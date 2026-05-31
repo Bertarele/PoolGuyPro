@@ -267,12 +267,17 @@ function MarketplaceScreen({ ctx }) {
                   ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
                   : `$${item.price}`;
                 return (
-                  <div key={item._id} className="pg-card" style={{
-                    padding:0, overflow:'hidden', position:'relative',
-                    border: isPending ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
-                    opacity: isPending ? 0.82 : 1,
-                    display:'flex', flexDirection:'column',
-                  }}>
+                  <button key={item._id}
+                    onClick={()=> !isPending && openPublicProfile && openPublicProfile({name:fmtAuthor(item.author),rating:4.5,reviews:0,jobs:0,loc:item.loc})}
+                    className="pg-press"
+                    style={{
+                      padding:0, overflow:'hidden', position:'relative', cursor: isPending ? 'default' : 'pointer',
+                      border: isPending ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
+                      opacity: isPending ? 0.82 : 1,
+                      display:'flex', flexDirection:'column',
+                      borderRadius:14, background:'var(--pg-white)', textAlign:'left', fontFamily:'inherit',
+                      boxShadow:'0 1px 3px rgba(0,0,0,0.08)',
+                    }}>
                     {/* Photo area — enforced 4:3 ratio */}
                     <div style={{position:'relative', paddingTop:'72%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
                       <div style={{position:'absolute', inset:0}}>
@@ -318,18 +323,13 @@ function MarketplaceScreen({ ctx }) {
                           <span style={{fontSize:11}}>👤</span> {fmtAuthor(item.author)}
                         </span>
                       </div>
-                      {isPending ? (
-                        <div style={{marginTop:10, padding:'7px 10px', borderRadius:8, background:'#FFF8E1', border:'0.5px solid #FFE082', fontSize:11, color:'#7C5C00', textAlign:'center', lineHeight:1.3}}>
-                          {lang==='pt'?'⏳ Aguardando aprovação':lang==='es'?'⏳ Esperando aprobación':'⏳ Awaiting approval'}
+                      {isPending && (
+                        <div style={{marginTop:8, fontSize:10.5, color:'#92710A', background:'#FFF8E1', border:'0.5px solid #FFE082', borderRadius:6, padding:'4px 8px', textAlign:'center'}}>
+                          ⏳ {lang==='pt'?'Aguardando aprovação':lang==='es'?'Esperando aprobación':'Awaiting approval'}
                         </div>
-                      ) : openPublicProfile && (
-                        <button onClick={()=>openPublicProfile({name:fmtAuthor(item.author),rating:4.5,reviews:0,jobs:0,loc:item.loc})}
-                          style={{width:'100%',marginTop:10,height:34,fontSize:12.5,fontFamily:'inherit',borderRadius:9,border:'none',background:'var(--pg-blue-500)',color:'#fff',fontWeight:700,cursor:'pointer',boxShadow:'0 2px 8px rgba(0,119,182,0.25)'}}>
-                          {t.contact||'Contato'}
-                        </button>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
 
