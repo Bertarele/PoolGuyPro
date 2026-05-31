@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[] } = ctx;
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
 
@@ -11,21 +11,23 @@ function HomeScreen({ ctx }) {
       ? 'Compra, vende y renta equipo de piscina'
       : 'Buy, sell and rent pool equipment';
 
-  const myAds = lang==='pt'
-    ? { title:'Meus Anúncios', sub:'Veja todos seus anúncios ativos', count:'2 anúncios' }
-    : lang==='es'
-      ? { title:'Mis Anuncios', sub:'Ve todos tus anuncios activos', count:'2 anuncios' }
-      : { title:'My Listings', sub:'View all your active listings', count:'2 listings' };
-
   const premiumLbls = lang==='pt'
-    ? { be:'Seja Premium', desc:'Desbloqueie anúncios ilimitados, posição prioritária e ofertas exclusivas', cta:'Assine Agora' }
+    ? { be:'Seja Premium', desc:'Anúncios ilimitados, posição prioritária e acesso exclusivo a trabalhos.', cta:'Assine Agora →', tag:'Mais popular' }
     : lang==='es'
-      ? { be:'Hazte Premium', desc:'Desbloquea anuncios ilimitados, posición prioritaria y ofertas exclusivas', cta:'Suscríbete Ahora' }
-      : { be:'Go Premium', desc:'Unlock unlimited listings, priority placement and exclusive offers', cta:'Subscribe Now' };
+      ? { be:'Hazte Premium', desc:'Anuncios ilimitados, posición prioritaria y acceso exclusivo a trabajos.', cta:'Suscríbete Ahora →', tag:'Más popular' }
+      : { be:'Go Premium', desc:'Unlimited listings, priority placement & exclusive job access.', cta:'Subscribe Now →', tag:'Most popular' };
 
-  // Pick a sample listing and a sample route for the "Meus Anúncios" card
-  const sampleEquip = EQUIPMENT.find(e => e.mode==='rent' && e.category==='Vacuum') || EQUIPMENT[2];
-  const sampleRoute = POOL_ROUTES[2];
+  // ── Resolve author name (same logic as dbWrite) ──────────────
+  const myAuthor = (user.name && !user.name.includes('@'))
+    ? user.name
+    : (user.email ? user.email.split('@')[0] : null);
+
+  // My real posts from Supabase liveMarket
+  const myPosts = liveMarket.filter(m =>
+    m.author === myAuthor ||
+    m.author === user.name ||
+    (user.email && m.author === user.email.split('@')[0])
+  );
 
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob,      setSelectedJob]      = React.useState(null);
@@ -37,14 +39,27 @@ function HomeScreen({ ctx }) {
       ? (lang==='pt'?'Boa tarde':lang==='es'?'Buenas tardes':'Good afternoon')
       : (lang==='pt'?'Boa noite':lang==='es'?'Buenas noches':'Good evening');
 
+  // Type label
+  const typeLabel = (m) => {
+    if (m.type === 'sell') return lang==='pt'?'À venda':lang==='es'?'En venta':'For sale';
+    if (m.type === 'rent') return lang==='pt'?'Aluguel':lang==='es'?'Renta':'Rental';
+    if (m.type === 'route') return lang==='pt'?'Rota':lang==='es'?'Ruta':'Route';
+    if (m.type === 'pool') return lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool';
+    return m.type || '';
+  };
+
+  const adsSectionTitle = lang==='pt'?'Meus Anúncios':lang==='es'?'Mis Anuncios':'My Listings';
+  const adsCountLbl = myPosts.length === 1
+    ? (lang==='pt'?`${myPosts.length} anúncio`:lang==='es'?`${myPosts.length} anuncio`:`${myPosts.length} listing`)
+    : (lang==='pt'?`${myPosts.length} anúncios`:lang==='es'?`${myPosts.length} anuncios`:`${myPosts.length} listings`);
+
   return (
     <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
     <div className="pg-screen" style={{paddingBottom:110, height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
+
       {/* Navy header */}
       <NavyBar
-        title={
-          <Wordmark size="lg" onDark subtitle={subtitle}/>
-        }
+        title={<Wordmark size="lg" onDark subtitle={subtitle}/>}
         right={
           <>
             <LangPill lang={lang} setLang={setLang} onDark/>
@@ -71,92 +86,160 @@ function HomeScreen({ ctx }) {
             <span style={{fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.90)', letterSpacing:'0.03em'}}>ACTIVE</span>
           </div>
         </div>
-
-        {/* Extra padding at bottom of header to allow card overlap */}
         <div style={{height:16}}/>
       </NavyBar>
 
-      {/* "Meus Anúncios" hero card overlapping the header */}
+      {/* ── Meus Anúncios card ── */}
       <div style={{padding:'0 18px', marginTop:-20}}>
-        <div className="pg-card" style={{padding:'14px 14px 16px', position:'relative'}}>
-          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12}}>
+        <div className="pg-card" style={{padding:'16px 16px 18px', position:'relative'}}>
+
+          {/* Header row */}
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14}}>
             <div style={{display:'flex', alignItems:'center', gap:10}}>
               <div style={{
-                width:32, height:32, borderRadius:9, background:'var(--pg-blue-100)',
-                display:'flex', alignItems:'center', justifyContent:'center',
+                width:34, height:34, borderRadius:10, background:'var(--pg-blue-100)',
+                display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-700)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-700)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20.6 11.4 13 3.7c-.4-.4-1-.7-1.6-.7H5C3.9 3 3 3.9 3 5v6.4c0 .6.2 1.2.7 1.6l7.7 7.7c.8.8 2 .8 2.8 0l6.4-6.4c.8-.8.8-2 0-2.9Z"/>
                   <circle cx="8" cy="8" r="1.5"/>
                 </svg>
               </div>
               <div>
-                <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.01em'}}>{myAds.title}</h3>
-                <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>{myAds.sub}</div>
+                <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.01em'}}>{adsSectionTitle}</h3>
+                <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>
+                  {myPosts.length === 0
+                    ? (lang==='pt'?'Nenhum anúncio ativo ainda':lang==='es'?'Sin anuncios activos aún':'No active listings yet')
+                    : (lang==='pt'?'Seus anúncios ativos':lang==='es'?'Tus anuncios activos':'Your active listings')}
+                </div>
               </div>
             </div>
-            <span className="pg-chip" style={{padding:'4px 10px', fontSize:11, background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', borderColor:'transparent'}}>
-              {myAds.count}
-            </span>
+            <div style={{display:'flex', alignItems:'center', gap:8}}>
+              {myPosts.length > 0 && (
+                <span className="pg-chip" style={{padding:'4px 10px', fontSize:11, background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', borderColor:'transparent'}}>
+                  {adsCountLbl}
+                </span>
+              )}
+              <button onClick={()=>goTab('market')} style={{
+                border:'none', background:'var(--pg-blue-500)', color:'#fff',
+                width:30, height:30, borderRadius:'50%', cursor:'pointer',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                boxShadow:'0 3px 8px rgba(0,119,182,0.35)',
+                flexShrink:0,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
-            {/* Rental listing */}
-            <button className="pg-card pg-card-tap" onClick={()=>goTab('market')} style={{padding:0, overflow:'hidden', textAlign:'left', cursor:'pointer', border:'0.5px solid var(--pg-ink-200)', background:'#fff'}}>
-              <div style={{position:'relative'}}>
-                <EquipImg category="Vacuum" height={100}/>
-                <span className="pg-badge pg-badge-new" style={{position:'absolute', top:8, left:8}}>
-                  {lang==='pt'?'Aluguel Ativo':lang==='es'?'Renta Activa':'Active Rental'}
-                </span>
+          {/* No posts state */}
+          {myPosts.length === 0 && (
+            <button onClick={()=>goTab('market')} style={{
+              width:'100%', padding:'20px 16px', borderRadius:14, cursor:'pointer',
+              border:'2px dashed var(--pg-ink-200)', background:'var(--pg-ink-50, #F7F9FB)',
+              display:'flex', flexDirection:'column', alignItems:'center', gap:10,
+              fontFamily:'inherit', transition:'all .15s',
+            }}>
+              <div style={{
+                width:52, height:52, borderRadius:16,
+                background:'linear-gradient(135deg, var(--pg-blue-100), var(--pg-blue-50))',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                {Icon.cart(24, 'var(--pg-blue-500)')}
               </div>
-              <div style={{padding:'10px 11px 11px'}}>
-                <div style={{display:'flex', alignItems:'flex-start', gap:6, marginBottom:4}}>
-                  <span style={{flex:1, fontSize:13, fontWeight:600, letterSpacing:'-0.01em', lineHeight:1.25}}>{sampleEquip.name}</span>
-                  <span className="pg-chip" style={{padding:'2px 7px', fontSize:10, background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', borderColor:'transparent', flexShrink:0}}>
-                    {lang==='pt'?'seminovo':lang==='es'?'casi nuevo':'like-new'}
-                  </span>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-800)', letterSpacing:'-0.01em'}}>
+                  {lang==='pt'?'Criar primeiro anúncio':lang==='es'?'Crear primer anuncio':'Create your first listing'}
                 </div>
-                <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:2, lineHeight:1.35}}>
-                  {lang==='pt'?'Diária ou semanal':lang==='es'?'Diaria o semanal':'Daily or weekly rental'}
+                <div style={{fontSize:12, color:'var(--pg-ink-400)', marginTop:3}}>
+                  {lang==='pt'?'Venda equipamentos, aluguéis ou rotas':lang==='es'?'Vende equipos, alquileres o rutas':'Sell equipment, rentals or routes'}
                 </div>
-                <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:8}}>
-                  <span style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
-                    ${sampleEquip.price}<span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-500)'}}>{tr(sampleEquip.unit, lang) || '/day'}</span>
-                  </span>
-                  <span style={{fontSize:10, color:'var(--pg-ink-500)'}}>RentAPool</span>
-                </div>
+              </div>
+              <div style={{
+                padding:'8px 20px', borderRadius:10, fontSize:13, fontWeight:700,
+                background:'var(--pg-blue-500)', color:'#fff',
+                boxShadow:'0 3px 10px rgba(0,119,182,0.30)',
+              }}>
+                {lang==='pt'?'Publicar agora →':lang==='es'?'Publicar ahora →':'Post now →'}
               </div>
             </button>
+          )}
 
-            {/* Route listing */}
-            <button className="pg-card pg-card-tap" onClick={()=>goTab('market')} style={{padding:0, overflow:'hidden', textAlign:'left', cursor:'pointer', border:'0.5px solid var(--pg-ink-200)', background:'#fff'}}>
-              <div style={{position:'relative'}}>
-                <EquipImg category="Routes" height={100}/>
-                <span className="pg-badge pg-badge-new" style={{position:'absolute', top:8, left:8, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)'}}>
-                  {lang==='pt'?'Rota à Venda':lang==='es'?'Ruta en Venta':'Route for Sale'}
-                </span>
-              </div>
-              <div style={{padding:'10px 11px 11px'}}>
-                <div style={{display:'flex', alignItems:'flex-start', gap:6, marginBottom:4}}>
-                  <span style={{flex:1, fontSize:13, fontWeight:600, letterSpacing:'-0.01em', lineHeight:1.25}}>
-                    {lang==='pt'?'Rota Limpeza · 22 Piscinas':lang==='es'?'Ruta Limpieza · 22 Piscinas':'Cleaning Route · 22 Pools'}
-                  </span>
-                  <span className="pg-chip" style={{padding:'2px 7px', fontSize:10, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)', borderColor:'transparent', flexShrink:0}}>
-                    good
-                  </span>
-                </div>
-                <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:2, lineHeight:1.35}}>
-                  {lang==='pt'?'Rota estabelecida, 22 clientes residenciais':lang==='es'?'Ruta consolidada, 22 clientes':'Established, 22 residential clients'}
-                </div>
-                <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:8}}>
-                  <span style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
-                    ${sampleRoute.est.toLocaleString()}
-                  </span>
-                  <span style={{fontSize:10, color:'var(--pg-ink-500)'}}>RouteKing</span>
-                </div>
-              </div>
-            </button>
-          </div>
+          {/* User posts list */}
+          {myPosts.length > 0 && (
+            <div style={{display:'flex', flexDirection:'column', gap:10}}>
+              {myPosts.slice(0, 4).map(item => {
+                const isPending = item.status === 'pending';
+                const priceStr = item.priceMode === 'neg'
+                  ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
+                  : item.asking
+                    ? `$${Number(item.asking).toLocaleString()}`
+                    : item.price
+                      ? `$${item.price}`
+                      : '—';
+                return (
+                  <button key={item._id} onClick={()=>goTab('market')} className="pg-press" style={{
+                    display:'flex', alignItems:'center', gap:12,
+                    padding:'10px 12px', borderRadius:14,
+                    border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
+                    background: isPending ? 'var(--pg-ink-50, #F7F9FB)' : 'var(--pg-blue-50)',
+                    cursor:'pointer', fontFamily:'inherit', textAlign:'left',
+                  }}>
+                    {/* Square thumbnail */}
+                    <div style={{
+                      width:58, height:58, borderRadius:12, overflow:'hidden', flexShrink:0,
+                      background:'linear-gradient(135deg, var(--pg-blue-100), var(--pg-ink-100))',
+                    }}>
+                      <EquipImg category={item.cat || (item.type==='route'?'Routes':'Tools')} height={58}/>
+                    </div>
+                    {/* Info */}
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:2}}>
+                        <span style={{
+                          fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:5,
+                          letterSpacing:'0.04em',
+                          background: isPending ? '#FFF3CD' : 'var(--pg-blue-100)',
+                          color: isPending ? '#856404' : 'var(--pg-blue-700)',
+                        }}>
+                          {isPending ? (lang==='pt'?'⏳ REVISÃO':lang==='es'?'⏳ REVISIÓN':'⏳ REVIEW') : '✓ ATIVO'}
+                        </span>
+                        <span style={{fontSize:10.5, color:'var(--pg-ink-400)', fontWeight:500}}>{typeLabel(item)}</span>
+                      </div>
+                      <div style={{
+                        fontSize:13.5, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.25,
+                        color: isPending ? 'var(--pg-ink-600)' : 'var(--pg-ink-900)',
+                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:180,
+                      }}>{item.name || item.routeName || '—'}</div>
+                      <div style={{fontSize:11.5, color:'var(--pg-ink-400)', marginTop:2}}>{item.loc || item.area || ''}</div>
+                    </div>
+                    {/* Price */}
+                    <div style={{textAlign:'right', flexShrink:0}}>
+                      <div style={{
+                        fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700,
+                        letterSpacing:'-0.02em', lineHeight:1,
+                        color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
+                      }}>{priceStr}</div>
+                      {item.type==='rent' && (
+                        <div style={{fontSize:9.5, color:'var(--pg-ink-400)', marginTop:2}}>/dia</div>
+                      )}
+                      {Icon.chev(13, 'var(--pg-ink-300)')}
+                    </div>
+                  </button>
+                );
+              })}
+              {myPosts.length > 4 && (
+                <button onClick={()=>goTab('market')} style={{
+                  width:'100%', padding:'10px', borderRadius:10, border:'none',
+                  background:'var(--pg-ink-100)', color:'var(--pg-blue-600)', fontWeight:700,
+                  fontSize:13, cursor:'pointer', fontFamily:'inherit',
+                }}>
+                  {lang==='pt'?`Ver todos os ${myPosts.length} anúncios →`:lang==='es'?`Ver los ${myPosts.length} anuncios →`:`View all ${myPosts.length} listings →`}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -188,35 +271,96 @@ function HomeScreen({ ctx }) {
       </div>
 
       <div style={{padding:'16px 18px 16px', display:'flex', flexDirection:'column', gap:18}}>
-        {/* Premium banner — cyan→teal gradient */}
-        <button onClick={openPaywall} className="pg-press" style={{
-          textAlign:'left', border:'none', cursor:'pointer',
-          padding:'18px', borderRadius:18, color:'#fff',
-          background:'linear-gradient(110deg, var(--pg-blue-500) 0%, var(--pg-aqua-500) 100%)',
-          position:'relative', overflow:'hidden', display:'flex', alignItems:'center', gap:14,
-          boxShadow:'0 6px 20px oklch(0.58 0.16 235 / 0.30)',
-        }}>
-          <div style={{
-            width:54, height:54, borderRadius:'50%',
-            background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
-            border:'0.5px solid rgba(255,255,255,0.25)',
-            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-          }}>{Icon.crown(28, '#fff')}</div>
-          <div style={{flex:1, minWidth:0}}>
-            <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:700, letterSpacing:'-0.02em'}}>
-              {premiumLbls.be}
-            </h3>
-            <div style={{fontSize:12.5, opacity:0.92, marginTop:4, lineHeight:1.4}}>
-              {premiumLbls.desc}
+
+        {/* ── Premium banner — redesigned ── */}
+        {!isPremium && (
+          <button onClick={openPaywall} className="pg-press" style={{
+            textAlign:'left', border:'none', cursor:'pointer',
+            padding:0, borderRadius:20, overflow:'hidden',
+            background:'linear-gradient(135deg, #011B5A 0%, #023EBA 50%, #0077B6 100%)',
+            boxShadow:'0 8px 32px rgba(0,30,100,0.35), 0 2px 8px rgba(0,0,0,0.15)',
+            position:'relative',
+          }}>
+            {/* Decorative glow orbs */}
+            <div style={{
+              position:'absolute', width:140, height:140, borderRadius:'50%',
+              background:'radial-gradient(circle, rgba(0,200,255,0.18) 0%, transparent 70%)',
+              top:-40, right:-20, pointerEvents:'none',
+            }}/>
+            <div style={{
+              position:'absolute', width:100, height:100, borderRadius:'50%',
+              background:'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
+              bottom:-20, left:60, pointerEvents:'none',
+            }}/>
+            {/* Subtle grid pattern */}
+            <div style={{
+              position:'absolute', inset:0, opacity:0.04,
+              backgroundImage:'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)',
+              backgroundSize:'32px 32px',
+              pointerEvents:'none',
+            }}/>
+
+            <div style={{position:'relative', padding:'20px 20px 18px', display:'flex', gap:16, alignItems:'flex-start'}}>
+              {/* Crown */}
+              <div style={{
+                width:54, height:54, borderRadius:16, flexShrink:0,
+                background:'linear-gradient(135deg, rgba(255,215,0,0.20), rgba(255,180,0,0.10))',
+                border:'1px solid rgba(255,215,0,0.30)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                boxShadow:'0 4px 12px rgba(0,0,0,0.20)',
+              }}>
+                <span style={{fontSize:28}}>👑</span>
+              </div>
+
+              <div style={{flex:1, minWidth:0}}>
+                {/* Tag */}
+                <div style={{
+                  display:'inline-flex', alignItems:'center', gap:5, marginBottom:8,
+                  background:'linear-gradient(135deg, rgba(255,215,0,0.22), rgba(255,180,0,0.12))',
+                  border:'1px solid rgba(255,215,0,0.35)',
+                  borderRadius:999, padding:'3px 10px',
+                }}>
+                  <div style={{width:5, height:5, borderRadius:'50%', background:'#FFD700'}}/>
+                  <span style={{fontSize:10, fontWeight:800, color:'#FFD700', letterSpacing:'0.08em'}}>{premiumLbls.tag.toUpperCase()}</span>
+                </div>
+
+                <h3 style={{margin:'0 0 6px', fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, color:'#fff', letterSpacing:'-0.02em', lineHeight:1.1}}>
+                  {premiumLbls.be}
+                </h3>
+                <p style={{margin:'0 0 14px', fontSize:13, color:'rgba(255,255,255,0.78)', lineHeight:1.5}}>
+                  {premiumLbls.desc}
+                </p>
+
+                {/* Feature pills */}
+                <div style={{display:'flex', gap:7, flexWrap:'wrap', marginBottom:16}}>
+                  {(lang==='pt'
+                    ? ['✓ Anúncios ilimitados', '✓ Prioridade', '✓ Jobs exclusivos']
+                    : lang==='es'
+                      ? ['✓ Anuncios ilimitados', '✓ Prioridad', '✓ Trabajos exclusivos']
+                      : ['✓ Unlimited listings', '✓ Priority', '✓ Exclusive jobs']
+                  ).map(feat => (
+                    <span key={feat} style={{
+                      fontSize:11, fontWeight:600, padding:'4px 10px', borderRadius:999,
+                      background:'rgba(255,255,255,0.10)', border:'0.5px solid rgba(255,255,255,0.20)',
+                      color:'rgba(255,255,255,0.88)',
+                    }}>{feat}</span>
+                  ))}
+                </div>
+
+                {/* CTA button */}
+                <div style={{
+                  display:'inline-flex', alignItems:'center', gap:8,
+                  background:'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                  color:'#011B5A', padding:'11px 22px', borderRadius:12,
+                  fontSize:14, fontWeight:800, letterSpacing:'-0.01em',
+                  boxShadow:'0 4px 16px rgba(255,180,0,0.40)',
+                }}>
+                  {premiumLbls.cta}
+                </div>
+              </div>
             </div>
-            <div style={{display:'inline-flex', alignItems:'center', gap:6,
-              background:'#fff', color:'var(--pg-blue-700)',
-              padding:'10px 18px', borderRadius:11, fontSize:13, fontWeight:700, marginTop:12,
-            }}>
-              {premiumLbls.cta} {Icon.arrow(14, 'var(--pg-blue-700)')}
-            </div>
-          </div>
-        </button>
+          </button>
+        )}
 
         {/* Featured */}
         <section>
@@ -237,7 +381,7 @@ function HomeScreen({ ctx }) {
                 <div key={f.id} className="pg-card pg-card-tap" onClick={()=>setSelectedFeatured(f)} style={{
                   minWidth:215, padding:0, overflow:'hidden', flexShrink:0, cursor:'pointer',
                 }}>
-                  <EquipImg category={f.category} height={102}/>
+                  <EquipImg category={f.category} height={130}/>
                   <div style={{padding:'10px 12px 12px'}}>
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
                       <span className={`pg-badge ${tagColor==='urgent'?'pg-badge-urgent':tagColor==='aqua'?'pg-badge-new':tagColor==='blue'?'pg-badge-applied':'pg-badge-new'}`}>
@@ -289,10 +433,9 @@ function HomeScreen({ ctx }) {
 
           {!isPremium && (
             <button onClick={openPaywall} style={{
-              width:'100%', textAlign:'left', border:'none', cursor:'pointer',
-              padding:'10px 12px', marginBottom:8, borderRadius:11,
+              width:'100%', textAlign:'left', border:'0.5px solid var(--pg-aqua-400)',
+              cursor:'pointer', padding:'10px 12px', marginBottom:8, borderRadius:11,
               background:'linear-gradient(110deg, oklch(0.97 0.04 178), oklch(0.97 0.04 235))',
-              border:'0.5px solid var(--pg-aqua-400)',
               display:'flex', alignItems:'center', gap:10, fontFamily:'inherit',
             }}>
               <div style={{
@@ -305,7 +448,7 @@ function HomeScreen({ ctx }) {
                   {lang==='pt'
                     ? 'Assine Premium para aplicar e contactar'
                     : lang==='es'
-                      ? 'SusÍrbete Premium para postular y contactar'
+                      ? 'Suscríbete Premium para postular y contactar'
                       : 'Subscribe to Premium to apply & contact'}
                 </div>
                 <div style={{fontSize:10.5, color:'var(--pg-ink-500)', marginTop:1, lineHeight:1.3}}>
@@ -356,7 +499,7 @@ function HomeScreen({ ctx }) {
                       fontSize:10, fontWeight:700, color:'var(--pg-blue-700)',
                       background:'var(--pg-blue-100)', padding:'4px 8px', borderRadius:7,
                       letterSpacing:'0.03em',
-                    }}>{lang==='pt'?'Premium':lang==='es'?'Premium':'Premium'}</div>
+                    }}>Premium</div>
                   ) : j.price === 'neg' ? (
                     <div style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-700)'}}>{t.negotiable}</div>
                   ) : (
@@ -380,12 +523,10 @@ function HomeScreen({ ctx }) {
           const f = selectedFeatured;
           const tagColor = f.tag==='URGENT' ? 'pg-badge-urgent' : f.tag==='HIRING' ? 'pg-badge-new' : 'pg-badge-applied';
           const isRoute = f.category === 'Routes';
-          const isPool  = f.category === 'Pools';
           return (
             <div style={{padding:'0 0 36px'}}>
-              {/* Hero */}
               <div style={{position:'relative'}}>
-                <EquipImg category={f.category} height={160}/>
+                <EquipImg category={f.category} height={180}/>
                 <div style={{position:'absolute', top:12, left:16}}>
                   <span className={`pg-badge ${tagColor}`}>{f.tag==='URGENT' ? t.urgent : f.tag}</span>
                 </div>
@@ -407,8 +548,6 @@ function HomeScreen({ ctx }) {
                     </div>}
                   </div>
                 </div>
-
-                {/* Details row */}
                 <div style={{display:'flex', gap:10, flexWrap:'wrap', marginBottom:16}}>
                   {f.loc && <span style={{display:'flex', alignItems:'center', gap:4, fontSize:12, color:'var(--pg-ink-600)'}}>
                     {Icon.pin(11,'var(--pg-ink-400)')} {f.loc}
@@ -418,11 +557,7 @@ function HomeScreen({ ctx }) {
                   </span>}
                   {f.type && <span className="pg-chip" style={{fontSize:11, padding:'3px 9px'}}>{f.type}</span>}
                 </div>
-
-                {/* Divider */}
                 <div className="pg-divider" style={{margin:'0 0 16px'}}/>
-
-                {/* Seller row */}
                 <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:16}}>
                   <button onClick={()=>openPublicProfile && openPublicProfile({ name:f.seller||'Verified Seller', rating:4.9, reviews:58, jobs:58, loc:'South Florida' })}
                     style={{display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left'}} className="pg-press">
@@ -440,8 +575,6 @@ function HomeScreen({ ctx }) {
                     <span style={{marginLeft:5}}>{lang==='pt'?'Mensagem':lang==='es'?'Mensaje':'Message'}</span>
                   </button>
                 </div>
-
-                {/* View full listing button */}
                 <button onClick={()=>{ setSelectedFeatured(null); goTab('market'); }}
                   className="pg-btn pg-btn-primary" style={{width:'100%', height:50, fontSize:15, borderRadius:14}}>
                   {lang==='pt'?'Ver anúncio completo →':lang==='es'?'Ver anuncio completo →':'View full listing →'}
@@ -459,7 +592,6 @@ function HomeScreen({ ctx }) {
           const isUrgent = j.urgency === 'urgent';
           return (
             <div style={{padding:'0 0 36px'}}>
-              {/* Hero */}
               <div style={{
                 padding:'24px 20px 20px',
                 background: isUrgent
@@ -485,9 +617,7 @@ function HomeScreen({ ctx }) {
                   {tr(j.dist, lang)}
                 </div>
               </div>
-
               <div style={{padding:'16px 20px 0'}}>
-                {/* Stats row */}
                 <div style={{display:'flex', gap:10, marginBottom:16}}>
                   <div className="pg-card" style={{flex:1, padding:'10px 12px', textAlign:'center'}}>
                     <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, color:'var(--pg-blue-500)'}}>
@@ -496,22 +626,14 @@ function HomeScreen({ ctx }) {
                     <div style={{fontSize:10.5, color:'var(--pg-ink-500)', marginTop:2}}>{t.perPool}</div>
                   </div>
                   {j.pools && <div className="pg-card" style={{flex:1, padding:'10px 12px', textAlign:'center'}}>
-                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, color:'var(--pg-ink-900)'}}>
-                      {j.pools}
-                    </div>
-                    <div style={{fontSize:10.5, color:'var(--pg-ink-500)', marginTop:2}}>
-                      {lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'}
-                    </div>
+                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, color:'var(--pg-ink-900)'}}>{j.pools}</div>
+                    <div style={{fontSize:10.5, color:'var(--pg-ink-500)', marginTop:2}}>{lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'}</div>
                   </div>}
                   {j.type && <div className="pg-card" style={{flex:1, padding:'10px 12px', textAlign:'center'}}>
                     <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-800)', lineHeight:1.2}}>{j.type}</div>
-                    <div style={{fontSize:10.5, color:'var(--pg-ink-500)', marginTop:2}}>
-                      {lang==='pt'?'tipo':lang==='es'?'tipo':'type'}
-                    </div>
+                    <div style={{fontSize:10.5, color:'var(--pg-ink-500)', marginTop:2}}>{lang==='pt'?'tipo':lang==='es'?'tipo':'type'}</div>
                   </div>}
                 </div>
-
-                {/* Action buttons */}
                 <div style={{display:'flex', gap:10}}>
                   <button onClick={()=>{ ctx.openChat && ctx.openChat('Pool Owner'); setSelectedJob(null); }}
                     className="pg-btn pg-btn-ghost" style={{height:50, padding:'0 18px', fontSize:13.5, borderRadius:14}}>

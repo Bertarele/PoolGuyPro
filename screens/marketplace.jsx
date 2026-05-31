@@ -10,6 +10,17 @@ function MarketplaceScreen({ ctx }) {
     if (a.includes('@')) return a.split('@')[0];
     return a;
   };
+
+  // Same logic as dbWrite: resolve what name was stored as author
+  const myAuthor = (user.name && !user.name.includes('@'))
+    ? user.name
+    : (user.email ? user.email.split('@')[0] : null);
+
+  const isMyPost = (m) => (
+    (myAuthor && m.author === myAuthor) ||
+    (user.name && m.author === user.name) ||
+    (user.email && m.author === user.email.split('@')[0])
+  );
   const t = STRINGS[lang];
   const [view,       setView]       = React.useState('buy');
   const [cat,        setCat]        = React.useState('All');
@@ -237,7 +248,7 @@ function MarketplaceScreen({ ctx }) {
             {liveMarket
               .filter(m => m.type === mode && (
                 m.status === 'approved' ||
-                (m.status === 'pending' && m.author === user.name)
+                (m.status === 'pending' && isMyPost(m))
               ))
               .map(item => {
                 const isPending = item.status === 'pending';
@@ -281,7 +292,7 @@ function MarketplaceScreen({ ctx }) {
                   </div>
                 );
               })}
-            {list.length === 0 && liveMarket.filter(m=>m.type===mode && (m.status==='approved'||(m.status==='pending'&&m.author===user.name))).length === 0 && (
+            {list.length === 0 && liveMarket.filter(m=>m.type===mode && (m.status==='approved'||(m.status==='pending'&&isMyPost(m)))).length === 0 && (
               <div style={{gridColumn:'1/-1', textAlign:'center', padding:'32px 20px', color:'var(--pg-ink-400)', fontSize:13}}>
                 {t.search}
               </div>
