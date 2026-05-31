@@ -218,11 +218,16 @@ function App() {
     loadProfile(sbUser);
   }, [loadProfile]);
 
-  // Restore session on page reload
+  // Restore session on page reload — proactively refresh token first
   React.useEffect(() => {
     if (!window.sb) return;
-    window.sb.auth.getSession().then(({ data: { session } }) => {
-      if (session) handleAuthLogin(session.user);
+    window.sb.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      // Try to refresh token before making any data requests
+      if (window.sb.auth.refresh) {
+        await window.sb.auth.refresh().catch(() => {});
+      }
+      handleAuthLogin(session.user);
     });
   }, []);
 
@@ -309,18 +314,34 @@ function App() {
       rentPeriod: r.rent_period || 'day',
       status: r.status || 'pending' });
 
-    // Initial fetch
-    Promise.all([
-      window.sb.from('jobs').select('*').order('created_at', { ascending: false }),
-      window.sb.from('techs').select('*').order('created_at', { ascending: false }),
-      window.sb.from('vacations').select('*').order('created_at', { ascending: false }),
-      window.sb.from('marketplace').select('*').order('created_at', { ascending: false }),
-    ]).then(([j, tc, v, m]) => {
+    // Initial fetch — with proactive token refresh to handle expired JWTs
+    const doFetch = async () => {
+      // Refresh token first if stored session exists (prevents JWT expired errors)
+      try {
+        const stored = JSON.parse(localStorage.getItem('pg_s') || 'null');
+        if (stored?.r && window.sb.auth.refresh) {
+          await window.sb.auth.refresh();
+        }
+      } catch(e) {}
+
+      const [j, tc, v, m] = await Promise.all([
+        window.sb.from('jobs').select('*').order('created_at', { ascending: false }),
+        window.sb.from('techs').select('*').order('created_at', { ascending: false }),
+        window.sb.from('vacations').select('*').order('created_at', { ascending: false }),
+        window.sb.from('marketplace').select('*').order('created_at', { ascending: false }),
+      ]);
+      // If JWT still expired after refresh attempt, sign out so user sees login screen
+      if (m.error && m.error.message && m.error.message.includes('JWT')) {
+        console.warn('[Supabase] Token refresh failed — signing out');
+        window.sb.auth.signOut();
+        return;
+      }
       if (j.data)  setLiveJobs(j.data.map(normJob));
       if (tc.data) setLiveTechs(tc.data.map(normTech));
       if (v.data)  setLiveVacations(v.data.map(normVac));
       if (m.data)  setLiveMarket(m.data.map(normMkt));
-    }).catch(e => console.warn('[Supabase] fetch:', e.message));
+    };
+    doFetch().catch(e => console.warn('[Supabase] fetch:', e.message));
 
     // Real-time subscriptions
     const channel = window.sb.channel('app-realtime')
