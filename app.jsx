@@ -213,23 +213,34 @@ function App() {
     }));
   }, []);
 
-  const handleAuthLogin = React.useCallback((sbUser) => {
+  // authReady gates the data fetch — ensures profile is loaded before querying DB
+  const [authReady, setAuthReady] = React.useState(false);
+
+  const handleAuthLogin = React.useCallback(async (sbUser) => {
     setIsLoggedIn(true);
-    loadProfile(sbUser);
+    await loadProfile(sbUser);
   }, [loadProfile]);
 
-  // Restore session on page reload — proactively refresh token first
+  // ── Boot sequence: getSession → refresh token → loadProfile → signal ready ──
+  // Must complete BEFORE data fetch runs (authReady gates it)
   React.useEffect(() => {
-    if (!window.sb) return;
-    window.sb.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
-      // Try to refresh token before making any data requests
-      if (window.sb.auth.refresh) {
-        await window.sb.auth.refresh().catch(() => {});
+    if (!window.sb) { setAuthReady(true); return; }
+    (async () => {
+      try {
+        const { data: { session } } = await window.sb.auth.getSession();
+        if (session) {
+          // Refresh token before anything else
+          if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(() => {});
+          // Load profile — sets user.name, uid, role
+          await handleAuthLogin(session.user);
+        }
+      } catch(e) {
+        console.warn('[Auth] Session restore failed:', e.message);
+      } finally {
+        setAuthReady(true); // always ungate, even if no session
       }
-      handleAuthLogin(session.user);
-    });
-  }, []);
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [lang, setLangState] = React.useState(t.lang);
   // Per-weekday region preferences for notifications
@@ -292,7 +303,7 @@ function App() {
   const [liveMarket,    setLiveMarket]    = React.useState([]);
 
   React.useEffect(() => {
-    if (!window.sb) return;
+    if (!window.sb || !authReady) return;
 
     // Normalizers — Supabase uses snake_case columns
     const normJob = r => ({ _id:r.id, _live:true, role:r.role, loc:r.loc, desc:r.description,
@@ -316,32 +327,21 @@ function App() {
       rentPeriod: r.rent_period || 'day',
       status: r.status || 'pending' });
 
-    // Initial fetch — with proactive token refresh to handle expired JWTs
+    // Data fetch — runs AFTER auth is ready (authReady gate above)
+    // Token was already refreshed in the boot sequence, so this should always work
     const doFetch = async () => {
-      // Refresh token first if stored session exists (prevents JWT expired errors)
-      try {
-        const stored = JSON.parse(localStorage.getItem('pg_s') || 'null');
-        if (stored?.r && window.sb.auth.refresh) {
-          await window.sb.auth.refresh();
-        }
-      } catch(e) {}
-
       const [j, tc, v, m] = await Promise.all([
         window.sb.from('jobs').select('*').order('created_at', { ascending: false }),
         window.sb.from('techs').select('*').order('created_at', { ascending: false }),
         window.sb.from('vacations').select('*').order('created_at', { ascending: false }),
         window.sb.from('marketplace').select('*').order('created_at', { ascending: false }),
       ]);
-      // If JWT still expired after refresh attempt, sign out so user sees login screen
-      if (m.error && m.error.message && m.error.message.includes('JWT')) {
-        console.warn('[Supabase] Token refresh failed — signing out');
-        window.sb.auth.signOut();
-        return;
-      }
       if (j.data)  setLiveJobs(j.data.map(normJob));
       if (tc.data) setLiveTechs(tc.data.map(normTech));
       if (v.data)  setLiveVacations(v.data.map(normVac));
       if (m.data)  setLiveMarket(m.data.map(normMkt));
+      // Log errors but never call signOut here — auth layer manages sessions
+      if (m.error) console.warn('[Supabase] marketplace fetch error:', m.error.message);
     };
     doFetch().catch(e => console.warn('[Supabase] fetch:', e.message));
 
@@ -364,7 +364,7 @@ function App() {
       });
 
     return () => { window.sb.removeChannel(channel); };
-  }, []);
+  }, [authReady]); // runs once authReady flips true — guaranteed after token refresh + loadProfile
 
   // Helper: insert row into Supabase
   const dbWrite = React.useCallback((col, data) => {
