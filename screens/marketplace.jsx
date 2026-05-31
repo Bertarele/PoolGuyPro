@@ -449,9 +449,9 @@ function MarketplaceScreen({ ctx }) {
                         <button key={opt.id} onClick={()=>setPoolPrice(opt.id)} style={{
                           padding:'5px 11px', borderRadius:8, border:'none', cursor:'pointer',
                           fontFamily:'inherit', fontSize:12, fontWeight:600, transition:'all .12s',
-                          background: on ? 'var(--pg-aqua-500)' : 'var(--pg-ink-100)',
-                          color:      on ? 'var(--pg-blue-900)' : 'var(--pg-ink-700)',
-                          boxShadow:  on ? '0 2px 6px rgba(0,119,182,0.30)' : 'none',
+                          background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+                          color:      on ? '#fff' : 'var(--pg-ink-700)',
+                          boxShadow:  on ? '0 2px 6px rgba(0,119,182,0.25)' : 'none',
                         }}>{opt.label}</button>
                       );
                     })}
@@ -536,26 +536,26 @@ function MarketplaceScreen({ ctx }) {
                   {/* Pool icon / mini image */}
                   <div style={{
                     width:82, height:82, borderRadius:12, overflow:'hidden', flexShrink:0,
-                    background:'linear-gradient(135deg, var(--pg-aqua-100) 0%, var(--pg-blue-100) 100%)',
+                    background:'linear-gradient(135deg, var(--pg-blue-100) 0%, var(--pg-blue-50) 100%)',
                     display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4,
                   }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pg-aqua-700)" strokeWidth="1.8" strokeLinecap="round">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-600)" strokeWidth="1.8" strokeLinecap="round">
                       <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
                       <path d="M2 18 Q6 14 10 18 Q14 22 18 18 Q20 16 22 18"/>
                       <circle cx="12" cy="5" r="2.5"/>
                     </svg>
                     <div style={{
                       fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:800,
-                      color:'var(--pg-aqua-700)', lineHeight:1,
+                      color:'var(--pg-blue-600)', lineHeight:1,
                     }}>{p.pools}</div>
-                    <div style={{fontSize:9, color:'var(--pg-aqua-600, var(--pg-aqua-700))', fontWeight:600, letterSpacing:'0.03em', opacity:0.75}}>
+                    <div style={{fontSize:9, color:'var(--pg-blue-700)', fontWeight:600, letterSpacing:'0.03em', opacity:0.75}}>
                       {p.pools === 1 ? (lang==='pt'?'PISCINA':lang==='es'?'PISCINA':'POOL') : (lang==='pt'?'PISCINAS':lang==='es'?'PISCINAS':'POOLS')}
                     </div>
                   </div>
 
                   <div style={{flex:1, minWidth:0}}>
                     <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:3}}>
-                      <span className="pg-badge" style={{background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', fontSize:9}}>
+                      <span className="pg-badge" style={{background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', fontSize:9}}>
                         {p.type === 'condo' ? 'CONDO' : (lang==='pt'?'RESIDENCIAL':lang==='es'?'RESIDENCIAL':'HOUSE')}
                       </span>
                       <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>{p.area}</span>
@@ -565,14 +565,14 @@ function MarketplaceScreen({ ctx }) {
                       {tr(p.name, lang)}
                     </div>
                     <div style={{display:'flex', gap:6, alignItems:'center', marginTop:5, flexWrap:'wrap'}}>
-                      <span className="pg-chip pg-chip-aqua" style={{padding:'3px 8px', fontSize:11}}>{tr(p.revenue, lang)}</span>
+                      <span className="pg-chip" style={{padding:'3px 8px', fontSize:11, background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', borderColor:'var(--pg-blue-100)'}}>{tr(p.revenue, lang)}</span>
                     </div>
                     <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:7}}>
                       <div>
                         <div style={{fontSize:10, color:'var(--pg-ink-400)'}}>{t.asking}</div>
-                        <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-aqua-700)', letterSpacing:'-0.02em'}}>${p.est.toLocaleString()}</div>
+                        <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${p.est.toLocaleString()}</div>
                       </div>
-                      <button onClick={()=>openChat()} className="pg-btn pg-btn-aqua" style={{height:34, padding:'0 14px', fontSize:13}}>
+                      <button onClick={()=>openChat()} className="pg-btn pg-btn-primary" style={{height:34, padding:'0 14px', fontSize:13}}>
                         {t.contact}
                       </button>
                     </div>
@@ -1197,28 +1197,28 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
   if (selected._type === 'pool') return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
       <div style={{position:'relative', height:180, flexShrink:0,
-        background:'linear-gradient(135deg, #ddf4fb 0%, #dbeeff 100%)',
+        background:'linear-gradient(135deg, #011B5A 0%, #023EBA 55%, #0077B6 100%)',
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4}}>
         <button onClick={onClose} style={{position:'absolute', top:12, right:12,
-          border:'none', background:'rgba(0,119,182,0.12)', width:30, height:30,
+          border:'none', background:'rgba(255,255,255,0.15)', width:30, height:30,
           borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
-          {Icon.x(14,'var(--pg-blue-700)')}
+          {Icon.x(14,'#fff')}
         </button>
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--pg-aqua-700)" strokeWidth="1.8" strokeLinecap="round">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.90)" strokeWidth="1.8" strokeLinecap="round">
           <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
           <path d="M2 18 Q6 14 10 18 Q14 22 18 18 Q20 16 22 18"/>
           <circle cx="12" cy="5" r="2.5"/>
         </svg>
-        <div style={{fontFamily:'var(--pg-font-display)', fontSize:54, fontWeight:800, color:'var(--pg-aqua-700)', lineHeight:1, letterSpacing:'-0.02em'}}>
+        <div style={{fontFamily:'var(--pg-font-display)', fontSize:54, fontWeight:800, color:'#fff', lineHeight:1, letterSpacing:'-0.02em'}}>
           {selected.pools}
         </div>
-        <div style={{fontSize:11, fontWeight:700, color:'var(--pg-aqua-700)', letterSpacing:'0.06em', opacity:0.75}}>
+        <div style={{fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.65)', letterSpacing:'0.06em'}}>
           {selected.pools===1 ? (lang==='pt'?'PISCINA':lang==='es'?'PISCINA':'POOL') : (lang==='pt'?'PISCINAS':lang==='es'?'PISCINAS':'POOLS')}
         </div>
       </div>
       <div style={{flex:1, overflowY:'auto', padding:'16px 18px 24px'}}>
         <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:6}}>
-          <span className="pg-badge" style={{background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', fontSize:9}}>
+          <span className="pg-badge" style={{background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', fontSize:9}}>
             {selected.type==='condo' ? 'CONDO' : (lang==='pt'?'RESIDENCIAL':lang==='es'?'RESIDENCIAL':'HOUSE')}
           </span>
           <span style={{fontSize:12, color:'var(--pg-ink-400)'}}>{selected.area}</span>
@@ -1228,10 +1228,10 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
         </h2>
         <div style={{display:'flex', alignItems:'baseline', gap:8, marginTop:10, flexWrap:'wrap'}}>
           <span style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em'}}>{t.asking.toUpperCase()}</span>
-          <span style={{fontFamily:'var(--pg-font-display)', fontSize:32, fontWeight:700, color:'var(--pg-aqua-700)', letterSpacing:'-0.02em'}}>
+          <span style={{fontFamily:'var(--pg-font-display)', fontSize:32, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
             ${selected.est.toLocaleString()}
           </span>
-          <span className="pg-chip pg-chip-aqua" style={{fontSize:11}}>{tr(selected.revenue, lang)}</span>
+          <span className="pg-chip" style={{fontSize:11, background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', borderColor:'var(--pg-blue-100)'}}>{tr(selected.revenue, lang)}</span>
         </div>
         <div style={{marginTop:12, fontSize:13, lineHeight:1.55, color:'var(--pg-ink-600)'}}>
           {tr(selected.desc, lang)}
@@ -1242,7 +1242,7 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
           <button onClick={openChat} className="pg-btn pg-btn-ghost" style={{flex:1}}>
             {Icon.msg(16,'var(--pg-blue-700)')} {t.message}
           </button>
-          <button onClick={openOffer} className="pg-btn pg-btn-aqua" style={{flex:2}}>{t.makeOffer}</button>
+          <button onClick={openOffer} className="pg-btn pg-btn-primary" style={{flex:2}}>{t.makeOffer}</button>
         </div>
       </div>
     </div>
@@ -1318,7 +1318,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
     { id:'parts',   label:t.forPartsLbl },
   ];
 
-  const isValid = name.trim().length > 2 && price.trim().length > 0 && loc.trim().length > 2;
+  const isValid = name.trim().length > 2 && (priceMode === 'neg' || price.trim().length > 0) && loc.trim().length > 2;
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
