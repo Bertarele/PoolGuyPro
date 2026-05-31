@@ -431,8 +431,329 @@ function App() {
     };
   }, [chatConvoName, chatOpen]);
 
-  const isMobile = window.innerWidth <= 480;
+  // ── Responsive: detect desktop vs mobile ─────────────────────
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
+  React.useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
+  // ── Desktop sidebar nav items ─────────────────────────────────
+  const desktopNavItems = [
+    { id:'home',    emoji:'🏠', label: lang==='pt'?'Início':lang==='es'?'Inicio':'Home' },
+    { id:'market',  emoji:'🏪', label: lang==='pt'?'Mercado':lang==='es'?'Mercado':'Marketplace' },
+    { id:'quick',   emoji:'🏊', label: 'Quick Pools' },
+    { id:'work',    emoji:'💼', label: lang==='pt'?'Trabalho':lang==='es'?'Trabajo':'Work' },
+    { id:'profile', emoji:'👤', label: lang==='pt'?'Perfil':lang==='es'?'Perfil':'Profile' },
+  ];
+  const desktopTabLabel = desktopNavItems.find(n=>n.id===tab);
+
+  // ── Shared overlays (used in both mobile and desktop) ─────────
+  const OverlayBundle = () => (
+    <>
+      <ChatSheet open={chatOpen}
+        onClose={()=>{ setChatOpen(false); setChatConvoName(null); }}
+        lang={lang} initialConvo={initialConvo}/>
+      <NotificationsSheet open={notifOpen} onClose={()=>setNotifOpen(false)} lang={lang}/>
+      <PaywallSheet open={payOpen} onClose={()=>setPayOpen(false)} setUser={ctx.setUser} lang={lang}/>
+      <PostMenuSheet open={postMenuOpen} onClose={()=>setPostMenuOpen(false)}
+        onPickQuickPool={()=>setPostQPOpen(true)} lang={lang}/>
+      <Sheet open={postQPOpen} onClose={()=>setPostQPOpen(false)} height="92%">
+        <PostQuickPool
+          lang={lang}
+          onClose={()=>setPostQPOpen(false)}
+          onSubmit={()=>{
+            setPostQPOpen(false);
+            showToast(STRINGS[lang].toastPosted);
+            setTab('quick');
+          }}
+        />
+      </Sheet>
+      <Toast message={toast}/>
+      <RegionEditorSheet
+        open={regionOpen} onClose={()=>setRegionOpen(false)} lang={lang}
+        regionsByDay={regionsByDay} setRegionsByDay={setRegionsByDay}
+        county={county}
+      />
+      <LanguagePickerSheet
+        open={langPickerOpen} onClose={()=>setLangPickerOpen(false)}
+        lang={lang} setLang={setLang}
+      />
+      <ApplicantsSheet
+        open={!!applicantsPost}
+        onClose={()=>setApplicantsPost(null)}
+        post={applicantsPost}
+        lang={lang}
+        onChat={(name)=>{ setApplicantsPost(null); setChatConvoName(name); setChatOpen(true); }}
+      />
+      <VerificationSheet open={verifyOpen} onClose={()=>setVerifyOpen(false)} lang={lang}/>
+      <WalletSheet open={walletOpen} onClose={()=>setWalletOpen(false)} lang={lang}/>
+      <WorkLifecycleSheet
+        open={!!jobDetailApp} onClose={()=>setJobDetailApp(null)}
+        app={jobDetailApp} lang={lang}
+        onReview={(app)=>{ setJobDetailApp(null); setReviewApp(app); }}/>
+      <ReviewSheet
+        open={!!reviewApp} onClose={()=>setReviewApp(null)}
+        app={reviewApp} lang={lang}
+        onSubmitDone={()=>{ setReviewApp(null); showToast(lang==='pt'?'Avaliação enviada ✓':lang==='es'?'Reseña enviada ✓':'Review submitted ✓'); }}/>
+      <Sheet open={vacSheetOpen} onClose={()=>setVacSheetOpen(false)} height="92%">
+        <PostVacationSheet
+          lang={lang}
+          onClose={()=>setVacSheetOpen(false)}
+          onSubmit={(data)=>{ setVacSheetOpen(false); if(data) dbWrite('vacations', data); showToast(lang==='pt'?'Férias publicadas ✓':lang==='es'?'Vacaciones publicadas ✓':'Vacation posted ✓'); }}
+        />
+      </Sheet>
+      <Sheet open={!!dayPickerVac} onClose={()=>setDayPickerVac(null)} height="88%">
+        <VacationDayPickerSheet
+          vac={dayPickerVac} lang={lang}
+          confirmedDays={confirmedDays}
+          onClose={()=>setDayPickerVac(null)}
+          onSubmit={()=>setDayPickerVac(null)}
+        />
+      </Sheet>
+      <Sheet open={hiringSheetOpen} onClose={()=>setHiringSheetOpen(false)} height="80%">
+        <PostHiringSheet
+          lang={lang}
+          onClose={()=>setHiringSheetOpen(false)}
+          onSubmit={(data)=>{ setHiringSheetOpen(false); if(data) dbWrite('jobs', data); showToast(lang==='pt'?'Vaga publicada ✓':lang==='es'?'Empleo publicado ✓':'Job posted ✓'); }}
+        />
+      </Sheet>
+      <Sheet open={techSheetOpen} onClose={()=>setTechSheetOpen(false)} height="80%">
+        <PostTechSheet
+          lang={lang}
+          onClose={()=>setTechSheetOpen(false)}
+          onSubmit={(data)=>{ setTechSheetOpen(false); if(data) dbWrite('techs', data); showToast(lang==='pt'?'Perfil publicado ✓':lang==='es'?'Perfil publicado ✓':'Profile posted ✓'); }}
+        />
+      </Sheet>
+      <ApplyJobSheet
+        open={!!applyJob} onClose={()=>setApplyJob(null)}
+        job={applyJob} user={user} lang={lang}
+        onEditProfile={()=>setEditProfileOpen(true)}
+        onSubmit={()=>{ setApplyJob(null); showToast(lang==='pt'?'Candidatura enviada ✓':lang==='es'?'Postulación enviada ✓':'Application sent ✓'); }}/>
+      <EditProfileSheet
+        open={editProfileOpen} onClose={()=>setEditProfileOpen(false)}
+        user={user} setUser={ctx.setUser} lang={lang}/>
+      <PublicProfileSheet
+        open={!!publicProfileUser}
+        onClose={()=>setPublicProfileUser(null)}
+        profile={publicProfileUser}
+        lang={lang}
+        onChat={(name)=>{ setPublicProfileUser(null); setChatConvoName(name); setChatOpen(true); }}
+      />
+      <HelpSheet open={helpOpen} onClose={()=>setHelpOpen(false)} lang={lang}/>
+      <PrivacySheet open={privacyOpen} onClose={()=>setPrivacyOpen(false)} lang={lang}/>
+      <HiringAppDetailSheet
+        open={!!hiringAppDetail} onClose={()=>setHiringAppDetail(null)}
+        app={hiringAppDetail} lang={lang}/>
+      <Sheet open={!!scheduleApp} onClose={()=>setScheduleApp(null)} height="95%">
+        <ScheduleSheet
+          app={scheduleApp} lang={lang}
+          onClose={()=>setScheduleApp(null)}
+        />
+      </Sheet>
+      <PushNotifSheet
+        open={pushNotifOpen} onClose={()=>setPushNotifOpen(false)} lang={lang}
+        onEnabled={()=>{ setPushNotifOpen(false); showToast(lang==='pt'?'Notificações ativadas ✓':lang==='es'?'Notificaciones activadas ✓':'Notifications enabled ✓'); }}/>
+      <FeedbackSheet open={feedbackOpen} onClose={()=>setFeedbackOpen(false)} lang={lang}/>
+    </>
+  );
+
+  // ════════════════════════════════════════════════════════════════
+  // DESKTOP LAYOUT
+  // ════════════════════════════════════════════════════════════════
+  if (!isMobile) {
+    const avatarLetter = ((user.name || user.email || '?')[0] || '?').toUpperCase();
+    return (
+      <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',background:'#eef2f7',position:'relative',overflow:'hidden'}}>
+
+        {/* ── Top header bar ── */}
+        <header style={{
+          height:56, flexShrink:0, background:'#fff',
+          borderBottom:'1px solid rgba(0,0,0,0.08)',
+          display:'flex', alignItems:'center', gap:0, zIndex:20,
+          boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+        }}>
+          {/* Logo */}
+          <div style={{
+            width:220, flexShrink:0, padding:'0 20px',
+            display:'flex', alignItems:'center', gap:10,
+            borderRight:'1px solid rgba(0,0,0,0.07)',
+          }}>
+            <div style={{
+              width:32, height:32, borderRadius:9,
+              background:'linear-gradient(135deg,#007AFF 0%,#0056CC 100%)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:16,
+            }}>🌊</div>
+            <div>
+              <div style={{fontFamily:'var(--pg-font-display)',fontSize:14,fontWeight:800,color:'#007AFF',lineHeight:1.1}}>PoolGuyPro</div>
+              <div style={{fontSize:9,color:'#8E8E93',letterSpacing:'0.04em',textTransform:'uppercase',lineHeight:1}}>Florida Pool Network</div>
+            </div>
+          </div>
+
+          {/* Page title */}
+          <div style={{flex:1, padding:'0 24px', display:'flex', alignItems:'center', gap:12}}>
+            {isLoggedIn && desktopTabLabel && (
+              <span style={{fontSize:15,fontWeight:700,color:'#1C1C1E'}}>
+                {desktopTabLabel.emoji} {desktopTabLabel.label}
+              </span>
+            )}
+          </div>
+
+          {/* Right actions */}
+          <div style={{padding:'0 16px', display:'flex', alignItems:'center', gap:8}}>
+            {isLoggedIn && (
+              <>
+                {/* Post button */}
+                {(tab==='market'||tab==='quick'||tab==='work') && (
+                  <button onClick={tab==='market'?()=>setMarketPostOpen(true):tab==='quick'?()=>setPostQPOpen(true):()=>setPostMenuOpen(true)} style={{
+                    height:34, padding:'0 16px', borderRadius:9, border:'none',
+                    background:'linear-gradient(135deg,#007AFF 0%,#0056CC 100%)',
+                    color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer',
+                    fontFamily:'inherit', display:'flex', alignItems:'center', gap:6,
+                    boxShadow:'0 2px 8px rgba(0,122,255,0.30)',
+                  }}>
+                    <span style={{fontSize:14}}>+</span>
+                    {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
+                  </button>
+                )}
+                {/* Notifications */}
+                <button onClick={()=>setNotifOpen(true)} style={{
+                  width:34, height:34, borderRadius:9, border:'1px solid rgba(0,0,0,0.09)',
+                  background:'#f5f5f5', display:'flex', alignItems:'center', justifyContent:'center',
+                  cursor:'pointer', fontSize:16,
+                }}>🔔</button>
+                {/* User avatar + name */}
+                <div style={{display:'flex',alignItems:'center',gap:8,padding:'4px 10px',borderRadius:9,border:'1px solid rgba(0,0,0,0.09)',background:'#f5f5f5',cursor:'pointer'}}
+                  onClick={()=>switchTab('profile')}>
+                  <div style={{
+                    width:26,height:26,borderRadius:'50%',
+                    background:'linear-gradient(135deg,#007AFF,#0056CC)',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    color:'#fff',fontSize:11,fontWeight:700,flexShrink:0,
+                  }}>{avatarLetter}</div>
+                  <span style={{fontSize:12,fontWeight:600,color:'#1C1C1E',maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                    {user.name || user.email || 'User'}
+                  </span>
+                </div>
+                {/* Logout */}
+                <button onClick={ctx.onLogout} style={{
+                  height:34, padding:'0 12px', borderRadius:9,
+                  border:'1px solid rgba(0,0,0,0.09)', background:'#f5f5f5',
+                  color:'#8E8E93', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                }}>
+                  {lang==='pt'?'Sair':lang==='es'?'Salir':'Logout'}
+                </button>
+              </>
+            )}
+          </div>
+        </header>
+
+        {/* ── Body: sidebar + content ── */}
+        <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+
+          {/* Sidebar */}
+          {isLoggedIn && (
+            <nav style={{
+              width:220, flexShrink:0, background:'#fff',
+              borderRight:'1px solid rgba(0,0,0,0.07)',
+              display:'flex', flexDirection:'column',
+              padding:'16px 10px',
+              overflowY:'auto',
+            }}>
+              {desktopNavItems.map(item => (
+                <button key={item.id} onClick={()=>switchTab(item.id)} style={{
+                  display:'flex', alignItems:'center', gap:10,
+                  padding:'10px 14px', borderRadius:10, border:'none', cursor:'pointer',
+                  background: tab===item.id ? 'rgba(0,122,255,0.08)' : 'transparent',
+                  color: tab===item.id ? '#007AFF' : '#3C3C43',
+                  fontWeight: tab===item.id ? 700 : 500,
+                  fontSize:14, fontFamily:'inherit',
+                  textAlign:'left', marginBottom:2,
+                  transition:'background .12s, color .12s',
+                }}>
+                  <span style={{fontSize:18,lineHeight:1}}>{item.emoji}</span>
+                  <span>{item.label}</span>
+                  {tab===item.id && (
+                    <div style={{marginLeft:'auto',width:6,height:6,borderRadius:'50%',background:'#007AFF'}}/>
+                  )}
+                </button>
+              ))}
+
+              {/* Spacer */}
+              <div style={{flex:1}}/>
+
+              {/* Feedback button */}
+              <button onClick={()=>setFeedbackOpen(true)} style={{
+                display:'flex', alignItems:'center', gap:10,
+                padding:'10px 14px', borderRadius:10, border:'none', cursor:'pointer',
+                background:'transparent', color:'#8E8E93',
+                fontSize:13, fontFamily:'inherit', textAlign:'left', marginTop:4,
+              }}>
+                <span style={{fontSize:16}}>💬</span>
+                <span>{lang==='pt'?'Feedback':lang==='es'?'Feedback':'Feedback'}</span>
+              </button>
+            </nav>
+          )}
+
+          {/* Main content area */}
+          <main ref={screenRef} data-pg-screen style={{
+            flex:1, overflowY:'auto', overflowX:'hidden',
+            background:'#f0f4f8', position:'relative',
+          }}>
+            {!isLoggedIn ? (
+              /* Desktop login — centered card */
+              <div style={{
+                minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center',
+                background:'linear-gradient(135deg, #eef2f7 0%, #e8f0fe 100%)',
+                padding:'40px 24px',
+              }}>
+                <div style={{
+                  background:'var(--pg-white)', borderRadius:24,
+                  boxShadow:'0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)',
+                  overflow:'hidden', width:'100%', maxWidth:420,
+                }}>
+                  <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
+                </div>
+              </div>
+            ) : (
+              /* Desktop screen content — max-width container */
+              <div style={{maxWidth:960, padding:'0 0 40px'}}>
+                {tab==='home'    && <HomeScreen ctx={ctx}/>}
+                {tab==='market'  && <MarketplaceScreen ctx={ctx}/>}
+                {tab==='quick'   && <QuickPoolsScreen ctx={ctx}/>}
+                {tab==='work'    && <WorkScreen ctx={ctx}/>}
+                {tab==='profile' && <ProfileScreen ctx={ctx}/>}
+              </div>
+            )}
+          </main>
+        </div>
+
+        {/* Overlays */}
+        <OverlayBundle/>
+
+        {/* Tweaks panel */}
+        <TweaksPanel>
+          <TweakSection label="Subscription tier"/>
+          <TweakRadio value={t.tier} options={['free','premium','pro']}
+            onChange={v=>{ setTweak('tier', v); }}/>
+          <TweakSection label="Language"/>
+          <TweakRadio value={lang} options={['en','pt','es']}
+            onChange={v=>setLang(v)}/>
+          <TweakSection label="Quick jumps"/>
+          <TweakButton onClick={()=>setIsLoggedIn(false)}>Show login screen</TweakButton>
+          <TweakButton onClick={()=>setChatOpen(true)}>Open chat</TweakButton>
+          <TweakButton onClick={()=>setPayOpen(true)}>Open paywall</TweakButton>
+          <TweakButton onClick={()=>setNotifOpen(true)}>Open notifications</TweakButton>
+        </TweaksPanel>
+      </div>
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // MOBILE LAYOUT
+  // ════════════════════════════════════════════════════════════════
   return (
     <div style={{
       width:'100%', height:'100%', position:'relative', overflow:'hidden',
@@ -441,15 +762,8 @@ function App() {
 
       {/* ── Login screen ── */}
       {!isLoggedIn && (
-        <div style={{position:'absolute', inset:0, zIndex:100}}>
-          {!isMobile && (
-            <div style={{position:'absolute', top:0, left:0, right:0, zIndex:25, background:'transparent'}}>
-              <IOSStatusBar dark={true}/>
-            </div>
-          )}
-          <div style={{position:'absolute', inset:0, paddingTop: isMobile ? 0 : 54, overflow:'auto'}}>
-            <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
-          </div>
+        <div style={{position:'absolute', inset:0, overflow:'auto'}}>
+          <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
         </div>
       )}
 
@@ -457,7 +771,7 @@ function App() {
       {isLoggedIn && (
         <>
           {/* Screen content */}
-          <div ref={screenRef} data-pg-screen style={{position:'absolute', inset:0, paddingTop: isMobile ? 0 : 54, overflow:'auto'}}>
+          <div ref={screenRef} data-pg-screen style={{position:'absolute', inset:0, paddingBottom:72, overflow:'auto'}}>
             {tab === 'home'    && <HomeScreen ctx={ctx}/>}
             {tab === 'market'  && <MarketplaceScreen ctx={ctx}/>}
             {tab === 'quick'   && <QuickPoolsScreen ctx={ctx}/>}
@@ -465,17 +779,10 @@ function App() {
             {tab === 'profile' && <ProfileScreen ctx={ctx}/>}
           </div>
 
-          {/* Status bar — only on desktop prototype */}
-          {!isMobile && (
-            <div style={{position:'absolute', top:0, left:0, right:0, zIndex:25, background:'transparent'}}>
-              <IOSStatusBar dark={true}/>
-            </div>
-          )}
-
           {/* Tab bar */}
           <TabBar tab={tab} setTab={switchTab} lang={lang}/>
 
-          {/* Floating action buttons — above tab bar */}
+          {/* Floating action button */}
           {(tab === 'market' || tab === 'quick') && (
             <button
               onClick={tab === 'market' ? ()=>setMarketPostOpen(true) : ()=>setPostQPOpen(true)}
@@ -491,161 +798,11 @@ function App() {
               {Icon.plus(24,'#fff')}
             </button>
           )}
-
-          {/* Overlays */}
-          <ChatSheet open={chatOpen}
-            onClose={()=>{ setChatOpen(false); setChatConvoName(null); }}
-            lang={lang} initialConvo={initialConvo}/>
-          <NotificationsSheet open={notifOpen} onClose={()=>setNotifOpen(false)} lang={lang}/>
-          <PaywallSheet open={payOpen} onClose={()=>setPayOpen(false)} setUser={ctx.setUser} lang={lang}/>
-          <PostMenuSheet open={postMenuOpen} onClose={()=>setPostMenuOpen(false)}
-            onPickQuickPool={()=>setPostQPOpen(true)} lang={lang}/>
-          <Sheet open={postQPOpen} onClose={()=>setPostQPOpen(false)} height="92%">
-            <PostQuickPool
-              lang={lang}
-              onClose={()=>setPostQPOpen(false)}
-              onSubmit={()=>{
-                setPostQPOpen(false);
-                showToast(STRINGS[lang].toastPosted);
-                setTab('quick');
-              }}
-            />
-          </Sheet>
-          <Toast message={toast}/>
-
-          {/* Region editor */}
-          <RegionEditorSheet
-            open={regionOpen} onClose={()=>setRegionOpen(false)} lang={lang}
-            regionsByDay={regionsByDay} setRegionsByDay={setRegionsByDay}
-            county={county}
-          />
-
-          {/* Language picker */}
-          <LanguagePickerSheet
-            open={langPickerOpen} onClose={()=>setLangPickerOpen(false)}
-            lang={lang} setLang={setLang}
-          />
-
-          {/* Applicants sheet */}
-          <ApplicantsSheet
-            open={!!applicantsPost}
-            onClose={()=>setApplicantsPost(null)}
-            post={applicantsPost}
-            lang={lang}
-            onChat={(name)=>{ setApplicantsPost(null); setChatConvoName(name); setChatOpen(true); }}
-          />
-
-          {/* Verification sheet */}
-          <VerificationSheet
-            open={verifyOpen} onClose={()=>setVerifyOpen(false)} lang={lang}/>
-
-          {/* Wallet sheet */}
-          <WalletSheet
-            open={walletOpen} onClose={()=>setWalletOpen(false)} lang={lang}/>
-
-          {/* Work lifecycle sheet */}
-          <WorkLifecycleSheet
-            open={!!jobDetailApp} onClose={()=>setJobDetailApp(null)}
-            app={jobDetailApp} lang={lang}
-            onReview={(app)=>{ setJobDetailApp(null); setReviewApp(app); }}/>
-
-          {/* Review sheet */}
-          <ReviewSheet
-            open={!!reviewApp} onClose={()=>setReviewApp(null)}
-            app={reviewApp} lang={lang}
-            onSubmitDone={()=>{ setReviewApp(null); showToast(lang==='pt'?'Avaliação enviada ✓':lang==='es'?'Reseña enviada ✓':'Review submitted ✓'); }}/>
-
-          {/* Work — vacation / hiring / tech sheets (app-level so backdrop covers full frame) */}
-          <Sheet open={vacSheetOpen} onClose={()=>setVacSheetOpen(false)} height="92%">
-            <PostVacationSheet
-              lang={lang}
-              onClose={()=>setVacSheetOpen(false)}
-              onSubmit={(data)=>{ setVacSheetOpen(false); if(data) dbWrite('vacations', data); showToast(lang==='pt'?'Férias publicadas ✓':lang==='es'?'Vacaciones publicadas ✓':'Vacation posted ✓'); }}
-            />
-          </Sheet>
-          <Sheet open={!!dayPickerVac} onClose={()=>setDayPickerVac(null)} height="88%">
-            <VacationDayPickerSheet
-              vac={dayPickerVac} lang={lang}
-              confirmedDays={confirmedDays}
-              onClose={()=>setDayPickerVac(null)}
-              onSubmit={()=>setDayPickerVac(null)}
-            />
-          </Sheet>
-          <Sheet open={hiringSheetOpen} onClose={()=>setHiringSheetOpen(false)} height="80%">
-            <PostHiringSheet
-              lang={lang}
-              onClose={()=>setHiringSheetOpen(false)}
-              onSubmit={(data)=>{ setHiringSheetOpen(false); if(data) dbWrite('jobs', data); showToast(lang==='pt'?'Vaga publicada ✓':lang==='es'?'Empleo publicado ✓':'Job posted ✓'); }}
-            />
-          </Sheet>
-          <Sheet open={techSheetOpen} onClose={()=>setTechSheetOpen(false)} height="80%">
-            <PostTechSheet
-              lang={lang}
-              onClose={()=>setTechSheetOpen(false)}
-              onSubmit={(data)=>{ setTechSheetOpen(false); if(data) dbWrite('techs', data); showToast(lang==='pt'?'Perfil publicado ✓':lang==='es'?'Perfil publicado ✓':'Profile posted ✓'); }}
-            />
-          </Sheet>
-
-          {/* Apply to job sheet */}
-          <ApplyJobSheet
-            open={!!applyJob} onClose={()=>setApplyJob(null)}
-            job={applyJob} user={user} lang={lang}
-            onEditProfile={()=>setEditProfileOpen(true)}
-            onSubmit={()=>{ setApplyJob(null); showToast(lang==='pt'?'Candidatura enviada ✓':lang==='es'?'Postulación enviada ✓':'Application sent ✓'); }}/>
-
-          {/* Edit profile sheet */}
-          <EditProfileSheet
-            open={editProfileOpen} onClose={()=>setEditProfileOpen(false)}
-            user={user} setUser={ctx.setUser} lang={lang}/>
-
-          {/* Public profile sheet */}
-          <PublicProfileSheet
-            open={!!publicProfileUser}
-            onClose={()=>setPublicProfileUser(null)}
-            profile={publicProfileUser}
-            lang={lang}
-            onChat={(name)=>{ setPublicProfileUser(null); setChatConvoName(name); setChatOpen(true); }}
-          />
-
-          {/* Help & Support sheet */}
-          <HelpSheet open={helpOpen} onClose={()=>setHelpOpen(false)} lang={lang}/>
-
-          {/* Privacy sheet */}
-          <PrivacySheet open={privacyOpen} onClose={()=>setPrivacyOpen(false)} lang={lang}/>
-
-          {/* Hiring application detail sheet */}
-          <HiringAppDetailSheet
-            open={!!hiringAppDetail} onClose={()=>setHiringAppDetail(null)}
-            app={hiringAppDetail} lang={lang}/>
-
-          {/* Coverage schedule sheet */}
-          <Sheet open={!!scheduleApp} onClose={()=>setScheduleApp(null)} height="95%">
-            <ScheduleSheet
-              app={scheduleApp} lang={lang}
-              onClose={()=>setScheduleApp(null)}
-            />
-          </Sheet>
-
-          {/* Push notifications sheet */}
-          <PushNotifSheet
-            open={pushNotifOpen} onClose={()=>setPushNotifOpen(false)} lang={lang}
-            onEnabled={()=>{ setPushNotifOpen(false); showToast(lang==='pt'?'Notificações ativadas ✓':lang==='es'?'Notificaciones activadas ✓':'Notifications enabled ✓'); }}/>
-
-          {/* Home indicator — only on desktop prototype */}
-          {!isMobile && (
-            <div style={{
-              position:'absolute', bottom:0, left:0, right:0, zIndex:60,
-              height:34, display:'flex', justifyContent:'center', alignItems:'flex-end',
-              paddingBottom:8, pointerEvents:'none',
-            }}>
-              <div style={{width:139, height:5, borderRadius:100, background:'rgba(0,0,0,0.25)'}}/>
-            </div>
-          )}
         </>
       )}
 
-      {/* ── Feedback sheet ── */}
-      <FeedbackSheet open={feedbackOpen} onClose={()=>setFeedbackOpen(false)} lang={lang}/>
+      {/* Overlays */}
+      <OverlayBundle/>
 
       {/* Tweaks */}
       <TweaksPanel>
