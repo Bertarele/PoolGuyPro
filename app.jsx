@@ -358,8 +358,16 @@ function App() {
       status: 'pending',
     } : { ...data, author: authorName };
 
-    window.sb.from(col).insert(row)
-      .then(({ error }) => { if (error) console.error('[Supabase] insert error:', error.message); });
+    return window.sb.from(col).insert(row)
+      .then(({ error }) => {
+        if (error) {
+          console.error('[Supabase] insert error:', error.message);
+          setToast('❌ ' + (error.message || 'Erro ao publicar'));
+          setTimeout(() => setToast(null), 3000);
+          return false;
+        }
+        return true;
+      });
   }, [user.name]);
 
   // Sync tier tweak → user state
@@ -422,7 +430,7 @@ function App() {
     },
     // Live Firestore data
     liveJobs, liveTechs, liveVacations, liveMarket,
-    dbWrite,
+    dbWrite, showToast,
   };
 
   // Build confirmed-day map from accepted vacation applications (for conflict detection)

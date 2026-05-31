@@ -1,7 +1,7 @@
 // marketplace.jsx — navy header + dual seg + distance + categories
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite } = ctx;
+  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast } = ctx;
 
   // Never show raw email as author — if author is an email, show the part before @
   const fmtAuthor = (a) => {
@@ -701,14 +701,26 @@ function MarketplaceScreen({ ctx }) {
       <Sheet open={postOpen && (postMode==='sell'||postMode==='rent')} onClose={()=>{ setPostMode(null); setPostOpen(false); }} height="86%">
         <PostEquipmentSheet lang={lang} t={t} mode={postMode}
           onClose={()=>{ setPostMode(null); setPostOpen(false); }}
-          onSubmit={(data)=>{ setPostMode(null); setPostOpen(false); if(data && dbWrite) dbWrite('marketplace', data); }}/>
+          onSubmit={async (data)=>{
+            setPostMode(null); setPostOpen(false);
+            if (data && dbWrite) {
+              const ok = await dbWrite('marketplace', data);
+              if (ok !== false && showToast) showToast(lang==='pt'?'✓ Anúncio enviado para revisão':lang==='es'?'✓ Anuncio enviado a revisión':'✓ Listing sent for review');
+            }
+          }}/>
       </Sheet>
 
       {/* Sell route form */}
       <Sheet open={postOpen && postMode==='route'} onClose={()=>{ setPostMode(null); setPostOpen(false); }} height="86%">
         <PostRouteSheet lang={lang} t={t}
           onClose={()=>{ setPostMode(null); setPostOpen(false); }}
-          onSubmit={(data)=>{ setPostMode(null); setPostOpen(false); if(data && dbWrite) dbWrite('marketplace', data); }}/>
+          onSubmit={async (data)=>{
+            setPostMode(null); setPostOpen(false);
+            if (data && dbWrite) {
+              const ok = await dbWrite('marketplace', data);
+              if (ok !== false && showToast) showToast(lang==='pt'?'✓ Rota enviada para revisão':lang==='es'?'✓ Ruta enviada a revisión':'✓ Route sent for review');
+            }
+          }}/>
       </Sheet>
     </div>
   );
