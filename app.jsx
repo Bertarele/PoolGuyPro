@@ -300,6 +300,7 @@ function App() {
       revenue:r.revenue, asking:r.asking, area:r.area,
       author:r.author, author_id:r.author_id || null,
       photoUrl: r.photo_url || null,
+      rentPeriod: r.rent_period || 'day',
       status: r.status || 'pending' });
 
     // Initial fetch
@@ -362,6 +363,7 @@ function App() {
       revenue: data.revenue, asking: data.asking, area: data.area,
       author: authorName, author_id: user.uid || null,
       photo_url: data.photoUrl || null,
+      rent_period: data.rentPeriod || null,
       status: 'pending',
     } : { ...data, author: authorName };
 

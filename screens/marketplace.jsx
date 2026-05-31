@@ -567,7 +567,9 @@ function MarketplaceScreen({ ctx }) {
                           <span style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800,
                             color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
                             letterSpacing:'-0.02em', lineHeight:1, flexShrink:0}}>
-                            ${item.price}{item.type==='rent' && !isPending && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>/dia</span>}
+                            ${item.price}{item.type==='rent' && !isPending && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>
+                              {item.rentPeriod==='week' ? (lang==='pt'?'/sem':'/wk') : item.rentPeriod==='month' ? (lang==='pt'?'/mês':'/mo') : (lang==='pt'?'/dia':'/day')}
+                            </span>}
                           </span>
                         )}
                         <div style={{display:'flex', alignItems:'center', gap:4, minWidth:0}}>
@@ -1682,19 +1684,28 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
 
 // ── Post equipment form (sell or rent) ────────────────────────
 function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
-  const [name,       setName]      = React.useState('');
-  const [cat,        setCat]       = React.useState('Pumps');
-  const [condition,  setCondition] = React.useState('likeNew');
-  const [price,      setPrice]     = React.useState('');
-  const [loc,        setLoc]       = React.useState('');
-  const [priceMode,  setPriceMode] = React.useState('fixed');
-  const [photos,     setPhotos]    = React.useState([]);
+  const [name,        setName]       = React.useState('');
+  const [cat,         setCat]        = React.useState('Pumps');
+  const [condition,   setCondition]  = React.useState('likeNew');
+  const [price,       setPrice]      = React.useState('');
+  const [loc,         setLoc]        = React.useState('');
+  const [priceMode,   setPriceMode]  = React.useState('fixed');
+  const [rentPeriod,  setRentPeriod] = React.useState('day'); // 'day'|'week'|'month'
+  const [photos,      setPhotos]     = React.useState([]);
 
   const isRent = mode === 'rent';
-  const headLbl    = isRent ? t.pmRentEq     : t.pmSellEq;
-  const priceLbl   = isRent ? t.ratePerDay   : (lang==='pt'?'Preço de venda':lang==='es'?'Precio de venta':'Sale price');
-  const submitLbl  = t.postListingBtn;
-  const priceSfx   = isRent ? (lang==='pt'?'/dia':lang==='es'?'/día':'/day') : '';
+  const headLbl   = isRent ? t.pmRentEq   : t.pmSellEq;
+  const priceLbl  = isRent
+    ? (lang==='pt'?'Valor do aluguel':lang==='es'?'Valor del alquiler':'Rental rate')
+    : (lang==='pt'?'Preço de venda':lang==='es'?'Precio de venta':'Sale price');
+  const submitLbl = t.postListingBtn;
+
+  const periodOptions = [
+    { id:'day',   label: lang==='pt'?'Por dia':lang==='es'?'Por día':'/day',    sfx: lang==='pt'?'/dia':lang==='es'?'/día':'/day' },
+    { id:'week',  label: lang==='pt'?'Por semana':lang==='es'?'Por semana':'/week', sfx: lang==='pt'?'/sem':lang==='es'?'/sem':'/wk' },
+    { id:'month', label: lang==='pt'?'Por mês':lang==='es'?'Por mes':'/month',  sfx: lang==='pt'?'/mês':lang==='es'?'/mes':'/mo' },
+  ];
+  const priceSfx = isRent ? (periodOptions.find(p=>p.id===rentPeriod)?.sfx || '/day') : '';
 
   const cats = ['Pumps','Filters','Vacuum','Heaters','Tools'];
   const catLabels = { Pumps:lang==='pt'?'Bombas':lang==='es'?'Bombas':'Pumps', Filters:lang==='pt'?'Filtros':lang==='es'?'Filtros':'Filters',
@@ -1774,6 +1785,22 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
         {/* Price */}
         <div>
           <FormLabel>{priceLbl}</FormLabel>
+
+          {/* Rent period selector */}
+          {isRent && (
+            <div style={{display:'flex', gap:8, marginBottom:12}}>
+              {periodOptions.map(p => (
+                <button key={p.id} onClick={()=>setRentPeriod(p.id)} style={{
+                  flex:1, padding:'10px 6px', borderRadius:12, border:'none', cursor:'pointer',
+                  fontFamily:'inherit', fontSize:13, fontWeight:700, transition:'all .12s',
+                  background: rentPeriod===p.id ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+                  color: rentPeriod===p.id ? '#fff' : 'var(--pg-ink-600)',
+                  boxShadow: rentPeriod===p.id ? '0 3px 10px rgba(0,119,182,0.30)' : 'none',
+                }}>{p.label}</button>
+              ))}
+            </div>
+          )}
+
           {!isRent && (
             <div className="pg-seg" style={{marginBottom:10}}>
               <button className={`pg-seg-btn ${priceMode==='fixed'?'on':''}`} onClick={()=>setPriceMode('fixed')}>{t.fixedPrice}</button>
@@ -1786,7 +1813,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
               <input className="pg-field" value={price} onChange={e=>setPrice(e.target.value)}
                 placeholder="0" type="number"
                 style={{height:56, paddingLeft:36, fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}/>
-              {priceSfx && <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--pg-ink-500)'}}>{priceSfx}</span>}
+              {priceSfx && <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:600, color:'var(--pg-ink-400)'}}>{priceSfx}</span>}
             </div>
           )}
         </div>
@@ -1800,7 +1827,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
 
       {/* Submit */}
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
-        <button onClick={()=>onSubmit && onSubmit({ type:mode, name, cat, condition, price: priceMode==='neg'?'Negotiable':price, priceMode, loc, photoUrl: photos[0]||null, photos })}
+        <button onClick={()=>onSubmit && onSubmit({ type:mode, name, cat, condition, price: priceMode==='neg'?'Negotiable':price, priceMode, loc, rentPeriod: isRent ? rentPeriod : null, photoUrl: photos[0]||null, photos })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.cart(17,'#fff')} {submitLbl}
