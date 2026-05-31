@@ -2,195 +2,178 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>PoolGuyX - Beta</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <meta name="description" content="PoolGuyX - Your Pool. Our Priority. South Florida pool guys."/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="theme-color" content="#011B5A"/>
+  <title>PoolGuyX - Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=76">
+  <link rel="stylesheet" href="tokens.css?v=102">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100%; }
-
-    /* ── Desktop: phone frame centered ── */
+    html, body { background: #e9eef5; height: 100%; }
     body {
+      margin: 0;
       font-family: "Poppins", -apple-system, system-ui, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px 24px 32px;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
       background:
-        radial-gradient(60% 60% at 20% 10%, rgba(0,119,182,0.12), transparent 60%),
-        radial-gradient(60% 60% at 80% 90%, rgba(0,119,182,0.10), transparent 60%),
+        radial-gradient(60% 60% at 20% 10%, rgba(0,122,255,0.10), transparent 60%),
+        radial-gradient(60% 60% at 80% 90%, rgba(0,86,204,0.08), transparent 60%),
         #eef2f7;
     }
-
-    /* Beta banner */
-    #beta-banner {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-      background: rgba(255,255,255,0.72);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 0.5px solid rgba(255,255,255,0.9);
-      border-radius: 999px;
-      padding: 9px 18px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 12px rgba(15,30,60,0.08);
-      max-width: 500px;
-      width: 100%;
-    }
-    #beta-banner .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: linear-gradient(135deg, #023EBA, #0077B6);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      padding: 3px 10px;
-      border-radius: 999px;
-      flex-shrink: 0;
-    }
-    #beta-banner .text {
-      font-size: 12.5px;
-      color: #4a5568;
-      flex: 1;
-      min-width: 160px;
-      text-align: center;
-    }
-    #beta-banner .feedback-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: #023EBA;
-      color: #fff;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 6px 14px;
-      border-radius: 999px;
-      text-decoration: none;
-      flex-shrink: 0;
-      transition: opacity 0.15s;
-    }
-    #beta-banner .feedback-btn:hover { opacity: 0.85; }
-
-    /* Phone frame */
     #stage {
-      width: 402px;
-      height: 874px;
-      border-radius: 48px;
-      overflow: hidden;
+      width: 402px; height: 874px; border-radius: 48px; overflow: hidden;
       box-shadow:
         0 1px 0 rgba(255,255,255,0.7) inset,
-        0 0 0 1px rgba(15,30,60,0.12),
-        0 40px 80px rgba(15,30,60,0.18),
-        0 10px 24px rgba(15,30,60,0.08);
+        0 0 0 1px rgba(15, 30, 60, 0.12),
+        0 40px 80px rgba(15, 30, 60, 0.18),
+        0 10px 24px rgba(15, 30, 60, 0.08);
       background: var(--pg-bg);
       position: relative;
-      flex-shrink: 0;
     }
     /* Dynamic island */
     #stage::after {
-      content: "";
-      position: absolute;
+      content: ""; position: absolute;
       top: 11px; left: 50%; transform: translateX(-50%);
       width: 126px; height: 37px; border-radius: 24px;
       background: #000; z-index: 50; pointer-events: none;
     }
     #root { width: 100%; height: 100%; }
-
-    /* Footer */
-    #beta-footer {
-      margin-top: 16px;
-      font-size: 11px;
-      color: rgba(74,85,104,0.6);
-      text-align: center;
-      letter-spacing: 0.01em;
-    }
-
-    /* ── Mobile: full screen, no frame ── */
-    @media (max-width: 480px) {
-      body {
-        padding: 0;
-        background: var(--pg-bg);
-        align-items: stretch;
-        justify-content: flex-start;
-        min-height: 100dvh;
-      }
-      #beta-banner { display: none; }
-      #beta-footer  { display: none; }
-      #stage {
-        width: 100%;
-        height: 100dvh;
-        border-radius: 0;
-        box-shadow: none;
-        flex-shrink: 0;
-      }
-      /* hide fake dynamic island on real phones */
-      #stage::after { display: none; }
-      /* force the React app root div to fill the screen */
-      #root, #root > div {
-        width: 100% !important;
-        height: 100% !important;
-        border-radius: 0 !important;
-        min-height: 100dvh !important;
-      }
-      /* hide the fake iOS status bar (9:41 overlay) */
-      #root div[style*="z-index: 25"] { display: none !important; }
-      /* remove the 54px top padding reserved for fake status bar */
-      #root div[style*="padding-top: 54px"] { padding-top: 0 !important; }
-    }
   </style>
 </head>
 <body>
-
-  <!-- Beta banner (desktop only) -->
-  <div id="beta-banner">
-    <span class="badge">&#9889; BETA</span>
-    <span class="text">Prototype in testing &mdash; sample data, real flow.</span>
-    <a class="feedback-btn" href="mailto:feedback@usapoolmarket.com?subject=Feedback PoolGuyX Beta" target="_blank">
-      &#128172; Give feedback
-    </a>
-  </div>
-
-  <!-- App -->
   <div id="stage"><div id="root"></div></div>
 
-  <!-- Footer (desktop only) -->
-  <div id="beta-footer">PoolGuyX &nbsp;&middot;&nbsp; Your Pool. Our Priority. &nbsp;&middot;&nbsp; South Florida &nbsp;&middot;&nbsp; Beta</div>
+  <!-- Supabase SDK -->
+  <script>
+  (function(){
+    var BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+    var KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
+    var _tok = null;
+    try { var s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(s&&s.t) _tok=s.t; } catch(e){}
+
+    function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
+
+    function makeBuilder(table){
+      var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null;
+      var run=async function(){
+        var url=BASE+'/rest/v1/'+table, h=hdrs();
+        if(op==='insert'){
+          var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Insert failed '+r.status}};}
+          return{data:null,error:null};
+        }
+        if(op==='update'){
+          var qs=filters.join('&');
+          var r=await fetch(url+(qs?'?'+qs:''),{method:'PATCH',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Update failed '+r.status}};}
+          return{data:null,error:null};
+        }
+        if(op==='delete'){
+          var qs=filters.join('&');
+          var r=await fetch(url+(qs?'?'+qs:''),{method:'DELETE',headers:h});
+          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Delete failed '+r.status}};}
+          return{data:null,error:null};
+        }
+        var p=['select='+encodeURIComponent(sel)];
+        filters.forEach(function(f){p.push(f);});
+        if(orderCol) p.push('order='+orderCol+(orderAsc?'':'.desc'));
+        if(isSingle) h['Accept']='application/vnd.pgrst.object+json';
+        var r=await fetch(url+'?'+p.join('&'),{headers:h});
+        if(r.status===406||r.status===404) return{data:null,error:null};
+        var d=await r.json();
+        if(!r.ok) return{data:null,error:{message:d.message||d.hint||'Query failed '+r.status}};
+        return{data:d,error:null};
+      };
+      var b={
+        select:function(c){sel=c||'*';return b;},
+        eq:function(c,v){filters.push(c+'=eq.'+encodeURIComponent(v));return b;},
+        order:function(c,opts){orderCol=c;orderAsc=opts?opts.ascending!==false:true;return b;},
+        single:function(){isSingle=true;return b;},
+        insert:function(row){op='insert';body=row;return b;},
+        update:function(upd){op='update';body=upd;return b;},
+        delete:function(){op='delete';return b;},
+        then:function(res,rej){return run().then(res,rej);},
+        catch:function(rej){return run().catch(rej);}
+      };
+      return b;
+    }
+
+    window.sb = {
+      auth:{
+        signInWithPassword:async function(creds){
+          var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
+          var d=await r.json();
+          if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Invalid credentials'}};
+          _tok=d.access_token;
+          try{localStorage.setItem('pg_s',JSON.stringify({t:d.access_token,u:{id:d.user.id,email:d.user.email}}));}catch(e){}
+          return{data:{user:d.user,session:d},error:null};
+        },
+        signUp:async function(creds){
+          var r=await fetch(BASE+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
+          var d=await r.json();
+          if(!r.ok) return{data:null,error:{message:d.msg||d.error_description||d.message||'Signup failed'}};
+          if(d.access_token){_tok=d.access_token; try{localStorage.setItem('pg_s',JSON.stringify({t:d.access_token,u:{id:d.user.id,email:d.user.email}}));}catch(e){}}
+          return{data:{user:d.user||d},error:null};
+        },
+        getSession:async function(){
+          try{var s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(s&&s.u) return{data:{session:{user:s.u,access_token:s.t}}};}catch(e){}
+          return{data:{session:null}};
+        },
+        signOut:async function(){
+          try{if(_tok) await fetch(BASE+'/auth/v1/logout',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+_tok}});}catch(e){}
+          _tok=null; try{localStorage.removeItem('pg_s');}catch(e){}
+        }
+      },
+      from:function(table){return makeBuilder(table);},
+      channel:function(){ return{on:function(){return this;},subscribe:function(cb){setTimeout(function(){if(cb)cb('SUBSCRIBED');},100);return this;}};},
+      removeChannel:function(){}
+    };
+    window.supabase = {createClient:function(){return window.sb;}};
+    console.log('[PoolGuyPro] Supabase (native fetch) ✓');
+  })();
+  </script>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-  <script type="text/babel" src="ios-frame.jsx?v=76"></script>
-  <script type="text/babel" src="tweaks-panel.jsx?v=76"></script>
-  <script type="text/babel" src="components.jsx?v=76"></script>
-  <script type="text/babel" src="brand.jsx?v=76"></script>
-  <script type="text/babel" src="data.jsx?v=76"></script>
-  <script type="text/babel" src="screens/login.jsx?v=76"></script>
-  <script type="text/babel" src="screens/home.jsx?v=76"></script>
-  <script type="text/babel" src="screens/marketplace.jsx?v=76"></script>
-  <script type="text/babel" src="screens/quickpools.jsx?v=76"></script>
-  <script type="text/babel" src="screens/post.jsx?v=76"></script>
-  <script type="text/babel" src="screens/work.jsx?v=76"></script>
-  <script type="text/babel" src="screens/profile.jsx?v=76"></script>
-  <script type="text/babel" src="screens/overlays.jsx?v=76"></script>
-  <script type="text/babel" src="app.jsx?v=76"></script>
-
+  <script type="text/babel" src="ios-frame.jsx?v=102"></script>
+  <script type="text/babel" src="tweaks-panel.jsx?v=102"></script>
+  <script type="text/babel" src="components.jsx?v=102"></script>
+  <script type="text/babel" src="brand.jsx?v=102"></script>
+  <script type="text/babel" src="data.jsx?v=102"></script>
+  <script type="text/babel" src="screens/login.jsx?v=102"></script>
+  <script type="text/babel" src="screens/home.jsx?v=102"></script>
+  <script type="text/babel" src="screens/marketplace.jsx?v=102"></script>
+  <script type="text/babel" src="screens/quickpools.jsx?v=102"></script>
+  <script type="text/babel" src="screens/post.jsx?v=102"></script>
+  <script type="text/babel" src="screens/work.jsx?v=102"></script>
+  <script type="text/babel" src="screens/profile.jsx?v=102"></script>
+  <script type="text/babel" src="screens/overlays.jsx?v=102"></script>
+  <script type="text/babel" src="app.jsx?v=102"></script>
+  <script>
+    // Live reload: watch all JSX files for changes
+    const _watchFiles = [
+      'ios-frame.jsx','tweaks-panel.jsx','components.jsx','brand.jsx','data.jsx',
+      'screens/login.jsx',
+      'screens/home.jsx','screens/marketplace.jsx','screens/quickpools.jsx',
+      'screens/post.jsx','screens/work.jsx','screens/profile.jsx',
+      'screens/overlays.jsx','app.jsx',
+    ];
+    let _lastSig = '';
+    setInterval(async () => {
+      try {
+        const tags = await Promise.all(
+          _watchFiles.map(f => fetch(f + '?_lrp=' + Date.now(), {method:'HEAD', cache:'no-store'})
+            .then(r => r.headers.get('last-modified') || r.headers.get('etag') || ''))
+        );
+        const sig = tags.join('|');
+        if (_lastSig && sig !== _lastSig) location.reload();
+        _lastSig = sig;
+      } catch(e) {}
+    }, 1500);
+  </script>
 </body>
 </html>
