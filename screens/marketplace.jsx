@@ -243,7 +243,7 @@ function MarketplaceScreen({ ctx }) {
 
         {/* Equipment grid */}
         {isEquipment && (
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:14}}>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:14, marginTop:14}}>
             {/* Live user-posted equipment items */}
             {liveMarket
               .filter(m => m.type === mode && (
@@ -252,73 +252,152 @@ function MarketplaceScreen({ ctx }) {
               ))
               .map(item => {
                 const isPending = item.status === 'pending';
+                const priceStr = item.priceMode === 'neg'
+                  ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
+                  : `$${item.price}`;
                 return (
                   <div key={item._id} className="pg-card" style={{
-                    padding:'12px', overflow:'hidden', position:'relative',
-                    border: isPending
-                      ? '1.5px solid var(--pg-ink-300)'
-                      : '1.5px solid var(--pg-aqua-400,#38bdf8)',
-                    opacity: isPending ? 0.75 : 1,
+                    padding:0, overflow:'hidden', position:'relative',
+                    border: isPending ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
+                    opacity: isPending ? 0.82 : 1,
+                    display:'flex', flexDirection:'column',
                   }}>
-                    {/* Status badge */}
-                    {isPending ? (
-                      <span style={{position:'absolute', top:8, right:8, fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:5, background:'#FFF3CD', color:'#856404', letterSpacing:'0.05em'}}>
-                        ⏳ {lang==='pt'?'EM REVISÃO':lang==='es'?'EN REVISIÓN':'UNDER REVIEW'}
-                      </span>
-                    ) : (
-                      <span style={{position:'absolute', top:8, right:8, fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:5, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', letterSpacing:'0.05em'}}>NEW</span>
-                    )}
-                    <EquipImg category={item.cat || 'Tools'} height={80}/>
-                    <div style={{marginTop:8}}>
-                      <div style={{fontSize:13, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3}}>{item.name}</div>
-                      <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:3}}>{item.loc}</div>
-                      <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:6}}>
-                        <span style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:700, color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)'}}>
-                          {item.priceMode==='neg'?'Negoc.':('$'+item.price)}
-                        </span>
-                        <span style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>👤 {fmtAuthor(item.author)}</span>
+                    {/* Photo area — enforced 4:3 ratio */}
+                    <div style={{position:'relative', paddingTop:'72%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
+                      <div style={{position:'absolute', inset:0}}>
+                        <EquipImg category={item.cat || 'Tools'} height={'100%'}/>
                       </div>
-                      {!isPending && openPublicProfile && (
-                        <button onClick={()=>openPublicProfile({name:fmtAuthor(item.author),rating:4.5,reviews:0,jobs:0,loc:item.loc})} style={{width:'100%',marginTop:8,height:30,fontSize:12,fontFamily:'inherit',borderRadius:8,border:'none',background:'var(--pg-blue-100)',color:'var(--pg-blue-700)',fontWeight:600,cursor:'pointer'}}>
-                          {t.contact||'Contact'}
-                        </button>
-                      )}
-                      {isPending && (
-                        <div style={{marginTop:8, fontSize:11, color:'var(--pg-ink-400)', textAlign:'center', lineHeight:1.3}}>
-                          {lang==='pt'?'Aguardando aprovação do admin':lang==='es'?'Esperando aprobación del admin':'Awaiting admin approval'}
+                      {/* Gradient overlay for badges */}
+                      <div style={{position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 45%, transparent 60%, rgba(0,0,0,0.10) 100%)', pointerEvents:'none'}}/>
+                      {/* Status badge top-left */}
+                      <span style={{
+                        position:'absolute', top:10, left:10,
+                        fontSize:9.5, fontWeight:700, padding:'3px 8px', borderRadius:6,
+                        letterSpacing:'0.05em',
+                        background: isPending ? 'rgba(255,243,205,0.95)' : 'rgba(255,255,255,0.95)',
+                        color: isPending ? '#856404' : 'var(--pg-blue-700)',
+                        backdropFilter:'blur(4px)',
+                      }}>
+                        {isPending ? `⏳ ${lang==='pt'?'REVISÃO':lang==='es'?'REVISIÓN':'REVIEW'}` : '✦ MEU ANÚNCIO'}
+                      </span>
+                      {/* Category badge top-right */}
+                      <span style={{
+                        position:'absolute', top:10, right:10,
+                        fontSize:9, fontWeight:700, padding:'3px 8px', borderRadius:6,
+                        background:'rgba(0,0,0,0.52)', color:'#fff',
+                        letterSpacing:'0.06em', backdropFilter:'blur(4px)',
+                        textTransform:'uppercase',
+                      }}>{item.cat || 'Tools'}</span>
+                    </div>
+                    {/* Content */}
+                    <div style={{padding:'12px 13px 13px', display:'flex', flexDirection:'column', flex:1}}>
+                      <div style={{fontSize:14, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3,
+                        display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
+                        {item.name}
+                      </div>
+                      <div style={{display:'flex', alignItems:'center', gap:4, marginTop:5, fontSize:11.5, color:'var(--pg-ink-500)'}}>
+                        {Icon.pin(10,'var(--pg-ink-400)')} {item.loc}
+                      </div>
+                      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10}}>
+                        <span style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
+                          {priceStr}
+                          {item.type==='rent' && !isPending && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)'}}>/dia</span>}
+                        </span>
+                        <span style={{fontSize:10.5, color:'var(--pg-ink-400)', display:'flex', alignItems:'center', gap:3}}>
+                          <span style={{fontSize:11}}>👤</span> {fmtAuthor(item.author)}
+                        </span>
+                      </div>
+                      {isPending ? (
+                        <div style={{marginTop:10, padding:'7px 10px', borderRadius:8, background:'#FFF8E1', border:'0.5px solid #FFE082', fontSize:11, color:'#7C5C00', textAlign:'center', lineHeight:1.3}}>
+                          {lang==='pt'?'⏳ Aguardando aprovação':lang==='es'?'⏳ Esperando aprobación':'⏳ Awaiting approval'}
                         </div>
+                      ) : openPublicProfile && (
+                        <button onClick={()=>openPublicProfile({name:fmtAuthor(item.author),rating:4.5,reviews:0,jobs:0,loc:item.loc})}
+                          style={{width:'100%',marginTop:10,height:34,fontSize:12.5,fontFamily:'inherit',borderRadius:9,border:'none',background:'var(--pg-blue-500)',color:'#fff',fontWeight:700,cursor:'pointer',boxShadow:'0 2px 8px rgba(0,119,182,0.25)'}}>
+                          {t.contact||'Contato'}
+                        </button>
                       )}
                     </div>
                   </div>
                 );
               })}
+
+            {/* Empty state */}
             {list.length === 0 && liveMarket.filter(m=>m.type===mode && (m.status==='approved'||(m.status==='pending'&&isMyPost(m)))).length === 0 && (
-              <div style={{gridColumn:'1/-1', textAlign:'center', padding:'32px 20px', color:'var(--pg-ink-400)', fontSize:13}}>
-                {t.search}
+              <div style={{gridColumn:'1/-1', textAlign:'center', padding:'48px 20px'}}>
+                <div style={{fontSize:36, marginBottom:12}}>🔍</div>
+                <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-700)', marginBottom:4}}>
+                  {lang==='pt'?'Nenhum item encontrado':lang==='es'?'No se encontraron artículos':'No items found'}
+                </div>
+                <div style={{fontSize:12, color:'var(--pg-ink-400)'}}>
+                  {lang==='pt'?'Tente outros filtros ou categorias':lang==='es'?'Prueba otros filtros o categorías':'Try different filters or categories'}
+                </div>
               </div>
             )}
+
+            {/* Static equipment items */}
             {list.map(e => (
-              <button key={e.id} className="pg-card pg-card-tap" onClick={()=>setSelected({...e, _type:'equipment'})} style={{
-                border:'none', textAlign:'left', cursor:'pointer', overflow:'hidden', padding:0,
-              }}>
-                <EquipImg category={e.category} height={120}/>
-                <div style={{padding:'11px 12px 12px'}}>
-                  <div style={{display:'flex', alignItems:'flex-start', gap:6}}>
-                    <span style={{flex:1, fontSize:13.5, fontWeight:600, letterSpacing:'-0.01em', lineHeight:1.25,
-                      display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>{e.name}</span>
-                    <span className="pg-chip" style={{padding:'2px 7px', fontSize:10, background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', borderColor:'transparent', flexShrink:0}}>
-                      {tr(e.condition, lang).toLowerCase()}
-                    </span>
+              <button key={e.id} onClick={()=>setSelected({...e, _type:'equipment'})}
+                className="pg-press"
+                style={{border:'none', textAlign:'left', cursor:'pointer', overflow:'hidden', padding:0,
+                  borderRadius:14, background:'var(--pg-white)',
+                  boxShadow:'0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px var(--pg-ink-200)',
+                  display:'flex', flexDirection:'column',
+                  transition:'box-shadow .15s, transform .12s',
+                }}>
+                {/* Photo — 4:3 ratio enforced */}
+                <div style={{position:'relative', paddingTop:'72%', background:'#e2e8f0', overflow:'hidden', borderRadius:'14px 14px 0 0', flexShrink:0}}>
+                  <div style={{position:'absolute', inset:0}}>
+                    <EquipImg category={e.category} height={'100%'}/>
                   </div>
-                  <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.35,
+                  {/* Gradient overlay */}
+                  <div style={{position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, transparent 40%, transparent 65%, rgba(0,0,0,0.08) 100%)', pointerEvents:'none'}}/>
+                  {/* Category badge */}
+                  <span style={{
+                    position:'absolute', top:10, left:10,
+                    fontSize:9, fontWeight:700, padding:'3px 9px', borderRadius:6,
+                    background:'rgba(0,0,0,0.50)', color:'#fff',
+                    letterSpacing:'0.07em', textTransform:'uppercase', backdropFilter:'blur(4px)',
+                  }}>{tr({Pumps:'Pumps',Filters:'Filters',Vacuum:'Vacuum',Heaters:'Heaters',Tools:'Tools'}[e.category] || e.category, lang)}</span>
+                  {/* Condition chip */}
+                  <span style={{
+                    position:'absolute', top:10, right:10,
+                    fontSize:9.5, fontWeight:700, padding:'3px 9px', borderRadius:6,
+                    background:'rgba(255,255,255,0.92)', color:'var(--pg-blue-700)',
+                    letterSpacing:'0.03em', backdropFilter:'blur(4px)',
+                  }}>{tr(e.condition, lang)}</span>
+                </div>
+                {/* Content */}
+                <div style={{padding:'12px 13px 14px', flex:1, display:'flex', flexDirection:'column'}}>
+                  {/* Title */}
+                  <div style={{fontSize:14, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3, color:'var(--pg-ink-900)',
                     display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
+                    {e.name}
+                  </div>
+                  {/* Description */}
+                  <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.4,
+                    display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden', flex:1}}>
                     {descFor(e, lang)}
                   </div>
-                  <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:8}}>
-                    <span style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
-                      ${e.price}{e.unit && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-500)'}}>{tr(e.unit, lang)}</span>}
-                    </span>
-                    <span style={{fontSize:10.5, color:'var(--pg-ink-500)'}}>{sellerFor(e)}</span>
+                  {/* Divider */}
+                  <div style={{height:1, background:'var(--pg-ink-100)', margin:'10px 0'}}/>
+                  {/* Price row */}
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                    <div>
+                      <span style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
+                        ${e.price}
+                      </span>
+                      {e.unit && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{tr(e.unit, lang)}</span>}
+                    </div>
+                    <div style={{display:'flex', alignItems:'center', gap:5}}>
+                      <div style={{
+                        width:22, height:22, borderRadius:'50%',
+                        background:'var(--pg-blue-100)',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:10, flexShrink:0,
+                      }}>👤</div>
+                      <span style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:500}}>{sellerFor(e)}</span>
+                    </div>
                   </div>
                 </div>
               </button>
