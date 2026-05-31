@@ -45,18 +45,93 @@
   <div id="stage"><div id="root"></div></div>
 
   <!-- Supabase SDK -->
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-    var SUPA_URL = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-    var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
-    try {
-      window.sb = createClient(SUPA_URL, SUPA_KEY);
-      window.supabase = { createClient };
-      console.log('[PoolGuyPro] Supabase conectado ✓');
-    } catch(e) {
-      console.error('[PoolGuyPro] Supabase erro:', e.message);
-      window.sb = null;
+  <script>
+  (function(){
+    var BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+    var KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
+    var _tok = null;
+    try { var s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(s&&s.t) _tok=s.t; } catch(e){}
+
+    function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
+
+    function makeBuilder(table){
+      var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null;
+      var run=async function(){
+        var url=BASE+'/rest/v1/'+table, h=hdrs();
+        if(op==='insert'){
+          var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Insert failed '+r.status}};}
+          return{data:null,error:null};
+        }
+        if(op==='update'){
+          var qs=filters.join('&');
+          var r=await fetch(url+(qs?'?'+qs:''),{method:'PATCH',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Update failed '+r.status}};}
+          return{data:null,error:null};
+        }
+        if(op==='delete'){
+          var qs=filters.join('&');
+          var r=await fetch(url+(qs?'?'+qs:''),{method:'DELETE',headers:h});
+          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Delete failed '+r.status}};}
+          return{data:null,error:null};
+        }
+        var p=['select='+encodeURIComponent(sel)];
+        filters.forEach(function(f){p.push(f);});
+        if(orderCol) p.push('order='+orderCol+(orderAsc?'':'.desc'));
+        if(isSingle) h['Accept']='application/vnd.pgrst.object+json';
+        var r=await fetch(url+'?'+p.join('&'),{headers:h});
+        if(r.status===406||r.status===404) return{data:null,error:null};
+        var d=await r.json();
+        if(!r.ok) return{data:null,error:{message:d.message||d.hint||'Query failed '+r.status}};
+        return{data:d,error:null};
+      };
+      var b={
+        select:function(c){sel=c||'*';return b;},
+        eq:function(c,v){filters.push(c+'=eq.'+encodeURIComponent(v));return b;},
+        order:function(c,opts){orderCol=c;orderAsc=opts?opts.ascending!==false:true;return b;},
+        single:function(){isSingle=true;return b;},
+        insert:function(row){op='insert';body=row;return b;},
+        update:function(upd){op='update';body=upd;return b;},
+        delete:function(){op='delete';return b;},
+        then:function(res,rej){return run().then(res,rej);},
+        catch:function(rej){return run().catch(rej);}
+      };
+      return b;
     }
+
+    window.sb = {
+      auth:{
+        signInWithPassword:async function(creds){
+          var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
+          var d=await r.json();
+          if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Invalid credentials'}};
+          _tok=d.access_token;
+          try{localStorage.setItem('pg_s',JSON.stringify({t:d.access_token,u:{id:d.user.id,email:d.user.email}}));}catch(e){}
+          return{data:{user:d.user,session:d},error:null};
+        },
+        signUp:async function(creds){
+          var r=await fetch(BASE+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
+          var d=await r.json();
+          if(!r.ok) return{data:null,error:{message:d.msg||d.error_description||d.message||'Signup failed'}};
+          if(d.access_token){_tok=d.access_token; try{localStorage.setItem('pg_s',JSON.stringify({t:d.access_token,u:{id:d.user.id,email:d.user.email}}));}catch(e){}}
+          return{data:{user:d.user||d},error:null};
+        },
+        getSession:async function(){
+          try{var s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(s&&s.u) return{data:{session:{user:s.u,access_token:s.t}}};}catch(e){}
+          return{data:{session:null}};
+        },
+        signOut:async function(){
+          try{if(_tok) await fetch(BASE+'/auth/v1/logout',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+_tok}});}catch(e){}
+          _tok=null; try{localStorage.removeItem('pg_s');}catch(e){}
+        }
+      },
+      from:function(table){return makeBuilder(table);},
+      channel:function(){ return{on:function(){return this;},subscribe:function(cb){setTimeout(function(){if(cb)cb('SUBSCRIBED');},100);return this;}};},
+      removeChannel:function(){}
+    };
+    window.supabase = {createClient:function(){return window.sb;}};
+    console.log('[PoolGuyPro] Supabase (native fetch) ✓');
+  })();
   </script>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
