@@ -320,6 +320,10 @@ function App() {
         p => setLiveVacations(prev => [normVac(p.new), ...prev]))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'marketplace' },
         p => setLiveMarket(prev => [normMkt(p.new), ...prev]))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'marketplace' },
+        p => setLiveMarket(prev => prev.map(m => m._id === p.new.id ? normMkt(p.new) : m)))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'marketplace' },
+        p => setLiveMarket(prev => prev.filter(m => m._id !== p.old.id)))
       .subscribe(status => {
         if (status === 'SUBSCRIBED') console.log('[Supabase] real-time ativo ✓');
       });
