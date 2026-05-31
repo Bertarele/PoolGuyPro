@@ -191,7 +191,13 @@ function App() {
   });
   const loadProfile = React.useCallback(async (sbUser) => {
     if (!sbUser || !window.sb) return;
-    const { data: profile } = await window.sb.from('profiles').select('*').eq('id', sbUser.id).single();
+    let { data: profile } = await window.sb.from('profiles').select('*').eq('id', sbUser.id).single();
+    // If no profile row exists, create a minimal one so the app works correctly
+    if (!profile) {
+      const fallbackName = sbUser.email ? sbUser.email.split('@')[0] : '';
+      await window.sb.from('profiles').insert({ id: sbUser.id, name: fallbackName, role: 'user' });
+      profile = { name: fallbackName, role: 'user', phone: '', region: '', photo_url: '' };
+    }
     // Sanitize: never use an email address as a display name
     const rawName = profile?.name || '';
     const cleanName = (rawName && !rawName.includes('@')) ? rawName : '';

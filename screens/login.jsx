@@ -86,8 +86,16 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       if (!window.sb) throw new Error('createClient failed — check console');
       const { data, error: err } = await window.sb.auth.signUp({ email: email.trim(), password: pass });
       if (err) throw err;
-      await window.sb.from('profiles').insert({ id: data.user.id, name, phone, region, role: 'user' });
-      onLogin(data.user);
+      // Try inserting profile — retry once if no auth token yet (email confirmation flow)
+      const userId = data.user?.id || data.id;
+      const insertProfile = () => window.sb.from('profiles').insert({ id: userId, name: name.trim(), phone: phone.trim(), region, role: 'user' });
+      const { error: insertErr } = await insertProfile();
+      if (insertErr) {
+        // Wait briefly for token to settle, then retry
+        await new Promise(r => setTimeout(r, 800));
+        await insertProfile();
+      }
+      onLogin(data.user || data);
     } catch(e) {
       setError(e.message || 'Signup failed');
       setLoading(false);

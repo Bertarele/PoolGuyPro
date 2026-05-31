@@ -1,5 +1,120 @@
 // marketplace.jsx — navy header + dual seg + distance + categories
 
+// ── View Listing Sheet (other users' posts — read-only + contact) ─────────
+function ViewListingSheet({ item, lang, onClose, openChat }) {
+  if (!item) return null;
+
+  const periodSfx = item.type === 'rent'
+    ? (item.rentPeriod === 'week' ? (lang==='pt'?'/sem':'/wk') : item.rentPeriod === 'month' ? (lang==='pt'?'/mês':'/mo') : (lang==='pt'?'/dia':'/day'))
+    : '';
+
+  const authorInitial = (item.author || 'U')[0].toUpperCase();
+  const authorDisplay = item.author
+    ? (item.author.includes('@') ? item.author.split('@')[0] : item.author)
+    : 'Unknown';
+
+  const pill = (label, bg='var(--pg-ink-100)', color='var(--pg-ink-700)') => (
+    <span style={{display:'inline-block', padding:'4px 11px', borderRadius:999,
+      background:bg, color, fontSize:11.5, fontWeight:600}}>{label}</span>
+  );
+
+  const handleContact = () => {
+    if (openChat) openChat(item.author || 'Seller');
+    if (onClose) onClose();
+  };
+
+  return (
+    <div style={{padding:'0 0 36px'}}>
+      {/* Hero image */}
+      <div style={{position:'relative', height:200, background:'linear-gradient(135deg,#e2e8f0,#cbd5e1)', overflow:'hidden', flexShrink:0}}>
+        {item.photoUrl
+          ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+          : <EquipImg category={item.cat||'Tools'} height={200}/>
+        }
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.20) 0%,transparent 50%,rgba(0,0,0,0.30) 100%)'}}/>
+        {/* Category badge */}
+        {item.cat && (
+          <span style={{position:'absolute',top:14,right:16,
+            fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:8,
+            background:'rgba(0,0,0,0.55)',color:'#fff',letterSpacing:'0.06em',
+            backdropFilter:'blur(4px)',textTransform:'uppercase'}}>{item.cat}</span>
+        )}
+        {/* Type badge */}
+        <span style={{position:'absolute',top:14,left:16,
+          fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:8,
+          background: item.type==='rent' ? 'rgba(14,186,199,0.90)' : 'rgba(59,130,246,0.90)',
+          color:'#fff',letterSpacing:'0.06em',backdropFilter:'blur(4px)',textTransform:'uppercase'}}>
+          {item.type==='rent' ? (lang==='pt'?'ALUGUEL':lang==='es'?'ALQUILER':'RENTAL')
+           : item.type==='route' ? (lang==='pt'?'ROTA':lang==='es'?'RUTA':'ROUTE')
+           : (lang==='pt'?'VENDA':lang==='es'?'VENTA':'FOR SALE')}
+        </span>
+      </div>
+
+      {/* Content */}
+      <div style={{padding:'20px 20px 0'}}>
+        {/* Title */}
+        <div style={{fontSize:20, fontWeight:800, letterSpacing:'-0.02em', lineHeight:1.2, color:'var(--pg-ink-900)', marginBottom:10}}>
+          {item.name}
+        </div>
+
+        {/* Price */}
+        <div style={{marginBottom:16}}>
+          {item.priceMode === 'neg' ? (
+            <span style={{fontSize:14, fontWeight:700, padding:'6px 14px', borderRadius:999,
+              background:'var(--pg-blue-50)', color:'var(--pg-blue-700)',
+              border:'1px solid var(--pg-blue-100)'}}>
+              🤝 {lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}
+            </span>
+          ) : (
+            <div style={{display:'flex', alignItems:'baseline', gap:4}}>
+              <span style={{fontFamily:'var(--pg-font-display)', fontSize:32, fontWeight:800,
+                color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
+                ${item.price}
+              </span>
+              {periodSfx && <span style={{fontSize:13, color:'var(--pg-ink-500)', fontWeight:500}}>{periodSfx}</span>}
+            </div>
+          )}
+        </div>
+
+        {/* Condition / Location pills */}
+        <div style={{display:'flex', flexWrap:'wrap', gap:8, marginBottom:18}}>
+          {item.condition && pill(item.condition)}
+          {item.loc && pill(`📍 ${item.loc}`)}
+        </div>
+
+        {/* Seller info */}
+        <div style={{display:'flex', alignItems:'center', gap:10, padding:'13px 16px',
+          background:'var(--pg-ink-50)', borderRadius:14, border:'1px solid var(--pg-ink-150)', marginBottom:20}}>
+          <div style={{width:40, height:40, borderRadius:'50%', flexShrink:0,
+            background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            color:'#fff', fontSize:15, fontWeight:700}}>
+            {authorInitial}
+          </div>
+          <div>
+            <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
+            <div style={{fontSize:11.5, color:'var(--pg-ink-500)'}}>{lang==='pt'?'Vendedor verificado':lang==='es'?'Vendedor verificado':'Verified seller'}</div>
+          </div>
+        </div>
+
+        {/* Contact button */}
+        <button onClick={handleContact} style={{
+          width:'100%', height:52, borderRadius:14, border:'none', cursor:'pointer',
+          fontFamily:'inherit', fontSize:15, fontWeight:700,
+          background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+          color:'#fff', boxShadow:'0 4px 14px rgba(0,119,182,0.30)',
+          display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          {lang==='pt'?'Entrar em contato':lang==='es'?'Contactar':'Contact Seller'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── My Post Detail / Edit Sheet ───────────────────────────────
 function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDeleted }) {
   const [editing, setEditing]   = React.useState(false);
@@ -258,6 +373,7 @@ function MarketplaceScreen({ ctx }) {
   const [q,            setQ]           = React.useState('');
   const [selected,     setSelected]    = React.useState(null);
   const [myPostDetail, setMyPostDetail]= React.useState(null); // own post detail/edit
+  const [viewListing,  setViewListing] = React.useState(null); // other user's post — read-only view
   const [postOpen,   setPostOpen]   = React.useState(false);
   const [postMode,   setPostMode]   = React.useState(null); // 'sell'|'rent'|'route'
   const [priceRange, setPriceRange] = React.useState('all');  // equipment price filter
@@ -497,10 +613,10 @@ function MarketplaceScreen({ ctx }) {
                   : `$${item.price}`;
                 return (
                   <button key={item._id}
-                    onClick={()=> setMyPostDetail(item)}
+                    onClick={()=> isMyPost(item) ? setMyPostDetail(item) : setViewListing(item)}
                     className="pg-press"
                     style={{
-                      padding:0, overflow:'hidden', position:'relative', cursor: isPending ? 'default' : 'pointer',
+                      padding:0, overflow:'hidden', position:'relative', cursor: 'pointer',
                       border: isPending ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
                       opacity: isPending ? 0.82 : 1,
                       display:'flex', flexDirection:'column',
@@ -517,17 +633,19 @@ function MarketplaceScreen({ ctx }) {
                       </div>
                       {/* Gradient overlay for badges */}
                       <div style={{position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 45%, transparent 60%, rgba(0,0,0,0.10) 100%)', pointerEvents:'none'}}/>
-                      {/* Status badge top-left */}
-                      <span style={{
-                        position:'absolute', top:10, left:10,
-                        fontSize:9.5, fontWeight:700, padding:'3px 8px', borderRadius:6,
-                        letterSpacing:'0.05em',
-                        background: isPending ? 'rgba(255,243,205,0.95)' : 'rgba(255,255,255,0.95)',
-                        color: isPending ? '#856404' : 'var(--pg-blue-700)',
-                        backdropFilter:'blur(4px)',
-                      }}>
-                        {isPending ? `⏳ ${lang==='pt'?'REVISÃO':lang==='es'?'REVISIÓN':'REVIEW'}` : '✦ MEU ANÚNCIO'}
-                      </span>
+                      {/* Status badge top-left — only for own posts */}
+                      {isMyPost(item) && (
+                        <span style={{
+                          position:'absolute', top:10, left:10,
+                          fontSize:9.5, fontWeight:700, padding:'3px 8px', borderRadius:6,
+                          letterSpacing:'0.05em',
+                          background: isPending ? 'rgba(255,243,205,0.95)' : 'rgba(14,186,199,0.92)',
+                          color: isPending ? '#856404' : '#fff',
+                          backdropFilter:'blur(4px)',
+                        }}>
+                          {isPending ? `⏳ ${lang==='pt'?'REVISÃO':lang==='es'?'REVISIÓN':'REVIEW'}` : `✦ ${lang==='pt'?'MEU ANÚNCIO':lang==='es'?'MI ANUNCIO':'MY LISTING'}`}
+                        </span>
+                      )}
                       {/* Category badge top-right */}
                       <span style={{
                         position:'absolute', top:10, right:10,
@@ -958,6 +1076,15 @@ function MarketplaceScreen({ ctx }) {
       </div>
 
     </div>{/* end .pg-screen */}
+
+      {/* Other user's listing — read-only view + contact */}
+      <Sheet open={!!viewListing} onClose={()=>setViewListing(null)} height="auto">
+        {viewListing && <ViewListingSheet
+          item={viewListing} lang={lang}
+          openChat={openChat}
+          onClose={()=>setViewListing(null)}
+        />}
+      </Sheet>
 
       {/* My post detail / edit sheet */}
       <Sheet open={!!myPostDetail} onClose={()=>setMyPostDetail(null)} height="auto">
