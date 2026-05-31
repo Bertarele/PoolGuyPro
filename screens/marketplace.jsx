@@ -17,6 +17,9 @@ function MarketplaceScreen({ ctx }) {
     : (user.email ? user.email.split('@')[0] : null);
 
   const isMyPost = (m) => (
+    // UID match — most reliable, works across sessions
+    (user.uid && m.author_id && m.author_id === user.uid) ||
+    // Name/email fallbacks for older posts without author_id
     (myAuthor && m.author === myAuthor) ||
     (user.name && m.author === user.name) ||
     (user.email && m.author === user.email.split('@')[0])
@@ -251,7 +254,7 @@ function MarketplaceScreen({ ctx }) {
 
         {/* Equipment grid */}
         {isEquipment && (
-          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:14, marginTop:14}}>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(155px, 1fr))', gap:12, marginTop:14}}>
             {/* Live user-posted equipment items */}
             {liveMarket
               .filter(m => m.type === mode && (
