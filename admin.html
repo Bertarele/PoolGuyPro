@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>PoolGuyX — Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+    input, select { font-family: inherit; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1a1f2e; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  var URL = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+  var KEY = 'sb_publishable_2C7PFtLNiXt3IziFnMVb4w_1YGfBqyX';
+  try { window.sb = window.supabase.createClient(URL, KEY); } catch(e) { window.sb = null; }
+})();
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+
+// ── Icons ─────────────────────────────────────────────────────
+const icons = {
+  users:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  jobs:    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+  market:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
+  logout:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  trash:   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>,
+  shield:  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  dash:    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+  techs:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>,
+  vac:     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+};
+
+// ── Stat Card ─────────────────────────────────────────────────
+function StatCard({ label, value, color, icon }) {
+  return (
+    <div style={{
+      background:'#1a1f2e', borderRadius:16, padding:'20px 22px',
+      border:'1px solid #1e293b', display:'flex', alignItems:'center', gap:16,
+    }}>
+      <div style={{
+        width:48, height:48, borderRadius:12, background: color + '18',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        color: color, flexShrink:0,
+      }}>{icon}</div>
+      <div>
+        <div style={{fontSize:28, fontWeight:700, lineHeight:1, color:'#f1f5f9'}}>{value ?? '—'}</div>
+        <div style={{fontSize:12.5, color:'#64748b', marginTop:3, fontWeight:500}}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Table ─────────────────────────────────────────────────────
+function DataTable({ columns, rows, onDelete, onPromote, loading }) {
+  if (loading) return <div style={{padding:32, textAlign:'center', color:'#64748b'}}>Loading…</div>;
+  if (!rows.length) return <div style={{padding:32, textAlign:'center', color:'#64748b'}}>No records found.</div>;
+  return (
+    <div style={{overflowX:'auto'}}>
+      <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+        <thead>
+          <tr style={{borderBottom:'1px solid #1e293b'}}>
+            {columns.map(c => (
+              <th key={c.key} style={{padding:'10px 14px', textAlign:'left', color:'#64748b', fontWeight:600, fontSize:11, letterSpacing:'0.06em', textTransform:'uppercase', whiteSpace:'nowrap'}}>{c.label}</th>
+            ))}
+            <th style={{padding:'10px 14px', color:'#64748b', fontWeight:600, fontSize:11, letterSpacing:'0.06em', textTransform:'uppercase'}}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={row.id || i} style={{borderBottom:'1px solid #1e293b18', transition:'background .1s'}}
+              onMouseEnter={e=>e.currentTarget.style.background='#1e293b50'}
+              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+              {columns.map(c => (
+                <td key={c.key} style={{padding:'10px 14px', color: c.key==='role' ? (row[c.key]==='admin'?'#0EBAC7':'#94a3b8') : '#cbd5e1', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                  {c.render ? c.render(row[c.key], row) : (row[c.key] ?? '—')}
+                </td>
+              ))}
+              <td style={{padding:'10px 14px'}}>
+                <div style={{display:'flex', gap:6}}>
+                  {onPromote && (
+                    <button onClick={()=>onPromote(row)} title={row.role==='admin'?'Remove admin':'Make admin'} style={{
+                      padding:'5px 10px', borderRadius:8, border:'1px solid',
+                      borderColor: row.role==='admin' ? '#334155' : '#0EBAC730',
+                      background: row.role==='admin' ? 'transparent' : '#0EBAC710',
+                      color: row.role==='admin' ? '#64748b' : '#0EBAC7',
+                      fontSize:11, fontWeight:600, display:'flex', alignItems:'center', gap:4,
+                    }}>{icons.shield} {row.role==='admin'?'Demote':'Admin'}</button>
+                  )}
+                  {onDelete && (
+                    <button onClick={()=>onDelete(row)} title="Delete" style={{
+                      padding:'5px 10px', borderRadius:8, border:'1px solid #ef444430',
+                      background:'#ef444410', color:'#ef4444',
+                      fontSize:11, fontWeight:600, display:'flex', alignItems:'center', gap:4,
+                    }}>{icons.trash} Delete</button>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Login ─────────────────────────────────────────────────────
+function AdminLogin({ onLogin }) {
+  const [email, setEmail] = React.useState('');
+  const [pass,  setPass]  = React.useState('');
+  const [error, setError] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email || !pass || loading) return;
+    setLoading(true); setError('');
+    try {
+      const { data, error: err } = await window.sb.auth.signInWithPassword({ email: email.trim(), password: pass });
+      if (err) throw err;
+      const { data: profile } = await window.sb.from('profiles').select('role').eq('id', data.user.id).single();
+      if (!profile || profile.role !== 'admin') {
+        await window.sb.auth.signOut();
+        throw new Error('Access denied — admin only.');
+      }
+      onLogin(data.user, profile);
+    } catch(e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#0f1117'}}>
+      <div style={{width:380, background:'#1a1f2e', borderRadius:20, padding:36, border:'1px solid #1e293b', boxShadow:'0 32px 80px rgba(0,0,0,0.5)'}}>
+        <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:28}}>
+          <div style={{width:44, height:44, borderRadius:12, background:'linear-gradient(135deg,#0EBAC7,#0D7280)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:18}}>PX</div>
+          <div>
+            <div style={{fontWeight:700, fontSize:18, color:'#f1f5f9'}}>Admin Panel</div>
+            <div style={{fontSize:12, color:'#64748b'}}>PoolGuyX — Restricted access</div>
+          </div>
+        </div>
+        <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
+          <div>
+            <label style={{display:'block', fontSize:11, fontWeight:600, color:'#64748b', marginBottom:6, letterSpacing:'0.06em', textTransform:'uppercase'}}>Email</label>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@email.com"
+              style={{width:'100%', padding:'12px 14px', borderRadius:10, border:'1px solid #334155', background:'#0f1117', color:'#f1f5f9', fontSize:14, outline:'none'}}/>
+          </div>
+          <div>
+            <label style={{display:'block', fontSize:11, fontWeight:600, color:'#64748b', marginBottom:6, letterSpacing:'0.06em', textTransform:'uppercase'}}>Password</label>
+            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••"
+              style={{width:'100%', padding:'12px 14px', borderRadius:10, border:'1px solid #334155', background:'#0f1117', color:'#f1f5f9', fontSize:14, outline:'none'}}/>
+          </div>
+          {error && <div style={{fontSize:12.5, color:'#ef4444', background:'#ef44441a', border:'1px solid #ef444430', borderRadius:8, padding:'9px 12px'}}>{error}</div>}
+          <button type="submit" disabled={loading} style={{
+            height:48, borderRadius:12, border:'none', fontWeight:700, fontSize:15,
+            background:'linear-gradient(135deg,#0EBAC7,#0D7280)', color:'#fff',
+            boxShadow:'0 6px 20px rgba(14,186,199,0.3)', transition:'opacity .2s',
+            opacity: loading ? 0.7 : 1,
+          }}>{loading ? 'Signing in…' : 'Sign in'}</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Admin App ─────────────────────────────────────────────────
+function AdminApp({ adminUser, onLogout }) {
+  const [section, setSection] = React.useState('dashboard');
+  const [stats,   setStats]   = React.useState({});
+  const [users,   setUsers]   = React.useState([]);
+  const [jobs,    setJobs]    = React.useState([]);
+  const [techs,   setTechs]   = React.useState([]);
+  const [market,  setMarket]  = React.useState([]);
+  const [vacs,    setVacs]    = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [toast,   setToast]   = React.useState(null);
+
+  const showToast = (msg, ok=true) => { setToast({msg, ok}); setTimeout(()=>setToast(null), 2500); };
+
+  const fetchAll = async () => {
+    setLoading(true);
+    const [u, j, tc, m, v] = await Promise.all([
+      window.sb.from('profiles').select('*').order('created_at', {ascending:false}),
+      window.sb.from('jobs').select('*').order('created_at', {ascending:false}),
+      window.sb.from('techs').select('*').order('created_at', {ascending:false}),
+      window.sb.from('marketplace').select('*').order('created_at', {ascending:false}),
+      window.sb.from('vacations').select('*').order('created_at', {ascending:false}),
+    ]);
+    if (u.data) setUsers(u.data);
+    if (j.data) setJobs(j.data);
+    if (tc.data) setTechs(tc.data);
+    if (m.data) setMarket(m.data);
+    if (v.data) setVacs(v.data);
+    setStats({
+      users: u.data?.length ?? 0,
+      jobs:  j.data?.length ?? 0,
+      techs: tc.data?.length ?? 0,
+      market:m.data?.length ?? 0,
+      vacs:  v.data?.length ?? 0,
+    });
+    setLoading(false);
+  };
+
+  React.useEffect(() => { fetchAll(); }, []);
+
+  const deleteRow = async (table, row) => {
+    if (!confirm(`Delete this record? This cannot be undone.`)) return;
+    const { error } = await window.sb.from(table).delete().eq('id', row.id);
+    if (error) { showToast('Error: ' + error.message, false); return; }
+    showToast('Deleted.');
+    fetchAll();
+  };
+
+  const toggleAdmin = async (row) => {
+    const newRole = row.role === 'admin' ? 'user' : 'admin';
+    if (!confirm(`${newRole === 'admin' ? 'Promote' : 'Demote'} ${row.name || row.email}?`)) return;
+    const { error } = await window.sb.from('profiles').update({ role: newRole }).eq('id', row.id);
+    if (error) { showToast('Error: ' + error.message, false); return; }
+    showToast(newRole === 'admin' ? 'Promoted to admin.' : 'Removed admin.');
+    fetchAll();
+  };
+
+  const navItems = [
+    { id:'dashboard', label:'Dashboard', icon:icons.dash },
+    { id:'users',     label:'Users',     icon:icons.users },
+    { id:'jobs',      label:'Jobs',      icon:icons.jobs },
+    { id:'techs',     label:'Techs',     icon:icons.techs },
+    { id:'market',    label:'Marketplace',icon:icons.market },
+    { id:'vacations', label:'Vacations', icon:icons.vac },
+  ];
+
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'2-digit'}) : '—';
+
+  return (
+    <div style={{display:'flex', minHeight:'100vh'}}>
+      {/* Sidebar */}
+      <div style={{width:220, background:'#13161f', borderRight:'1px solid #1e293b', display:'flex', flexDirection:'column', flexShrink:0, position:'fixed', top:0, left:0, height:'100vh'}}>
+        <div style={{padding:'24px 20px 16px', borderBottom:'1px solid #1e293b'}}>
+          <div style={{fontWeight:800, fontSize:16, color:'#f1f5f9'}}>PoolGuyX</div>
+          <div style={{fontSize:11, color:'#0EBAC7', fontWeight:600, marginTop:2}}>Admin Panel</div>
+        </div>
+        <nav style={{flex:1, padding:'12px 10px', display:'flex', flexDirection:'column', gap:2}}>
+          {navItems.map(n => (
+            <button key={n.id} onClick={()=>setSection(n.id)} style={{
+              display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, border:'none',
+              background: section===n.id ? '#0EBAC715' : 'transparent',
+              color: section===n.id ? '#0EBAC7' : '#64748b',
+              fontWeight: section===n.id ? 600 : 500, fontSize:13.5, textAlign:'left', transition:'all .15s',
+            }}>{n.icon} {n.label}</button>
+          ))}
+        </nav>
+        <div style={{padding:'12px 10px', borderTop:'1px solid #1e293b'}}>
+          <div style={{fontSize:12, color:'#475569', padding:'0 12px', marginBottom:8, fontWeight:500}}>{adminUser.email}</div>
+          <button onClick={onLogout} style={{
+            display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, border:'none',
+            background:'transparent', color:'#64748b', fontSize:13.5, fontWeight:500, width:'100%', textAlign:'left',
+            transition:'all .15s',
+          }} onMouseEnter={e=>e.currentTarget.style.color='#ef4444'} onMouseLeave={e=>e.currentTarget.style.color='#64748b'}>
+            {icons.logout} Sign out
+          </button>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div style={{marginLeft:220, flex:1, padding:'32px 36px', minWidth:0}}>
+
+        {/* Dashboard */}
+        {section === 'dashboard' && (
+          <div>
+            <h1 style={{fontSize:22, fontWeight:700, color:'#f1f5f9', marginBottom:6}}>Dashboard</h1>
+            <p style={{fontSize:13, color:'#64748b', marginBottom:28}}>Overview of all activity on PoolGuyX.</p>
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:16, marginBottom:32}}>
+              <StatCard label="Total Users"      value={stats.users}  color="#0EBAC7" icon={icons.users}  />
+              <StatCard label="Job Listings"     value={stats.jobs}   color="#6366f1" icon={icons.jobs}   />
+              <StatCard label="Technicians"      value={stats.techs}  color="#10b981" icon={icons.techs}  />
+              <StatCard label="Marketplace"      value={stats.market} color="#f59e0b" icon={icons.market} />
+              <StatCard label="Vacation Routes"  value={stats.vacs}   color="#ec4899" icon={icons.vac}    />
+            </div>
+            <div style={{background:'#1a1f2e', borderRadius:16, padding:'20px 22px', border:'1px solid #1e293b'}}>
+              <div style={{fontWeight:600, fontSize:14, color:'#f1f5f9', marginBottom:4}}>Recent Users</div>
+              <div style={{fontSize:12, color:'#64748b', marginBottom:16}}>Last 5 signups</div>
+              {users.slice(0,5).map(u => (
+                <div key={u.id} style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid #1e293b20'}}>
+                  <div>
+                    <div style={{fontWeight:600, fontSize:13.5, color:'#e2e8f0'}}>{u.name || '—'}</div>
+                    <div style={{fontSize:11.5, color:'#64748b'}}>{u.region || 'No region'} · {fmtDate(u.created_at)}</div>
+                  </div>
+                  <span style={{fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:999,
+                    background: u.role==='admin' ? '#0EBAC720' : '#1e293b',
+                    color: u.role==='admin' ? '#0EBAC7' : '#475569',
+                  }}>{u.role}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Users */}
+        {section === 'users' && (
+          <div>
+            <h1 style={{fontSize:22, fontWeight:700, color:'#f1f5f9', marginBottom:6}}>Users <span style={{fontSize:14, color:'#64748b', fontWeight:500}}>({users.length})</span></h1>
+            <p style={{fontSize:13, color:'#64748b', marginBottom:24}}>All registered accounts.</p>
+            <div style={{background:'#1a1f2e', borderRadius:16, border:'1px solid #1e293b', overflow:'hidden'}}>
+              <DataTable
+                loading={loading}
+                rows={users}
+                columns={[
+                  { key:'name',       label:'Name' },
+                  { key:'phone',      label:'Phone' },
+                  { key:'region',     label:'Region' },
+                  { key:'role',       label:'Role' },
+                  { key:'created_at', label:'Joined', render: v => fmtDate(v) },
+                ]}
+                onDelete={row => deleteRow('profiles', row)}
+                onPromote={toggleAdmin}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Jobs */}
+        {section === 'jobs' && (
+          <div>
+            <h1 style={{fontSize:22, fontWeight:700, color:'#f1f5f9', marginBottom:6}}>Job Listings <span style={{fontSize:14, color:'#64748b', fontWeight:500}}>({jobs.length})</span></h1>
+            <p style={{fontSize:13, color:'#64748b', marginBottom:24}}>All posted hiring listings.</p>
+            <div style={{background:'#1a1f2e', borderRadius:16, border:'1px solid #1e293b', overflow:'hidden'}}>
+              <DataTable
+                loading={loading}
+                rows={jobs}
+                columns={[
+                  { key:'role',        label:'Role' },
+                  { key:'loc',         label:'Location' },
+                  { key:'contract',    label:'Contract' },
+                  { key:'pay',         label:'Pay' },
+                  { key:'author',      label:'Author' },
+                  { key:'created_at',  label:'Posted', render: v => fmtDate(v) },
+                ]}
+                onDelete={row => deleteRow('jobs', row)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Techs */}
+        {section === 'techs' && (
+          <div>
+            <h1 style={{fontSize:22, fontWeight:700, color:'#f1f5f9', marginBottom:6}}>Technicians <span style={{fontSize:14, color:'#64748b', fontWeight:500}}>({techs.length})</span></h1>
+            <p style={{fontSize:13, color:'#64748b', marginBottom:24}}>All posted tech profiles.</p>
+            <div style={{background:'#1a1f2e', borderRadius:16, border:'1px solid #1e293b', overflow:'hidden'}}>
+              <DataTable
+                loading={loading}
+                rows={techs}
+                columns={[
+                  { key:'name',       label:'Name' },
+                  { key:'specialty',  label:'Specialty' },
+                  { key:'loc',        label:'Location' },
+                  { key:'phone',      label:'Phone' },
+                  { key:'rate',       label:'Rate' },
+                  { key:'author',     label:'Author' },
+                  { key:'created_at', label:'Posted', render: v => fmtDate(v) },
+                ]}
+                onDelete={row => deleteRow('techs', row)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Marketplace */}
+        {section === 'market' && (
+          <div>
+            <h1 style={{fontSize:22, fontWeight:700, color:'#f1f5f9', marginBottom:6}}>Marketplace <span style={{fontSize:14, color:'#64748b', fontWeight:500}}>({market.length})</span></h1>
+            <p style={{fontSize:13, color:'#64748b', marginBottom:24}}>All equipment and route listings.</p>
+            <div style={{background:'#1a1f2e', borderRadius:16, border:'1px solid #1e293b', overflow:'hidden'}}>
+              <DataTable
+                loading={loading}
+                rows={market}
+                columns={[
+                  { key:'type',       label:'Type' },
+                  { key:'name',       label:'Name / Route' },
+                  { key:'cat',        label:'Category' },
+                  { key:'price',      label:'Price' },
+                  { key:'loc',        label:'Location' },
+                  { key:'author',     label:'Author' },
+                  { key:'created_at', label:'Posted', render: v => fmtDate(v) },
+                ]}
+                onDelete={row => deleteRow('marketplace', row)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Vacations */}
+        {section === 'vacations' && (
+          <div>
+            <h1 style={{fontSize:22, fontWeight:700, color:'#f1f5f9', marginBottom:6}}>Vacation Routes <span style={{fontSize:14, color:'#64748b', fontWeight:500}}>({vacs.length})</span></h1>
+            <p style={{fontSize:13, color:'#64748b', marginBottom:24}}>All posted vacation route listings.</p>
+            <div style={{background:'#1a1f2e', borderRadius:16, border:'1px solid #1e293b', overflow:'hidden'}}>
+              <DataTable
+                loading={loading}
+                rows={vacs}
+                columns={[
+                  { key:'month_idx',  label:'Month', render: (v,r) => { const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return (m[v]||v)+' '+(r.year||''); } },
+                  { key:'price',      label:'Price' },
+                  { key:'price_mode', label:'Mode' },
+                  { key:'author',     label:'Author' },
+                  { key:'created_at', label:'Posted', render: v => fmtDate(v) },
+                ]}
+                onDelete={row => deleteRow('vacations', row)}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position:'fixed', bottom:28, right:28, padding:'12px 20px', borderRadius:12,
+          background: toast.ok ? '#0EBAC7' : '#ef4444', color:'#fff',
+          fontWeight:600, fontSize:13.5, boxShadow:'0 8px 24px rgba(0,0,0,0.4)', zIndex:999,
+        }}>{toast.msg}</div>
+      )}
+    </div>
+  );
+}
+
+// ── Root ──────────────────────────────────────────────────────
+function Root() {
+  const [adminUser, setAdminUser] = React.useState(null);
+  const [checking,  setChecking]  = React.useState(true);
+
+  React.useEffect(() => {
+    if (!window.sb) { setChecking(false); return; }
+    window.sb.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        const { data: profile } = await window.sb.from('profiles').select('role').eq('id', session.user.id).single();
+        if (profile?.role === 'admin') setAdminUser(session.user);
+      }
+      setChecking(false);
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    await window.sb.auth.signOut();
+    setAdminUser(null);
+  };
+
+  if (checking) return (
+    <div style={{minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#0f1117'}}>
+      <div style={{color:'#64748b', fontSize:14}}>Loading…</div>
+    </div>
+  );
+
+  if (!adminUser) return <AdminLogin onLogin={(u) => setAdminUser(u)} />;
+  return <AdminApp adminUser={adminUser} onLogout={handleLogout} />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
+</script>
+</body>
+</html>
