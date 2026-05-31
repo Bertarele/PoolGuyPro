@@ -425,9 +425,21 @@ function AdminApp({ adminUser, onLogout }) {
   const deleteRow = async (table, row) => {
     if (!confirm(`Delete this record? This cannot be undone.`)) return;
     const { error } = await window.sb.from(table).delete().eq('id', row.id);
-    if (error) { showToast('Error: ' + error.message, false); return; }
-    showToast('Deleted.');
-    fetchAll();
+    if (error) {
+      if (error.message && (error.message.includes('RLS') || error.message.includes('policy') || error.message.includes('permission'))) {
+        setRlsModalOpen(true);
+      } else {
+        showToast('❌ ' + error.message, false);
+      }
+      return;
+    }
+    // Optimistic update — remove from local state immediately
+    if (table === 'marketplace') setMarket(prev => prev.filter(m => m.id !== row.id));
+    else if (table === 'jobs')    setJobs(prev  => prev.filter(j => j.id !== row.id));
+    else if (table === 'techs')   setTechs(prev => prev.filter(t => t.id !== row.id));
+    else if (table === 'profiles')setUsers(prev => prev.filter(u => u.id !== row.id));
+    else if (table === 'vacations')setVacs(prev => prev.filter(v => v.id !== row.id));
+    showToast('🗑️ Deleted.');
   };
 
   const [rlsModalOpen, setRlsModalOpen] = React.useState(false);
@@ -790,7 +802,10 @@ function AdminApp({ adminUser, onLogout }) {
               background:'#0f1117', borderRadius:10, padding:'14px 16px',
               fontSize:12, color:'#7dd3fc', overflowX:'auto', lineHeight:1.7,
               border:'1px solid #1e293b', margin:'0 0 18px',
-            }}>{`-- Allow admins to approve/reject marketplace posts
+            }}>{`-- Drop old policies if they exist, then recreate
+DROP POLICY IF EXISTS "Admins can update marketplace" ON marketplace;
+DROP POLICY IF EXISTS "Admins can delete marketplace" ON marketplace;
+
 CREATE POLICY "Admins can update marketplace"
 ON marketplace FOR UPDATE
 USING (
@@ -809,7 +824,24 @@ USING (
     WHERE profiles.id = auth.uid()
     AND profiles.role = 'admin'
   )
-);`}</pre>
+);
+
+-- Also allow admins to delete from other tables
+DROP POLICY IF EXISTS "Admins can delete jobs" ON jobs;
+DROP POLICY IF EXISTS "Admins can delete techs" ON techs;
+DROP POLICY IF EXISTS "Admins can delete vacations" ON vacations;
+
+CREATE POLICY "Admins can delete jobs"
+ON jobs FOR DELETE
+USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+
+CREATE POLICY "Admins can delete techs"
+ON techs FOR DELETE
+USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+
+CREATE POLICY "Admins can delete vacations"
+ON vacations FOR DELETE
+USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));`}</pre>
             <div style={{fontSize:12, color:'#64748b', marginBottom:18}}>
               After running the SQL, click Approve again — it will work.
             </div>
