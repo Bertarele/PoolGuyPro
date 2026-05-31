@@ -239,34 +239,80 @@ function App() {
   const [liveMarket,    setLiveMarket]    = React.useState([]);
 
   React.useEffect(() => {
-    if (!window.db) return;
-    const subs = [];
-    const listen = (col, setter) => {
-      try {
-        const unsub = window.db.collection(col)
-          .orderBy('createdAt', 'desc')
-          .onSnapshot(
-            snap => setter(snap.docs.map(d => ({ _id: d.id, ...d.data(), _live: true }))),
-            err  => console.warn('[Firebase]', col, err.message)
-          );
-        subs.push(unsub);
-      } catch (e) { console.warn('[Firebase] listen:', e.message); }
-    };
-    listen('jobs',        setLiveJobs);
-    listen('techs',       setLiveTechs);
-    listen('vacations',   setLiveVacations);
-    listen('marketplace', setLiveMarket);
-    return () => subs.forEach(u => u && u());
+    if (!window.sb) return;
+
+    // Normalizers — Supabase uses snake_case columns
+    const normJob = r => ({ _id:r.id, _live:true, role:r.role, loc:r.loc, desc:r.description,
+      contract:r.contract, payMode:r.pay_mode, pay:r.pay,
+      carReq:r.car_req, equipReq:r.equip_req, author:r.author });
+    const normTech = r => ({ _id:r.id, _live:true, name:r.name, specialty:r.specialty,
+      loc:r.loc, phone:r.phone, email:r.email,
+      rateMode:r.rate_mode, rate:r.rate, author:r.author });
+    const normVac = r => ({ _id:r.id, _live:true, monthIdx:r.month_idx, year:r.year,
+      selectedDays:r.selected_days, weekdayRegions:r.weekday_regions,
+      poolsPerWeekday:r.pools_per_weekday, price:r.price,
+      priceMode:r.price_mode, author:r.author });
+    const normMkt = r => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
+      condition:r.condition, price:r.price, priceMode:r.price_mode,
+      loc:r.loc, routeName:r.route_name, clients:r.clients,
+      revenue:r.revenue, asking:r.asking, area:r.area, author:r.author });
+
+    // Initial fetch
+    Promise.all([
+      window.sb.from('jobs').select('*').order('created_at', { ascending: false }),
+      window.sb.from('techs').select('*').order('created_at', { ascending: false }),
+      window.sb.from('vacations').select('*').order('created_at', { ascending: false }),
+      window.sb.from('marketplace').select('*').order('created_at', { ascending: false }),
+    ]).then(([j, tc, v, m]) => {
+      if (j.data)  setLiveJobs(j.data.map(normJob));
+      if (tc.data) setLiveTechs(tc.data.map(normTech));
+      if (v.data)  setLiveVacations(v.data.map(normVac));
+      if (m.data)  setLiveMarket(m.data.map(normMkt));
+    }).catch(e => console.warn('[Supabase] fetch:', e.message));
+
+    // Real-time subscriptions
+    const channel = window.sb.channel('app-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jobs' },
+        p => setLiveJobs(prev => [normJob(p.new), ...prev]))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'techs' },
+        p => setLiveTechs(prev => [normTech(p.new), ...prev]))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vacations' },
+        p => setLiveVacations(prev => [normVac(p.new), ...prev]))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'marketplace' },
+        p => setLiveMarket(prev => [normMkt(p.new), ...prev]))
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') console.log('[Supabase] real-time ativo ✓');
+      });
+
+    return () => { window.sb.removeChannel(channel); };
   }, []);
 
-  // Helper: write a document to Firestore
+  // Helper: insert row into Supabase
   const dbWrite = React.useCallback((col, data) => {
-    if (!window.db) return;
-    window.db.collection(col).add({
-      ...data,
-      author:    user.name,
-      createdAt: window.fsNow ? window.fsNow() : new Date().toISOString(),
-    }).catch(e => console.error('[Firebase] write error:', e.message));
+    if (!window.sb) return;
+    const row = col === 'jobs' ? {
+      role: data.role, loc: data.loc, contract: data.contract,
+      pay_mode: data.payMode, pay: data.pay, car_req: data.carReq,
+      equip_req: data.equipReq, description: data.desc, author: user.name,
+    } : col === 'techs' ? {
+      name: data.name, specialty: data.specialty, loc: data.loc,
+      phone: data.phone, email: data.email,
+      rate_mode: data.rateMode, rate: data.rate, author: user.name,
+    } : col === 'vacations' ? {
+      month_idx: data.monthIdx, year: data.year,
+      selected_days: data.selectedDays, weekday_regions: data.weekdayRegions,
+      pools_per_weekday: data.poolsPerWeekday,
+      price: data.price, price_mode: data.priceMode, author: user.name,
+    } : col === 'marketplace' ? {
+      type: data.type, name: data.name, cat: data.cat,
+      condition: data.condition, price: data.price,
+      price_mode: data.priceMode, loc: data.loc,
+      route_name: data.routeName, clients: data.clients,
+      revenue: data.revenue, asking: data.asking, area: data.area, author: user.name,
+    } : { ...data, author: user.name };
+
+    window.sb.from(col).insert(row)
+      .then(({ error }) => { if (error) console.error('[Supabase] insert error:', error.message); });
   }, [user.name]);
 
   // Sync tier tweak → user state
