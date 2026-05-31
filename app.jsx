@@ -573,38 +573,38 @@ function App() {
     : (user.email ? user.email.split('@')[0] : 'User');
   const avatarLetter = (displayName[0] || '?').toUpperCase();
     return (
-      <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',background:'#eef2f7',position:'relative',overflow:'hidden'}}>
+      <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',background:'var(--pg-bg)',position:'relative',overflow:'hidden'}}>
 
         {/* ── Top header bar ── */}
         <header style={{
-          height:56, flexShrink:0, background:'#fff',
-          borderBottom:'1px solid rgba(0,0,0,0.08)',
-          display:'flex', alignItems:'center', gap:0, zIndex:20,
-          boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+          height:56, flexShrink:0, zIndex:20,
+          background:'linear-gradient(90deg,#0a1628 0%,#0d1f3c 220px,#fff 220px)',
+          borderBottom:'1px solid rgba(0,0,0,0.10)',
+          display:'flex', alignItems:'center', gap:0,
+          boxShadow:'0 2px 8px rgba(0,0,0,0.10)',
         }}>
-          {/* Logo */}
+          {/* Logo — aligned with sidebar */}
           <div style={{
             width:220, flexShrink:0, padding:'0 20px',
             display:'flex', alignItems:'center', gap:10,
-            borderRight:'1px solid rgba(0,0,0,0.07)',
           }}>
             <div style={{
               width:32, height:32, borderRadius:9,
-              background:'linear-gradient(135deg,#007AFF 0%,#0056CC 100%)',
+              background:'linear-gradient(135deg,#007AFF 0%,#38bdf8 100%)',
               display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:16,
+              fontSize:18, boxShadow:'0 2px 8px rgba(0,122,255,0.45)',
             }}>🌊</div>
             <div>
-              <div style={{fontFamily:'var(--pg-font-display)',fontSize:14,fontWeight:800,color:'#007AFF',lineHeight:1.1}}>PoolGuyPro</div>
-              <div style={{fontSize:9,color:'#8E8E93',letterSpacing:'0.04em',textTransform:'uppercase',lineHeight:1}}>Florida Pool Network</div>
+              <div style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:'#fff',lineHeight:1.1,letterSpacing:'-0.02em'}}>PoolGuyX</div>
+              <div style={{fontSize:8.5,color:'rgba(255,255,255,0.45)',letterSpacing:'0.08em',textTransform:'uppercase',lineHeight:1}}>Florida Pool Network</div>
             </div>
           </div>
 
           {/* Page title */}
-          <div style={{flex:1, padding:'0 24px', display:'flex', alignItems:'center', gap:12}}>
+          <div style={{flex:1, padding:'0 28px', display:'flex', alignItems:'center', gap:12}}>
             {isLoggedIn && desktopTabLabel && (
-              <span style={{fontSize:15,fontWeight:700,color:'#1C1C1E'}}>
-                {desktopTabLabel.emoji} {desktopTabLabel.label}
+              <span style={{fontSize:16,fontWeight:700,color:'#1C1C1E',letterSpacing:'-0.01em'}}>
+                {desktopTabLabel.label}
               </span>
             )}
           </div>
@@ -659,81 +659,71 @@ function App() {
         </header>
 
         {/* ── Body: sidebar + content ── */}
-        <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+        <div style={{flex:1, display:'flex', overflow:'hidden', position:'relative'}}>
 
           {/* Sidebar */}
           {isLoggedIn && (
             <nav style={{
-              width:220, flexShrink:0, background:'#fff',
-              borderRight:'1px solid rgba(0,0,0,0.07)',
+              width:220, flexShrink:0,
+              background:'linear-gradient(180deg,#0a1628 0%,#0d1f3c 100%)',
               display:'flex', flexDirection:'column',
-              padding:'16px 10px',
-              overflowY:'auto',
+              padding:'20px 10px 16px',
+              overflowY:'auto', zIndex:5,
             }}>
               {desktopNavItems.map(item => (
                 <button key={item.id} onClick={()=>switchTab(item.id)} style={{
-                  display:'flex', alignItems:'center', gap:10,
-                  padding:'10px 14px', borderRadius:10, border:'none', cursor:'pointer',
-                  background: tab===item.id ? 'rgba(0,122,255,0.08)' : 'transparent',
-                  color: tab===item.id ? '#007AFF' : '#3C3C43',
+                  display:'flex', alignItems:'center', gap:11,
+                  padding:'11px 14px', borderRadius:11, border:'none', cursor:'pointer',
+                  background: tab===item.id ? 'rgba(0,122,255,0.22)' : 'transparent',
+                  color: tab===item.id ? '#fff' : 'rgba(255,255,255,0.55)',
                   fontWeight: tab===item.id ? 700 : 500,
                   fontSize:14, fontFamily:'inherit',
-                  textAlign:'left', marginBottom:2,
-                  transition:'background .12s, color .12s',
+                  textAlign:'left', marginBottom:3,
+                  transition:'all .14s',
+                  borderLeft: tab===item.id ? '3px solid #007AFF' : '3px solid transparent',
                 }}>
                   <span style={{fontSize:18,lineHeight:1}}>{item.emoji}</span>
                   <span>{item.label}</span>
-                  {tab===item.id && (
-                    <div style={{marginLeft:'auto',width:6,height:6,borderRadius:'50%',background:'#007AFF'}}/>
-                  )}
                 </button>
               ))}
 
-              {/* Spacer */}
               <div style={{flex:1}}/>
 
-              {/* Feedback button */}
               <button onClick={()=>setFeedbackOpen(true)} style={{
-                display:'flex', alignItems:'center', gap:10,
-                padding:'10px 14px', borderRadius:10, border:'none', cursor:'pointer',
-                background:'transparent', color:'#8E8E93',
-                fontSize:13, fontFamily:'inherit', textAlign:'left', marginTop:4,
+                display:'flex', alignItems:'center', gap:11,
+                padding:'10px 14px', borderRadius:11, border:'none', cursor:'pointer',
+                background:'transparent', color:'rgba(255,255,255,0.35)',
+                fontSize:13, fontFamily:'inherit', textAlign:'left',
               }}>
                 <span style={{fontSize:16}}>💬</span>
-                <span>{lang==='pt'?'Feedback':lang==='es'?'Feedback':'Feedback'}</span>
+                <span>Feedback</span>
               </button>
             </nav>
           )}
 
-          {/* Main content area */}
-          <main ref={screenRef} data-pg-screen style={{
-            flex:1, overflowY:'auto', overflowX:'hidden',
-            background:'#e8edf4', position:'relative',
-            display:'flex', flexDirection:'column', alignItems:'center',
-          }}>
+          {/* Main content — position:relative so screens can use position:absolute inside */}
+          <div style={{flex:1, position:'relative', overflow:'hidden', background:'var(--pg-bg)'}}>
             {!isLoggedIn ? (
-              /* Desktop login — centered card */
+              /* Login — centered card */
               <div style={{
-                width:'100%', flex:1, display:'flex', alignItems:'center', justifyContent:'center',
-                background:'linear-gradient(135deg, #eef2f7 0%, #e8f0fe 100%)',
+                position:'absolute', inset:0, overflowY:'auto',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                background:'linear-gradient(135deg,#eef2f7 0%,#e8f0fe 100%)',
                 padding:'40px 24px',
               }}>
                 <div style={{
                   background:'var(--pg-white)', borderRadius:24,
-                  boxShadow:'0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)',
+                  boxShadow:'0 20px 60px rgba(0,0,0,0.12)',
                   overflow:'hidden', width:'100%', maxWidth:420,
                 }}>
                   <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
                 </div>
               </div>
             ) : (
-              /* Desktop screen — centered narrow column, app background */
-              <div style={{
-                width:'100%', maxWidth:540, flexShrink:0,
-                background:'var(--pg-bg)',
-                boxShadow:'0 0 40px rgba(0,0,0,0.10)',
-                minHeight:'100%',
-                paddingBottom:40,
+              /* Screens — position:absolute so height:100% inside screens resolves correctly,
+                 fixing scroll. ref goes here so switchTab scrolls to top. */
+              <div ref={screenRef} data-pg-screen style={{
+                position:'absolute', inset:0, overflowY:'auto', overflowX:'hidden',
               }}>
                 {tab==='home'    && <HomeScreen ctx={ctx}/>}
                 {tab==='market'  && <MarketplaceScreen ctx={ctx}/>}
@@ -742,7 +732,7 @@ function App() {
                 {tab==='profile' && <ProfileScreen ctx={ctx}/>}
               </div>
             )}
-          </main>
+          </div>
         </div>
 
         {/* Overlays */}
