@@ -65,7 +65,7 @@ function StatCard({ label, value, color, icon }) {
 }
 
 // ── Table ─────────────────────────────────────────────────────
-function DataTable({ columns, rows, onDelete, onPromote, loading }) {
+function DataTable({ columns, rows, onDelete, onPromote, onApprove, onReject, loading }) {
   if (loading) return <div style={{padding:32, textAlign:'center', color:'#64748b'}}>Loading…</div>;
   if (!rows.length) return <div style={{padding:32, textAlign:'center', color:'#64748b'}}>No records found.</div>;
   return (
@@ -90,7 +90,21 @@ function DataTable({ columns, rows, onDelete, onPromote, loading }) {
                 </td>
               ))}
               <td style={{padding:'10px 14px'}}>
-                <div style={{display:'flex', gap:6}}>
+                <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+                  {onApprove && row.status !== 'approved' && (
+                    <button onClick={()=>onApprove(row)} style={{
+                      padding:'5px 10px', borderRadius:8, border:'1px solid #22c55e40',
+                      background:'#22c55e15', color:'#22c55e',
+                      fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4,
+                    }}>✓ Approve</button>
+                  )}
+                  {onReject && row.status !== 'approved' && (
+                    <button onClick={()=>onReject(row)} style={{
+                      padding:'5px 10px', borderRadius:8, border:'1px solid #f59e0b40',
+                      background:'#f59e0b15', color:'#f59e0b',
+                      fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4,
+                    }}>✗ Reject</button>
+                  )}
                   {onPromote && (
                     <button onClick={()=>onPromote(row)} title={row.role==='admin'?'Remove admin':'Make admin'} style={{
                       padding:'5px 10px', borderRadius:8, border:'1px solid',
@@ -180,15 +194,16 @@ function AdminLogin({ onLogin }) {
 
 // ── Admin App ─────────────────────────────────────────────────
 function AdminApp({ adminUser, onLogout }) {
-  const [section, setSection] = React.useState('dashboard');
-  const [stats,   setStats]   = React.useState({});
-  const [users,   setUsers]   = React.useState([]);
-  const [jobs,    setJobs]    = React.useState([]);
-  const [techs,   setTechs]   = React.useState([]);
-  const [market,  setMarket]  = React.useState([]);
-  const [vacs,    setVacs]    = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const [toast,   setToast]   = React.useState(null);
+  const [section,    setSection]    = React.useState('dashboard');
+  const [stats,      setStats]      = React.useState({});
+  const [users,      setUsers]      = React.useState([]);
+  const [jobs,       setJobs]       = React.useState([]);
+  const [techs,      setTechs]      = React.useState([]);
+  const [market,     setMarket]     = React.useState([]);
+  const [vacs,       setVacs]       = React.useState([]);
+  const [loading,    setLoading]    = React.useState(false);
+  const [toast,      setToast]      = React.useState(null);
+  const [marketTab,  setMarketTab]  = React.useState('pending'); // 'pending'|'approved'|'all'
 
   const showToast = (msg, ok=true) => { setToast({msg, ok}); setTimeout(()=>setToast(null), 2500); };
 
@@ -226,6 +241,21 @@ function AdminApp({ adminUser, onLogout }) {
     fetchAll();
   };
 
+  const approveMarket = async (row) => {
+    const { error } = await window.sb.from('marketplace').update({ status: 'approved' }).eq('id', row.id);
+    if (error) { showToast('Error: ' + error.message, false); return; }
+    showToast('✓ Post approved and published!');
+    fetchAll();
+  };
+
+  const rejectMarket = async (row) => {
+    if (!confirm(`Reject and delete "${row.name || row.type}"? This cannot be undone.`)) return;
+    const { error } = await window.sb.from('marketplace').delete().eq('id', row.id);
+    if (error) { showToast('Error: ' + error.message, false); return; }
+    showToast('Post rejected and removed.');
+    fetchAll();
+  };
+
   const toggleAdmin = async (row) => {
     const newRole = row.role === 'admin' ? 'user' : 'admin';
     if (!confirm(`${newRole === 'admin' ? 'Promote' : 'Demote'} ${row.name || row.email}?`)) return;
@@ -235,12 +265,14 @@ function AdminApp({ adminUser, onLogout }) {
     fetchAll();
   };
 
+  const pendingCount = market.filter(m => !m.status || m.status === 'pending').length;
+
   const navItems = [
     { id:'dashboard', label:'Dashboard', icon:icons.dash },
     { id:'users',     label:'Users',     icon:icons.users },
     { id:'jobs',      label:'Jobs',      icon:icons.jobs },
     { id:'techs',     label:'Techs',     icon:icons.techs },
-    { id:'market',    label:'Marketplace',icon:icons.market },
+    { id:'market',    label:'Marketplace',icon:icons.market, badge: pendingCount },
     { id:'vacations', label:'Vacations', icon:icons.vac },
   ];
 
@@ -261,7 +293,17 @@ function AdminApp({ adminUser, onLogout }) {
               background: section===n.id ? '#0EBAC715' : 'transparent',
               color: section===n.id ? '#0EBAC7' : '#64748b',
               fontWeight: section===n.id ? 600 : 500, fontSize:13.5, textAlign:'left', transition:'all .15s',
-            }}>{n.icon} {n.label}</button>
+              width:'100%',
+            }}>
+              {n.icon}
+              <span style={{flex:1}}>{n.label}</span>
+              {n.badge > 0 && (
+                <span style={{
+                  background:'#f59e0b', color:'#000', fontSize:10, fontWeight:800,
+                  padding:'1px 6px', borderRadius:999, minWidth:18, textAlign:'center',
+                }}>{n.badge}</span>
+              )}
+            </button>
           ))}
         </nav>
         <div style={{padding:'12px 10px', borderTop:'1px solid #1e293b'}}>
@@ -283,7 +325,26 @@ function AdminApp({ adminUser, onLogout }) {
         {section === 'dashboard' && (
           <div>
             <h1 style={{fontSize:22, fontWeight:700, color:'#f1f5f9', marginBottom:6}}>Dashboard</h1>
-            <p style={{fontSize:13, color:'#64748b', marginBottom:28}}>Overview of all activity on PoolGuyX.</p>
+            <p style={{fontSize:13, color:'#64748b', marginBottom:20}}>Overview of all activity on PoolGuyX.</p>
+
+            {/* Pending approval alert */}
+            {pendingCount > 0 && (
+              <div onClick={()=>setSection('market')} style={{
+                background:'#f59e0b18', border:'1px solid #f59e0b40', borderRadius:14,
+                padding:'14px 18px', marginBottom:24, cursor:'pointer', display:'flex', alignItems:'center', gap:14,
+                transition:'background .15s',
+              }}>
+                <div style={{width:40, height:40, borderRadius:10, background:'#f59e0b20', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:20}}>⏳</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700, fontSize:14, color:'#f59e0b'}}>
+                    {pendingCount} marketplace post{pendingCount > 1 ? 's' : ''} awaiting approval
+                  </div>
+                  <div style={{fontSize:12, color:'#94a3b8', marginTop:2}}>Click to review and approve or reject</div>
+                </div>
+                <div style={{fontSize:18, color:'#f59e0b', opacity:0.7}}>→</div>
+              </div>
+            )}
+
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:16, marginBottom:32}}>
               <StatCard label="Total Users"      value={stats.users}  color="#0EBAC7" icon={icons.users}  />
               <StatCard label="Job Listings"     value={stats.jobs}   color="#6366f1" icon={icons.jobs}   />
@@ -381,28 +442,82 @@ function AdminApp({ adminUser, onLogout }) {
         )}
 
         {/* Marketplace */}
-        {section === 'market' && (
-          <div>
-            <h1 style={{fontSize:22, fontWeight:700, color:'#f1f5f9', marginBottom:6}}>Marketplace <span style={{fontSize:14, color:'#64748b', fontWeight:500}}>({market.length})</span></h1>
-            <p style={{fontSize:13, color:'#64748b', marginBottom:24}}>All equipment and route listings.</p>
-            <div style={{background:'#1a1f2e', borderRadius:16, border:'1px solid #1e293b', overflow:'hidden'}}>
-              <DataTable
-                loading={loading}
-                rows={market}
-                columns={[
-                  { key:'type',       label:'Type' },
-                  { key:'name',       label:'Name / Route' },
-                  { key:'cat',        label:'Category' },
-                  { key:'price',      label:'Price' },
-                  { key:'loc',        label:'Location' },
-                  { key:'author',     label:'Author' },
-                  { key:'created_at', label:'Posted', render: v => fmtDate(v) },
-                ]}
-                onDelete={row => deleteRow('marketplace', row)}
-              />
+        {section === 'market' && (() => {
+          const pendingRows  = market.filter(m => !m.status || m.status === 'pending');
+          const approvedRows = market.filter(m => m.status === 'approved');
+          const displayRows  = marketTab === 'pending' ? pendingRows
+                             : marketTab === 'approved' ? approvedRows
+                             : market;
+          const mktCols = [
+            { key:'status', label:'Status', render: v => (
+              <span style={{
+                fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:999,
+                background: v==='approved' ? '#22c55e20' : '#f59e0b20',
+                color:      v==='approved' ? '#22c55e'   : '#f59e0b',
+              }}>{v==='approved' ? '✓ Approved' : '⏳ Pending'}</span>
+            )},
+            { key:'type',       label:'Type' },
+            { key:'name',       label:'Name / Route' },
+            { key:'cat',        label:'Category' },
+            { key:'price',      label:'Price' },
+            { key:'loc',        label:'Location' },
+            { key:'author',     label:'Author' },
+            { key:'created_at', label:'Posted', render: v => fmtDate(v) },
+          ];
+          return (
+            <div>
+              <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:6, flexWrap:'wrap'}}>
+                <h1 style={{fontSize:22, fontWeight:700, color:'#f1f5f9'}}>Marketplace</h1>
+                {pendingRows.length > 0 && (
+                  <span style={{background:'#f59e0b', color:'#000', fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:999}}>
+                    {pendingRows.length} pending
+                  </span>
+                )}
+              </div>
+              <p style={{fontSize:13, color:'#64748b', marginBottom:20}}>Review and approve user-submitted listings before they go live.</p>
+
+              {/* Filter tabs */}
+              <div style={{display:'flex', gap:8, marginBottom:20}}>
+                {[
+                  { id:'pending',  label:`⏳ Pending Review (${pendingRows.length})` },
+                  { id:'approved', label:`✓ Approved (${approvedRows.length})` },
+                  { id:'all',      label:`All (${market.length})` },
+                ].map(tab => (
+                  <button key={tab.id} onClick={()=>setMarketTab(tab.id)} style={{
+                    padding:'8px 16px', borderRadius:10, border:'none', cursor:'pointer', fontFamily:'inherit',
+                    fontSize:12.5, fontWeight:600, transition:'all .15s',
+                    background: marketTab===tab.id ? (tab.id==='pending' ? '#f59e0b' : tab.id==='approved' ? '#22c55e' : '#0EBAC7') : '#1a1f2e',
+                    color: marketTab===tab.id ? '#000' : '#64748b',
+                    border: marketTab===tab.id ? 'none' : '1px solid #1e293b',
+                  }}>{tab.label}</button>
+                ))}
+              </div>
+
+              {/* Empty state for pending */}
+              {marketTab === 'pending' && pendingRows.length === 0 && (
+                <div style={{background:'#1a1f2e', borderRadius:16, border:'1px solid #1e293b', padding:'48px 24px', textAlign:'center'}}>
+                  <div style={{fontSize:36, marginBottom:12}}>✅</div>
+                  <div style={{fontWeight:700, fontSize:16, color:'#f1f5f9', marginBottom:6}}>All caught up!</div>
+                  <div style={{fontSize:13, color:'#64748b'}}>No marketplace posts waiting for approval.</div>
+                </div>
+              )}
+
+              {/* Table */}
+              {displayRows.length > 0 && (
+                <div style={{background:'#1a1f2e', borderRadius:16, border:'1px solid #1e293b', overflow:'hidden'}}>
+                  <DataTable
+                    loading={loading}
+                    rows={displayRows}
+                    columns={mktCols}
+                    onApprove={approveMarket}
+                    onReject={rejectMarket}
+                    onDelete={row => deleteRow('marketplace', row)}
+                  />
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Vacations */}
         {section === 'vacations' && (

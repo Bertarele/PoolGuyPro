@@ -282,7 +282,8 @@ function App() {
     const normMkt = r => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
       condition:r.condition, price:r.price, priceMode:r.price_mode,
       loc:r.loc, routeName:r.route_name, clients:r.clients,
-      revenue:r.revenue, asking:r.asking, area:r.area, author:r.author });
+      revenue:r.revenue, asking:r.asking, area:r.area, author:r.author,
+      status: r.status || 'pending' });
 
     // Initial fetch
     Promise.all([
@@ -336,6 +337,7 @@ function App() {
       price_mode: data.priceMode, loc: data.loc,
       route_name: data.routeName, clients: data.clients,
       revenue: data.revenue, asking: data.asking, area: data.area, author: user.name,
+      status: 'pending',
     } : { ...data, author: user.name };
 
     window.sb.from(col).insert(row)
