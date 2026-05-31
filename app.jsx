@@ -259,6 +259,17 @@ function App() {
   const [helpOpen,       setHelpOpen]        = React.useState(false);
   const [privacyOpen,    setPrivacyOpen]     = React.useState(false);
 
+  // ── Dark mode ─────────────────────────────────────────────────
+  const [darkMode, setDarkModeState] = React.useState(() => {
+    try { return localStorage.getItem('pg_dark') === '1'; } catch(e) { return false; }
+  });
+  React.useEffect(() => {
+    const stage = document.getElementById('stage');
+    if (stage) stage.setAttribute('data-pg-dark', darkMode ? '1' : '0');
+    try { localStorage.setItem('pg_dark', darkMode ? '1' : '0'); } catch(e) {}
+  }, [darkMode]);
+  const toggleDark = React.useCallback(() => setDarkModeState(v => !v), []);
+
   // ── Live Firestore data ────────────────────────────────────
   const [liveJobs,      setLiveJobs]      = React.useState([]);
   const [liveTechs,     setLiveTechs]     = React.useState([]);
@@ -397,6 +408,7 @@ function App() {
     openPublicProfile:  (u)   => setPublicProfileUser(u),
     openHelp:           ()    => setHelpOpen(true),
     openPrivacy:        ()    => setPrivacyOpen(true),
+    darkMode, toggleDark,
     onLogout: () => {
       if (window.sb) window.sb.auth.signOut();
       setIsLoggedIn(false);

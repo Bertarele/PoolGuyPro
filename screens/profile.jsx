@@ -3,7 +3,8 @@
 function ProfileScreen({ ctx }) {
   const { lang, user, setUser, openPaywall, regions, openRegionEditor,
           openLanguagePicker, openApplicants, openVerification, openPushNotif, openFeedback,
-          openEditProfile, onLogout, openHelp, openPrivacy } = ctx;
+          openEditProfile, onLogout, openHelp, openPrivacy,
+          darkMode, toggleDark } = ctx;
   const t = STRINGS[lang];
 
   const typeIcon = (type) => {
@@ -169,6 +170,18 @@ function ProfileScreen({ ctx }) {
               label={lang==='pt'?'Enviar Feedback':lang==='es'?'Enviar Feedback':'Send Feedback'}
               detail={lang==='pt'?'Beta':'Beta'}
               chev onClick={openFeedback}/>
+            <SettingRow
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>}
+              label={lang==='pt'?'Modo Escuro':lang==='es'?'Modo Oscuro':'Dark Mode'}
+              right={
+                <div
+                  onClick={e=>{ e.stopPropagation(); toggleDark && toggleDark(); }}
+                  className={'pg-toggle' + (darkMode ? ' on' : '')}
+                  style={{flexShrink:0}}
+                />
+              }
+              onClick={toggleDark}
+            />
             <SettingRow icon={Icon.lock(18,'var(--pg-blue-500)')} label={t.privacy} chev last onClick={openPrivacy}/>
           </div>
         </Section>
@@ -241,7 +254,7 @@ function Section({ title, action, onAction, children }) {
   );
 }
 
-function SettingRow({ icon, label, detail, chev, last, onClick }) {
+function SettingRow({ icon, label, detail, chev, last, onClick, right }) {
   return (
     <div onClick={onClick} style={{
       display:'flex', alignItems:'center', gap:12, padding:'13px 14px',
@@ -251,6 +264,7 @@ function SettingRow({ icon, label, detail, chev, last, onClick }) {
       <div style={{width:32, height:32, borderRadius:8, background:'var(--pg-blue-100)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>{icon}</div>
       <div style={{flex:1, fontSize:14, fontWeight:500, color:'var(--pg-ink-900)'}}>{label}</div>
       {detail && <div style={{fontSize:13, color:'var(--pg-ink-500)'}}>{detail}</div>}
+      {right}
       {chev && Icon.chev(14,'var(--pg-ink-400)')}
     </div>
   );
