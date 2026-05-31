@@ -45,6 +45,14 @@ function QuickPoolsScreen({ ctx }) {
             </div>
           </div>
         }
+        right={
+          <div style={{position:'relative', display:'inline-flex'}}>
+            <IconButton dark onClick={() => openChat && openChat()}>
+              {Icon.msg(20, '#fff')}
+            </IconButton>
+            <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>
+          </div>
+        }
       >
         {/* Notification regions indicator */}
         <div style={{

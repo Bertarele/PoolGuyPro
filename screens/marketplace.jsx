@@ -127,6 +127,14 @@ function MarketplaceScreen({ ctx }) {
           </div>
         }
         leftBack onBack={()=>goTab('home')}
+        right={
+          <div style={{position:'relative', display:'inline-flex'}}>
+            <IconButton dark onClick={() => openChat && openChat()}>
+              {Icon.msg(20, '#fff')}
+            </IconButton>
+            <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>
+          </div>
+        }
       >
         {/* Stats strip below title */}
         <div style={{display:'flex', alignItems:'center', gap:12, marginTop:10, paddingTop:10, borderTop:'1px solid rgba(255,255,255,0.12)'}}>

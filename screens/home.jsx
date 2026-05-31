@@ -63,6 +63,17 @@ function HomeScreen({ ctx }) {
         right={
           <>
             <LangPill lang={lang} setLang={setLang} onDark/>
+            <div style={{position:'relative', display:'inline-flex'}}>
+              <IconButton dark onClick={() => ctx.openChat && ctx.openChat()}>
+                {Icon.msg(20, '#fff')}
+              </IconButton>
+              <span style={{
+                position:'absolute', top:5, right:5,
+                width:8, height:8, borderRadius:'50%',
+                background:'#FF3B30', border:'1.5px solid #011B5A',
+                pointerEvents:'none',
+              }}/>
+            </div>
             <IconButton dark onClick={openNotifications} badge>{Icon.bell(20, '#fff')}</IconButton>
           </>
         }
