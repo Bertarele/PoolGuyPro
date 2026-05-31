@@ -234,8 +234,25 @@ function ProfileScreen({ ctx }) {
           </div>
         </Section>
 
+        {/* Admin Panel button — only for admins */}
+        {user.role === 'admin' && (
+          <button onClick={() => window.open('admin.html', '_blank')} style={{
+            width:'100%', padding:'13px 14px', borderRadius:12, marginBottom:10,
+            border:'1px solid rgba(14,186,199,0.35)',
+            background:'linear-gradient(135deg, rgba(14,186,199,0.12), rgba(13,114,128,0.08))',
+            color:'#0EBAC7', fontWeight:700, fontSize:14,
+            cursor:'pointer', fontFamily:'inherit',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            {lang==='pt' ? 'Painel Admin' : lang==='es' ? 'Panel Admin' : 'Admin Panel'}
+          </button>
+        )}
+
         <button onClick={onLogout} style={{
-          padding:'13px 14px', borderRadius:12, border:'1px solid var(--pg-ink-200)',
+          width:'100%', padding:'13px 14px', borderRadius:12, border:'1px solid var(--pg-ink-200)',
           background:'transparent', color:'var(--pg-danger)', fontWeight:600, fontSize:14,
           cursor:'pointer', fontFamily:'inherit',
         }}>{t.logout}</button>
