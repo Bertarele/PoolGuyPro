@@ -192,9 +192,12 @@ function App() {
   const loadProfile = React.useCallback(async (sbUser) => {
     if (!sbUser || !window.sb) return;
     const { data: profile } = await window.sb.from('profiles').select('*').eq('id', sbUser.id).single();
+    // Sanitize: never use an email address as a display name
+    const rawName = profile?.name || '';
+    const cleanName = (rawName && !rawName.includes('@')) ? rawName : '';
     setUser(u => ({
       ...u,
-      name:     profile?.name     || '',
+      name:     cleanName,
       phone:    profile?.phone    || '',
       region:   profile?.region   || '',
       role:     profile?.role     || 'user',

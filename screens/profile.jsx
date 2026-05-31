@@ -25,9 +25,15 @@ function ProfileScreen({ ctx }) {
       <NavyBar title={
         <div>
           <div style={{fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.50)', letterSpacing:'0.10em', textTransform:'uppercase', marginBottom:3}}>{t.myProfile}</div>
-          <div style={{fontFamily:'var(--pg-font-display)', fontSize:21, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1}}>
-            {user.name.split(' ')[0]} <span style={{fontWeight:400, opacity:0.70}}>{user.name.split(' ').slice(1).join(' ')}</span>
-          </div>
+          {(() => {
+            const dn = (user.name && !user.name.includes('@')) ? user.name : (user.email ? user.email.split('@')[0] : '');
+            const parts = dn.split(' ');
+            return (
+              <div style={{fontFamily:'var(--pg-font-display)', fontSize:21, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1}}>
+                {parts[0]} <span style={{fontWeight:400, opacity:0.70}}>{parts.slice(1).join(' ')}</span>
+              </div>
+            );
+          })()}
         </div>
       } right={
         <div style={{display:'flex', alignItems:'center', gap:6}}>

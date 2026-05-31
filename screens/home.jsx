@@ -71,7 +71,7 @@ function HomeScreen({ ctx }) {
         <div style={{marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
           <div>
             <div style={{fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.80)', letterSpacing:'-0.01em'}}>
-              {greetWord}, {user.name.split(' ')[0]}! 👋
+              {greetWord}, {myAuthor ? myAuthor.split(' ')[0] : (user.email ? user.email.split('@')[0] : '')}! 👋
             </div>
             <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
               {Icon.pin(10,'var(--pg-aqua-400)')}
