@@ -38,9 +38,12 @@
       }
       if(op==='update'){
         var qs=filters.join('&');
-        var r=await fetch(url+(qs?'?'+qs:''),{method:'PATCH',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+        // Use return=representation so we can detect 0-row updates (silent RLS block)
+        var r=await fetch(url+(qs?'?'+qs:''),{method:'PATCH',headers:Object.assign({},h,{'Prefer':'return=representation'}),body:JSON.stringify(body)});
         if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Update failed '+r.status}};}
-        return{data:null,error:null};
+        var d=[]; try{d=await r.json();}catch(x){}
+        if(!Array.isArray(d)||d.length===0) return{data:null,error:{message:'No rows updated — check Supabase RLS policies for UPDATE on this table.'}};
+        return{data:d,error:null};
       }
       if(op==='delete'){
         var qs=filters.join('&');
@@ -313,16 +316,21 @@ function AdminApp({ adminUser, onLogout }) {
     fetchAll();
   };
 
+  const [rlsModalOpen, setRlsModalOpen] = React.useState(false);
+
   const approveMarket = async (row) => {
-    console.log('[Admin] Approving marketplace id=', row.id);
-    const { error } = await window.sb.from('marketplace').update({ status: 'approved' }).eq('id', row.id);
+    console.log('[Admin] Approving id=', row.id);
+    const { data, error } = await window.sb.from('marketplace').update({ status: 'approved' }).eq('id', row.id);
     if (error) {
       console.error('[Admin] Approve error:', error);
-      showToast('Error: ' + error.message, false);
+      if (error.message && error.message.includes('RLS')) {
+        setRlsModalOpen(true);
+      } else {
+        showToast('❌ ' + error.message, false);
+      }
       return;
     }
-    console.log('[Admin] Approved ok');
-    // Optimistic UI — update local state immediately
+    console.log('[Admin] Approved ok, rows=', data);
     setMarket(prev => prev.map(m => m.id === row.id ? {...m, status:'approved'} : m));
     showToast('✓ Post approved and published!');
   };
@@ -628,6 +636,61 @@ function AdminApp({ adminUser, onLogout }) {
           background: toast.ok ? '#0EBAC7' : '#ef4444', color:'#fff',
           fontWeight:600, fontSize:13.5, boxShadow:'0 8px 24px rgba(0,0,0,0.4)', zIndex:999,
         }}>{toast.msg}</div>
+      )}
+
+      {/* RLS Fix Modal */}
+      {rlsModalOpen && (
+        <div style={{
+          position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:1000,
+          display:'flex', alignItems:'center', justifyContent:'center', padding:24,
+        }} onClick={()=>setRlsModalOpen(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{
+            background:'#1a1f2e', borderRadius:20, padding:28, maxWidth:560, width:'100%',
+            border:'1px solid #334155', boxShadow:'0 24px 64px rgba(0,0,0,0.6)',
+          }}>
+            <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:16}}>
+              <div style={{fontSize:28}}>🔒</div>
+              <div>
+                <div style={{fontWeight:700, fontSize:17, color:'#f1f5f9'}}>Supabase RLS is blocking the update</div>
+                <div style={{fontSize:12, color:'#64748b', marginTop:2}}>The approve button works, but the database policy is rejecting it.</div>
+              </div>
+            </div>
+            <div style={{fontSize:13, color:'#94a3b8', marginBottom:14, lineHeight:1.6}}>
+              Run this SQL in <strong style={{color:'#f1f5f9'}}>Supabase → SQL Editor</strong>:
+            </div>
+            <pre style={{
+              background:'#0f1117', borderRadius:10, padding:'14px 16px',
+              fontSize:12, color:'#7dd3fc', overflowX:'auto', lineHeight:1.7,
+              border:'1px solid #1e293b', margin:'0 0 18px',
+            }}>{`-- Allow admins to approve/reject marketplace posts
+CREATE POLICY "Admins can update marketplace"
+ON marketplace FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role = 'admin'
+  )
+);
+
+CREATE POLICY "Admins can delete marketplace"
+ON marketplace FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role = 'admin'
+  )
+);`}</pre>
+            <div style={{fontSize:12, color:'#64748b', marginBottom:18}}>
+              After running the SQL, click Approve again — it will work.
+            </div>
+            <button onClick={()=>setRlsModalOpen(false)} style={{
+              width:'100%', padding:'12px', borderRadius:12, border:'none',
+              background:'#0EBAC7', color:'#fff', fontWeight:700, fontSize:14, cursor:'pointer',
+            }}>Got it — I'll run the SQL</button>
+          </div>
+        </div>
       )}
     </div>
   );
