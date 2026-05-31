@@ -269,6 +269,18 @@ function Sheet({ open, onClose, children, height='auto' }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!mounted) return null;
+
+  // Desktop: constrain width with `left: calc(50% - half)` so CSS slide animations
+  // (which only use translateY) don't conflict with horizontal centering.
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 540;
+  const desktopW  = isDesktop ? Math.min(520, Math.round(window.innerWidth * 0.96)) : null;
+  const desktopStyle = isDesktop ? {
+    left:  `calc(50% - ${Math.floor(desktopW / 2)}px)`,
+    right: 'auto',
+    width: desktopW,
+    borderRadius: '20px 20px 0 0',
+  } : {};
+
   return (
     <>
       <div
@@ -279,7 +291,7 @@ function Sheet({ open, onClose, children, height='auto' }) {
       />
       <div
         className={`pg-sheet${closing ? ' pg-sheet-down' : ''}`}
-        style={{height}}
+        style={{height, ...desktopStyle}}
         onWheel={e => e.stopPropagation()}
       >
         <div className="pg-sheet-grabber" />

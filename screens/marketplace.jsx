@@ -741,10 +741,12 @@ function MarketplaceScreen({ ctx }) {
                         display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
                         {item.name}
                       </div>
-                      {/* Description line — condition + location */}
+                      {/* Description — show text if available, else condition · location */}
                       <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.4, flex:1,
                         display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
-                        {[item.condition, item.loc].filter(Boolean).join(' · ') || '—'}
+                        {item.description
+                          ? item.description
+                          : ([item.condition, item.loc].filter(Boolean).join(' · ') || '—')}
                       </div>
                       {/* Divider */}
                       <div style={{height:1, background:'var(--pg-ink-100)', margin:'10px 0'}}/>
