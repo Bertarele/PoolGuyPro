@@ -160,6 +160,19 @@ button { font-family: inherit; }
     0 -16px 56px rgba(4, 13, 24, 0.22),
     0 -3px 10px rgba(0,0,0,0.06);
 }
+/* On wider screens, cap the sheet width so it doesn't look ugly stretched */
+@media (min-width: 540px) {
+  .pg-sheet {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(520px, 96vw);
+    border-radius: 26px 26px 0 0;
+  }
+  .pg-sheet-down {
+    transform: translateX(-50%) translateY(100%) !important;
+  }
+}
 .pg-sheet-down {
   animation: pg-sheet-down 0.26s cubic-bezier(.36, 0, .66, 0) forwards;
 }

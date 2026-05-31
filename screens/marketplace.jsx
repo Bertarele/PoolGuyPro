@@ -1,9 +1,54 @@
 // marketplace.jsx — navy header + dual seg + distance + categories
 
+// ── Photo Carousel ────────────────────────────────────────────
+function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
+  const photos = urls.filter(Boolean);
+  const [idx, setIdx] = React.useState(0);
+  const prev = () => setIdx(i => (i - 1 + photos.length) % photos.length);
+  const next = () => setIdx(i => (i + 1) % photos.length);
+
+  return (
+    <div style={{position:'relative', height, background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
+      {photos.length > 0
+        ? <img src={photos[idx]} alt="" style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+        : <EquipImg category={fallbackCat} height={height}/>
+      }
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.18) 0%,transparent 45%,rgba(0,0,0,0.25) 100%)',pointerEvents:'none'}}/>
+
+      {/* Arrows — only if multiple photos */}
+      {photos.length > 1 && (
+        <>
+          <button onClick={prev} style={{
+            position:'absolute', left:10, top:'50%', transform:'translateY(-50%)',
+            width:32, height:32, borderRadius:'50%', border:'none', cursor:'pointer',
+            background:'rgba(0,0,0,0.45)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
+          }}>‹</button>
+          <button onClick={next} style={{
+            position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
+            width:32, height:32, borderRadius:'50%', border:'none', cursor:'pointer',
+            background:'rgba(0,0,0,0.45)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
+          }}>›</button>
+          {/* Dot indicators */}
+          <div style={{position:'absolute', bottom:10, left:'50%', transform:'translateX(-50%)', display:'flex', gap:5}}>
+            {photos.map((_,i) => (
+              <div key={i} onClick={()=>setIdx(i)} style={{
+                width: i===idx ? 18 : 6, height:6, borderRadius:3, cursor:'pointer',
+                background: i===idx ? '#fff' : 'rgba(255,255,255,0.5)',
+                transition:'width .2s, background .2s',
+              }}/>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
 function ViewListingSheet({ item, lang, onClose, openChat }) {
   if (!item) return null;
 
+  const allPhotos = (item.photoUrls && item.photoUrls.length > 0) ? item.photoUrls : (item.photoUrl ? [item.photoUrl] : []);
   const periodSfx = item.type === 'rent'
     ? (item.rentPeriod === 'week' ? (lang==='pt'?'/sem':'/wk') : item.rentPeriod === 'month' ? (lang==='pt'?'/mês':'/mo') : (lang==='pt'?'/dia':'/day'))
     : '';
@@ -13,11 +58,6 @@ function ViewListingSheet({ item, lang, onClose, openChat }) {
     ? (item.author.includes('@') ? item.author.split('@')[0] : item.author)
     : 'Unknown';
 
-  const pill = (label, bg='var(--pg-ink-100)', color='var(--pg-ink-700)') => (
-    <span style={{display:'inline-block', padding:'4px 11px', borderRadius:999,
-      background:bg, color, fontSize:11.5, fontWeight:600}}>{label}</span>
-  );
-
   const handleContact = () => {
     if (openChat) openChat(item.author || 'Seller');
     if (onClose) onClose();
@@ -25,91 +65,107 @@ function ViewListingSheet({ item, lang, onClose, openChat }) {
 
   return (
     <div style={{padding:'0 0 36px'}}>
-      {/* Hero image */}
-      <div style={{position:'relative', height:200, background:'linear-gradient(135deg,#e2e8f0,#cbd5e1)', overflow:'hidden', flexShrink:0}}>
-        {item.photoUrl
-          ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
-          : <EquipImg category={item.cat||'Tools'} height={200}/>
-        }
-        <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.20) 0%,transparent 50%,rgba(0,0,0,0.30) 100%)'}}/>
-        {/* Category badge */}
-        {item.cat && (
-          <span style={{position:'absolute',top:14,right:16,
-            fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:8,
-            background:'rgba(0,0,0,0.55)',color:'#fff',letterSpacing:'0.06em',
-            backdropFilter:'blur(4px)',textTransform:'uppercase'}}>{item.cat}</span>
-        )}
+      {/* Photo carousel */}
+      <div style={{position:'relative'}}>
+        <PhotoCarousel urls={allPhotos} fallbackCat={item.cat||'Tools'} height={240}/>
         {/* Type badge */}
-        <span style={{position:'absolute',top:14,left:16,
-          fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:8,
-          background: item.type==='rent' ? 'rgba(14,186,199,0.90)' : 'rgba(59,130,246,0.90)',
-          color:'#fff',letterSpacing:'0.06em',backdropFilter:'blur(4px)',textTransform:'uppercase'}}>
+        <span style={{position:'absolute', top:14, left:16, zIndex:2,
+          fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:8,
+          background: item.type==='rent' ? 'rgba(14,186,199,0.92)' : 'rgba(59,130,246,0.92)',
+          color:'#fff', letterSpacing:'0.06em', backdropFilter:'blur(4px)', textTransform:'uppercase'}}>
           {item.type==='rent' ? (lang==='pt'?'ALUGUEL':lang==='es'?'ALQUILER':'RENTAL')
-           : item.type==='route' ? (lang==='pt'?'ROTA':lang==='es'?'RUTA':'ROUTE')
            : (lang==='pt'?'VENDA':lang==='es'?'VENTA':'FOR SALE')}
         </span>
+        {item.cat && (
+          <span style={{position:'absolute', top:14, right:16, zIndex:2,
+            fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:8,
+            background:'rgba(0,0,0,0.55)', color:'#fff', letterSpacing:'0.06em',
+            backdropFilter:'blur(4px)', textTransform:'uppercase'}}>{item.cat}</span>
+        )}
       </div>
 
       {/* Content */}
-      <div style={{padding:'20px 20px 0'}}>
-        {/* Title */}
-        <div style={{fontSize:20, fontWeight:800, letterSpacing:'-0.02em', lineHeight:1.2, color:'var(--pg-ink-900)', marginBottom:10}}>
-          {item.name}
-        </div>
-
-        {/* Price */}
-        <div style={{marginBottom:16}}>
-          {item.priceMode === 'neg' ? (
-            <span style={{fontSize:14, fontWeight:700, padding:'6px 14px', borderRadius:999,
-              background:'var(--pg-blue-50)', color:'var(--pg-blue-700)',
-              border:'1px solid var(--pg-blue-100)'}}>
-              🤝 {lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}
-            </span>
-          ) : (
-            <div style={{display:'flex', alignItems:'baseline', gap:4}}>
-              <span style={{fontFamily:'var(--pg-font-display)', fontSize:32, fontWeight:800,
-                color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
-                ${item.price}
+      <div style={{padding:'18px 20px 0'}}>
+        {/* Title + price */}
+        <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:14}}>
+          <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, letterSpacing:'-0.02em', lineHeight:1.2, color:'var(--pg-ink-900)', flex:1, minWidth:0}}>
+            {item.name}
+          </h2>
+          <div style={{textAlign:'right', flexShrink:0}}>
+            {item.priceMode === 'neg' ? (
+              <span style={{fontSize:13, fontWeight:700, padding:'5px 12px', borderRadius:999,
+                background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', border:'1px solid var(--pg-blue-100)', whiteSpace:'nowrap'}}>
+                🤝 {lang==='pt'?'Negociável':'Negotiable'}
               </span>
-              {periodSfx && <span style={{fontSize:13, color:'var(--pg-ink-500)', fontWeight:500}}>{periodSfx}</span>}
-            </div>
-          )}
+            ) : (
+              <div>
+                <div style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:800, color:'var(--pg-blue-500)', letterSpacing:'-0.03em', lineHeight:1}}>
+                  ${item.price}
+                </div>
+                {periodSfx && <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:2, textAlign:'right'}}>{periodSfx}</div>}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Condition / Location pills */}
-        <div style={{display:'flex', flexWrap:'wrap', gap:8, marginBottom:18}}>
-          {item.condition && pill(item.condition)}
-          {item.loc && pill(`📍 ${item.loc}`)}
+        <div style={{display:'flex', flexWrap:'wrap', gap:7, marginBottom:14}}>
+          {item.condition && <span style={{fontSize:12, fontWeight:600, padding:'4px 11px', borderRadius:999, background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', border:'1px solid var(--pg-blue-100)'}}>{item.condition}</span>}
+          {item.loc && <span style={{fontSize:12, fontWeight:600, padding:'4px 11px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>📍 {item.loc}</span>}
         </div>
 
-        {/* Seller info */}
-        <div style={{display:'flex', alignItems:'center', gap:10, padding:'13px 16px',
-          background:'var(--pg-ink-50)', borderRadius:14, border:'1px solid var(--pg-ink-150)', marginBottom:20}}>
-          <div style={{width:40, height:40, borderRadius:'50%', flexShrink:0,
+        {/* Description */}
+        {item.description && (
+          <div style={{marginBottom:16, padding:'12px 14px', background:'var(--pg-ink-50)', borderRadius:12, border:'1px solid var(--pg-ink-150,var(--pg-ink-200))'}}>
+            <div style={{fontSize:10.5, fontWeight:700, color:'var(--pg-ink-400)', letterSpacing:'0.07em', textTransform:'uppercase', marginBottom:5}}>
+              {lang==='pt'?'DESCRIÇÃO':lang==='es'?'DESCRIPCIÓN':'DESCRIPTION'}
+            </div>
+            <div style={{fontSize:13.5, color:'var(--pg-ink-700)', lineHeight:1.55}}>{item.description}</div>
+          </div>
+        )}
+
+        {/* Seller card */}
+        <div style={{display:'flex', alignItems:'center', gap:12, padding:'13px 15px',
+          background:'var(--pg-ink-50)', borderRadius:14, border:'1px solid var(--pg-ink-200)', marginBottom:16}}>
+          <div style={{width:44, height:44, borderRadius:'50%', flexShrink:0,
             background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
             display:'flex', alignItems:'center', justifyContent:'center',
-            color:'#fff', fontSize:15, fontWeight:700}}>
+            color:'#fff', fontSize:17, fontWeight:700, letterSpacing:'-0.02em'}}>
             {authorInitial}
           </div>
-          <div>
-            <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
-            <div style={{fontSize:11.5, color:'var(--pg-ink-500)'}}>{lang==='pt'?'Vendedor verificado':lang==='es'?'Vendedor verificado':'Verified seller'}</div>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
+            <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>
+              {lang==='pt'?'✓ Membro verificado':lang==='es'?'✓ Miembro verificado':'✓ Verified member'}
+            </div>
           </div>
+          <div style={{fontSize:11, color:'var(--pg-ink-400)', flexShrink:0}}>Pool Guy</div>
         </div>
 
-        {/* Contact button */}
-        <button onClick={handleContact} style={{
-          width:'100%', height:52, borderRadius:14, border:'none', cursor:'pointer',
-          fontFamily:'inherit', fontSize:15, fontWeight:700,
-          background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-          color:'#fff', boxShadow:'0 4px 14px rgba(0,119,182,0.30)',
-          display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-        }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          {lang==='pt'?'Entrar em contato':lang==='es'?'Contactar':'Contact Seller'}
-        </button>
+        {/* Action buttons */}
+        <div style={{display:'flex', gap:10}}>
+          <button onClick={handleContact} style={{
+            flex:1, height:52, borderRadius:14, border:'none', cursor:'pointer',
+            fontFamily:'inherit', fontSize:15, fontWeight:700,
+            background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+            color:'#fff', boxShadow:'0 4px 14px rgba(0,119,182,0.28)',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+          }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            {lang==='pt'?'Entrar em contato':lang==='es'?'Contactar':'Contact Seller'}
+          </button>
+          <button onClick={handleContact} style={{
+            width:52, height:52, borderRadius:14, border:'1.5px solid var(--pg-blue-200)',
+            background:'var(--pg-blue-50)', color:'var(--pg-blue-600)', cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+          }} title={lang==='pt'?'Fazer oferta':'Make an offer'}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -121,53 +177,57 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
   const [saving,  setSaving]    = React.useState(false);
   const [deleting,setDeleting]  = React.useState(false);
   const [form,    setForm]      = React.useState({
-    name:       item.name       || '',
-    price:      item.price      || '',
-    priceMode:  item.priceMode  || 'fixed',
-    loc:        item.loc        || '',
-    condition:  item.condition  || '',
-    cat:        item.cat        || '',
+    name:        item.name        || '',
+    description: item.description || '',
+    price:       item.price       || '',
+    priceMode:   item.priceMode   || 'fixed',
+    loc:         item.loc         || '',
+    condition:   item.condition   || '',
+    cat:         item.cat         || '',
   });
   const set = (k,v) => setForm(f=>({...f,[k]:v}));
 
-  const isPending  = item.status === 'pending';
+  const allPhotos = (item.photoUrls && item.photoUrls.length > 0) ? item.photoUrls : (item.photoUrl ? [item.photoUrl] : []);
+  const isPending   = item.status === 'pending';
   const statusColor = isPending ? '#D97706' : '#16A34A';
   const statusBg    = isPending ? '#FEF3C7' : '#DCFCE7';
   const statusLabel = isPending
     ? (lang==='pt'?'⏳ Em revisão':lang==='es'?'⏳ En revisión':'⏳ Under review')
     : (lang==='pt'?'✓ Ativo':lang==='es'?'✓ Activo':'✓ Active');
 
+  const periodSfx = item.type === 'rent'
+    ? (item.rentPeriod === 'week' ? (lang==='pt'?'/sem':'/wk') : item.rentPeriod === 'month' ? (lang==='pt'?'/mês':'/mo') : (lang==='pt'?'/dia':'/day'))
+    : '';
+
   const handleSave = async () => {
     if (!window.sb) return;
     setSaving(true);
     const patch = {
-      name:       form.name,
-      price:      form.price || null,
-      price_mode: form.priceMode,
-      loc:        form.loc,
-      condition:  form.condition,
-      cat:        form.cat,
-      status:     'pending', // always back to review on edit
+      name:        form.name,
+      description: form.description || null,
+      price:       form.price || null,
+      price_mode:  form.priceMode,
+      loc:         form.loc,
+      condition:   form.condition,
+      cat:         form.cat,
+      status:      'pending',
     };
     const { error } = await window.sb.from('marketplace').update(patch).eq('id', item._id);
     setSaving(false);
-    if (error) {
-      if (showToast) showToast('❌ ' + error.message);
-      return;
-    }
-    if (showToast) showToast(lang==='pt'?'✓ Anúncio atualizado — aguardando revisão':lang==='es'?'✓ Anuncio actualizado — en revisión':'✓ Post updated — back under review');
+    if (error) { if (showToast) showToast('❌ ' + error.message); return; }
+    if (showToast) showToast(lang==='pt'?'✓ Anúncio atualizado — aguardando revisão':'✓ Post updated — back under review');
     onUpdated && onUpdated({...item, ...patch});
   };
 
   const handleDelete = async () => {
     if (!window.sb) return;
-    const confirm = window.confirm(lang==='pt'?'Deletar este anúncio? Não pode ser desfeito.':lang==='es'?'¿Eliminar este anuncio? No se puede deshacer.':'Delete this listing? This cannot be undone.');
-    if (!confirm) return;
+    const ok = window.confirm(lang==='pt'?'Deletar este anúncio? Não pode ser desfeito.':'Delete this listing? This cannot be undone.');
+    if (!ok) return;
     setDeleting(true);
     const { error } = await window.sb.from('marketplace').delete().eq('id', item._id);
     setDeleting(false);
     if (error) { if (showToast) showToast('❌ ' + error.message); return; }
-    if (showToast) showToast(lang==='pt'?'🗑️ Anúncio deletado':lang==='es'?'🗑️ Anuncio eliminado':'🗑️ Listing deleted');
+    if (showToast) showToast(lang==='pt'?'🗑️ Anúncio deletado':'🗑️ Listing deleted');
     onDeleted && onDeleted(item._id);
   };
 
@@ -176,34 +236,30 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 
   return (
     <div style={{padding:'0 0 36px'}}>
-      {/* Hero image */}
-      <div style={{position:'relative', height:180, background:'linear-gradient(135deg,#e2e8f0,#cbd5e1)', overflow:'hidden', flexShrink:0}}>
-        {item.photoUrl
-          ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
-          : <EquipImg category={item.cat||'Tools'} height={180}/>
-        }
-        <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.20) 0%,transparent 50%,rgba(0,0,0,0.30) 100%)'}}/>
-        {/* Status badge */}
-        <span style={{
-          position:'absolute',top:14,left:16,
+      {/* Photo carousel with status badge overlay */}
+      <div style={{position:'relative'}}>
+        <PhotoCarousel urls={allPhotos} fallbackCat={item.cat||'Tools'} height={220}/>
+        <span style={{position:'absolute',top:14,left:16,zIndex:2,
           fontSize:11,fontWeight:700,padding:'5px 12px',borderRadius:8,
-          background:statusBg,color:statusColor,letterSpacing:'0.03em',
-        }}>{statusLabel}</span>
-        {/* Category badge */}
-        <span style={{
-          position:'absolute',top:14,right:16,
-          fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:8,
-          background:'rgba(0,0,0,0.50)',color:'#fff',letterSpacing:'0.06em',textTransform:'uppercase',
-        }}>{item.cat||'Tools'}</span>
+          background:statusBg,color:statusColor,letterSpacing:'0.03em'}}>
+          {statusLabel}
+        </span>
+        {item.cat && (
+          <span style={{position:'absolute',top:14,right:16,zIndex:2,
+            fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:8,
+            background:'rgba(0,0,0,0.50)',color:'#fff',letterSpacing:'0.06em',textTransform:'uppercase'}}>
+            {item.cat}
+          </span>
+        )}
       </div>
 
       <div style={{padding:'20px 20px 0'}}>
         {!editing ? (
           /* ── View mode ── */
           <>
-            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12,marginBottom:16}}>
+            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12,marginBottom:12}}>
               <div style={{flex:1,minWidth:0}}>
-                <h2 style={{margin:'0 0 6px',fontFamily:'var(--pg-font-display)',fontSize:22,fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.2,color:'var(--pg-ink-900)'}}>
+                <h2 style={{margin:'0 0 6px',fontFamily:'var(--pg-font-display)',fontSize:21,fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.2,color:'var(--pg-ink-900)'}}>
                   {item.name||'—'}
                 </h2>
                 {item.loc && (
@@ -213,20 +269,37 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
                 )}
               </div>
               <div style={{textAlign:'right',flexShrink:0}}>
-                <div style={{fontFamily:'var(--pg-font-display)',fontSize:28,fontWeight:800,color:'var(--pg-blue-500)',letterSpacing:'-0.03em',lineHeight:1}}>
-                  {item.priceMode==='neg'
-                    ? (lang==='pt'?'Neg.':lang==='es'?'Neg.':'Neg.')
-                    : item.price ? `$${Number(item.price).toLocaleString()}` : '—'}
-                </div>
-                {item.type==='rent' && <div style={{fontSize:11,color:'var(--pg-ink-400)',marginTop:2}}>/dia</div>}
+                {item.priceMode==='neg' ? (
+                  <span style={{fontSize:13,fontWeight:700,padding:'5px 12px',borderRadius:999,
+                    background:'var(--pg-blue-50)',color:'var(--pg-blue-700)',border:'1px solid var(--pg-blue-100)',whiteSpace:'nowrap'}}>
+                    🤝 {lang==='pt'?'Negociável':'Negotiable'}
+                  </span>
+                ) : (
+                  <div>
+                    <div style={{fontFamily:'var(--pg-font-display)',fontSize:26,fontWeight:800,color:'var(--pg-blue-500)',letterSpacing:'-0.03em',lineHeight:1}}>
+                      {item.price ? `$${Number(item.price).toLocaleString()}` : '—'}
+                    </div>
+                    {periodSfx && <div style={{fontSize:11,color:'var(--pg-ink-400)',marginTop:2,textAlign:'right'}}>{periodSfx}</div>}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Details pills */}
-            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:20}}>
-              {item.condition && <span style={{fontSize:12,fontWeight:600,padding:'5px 12px',borderRadius:999,background:'var(--pg-blue-50)',color:'var(--pg-blue-700)',border:'1px solid var(--pg-blue-100)'}}>{item.condition}</span>}
-              {item.type && <span style={{fontSize:12,fontWeight:600,padding:'5px 12px',borderRadius:999,background:'var(--pg-ink-100)',color:'var(--pg-ink-700)'}}>{item.type}</span>}
+            <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:14}}>
+              {item.condition && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-blue-50)',color:'var(--pg-blue-700)',border:'1px solid var(--pg-blue-100)'}}>{item.condition}</span>}
+              {item.type && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-ink-100)',color:'var(--pg-ink-700)'}}>{item.type}</span>}
             </div>
+
+            {/* Description */}
+            {item.description && (
+              <div style={{marginBottom:14,padding:'11px 13px',background:'var(--pg-ink-50)',borderRadius:12,border:'1px solid var(--pg-ink-200)'}}>
+                <div style={{fontSize:10.5,fontWeight:700,color:'var(--pg-ink-400)',letterSpacing:'0.07em',textTransform:'uppercase',marginBottom:5}}>
+                  {lang==='pt'?'DESCRIÇÃO':'DESCRIPTION'}
+                </div>
+                <div style={{fontSize:13.5,color:'var(--pg-ink-700)',lineHeight:1.55}}>{item.description}</div>
+              </div>
+            )}
 
             {isPending && (
               <div style={{padding:'12px 14px',borderRadius:12,background:'#FFFBEB',border:'1px solid #FDE68A',marginBottom:16,display:'flex',alignItems:'flex-start',gap:10}}>
@@ -285,6 +358,12 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
               <div>
                 {lbl(lang==='pt'?'Título':'Title')}
                 <input {...inp} value={form.name} onChange={e=>set('name',e.target.value)}/>
+              </div>
+              <div>
+                {lbl(lang==='pt'?'Descrição':'Description')}
+                <textarea {...inp} value={form.description} onChange={e=>set('description',e.target.value)}
+                  rows={3} placeholder={lang==='pt'?'Descreva o produto, estado de conservação, detalhes importantes…':'Describe the product, condition details, important info…'}
+                  style={{...inp.style, resize:'vertical', minHeight:80, lineHeight:1.5}}/>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div>
@@ -1812,6 +1891,7 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
 // ── Post equipment form (sell or rent) ────────────────────────
 function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
   const [name,        setName]       = React.useState('');
+  const [description, setDescription]= React.useState('');
   const [cat,         setCat]        = React.useState('Pumps');
   const [condition,   setCondition]  = React.useState('likeNew');
   const [price,       setPrice]      = React.useState('');
@@ -1876,6 +1956,15 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
         <div>
           <FormLabel>{t.modelLbl}</FormLabel>
           <input className="pg-field" value={name} onChange={e=>setName(e.target.value)} placeholder={t.modelPh}/>
+        </div>
+
+        {/* Description */}
+        <div>
+          <FormLabel>{lang==='pt'?'Descrição':lang==='es'?'Descripción':'Description'}</FormLabel>
+          <textarea className="pg-field" value={description} onChange={e=>setDescription(e.target.value)}
+            rows={3}
+            placeholder={lang==='pt'?'Ex: Bomba usada por 2 anos, funcionando perfeitamente. Acompanha manual e cabo elétrico original…':lang==='es'?'Ej: Bomba usada por 2 años, funcionando perfectamente…':'e.g. Used for 2 years, works perfectly. Includes original manual and power cable…'}
+            style={{resize:'vertical', minHeight:76, lineHeight:1.5}}/>
         </div>
 
         {/* Category */}
@@ -1954,7 +2043,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
 
       {/* Submit */}
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
-        <button onClick={()=>onSubmit && onSubmit({ type:mode, name, cat, condition, price: priceMode==='neg'?'Negotiable':price, priceMode, loc, rentPeriod: isRent ? rentPeriod : null, photoUrl: photos[0]||null, photos })}
+        <button onClick={()=>onSubmit && onSubmit({ type:mode, name, description, cat, condition, price: priceMode==='neg'?'Negotiable':price, priceMode, loc, rentPeriod: isRent ? rentPeriod : null, photoUrl: photos[0]||null, photos })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.cart(17,'#fff')} {submitLbl}

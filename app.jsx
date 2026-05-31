@@ -309,8 +309,10 @@ function App() {
       condition:r.condition, price:r.price, priceMode:r.price_mode,
       loc:r.loc, routeName:r.route_name, clients:r.clients,
       revenue:r.revenue, asking:r.asking, area:r.area,
+      description: r.description || '',
       author:r.author, author_id:r.author_id || null,
       photoUrl: r.photo_url || null,
+      photoUrls: (r.photo_urls && r.photo_urls.length > 0) ? r.photo_urls : (r.photo_url ? [r.photo_url] : []),
       rentPeriod: r.rent_period || 'day',
       status: r.status || 'pending' });
 
@@ -386,10 +388,12 @@ function App() {
       type: data.type, name: data.name, cat: data.cat,
       condition: data.condition, price: data.price,
       price_mode: data.priceMode, loc: data.loc,
+      description: data.description || null,
       route_name: data.routeName, clients: data.clients,
       revenue: data.revenue, asking: data.asking, area: data.area,
       author: authorName, author_id: user.uid || null,
       photo_url: data.photoUrl || null,
+      photo_urls: (data.photos && data.photos.length > 0) ? data.photos : (data.photoUrl ? [data.photoUrl] : []),
       rent_period: data.rentPeriod || null,
       status: 'pending',
     } : { ...data, author: authorName };
