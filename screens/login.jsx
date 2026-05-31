@@ -408,8 +408,16 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
               <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'var(--pg-ink-500)', marginBottom:6}}>
                 {lang==='pt'?'TELEFONE':lang==='es'?'TELÉFONO':'PHONE'}
               </div>
-              <input className="pg-field" type="tel" value={phone} onChange={e=>setPhone(e.target.value)}
-                placeholder="+1 (954) 000-0000" style={{height:48, fontSize:14}}/>
+              <input className="pg-field" type="tel" value={phone}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  let fmt = digits;
+                  if (digits.length >= 7) fmt = '(' + digits.slice(0,3) + ') ' + digits.slice(3,6) + '-' + digits.slice(6);
+                  else if (digits.length >= 4) fmt = '(' + digits.slice(0,3) + ') ' + digits.slice(3);
+                  else if (digits.length > 0) fmt = '(' + digits;
+                  setPhone(fmt);
+                }}
+                placeholder="(954) 000-0000" style={{height:48, fontSize:14}}/>
             </div>
 
             {/* Searchable region picker */}
