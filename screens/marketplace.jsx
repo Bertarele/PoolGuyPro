@@ -63,7 +63,10 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
     <div style={{padding:'0 0 36px'}}>
       {/* Hero image */}
       <div style={{position:'relative', height:180, background:'linear-gradient(135deg,#e2e8f0,#cbd5e1)', overflow:'hidden', flexShrink:0}}>
-        <EquipImg category={item.cat||'Tools'} height={180}/>
+        {item.photoUrl
+          ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+          : <EquipImg category={item.cat||'Tools'} height={180}/>
+        }
         <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.20) 0%,transparent 50%,rgba(0,0,0,0.30) 100%)'}}/>
         {/* Status badge */}
         <span style={{
@@ -507,7 +510,10 @@ function MarketplaceScreen({ ctx }) {
                     {/* Photo area — enforced 4:3 ratio */}
                     <div style={{position:'relative', paddingTop:'72%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
                       <div style={{position:'absolute', inset:0}}>
-                        <EquipImg category={item.cat || 'Tools'} height={'100%'}/>
+                        {item.photoUrl
+                          ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                          : <EquipImg category={item.cat || 'Tools'} height={'100%'}/>
+                        }
                       </div>
                       {/* Gradient overlay for badges */}
                       <div style={{position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 45%, transparent 60%, rgba(0,0,0,0.10) 100%)', pointerEvents:'none'}}/>

@@ -205,7 +205,10 @@ function HomeScreen({ ctx }) {
                       width:58, height:58, borderRadius:12, overflow:'hidden', flexShrink:0,
                       background:'linear-gradient(135deg, var(--pg-blue-100), var(--pg-ink-100))',
                     }}>
-                      <EquipImg category={item.cat || (item.type==='route'?'Routes':'Tools')} height={58}/>
+                      {item.photoUrl
+                        ? <img src={item.photoUrl} alt={item.name} style={{width:58, height:58, objectFit:'cover', borderRadius:12}}/>
+                        : <EquipImg category={item.cat || (item.type==='route'?'Routes':'Tools')} height={58}/>
+                      }
                     </div>
                     {/* Info */}
                     <div style={{flex:1, minWidth:0}}>
