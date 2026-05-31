@@ -191,13 +191,25 @@ function App() {
   });
   const loadProfile = React.useCallback(async (sbUser) => {
     if (!sbUser || !window.sb) return;
-    let { data: profile } = await window.sb.from('profiles').select('*').eq('id', sbUser.id).single();
+    // Set uid+email immediately — doesn't need DB, ensures isMyPost() works even if query fails
+    setUser(u => ({ ...u, uid: sbUser.id, email: sbUser.email }));
+
+    let { data: profile, error: pErr } = await window.sb.from('profiles').select('*').eq('id', sbUser.id).single();
+    if (pErr) {
+      console.warn('[loadProfile] DB error:', pErr.message, '— using cached role');
+      // Use last known role from localStorage as fallback (set on successful login)
+      const cachedRole = (() => { try { return localStorage.getItem('pg_role') || 'user'; } catch(e) { return 'user'; } })();
+      setUser(u => ({ ...u, role: cachedRole }));
+      return;
+    }
     // If no profile row exists, create a minimal one so the app works correctly
     if (!profile) {
       const fallbackName = sbUser.email ? sbUser.email.split('@')[0] : '';
       await window.sb.from('profiles').insert({ id: sbUser.id, name: fallbackName, role: 'user' });
       profile = { name: fallbackName, role: 'user', phone: '', region: '', photo_url: '' };
     }
+    // Cache role for future sessions (used as fallback if DB is unreachable on page reload)
+    if (profile?.role) { try { localStorage.setItem('pg_role', profile.role); } catch(e) {} }
     // Sanitize: never use an email address as a display name
     const rawName = profile?.name || '';
     const cleanName = (rawName && !rawName.includes('@')) ? rawName : '';

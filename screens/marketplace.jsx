@@ -45,7 +45,8 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
 }
 
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
-function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, showToast, onDeleted }) {
+// canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
+function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, showToast, onDeleted }) {
   if (!item) return null;
   const [deleting, setDeleting] = React.useState(false);
 
@@ -188,8 +189,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, showToast, o
               <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
             </svg>
           </button>
-          {/* Admin delete button */}
-          {isAdmin && (
+          {/* Delete button — visible for admins or the post's own author */}
+          {canDelete && (
             <button onClick={handleAdminDelete} disabled={deleting} style={{
               width:52, height:52, borderRadius:14, border:'1.5px solid #FCA5A5',
               background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
@@ -205,7 +206,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, showToast, o
         </div>
 
         {/* Admin info strip */}
-        {isAdmin && (
+        {canDelete && (
           <div style={{marginTop:12, padding:'9px 13px', borderRadius:10, background:'#FEF2F2', border:'1px solid #FCA5A5',
             display:'flex', alignItems:'center', gap:8}}>
             <span style={{fontSize:14}}>🛡</span>
@@ -1206,17 +1207,17 @@ function MarketplaceScreen({ ctx }) {
 
     </div>{/* end .pg-screen */}
 
-      {/* Other user's listing — read-only view + contact (admin gets delete button) */}
+      {/* Other user's listing — read-only view + contact (admin or author gets delete button) */}
       <Sheet open={!!viewListing} onClose={()=>setViewListing(null)} height="auto">
         {viewListing && <ViewListingSheet
           item={viewListing} lang={lang}
           openChat={openChat}
           onClose={()=>setViewListing(null)}
           isAdmin={user.role === 'admin'}
+          canDelete={user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id)}
           showToast={showToast}
           onDeleted={(id) => {
             setViewListing(null);
-            // realtime subscription removes it automatically, but force remove just in case
             if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
           }}
         />}
