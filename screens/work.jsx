@@ -1604,140 +1604,302 @@ function PostVacationSheet({ onClose, lang='en', onSubmit }) {
 
   const isValid = selectedDays.size > 0 && involvedWeekdays.every(wd => (weekdayRegions[wd]?.length || 0) > 0);
 
+  // Desktop-friendly calendar: fixed 40px cells regardless of container width
+  const DAY_SIZE = 40;
+
   return (
-    <div style={{padding:'8px 0 24px'}}>
-      <div style={{padding:'4px 18px 14px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-        <button onClick={onClose} style={{
-          border:'none', background:'transparent', color:'var(--pg-blue-500)',
-          fontSize:15, fontWeight:600, cursor:'pointer', padding:0,
-        }}>{t.cancel}</button>
-        <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, letterSpacing:'-0.01em'}}>{headLbl}</h2>
-        <div style={{width:60}}/>
+    <div style={{display:'flex', flexDirection:'column', height:'100%', minHeight:0}}>
+
+      {/* ── Header with navy gradient ── */}
+      <div style={{
+        background:'linear-gradient(135deg, #011B5A 0%, #023EBA 60%, #0077B6 100%)',
+        padding:'16px 20px 18px', flexShrink:0,
+      }}>
+        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:2}}>
+          <button onClick={onClose} style={{
+            border:'1px solid rgba(255,255,255,0.25)', background:'rgba(255,255,255,0.12)',
+            color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer',
+            padding:'6px 14px', borderRadius:999, fontFamily:'inherit',
+          }}>{t.cancel}</button>
+          <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700,
+            letterSpacing:'-0.01em', color:'#fff'}}>{headLbl}</h2>
+          <div style={{width:80}}/>
+        </div>
+        {/* Month chips inside header */}
+        <div className="pg-scroll-x" style={{display:'flex', gap:6, marginTop:14, marginLeft:-20, marginRight:-20, padding:'2px 20px'}}>
+          {months.map(({ name, idx }) => (
+            <button key={idx}
+              onClick={()=>{ setMonthIdx(idx); setSelectedDays(new Set()); setWeekdayRegions({}); }}
+              style={{
+                padding:'6px 14px', borderRadius:999, border:'none', cursor:'pointer',
+                fontFamily:'inherit', fontSize:12.5, fontWeight:700, whiteSpace:'nowrap',
+                background: monthIdx===idx ? '#fff' : 'rgba(255,255,255,0.14)',
+                color: monthIdx===idx ? 'var(--pg-blue-700)' : 'rgba(255,255,255,0.88)',
+                boxShadow: monthIdx===idx ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
+                transition:'all .12s',
+              }}>
+              {name} {year}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div style={{padding:'0 18px', display:'flex', flexDirection:'column', gap:18}}>
-        {/* Month picker */}
-        <div>
-          <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em', marginBottom:8}}>{monthLbl.toUpperCase()}</div>
-          <div className="pg-scroll-x" style={{display:'flex', gap:6, marginLeft:-18, marginRight:-18, padding:'2px 18px'}}>
-            {months.map(({ name, idx }) => (
-              <button key={idx} onClick={()=>{ setMonthIdx(idx); setSelectedDays(new Set()); setWeekdayRegions({}); }}
-                className={`pg-chip ${monthIdx===idx?'pg-chip-on':''}`}>
-                {name} {year}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* ── Scrollable body ── */}
+      <div style={{flex:1, overflowY:'auto', padding:'20px 20px 100px'}}>
 
-        {/* Days picker */}
-        <div>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
-            <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em'}}>{daysLbl.toUpperCase()}</div>
-            <div style={{fontSize:11, color:'var(--pg-aqua-700)', fontWeight:600}}>
-              {selectedDays.size} {t.days}
-            </div>
-          </div>
-          <div className="pg-card" style={{padding:'12px 12px'}}>
-            <div style={{display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:4, marginBottom:6}}>
-              {dayShort.map(d => (
-                <div key={d} style={{fontSize:10, color:'var(--pg-ink-500)', textAlign:'center', fontWeight:600}}>{d}</div>
-              ))}
-            </div>
-            <div style={{display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:4}}>
-              {Array.from({length: firstDow}).map((_, i) => (
-                <div key={`spacer-${i}`}/>
-              ))}
-              {Array.from({length: daysInMonth}, (_, i) => i+1).map(d => {
-                const on = selectedDays.has(d);
-                return (
-                  <button key={d} onClick={()=>toggleDay(d)} style={{
-                    aspectRatio:'1', borderRadius:8, fontSize:12, fontWeight:600,
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    background: on ? 'var(--pg-blue-500)' : 'transparent',
-                    color: on ? '#fff' : 'var(--pg-ink-700)',
-                    border:'none', cursor:'pointer', fontFamily:'inherit',
-                    transition:'all .12s ease',
-                  }}>{d}</button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        {/* ── Two-column on desktop ── */}
+        <div style={{display:'flex', gap:24, alignItems:'flex-start', flexWrap:'wrap'}}>
 
-        {/* Price */}
-        <div>
-          <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em', marginBottom:8}}>{priceLbl.toUpperCase()}</div>
-          <div className="pg-seg" style={{marginBottom:10}}>
-            <button className={`pg-seg-btn ${priceMode==='fixed'?'on':''}`} onClick={()=>setPriceMode('fixed')}>{t.fixedPrice}</button>
-            <button className={`pg-seg-btn ${priceMode==='neg'?'on':''}`} onClick={()=>setPriceMode('neg')}>{t.priceNeg}</button>
-          </div>
-          {priceMode === 'fixed' && (
-            <div style={{position:'relative'}}>
-              <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
-              <input className="pg-field" value={price} onChange={e=>setPrice(e.target.value)}
-                style={{height:60, paddingLeft:36, fontSize:26, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', fontFamily:'var(--pg-font-display)'}}/>
-              <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--pg-ink-500)'}}>{t.perPool}</span>
+          {/* LEFT: Calendar */}
+          <div style={{flex:'0 0 auto', width: DAY_SIZE*7 + 6*4 + 24, minWidth:0}}>
+            {/* Section label */}
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
+              <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-500)', textTransform:'uppercase'}}>
+                {daysLbl}
+              </div>
+              {selectedDays.size > 0 && (
+                <span style={{
+                  fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:999,
+                  background:'var(--pg-blue-500)', color:'#fff',
+                }}>
+                  {selectedDays.size} {t.days}
+                </span>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* ── Localização + piscinas por dia da semana ── */}
-        {involvedWeekdays.length > 0 && (
-          <div>
-            <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em', marginBottom:8}}>
-              {regsLbl.toUpperCase()}
+            {/* Calendar grid — fixed cell sizes */}
+            <div style={{
+              background:'var(--pg-white)', borderRadius:16,
+              border:'1px solid var(--pg-ink-100)',
+              padding:'14px 12px',
+              boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+            }}>
+              {/* Day headers */}
+              <div style={{display:'grid', gridTemplateColumns:`repeat(7, ${DAY_SIZE}px)`, gap:4, marginBottom:8}}>
+                {dayShort.map(d => (
+                  <div key={d} style={{
+                    width:DAY_SIZE, textAlign:'center',
+                    fontSize:10.5, color:'var(--pg-ink-400)', fontWeight:700,
+                    letterSpacing:'0.04em', textTransform:'uppercase',
+                  }}>{d}</div>
+                ))}
+              </div>
+              {/* Day cells */}
+              <div style={{display:'grid', gridTemplateColumns:`repeat(7, ${DAY_SIZE}px)`, gap:4}}>
+                {Array.from({length: firstDow}).map((_, i) => (
+                  <div key={`s-${i}`} style={{width:DAY_SIZE, height:DAY_SIZE}}/>
+                ))}
+                {Array.from({length: daysInMonth}, (_, i) => i+1).map(d => {
+                  const on = selectedDays.has(d);
+                  const today = new Date();
+                  const isToday = today.getDate()===d && today.getMonth()===monthIdx && today.getFullYear()===year;
+                  return (
+                    <button key={d} onClick={()=>toggleDay(d)} style={{
+                      width:DAY_SIZE, height:DAY_SIZE,
+                      borderRadius:10, fontSize:13, fontWeight: on ? 700 : 500,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      background: on
+                        ? 'var(--pg-blue-500)'
+                        : isToday ? 'var(--pg-blue-50)' : 'transparent',
+                      color: on ? '#fff' : isToday ? 'var(--pg-blue-600)' : 'var(--pg-ink-800)',
+                      border: isToday && !on ? '1.5px solid var(--pg-blue-200)' : 'none',
+                      cursor:'pointer', fontFamily:'inherit',
+                      boxShadow: on ? '0 2px 6px rgba(0,119,182,0.35)' : 'none',
+                      transition:'all .12s ease',
+                    }}>{d}</button>
+                  );
+                })}
+              </div>
             </div>
-            <div style={{display:'flex', flexDirection:'column', gap:8}}>
-              {involvedWeekdays.map(wd => (
-                <WeekdayRegionRow key={wd}
-                  label={dayFull[wd]}
-                  values={weekdayRegions[wd] || []}
-                  cities={allCities}
-                  onToggle={(city) => toggleCityForWeekday(wd, city)}
-                  poolCount={getPoolsForWd(wd)}
-                  onPoolChange={(n) => setPoolsForWd(wd, n)}
-                  pricePerPool={priceMode === 'fixed' ? parseInt(price || 0) : 0}
-                  addresses={wdAddresses[wd] || []}
-                  onAddressChange={(i, val) => setWdAddresses(a => {
-                    const arr = [...(a[wd] || [])];
-                    arr[i] = val;
-                    return { ...a, [wd]: arr };
-                  })}
-                  lang={lang}
-                />
-              ))}
-            </div>
-          </div>
-        )}
 
-      </div>
-
-      <div style={{padding:'14px 18px 8px', position:'sticky', bottom:0, background:'#fff', borderTop:'0.5px solid var(--pg-ink-100)'}}>
-        {isValid && (
-          <div style={{
-            display:'flex', alignItems:'center', justifyContent:'space-between',
-            padding:'8px 12px', borderRadius:10, background:'var(--pg-blue-50)',
-            marginBottom:10,
-          }}>
-            <div style={{fontSize:12, color:'var(--pg-ink-600)'}}>
-              <b>{selectedDays.size}</b> {lang==='pt'?'dias · ':lang==='es'?'días · ':'days · '}
-              <b>{involvedWeekdays.length}</b> {lang==='pt'?'dias/sem.':lang==='es'?'días/sem.':'weekdays'}
-            </div>
-            {priceMode === 'fixed' && totalPotential > 0 && (
-              <div style={{fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.01em'}}>
-                ${totalPotential.toLocaleString()} {lang==='pt'?'pot.':lang==='es'?'pot.':'pot.'}
+            {/* Quick select hint */}
+            {selectedDays.size === 0 && (
+              <div style={{
+                marginTop:10, padding:'8px 12px', borderRadius:10,
+                background:'var(--pg-ink-50, #F7F9FB)',
+                fontSize:12, color:'var(--pg-ink-500)', textAlign:'center',
+              }}>
+                👆 {lang==='pt'?'Toque nos dias em que estará fora':lang==='es'?'Toca los días que estarás fuera':'Tap the days you\'ll be away'}
               </div>
             )}
           </div>
+
+          {/* RIGHT: Price + weekday config */}
+          <div style={{flex:'1 1 260px', minWidth:240, display:'flex', flexDirection:'column', gap:16}}>
+
+            {/* Price section */}
+            <div>
+              <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-500)', textTransform:'uppercase', marginBottom:10}}>
+                {priceLbl}
+              </div>
+              {/* Seg control */}
+              <div style={{display:'flex', gap:6, marginBottom:12}}>
+                {[
+                  { id:'fixed', label: t.fixedPrice },
+                  { id:'neg',   label: t.priceNeg },
+                ].map(opt => {
+                  const on = priceMode === opt.id;
+                  return (
+                    <button key={opt.id} onClick={()=>setPriceMode(opt.id)} style={{
+                      flex:1, padding:'9px 0', border:'none', borderRadius:10, cursor:'pointer',
+                      fontFamily:'inherit', fontSize:13, fontWeight:700,
+                      background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+                      color: on ? '#fff' : 'var(--pg-ink-600)',
+                      transition:'all .12s',
+                      boxShadow: on ? '0 2px 8px rgba(0,119,182,0.30)' : 'none',
+                    }}>{opt.label}</button>
+                  );
+                })}
+              </div>
+              {priceMode === 'fixed' && (
+                <div style={{
+                  display:'flex', alignItems:'center',
+                  background:'var(--pg-white)', borderRadius:14,
+                  border:'1.5px solid var(--pg-blue-200)',
+                  padding:'0 16px', height:64,
+                  boxShadow:'0 2px 8px rgba(0,119,182,0.10)',
+                }}>
+                  <span style={{fontSize:28, fontWeight:800, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)', marginRight:4}}>$</span>
+                  <input
+                    className="pg-field"
+                    value={price}
+                    onChange={e=>setPrice(e.target.value)}
+                    style={{
+                      flex:1, border:'none', padding:0, height:40, fontSize:32,
+                      fontWeight:800, color:'var(--pg-blue-500)', letterSpacing:'-0.03em',
+                      fontFamily:'var(--pg-font-display)', background:'transparent',
+                      outline:'none', boxShadow:'none',
+                    }}
+                  />
+                  <span style={{fontSize:12.5, color:'var(--pg-ink-400)', fontWeight:600, whiteSpace:'nowrap'}}>{t.perPool}</span>
+                </div>
+              )}
+              {priceMode === 'neg' && (
+                <div style={{
+                  display:'flex', alignItems:'center', gap:10,
+                  padding:'14px 16px', borderRadius:14,
+                  background:'var(--pg-ink-50, #F7F9FB)',
+                  border:'1px solid var(--pg-ink-200)',
+                }}>
+                  <span style={{fontSize:22}}>🤝</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13.5, fontWeight:700, color:'var(--pg-ink-800)'}}>
+                      {lang==='pt'?'Preço a combinar':lang==='es'?'Precio a convenir':'Price on request'}
+                    </div>
+                    <div style={{fontSize:11.5, color:'var(--pg-ink-400)', marginTop:2}}>
+                      {lang==='pt'?'Defina o valor ao combinar com o solicitante':lang==='es'?'Define el precio al hablar con el solicitante':'Set the price when talking to the requester'}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Earnings preview — show when days + price selected */}
+            {selectedDays.size > 0 && priceMode === 'fixed' && totalPotential > 0 && (
+              <div style={{
+                background:'linear-gradient(135deg, var(--pg-blue-50), oklch(0.97 0.04 178))',
+                border:'1px solid var(--pg-blue-100)',
+                borderRadius:14, padding:'14px 16px',
+              }}>
+                <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.06em', marginBottom:6, textTransform:'uppercase'}}>
+                  {lang==='pt'?'Potencial de ganho':lang==='es'?'Ganancia potencial':'Earning potential'}
+                </div>
+                <div style={{fontFamily:'var(--pg-font-display)', fontSize:32, fontWeight:800, color:'var(--pg-blue-500)', letterSpacing:'-0.03em', lineHeight:1}}>
+                  ${totalPotential.toLocaleString()}
+                </div>
+                <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:6}}>
+                  {selectedDays.size} {lang==='pt'?'dias · $'+price+'/piscina':lang==='es'?'días · $'+price+'/piscina':'days · $'+price+'/pool'}
+                </div>
+              </div>
+            )}
+
+            {/* Weekday region rows */}
+            {involvedWeekdays.length > 0 && (
+              <div>
+                <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-500)', textTransform:'uppercase', marginBottom:10}}>
+                  {regsLbl}
+                </div>
+                <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                  {involvedWeekdays.map(wd => (
+                    <WeekdayRegionRow key={wd}
+                      label={dayFull[wd]}
+                      values={weekdayRegions[wd] || []}
+                      cities={allCities}
+                      onToggle={(city) => toggleCityForWeekday(wd, city)}
+                      poolCount={getPoolsForWd(wd)}
+                      onPoolChange={(n) => setPoolsForWd(wd, n)}
+                      pricePerPool={priceMode === 'fixed' ? parseInt(price || 0) : 0}
+                      addresses={wdAddresses[wd] || []}
+                      onAddressChange={(i, val) => setWdAddresses(a => {
+                        const arr = [...(a[wd] || [])];
+                        arr[i] = val;
+                        return { ...a, [wd]: arr };
+                      })}
+                      lang={lang}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Sticky footer ── */}
+      <div style={{
+        padding:'14px 20px 18px', flexShrink:0,
+        background:'var(--pg-white)', borderTop:'1px solid var(--pg-ink-100)',
+        boxShadow:'0 -4px 16px rgba(0,0,0,0.06)',
+      }}>
+        {isValid && (
+          <div style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'10px 14px', borderRadius:12,
+            background:'linear-gradient(110deg, var(--pg-blue-50), oklch(0.97 0.04 178))',
+            border:'0.5px solid var(--pg-blue-100)',
+            marginBottom:12,
+          }}>
+            <div style={{display:'flex', gap:16, alignItems:'center'}}>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, color:'var(--pg-blue-500)', lineHeight:1}}>{selectedDays.size}</div>
+                <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600, marginTop:2, letterSpacing:'0.03em'}}>{lang==='pt'?'DIAS':lang==='es'?'DÍAS':'DAYS'}</div>
+              </div>
+              <div style={{width:1, height:30, background:'var(--pg-ink-200)'}}/>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, color:'var(--pg-blue-500)', lineHeight:1}}>{involvedWeekdays.length}</div>
+                <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600, marginTop:2, letterSpacing:'0.03em'}}>{lang==='pt'?'DIAS/SEM':lang==='es'?'DÍAS/SEM':'WEEKDAYS'}</div>
+              </div>
+              {totalPotential > 0 && <>
+                <div style={{width:1, height:30, background:'var(--pg-ink-200)'}}/>
+                <div style={{textAlign:'center'}}>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, color:'var(--pg-blue-500)', lineHeight:1}}>${totalPotential.toLocaleString()}</div>
+                  <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600, marginTop:2, letterSpacing:'0.03em'}}>{lang==='pt'?'POTENCIAL':lang==='es'?'POTENCIAL':'POTENTIAL'}</div>
+                </div>
+              </>}
+            </div>
+            <span style={{
+              fontSize:10.5, fontWeight:700, padding:'4px 10px', borderRadius:999,
+              background: isValid ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)',
+              color: isValid ? '#fff' : 'var(--pg-ink-400)',
+            }}>
+              {isValid ? (lang==='pt'?'✓ PRONTO':lang==='es'?'✓ LISTO':'✓ READY') : (lang==='pt'?'Falta cidade':lang==='es'?'Falta ciudad':'Need city')}
+            </span>
+          </div>
         )}
-        <button onClick={()=>onSubmit && onSubmit({ monthIdx, year, selectedDays:[...selectedDays], weekdayRegions, poolsPerWeekday, price, priceMode })}
+        <button
+          onClick={()=>onSubmit && onSubmit({ monthIdx, year, selectedDays:[...selectedDays], weekdayRegions, poolsPerWeekday, price, priceMode })}
           disabled={!isValid}
           className="pg-btn pg-btn-primary"
           style={{
-            width:'100%', height:52, fontSize:16,
-            opacity: isValid ? 1 : 0.45,
+            width:'100%', height:54, fontSize:16, borderRadius:14,
+            opacity: isValid ? 1 : 0.40,
+            background: isValid
+              ? 'linear-gradient(135deg, #023EBA 0%, #0077B6 100%)'
+              : 'var(--pg-ink-200)',
+            boxShadow: isValid ? '0 6px 20px rgba(0,119,182,0.35)' : 'none',
           }}>
-          {Icon.cal(17, '#fff')} {submitLbl}
+          {Icon.cal(18, isValid ? '#fff' : 'var(--pg-ink-400)')}
+          <span style={{marginLeft:8}}>{submitLbl}</span>
         </button>
       </div>
     </div>
