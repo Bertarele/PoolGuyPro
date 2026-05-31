@@ -41,7 +41,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
     setLoading(true);
     setError('');
     try {
-      if (!window.sb) throw new Error('No connection to database');
+      if (!window.supabase) throw new Error('SDK not loaded (check CDN)');
+      if (!window.sb) throw new Error('createClient failed — check console');
       const { data, error: err } = await window.sb.auth.signInWithPassword({ email: email.trim(), password: pass });
       if (err) throw err;
       onLogin(data.user);
@@ -63,7 +64,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
     setLoading(true);
     setError('');
     try {
-      if (!window.sb) throw new Error('No connection to database');
+      if (!window.supabase) throw new Error('SDK not loaded (check CDN)');
+      if (!window.sb) throw new Error('createClient failed — check console');
       const { data, error: err } = await window.sb.auth.signUp({ email: email.trim(), password: pass });
       if (err) throw err;
       await window.sb.from('profiles').insert({ id: data.user.id, name, phone, region, role: 'user' });
