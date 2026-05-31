@@ -2,6 +2,14 @@
 
 function MarketplaceScreen({ ctx }) {
   const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite } = ctx;
+
+  // Never show raw email as author — if author is an email, show the part before @
+  const fmtAuthor = (a) => {
+    if (!a) return 'Unknown';
+    if (a === user.email && user.name && !user.name.includes('@')) return user.name;
+    if (a.includes('@')) return a.split('@')[0];
+    return a;
+  };
   const t = STRINGS[lang];
   const [view,       setView]       = React.useState('buy');
   const [cat,        setCat]        = React.useState('All');
@@ -257,10 +265,10 @@ function MarketplaceScreen({ ctx }) {
                         <span style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:700, color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)'}}>
                           {item.priceMode==='neg'?'Negoc.':('$'+item.price)}
                         </span>
-                        <span style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>👤 {item.author}</span>
+                        <span style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>👤 {fmtAuthor(item.author)}</span>
                       </div>
                       {!isPending && openPublicProfile && (
-                        <button onClick={()=>openPublicProfile({name:item.author,rating:4.5,reviews:0,jobs:0,loc:item.loc})} style={{width:'100%',marginTop:8,height:30,fontSize:12,fontFamily:'inherit',borderRadius:8,border:'none',background:'var(--pg-blue-100)',color:'var(--pg-blue-700)',fontWeight:600,cursor:'pointer'}}>
+                        <button onClick={()=>openPublicProfile({name:fmtAuthor(item.author),rating:4.5,reviews:0,jobs:0,loc:item.loc})} style={{width:'100%',marginTop:8,height:30,fontSize:12,fontFamily:'inherit',borderRadius:8,border:'none',background:'var(--pg-blue-100)',color:'var(--pg-blue-700)',fontWeight:600,cursor:'pointer'}}>
                           {t.contact||'Contact'}
                         </button>
                       )}

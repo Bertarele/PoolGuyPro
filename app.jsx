@@ -194,10 +194,10 @@ function App() {
     const { data: profile } = await window.sb.from('profiles').select('*').eq('id', sbUser.id).single();
     setUser(u => ({
       ...u,
-      name:   profile ? profile.name   : (sbUser.email || ''),
-      phone:  profile ? profile.phone  : '',
-      region: profile ? profile.region : '',
-      role:   profile ? profile.role   : 'user',
+      name:   profile?.name  || '',
+      phone:  profile?.phone  || '',
+      region: profile?.region || '',
+      role:   profile?.role   || 'user',
       email:  sbUser.email,
       uid:    sbUser.id,
     }));
@@ -318,27 +318,29 @@ function App() {
   // Helper: insert row into Supabase
   const dbWrite = React.useCallback((col, data) => {
     if (!window.sb) return;
+    // Always use profile name; never leak email as author
+    const authorName = (user.name && !user.name.includes('@')) ? user.name : (user.email ? user.email.split('@')[0] : 'User');
     const row = col === 'jobs' ? {
       role: data.role, loc: data.loc, contract: data.contract,
       pay_mode: data.payMode, pay: data.pay, car_req: data.carReq,
-      equip_req: data.equipReq, description: data.desc, author: user.name,
+      equip_req: data.equipReq, description: data.desc, author: authorName,
     } : col === 'techs' ? {
       name: data.name, specialty: data.specialty, loc: data.loc,
       phone: data.phone, email: data.email,
-      rate_mode: data.rateMode, rate: data.rate, author: user.name,
+      rate_mode: data.rateMode, rate: data.rate, author: authorName,
     } : col === 'vacations' ? {
       month_idx: data.monthIdx, year: data.year,
       selected_days: data.selectedDays, weekday_regions: data.weekdayRegions,
       pools_per_weekday: data.poolsPerWeekday,
-      price: data.price, price_mode: data.priceMode, author: user.name,
+      price: data.price, price_mode: data.priceMode, author: authorName,
     } : col === 'marketplace' ? {
       type: data.type, name: data.name, cat: data.cat,
       condition: data.condition, price: data.price,
       price_mode: data.priceMode, loc: data.loc,
       route_name: data.routeName, clients: data.clients,
-      revenue: data.revenue, asking: data.asking, area: data.area, author: user.name,
+      revenue: data.revenue, asking: data.asking, area: data.area, author: authorName,
       status: 'pending',
-    } : { ...data, author: user.name };
+    } : { ...data, author: authorName };
 
     window.sb.from(col).insert(row)
       .then(({ error }) => { if (error) console.error('[Supabase] insert error:', error.message); });
@@ -565,7 +567,11 @@ function App() {
   // DESKTOP LAYOUT
   // ════════════════════════════════════════════════════════════════
   if (!isMobile) {
-    const avatarLetter = ((user.name || user.email || '?')[0] || '?').toUpperCase();
+    // Display name: never show raw email — use name from profile, fallback to username part of email
+  const displayName = (user.name && !user.name.includes('@'))
+    ? user.name
+    : (user.email ? user.email.split('@')[0] : 'User');
+  const avatarLetter = (displayName[0] || '?').toUpperCase();
     return (
       <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',background:'#eef2f7',position:'relative',overflow:'hidden'}}>
 
@@ -636,7 +642,7 @@ function App() {
                     color:'#fff',fontSize:11,fontWeight:700,flexShrink:0,
                   }}>{avatarLetter}</div>
                   <span style={{fontSize:12,fontWeight:600,color:'#1C1C1E',maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                    {user.name || user.email || 'User'}
+                    {displayName}
                   </span>
                 </div>
                 {/* Logout */}
@@ -702,12 +708,13 @@ function App() {
           {/* Main content area */}
           <main ref={screenRef} data-pg-screen style={{
             flex:1, overflowY:'auto', overflowX:'hidden',
-            background:'#f0f4f8', position:'relative',
+            background:'#e8edf4', position:'relative',
+            display:'flex', flexDirection:'column', alignItems:'center',
           }}>
             {!isLoggedIn ? (
               /* Desktop login — centered card */
               <div style={{
-                minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center',
+                width:'100%', flex:1, display:'flex', alignItems:'center', justifyContent:'center',
                 background:'linear-gradient(135deg, #eef2f7 0%, #e8f0fe 100%)',
                 padding:'40px 24px',
               }}>
@@ -720,8 +727,14 @@ function App() {
                 </div>
               </div>
             ) : (
-              /* Desktop screen content — max-width container */
-              <div style={{maxWidth:960, padding:'0 0 40px'}}>
+              /* Desktop screen — centered narrow column, app background */
+              <div style={{
+                width:'100%', maxWidth:540, flexShrink:0,
+                background:'var(--pg-bg)',
+                boxShadow:'0 0 40px rgba(0,0,0,0.10)',
+                minHeight:'100%',
+                paddingBottom:40,
+              }}>
                 {tab==='home'    && <HomeScreen ctx={ctx}/>}
                 {tab==='market'  && <MarketplaceScreen ctx={ctx}/>}
                 {tab==='quick'   && <QuickPoolsScreen ctx={ctx}/>}
