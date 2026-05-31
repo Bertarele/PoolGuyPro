@@ -55,8 +55,26 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   const goSignup = () => { setMode('signup'); setStep(1); };
   const goLogin  = () => { setMode('login'); setStep(1); };
 
-  const passMatch = pass.length >= 4 && passConfirm.length >= 4 && pass === passConfirm;
-  const canStep1 = name.trim().length > 1 && email.trim().length > 3 && pass.trim().length >= 4 && passMatch;
+  // ── Password strength ────────────────────────────────────────
+  const passStrength = React.useMemo(() => {
+    if (!pass) return { score: 0, label: '', color: '' };
+    const checks = {
+      length:   pass.length >= 8,
+      upper:    /[A-Z]/.test(pass),
+      lower:    /[a-z]/.test(pass),
+      number:   /[0-9]/.test(pass),
+      special:  /[^A-Za-z0-9]/.test(pass),
+    };
+    const score = Object.values(checks).filter(Boolean).length;
+    if (score <= 2) return { score, checks, label: lang==='pt'?'Fraca':lang==='es'?'Débil':'Weak',     color:'#ef4444', pct: 20 };
+    if (score === 3) return { score, checks, label: lang==='pt'?'Razoável':lang==='es'?'Regular':'Fair',   color:'#f97316', pct: 50 };
+    if (score === 4) return { score, checks, label: lang==='pt'?'Boa':lang==='es'?'Buena':'Good',     color:'#eab308', pct: 75 };
+    return              { score, checks, label: lang==='pt'?'Forte':lang==='es'?'Fuerte':'Strong',   color:'#22c55e', pct: 100 };
+  }, [pass, lang]);
+
+  const passValid = passStrength.score >= 5; // all 5 checks
+  const passMatch = pass.length >= 8 && passConfirm.length >= 1 && pass === passConfirm;
+  const canStep1 = name.trim().length > 1 && email.trim().length > 3 && passValid && passMatch;
   const canStep2 = phone.trim().length >= 9 && region !== '';
 
   const handleSignup = async () => {
@@ -352,7 +370,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
               </div>
               <div style={{position:'relative'}}>
                 <input className="pg-field" type={showPass?'text':'password'} value={pass} onChange={e=>setPass(e.target.value)}
-                  placeholder={lang==='pt'?'Mín. 4 caracteres':lang==='es'?'Mín. 4 caracteres':'Min. 4 characters'}
+                  placeholder={lang==='pt'?'Mín. 8 caracteres':lang==='es'?'Mín. 8 caracteres':'Min. 8 characters'}
                   style={{height:48, fontSize:14, paddingRight:46}}/>
                 <button onClick={()=>setShowPass(p=>!p)} style={{position:'absolute', right:14, top:'50%', transform:'translateY(-50%)',
                   border:'none', background:'transparent', cursor:'pointer', padding:4, color:'var(--pg-ink-400)', display:'flex', alignItems:'center'}}>
@@ -361,6 +379,40 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                     : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
                 </button>
               </div>
+
+              {/* ── Strength bar ── */}
+              {pass.length > 0 && (
+                <div style={{marginTop:10}}>
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                    <div style={{display:'flex', gap:4}}>
+                      {[1,2,3,4,5].map(i => (
+                        <div key={i} style={{
+                          height:4, width:36, borderRadius:999,
+                          background: i <= passStrength.score ? passStrength.color : 'var(--pg-ink-200)',
+                          transition:'background .2s',
+                        }}/>
+                      ))}
+                    </div>
+                    <span style={{fontSize:11, fontWeight:700, color: passStrength.color}}>{passStrength.label}</span>
+                  </div>
+                  <div style={{display:'flex', flexWrap:'wrap', gap:'4px 10px'}}>
+                    {[
+                      { ok: passStrength.checks?.length,  txt: lang==='pt'?'8+ chars':lang==='es'?'8+ chars':'8+ chars' },
+                      { ok: passStrength.checks?.upper,   txt: lang==='pt'?'Maiúscula':lang==='es'?'Mayúscula':'Uppercase' },
+                      { ok: passStrength.checks?.lower,   txt: lang==='pt'?'Minúscula':lang==='es'?'Minúscula':'Lowercase' },
+                      { ok: passStrength.checks?.number,  txt: lang==='pt'?'Número':lang==='es'?'Número':'Number' },
+                      { ok: passStrength.checks?.special, txt: lang==='pt'?'Especial (!@#)':lang==='es'?'Especial (!@#)':'Special (!@#)' },
+                    ].map((c,i) => (
+                      <span key={i} style={{fontSize:10.5, fontWeight:600,
+                        color: c.ok ? '#16a34a' : 'var(--pg-ink-400)',
+                        display:'flex', alignItems:'center', gap:3,
+                      }}>
+                        {c.ok ? '✓' : '○'} {c.txt}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             {/* Confirm password */}
             <div>
@@ -368,7 +420,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                 <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'var(--pg-ink-500)'}}>
                   {lang==='pt'?'CONFIRMAR SENHA':lang==='es'?'CONFIRMAR CONTRASEÑA':'CONFIRM PASSWORD'}
                 </div>
-                {passConfirm.length >= 4 && (
+                {passConfirm.length >= 1 && (
                   <span style={{fontSize:10.5, fontWeight:600,
                     color: passMatch ? 'var(--pg-green-600,#16a34a)' : 'var(--pg-red-500,#ef4444)'}}>
                     {passMatch
