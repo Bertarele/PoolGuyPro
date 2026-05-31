@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "mcp__Claude_in_Chrome__select_browser",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__read_page",
+      "mcp__Claude_in_Chrome__javascript_tool",
+      "mcp__Claude_in_Chrome__read_network_requests",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Filipe Bertarele\\\\Downloads\\\\\" | Where-Object { $_.Name -match '\\\\.\\(jsx|css|html\\)$' } | Select-Object Name, LastWriteTime | Sort-Object LastWriteTime -Descending | Select-Object -First 20)",
+      "PowerShell(Get-Job)",
+      "Bash(node \"C:/Users/Filipe Bertarele/PoolGuyPro/save-server.js\")",
+      "Bash(python -m http.server 3000)",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell($p = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -First 1; if \\($p\\) { Stop-Process -Id $p -Force; \"Killed PID $p\" } else { \"No process on 3000\" })",
+      "Bash(Expand-Archive -Path PoolGuyPro.zip -DestinationPath _zip_compare -Force)",
+      "Bash(Get-ChildItem _zip_compare -Recurse)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\Filipe Bertarele\\\\PoolGuyPro\\\\_zip_compare\\\\design_handoff_poolguypro\\\\source\\\\ios-frame.jsx\"\\).Count)",
+      "Bash(powershell -Command \"\\(Get-Content PoolGuyPro.html\\) -replace 'v=33', 'v=34' | Set-Content PoolGuyPro.html -Encoding utf8\")",
+      "Bash(powershell -Command \"\\(Get-Content PoolGuyPro.html\\) -replace 'v=34', 'v=35' | Set-Content PoolGuyPro.html -Encoding utf8\")",
+      "Bash(powershell -Command \"\\(Get-Content PoolGuyPro.html\\) -replace 'v=35', 'v=36' | Set-Content PoolGuyPro.html -Encoding utf8\")",
+      "Bash(powershell -Command \"\\(Get-Content PoolGuyPro.html\\) -replace 'v=36', 'v=37' | Set-Content PoolGuyPro.html -Encoding utf8\")",
+      "Bash(powershell -Command \"\\(Get-Content PoolGuyPro.html\\) -replace 'v=52', 'v=53' | Set-Content PoolGuyPro.html\")",
+      "mcp__Claude_in_Chrome__computer",
+      "Bash(powershell -Command \"Compress-Archive -Path 'index.html','PoolGuyPro.html','tokens.css','app.jsx','components.jsx','brand.jsx','data.jsx','ios-frame.jsx','tweaks-panel.jsx','screens' -DestinationPath 'PoolGuyPro_deploy.zip' -Force; Write-Host 'ZIP criado:'; \\(Get-Item PoolGuyPro_deploy.zip\\).Length / 1KB\")",
+      "mcp__Claude_in_Chrome__get_page_text",
+      "Bash(python -c \"import urllib.request; urllib.request.urlretrieve\\('http://localhost:3000/PoolGuyPro.html', 'test.html'\\); print\\('ok'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(powershell -Command \"\\(Get-Content PoolGuyPro.html\\) -replace 'v=53', 'v=54' | Set-Content PoolGuyPro.html; \\(Get-Content index.html\\) -replace 'v=53', 'v=54' | Set-Content index.html; Write-Host 'v=54 ok'\")",
+      "Bash(powershell -Command \"\\(Get-Content PoolGuyPro.html\\) -replace 'v=54', 'v=55' | Set-Content PoolGuyPro.html; \\(Get-Content index.html\\) -replace 'v=54', 'v=55' | Set-Content index.html; Write-Host 'v=55 ok'\")",
+      "Bash(powershell -Command \"\\(Get-Content PoolGuyPro.html\\) -replace 'v=55', 'v=56' | Set-Content PoolGuyPro.html; \\(Get-Content index.html\\) -replace 'v=55', 'v=56' | Set-Content index.html; Write-Host 'v=56'\")",
+      "Bash(powershell -Command \"Select-String -Path 'screens\\\\home.jsx' -Pattern 'header|Header|NavyBar|nav-bar|appbar|topbar|pg-header' | Select-Object -First 20\")",
+      "Bash(python -m http.server 8765 --bind 127.0.0.1)",
+      "Bash(powershell -command \"\\(Get-Content index.html -Encoding utf8\\) -replace 'v=64', 'v=65' | Set-Content index.html -Encoding utf8\")",
+      "Bash(powershell -command \"\\(Get-Content PoolGuyPro.html -Encoding utf8\\) -replace 'v=63', 'v=65' | Set-Content PoolGuyPro.html -Encoding utf8\")"
+    ]
+  }
+}

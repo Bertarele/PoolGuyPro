@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PoolGuyX — Brand Identity</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Raleway:wght@700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Brand tokens (always same) ── */
+  :root {
+    --aqua:#0EBAC7; --aqua-lt:#6DD8F0; --aqua-dk:#0D7280;
+    --blue:#1A6EBD; --blue-lt:#4BA8E8;
+    --navy:#040D18; --navy-md:#071A2E; --navy-lt:#0C2A46;
+  }
+
+  /* ── Light theme ── */
+  html[data-theme="light"] {
+    --bg-page:     #EAF1F7;
+    --bg-card:     #ffffff;
+    --bg-card2:    #F4F8FB;
+    --bd-card:     #DDE6EE;
+    --text-hi:     #071A2E;
+    --text-md:     #2A3F52;
+    --text-lo:     #7A95AD;
+    --divider:     #DDE6EE;
+    --swatch-bg:   #ffffff;
+    --label-line:  #DDE6EE;
+    --label-color: #0D7280;
+    --wm-light-pool: #071A2E;
+    --usage-light-bg: #ffffff;
+    --usage-light-bd: #DDE6EE;
+    --usage-light-title: #071A2E;
+    --icon-sizes-bg: #ffffff;
+    --footer-bd:   #DDE6EE;
+    --footer-wm-pool: #071A2E;
+  }
+
+  /* ── Dark theme ── */
+  html[data-theme="dark"] {
+    --bg-page:     #02080F;
+    --bg-card:     #071A2E;
+    --bg-card2:    #0A2035;
+    --bd-card:     rgba(255,255,255,0.07);
+    --text-hi:     #E8F4FA;
+    --text-md:     #A8C8DE;
+    --text-lo:     #5A7A92;
+    --divider:     rgba(255,255,255,0.07);
+    --swatch-bg:   #0C2A46;
+    --label-line:  rgba(255,255,255,0.07);
+    --label-color: #0EBAC7;
+    --wm-light-pool: #ffffff;
+    --usage-light-bg: #071A2E;
+    --usage-light-bd: rgba(255,255,255,0.07);
+    --usage-light-title: #E8F4FA;
+    --icon-sizes-bg: #071A2E;
+    --footer-bd:   rgba(255,255,255,0.07);
+    --footer-wm-pool: #ffffff;
+  }
+
+  body { font-family:'Inter',sans-serif; background:var(--bg-page); color:var(--text-hi); line-height:1.5; transition:background .3s, color .3s; }
+  .page { max-width:1080px; margin:0 auto; padding:48px 32px 100px; }
+
+  /* ── Theme toggle ── */
+  .theme-toggle {
+    position:fixed; top:24px; right:24px; z-index:100;
+    width:46px; height:26px; border-radius:13px; border:none; cursor:pointer;
+    padding:3px; display:flex; align-items:center;
+    background:rgba(14,186,199,0.18); border:1.5px solid rgba(14,186,199,0.30);
+    transition:background .3s;
+  }
+  .theme-toggle:hover { background:rgba(14,186,199,0.28); }
+  .toggle-knob {
+    width:18px; height:18px; border-radius:50%;
+    background:var(--aqua); transition:transform .25s cubic-bezier(.4,0,.2,1);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    font-size:10px; line-height:1;
+  }
+  html[data-theme="dark"] .toggle-knob  { transform:translateX(20px); }
+  html[data-theme="light"] .toggle-knob { transform:translateX(0); }
+
+  /* ── Header ── */
+  .brand-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:64px; padding:44px 56px;
+    background:linear-gradient(135deg,#040D18 0%,#071A2E 55%,#0A2840 100%);
+    border-radius:28px; position:relative; overflow:hidden;
+  }
+  .brand-header::before {
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(ellipse 55% 70% at 85% 50%, rgba(14,186,199,0.10) 0%, transparent 65%);
+  }
+  .brand-header::after {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg, transparent, rgba(14,186,199,0.3), transparent);
+  }
+  .brand-header-left { position:relative; z-index:1; }
+  .brand-header-label {
+    font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--aqua); margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  }
+  .brand-header-label::before { content:''; width:20px; height:1px; background:var(--aqua); }
+  .brand-wordmark { display:flex; align-items:baseline; margin-bottom:10px; }
+  .brand-wordmark .pool { font-family:'Poppins'; font-size:54px; font-weight:800; letter-spacing:-0.03em; color:#fff; }
+  .brand-wordmark .guy  { font-family:'Poppins'; font-size:54px; font-weight:800; letter-spacing:-0.03em; background:linear-gradient(135deg,#4BA8E8,#B8E4FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .brand-wordmark .x    { font-family:'Raleway';  font-size:62px; font-weight:800; letter-spacing:-0.025em; line-height:1; background:linear-gradient(135deg,#0EBAC7,#6DD8F0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .brand-tagline { font-size:13px; color:rgba(255,255,255,.35); letter-spacing:.04em; }
+
+  /* ── Sections ── */
+  .section { margin-bottom:60px; }
+  .section-label {
+    font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--label-color); margin-bottom:22px; display:flex; align-items:center; gap:12px;
+    transition:color .3s;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--label-line); transition:background .3s; }
+  .section-title { font-family:'Poppins'; font-size:24px; font-weight:700; color:var(--text-hi); margin-bottom:6px; transition:color .3s; }
+  .section-sub   { font-size:13px; color:var(--text-lo); margin-bottom:30px; transition:color .3s; }
+
+  /* ── Logo cards ── */
+  .logo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:24px; }
+  .logo-card { border-radius:22px; padding:44px 28px; display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .logo-card.dark  { background:linear-gradient(145deg,#040D18,#071A2E); border:1px solid rgba(255,255,255,0.06); }
+  .logo-card.light { background:var(--bg-card); border:1.5px solid var(--bd-card); transition:background .3s, border-color .3s; }
+  .logo-card.aqua  { background:linear-gradient(145deg,#0EBAC7,#0A6070); }
+  .logo-card-label { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+  .logo-card.dark  .logo-card-label { color:rgba(255,255,255,0.35); }
+  .logo-card.light .logo-card-label { color:var(--text-lo); }
+  .logo-card.aqua  .logo-card-label { color:rgba(255,255,255,0.5); }
+
+  /* ── Icon sizes ── */
+  .icon-sizes-panel { background:var(--bg-card); border-radius:20px; padding:32px 36px; border:1.5px solid var(--bd-card); transition:background .3s, border-color .3s; }
+  .icon-row { display:flex; gap:28px; align-items:flex-end; flex-wrap:wrap; }
+  .icon-item { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .icon-item-label { font-size:11px; color:var(--text-lo); font-weight:500; transition:color .3s; }
+
+  /* ── Palette ── */
+  .palette-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; }
+  .swatch { border-radius:16px; overflow:hidden; box-shadow:0 2px 16px rgba(0,0,0,.08); }
+  .swatch-color { height:90px; }
+  .swatch-info { background:var(--swatch-bg); padding:12px 14px; transition:background .3s; }
+  .swatch-name { font-size:13px; font-weight:700; color:var(--text-hi); transition:color .3s; }
+  .swatch-hex  { font-size:11px; color:var(--text-lo); margin-top:2px; font-family:monospace; letter-spacing:.04em; transition:color .3s; }
+  .swatch-role { font-size:10px; color:var(--text-lo); margin-top:3px; font-style:italic; transition:color .3s; }
+
+  /* ── Type ── */
+  .type-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .type-card { background:var(--bg-card); border-radius:18px; padding:32px; border:1.5px solid var(--bd-card); transition:background .3s, border-color .3s; }
+  .type-family { font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--aqua); margin-bottom:20px; }
+
+  /* ── Gradients ── */
+  .grad-row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .grad-item { border-radius:14px; height:76px; display:flex; align-items:flex-end; padding:14px; }
+  .grad-label { font-size:11px; font-weight:600; color:rgba(255,255,255,.75); letter-spacing:.04em; }
+
+  /* ── Wordmark panels ── */
+  .wm-panel-dark {
+    background:linear-gradient(135deg,#040D18 0%,#071A2E 55%,#0A2840 100%);
+    border-radius:22px; padding:44px 52px; margin-bottom:16px;
+    display:flex; align-items:center; justify-content:space-between;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .wm-panel-light {
+    background:var(--bg-card); border-radius:22px; padding:36px 52px;
+    border:1.5px solid var(--bd-card);
+    display:flex; align-items:center; justify-content:space-between;
+    transition:background .3s, border-color .3s;
+  }
+  .wm-light-pool { font-family:'Poppins'; font-size:46px; font-weight:800; letter-spacing:-0.03em; color:var(--wm-light-pool); transition:color .3s; }
+  /* In dark mode, light panel "Guy" uses the same blue grad but stays visible */
+  .wm-light-guy {
+    font-family:'Poppins'; font-size:46px; font-weight:800; letter-spacing:-0.03em;
+    background:linear-gradient(135deg,#1A6EBD,#4BA8E8);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  html[data-theme="dark"] .wm-light-guy {
+    background:linear-gradient(135deg,#4BA8E8,#B8E4FA);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .wm-light-x {
+    font-family:'Raleway'; font-size:52px; font-weight:800; letter-spacing:-0.025em; line-height:1;
+    background:linear-gradient(135deg,#0EBAC7,#0D7280);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  html[data-theme="dark"] .wm-light-x {
+    background:linear-gradient(135deg,#18DAEA,#6DD8F0);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .wm-light-badge { font-size:11px; color:var(--text-lo); letter-spacing:.10em; text-transform:uppercase; font-weight:700; font-family:'Inter'; transition:color .3s; }
+
+  /* ── Usage ── */
+  .usage-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .usage-card { border-radius:22px; padding:32px; }
+  .usage-card.dark  { background:linear-gradient(145deg,#040D18,#071A2E); border:1px solid rgba(255,255,255,0.06); }
+  .usage-card.light { background:var(--usage-light-bg); border:1.5px solid var(--usage-light-bd); transition:background .3s, border-color .3s; }
+  .usage-title { font-family:'Poppins'; font-weight:700; font-size:15px; margin-bottom:20px; }
+  .usage-card.dark  .usage-title { color:#fff; }
+  .usage-card.light .usage-title { color:var(--usage-light-title); transition:color .3s; }
+
+  /* FAB container bg */
+  .fab-bg { background:var(--bg-card2); border-radius:14px; padding:14px 20px; margin-bottom:12px; display:flex; align-items:center; gap:14px; transition:background .3s; }
+  .fab-label { font-family:'Poppins'; font-size:13px; font-weight:600; color:var(--text-hi); display:block; transition:color .3s; }
+  .fab-sub { font-size:11px; color:var(--text-lo); font-family:'Inter'; transition:color .3s; }
+
+  .tag { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:600; }
+
+  /* ── Type demo text colors ── */
+  .type-demo-hi  { font-family:'Poppins'; color:var(--text-hi); transition:color .3s; }
+  .type-demo-md  { font-family:'Poppins'; color:var(--text-md); transition:color .3s; }
+  .type-demo-lo  { font-family:'Poppins'; color:var(--text-lo); transition:color .3s; }
+  .type-note     { font-size:11px; color:var(--text-lo); font-style:italic; font-family:'Inter'; margin-top:10px; transition:color .3s; }
+
+  /* ── Footer ── */
+  .footer { text-align:center; padding:36px 0 0; border-top:1px solid var(--footer-bd); transition:border-color .3s; }
+  .footer-wm-pool { font-family:'Poppins'; font-size:20px; font-weight:800; color:var(--footer-wm-pool); transition:color .3s; }
+  .footer-note { font-size:12px; color:var(--text-lo); font-family:'Inter'; transition:color .3s; }
+</style>
+</head>
+<body>
+
+<!-- ── THEME TOGGLE ── -->
+<button class="theme-toggle" onclick="toggleTheme()" title="Toggle light / dark mode" aria-label="Toggle theme">
+  <div class="toggle-knob">
+    <span id="theme-icon">☀</span>
+  </div>
+</button>
+
+<div class="page">
+
+<!-- ── HEADER ── -->
+<div class="brand-header">
+  <div class="brand-header-left">
+    <div class="brand-header-label">Brand Identity · v2.0</div>
+    <div class="brand-wordmark">
+      <span class="pool">Pool</span><span class="guy">Guy</span><span class="x">X</span>
+    </div>
+    <div class="brand-tagline">Pool Service Management · Broward County, FL</div>
+  </div>
+  <div id="icon-header" style="filter:drop-shadow(0 0 24px rgba(14,186,199,0.38))"></div>
+</div>
+
+<!-- ── 01 LOGO MARK ── -->
+<div class="section">
+  <div class="section-label">01 — Logo Mark</div>
+  <div class="section-title">Flood Level — Símbolo da Marca</div>
+  <div class="section-sub">P e X imersos — água sobe até ~60% das letras, parte submersa vira aqua com glow · Onda na superfície</div>
+
+  <div class="logo-grid">
+    <div class="logo-card dark">
+      <div id="icon-dark"></div>
+      <span class="logo-card-label">Fundo Escuro</span>
+    </div>
+    <div class="logo-card light">
+      <div id="icon-light"></div>
+      <span class="logo-card-label">Fundo Claro</span>
+    </div>
+    <div class="logo-card aqua">
+      <div id="icon-aqua"></div>
+      <span class="logo-card-label">Fundo Aqua</span>
+    </div>
+  </div>
+
+  <div class="section-sub" style="margin-bottom:18px">Escalonamento — tamanhos iOS</div>
+  <div class="icon-sizes-panel">
+    <div class="icon-row">
+      <div class="icon-item"><div id="icon-1024"></div><span class="icon-item-label">1024 · App Store</span></div>
+      <div class="icon-item"><div id="icon-180"></div><span class="icon-item-label">180 · iPhone</span></div>
+      <div class="icon-item"><div id="icon-76"></div><span class="icon-item-label">76 · iPad</span></div>
+      <div class="icon-item"><div id="icon-40"></div><span class="icon-item-label">40 · Spotlight</span></div>
+      <div class="icon-item"><div id="icon-29"></div><span class="icon-item-label">29 · Settings</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 02 WORDMARK ── -->
+<div class="section">
+  <div class="section-label">02 — Wordmark</div>
+  <div class="section-title">Tipografia da Marca</div>
+  <div class="section-sub">Poppins 800 + Raleway 800 — tensão visual entre peso e elegância</div>
+
+  <!-- Always-dark panel -->
+  <div class="wm-panel-dark">
+    <div style="display:flex; align-items:baseline;">
+      <span style="font-family:'Poppins'; font-size:58px; font-weight:800; letter-spacing:-0.03em; color:#fff;">Pool</span>
+      <span style="font-family:'Poppins'; font-size:58px; font-weight:800; letter-spacing:-0.03em; background:linear-gradient(135deg,#4BA8E8,#B8E4FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Guy</span>
+      <span style="font-family:'Raleway'; font-size:66px; font-weight:800; letter-spacing:-0.025em; line-height:1; background:linear-gradient(135deg,#0EBAC7,#6DD8F0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">X</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:7px; align-items:flex-end;">
+      <span style="font-size:11px; color:rgba(255,255,255,.35); font-weight:500; letter-spacing:.08em; text-transform:uppercase; font-family:'Inter'">"Pool" — Poppins 800 · White</span>
+      <span style="font-size:11px; color:rgba(75,168,232,.65); font-weight:500; letter-spacing:.08em; text-transform:uppercase; font-family:'Inter'">"Guy" — Poppins 800 · Blue Grad</span>
+      <span style="font-size:11px; color:rgba(14,186,199,.9); font-weight:500; letter-spacing:.08em; text-transform:uppercase; font-family:'Inter'">"X" — Raleway 800 · Aqua Grad</span>
+    </div>
+  </div>
+
+  <!-- Theme-aware light panel -->
+  <div class="wm-panel-light">
+    <div style="display:flex; align-items:baseline;">
+      <span class="wm-light-pool">Pool</span>
+      <span class="wm-light-guy">Guy</span>
+      <span class="wm-light-x">X</span>
+    </div>
+    <span class="wm-light-badge">Versão para fundo claro</span>
+  </div>
+</div>
+
+<!-- ── 03 PALETTE ── -->
+<div class="section">
+  <div class="section-label">03 — Paleta de Cores</div>
+  <div class="section-title">Cores da Marca</div>
+  <div class="section-sub">Do fundo oceânico ao aqua vibrante — paleta de profundidade</div>
+  <div class="palette-grid">
+    <div class="swatch"><div class="swatch-color" style="background:linear-gradient(145deg,#1BD4E1,#0EBAC7)"></div><div class="swatch-info"><div class="swatch-name">Aqua</div><div class="swatch-hex">#0EBAC7</div><div class="swatch-role">Cor primária</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:linear-gradient(145deg,#0EBAC7,#0A6070)"></div><div class="swatch-info"><div class="swatch-name">Aqua Dark</div><div class="swatch-hex">#0D7280</div><div class="swatch-role">Primária escura</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:linear-gradient(145deg,#4BA8E8,#1A6EBD)"></div><div class="swatch-info"><div class="swatch-name">Ocean Blue</div><div class="swatch-hex">#1A6EBD</div><div class="swatch-role">Cor de apoio</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:linear-gradient(145deg,#0D2840,#040D18)"></div><div class="swatch-info"><div class="swatch-name">Deep Navy</div><div class="swatch-hex">#040D18</div><div class="swatch-role">Fundo primário</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:linear-gradient(145deg,#B8E4FA,#6DD8F0)"></div><div class="swatch-info"><div class="swatch-name">Sky</div><div class="swatch-hex">#6DD8F0</div><div class="swatch-role">Destaque / texto</div></div></div>
+  </div>
+</div>
+
+<!-- ── 04 GRADIENTS ── -->
+<div class="section">
+  <div class="section-label">04 — Gradientes</div>
+  <div class="section-title">Gradientes de Sistema</div>
+  <div class="section-sub">Usados em botões, FABs, cards e no ícone do app</div>
+  <div class="grad-row">
+    <div class="grad-item" style="background:linear-gradient(135deg,#0EBAC7,#0D7280)"><span class="grad-label">Aqua Primário</span></div>
+    <div class="grad-item" style="background:linear-gradient(135deg,#0D2840,#040D18)"><span class="grad-label">Deep Navy</span></div>
+    <div class="grad-item" style="background:linear-gradient(135deg,#4BA8E8,#0EBAC7)"><span class="grad-label">Blue → Aqua</span></div>
+    <div class="grad-item" style="background:linear-gradient(135deg,#18DAEA,#065068)"><span class="grad-label">Flood Gradient</span></div>
+    <div class="grad-item" style="background:linear-gradient(135deg,#B8E4FA,#4BA8E8,#0EBAC7)"><span class="grad-label">Sky Highlight</span></div>
+    <div class="grad-item" style="background:linear-gradient(135deg,#040D18,#0D3A60,#0D7280)"><span class="grad-label">Deep Ocean</span></div>
+  </div>
+</div>
+
+<!-- ── 05 TYPOGRAPHY ── -->
+<div class="section">
+  <div class="section-label">05 — Tipografia</div>
+  <div class="section-title">Sistema Tipográfico</div>
+  <div class="section-sub">Dois typefaces — expressão de marca + interface funcional</div>
+  <div class="type-grid">
+    <div class="type-card">
+      <div class="type-family">Poppins — Display & Brand</div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <span class="type-demo-hi" style="font-size:42px; font-weight:800; line-height:1.1">Aa Bb</span>
+        <span class="type-demo-hi" style="font-size:26px; font-weight:700;">Pool Service Pro</span>
+        <span class="type-demo-md" style="font-size:18px; font-weight:600;">Títulos e headings</span>
+        <span class="type-demo-lo" style="font-size:14px; font-weight:500;">Subtítulos de seção</span>
+        <span class="type-demo-lo" style="font-size:13px; font-weight:400;">Texto de corpo em Poppins</span>
+        <span class="type-note">Pesos: 400 · 500 · 600 · 700 · 800</span>
+      </div>
+    </div>
+    <div class="type-card">
+      <div class="type-family">Raleway — Marca / X Accent</div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <span style="font-family:'Raleway'; font-size:42px; font-weight:800; color:#0EBAC7; line-height:1.1">X Pro</span>
+        <span style="font-family:'Raleway'; font-size:26px; font-weight:800; color:var(--text-hi); transition:color .3s;">PoolGuyX</span>
+        <span style="font-family:'Raleway'; font-size:18px; font-weight:700; color:var(--text-md); transition:color .3s;">Broward County FL</span>
+        <span style="font-family:'Inter'; font-size:14px; font-weight:500; color:var(--text-lo); margin-top:8px; transition:color .3s;">Inter — Interface</span>
+        <span style="font-family:'Inter'; font-size:13px; color:var(--text-lo); transition:color .3s;">Labels, badges, texto de UI</span>
+        <span class="type-note">Raleway 800 só para "X" · Inter para todo UI</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 06 APPLICATION ── -->
+<div class="section">
+  <div class="section-label">06 — Aplicação</div>
+  <div class="section-title">Exemplos de Uso</div>
+  <div class="section-sub">Como a identidade visual aparece no app</div>
+  <div class="usage-grid">
+    <!-- Login — always dark -->
+    <div class="usage-card dark">
+      <div class="usage-title">Login / Splash</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:14px; padding:24px 20px; background:rgba(255,255,255,.03); border-radius:16px; border:1px solid rgba(255,255,255,0.06);">
+        <div id="icon-login" style="filter:drop-shadow(0 4px 16px rgba(14,186,199,0.38))"></div>
+        <div style="display:flex; align-items:baseline;">
+          <span style="font-family:'Poppins'; font-size:28px; font-weight:800; color:#fff;">Pool</span>
+          <span style="font-family:'Poppins'; font-size:28px; font-weight:800; background:linear-gradient(135deg,#4BA8E8,#B8E4FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Guy</span>
+          <span style="font-family:'Raleway'; font-size:32px; font-weight:800; background:linear-gradient(135deg,#0EBAC7,#6DD8F0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">X</span>
+        </div>
+        <span style="font-size:10px; color:rgba(255,255,255,.35); letter-spacing:.12em; text-transform:uppercase;">Pool Service Management</span>
+        <div style="width:100%; background:rgba(255,255,255,.07); border-radius:11px; padding:11px 16px; border:1px solid rgba(255,255,255,0.10);">
+          <span style="font-size:13px; color:rgba(255,255,255,.3);">Email ou telefone</span>
+        </div>
+        <div style="width:100%; background:linear-gradient(135deg,#0EBAC7,#0D7280); border-radius:11px; padding:12px; text-align:center; box-shadow:0 4px 16px rgba(14,186,199,0.35);">
+          <span style="font-size:13px; font-weight:700; color:#fff; font-family:'Poppins'">Entrar</span>
+        </div>
+      </div>
+    </div>
+    <!-- Navbar — light card (theme-aware) -->
+    <div class="usage-card light">
+      <div class="usage-title">Navbar & FAB</div>
+      <!-- Navbar bar is always dark -->
+      <div style="background:#040D18; border-radius:14px; padding:15px 20px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; border:1px solid rgba(255,255,255,0.06);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div id="icon-nav"></div>
+          <div style="display:flex; align-items:baseline;">
+            <span style="font-family:'Poppins'; font-size:17px; font-weight:800; color:#fff;">Pool</span>
+            <span style="font-family:'Poppins'; font-size:17px; font-weight:800; background:linear-gradient(135deg,#4BA8E8,#B8E4FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Guy</span>
+            <span style="font-family:'Raleway'; font-size:19px; font-weight:800; background:linear-gradient(135deg,#0EBAC7,#6DD8F0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">X</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="width:30px; height:30px; background:rgba(14,186,199,.12); border-radius:50%; border:1px solid rgba(14,186,199,.25);"></div>
+          <div style="width:30px; height:30px; background:rgba(14,186,199,.12); border-radius:50%; border:1px solid rgba(14,186,199,.25);"></div>
+        </div>
+      </div>
+      <!-- FAB -->
+      <div class="fab-bg">
+        <div style="width:50px; height:50px; background:linear-gradient(135deg,#0EBAC7,#0D7280); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 20px rgba(14,186,199,0.42); flex-shrink:0;">
+          <span style="color:#fff; font-size:24px; font-weight:200; line-height:1; margin-top:-1px;">+</span>
+        </div>
+        <div>
+          <span class="fab-label">FAB — Ação Principal</span>
+          <span class="fab-sub">Aqua gradient · zIndex 35</span>
+        </div>
+      </div>
+      <!-- Tags -->
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <span class="tag" style="background:rgba(14,186,199,.10); color:#0A6070;"><span style="width:7px;height:7px;border-radius:50%;background:#0EBAC7;display:inline-block;"></span> Ativo</span>
+        <span class="tag" style="background:rgba(26,110,189,.10); color:#1A6EBD;"><span style="width:7px;height:7px;border-radius:50%;background:#4BA8E8;display:inline-block;"></span> Pendente</span>
+        <span class="tag" style="background:rgba(7,26,46,.07); color:var(--text-md);">Rota #04</span>
+        <span class="tag" style="background:rgba(14,186,199,.08); color:#0A6070;">12 piscinas</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div style="display:flex; align-items:baseline; gap:0; justify-content:center; margin-bottom:10px;">
+    <span class="footer-wm-pool">Pool</span>
+    <span style="font-family:'Poppins'; font-size:20px; font-weight:800; background:linear-gradient(135deg,#1A6EBD,#4BA8E8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Guy</span>
+    <span style="font-family:'Raleway'; font-size:23px; font-weight:800; background:linear-gradient(135deg,#0EBAC7,#0D7280); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">X</span>
+  </div>
+  <p class="footer-note">Brand Identity Guide v2.0 · Flood Level Icon · Pool Service Management · Broward County, FL</p>
+</div>
+
+</div><!-- /page -->
+
+<script>
+/* ─── Theme toggle ─────────────────────────────────────── */
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('theme-icon').textContent = isDark ? '☀' : '☾';
+  localStorage.setItem('pgx-theme', isDark ? 'light' : 'dark');
+}
+
+// Restore saved preference
+(function() {
+  const saved = localStorage.getItem('pgx-theme');
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('theme-icon').textContent = '☾';
+  }
+})();
+
+/* ─── Flood Level icon generator ───────────────────────────
+   Renders the approved "Flood Level" icon at any pixel size.
+   All SVG IDs are namespaced with the uid to avoid conflicts.
+   ─────────────────────────────────────────────────────── */
+function floodIcon(uid, px, shadow) {
+  const s = shadow || '0 0 20px rgba(14,186,199,0.36)';
+  return `<svg width="${px}" height="${px}" viewBox="0 0 100 100"
+    xmlns="http://www.w3.org/2000/svg"
+    style="display:block;filter:drop-shadow(${s})">
+  <defs>
+    <radialGradient id="${uid}bg" cx="50%" cy="48%" r="66%">
+      <stop offset="0%" stop-color="#0B1F32"/>
+      <stop offset="100%" stop-color="#040D18"/>
+    </radialGradient>
+    <clipPath id="${uid}wc">
+      <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59 L105,105 L-5,105Z"/>
+    </clipPath>
+    <linearGradient id="${uid}wf" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0AB8C8" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#065068" stop-opacity="0.55"/>
+    </linearGradient>
+    <filter id="${uid}g1">
+      <feGaussianBlur stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="${uid}g2">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="${uid}gl" x1="0%" y1="0%" x2="55%" y2="100%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.13"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="${uid}rnd"><rect width="100" height="100" rx="24"/></clipPath>
+  </defs>
+  <rect width="100" height="100" rx="24" fill="url(#${uid}bg)"/>
+  <g clip-path="url(#${uid}rnd)">
+    <text x="5" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66"
+          fill="rgba(255,255,255,0.95)">P</text>
+    <text x="53" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66"
+          fill="rgba(255,255,255,0.95)">X</text>
+    <text clip-path="url(#${uid}wc)" x="5" y="72" font-family="Poppins,sans-serif"
+          font-weight="800" font-size="66" fill="#18DAEA" filter="url(#${uid}g1)">P</text>
+    <text clip-path="url(#${uid}wc)" x="53" y="72" font-family="Poppins,sans-serif"
+          font-weight="800" font-size="66" fill="#18DAEA" filter="url(#${uid}g1)">X</text>
+    <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59 L105,105 L-5,105Z"
+          fill="url(#${uid}wf)"/>
+    <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59"
+          stroke="#0EBAC7" stroke-width="2.8" fill="none" stroke-linecap="round"
+          filter="url(#${uid}g1)"/>
+    <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59"
+          stroke="rgba(255,255,255,0.50)" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="20" cy="46" r="2.2" fill="none" stroke="rgba(14,186,199,0.55)"
+            stroke-width="1.2" filter="url(#${uid}g1)"/>
+    <circle cx="34" cy="40" r="1.5" fill="none" stroke="rgba(14,186,199,0.40)" stroke-width="1"/>
+    <circle cx="70" cy="43" r="2.5" fill="none" stroke="rgba(14,186,199,0.50)"
+            stroke-width="1.2" filter="url(#${uid}g1)"/>
+    <circle cx="83" cy="37" r="1.6" fill="none" stroke="rgba(14,186,199,0.35)" stroke-width="1"/>
+    <circle cx="47" cy="50" r="1.2" fill="none" stroke="rgba(14,186,199,0.30)" stroke-width="0.8"/>
+    <rect width="100" height="100" rx="24" fill="url(#${uid}gl)"/>
+    <ellipse cx="26" cy="17" rx="20" ry="9" fill="white" opacity="0.07"
+             transform="rotate(-14,26,17)"/>
+  </g>
+  <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none"
+        stroke="rgba(14,186,199,0.25)" stroke-width="1.5"/>
+</svg>`;
+}
+
+/* ── Render all instances ── */
+document.getElementById('icon-header').innerHTML = floodIcon('h',  96, '0 0 28px rgba(14,186,199,0.42)');
+document.getElementById('icon-dark').innerHTML   = floodIcon('d', 108, '0 4px 24px rgba(14,186,199,0.32)');
+document.getElementById('icon-light').innerHTML  = floodIcon('l', 108, '0 4px 24px rgba(14,186,199,0.22)');
+document.getElementById('icon-aqua').innerHTML   = floodIcon('a', 108, '0 4px 24px rgba(0,0,0,0.28)');
+document.getElementById('icon-1024').innerHTML   = floodIcon('s1', 84, '0 4px 16px rgba(14,186,199,0.30)');
+document.getElementById('icon-180').innerHTML    = floodIcon('s2', 64, '0 3px 12px rgba(14,186,199,0.26)');
+document.getElementById('icon-76').innerHTML     = floodIcon('s3', 48, '0 2px 10px rgba(14,186,199,0.22)');
+document.getElementById('icon-40').innerHTML     = floodIcon('s4', 36, 'none');
+document.getElementById('icon-29').innerHTML     = floodIcon('s5', 26, 'none');
+document.getElementById('icon-login').innerHTML  = floodIcon('ln', 56, '0 4px 18px rgba(14,186,199,0.42)');
+document.getElementById('icon-nav').innerHTML    = floodIcon('nv', 28, 'none');
+</script>
+</body>
+</html>

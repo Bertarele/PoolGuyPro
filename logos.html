@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PoolGuyX — Logo Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Raleway:wght@800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Inter',sans-serif; background:#0A1220; color:#fff; min-height:100vh; }
+
+  .page { max-width:1100px; margin:0 auto; padding:56px 32px 96px; }
+
+  /* ── Page header ── */
+  .pg-header { text-align:center; margin-bottom:72px; }
+  .pg-label  { font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#0EBAC7; margin-bottom:14px; display:flex; align-items:center; justify-content:center; gap:12px; }
+  .pg-label::before, .pg-label::after { content:''; width:32px; height:1px; background:#0EBAC7; opacity:.5; }
+  .pg-title  { font-family:'Poppins'; font-size:38px; font-weight:800; line-height:1.1; margin-bottom:10px; }
+  .pg-title span { background:linear-gradient(135deg,#0EBAC7,#6DD8F0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .pg-sub    { font-size:15px; color:rgba(255,255,255,.4); max-width:480px; margin:0 auto; }
+
+  /* ── Grid ── */
+  .concepts-grid { display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-bottom:60px; }
+  .concept-card  {
+    background:linear-gradient(145deg,#0D1C2C,#0A1420);
+    border:1px solid rgba(255,255,255,0.07);
+    border-radius:28px; padding:44px 36px;
+    display:flex; flex-direction:column; align-items:center; gap:0;
+    transition:border-color .3s;
+  }
+  .concept-card:hover { border-color:rgba(14,186,199,0.25); }
+
+  .concept-num   { font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:rgba(14,186,199,.5); margin-bottom:8px; }
+  .concept-name  { font-family:'Poppins'; font-size:20px; font-weight:800; color:#fff; margin-bottom:6px; text-align:center; }
+  .concept-desc  { font-size:12px; color:rgba(255,255,255,.35); margin-bottom:36px; text-align:center; line-height:1.5; }
+
+  .icon-showcase { display:flex; gap:20px; align-items:flex-end; margin-bottom:36px; }
+  .icon-set { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .icon-set-label { font-size:10px; color:rgba(255,255,255,.3); font-weight:500; }
+
+  .concept-divider { width:100%; height:1px; background:rgba(255,255,255,0.06); margin-bottom:24px; }
+
+  /* Wordmark preview in card */
+  .wm-preview { display:flex; align-items:baseline; gap:0; margin-bottom:8px; }
+  .wm-preview .pool { font-family:'Poppins'; font-weight:800; letter-spacing:-0.03em; color:#fff; }
+  .wm-preview .guy  { font-family:'Poppins'; font-weight:800; letter-spacing:-0.03em; background:linear-gradient(135deg,#4BA8E8,#B8E4FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .wm-preview .x    { font-family:'Raleway';  font-weight:800; letter-spacing:-0.025em; line-height:1; background:linear-gradient(135deg,#0EBAC7,#6DD8F0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+  /* Tags */
+  .tags { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .tag  { padding:4px 12px; border-radius:99px; font-size:11px; font-weight:600; }
+  .tag-aqua { background:rgba(14,186,199,.12); color:#0EBAC7; }
+  .tag-blue { background:rgba(75,168,232,.12); color:#4BA8E8; }
+  .tag-gray { background:rgba(255,255,255,.07); color:rgba(255,255,255,.5); }
+
+  /* ── Reference bar (Aqua Vortex) ── */
+  .ref-bar {
+    background:linear-gradient(135deg,#040D18,#071A2E);
+    border:1px solid rgba(14,186,199,0.18);
+    border-radius:20px; padding:28px 36px;
+    display:flex; align-items:center; gap:24px;
+  }
+  .ref-label { font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:rgba(14,186,199,.5); margin-bottom:6px; }
+  .ref-title { font-family:'Poppins'; font-size:16px; font-weight:700; color:#fff; margin-bottom:4px; }
+  .ref-sub   { font-size:12px; color:rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ── -->
+  <div class="pg-header">
+    <div class="pg-label">Logo Concepts</div>
+    <div class="pg-title">4 Conceitos para <span>PoolGuyX</span></div>
+    <div class="pg-sub">Identidade visual profissional · Cada conceito com efeitos únicos e estilo distinto</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       CONCEPTS GRID
+  ══════════════════════════════════════════════════ -->
+  <div class="concepts-grid">
+
+    <!-- ╔═══════════════════════════════════
+         CONCEPT A — LIQUID X
+    ═══════════════════════════════════╗ -->
+    <div class="concept-card">
+      <div class="concept-num">Conceito 01</div>
+      <div class="concept-name">Liquid X</div>
+      <div class="concept-desc">O "X" da marca em forma fluida — dois traços cruzados como água em movimento. Dinâmico e moderno.</div>
+
+      <div class="icon-showcase">
+        <!-- Large -->
+        <div class="icon-set">
+          <svg width="108" height="108" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 22px rgba(14,186,199,0.38))">
+            <defs>
+              <radialGradient id="Abg" cx="50%" cy="50%" r="65%">
+                <stop offset="0%" stop-color="#0C2A40"/>
+                <stop offset="100%" stop-color="#040D18"/>
+              </radialGradient>
+              <linearGradient id="Axg1" x1="15" y1="15" x2="85" y2="85" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#6DD8F0"/>
+                <stop offset="45%" stop-color="#0EBAC7"/>
+                <stop offset="100%" stop-color="#0A5070"/>
+              </linearGradient>
+              <linearGradient id="Axg2" x1="85" y1="15" x2="15" y2="85" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#4BA8E8"/>
+                <stop offset="45%" stop-color="#0C90B0"/>
+                <stop offset="100%" stop-color="#0A3A58"/>
+              </linearGradient>
+              <filter id="Aglow1"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="Aglow2"><feGaussianBlur stdDeviation="5.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="Aglow3"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <linearGradient id="Agloss" x1="0%" y1="0%" x2="60%" y2="100%">
+                <stop offset="0%" stop-color="white" stop-opacity="0.14"/>
+                <stop offset="100%" stop-color="white" stop-opacity="0"/>
+              </linearGradient>
+              <clipPath id="Aclip"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Abg)"/>
+            <g clip-path="url(#Aclip)">
+              <!-- Ambient center glow -->
+              <circle cx="50" cy="50" r="22" fill="#0EBAC7" opacity="0.07" filter="url(#Aglow3)"/>
+              <!-- ╲ bar -->
+              <line x1="16" y1="16" x2="84" y2="84" stroke="url(#Axg1)" stroke-width="17" stroke-linecap="round" filter="url(#Aglow1)"/>
+              <!-- ╱ bar -->
+              <line x1="84" y1="16" x2="16" y2="84" stroke="url(#Axg2)" stroke-width="17" stroke-linecap="round" filter="url(#Aglow1)"/>
+              <!-- Water drops at lower tips -->
+              <circle cx="12" cy="88" r="5.5" fill="#0EBAC7" opacity="0.5" filter="url(#Aglow2)"/>
+              <circle cx="12" cy="88" r="3" fill="#6DD8F0" opacity="0.9"/>
+              <circle cx="88" cy="88" r="5.5" fill="#4BA8E8" opacity="0.5" filter="url(#Aglow2)"/>
+              <circle cx="88" cy="88" r="3" fill="#B8E4FA" opacity="0.9"/>
+              <!-- Cross-point ripple rings -->
+              <circle cx="50" cy="50" r="9" fill="none" stroke="rgba(14,186,199,0.35)" stroke-width="1.5" filter="url(#Aglow1)"/>
+              <circle cx="50" cy="50" r="15" fill="none" stroke="rgba(14,186,199,0.16)" stroke-width="1"/>
+              <circle cx="50" cy="50" r="21" fill="none" stroke="rgba(14,186,199,0.08)" stroke-width="1"/>
+              <!-- Glass -->
+              <rect width="100" height="100" rx="24" fill="url(#Agloss)"/>
+              <ellipse cx="27" cy="20" rx="20" ry="9" fill="white" opacity="0.07" transform="rotate(-20,27,20)"/>
+            </g>
+            <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.28)" stroke-width="1.5"/>
+          </svg>
+          <span class="icon-set-label">512px</span>
+        </div>
+        <!-- Small -->
+        <div class="icon-set">
+          <svg width="60" height="60" viewBox="0 0 100 100">
+            <defs>
+              <radialGradient id="Abg2" cx="50%" cy="50%" r="65%"><stop offset="0%" stop-color="#0C2A40"/><stop offset="100%" stop-color="#040D18"/></radialGradient>
+              <linearGradient id="Ax1b" x1="15" y1="15" x2="85" y2="85" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#6DD8F0"/><stop offset="50%" stop-color="#0EBAC7"/><stop offset="100%" stop-color="#0A5070"/></linearGradient>
+              <linearGradient id="Ax2b" x1="85" y1="15" x2="15" y2="85" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#4BA8E8"/><stop offset="50%" stop-color="#0C90B0"/><stop offset="100%" stop-color="#0A3A58"/></linearGradient>
+              <filter id="Ag1b"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <clipPath id="Aclip2"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Abg2)"/>
+            <g clip-path="url(#Aclip2)">
+              <line x1="16" y1="16" x2="84" y2="84" stroke="url(#Ax1b)" stroke-width="17" stroke-linecap="round" filter="url(#Ag1b)"/>
+              <line x1="84" y1="16" x2="16" y2="84" stroke="url(#Ax2b)" stroke-width="17" stroke-linecap="round" filter="url(#Ag1b)"/>
+              <circle cx="50" cy="50" r="9" fill="none" stroke="rgba(14,186,199,0.30)" stroke-width="1.5"/>
+            </g>
+          </svg>
+          <span class="icon-set-label">180px</span>
+        </div>
+        <div class="icon-set">
+          <svg width="36" height="36" viewBox="0 0 100 100">
+            <defs>
+              <radialGradient id="Abg3" cx="50%" cy="50%" r="65%"><stop offset="0%" stop-color="#0C2A40"/><stop offset="100%" stop-color="#040D18"/></radialGradient>
+              <linearGradient id="Ax1c" x1="15" y1="15" x2="85" y2="85" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#6DD8F0"/><stop offset="50%" stop-color="#0EBAC7"/><stop offset="100%" stop-color="#0A5070"/></linearGradient>
+              <linearGradient id="Ax2c" x1="85" y1="15" x2="15" y2="85" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#4BA8E8"/><stop offset="50%" stop-color="#0C90B0"/><stop offset="100%" stop-color="#0A3A58"/></linearGradient>
+              <filter id="Ag1c"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <clipPath id="Aclip3"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Abg3)"/>
+            <g clip-path="url(#Aclip3)">
+              <line x1="16" y1="16" x2="84" y2="84" stroke="url(#Ax1c)" stroke-width="17" stroke-linecap="round" filter="url(#Ag1c)"/>
+              <line x1="84" y1="16" x2="16" y2="84" stroke="url(#Ax2c)" stroke-width="17" stroke-linecap="round" filter="url(#Ag1c)"/>
+            </g>
+          </svg>
+          <span class="icon-set-label">40px</span>
+        </div>
+      </div>
+
+      <div class="concept-divider"></div>
+      <div class="wm-preview" style="margin-bottom:16px">
+        <span class="pool" style="font-size:22px;">Pool</span>
+        <span class="guy"  style="font-size:22px;">Guy</span>
+        <span class="x"    style="font-size:25px;">X</span>
+      </div>
+      <div class="tags">
+        <span class="tag tag-aqua">Dinâmico</span>
+        <span class="tag tag-blue">Moderno</span>
+        <span class="tag tag-gray">Marca forte</span>
+      </div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════
+         CONCEPT B — HEX BADGE
+    ═══════════════════════════════════╗ -->
+    <div class="concept-card">
+      <div class="concept-num">Conceito 02</div>
+      <div class="concept-name">Hex Badge</div>
+      <div class="concept-desc">Badge hexagonal profissional — sol de Florida no topo, ondas na base. Estilo de certificação premium.</div>
+
+      <div class="icon-showcase">
+        <div class="icon-set">
+          <svg width="108" height="108" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 22px rgba(14,186,199,0.30))">
+            <defs>
+              <radialGradient id="Bbg" cx="50%" cy="42%" r="65%">
+                <stop offset="0%" stop-color="#0C2038"/>
+                <stop offset="100%" stop-color="#040D18"/>
+              </radialGradient>
+              <linearGradient id="BhGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7EE8F8"/>
+                <stop offset="40%" stop-color="#0EBAC7"/>
+                <stop offset="100%" stop-color="#0A5070"/>
+              </linearGradient>
+              <linearGradient id="BwGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#0A6080" stop-opacity="0"/>
+                <stop offset="30%" stop-color="#0DAFC0"/>
+                <stop offset="70%" stop-color="#0DAFC0"/>
+                <stop offset="100%" stop-color="#0A6080" stop-opacity="0"/>
+              </linearGradient>
+              <filter id="Bglow1"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="Bglow2"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="Bglow3"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <linearGradient id="Bgloss" x1="0%" y1="0%" x2="60%" y2="100%"><stop offset="0%" stop-color="white" stop-opacity="0.12"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient>
+              <clipPath id="Bclip"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Bbg)"/>
+            <g clip-path="url(#Bclip)">
+              <!-- Hex outer glow ring -->
+              <polygon points="50,6 90,28 90,72 50,94 10,72 10,28" fill="none" stroke="#0EBAC7" stroke-width="1" opacity="0.10" filter="url(#Bglow3)"/>
+              <!-- Hex outer ring (gradient stroke) -->
+              <polygon points="50,6 90,28 90,72 50,94 10,72 10,28" fill="none" stroke="url(#BhGrad)" stroke-width="2.5" filter="url(#Bglow1)"/>
+              <!-- Hex inner fill (subtle) -->
+              <polygon points="50,11 85,31 85,69 50,89 15,69 15,31" fill="rgba(14,186,199,0.04)"/>
+              <!-- Horizontal divider -->
+              <line x1="16" y1="52" x2="84" y2="52" stroke="rgba(14,186,199,0.18)" stroke-width="1"/>
+              <!-- SUN — upper half -->
+              <!-- Sun glow aura -->
+              <circle cx="50" cy="31" r="14" fill="#0EBAC7" opacity="0.06" filter="url(#Bglow3)"/>
+              <!-- Sun rays (8 rays) -->
+              <line x1="50" y1="13" x2="50" y2="17" stroke="rgba(255,255,255,0.6)"  stroke-width="2"   stroke-linecap="round" filter="url(#Bglow1)"/>
+              <line x1="64" y1="17" x2="62" y2="20" stroke="rgba(255,255,255,0.55)" stroke-width="1.8" stroke-linecap="round" filter="url(#Bglow1)"/>
+              <line x1="36" y1="17" x2="38" y2="20" stroke="rgba(255,255,255,0.55)" stroke-width="1.8" stroke-linecap="round" filter="url(#Bglow1)"/>
+              <line x1="69" y1="31" x2="65" y2="31" stroke="rgba(255,255,255,0.50)" stroke-width="1.8" stroke-linecap="round" filter="url(#Bglow1)"/>
+              <line x1="31" y1="31" x2="35" y2="31" stroke="rgba(255,255,255,0.50)" stroke-width="1.8" stroke-linecap="round" filter="url(#Bglow1)"/>
+              <line x1="64" y1="45" x2="62" y2="42" stroke="rgba(255,255,255,0.30)" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="36" y1="45" x2="38" y2="42" stroke="rgba(255,255,255,0.30)" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="50" y1="49" x2="50" y2="45" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-linecap="round"/>
+              <!-- Sun circle -->
+              <circle cx="50" cy="31" r="10" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.8" filter="url(#Bglow1)"/>
+              <!-- Sun center -->
+              <circle cx="50" cy="31" r="4.5" fill="rgba(255,255,255,0.80)" filter="url(#Bglow2)"/>
+              <!-- WAVES — lower half -->
+              <path d="M 18,62 Q 29,54 40,62 Q 51,70 62,62 Q 73,54 82,62" stroke="url(#BwGrad)" stroke-width="2.5" fill="none" stroke-linecap="round" filter="url(#Bglow1)"/>
+              <path d="M 20,72 Q 31,64 42,72 Q 53,80 64,72 Q 73,66 80,72" stroke="rgba(14,186,199,0.45)" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M 22,82 Q 33,75 44,82 Q 55,89 65,82 Q 73,77 79,82" stroke="rgba(14,186,199,0.22)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              <!-- Gloss -->
+              <rect width="100" height="100" rx="24" fill="url(#Bgloss)"/>
+              <ellipse cx="28" cy="20" rx="20" ry="9" fill="white" opacity="0.07" transform="rotate(-18,28,20)"/>
+            </g>
+            <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.20)" stroke-width="1"/>
+          </svg>
+          <span class="icon-set-label">512px</span>
+        </div>
+        <div class="icon-set">
+          <svg width="60" height="60" viewBox="0 0 100 100">
+            <defs>
+              <radialGradient id="Bbg2" cx="50%" cy="42%" r="65%"><stop offset="0%" stop-color="#0C2038"/><stop offset="100%" stop-color="#040D18"/></radialGradient>
+              <linearGradient id="BhG2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7EE8F8"/><stop offset="40%" stop-color="#0EBAC7"/><stop offset="100%" stop-color="#0A5070"/></linearGradient>
+              <linearGradient id="BwG2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0A6080" stop-opacity="0"/><stop offset="30%" stop-color="#0DAFC0"/><stop offset="70%" stop-color="#0DAFC0"/><stop offset="100%" stop-color="#0A6080" stop-opacity="0"/></linearGradient>
+              <filter id="Bg1b"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="Bg2b"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <clipPath id="Bclip2"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Bbg2)"/>
+            <g clip-path="url(#Bclip2)">
+              <polygon points="50,6 90,28 90,72 50,94 10,72 10,28" fill="none" stroke="url(#BhG2)" stroke-width="2.5" filter="url(#Bg1b)"/>
+              <line x1="16" y1="52" x2="84" y2="52" stroke="rgba(14,186,199,0.18)" stroke-width="1"/>
+              <line x1="50" y1="15" x2="50" y2="18" stroke="rgba(255,255,255,0.5)" stroke-width="1.8" stroke-linecap="round" filter="url(#Bg1b)"/>
+              <line x1="63" y1="19" x2="61" y2="22" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round" filter="url(#Bg1b)"/>
+              <line x1="37" y1="19" x2="39" y2="22" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round" filter="url(#Bg1b)"/>
+              <line x1="68" y1="31" x2="64" y2="31" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" filter="url(#Bg1b)"/>
+              <line x1="32" y1="31" x2="36" y2="31" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" filter="url(#Bg1b)"/>
+              <circle cx="50" cy="31" r="9" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1.8" filter="url(#Bg1b)"/>
+              <circle cx="50" cy="31" r="3.5" fill="rgba(255,255,255,0.75)" filter="url(#Bg2b)"/>
+              <path d="M 18,62 Q 29,54 40,62 Q 51,70 62,62 Q 73,54 82,62" stroke="url(#BwG2)" stroke-width="2.5" fill="none" stroke-linecap="round" filter="url(#Bg1b)"/>
+              <path d="M 20,72 Q 31,64 42,72 Q 53,80 64,72 Q 73,66 80,72" stroke="rgba(14,186,199,0.40)" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </g>
+          </svg>
+          <span class="icon-set-label">180px</span>
+        </div>
+        <div class="icon-set">
+          <svg width="36" height="36" viewBox="0 0 100 100">
+            <defs>
+              <radialGradient id="Bbg3" cx="50%" cy="42%" r="65%"><stop offset="0%" stop-color="#0C2038"/><stop offset="100%" stop-color="#040D18"/></radialGradient>
+              <linearGradient id="BhG3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7EE8F8"/><stop offset="40%" stop-color="#0EBAC7"/><stop offset="100%" stop-color="#0A5070"/></linearGradient>
+              <filter id="Bg1c"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <clipPath id="Bclip3"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Bbg3)"/>
+            <g clip-path="url(#Bclip3)">
+              <polygon points="50,6 90,28 90,72 50,94 10,72 10,28" fill="none" stroke="url(#BhG3)" stroke-width="2.5" filter="url(#Bg1c)"/>
+              <line x1="16" y1="52" x2="84" y2="52" stroke="rgba(14,186,199,0.15)" stroke-width="1"/>
+              <circle cx="50" cy="31" r="9" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2" filter="url(#Bg1c)"/>
+              <circle cx="50" cy="31" r="3" fill="rgba(255,255,255,0.7)"/>
+              <path d="M 20,63 Q 31,55 42,63 Q 53,71 64,63 Q 73,57 80,63" stroke="rgba(14,186,199,0.60)" stroke-width="2.5" fill="none" stroke-linecap="round" filter="url(#Bg1c)"/>
+            </g>
+          </svg>
+          <span class="icon-set-label">40px</span>
+        </div>
+      </div>
+
+      <div class="concept-divider"></div>
+      <div class="wm-preview" style="margin-bottom:16px">
+        <span class="pool" style="font-size:22px;">Pool</span>
+        <span class="guy"  style="font-size:22px;">Guy</span>
+        <span class="x"    style="font-size:25px;">X</span>
+      </div>
+      <div class="tags">
+        <span class="tag tag-aqua">Profissional</span>
+        <span class="tag tag-blue">Florida vibes</span>
+        <span class="tag tag-gray">Badge</span>
+      </div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════
+         CONCEPT C — WAVE STACK
+    ═══════════════════════════════════╗ -->
+    <div class="concept-card">
+      <div class="concept-num">Conceito 03</div>
+      <div class="concept-name">Wave Stack</div>
+      <div class="concept-desc">3 ondas em camadas sobrepostas — do oceano profundo à superfície vibrante. Minimalismo impactante.</div>
+
+      <div class="icon-showcase">
+        <div class="icon-set">
+          <svg width="108" height="108" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 22px rgba(14,186,199,0.30))">
+            <defs>
+              <linearGradient id="Cbg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#071828"/>
+                <stop offset="100%" stop-color="#040D18"/>
+              </linearGradient>
+              <linearGradient id="Cw1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#0A3250" stop-opacity="0"/>
+                <stop offset="25%" stop-color="#0B5878"/>
+                <stop offset="75%" stop-color="#0B5878"/>
+                <stop offset="100%" stop-color="#0A3250" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="Cw2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#0A6080" stop-opacity="0"/>
+                <stop offset="20%" stop-color="#0C90B0"/>
+                <stop offset="80%" stop-color="#0C90B0"/>
+                <stop offset="100%" stop-color="#0A6080" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="Cw3" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#0EBAC7" stop-opacity="0"/>
+                <stop offset="20%" stop-color="#20DDED"/>
+                <stop offset="80%" stop-color="#20DDED"/>
+                <stop offset="100%" stop-color="#0EBAC7" stop-opacity="0"/>
+              </linearGradient>
+              <filter id="Cglow1"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="Cglow2"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <linearGradient id="Cgloss" x1="0%" y1="0%" x2="50%" y2="100%"><stop offset="0%" stop-color="white" stop-opacity="0.13"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient>
+              <clipPath id="Cclip"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Cbg)"/>
+            <g clip-path="url(#Cclip)">
+              <!-- Wave 1 - darkest, deepest -->
+              <path d="M -8,72 C 8,58 18,72 30,64 C 42,56 54,72 66,64 C 78,56 90,70 108,64 L 108,108 L -8,108 Z" fill="url(#Cw1)" opacity="0.95"/>
+              <!-- Wave 2 - medium -->
+              <path d="M -8,57 C 8,43 18,57 30,49 C 42,41 54,57 66,49 C 78,41 90,55 108,49 L 108,108 L -8,108 Z" fill="url(#Cw2)" opacity="0.90" filter="url(#Cglow1)"/>
+              <!-- Wave 2 crest highlight -->
+              <path d="M -8,57 C 8,43 18,57 30,49 C 42,41 54,57 66,49 C 78,41 90,55 108,49" stroke="rgba(255,255,255,0.18)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              <!-- Wave 3 - brightest, top -->
+              <path d="M -8,42 C 8,28 18,42 30,34 C 42,26 54,42 66,34 C 78,26 90,40 108,34 L 108,92 L -8,92 Z" fill="url(#Cw3)" opacity="0.85" filter="url(#Cglow2)"/>
+              <!-- Wave 3 crest foam -->
+              <path d="M -8,42 C 8,28 18,42 30,34 C 42,26 54,42 66,34 C 78,26 90,40 108,34" stroke="rgba(255,255,255,0.40)" stroke-width="2" fill="none" stroke-linecap="round" filter="url(#Cglow1)"/>
+              <!-- Sky/cloud suggestion at top -->
+              <ellipse cx="50" cy="14" rx="28" ry="9" fill="rgba(14,186,199,0.06)"/>
+              <!-- Gloss -->
+              <rect width="100" height="100" rx="24" fill="url(#Cgloss)"/>
+              <ellipse cx="28" cy="18" rx="22" ry="10" fill="white" opacity="0.06" transform="rotate(-15,28,18)"/>
+            </g>
+            <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.20)" stroke-width="1.5"/>
+          </svg>
+          <span class="icon-set-label">512px</span>
+        </div>
+        <div class="icon-set">
+          <svg width="60" height="60" viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="Cbg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#071828"/><stop offset="100%" stop-color="#040D18"/></linearGradient>
+              <linearGradient id="Cw1b" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0A3250" stop-opacity="0"/><stop offset="30%" stop-color="#0B5878"/><stop offset="70%" stop-color="#0B5878"/><stop offset="100%" stop-color="#0A3250" stop-opacity="0"/></linearGradient>
+              <linearGradient id="Cw2b" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0A6080" stop-opacity="0"/><stop offset="20%" stop-color="#0C90B0"/><stop offset="80%" stop-color="#0C90B0"/><stop offset="100%" stop-color="#0A6080" stop-opacity="0"/></linearGradient>
+              <linearGradient id="Cw3b" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0EBAC7" stop-opacity="0"/><stop offset="20%" stop-color="#20DDED"/><stop offset="80%" stop-color="#20DDED"/><stop offset="100%" stop-color="#0EBAC7" stop-opacity="0"/></linearGradient>
+              <filter id="Cg1b"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <clipPath id="Cclip2"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Cbg2)"/>
+            <g clip-path="url(#Cclip2)">
+              <path d="M -8,72 C 8,58 18,72 30,64 C 42,56 54,72 66,64 C 78,56 90,70 108,64 L 108,108 L -8,108 Z" fill="url(#Cw1b)" opacity="0.95"/>
+              <path d="M -8,57 C 8,43 18,57 30,49 C 42,41 54,57 66,49 C 78,41 90,55 108,49 L 108,108 L -8,108 Z" fill="url(#Cw2b)" opacity="0.90" filter="url(#Cg1b)"/>
+              <path d="M -8,42 C 8,28 18,42 30,34 C 42,26 54,42 66,34 C 78,26 90,40 108,34 L 108,92 L -8,92 Z" fill="url(#Cw3b)" opacity="0.85" filter="url(#Cg1b)"/>
+              <path d="M -8,42 C 8,28 18,42 30,34 C 42,26 54,42 66,34 C 78,26 90,40 108,34" stroke="rgba(255,255,255,0.30)" stroke-width="1.5" fill="none"/>
+            </g>
+          </svg>
+          <span class="icon-set-label">180px</span>
+        </div>
+        <div class="icon-set">
+          <svg width="36" height="36" viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="Cbg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#071828"/><stop offset="100%" stop-color="#040D18"/></linearGradient>
+              <linearGradient id="Cw1c" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0A3250" stop-opacity="0"/><stop offset="30%" stop-color="#0B5878"/><stop offset="70%" stop-color="#0B5878"/><stop offset="100%" stop-color="#0A3250" stop-opacity="0"/></linearGradient>
+              <linearGradient id="Cw2c" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0A6080" stop-opacity="0"/><stop offset="20%" stop-color="#0C90B0"/><stop offset="80%" stop-color="#0C90B0"/><stop offset="100%" stop-color="#0A6080" stop-opacity="0"/></linearGradient>
+              <linearGradient id="Cw3c" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0EBAC7" stop-opacity="0"/><stop offset="20%" stop-color="#20DDED"/><stop offset="80%" stop-color="#20DDED"/><stop offset="100%" stop-color="#0EBAC7" stop-opacity="0"/></linearGradient>
+              <filter id="Cg1c"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <clipPath id="Cclip3"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Cbg3)"/>
+            <g clip-path="url(#Cclip3)">
+              <path d="M -8,72 C 8,58 18,72 30,64 C 42,56 54,72 66,64 C 78,56 90,70 108,64 L 108,108 L -8,108 Z" fill="url(#Cw1c)" opacity="0.95"/>
+              <path d="M -8,57 C 8,43 18,57 30,49 C 42,41 54,57 66,49 C 78,41 90,55 108,49 L 108,108 L -8,108 Z" fill="url(#Cw2c)" opacity="0.90" filter="url(#Cg1c)"/>
+              <path d="M -8,42 C 8,28 18,42 30,34 C 42,26 54,42 66,34 C 78,26 90,40 108,34 L 108,92 L -8,92 Z" fill="url(#Cw3c)" opacity="0.85" filter="url(#Cg1c)"/>
+              <path d="M -8,42 C 8,28 18,42 30,34 C 42,26 54,42 66,34 C 78,26 90,40 108,34" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" fill="none"/>
+            </g>
+          </svg>
+          <span class="icon-set-label">40px</span>
+        </div>
+      </div>
+
+      <div class="concept-divider"></div>
+      <div class="wm-preview" style="margin-bottom:16px">
+        <span class="pool" style="font-size:22px;">Pool</span>
+        <span class="guy"  style="font-size:22px;">Guy</span>
+        <span class="x"    style="font-size:25px;">X</span>
+      </div>
+      <div class="tags">
+        <span class="tag tag-aqua">Minimalista</span>
+        <span class="tag tag-blue">Profundidade</span>
+        <span class="tag tag-gray">Limpo</span>
+      </div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════
+         CONCEPT D — SOLAR DROP
+    ═══════════════════════════════════╗ -->
+    <div class="concept-card">
+      <div class="concept-num">Conceito 04</div>
+      <div class="concept-name">Solar Drop</div>
+      <div class="concept-desc">Gota d'água com sol da Flórida dentro — fusão de natureza e serviço profissional. Único e memorável.</div>
+
+      <div class="icon-showcase">
+        <div class="icon-set">
+          <svg width="108" height="108" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 22px rgba(14,186,199,0.32))">
+            <defs>
+              <radialGradient id="Dbg" cx="50%" cy="45%" r="62%">
+                <stop offset="0%" stop-color="#0C2030"/>
+                <stop offset="100%" stop-color="#040D18"/>
+              </radialGradient>
+              <radialGradient id="Ddrop" cx="48%" cy="38%" r="65%">
+                <stop offset="0%" stop-color="#0DAFC0"/>
+                <stop offset="60%" stop-color="#0B7090"/>
+                <stop offset="100%" stop-color="#084060"/>
+              </radialGradient>
+              <filter id="Dglow1"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="Dglow2"><feGaussianBlur stdDeviation="4"   result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="Dglow3"><feGaussianBlur stdDeviation="7"   result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <clipPath id="DdropClip">
+                <path d="M 50,9 C 50,9 19,42 19,63 C 19,81 32.5,91 50,91 C 67.5,91 81,81 81,63 C 81,42 50,9 50,9 Z"/>
+              </clipPath>
+              <linearGradient id="DdropGloss" x1="20%" y1="0%" x2="60%" y2="100%">
+                <stop offset="0%" stop-color="white" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="white" stop-opacity="0"/>
+              </linearGradient>
+              <clipPath id="Dclip"><rect width="100" height="100" rx="24"/></clipPath>
+              <linearGradient id="Dbggloss" x1="0%" y1="0%" x2="60%" y2="100%"><stop offset="0%" stop-color="white" stop-opacity="0.10"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Dbg)"/>
+            <g clip-path="url(#Dclip)">
+              <!-- Drop outer aura -->
+              <path d="M 50,5 C 50,5 15,40 15,63 C 15,82 30.5,95 50,95 C 69.5,95 85,82 85,63 C 85,40 50,5 50,5 Z" fill="#0EBAC7" opacity="0.07" filter="url(#Dglow3)"/>
+              <!-- Drop body -->
+              <path d="M 50,9 C 50,9 19,42 19,63 C 19,81 32.5,91 50,91 C 67.5,91 81,81 81,63 C 81,42 50,9 50,9 Z" fill="url(#Ddrop)"/>
+              <!-- Elements inside drop -->
+              <g clip-path="url(#DdropClip)">
+                <!-- Sun glow aura -->
+                <circle cx="50" cy="54" r="18" fill="#0EBAC7" opacity="0.14" filter="url(#Dglow3)"/>
+                <!-- Sun rays (8 directions) -->
+                <line x1="50" y1="29" x2="50" y2="33" stroke="rgba(255,255,255,0.70)" stroke-width="2"   stroke-linecap="round" filter="url(#Dglow1)"/>
+                <line x1="68" y1="36" x2="65" y2="39" stroke="rgba(255,255,255,0.65)" stroke-width="1.8" stroke-linecap="round" filter="url(#Dglow1)"/>
+                <line x1="32" y1="36" x2="35" y2="39" stroke="rgba(255,255,255,0.65)" stroke-width="1.8" stroke-linecap="round" filter="url(#Dglow1)"/>
+                <line x1="74" y1="54" x2="70" y2="54" stroke="rgba(255,255,255,0.60)" stroke-width="1.8" stroke-linecap="round" filter="url(#Dglow1)"/>
+                <line x1="26" y1="54" x2="30" y2="54" stroke="rgba(255,255,255,0.60)" stroke-width="1.8" stroke-linecap="round" filter="url(#Dglow1)"/>
+                <line x1="68" y1="72" x2="65" y2="69" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="32" y1="72" x2="35" y2="69" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="50" y1="79" x2="50" y2="75" stroke="rgba(255,255,255,0.30)" stroke-width="1.5" stroke-linecap="round"/>
+                <!-- Sun circle -->
+                <circle cx="50" cy="54" r="12" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="2" filter="url(#Dglow1)"/>
+                <!-- Inner sun ring -->
+                <circle cx="50" cy="54" r="7"  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+                <!-- Sun center -->
+                <circle cx="50" cy="54" r="4.5" fill="rgba(255,255,255,0.85)" filter="url(#Dglow2)"/>
+                <!-- Water wave at drop base -->
+                <path d="M 26,80 Q 34,73 43,80 Q 52,87 61,80 Q 69,73 75,80" stroke="rgba(255,255,255,0.30)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+              </g>
+              <!-- Drop gloss overlay -->
+              <path d="M 50,9 C 50,9 19,42 19,63 C 19,81 32.5,91 50,91 C 67.5,91 81,81 81,63 C 81,42 50,9 50,9 Z" fill="url(#DdropGloss)"/>
+              <!-- Specular on drop side -->
+              <ellipse cx="36" cy="40" rx="7" ry="16" fill="white" opacity="0.12" transform="rotate(-30,36,40)"/>
+              <!-- BG gloss -->
+              <rect width="100" height="100" rx="24" fill="url(#Dbggloss)"/>
+            </g>
+            <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.22)" stroke-width="1.5"/>
+          </svg>
+          <span class="icon-set-label">512px</span>
+        </div>
+        <div class="icon-set">
+          <svg width="60" height="60" viewBox="0 0 100 100">
+            <defs>
+              <radialGradient id="Dbg2" cx="50%" cy="45%" r="62%"><stop offset="0%" stop-color="#0C2030"/><stop offset="100%" stop-color="#040D18"/></radialGradient>
+              <radialGradient id="Ddrop2" cx="48%" cy="38%" r="65%"><stop offset="0%" stop-color="#0DAFC0"/><stop offset="60%" stop-color="#0B7090"/><stop offset="100%" stop-color="#084060"/></radialGradient>
+              <filter id="Dg1b"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="Dg2b"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <clipPath id="DdC2"><path d="M 50,9 C 50,9 19,42 19,63 C 19,81 32.5,91 50,91 C 67.5,91 81,81 81,63 C 81,42 50,9 50,9 Z"/></clipPath>
+              <linearGradient id="DdG2" x1="20%" y1="0%" x2="60%" y2="100%"><stop offset="0%" stop-color="white" stop-opacity="0.20"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient>
+              <clipPath id="Dclip2"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Dbg2)"/>
+            <g clip-path="url(#Dclip2)">
+              <path d="M 50,9 C 50,9 19,42 19,63 C 19,81 32.5,91 50,91 C 67.5,91 81,81 81,63 C 81,42 50,9 50,9 Z" fill="url(#Ddrop2)"/>
+              <g clip-path="url(#DdC2)">
+                <line x1="50" y1="30" x2="50" y2="33" stroke="rgba(255,255,255,0.65)" stroke-width="2"   stroke-linecap="round" filter="url(#Dg1b)"/>
+                <line x1="68" y1="37" x2="65" y2="40" stroke="rgba(255,255,255,0.60)" stroke-width="1.8" stroke-linecap="round" filter="url(#Dg1b)"/>
+                <line x1="32" y1="37" x2="35" y2="40" stroke="rgba(255,255,255,0.60)" stroke-width="1.8" stroke-linecap="round" filter="url(#Dg1b)"/>
+                <line x1="74" y1="54" x2="70" y2="54" stroke="rgba(255,255,255,0.55)" stroke-width="1.8" stroke-linecap="round" filter="url(#Dg1b)"/>
+                <line x1="26" y1="54" x2="30" y2="54" stroke="rgba(255,255,255,0.55)" stroke-width="1.8" stroke-linecap="round" filter="url(#Dg1b)"/>
+                <circle cx="50" cy="54" r="12" fill="none" stroke="rgba(255,255,255,0.60)" stroke-width="2" filter="url(#Dg1b)"/>
+                <circle cx="50" cy="54" r="4" fill="rgba(255,255,255,0.80)" filter="url(#Dg2b)"/>
+              </g>
+              <path d="M 50,9 C 50,9 19,42 19,63 C 19,81 32.5,91 50,91 C 67.5,91 81,81 81,63 C 81,42 50,9 50,9 Z" fill="url(#DdG2)"/>
+            </g>
+          </svg>
+          <span class="icon-set-label">180px</span>
+        </div>
+        <div class="icon-set">
+          <svg width="36" height="36" viewBox="0 0 100 100">
+            <defs>
+              <radialGradient id="Dbg3" cx="50%" cy="45%" r="62%"><stop offset="0%" stop-color="#0C2030"/><stop offset="100%" stop-color="#040D18"/></radialGradient>
+              <radialGradient id="Ddrop3" cx="48%" cy="38%" r="65%"><stop offset="0%" stop-color="#0DAFC0"/><stop offset="60%" stop-color="#0B7090"/><stop offset="100%" stop-color="#084060"/></radialGradient>
+              <filter id="Dg1c"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <clipPath id="DdC3"><path d="M 50,9 C 50,9 19,42 19,63 C 19,81 32.5,91 50,91 C 67.5,91 81,81 81,63 C 81,42 50,9 50,9 Z"/></clipPath>
+              <clipPath id="Dclip3"><rect width="100" height="100" rx="24"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="24" fill="url(#Dbg3)"/>
+            <g clip-path="url(#Dclip3)">
+              <path d="M 50,9 C 50,9 19,42 19,63 C 19,81 32.5,91 50,91 C 67.5,91 81,81 81,63 C 81,42 50,9 50,9 Z" fill="url(#Ddrop3)"/>
+              <g clip-path="url(#DdC3)">
+                <circle cx="50" cy="54" r="12" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2.5" filter="url(#Dg1c)"/>
+                <circle cx="50" cy="54" r="3.5" fill="rgba(255,255,255,0.80)"/>
+              </g>
+            </g>
+          </svg>
+          <span class="icon-set-label">40px</span>
+        </div>
+      </div>
+
+      <div class="concept-divider"></div>
+      <div class="wm-preview" style="margin-bottom:16px">
+        <span class="pool" style="font-size:22px;">Pool</span>
+        <span class="guy"  style="font-size:22px;">Guy</span>
+        <span class="x"    style="font-size:25px;">X</span>
+      </div>
+      <div class="tags">
+        <span class="tag tag-aqua">Único</span>
+        <span class="tag tag-blue">Florida</span>
+        <span class="tag tag-gray">Memorável</span>
+      </div>
+    </div>
+
+  </div><!-- /concepts-grid -->
+
+  <!-- ══════════════════════════════════════════════════
+       REFERENCE — AQUA VORTEX (approved)
+  ══════════════════════════════════════════════════ -->
+  <div class="ref-bar">
+    <svg width="64" height="64" viewBox="0 0 100 100" style="flex-shrink:0; filter:drop-shadow(0 4px 16px rgba(14,186,199,0.35))">
+      <defs>
+        <radialGradient id="refBg" cx="42%" cy="38%" r="68%"><stop offset="0%" stop-color="#0D2840"/><stop offset="100%" stop-color="#040D18"/></radialGradient>
+        <filter id="refGa"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="refGb"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="refGc"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <clipPath id="refClip"><rect width="100" height="100" rx="23"/></clipPath>
+      </defs>
+      <rect width="100" height="100" rx="23" fill="url(#refBg)"/>
+      <g clip-path="url(#refClip)">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#0A5A78" stroke-width="18" opacity="0.15"/>
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#0B6080" stroke-width="5.5" stroke-dasharray="179 60" stroke-linecap="round" transform="rotate(0,50,50)" opacity="0.82"/>
+        <circle cx="50" cy="50" r="30" fill="none" stroke="#0C8AAA" stroke-width="5"   stroke-dasharray="141 47" stroke-linecap="round" transform="rotate(30,50,50)" filter="url(#refGa)" opacity="0.88"/>
+        <circle cx="50" cy="50" r="22" fill="none" stroke="#0DAFC0" stroke-width="4.5" stroke-dasharray="104 35" stroke-linecap="round" transform="rotate(60,50,50)" filter="url(#refGa)" opacity="0.93"/>
+        <circle cx="50" cy="50" r="14" fill="none" stroke="#12C8D8" stroke-width="4"   stroke-dasharray="66 22"  stroke-linecap="round" transform="rotate(90,50,50)" filter="url(#refGb)" opacity="0.96"/>
+        <circle cx="50" cy="50" r="7"  fill="none" stroke="#1ADCE8" stroke-width="3.5" stroke-dasharray="33 11"  stroke-linecap="round" transform="rotate(120,50,50)" filter="url(#refGb)" opacity="0.98"/>
+        <circle cx="50" cy="50" r="4.5" fill="#7EE8F8" filter="url(#refGc)" opacity="0.85"/>
+        <circle cx="50" cy="50" r="2.5" fill="white"/>
+      </g>
+      <rect x="1" y="1" width="98" height="98" rx="22.5" fill="none" stroke="rgba(14,186,199,0.28)" stroke-width="1.5"/>
+    </svg>
+    <div>
+      <div class="ref-label">✓ Ícone Aprovado</div>
+      <div class="ref-title">Aqua Vortex — Brand Identity v2.0</div>
+      <div class="ref-sub">Configuração salva na memória · Reproduzível sob demanda</div>
+    </div>
+    <div style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0;">
+      <a href="brand-identity.html" style="padding:8px 18px; background:rgba(14,186,199,0.12); border:1px solid rgba(14,186,199,0.25); border-radius:99px; color:#0EBAC7; font-size:12px; font-weight:600; text-decoration:none; font-family:'Inter'">Ver Brand Guide</a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

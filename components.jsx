@@ -1,0 +1,380 @@
+// components.jsx — shared atoms, icons, nav, header
+
+// ── Icons ─────────────────────────────────────────────────────
+const Icon = {
+  home: (s=22, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>
+    </svg>
+  ),
+  cart: (s=22, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 4h2l2.5 12h11L21 7H6"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/>
+    </svg>
+  ),
+  bolt: (s=24, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill={c}>
+      <path d="M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"/>
+    </svg>
+  ),
+  briefcase: (s=22, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/>
+    </svg>
+  ),
+  user: (s=22, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 5-7 8-7s7 2 8 7"/>
+    </svg>
+  ),
+  bell: (s=20, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 17V11a6 6 0 0 1 12 0v6"/><path d="M4 17h16"/><path d="M10 21a2 2 0 0 0 4 0"/>
+    </svg>
+  ),
+  search: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+    </svg>
+  ),
+  chev: (s=16, c="currentColor", dir='right') => {
+    const r = { right: 0, left: 180, up: -90, down: 90 }[dir];
+    return (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform:`rotate(${r}deg)`}}>
+        <path d="m9 6 6 6-6 6"/>
+      </svg>
+    );
+  },
+  plus: (s=20, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.2" strokeLinecap="round">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+  ),
+  star: (s=14, c="currentColor", filled=true) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill={filled?c:"none"} stroke={c} strokeWidth="1.5" strokeLinejoin="round">
+      <path d="m12 3 2.7 6 6.3.5-4.8 4.2 1.5 6.3L12 16.8 6.3 20l1.5-6.3L3 9.5l6.3-.5z"/>
+    </svg>
+  ),
+  pin: (s=16, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/>
+    </svg>
+  ),
+  clock: (s=14, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+    </svg>
+  ),
+  filter: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 5h18"/><path d="M6 12h12"/><path d="M10 19h4"/>
+    </svg>
+  ),
+  msg: (s=22, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12a8 8 0 0 1-11.4 7.3L4 21l1.7-5.6A8 8 0 1 1 21 12Z"/>
+    </svg>
+  ),
+  share: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/>
+      <path d="m8 11 8-4"/><path d="m8 13 8 4"/>
+    </svg>
+  ),
+  heart: (s=18, c="currentColor", filled=false) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill={filled?c:"none"} stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10Z"/>
+    </svg>
+  ),
+  lock: (s=14, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+    </svg>
+  ),
+  globe: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/>
+    </svg>
+  ),
+  check: (s=16, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.5 10 17l9-10"/>
+    </svg>
+  ),
+  x: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round">
+      <path d="M6 6l12 12M6 18 18 6"/>
+    </svg>
+  ),
+  cal: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/>
+    </svg>
+  ),
+  pool: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 17c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/>
+      <path d="M3 20c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/>
+      <path d="M7 14V6a2 2 0 0 1 2-2"/><path d="M17 14V6a2 2 0 0 0-2-2"/>
+      <path d="M7 9h10"/>
+    </svg>
+  ),
+  crown: (s=14, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill={c}>
+      <path d="M3 8l4 4 5-7 5 7 4-4v10H3z"/>
+    </svg>
+  ),
+  shield: (s=14, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3 4 6v6c0 4.5 3.5 8 8 9 4.5-1 8-4.5 8-9V6z"/>
+      <path d="m9 12 2 2 4-4"/>
+    </svg>
+  ),
+  dog: (s=16, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 9c0-2 2-4 4-2l3-1 3 1c2-2 4 0 4 2v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z"/>
+      <circle cx="9" cy="12" r=".7" fill={c}/><circle cx="15" cy="12" r=".7" fill={c}/>
+      <path d="M11 15h2"/>
+    </svg>
+  ),
+  key: (s=16, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="14" r="4"/><path d="m11 11 9-9"/><path d="m17 5 3 3"/><path d="m15 7 3 3"/>
+    </svg>
+  ),
+  more: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill={c}>
+      <circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/>
+    </svg>
+  ),
+  arrow: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>
+    </svg>
+  ),
+};
+
+// ── Avatar (deterministic color from initials) ────────────────
+function Avatar({ name="?", size=40, src }) {
+  const initials = name.split(' ').slice(0,2).map(p => p[0]).join('').toUpperCase();
+  const hue = [...name].reduce((a,c)=>a+c.charCodeAt(0),0) % 360;
+  return (
+    <div className="pg-avatar" style={{
+      width:size, height:size, fontSize:size*0.36,
+      background: `linear-gradient(155deg, oklch(0.68 0.12 ${hue}), oklch(0.45 0.16 ${(hue+30)%360}))`
+    }}>{initials}</div>
+  );
+}
+
+// ── Star rating ───────────────────────────────────────────────
+function Stars({ rating=5, size=12 }) {
+  const full = Math.floor(rating);
+  return (
+    <span className="pg-stars">
+      {[0,1,2,3,4].map(i => (
+        <span key={i} style={{display:'inline-flex'}}>
+          {Icon.star(size, i < full ? "currentColor" : "oklch(0.85 0.04 80)", true)}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+// ── Reputation badge (based on completed jobs) ───────────────
+function ReputationBadge({ jobs=0, lang='en', size='sm' }) {
+  const levels = [
+    { min:0,   label:{en:'Rookie',      pt:'Iniciante',    es:'Novato'}    },
+    { min:25,  label:{en:'Reliable',    pt:'Confiável',    es:'Confiable'} },
+    { min:76,  label:{en:'Expert',      pt:'Especialista', es:'Experto'}   },
+    { min:151, label:{en:'Master',      pt:'Mestre',       es:'Maestro'}   },
+    { min:301, label:{en:'Elite',       pt:'Elite',        es:'Elite'}     },
+  ];
+  const palette = [
+    { color:'oklch(0.52 0.13 80)',  bg:'oklch(0.95 0.05 80)'  },
+    { color:'oklch(0.48 0.14 210)', bg:'oklch(0.94 0.04 210)' },
+    { color:'oklch(0.44 0.17 245)', bg:'oklch(0.93 0.06 245)' },
+    { color:'oklch(0.42 0.17 178)', bg:'oklch(0.93 0.06 178)' },
+    { color:'oklch(0.42 0.19 310)', bg:'oklch(0.94 0.07 310)' },
+  ];
+  const idx = levels.reduce((best, lv, i) => (jobs >= lv.min ? i : best), 0);
+  const { color, bg } = palette[idx];
+  const lbl = tr(levels[idx].label, lang);
+  const isLg = size === 'lg';
+  return (
+    <span style={{
+      display:'inline-flex', alignItems:'center', gap:4,
+      fontSize: isLg ? 11 : 9.5, fontWeight:700, letterSpacing:'0.05em',
+      padding: isLg ? '4px 10px' : '2px 7px', borderRadius:6,
+      background:bg, color,
+    }}>
+      {isLg && <span style={{fontSize:12}}>{'⭐'}</span>}
+      {lbl.toUpperCase()}
+    </span>
+  );
+}
+
+// ── Scroll lock (prevents background scroll while any sheet is open) ──
+let _sheetDepth = 0;
+function _lockScreen() {
+  _sheetDepth++;
+  const el = document.querySelector('[data-pg-screen]');
+  if (el) el.style.overflow = 'hidden';
+}
+function _unlockScreen() {
+  _sheetDepth = Math.max(0, _sheetDepth - 1);
+  if (_sheetDepth === 0) {
+    const el = document.querySelector('[data-pg-screen]');
+    if (el) el.style.overflow = '';
+  }
+}
+
+// ── Bottom Sheet ──────────────────────────────────────────────
+function Sheet({ open, onClose, children, height='auto' }) {
+  const [mounted, setMounted]   = React.useState(open);
+  const [closing, setClosing]   = React.useState(false);
+  const lockedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (open) {
+      setMounted(true);
+      setClosing(false);
+      if (!lockedRef.current) { lockedRef.current = true; _lockScreen(); }
+    } else if (mounted) {
+      setClosing(true);
+      const t = setTimeout(() => {
+        setMounted(false);
+        setClosing(false);
+        if (lockedRef.current) { lockedRef.current = false; _unlockScreen(); }
+      }, 260);
+      return () => clearTimeout(t);
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Safety: unlock if component unmounts while still locked
+  React.useEffect(() => {
+    return () => { if (lockedRef.current) { lockedRef.current = false; _unlockScreen(); } };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!mounted) return null;
+  return (
+    <>
+      <div
+        className={`pg-sheet-backdrop${closing ? ' pg-sheet-backdrop-out' : ''}`}
+        onClick={onClose}
+        onWheel={e => e.stopPropagation()}
+        onTouchMove={e => e.stopPropagation()}
+      />
+      <div
+        className={`pg-sheet${closing ? ' pg-sheet-down' : ''}`}
+        style={{height}}
+        onWheel={e => e.stopPropagation()}
+      >
+        <div className="pg-sheet-grabber" />
+        {children}
+      </div>
+    </>
+  );
+}
+
+// ── Top App Header (for screens) ──────────────────────────────
+function TopBar({ title, left, right, subtitle }) {
+  return (
+    <div style={{
+      display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'8px 18px 10px', minHeight:48,
+    }}>
+      <div style={{display:'flex', alignItems:'center', gap:10, minWidth:0}}>
+        {left}
+        <div style={{minWidth:0}}>
+          <div style={{fontSize:20, fontWeight:700, letterSpacing:'-0.02em', color:'var(--pg-ink-900)'}}>{title}</div>
+          {subtitle && <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:1}}>{subtitle}</div>}
+        </div>
+      </div>
+      <div style={{display:'flex', alignItems:'center', gap:8}}>
+        {right}
+      </div>
+    </div>
+  );
+}
+
+function IconButton({ children, onClick, badge, dark=false }) {
+  return (
+    <button onClick={onClick} className="pg-press" style={{
+      width:38, height:38, borderRadius:12,
+      background: dark ? 'rgba(255,255,255,0.14)' : 'var(--pg-white)',
+      border: dark ? 'none' : '0.5px solid var(--pg-ink-200)',
+      color: dark ? '#fff' : 'var(--pg-ink-700)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      cursor:'pointer', position:'relative',
+    }}>
+      {children}
+      {badge && <span style={{
+        position:'absolute', top:6, right:6, width:8, height:8, borderRadius:'50%',
+        background:'var(--pg-danger)', border:'1.5px solid '+ (dark?'#0b1530':'#fff'),
+      }} />}
+    </button>
+  );
+}
+
+// ── Tab bar (5 tabs, center elevated) ─────────────────────────
+function TabBar({ tab, setTab, lang='en' }) {
+  const t = STRINGS[lang];
+  const tabs = [
+    { id:'home',   label:t.home,        icon:Icon.home },
+    { id:'market', label:t.marketplace, icon:Icon.cart },
+    { id:'quick',  label:t.quickPools,  icon:Icon.bolt, center:true },
+    { id:'work',   label:t.work,        icon:Icon.briefcase },
+    { id:'profile',label:t.profile,     icon:Icon.user },
+  ];
+  return (
+    <div className="pg-tabbar">
+      {tabs.map(tb => {
+        const on = tb.id === tab;
+        if (tb.center) {
+          return (
+            <button key={tb.id} className="pg-tab pg-tab-center" onClick={()=>setTab(tb.id)}>
+              <div className={`pg-tab-center-dot ${on?'on':''}`}>
+                {tb.icon(26, '#fff')}
+              </div>
+              <span className="pg-tab-label" style={{color: on ? 'var(--pg-aqua-700)' : 'var(--pg-ink-700)', fontWeight:700}}>
+                {tb.label}
+              </span>
+            </button>
+          );
+        }
+        return (
+          <button key={tb.id} className={`pg-tab ${on?'pg-tab-on':''}`} onClick={()=>setTab(tb.id)}>
+            {tb.icon(22, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-500)')}
+            <span className="pg-tab-label">{tb.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Language selector pill ────────────────────────────────────
+function LangPill({ lang, setLang, onDark=false }) {
+  const flags = { en:'EN', pt:'PT', es:'ES' };
+  const next = { en:'pt', pt:'es', es:'en' };
+  return (
+    <button className="pg-press" onClick={()=>setLang(next[lang])} style={{
+      display:'inline-flex', alignItems:'center', gap:6,
+      height:32, padding:'0 10px 0 8px', borderRadius:10,
+      background: onDark ? 'rgba(255,255,255,0.14)' : 'var(--pg-white)',
+      border: onDark ? '0.5px solid rgba(255,255,255,0.18)' : '0.5px solid var(--pg-ink-200)',
+      color: onDark ? '#fff' : 'var(--pg-ink-700)',
+      fontSize:12, fontWeight:600, cursor:'pointer',
+    }}>
+      {Icon.globe(14, onDark ? 'rgba(255,255,255,0.85)' : 'var(--pg-ink-500)')}
+      <span style={{letterSpacing:'0.04em'}}>{flags[lang]}</span>
+    </button>
+  );
+}
+
+// Simple shimmer line
+function Shimmer({ w=80, h=10 }) {
+  return <div style={{width:w, height:h, borderRadius:4, background:'var(--pg-ink-100)'}}/>;
+}
+
+Object.assign(window, { Icon, Avatar, Stars, ReputationBadge, Sheet, TopBar, IconButton, TabBar, LangPill, Shimmer, _lockScreen, _unlockScreen });

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>PoolGuyPro — Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="tokens.css?v=53">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <style>
+    html, body { background: #e9eef5; height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Inter", -apple-system, system-ui, sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+      background:
+        radial-gradient(60% 60% at 20% 10%, oklch(0.94 0.04 235 / 0.6), transparent 60%),
+        radial-gradient(60% 60% at 80% 90%, oklch(0.94 0.06 178 / 0.5), transparent 60%),
+        #eef2f7;
+    }
+    #stage {
+      width: 402px; height: 874px; border-radius: 48px; overflow: hidden;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.7) inset,
+        0 0 0 1px rgba(15, 30, 60, 0.12),
+        0 40px 80px rgba(15, 30, 60, 0.18),
+        0 10px 24px rgba(15, 30, 60, 0.08);
+      background: var(--pg-bg);
+      position: relative;
+    }
+    /* Dynamic island */
+    #stage::after {
+      content: ""; position: absolute;
+      top: 11px; left: 50%; transform: translateX(-50%);
+      width: 126px; height: 37px; border-radius: 24px;
+      background: #000; z-index: 50; pointer-events: none;
+    }
+    #root { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="stage"><div id="root"></div></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="ios-frame.jsx?v=53"></script>
+  <script type="text/babel" src="tweaks-panel.jsx?v=53"></script>
+  <script type="text/babel" src="components.jsx?v=53"></script>
+  <script type="text/babel" src="brand.jsx?v=53"></script>
+  <script type="text/babel" src="data.jsx?v=53"></script>
+  <script type="text/babel" src="screens/login.jsx?v=53"></script>
+  <script type="text/babel" src="screens/home.jsx?v=53"></script>
+  <script type="text/babel" src="screens/marketplace.jsx?v=53"></script>
+  <script type="text/babel" src="screens/quickpools.jsx?v=53"></script>
+  <script type="text/babel" src="screens/post.jsx?v=53"></script>
+  <script type="text/babel" src="screens/work.jsx?v=53"></script>
+  <script type="text/babel" src="screens/profile.jsx?v=53"></script>
+  <script type="text/babel" src="screens/overlays.jsx?v=53"></script>
+  <script type="text/babel" src="app.jsx?v=53"></script>
+  <script>
+    // Live reload: watch all JSX files for changes
+    const _watchFiles = [
+      'ios-frame.jsx','tweaks-panel.jsx','components.jsx','brand.jsx','data.jsx',
+      'screens/login.jsx',
+      'screens/home.jsx','screens/marketplace.jsx','screens/quickpools.jsx',
+      'screens/post.jsx','screens/work.jsx','screens/profile.jsx',
+      'screens/overlays.jsx','app.jsx',
+    ];
+    let _lastSig = '';
+    setInterval(async () => {
+      try {
+        const tags = await Promise.all(
+          _watchFiles.map(f => fetch(f + '?_lrp=' + Date.now(), {method:'HEAD', cache:'no-store'})
+            .then(r => r.headers.get('last-modified') || r.headers.get('etag') || ''))
+        );
+        const sig = tags.join('|');
+        if (_lastSig && sig !== _lastSig) location.reload();
+        _lastSig = sig;
+      } catch(e) {}
+    }, 1500);
+  </script>
+</body>
+</html>

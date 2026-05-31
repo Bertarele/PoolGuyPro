@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PoolGuyX — Logo Concepts v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Inter',sans-serif; background:#070F1A; color:#fff; min-height:100vh; }
+  .page { max-width:1100px; margin:0 auto; padding:56px 32px 96px; }
+
+  .pg-header { text-align:center; margin-bottom:64px; }
+  .pg-label { font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#0EBAC7; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:12px; }
+  .pg-label::before,.pg-label::after { content:''; width:32px; height:1px; background:rgba(14,186,199,.4); }
+  .pg-title { font-family:'Poppins'; font-size:36px; font-weight:800; margin-bottom:8px; }
+  .pg-title span { background:linear-gradient(135deg,#0EBAC7,#6DD8F0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .pg-sub { font-size:14px; color:rgba(255,255,255,.38); }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+
+  .card {
+    background:linear-gradient(145deg,#0C1B2C,#08111E);
+    border:1px solid rgba(255,255,255,0.07);
+    border-radius:26px; padding:40px 32px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .card:hover { border-color:rgba(14,186,199,0.22); }
+
+  .c-num  { font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:rgba(14,186,199,.45); margin-bottom:8px; }
+  .c-name { font-family:'Poppins'; font-size:21px; font-weight:800; margin-bottom:6px; text-align:center; }
+  .c-desc { font-size:12px; color:rgba(255,255,255,.32); margin-bottom:32px; text-align:center; line-height:1.55; max-width:280px; }
+
+  .sizes { display:flex; gap:20px; align-items:flex-end; margin-bottom:32px; }
+  .sz { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .sz span { font-size:10px; color:rgba(255,255,255,.28); font-weight:500; }
+
+  .divider { width:100%; height:1px; background:rgba(255,255,255,.05); margin-bottom:20px; }
+
+  .wm { display:flex; align-items:baseline; margin-bottom:14px; }
+  .wm .p { font-family:'Poppins'; font-weight:800; letter-spacing:-0.03em; }
+  .wm .g { font-family:'Poppins'; font-weight:800; letter-spacing:-0.03em; background:linear-gradient(135deg,#4BA8E8,#B8E4FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .wm .x { font-family:'Poppins'; font-weight:800; letter-spacing:-0.025em; background:linear-gradient(135deg,#0EBAC7,#6DD8F0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+  .tags { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; }
+  .tag { padding:4px 11px; border-radius:99px; font-size:11px; font-weight:600; }
+  .taq { background:rgba(14,186,199,.11); color:#0EBAC7; }
+  .tbl { background:rgba(75,168,232,.11); color:#4BA8E8; }
+  .tgy { background:rgba(255,255,255,.06); color:rgba(255,255,255,.45); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="pg-header">
+  <div class="pg-label">Logo Concepts v2</div>
+  <div class="pg-title">P &amp; X — <span>4 Novos Conceitos</span></div>
+  <div class="pg-sub">Primeira e última letra da marca com efeitos visuais de água impactantes</div>
+</div>
+
+<div class="grid">
+
+<!-- ══════════════════════════════════════
+     A — FLOOD LEVEL
+══════════════════════════════════════ -->
+<div class="card">
+  <div class="c-num">Conceito 01</div>
+  <div class="c-name">Flood Level</div>
+  <div class="c-desc">Água subindo — a parte submersa do P e X vira aqua, a superfície brilha com glow.</div>
+
+  <div class="sizes">
+    <!-- 512 -->
+    <div class="sz">
+      <svg width="110" height="110" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+           style="filter:drop-shadow(0 0 20px rgba(14,186,199,0.36))">
+        <defs>
+          <radialGradient id="Abg" cx="50%" cy="48%" r="66%">
+            <stop offset="0%" stop-color="#0B1F32"/><stop offset="100%" stop-color="#040D18"/>
+          </radialGradient>
+          <!-- Water surface wave clip -->
+          <clipPath id="AwClip">
+            <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59 L105,105 L-5,105Z"/>
+          </clipPath>
+          <linearGradient id="AwFill" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#0AB8C8" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="#065068" stop-opacity="0.55"/>
+          </linearGradient>
+          <filter id="Ag1"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="Ag2"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <linearGradient id="Agl" x1="0%" y1="0%" x2="55%" y2="100%"><stop offset="0%" stop-color="white" stop-opacity="0.13"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient>
+          <clipPath id="Arnd"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Abg)"/>
+        <g clip-path="url(#Arnd)">
+          <!-- White letters (full) -->
+          <text x="5" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="rgba(255,255,255,0.95)">P</text>
+          <text x="53" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="rgba(255,255,255,0.95)">X</text>
+          <!-- Aqua letters — underwater zone only -->
+          <text clip-path="url(#AwClip)" x="5" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="#18DAEA" filter="url(#Ag1)">P</text>
+          <text clip-path="url(#AwClip)" x="53" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="#18DAEA" filter="url(#Ag1)">X</text>
+          <!-- Water body -->
+          <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59 L105,105 L-5,105Z" fill="url(#AwFill)"/>
+          <!-- Wave crest glow -->
+          <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59" stroke="#0EBAC7" stroke-width="2.8" fill="none" stroke-linecap="round" filter="url(#Ag1)"/>
+          <!-- Wave foam -->
+          <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59" stroke="rgba(255,255,255,0.50)" stroke-width="1" fill="none" stroke-linecap="round"/>
+          <!-- Bubbles -->
+          <circle cx="20" cy="46" r="2.2" fill="none" stroke="rgba(14,186,199,0.55)" stroke-width="1.2" filter="url(#Ag1)"/>
+          <circle cx="34" cy="40" r="1.5" fill="none" stroke="rgba(14,186,199,0.40)" stroke-width="1"/>
+          <circle cx="70" cy="43" r="2.5" fill="none" stroke="rgba(14,186,199,0.50)" stroke-width="1.2" filter="url(#Ag1)"/>
+          <circle cx="83" cy="37" r="1.6" fill="none" stroke="rgba(14,186,199,0.35)" stroke-width="1"/>
+          <circle cx="47" cy="50" r="1.2" fill="none" stroke="rgba(14,186,199,0.30)" stroke-width="0.8"/>
+          <!-- Gloss -->
+          <rect width="100" height="100" rx="24" fill="url(#Agl)"/>
+          <ellipse cx="26" cy="17" rx="20" ry="9" fill="white" opacity="0.07" transform="rotate(-14,26,17)"/>
+        </g>
+        <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.25)" stroke-width="1.5"/>
+      </svg>
+      <span>512px</span>
+    </div>
+    <!-- 180 -->
+    <div class="sz">
+      <svg width="64" height="64" viewBox="0 0 100 100">
+        <defs>
+          <radialGradient id="Abg2" cx="50%" cy="48%" r="66%"><stop offset="0%" stop-color="#0B1F32"/><stop offset="100%" stop-color="#040D18"/></radialGradient>
+          <clipPath id="AwClip2"><path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59 L105,105 L-5,105Z"/></clipPath>
+          <linearGradient id="AwFill2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#0AB8C8" stop-opacity="0.28"/><stop offset="100%" stop-color="#065068" stop-opacity="0.55"/></linearGradient>
+          <filter id="Ag1b"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="Arnd2"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Abg2)"/>
+        <g clip-path="url(#Arnd2)">
+          <text x="5" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="rgba(255,255,255,0.95)">P</text>
+          <text x="53" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="rgba(255,255,255,0.95)">X</text>
+          <text clip-path="url(#AwClip2)" x="5" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="#18DAEA" filter="url(#Ag1b)">P</text>
+          <text clip-path="url(#AwClip2)" x="53" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="#18DAEA" filter="url(#Ag1b)">X</text>
+          <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59 L105,105 L-5,105Z" fill="url(#AwFill2)"/>
+          <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59" stroke="#0EBAC7" stroke-width="2.5" fill="none" stroke-linecap="round" filter="url(#Ag1b)"/>
+          <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59" stroke="rgba(255,255,255,0.45)" stroke-width="1" fill="none"/>
+        </g>
+        <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.22)" stroke-width="1.5"/>
+      </svg>
+      <span>180px</span>
+    </div>
+    <!-- 40 -->
+    <div class="sz">
+      <svg width="38" height="38" viewBox="0 0 100 100">
+        <defs>
+          <radialGradient id="Abg3" cx="50%" cy="48%" r="66%"><stop offset="0%" stop-color="#0B1F32"/><stop offset="100%" stop-color="#040D18"/></radialGradient>
+          <clipPath id="AwClip3"><path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59 L105,105 L-5,105Z"/></clipPath>
+          <filter id="Ag1c"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="Arnd3"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Abg3)"/>
+        <g clip-path="url(#Arnd3)">
+          <text x="5" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="rgba(255,255,255,0.9)">P</text>
+          <text x="53" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="rgba(255,255,255,0.9)">X</text>
+          <text clip-path="url(#AwClip3)" x="5" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="#18DAEA" filter="url(#Ag1c)">P</text>
+          <text clip-path="url(#AwClip3)" x="53" y="72" font-family="Poppins,sans-serif" font-weight="800" font-size="66" fill="#18DAEA" filter="url(#Ag1c)">X</text>
+          <path d="M-5,59 Q13,51 28,59 Q43,67 58,59 Q73,51 88,59 Q97,63 105,59" stroke="#0EBAC7" stroke-width="3" fill="none" filter="url(#Ag1c)"/>
+        </g>
+      </svg>
+      <span>40px</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="wm" style="margin-bottom:14px"><span class="p" style="font-size:20px">Pool</span><span class="g" style="font-size:20px">Guy</span><span class="x" style="font-size:23px">X</span></div>
+  <div class="tags"><span class="tag taq">Impacto visual</span><span class="tag tbl">Imersão</span><span class="tag tgy">Dramático</span></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     B — NEON WAVE
+══════════════════════════════════════ -->
+<div class="card">
+  <div class="c-num">Conceito 02</div>
+  <div class="c-name">Neon Wave</div>
+  <div class="c-desc">P e X com bloom neon aqua intenso — letras brancas brilhando como luz elétrica sobre a água.</div>
+
+  <div class="sizes">
+    <div class="sz">
+      <svg width="110" height="110" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+           style="filter:drop-shadow(0 0 22px rgba(14,186,199,0.40))">
+        <defs>
+          <linearGradient id="Bbg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#060E1A"/><stop offset="100%" stop-color="#030810"/>
+          </linearGradient>
+          <!-- Neon glow: render text 4× with decreasing blur -->
+          <filter id="Bneon1"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="Bneon2"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="Bneon3"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="BwaveGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <linearGradient id="BwGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#0EBAC7" stop-opacity="0"/>
+            <stop offset="25%" stop-color="#0EBAC7"/>
+            <stop offset="75%" stop-color="#0EBAC7"/>
+            <stop offset="100%" stop-color="#0EBAC7" stop-opacity="0"/>
+          </linearGradient>
+          <clipPath id="Brnd"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Bbg)"/>
+        <g clip-path="url(#Brnd)">
+          <!-- NEON P — 4 layers: wide glow → tight glow → inner → sharp -->
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#0EBAC7" opacity="0.30" filter="url(#Bneon1)">P</text>
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#15D0E0" opacity="0.55" filter="url(#Bneon2)">P</text>
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#50EAF5" opacity="0.75" filter="url(#Bneon3)">P</text>
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="white">P</text>
+          <!-- NEON X -->
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#0EBAC7" opacity="0.30" filter="url(#Bneon1)">X</text>
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#15D0E0" opacity="0.55" filter="url(#Bneon2)">X</text>
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#50EAF5" opacity="0.75" filter="url(#Bneon3)">X</text>
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="white">X</text>
+          <!-- Water drops dripping from bottom of letters -->
+          <ellipse cx="12" cy="80" rx="2.5" ry="3.8" fill="#0EBAC7" opacity="0.7" filter="url(#Bneon3)"/>
+          <ellipse cx="12" cy="87" rx="1.8" ry="2.8" fill="#0EBAC7" opacity="0.5" filter="url(#Bneon3)"/>
+          <ellipse cx="12" cy="93" rx="1.2" ry="2" fill="#0EBAC7" opacity="0.3"/>
+          <ellipse cx="60" cy="80" rx="2.5" ry="3.8" fill="#0EBAC7" opacity="0.7" filter="url(#Bneon3)"/>
+          <ellipse cx="60" cy="87" rx="1.8" ry="2.8" fill="#0EBAC7" opacity="0.5" filter="url(#Bneon3)"/>
+          <ellipse cx="60" cy="93" rx="1.2" ry="2" fill="#0EBAC7" opacity="0.3"/>
+          <ellipse cx="80" cy="80" rx="2.5" ry="3.8" fill="#4BA8E8" opacity="0.65" filter="url(#Bneon3)"/>
+          <ellipse cx="80" cy="87" rx="1.8" ry="2.5" fill="#4BA8E8" opacity="0.45"/>
+          <!-- Wave at bottom -->
+          <path d="M-5,92 Q15,85 30,92 Q48,99 65,92 Q80,85 105,92" stroke="url(#BwGrad)" stroke-width="2" fill="none" filter="url(#BwaveGlow)"/>
+          <path d="M-5,92 Q15,85 30,92 Q48,99 65,92 Q80,85 105,92" stroke="rgba(255,255,255,0.25)" stroke-width="0.8" fill="none"/>
+          <!-- Subtle grid dots (electric grid) -->
+          <circle cx="8" cy="15" r="0.8" fill="#0EBAC7" opacity="0.35"/>
+          <circle cx="22" cy="18" r="0.8" fill="#0EBAC7" opacity="0.25"/>
+          <circle cx="90" cy="12" r="0.8" fill="#0EBAC7" opacity="0.30"/>
+          <circle cx="76" cy="20" r="0.8" fill="#4BA8E8" opacity="0.25"/>
+        </g>
+        <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.30)" stroke-width="1.5"/>
+      </svg>
+      <span>512px</span>
+    </div>
+    <div class="sz">
+      <svg width="64" height="64" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="Bbg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#060E1A"/><stop offset="100%" stop-color="#030810"/></linearGradient>
+          <filter id="Bn1b"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="Bn2b"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="Bn3b"><feGaussianBlur stdDeviation="1.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="Bwgb"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <linearGradient id="BwG2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0EBAC7" stop-opacity="0"/><stop offset="30%" stop-color="#0EBAC7"/><stop offset="70%" stop-color="#0EBAC7"/><stop offset="100%" stop-color="#0EBAC7" stop-opacity="0"/></linearGradient>
+          <clipPath id="Brnd2"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Bbg2)"/>
+        <g clip-path="url(#Brnd2)">
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#0EBAC7" opacity="0.28" filter="url(#Bn1b)">P</text>
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#15D0E0" opacity="0.52" filter="url(#Bn2b)">P</text>
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#50EAF5" opacity="0.72" filter="url(#Bn3b)">P</text>
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="white">P</text>
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#0EBAC7" opacity="0.28" filter="url(#Bn1b)">X</text>
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#15D0E0" opacity="0.52" filter="url(#Bn2b)">X</text>
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#50EAF5" opacity="0.72" filter="url(#Bn3b)">X</text>
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="white">X</text>
+          <path d="M-5,92 Q15,85 30,92 Q48,99 65,92 Q80,85 105,92" stroke="url(#BwG2)" stroke-width="2" fill="none" filter="url(#Bwgb)"/>
+        </g>
+        <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.25)" stroke-width="1.5"/>
+      </svg>
+      <span>180px</span>
+    </div>
+    <div class="sz">
+      <svg width="38" height="38" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="Bbg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#060E1A"/><stop offset="100%" stop-color="#030810"/></linearGradient>
+          <filter id="Bn2c"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="Brnd3"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Bbg3)"/>
+        <g clip-path="url(#Brnd3)">
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#0EBAC7" opacity="0.45" filter="url(#Bn2c)">P</text>
+          <text x="4" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="white">P</text>
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="#0EBAC7" opacity="0.45" filter="url(#Bn2c)">X</text>
+          <text x="52" y="66" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="white">X</text>
+        </g>
+      </svg>
+      <span>40px</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="wm" style="margin-bottom:14px"><span class="p" style="font-size:20px">Pool</span><span class="g" style="font-size:20px">Guy</span><span class="x" style="font-size:23px">X</span></div>
+  <div class="tags"><span class="tag taq">Neon glow</span><span class="tag tbl">Elétrico</span><span class="tag tgy">Premium</span></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     C — SPLIT OCEAN
+══════════════════════════════════════ -->
+<div class="card">
+  <div class="c-num">Conceito 03</div>
+  <div class="c-name">Split Ocean</div>
+  <div class="c-desc">Onda vertical divide o ícone — P no lado escuro, X no lado aqua. Contraste máximo e visual único.</div>
+
+  <div class="sizes">
+    <div class="sz">
+      <svg width="110" height="110" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+           style="filter:drop-shadow(0 0 20px rgba(14,186,199,0.34))">
+        <defs>
+          <!-- Left side bg -->
+          <linearGradient id="Cleft" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0B1E30"/><stop offset="100%" stop-color="#040D18"/>
+          </linearGradient>
+          <!-- Right side aqua bg -->
+          <linearGradient id="Cright" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0CBAC7"/><stop offset="100%" stop-color="#077080"/>
+          </linearGradient>
+          <!-- Right bg wave clip -->
+          <clipPath id="CrightClip">
+            <path d="M 48,0 Q 36,25 48,50 Q 60,75 48,100 L 105,100 L 105,0 Z"/>
+          </clipPath>
+          <!-- Wave boundary line clip left (to show glow only on right of wave) -->
+          <filter id="CwaveGlow"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="CgX"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <linearGradient id="Cgl" x1="0%" y1="0%" x2="55%" y2="100%"><stop offset="0%" stop-color="white" stop-opacity="0.12"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient>
+          <clipPath id="Crnd"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Cleft)"/>
+        <g clip-path="url(#Crnd)">
+          <!-- Right aqua half -->
+          <rect width="100" height="100" fill="url(#Cright)" clip-path="url(#CrightClip)"/>
+          <!-- P on dark left — white -->
+          <text x="4" y="67" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="rgba(255,255,255,0.96)">P</text>
+          <!-- X on aqua right — dark navy (contrast flip) -->
+          <text x="52" y="67" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="rgba(4,13,24,0.90)">X</text>
+          <!-- X white outline for edge definition -->
+          <text x="52" y="67" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.5">X</text>
+          <!-- Wave divider with glow -->
+          <path d="M 48,0 Q 36,25 48,50 Q 60,75 48,100" stroke="white" stroke-width="2.5" fill="none" filter="url(#CwaveGlow)"/>
+          <path d="M 48,0 Q 36,25 48,50 Q 60,75 48,100" stroke="rgba(255,255,255,0.85)" stroke-width="1" fill="none"/>
+          <!-- Foam dots along wave -->
+          <circle cx="36" cy="25" r="1.5" fill="white" opacity="0.55"/>
+          <circle cx="60" cy="50" r="1.8" fill="white" opacity="0.65"/>
+          <circle cx="48" cy="75" r="1.5" fill="white" opacity="0.50"/>
+          <circle cx="42" cy="12" r="1" fill="white" opacity="0.35"/>
+          <circle cx="55" cy="88" r="1" fill="white" opacity="0.30"/>
+          <!-- Gloss -->
+          <rect width="100" height="100" rx="24" fill="url(#Cgl)"/>
+        </g>
+        <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.25)" stroke-width="1.5"/>
+      </svg>
+      <span>512px</span>
+    </div>
+    <div class="sz">
+      <svg width="64" height="64" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="Cleft2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0B1E30"/><stop offset="100%" stop-color="#040D18"/></linearGradient>
+          <linearGradient id="Cright2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0CBAC7"/><stop offset="100%" stop-color="#077080"/></linearGradient>
+          <clipPath id="CrC2"><path d="M 48,0 Q 36,25 48,50 Q 60,75 48,100 L 105,100 L 105,0 Z"/></clipPath>
+          <filter id="CwG2"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="Crnd2"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Cleft2)"/>
+        <g clip-path="url(#Crnd2)">
+          <rect width="100" height="100" fill="url(#Cright2)" clip-path="url(#CrC2)"/>
+          <text x="4" y="67" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="rgba(255,255,255,0.96)">P</text>
+          <text x="52" y="67" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="rgba(4,13,24,0.88)">X</text>
+          <path d="M 48,0 Q 36,25 48,50 Q 60,75 48,100" stroke="white" stroke-width="2.5" fill="none" filter="url(#CwG2)"/>
+          <path d="M 48,0 Q 36,25 48,50 Q 60,75 48,100" stroke="rgba(255,255,255,0.80)" stroke-width="1" fill="none"/>
+        </g>
+        <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.22)" stroke-width="1.5"/>
+      </svg>
+      <span>180px</span>
+    </div>
+    <div class="sz">
+      <svg width="38" height="38" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="Cleft3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0B1E30"/><stop offset="100%" stop-color="#040D18"/></linearGradient>
+          <linearGradient id="Cright3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0CBAC7"/><stop offset="100%" stop-color="#077080"/></linearGradient>
+          <clipPath id="CrC3"><path d="M 48,0 Q 36,25 48,50 Q 60,75 48,100 L 105,100 L 105,0 Z"/></clipPath>
+          <filter id="CwG3"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="Crnd3"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Cleft3)"/>
+        <g clip-path="url(#Crnd3)">
+          <rect width="100" height="100" fill="url(#Cright3)" clip-path="url(#CrC3)"/>
+          <text x="4" y="67" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="rgba(255,255,255,0.95)">P</text>
+          <text x="52" y="67" font-family="Poppins,sans-serif" font-weight="800" font-size="62" fill="rgba(4,13,24,0.88)">X</text>
+          <path d="M 48,0 Q 36,25 48,50 Q 60,75 48,100" stroke="white" stroke-width="2.5" fill="none" filter="url(#CwG3)"/>
+        </g>
+      </svg>
+      <span>40px</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="wm" style="margin-bottom:14px"><span class="p" style="font-size:20px">Pool</span><span class="g" style="font-size:20px">Guy</span><span class="x" style="font-size:23px">X</span></div>
+  <div class="tags"><span class="tag taq">Contraste</span><span class="tag tbl">Divisão oceânica</span><span class="tag tgy">Único</span></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     D — DEEP WATER
+══════════════════════════════════════ -->
+<div class="card">
+  <div class="c-num">Conceito 04</div>
+  <div class="c-name">Deep Water</div>
+  <div class="c-desc">P e X vistos de baixo d'água — luz cáustica dançando no fundo de uma piscina cristalina.</div>
+
+  <div class="sizes">
+    <div class="sz">
+      <svg width="110" height="110" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+           style="filter:drop-shadow(0 0 22px rgba(14,186,199,0.38))">
+        <defs>
+          <radialGradient id="Dbg" cx="50%" cy="55%" r="68%">
+            <stop offset="0%" stop-color="#0A2A40"/><stop offset="100%" stop-color="#030C16"/>
+          </radialGradient>
+          <!-- caustic light blobs -->
+          <filter id="Dcaustic"><feGaussianBlur stdDeviation="1.8"/></filter>
+          <filter id="DcausticSoft"><feGaussianBlur stdDeviation="3.5"/></filter>
+          <!-- Letter glow underwater -->
+          <filter id="DletterGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="DletterSoft"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <!-- Surface shimmer (wavy lines at top) -->
+          <filter id="DsurfGlow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <linearGradient id="Doverlay" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#0AB8C8" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#0AB8C8" stop-opacity="0.05"/>
+          </linearGradient>
+          <clipPath id="Drnd"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Dbg)"/>
+        <g clip-path="url(#Drnd)">
+          <!-- ── CAUSTIC LIGHT BLOBS (pool bottom light) ── -->
+          <!-- Row 1 -->
+          <ellipse cx="8"  cy="22" rx="7" ry="3.5" fill="#0EBAC7" opacity="0.18" filter="url(#Dcaustic)" transform="rotate(20,8,22)"/>
+          <ellipse cx="28" cy="16" rx="9" ry="4"   fill="#15CCD8" opacity="0.15" filter="url(#Dcaustic)" transform="rotate(-10,28,16)"/>
+          <ellipse cx="55" cy="12" rx="6" ry="3"   fill="#0EBAC7" opacity="0.16" filter="url(#Dcaustic)" transform="rotate(30,55,12)"/>
+          <ellipse cx="80" cy="19" rx="8" ry="3.5" fill="#12C0D0" opacity="0.14" filter="url(#Dcaustic)" transform="rotate(-20,80,19)"/>
+          <ellipse cx="95" cy="8"  rx="5" ry="2.5" fill="#0EBAC7" opacity="0.12" filter="url(#Dcaustic)"/>
+          <!-- Row 2 (brighter — closer to center) -->
+          <ellipse cx="15" cy="38" rx="10" ry="4.5" fill="#18D8E8" opacity="0.22" filter="url(#DcausticSoft)" transform="rotate(15,15,38)"/>
+          <ellipse cx="40" cy="32" rx="8"  ry="3.5" fill="#0EBAC7" opacity="0.20" filter="url(#Dcaustic)" transform="rotate(-25,40,32)"/>
+          <ellipse cx="68" cy="28" rx="11" ry="4"   fill="#18D0E0" opacity="0.24" filter="url(#DcausticSoft)" transform="rotate(10,68,28)"/>
+          <ellipse cx="90" cy="35" rx="7"  ry="3.2" fill="#0EBAC7" opacity="0.18" filter="url(#Dcaustic)" transform="rotate(-15,90,35)"/>
+          <!-- Smaller bright spots -->
+          <ellipse cx="22" cy="50" rx="5" ry="2.2" fill="#20E0F0" opacity="0.25" filter="url(#Dcaustic)" transform="rotate(25,22,50)"/>
+          <ellipse cx="75" cy="46" rx="6" ry="2.5" fill="#20E0F0" opacity="0.22" filter="url(#Dcaustic)" transform="rotate(-20,75,46)"/>
+          <ellipse cx="50" cy="44" rx="4" ry="1.8" fill="#18D8E8" opacity="0.20" filter="url(#Dcaustic)"/>
+          <ellipse cx="88" cy="55" rx="5" ry="2"   fill="#0EBAC7" opacity="0.18" filter="url(#Dcaustic)" transform="rotate(30,88,55)"/>
+          <!-- Bottom caustics (dimmer) -->
+          <ellipse cx="12" cy="88" rx="8" ry="3.5" fill="#0EBAC7" opacity="0.12" filter="url(#Dcaustic)" transform="rotate(10,12,88)"/>
+          <ellipse cx="40" cy="92" rx="6" ry="2.5" fill="#0EBAC7" opacity="0.10" filter="url(#Dcaustic)"/>
+          <ellipse cx="72" cy="88" rx="9" ry="4"   fill="#0EBAC7" opacity="0.12" filter="url(#Dcaustic)" transform="rotate(-15,72,88)"/>
+
+          <!-- ── LETTERS — underwater look (slight teal tint, glow) ── -->
+          <!-- Soft underwater bloom behind letters -->
+          <text x="5" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#0EBAC7" opacity="0.20" filter="url(#DletterSoft)">P</text>
+          <text x="52" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#0EBAC7" opacity="0.20" filter="url(#DletterSoft)">X</text>
+          <!-- Tight glow -->
+          <text x="5" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#B8F0FC" opacity="0.55" filter="url(#DletterGlow)">P</text>
+          <text x="52" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#B8F0FC" opacity="0.55" filter="url(#DletterGlow)">X</text>
+          <!-- Sharp letter (slightly translucent — underwater feel) -->
+          <text x="5" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="rgba(255,255,255,0.90)">P</text>
+          <text x="52" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="rgba(255,255,255,0.90)">X</text>
+
+          <!-- ── WATER SURFACE at top ── -->
+          <path d="M-5,8 Q13,3 27,8 Q41,13 55,8 Q69,3 83,8 Q94,12 105,8" stroke="#0EBAC7" stroke-width="1.8" fill="none" filter="url(#DsurfGlow)"/>
+          <path d="M-5,8 Q13,3 27,8 Q41,13 55,8 Q69,3 83,8 Q94,12 105,8" stroke="rgba(255,255,255,0.30)" stroke-width="0.8" fill="none"/>
+          <path d="M-5,14 Q15,9 32,14 Q49,19 66,14 Q82,9 105,14" stroke="rgba(14,186,199,0.20)" stroke-width="1" fill="none"/>
+
+          <!-- Aqua water overlay tint -->
+          <rect width="100" height="100" rx="24" fill="url(#Doverlay)"/>
+
+          <!-- Gloss -->
+          <ellipse cx="25" cy="15" rx="22" ry="10" fill="white" opacity="0.07" transform="rotate(-12,25,15)"/>
+        </g>
+        <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.28)" stroke-width="1.5"/>
+      </svg>
+      <span>512px</span>
+    </div>
+    <div class="sz">
+      <svg width="64" height="64" viewBox="0 0 100 100">
+        <defs>
+          <radialGradient id="Dbg2" cx="50%" cy="55%" r="68%"><stop offset="0%" stop-color="#0A2A40"/><stop offset="100%" stop-color="#030C16"/></radialGradient>
+          <filter id="Dc2"><feGaussianBlur stdDeviation="2.5"/></filter>
+          <filter id="DlG2"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="DlS2"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="DsG2"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <linearGradient id="Dov2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#0AB8C8" stop-opacity="0.14"/><stop offset="100%" stop-color="#0AB8C8" stop-opacity="0.04"/></linearGradient>
+          <clipPath id="Drnd2"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Dbg2)"/>
+        <g clip-path="url(#Drnd2)">
+          <ellipse cx="15" cy="35" rx="10" ry="4"  fill="#18D8E8" opacity="0.22" filter="url(#Dc2)" transform="rotate(15,15,35)"/>
+          <ellipse cx="42" cy="28" rx="8"  ry="3.5" fill="#0EBAC7" opacity="0.20" filter="url(#Dc2)" transform="rotate(-25,42,28)"/>
+          <ellipse cx="70" cy="32" rx="11" ry="4"  fill="#18D0E0" opacity="0.24" filter="url(#Dc2)" transform="rotate(10,70,32)"/>
+          <ellipse cx="22" cy="50" rx="5"  ry="2.2" fill="#20E0F0" opacity="0.22" filter="url(#Dc2)" transform="rotate(25,22,50)"/>
+          <ellipse cx="78" cy="48" rx="6"  ry="2.5" fill="#20E0F0" opacity="0.20" filter="url(#Dc2)" transform="rotate(-20,78,48)"/>
+          <text x="5" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#0EBAC7" opacity="0.18" filter="url(#DlS2)">P</text>
+          <text x="52" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#0EBAC7" opacity="0.18" filter="url(#DlS2)">X</text>
+          <text x="5" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#B8F0FC" opacity="0.50" filter="url(#DlG2)">P</text>
+          <text x="52" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#B8F0FC" opacity="0.50" filter="url(#DlG2)">X</text>
+          <text x="5" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="rgba(255,255,255,0.90)">P</text>
+          <text x="52" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="rgba(255,255,255,0.90)">X</text>
+          <path d="M-5,8 Q13,3 27,8 Q41,13 55,8 Q69,3 83,8 Q94,12 105,8" stroke="#0EBAC7" stroke-width="1.8" fill="none" filter="url(#DsG2)"/>
+          <rect width="100" height="100" rx="24" fill="url(#Dov2)"/>
+        </g>
+        <rect x="1" y="1" width="98" height="98" rx="23.5" fill="none" stroke="rgba(14,186,199,0.25)" stroke-width="1.5"/>
+      </svg>
+      <span>180px</span>
+    </div>
+    <div class="sz">
+      <svg width="38" height="38" viewBox="0 0 100 100">
+        <defs>
+          <radialGradient id="Dbg3" cx="50%" cy="55%" r="68%"><stop offset="0%" stop-color="#0A2A40"/><stop offset="100%" stop-color="#030C16"/></radialGradient>
+          <filter id="DlG3"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="Drnd3"><rect width="100" height="100" rx="24"/></clipPath>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="url(#Dbg3)"/>
+        <g clip-path="url(#Drnd3)">
+          <text x="5" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#0EBAC7" opacity="0.40" filter="url(#DlG3)">P</text>
+          <text x="52" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="#0EBAC7" opacity="0.40" filter="url(#DlG3)">X</text>
+          <text x="5" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="rgba(255,255,255,0.90)">P</text>
+          <text x="52" y="69" font-family="Poppins,sans-serif" font-weight="800" font-size="63" fill="rgba(255,255,255,0.90)">X</text>
+        </g>
+      </svg>
+      <span>40px</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="wm" style="margin-bottom:14px"><span class="p" style="font-size:20px">Pool</span><span class="g" style="font-size:20px">Guy</span><span class="x" style="font-size:23px">X</span></div>
+  <div class="tags"><span class="tag taq">Luz cáustica</span><span class="tag tbl">Piscina cristalina</span><span class="tag tgy">Atmosférico</span></div>
+</div>
+
+</div><!-- /grid -->
+</div>
+</body>
+</html>

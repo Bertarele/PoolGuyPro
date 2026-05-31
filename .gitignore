@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Environment / secrets (NUNCA commitar)
+.env
+.env.local
+firebase-config.local.js
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
+
+# Python cache (servidor local)
+__pycache__/
+*.pyc
