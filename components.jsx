@@ -372,6 +372,183 @@ function LangPill({ lang, setLang, onDark=false }) {
   );
 }
 
+// ── PhotoPicker — camera / gallery + Supabase Storage upload ────────────────
+// Defined here (components.jsx) so it's available in ALL screen files.
+function PhotoPicker({ photos=[], onAdd, onRemove, max=5, lang='en', title }) {
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const [uploading,  setUploading]  = React.useState(false);
+  const camRef = React.useRef(null);
+  const galRef = React.useRef(null);
+
+  const titleLbl = title || (lang==='pt'?'Fotos':lang==='es'?'Fotos':'Photos');
+  const hintLbl  = lang==='pt'?`Até ${max} fotos · a primeira é a capa`
+                 : lang==='es'?`Hasta ${max} fotos · la primera es la portada`
+                 : `Up to ${max} photos · first is the cover`;
+  const canAdd = photos.length < max;
+
+  const compress = (file) => new Promise(resolve => {
+    const img = new Image();
+    const src = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+        else        { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(src);
+      c.toBlob(b => resolve(b), 'image/jpeg', 0.78);
+    };
+    img.src = src;
+  });
+
+  const handleFile = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file || !canAdd) return;
+    setPickerOpen(false);
+    setUploading(true);
+    try {
+      const blob = await compress(file);
+      let url = null;
+      if (window.sb && window.sb.storage) {
+        const path = 'posts/' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.jpg';
+        const { data, error } = await window.sb.storage.from('post-images').upload(path, blob, { contentType:'image/jpeg' });
+        if (!error && data) {
+          const { data: ud } = window.sb.storage.from('post-images').getPublicUrl(path);
+          url = ud.publicUrl;
+        }
+      }
+      if (!url) {
+        url = await new Promise(res => {
+          const r = new FileReader();
+          r.onload = ev => res(ev.target.result);
+          r.readAsDataURL(blob);
+        });
+      }
+      onAdd && onAdd(url);
+    } catch(err) { console.warn('[PhotoPicker]', err); }
+    finally { setUploading(false); }
+  };
+
+  const SZ = 88;
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10}}>
+        <div>
+          <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{titleLbl}</div>
+          <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:2}}>{hintLbl}</div>
+        </div>
+        <span style={{
+          fontSize:11, fontWeight:700, padding:'3px 9px', borderRadius:6,
+          background: photos.length===max ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+          color: photos.length===max ? '#fff' : 'var(--pg-ink-500)',
+        }}>{photos.length}/{max}</span>
+      </div>
+
+      <div style={{display:'flex', gap:8, overflowX:'auto', paddingBottom:4, scrollbarWidth:'none'}}>
+        {photos.map((url, i) => (
+          <div key={i} style={{position:'relative', flexShrink:0, width:SZ, height:SZ}}>
+            <img src={url} alt="" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:10,display:'block'}}/>
+            {i===0 && (
+              <div style={{
+                position:'absolute',bottom:0,left:0,right:0,
+                background:'linear-gradient(transparent,rgba(0,0,0,0.6))',
+                borderRadius:'0 0 10px 10px',
+                fontSize:8,fontWeight:700,color:'#fff',textAlign:'center',
+                letterSpacing:'0.07em',padding:'3px 0 5px',
+              }}>{lang==='pt'?'CAPA':lang==='es'?'PORTADA':'COVER'}</div>
+            )}
+            <button onClick={()=>onRemove && onRemove(url)} style={{
+              position:'absolute',top:-6,right:-6,
+              width:22,height:22,borderRadius:'50%',
+              background:'var(--pg-danger,#ff3b30)',border:'2.5px solid #fff',
+              cursor:'pointer',padding:0,
+              display:'flex',alignItems:'center',justifyContent:'center',
+            }}>{Icon.x(9,'#fff')}</button>
+          </div>
+        ))}
+        {canAdd && !uploading && (
+          <button onClick={()=>setPickerOpen(true)} style={{
+            flexShrink:0,width:SZ,height:SZ,borderRadius:10,cursor:'pointer',
+            border:'2px dashed var(--pg-ink-300)',
+            background:'var(--pg-ink-50,#f7f9fb)',
+            display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,
+          }}>
+            <span style={{fontSize:24}}>📷</span>
+            <span style={{fontSize:9.5,color:'var(--pg-ink-400)',fontWeight:600}}>
+              {lang==='pt'?'Adicionar':lang==='es'?'Agregar':'Add photo'}
+            </span>
+          </button>
+        )}
+        {uploading && (
+          <div style={{flexShrink:0,width:SZ,height:SZ,borderRadius:10,background:'var(--pg-ink-100)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <span style={{fontSize:22}}>⏳</span>
+          </div>
+        )}
+      </div>
+
+      {pickerOpen && (
+        <div onClick={()=>setPickerOpen(false)} style={{
+          position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',
+          zIndex:9999,display:'flex',alignItems:'flex-end',justifyContent:'center',
+        }}>
+          <div onClick={e=>e.stopPropagation()} style={{
+            background:'#fff',borderRadius:'20px 20px 0 0',
+            padding:'16px 16px 40px',width:'100%',maxWidth:480,
+            boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',
+          }}>
+            <div style={{width:40,height:4,borderRadius:2,background:'#e0e0e0',margin:'0 auto 18px'}}/>
+            <div style={{fontWeight:700,fontSize:16,textAlign:'center',marginBottom:18,color:'var(--pg-ink-900)'}}>
+              {lang==='pt'?'Adicionar foto':lang==='es'?'Agregar foto':'Add photo'}
+            </div>
+            <button onClick={()=>camRef.current&&camRef.current.click()} style={{
+              width:'100%',padding:'15px 18px',marginBottom:10,borderRadius:14,
+              border:'1.5px solid var(--pg-ink-200)',background:'#fff',
+              display:'flex',alignItems:'center',gap:14,cursor:'pointer',fontFamily:'inherit',
+            }}>
+              <span style={{fontSize:28}}>📷</span>
+              <div style={{textAlign:'left'}}>
+                <div style={{fontWeight:700,fontSize:15,color:'var(--pg-ink-900)'}}>
+                  {lang==='pt'?'Tirar foto':lang==='es'?'Tomar foto':'Take photo'}
+                </div>
+                <div style={{fontSize:12,color:'var(--pg-ink-400)',marginTop:2}}>
+                  {lang==='pt'?'Usar câmera do celular':lang==='es'?'Usar cámara del celular':'Use your phone camera'}
+                </div>
+              </div>
+            </button>
+            <button onClick={()=>galRef.current&&galRef.current.click()} style={{
+              width:'100%',padding:'15px 18px',marginBottom:16,borderRadius:14,
+              border:'1.5px solid var(--pg-ink-200)',background:'#fff',
+              display:'flex',alignItems:'center',gap:14,cursor:'pointer',fontFamily:'inherit',
+            }}>
+              <span style={{fontSize:28}}>🖼️</span>
+              <div style={{textAlign:'left'}}>
+                <div style={{fontWeight:700,fontSize:15,color:'var(--pg-ink-900)'}}>
+                  {lang==='pt'?'Escolher da galeria':lang==='es'?'Elegir de la galería':'Choose from gallery'}
+                </div>
+                <div style={{fontSize:12,color:'var(--pg-ink-400)',marginTop:2}}>
+                  {lang==='pt'?'Acessar fotos salvas':lang==='es'?'Acceder a fotos guardadas':'Access saved photos'}
+                </div>
+              </div>
+            </button>
+            <button onClick={()=>setPickerOpen(false)} style={{
+              width:'100%',padding:'14px',borderRadius:14,border:'none',
+              background:'var(--pg-ink-100)',color:'var(--pg-ink-700)',
+              fontWeight:600,fontSize:15,cursor:'pointer',fontFamily:'inherit',
+            }}>{lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}</button>
+          </div>
+        </div>
+      )}
+      <input ref={camRef} type="file" accept="image/*" capture="environment" style={{display:'none',position:'absolute'}} onChange={handleFile}/>
+      <input ref={galRef} type="file" accept="image/*" style={{display:'none',position:'absolute'}} onChange={handleFile}/>
+    </div>
+  );
+}
+
 // Simple shimmer line
 function Shimmer({ w=80, h=10 }) {
   return <div style={{width:w, height:h, borderRadius:4, background:'var(--pg-ink-100)'}}/>;

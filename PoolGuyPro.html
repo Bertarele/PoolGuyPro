@@ -116,6 +116,26 @@
       channel:function(){ return{on:function(){return this;},subscribe:function(cb){setTimeout(function(){if(cb)cb('SUBSCRIBED');},100);return this;}};},
       removeChannel:function(){}
     };
+    // Storage API
+    window.sb.storage = {
+      from: function(bucket){
+        return {
+          upload: async function(path, file, opts){
+            var ct = (opts&&opts.contentType) || (file&&file.type) || 'application/octet-stream';
+            var r = await fetch(BASE+'/storage/v1/object/'+bucket+'/'+path, {
+              method:'POST',
+              headers:{'apikey':KEY,'Authorization':'Bearer '+(_tok||KEY),'Content-Type':ct,'x-upsert':'true'},
+              body: file,
+            });
+            if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Upload failed '+r.status}};}
+            return{data:{path:path},error:null};
+          },
+          getPublicUrl: function(path){
+            return{data:{publicUrl:BASE+'/storage/v1/object/public/'+bucket+'/'+path}};
+          }
+        };
+      }
+    };
     window.supabase = {createClient:function(){return window.sb;}};
     console.log('[PoolGuyPro] Supabase (native fetch) ✓');
   })();

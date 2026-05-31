@@ -2154,7 +2154,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
             {lang==='pt'?'Selecione os requisitos de veículo e equipamento':lang==='es'?'Selecciona los requisitos de vehículo y equipo':'Select vehicle and equipment requirements to continue'}
           </div>
         )}
-        <button onClick={()=>onSubmit && onSubmit({ role, loc, contract, payMode, pay, carReq, equipReq, desc })}
+        <button onClick={()=>onSubmit && onSubmit({ role, loc, contract, payMode, pay, carReq, equipReq, desc, photoUrl: null })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.briefcase(17, '#fff')} {submitLbl}
@@ -2172,6 +2172,7 @@ function PostTechSheet({ onClose, lang='en', onSubmit }) {
   const [loc, setLoc]           = React.useState('');
   const [phone, setPhone]       = React.useState('');
   const [email, setEmail]       = React.useState('');
+  const [photos, setPhotos]     = React.useState([]);
   const [rateMode, setRateMode] = React.useState('fixed');
   const [rate, setRate]         = React.useState('90');
 
@@ -2207,6 +2208,15 @@ function PostTechSheet({ onClose, lang='en', onSubmit }) {
       </div>
 
       <div style={{padding:'0 18px', display:'flex', flexDirection:'column', gap:18}}>
+        {/* Profile photo */}
+        <PhotoPicker
+          photos={photos}
+          onAdd={url=>setPhotos(p=>[...p,url])}
+          onRemove={url=>setPhotos(p=>p.filter(u=>u!==url))}
+          max={3} lang={lang}
+          title={lang==='pt'?'Foto do perfil':lang==='es'?'Foto de perfil':'Profile photo'}
+        />
+        <div style={{height:0,borderTop:'0.5px solid var(--pg-ink-200)'}}/>
         <div>
           <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em', marginBottom:8}}>{nameLbl.toUpperCase()}</div>
           <input className="pg-field" value={name} onChange={e=>setName(e.target.value)} placeholder={namePh}/>
@@ -2259,7 +2269,7 @@ function PostTechSheet({ onClose, lang='en', onSubmit }) {
       </div>
 
       <div style={{padding:'18px 18px 8px', position:'sticky', bottom:0, background:'#fff'}}>
-        <button onClick={()=>onSubmit && onSubmit({ name, specialty, loc, phone, email, rateMode, rate })}
+        <button onClick={()=>onSubmit && onSubmit({ name, specialty, loc, phone, email, rateMode, rate, photoUrl: photos[0]||null })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.shield(17, '#fff')} {submitLbl}
