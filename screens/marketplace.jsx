@@ -45,8 +45,9 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
 }
 
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
-function ViewListingSheet({ item, lang, onClose, openChat }) {
+function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, showToast, onDeleted }) {
   if (!item) return null;
+  const [deleting, setDeleting] = React.useState(false);
 
   const allPhotos = (item.photoUrls && item.photoUrls.length > 0) ? item.photoUrls : (item.photoUrl ? [item.photoUrl] : []);
   const periodSfx = item.type === 'rent'
@@ -60,6 +61,20 @@ function ViewListingSheet({ item, lang, onClose, openChat }) {
 
   const handleContact = () => {
     if (openChat) openChat(item.author || 'Seller');
+    if (onClose) onClose();
+  };
+
+  const handleAdminDelete = async () => {
+    const confirmMsg = lang==='pt'
+      ? `Excluir o anúncio "${item.name}"? Não pode ser desfeito.`
+      : `Delete listing "${item.name}"? This cannot be undone.`;
+    if (!window.confirm(confirmMsg)) return;
+    setDeleting(true);
+    const { error } = await window.sb.from('marketplace').delete().eq('id', item._id);
+    setDeleting(false);
+    if (error) { if (showToast) showToast('❌ ' + error.message); return; }
+    if (showToast) showToast(lang==='pt'?'🗑️ Anúncio excluído':'🗑️ Listing deleted');
+    if (onDeleted) onDeleted(item._id);
     if (onClose) onClose();
   };
 
@@ -81,6 +96,14 @@ function ViewListingSheet({ item, lang, onClose, openChat }) {
             fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:8,
             background:'rgba(0,0,0,0.55)', color:'#fff', letterSpacing:'0.06em',
             backdropFilter:'blur(4px)', textTransform:'uppercase'}}>{item.cat}</span>
+        )}
+        {/* Admin badge */}
+        {isAdmin && (
+          <span style={{position:'absolute', bottom:14, left:16, zIndex:2,
+            fontSize:9.5, fontWeight:700, padding:'3px 9px', borderRadius:6,
+            background:'rgba(239,68,68,0.85)', color:'#fff', letterSpacing:'0.05em'}}>
+            🛡 ADMIN
+          </span>
         )}
       </div>
 
@@ -165,7 +188,32 @@ function ViewListingSheet({ item, lang, onClose, openChat }) {
               <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
             </svg>
           </button>
+          {/* Admin delete button */}
+          {isAdmin && (
+            <button onClick={handleAdminDelete} disabled={deleting} style={{
+              width:52, height:52, borderRadius:14, border:'1.5px solid #FCA5A5',
+              background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+              opacity: deleting ? 0.6 : 1,
+            }} title={lang==='pt'?'Excluir anúncio (admin)':'Delete listing (admin)'}>
+              {deleting
+                ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" strokeDasharray="31.4" strokeDashoffset="10"/></svg>
+                : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              }
+            </button>
+          )}
         </div>
+
+        {/* Admin info strip */}
+        {isAdmin && (
+          <div style={{marginTop:12, padding:'9px 13px', borderRadius:10, background:'#FEF2F2', border:'1px solid #FCA5A5',
+            display:'flex', alignItems:'center', gap:8}}>
+            <span style={{fontSize:14}}>🛡</span>
+            <span style={{fontSize:12, color:'#DC2626', fontWeight:500}}>
+              {lang==='pt'?'Você está vendo este anúncio como admin. O botão 🗑️ remove definitivamente.':'You are viewing this as admin. The 🗑️ button permanently removes it.'}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1158,12 +1206,19 @@ function MarketplaceScreen({ ctx }) {
 
     </div>{/* end .pg-screen */}
 
-      {/* Other user's listing — read-only view + contact */}
+      {/* Other user's listing — read-only view + contact (admin gets delete button) */}
       <Sheet open={!!viewListing} onClose={()=>setViewListing(null)} height="auto">
         {viewListing && <ViewListingSheet
           item={viewListing} lang={lang}
           openChat={openChat}
           onClose={()=>setViewListing(null)}
+          isAdmin={user.role === 'admin'}
+          showToast={showToast}
+          onDeleted={(id) => {
+            setViewListing(null);
+            // realtime subscription removes it automatically, but force remove just in case
+            if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
+          }}
         />}
       </Sheet>
 
@@ -1179,6 +1234,7 @@ function MarketplaceScreen({ ctx }) {
           }}
           onDeleted={(id)=>{
             setMyPostDetail(null);
+            if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
           }}
         />}
       </Sheet>
