@@ -531,27 +531,40 @@ function MarketplaceScreen({ ctx }) {
                         textTransform:'uppercase',
                       }}>{item.cat || 'Tools'}</span>
                     </div>
-                    {/* Content */}
-                    <div style={{padding:'12px 13px 13px', display:'flex', flexDirection:'column', flex:1}}>
-                      <div style={{fontSize:14, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3,
+                    {/* Content — same structure as static cards */}
+                    <div style={{padding:'12px 13px 14px', display:'flex', flexDirection:'column', flex:1}}>
+                      {/* Title */}
+                      <div style={{fontSize:14, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3, color:'var(--pg-ink-900)',
                         display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
                         {item.name}
                       </div>
-                      <div style={{display:'flex', alignItems:'center', gap:4, marginTop:5, fontSize:11.5, color:'var(--pg-ink-500)'}}>
-                        {Icon.pin(10,'var(--pg-ink-400)')} {item.loc}
+                      {/* Description line — condition + location */}
+                      <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.4, flex:1,
+                        display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
+                        {[item.condition, item.loc].filter(Boolean).join(' · ') || '—'}
                       </div>
-                      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10}}>
-                        <span style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
-                          {priceStr}
-                          {item.type==='rent' && !isPending && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)'}}>/dia</span>}
-                        </span>
-                        <span style={{fontSize:10.5, color:'var(--pg-ink-400)', display:'flex', alignItems:'center', gap:3}}>
-                          <span style={{fontSize:11}}>👤</span> {fmtAuthor(item.author)}
+                      {/* Divider */}
+                      <div style={{height:1, background:'var(--pg-ink-100)', margin:'10px 0'}}/>
+                      {/* Price */}
+                      <span style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800,
+                        color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
+                        letterSpacing:'-0.02em', lineHeight:1, display:'block'}}>
+                        {priceStr}
+                        {item.type==='rent' && !isPending && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>/dia</span>}
+                      </span>
+                      {/* Author — own line, never truncated */}
+                      <div style={{display:'flex', alignItems:'center', gap:5, marginTop:5}}>
+                        <div style={{width:20, height:20, borderRadius:'50%', background:'var(--pg-blue-100)',
+                          display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, flexShrink:0}}>👤</div>
+                        <span style={{fontSize:11, fontWeight:600, color:'var(--pg-ink-600)',
+                          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                          {fmtAuthor(item.author)}
                         </span>
                       </div>
                       {isPending && (
-                        <div style={{marginTop:8, fontSize:10.5, color:'#92710A', background:'#FFF8E1', border:'0.5px solid #FFE082', borderRadius:6, padding:'4px 8px', textAlign:'center'}}>
-                          ⏳ {lang==='pt'?'Aguardando aprovação':lang==='es'?'Esperando aprobación':'Awaiting approval'}
+                        <div style={{marginTop:8, fontSize:10.5, color:'#92710A', background:'#FFF8E1',
+                          border:'0.5px solid #FFE082', borderRadius:6, padding:'4px 8px', textAlign:'center'}}>
+                          ⏳ {lang==='pt'?'Em revisão':lang==='es'?'En revisión':'Under review'}
                         </div>
                       )}
                     </div>
