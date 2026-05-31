@@ -37,23 +37,95 @@
     var BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
     var KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
     var _tok = null;
-    try { var s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(s&&s.t) _tok=s.t; } catch(e){}
+    var _refreshing = null; // pending refresh promise — avoids race conditions
 
+    // Load saved session (now includes refresh_token as 'r')
+    try { var _s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(_s&&_s.t) _tok=_s.t; } catch(e){}
+
+    // Persist session with both tokens
+    function _saveSession(d) {
+      _tok = d.access_token;
+      try {
+        localStorage.setItem('pg_s', JSON.stringify({
+          t: d.access_token,
+          r: d.refresh_token || null,
+          u: { id: d.user.id, email: d.user.email }
+        }));
+      } catch(e) {}
+    }
+
+    // Silently refresh the access token using the stored refresh_token
+    async function _doRefresh() {
+      try {
+        var stored = JSON.parse(localStorage.getItem('pg_s') || 'null');
+        if (!stored || !stored.r) return false;
+        var resp = await fetch(BASE + '/auth/v1/token?grant_type=refresh_token', {
+          method: 'POST',
+          headers: { 'apikey': KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: stored.r })
+        });
+        if (!resp.ok) return false;
+        var d = await resp.json();
+        if (!d.access_token) return false;
+        _tok = d.access_token;
+        // Preserve user info, update tokens
+        try {
+          localStorage.setItem('pg_s', JSON.stringify({
+            t: d.access_token,
+            r: d.refresh_token || stored.r,
+            u: stored.u
+          }));
+        } catch(e) {}
+        console.log('[PoolGuyPro] Token refreshed ✓');
+        return true;
+      } catch(e) {
+        console.warn('[PoolGuyPro] Token refresh failed:', e.message);
+        return false;
+      }
+    }
+
+    // Deduplicated refresh — if already refreshing, wait for same promise
+    function _refreshOnce() {
+      if (_refreshing) return _refreshing;
+      _refreshing = _doRefresh().finally(function(){ _refreshing = null; });
+      return _refreshing;
+    }
+
+    // Check if an error body indicates JWT expiry
+    function _isExpired(msg) {
+      return msg && (msg.includes('JWT expired') || msg.includes('invalid JWT') || msg.includes('token is expired'));
+    }
+
+    // Always read fresh token from closure (updated by refresh)
     function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
 
     function makeBuilder(table){
       var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null;
-      var run=async function(){
+      var run=async function(retried){
         var url=BASE+'/rest/v1/'+table, h=hdrs();
         if(op==='insert'){
           var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
-          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Insert failed '+r.status}};}
+          if(!r.ok){
+            var e={}; try{e=await r.json();}catch(x){}
+            if(!retried && _isExpired(e.message||e.msg||'')) {
+              var ok = await _refreshOnce();
+              if(ok) return run(true);
+            }
+            return{data:null,error:{message:e.message||'Insert failed '+r.status}};
+          }
           return{data:null,error:null};
         }
         if(op==='update'){
           var qs=filters.join('&');
           var r=await fetch(url+(qs?'?'+qs:''),{method:'PATCH',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
-          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Update failed '+r.status}};}
+          if(!r.ok){
+            var e={}; try{e=await r.json();}catch(x){}
+            if(!retried && _isExpired(e.message||e.msg||'')) {
+              var ok = await _refreshOnce();
+              if(ok) return run(true);
+            }
+            return{data:null,error:{message:e.message||'Update failed '+r.status}};
+          }
           return{data:null,error:null};
         }
         if(op==='delete'){
@@ -68,6 +140,10 @@
         if(isSingle) h['Accept']='application/vnd.pgrst.object+json';
         var r=await fetch(url+'?'+p.join('&'),{headers:h});
         if(r.status===406||r.status===404) return{data:null,error:null};
+        if(r.status===401 && !retried){
+          var ok = await _refreshOnce();
+          if(ok) return run(true);
+        }
         var d=await r.json();
         if(!r.ok) return{data:null,error:{message:d.message||d.hint||'Query failed '+r.status}};
         return{data:d,error:null};
@@ -75,6 +151,7 @@
       var b={
         select:function(c){sel=c||'*';return b;},
         eq:function(c,v){filters.push(c+'=eq.'+encodeURIComponent(v));return b;},
+        neq:function(c,v){filters.push(c+'=neq.'+encodeURIComponent(v));return b;},
         order:function(c,opts){orderCol=c;orderAsc=opts?opts.ascending!==false:true;return b;},
         single:function(){isSingle=true;return b;},
         insert:function(row){op='insert';body=row;return b;},
@@ -92,15 +169,16 @@
           var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
           var d=await r.json();
           if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Invalid credentials'}};
-          _tok=d.access_token;
-          try{localStorage.setItem('pg_s',JSON.stringify({t:d.access_token,u:{id:d.user.id,email:d.user.email}}));}catch(e){}
+          _saveSession(d);
+          // Start background auto-refresh (every 50 min, token valid 1h)
+          _startAutoRefresh();
           return{data:{user:d.user,session:d},error:null};
         },
         signUp:async function(creds){
           var r=await fetch(BASE+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
           var d=await r.json();
           if(!r.ok) return{data:null,error:{message:d.msg||d.error_description||d.message||'Signup failed'}};
-          if(d.access_token){_tok=d.access_token; try{localStorage.setItem('pg_s',JSON.stringify({t:d.access_token,u:{id:d.user.id,email:d.user.email}}));}catch(e){}}
+          if(d.access_token){ _saveSession(d); _startAutoRefresh(); }
           return{data:{user:d.user||d},error:null};
         },
         getSession:async function(){
@@ -109,13 +187,26 @@
         },
         signOut:async function(){
           try{if(_tok) await fetch(BASE+'/auth/v1/logout',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+_tok}});}catch(e){}
-          _tok=null; try{localStorage.removeItem('pg_s');}catch(e){}
+          _tok=null; _stopAutoRefresh(); try{localStorage.removeItem('pg_s');}catch(e){}
         }
       },
       from:function(table){return makeBuilder(table);},
       channel:function(){ return{on:function(){return this;},subscribe:function(cb){setTimeout(function(){if(cb)cb('SUBSCRIBED');},100);return this;}};},
       removeChannel:function(){}
     };
+
+    // Auto-refresh: renew the token every 50 minutes while the tab is open
+    var _refreshTimer = null;
+    function _startAutoRefresh() {
+      _stopAutoRefresh();
+      _refreshTimer = setInterval(function(){ _refreshOnce(); }, 50 * 60 * 1000);
+    }
+    function _stopAutoRefresh() {
+      if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+    }
+    // If already logged in from a previous session, start auto-refresh immediately
+    if (_tok) _startAutoRefresh();
+
     // Storage API
     window.sb.storage = {
       from: function(bucket){
@@ -137,7 +228,7 @@
       }
     };
     window.supabase = {createClient:function(){return window.sb;}};
-    console.log('[PoolGuyPro] Supabase (native fetch) ✓');
+    console.log('[PoolGuyPro] Supabase (native fetch + auto-refresh) ✓');
   })();
   </script>
 
