@@ -23,9 +23,11 @@ function HomeScreen({ ctx }) {
     : (user.email ? user.email.split('@')[0] : null);
 
   // My real posts from Supabase liveMarket
+  // author_id check is most reliable — works regardless of name changes
   const myPosts = liveMarket.filter(m =>
-    m.author === myAuthor ||
-    m.author === user.name ||
+    (user.uid && m.author_id && m.author_id === user.uid) ||
+    (myAuthor && m.author === myAuthor) ||
+    (user.name && m.author === user.name) ||
     (user.email && m.author === user.email.split('@')[0])
   );
 
