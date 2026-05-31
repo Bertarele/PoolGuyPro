@@ -167,7 +167,7 @@ function App() {
   }, []);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [user, setUser] = React.useState({
-    name:'Lucas Mendes', tier: t.tier, rating: 4.9, reviews: 128,
+    name:'', email:'', uid:'', role:'user', tier: t.tier, rating: 4.9, reviews: 128,
     regions:['Broward','Weston','Plantation'],
     // Profile fields — pre-filled on job applications
     age: 31,
@@ -189,6 +189,33 @@ function App() {
                es:'Gestioné mi propia ruta con 30+ clientes fijos en el Condado de Broward. Balance químico, reparaciones y atención al cliente.'} },
     ],
   });
+  const loadProfile = React.useCallback(async (sbUser) => {
+    if (!sbUser || !window.sb) return;
+    const { data: profile } = await window.sb.from('profiles').select('*').eq('id', sbUser.id).single();
+    setUser(u => ({
+      ...u,
+      name:   profile ? profile.name   : (sbUser.email || ''),
+      phone:  profile ? profile.phone  : '',
+      region: profile ? profile.region : '',
+      role:   profile ? profile.role   : 'user',
+      email:  sbUser.email,
+      uid:    sbUser.id,
+    }));
+  }, []);
+
+  const handleAuthLogin = React.useCallback((sbUser) => {
+    setIsLoggedIn(true);
+    loadProfile(sbUser);
+  }, [loadProfile]);
+
+  // Restore session on page reload
+  React.useEffect(() => {
+    if (!window.sb) return;
+    window.sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) handleAuthLogin(session.user);
+    });
+  }, []);
+
   const [lang, setLangState] = React.useState(t.lang);
   // Per-weekday region preferences for notifications
   const [regionsByDay, setRegionsByDay] = React.useState({
@@ -366,7 +393,12 @@ function App() {
     openPublicProfile:  (u)   => setPublicProfileUser(u),
     openHelp:           ()    => setHelpOpen(true),
     openPrivacy:        ()    => setPrivacyOpen(true),
-    onLogout:           ()    => { setIsLoggedIn(false); setTab('home'); },
+    onLogout: () => {
+      if (window.sb) window.sb.auth.signOut();
+      setIsLoggedIn(false);
+      setTab('home');
+      setUser(u => ({ ...u, name:'', email:'', uid:'', role:'user' }));
+    },
     // Live Firestore data
     liveJobs, liveTechs, liveVacations, liveMarket,
     dbWrite,
@@ -416,7 +448,7 @@ function App() {
             </div>
           )}
           <div style={{position:'absolute', inset:0, paddingTop: isMobile ? 0 : 54, overflow:'auto'}}>
-            <LoginScreen onLogin={()=>setIsLoggedIn(true)} lang={lang} setLang={setLang}/>
+            <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
           </div>
         </div>
       )}

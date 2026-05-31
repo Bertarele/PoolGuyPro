@@ -8,6 +8,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   const [pass,          setPass]         = React.useState('');
   const [passConfirm,   setPassConfirm]  = React.useState('');
   const [loading,       setLoading]      = React.useState(false);
+  const [error,         setError]        = React.useState('');
   const [showPass,      setShowPass]     = React.useState(false);
   const [showPassC,     setShowPassC]    = React.useState(false);
   // Signup fields
@@ -35,10 +36,19 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
   const canSubmit = email.trim().length > 3 && pass.trim().length >= 4;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!canSubmit || loading) return;
     setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 900);
+    setError('');
+    try {
+      if (!window.sb) throw new Error('No connection to database');
+      const { data, error: err } = await window.sb.auth.signInWithPassword({ email: email.trim(), password: pass });
+      if (err) throw err;
+      onLogin(data.user);
+    } catch(e) {
+      setError(e.message || 'Login failed');
+      setLoading(false);
+    }
   };
 
   const goSignup = () => { setMode('signup'); setStep(1); };
@@ -48,10 +58,20 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   const canStep1 = name.trim().length > 1 && email.trim().length > 3 && pass.trim().length >= 4 && passMatch;
   const canStep2 = phone.trim().length >= 9 && region !== '';
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!canStep2 || loading) return;
     setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 900);
+    setError('');
+    try {
+      if (!window.sb) throw new Error('No connection to database');
+      const { data, error: err } = await window.sb.auth.signUp({ email: email.trim(), password: pass });
+      if (err) throw err;
+      await window.sb.from('profiles').insert({ id: data.user.id, name, phone, region, role: 'user' });
+      onLogin(data.user);
+    } catch(e) {
+      setError(e.message || 'Signup failed');
+      setLoading(false);
+    }
   };
 
   const langs = [
@@ -245,6 +265,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
               </button>
             </div>
           </div>
+
+          {error ? <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div> : null}
 
           <button onClick={handleLogin} disabled={!canSubmit||loading} style={{
             width:'100%', height:50, borderRadius:14, border:'none', cursor:'pointer',
@@ -477,6 +499,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                 <div style={{position:'fixed', inset:0, zIndex:98}} onClick={()=>setRegionOpen(false)}/>
               )}
             </div>
+
+            {error ? <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div> : null}
 
             <button onClick={handleSignup} disabled={!canStep2||loading} style={{
               width:'100%', height:50, borderRadius:14, border:'none', cursor: canStep2?'pointer':'not-allowed',
