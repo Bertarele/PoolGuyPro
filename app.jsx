@@ -743,6 +743,27 @@ function App() {
                 <span style={{fontSize:16}}>💬</span>
                 <span>Feedback</span>
               </button>
+
+              {/* Divider */}
+              <div style={{height:'1px', background:'rgba(255,255,255,0.08)', margin:'6px 4px'}}/>
+
+              {/* Logout */}
+              <button onClick={ctx.onLogout} style={{
+                display:'flex', alignItems:'center', gap:11,
+                padding:'10px 14px', borderRadius:11, border:'none', cursor:'pointer',
+                background:'transparent', color:'rgba(239,68,68,0.55)',
+                fontSize:13, fontFamily:'inherit', textAlign:'left', transition:'all .15s',
+              }}
+                onMouseEnter={e=>{ e.currentTarget.style.background='rgba(239,68,68,0.10)'; e.currentTarget.style.color='#EF4444'; }}
+                onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='rgba(239,68,68,0.55)'; }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>{lang==='pt'?'Sair':lang==='es'?'Salir':'Log out'}</span>
+              </button>
             </nav>
           )}
 
