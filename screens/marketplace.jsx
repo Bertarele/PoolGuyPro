@@ -1,5 +1,230 @@
 // marketplace.jsx — navy header + dual seg + distance + categories
 
+// ── My Post Detail / Edit Sheet ───────────────────────────────
+function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDeleted }) {
+  const [editing, setEditing]   = React.useState(false);
+  const [saving,  setSaving]    = React.useState(false);
+  const [deleting,setDeleting]  = React.useState(false);
+  const [form,    setForm]      = React.useState({
+    name:       item.name       || '',
+    price:      item.price      || '',
+    priceMode:  item.priceMode  || 'fixed',
+    loc:        item.loc        || '',
+    condition:  item.condition  || '',
+    cat:        item.cat        || '',
+  });
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  const isPending  = item.status === 'pending';
+  const statusColor = isPending ? '#D97706' : '#16A34A';
+  const statusBg    = isPending ? '#FEF3C7' : '#DCFCE7';
+  const statusLabel = isPending
+    ? (lang==='pt'?'⏳ Em revisão':lang==='es'?'⏳ En revisión':'⏳ Under review')
+    : (lang==='pt'?'✓ Ativo':lang==='es'?'✓ Activo':'✓ Active');
+
+  const handleSave = async () => {
+    if (!window.sb) return;
+    setSaving(true);
+    const patch = {
+      name:       form.name,
+      price:      form.price || null,
+      price_mode: form.priceMode,
+      loc:        form.loc,
+      condition:  form.condition,
+      cat:        form.cat,
+      status:     'pending', // always back to review on edit
+    };
+    const { error } = await window.sb.from('marketplace').update(patch).eq('id', item._id);
+    setSaving(false);
+    if (error) {
+      if (showToast) showToast('❌ ' + error.message);
+      return;
+    }
+    if (showToast) showToast(lang==='pt'?'✓ Anúncio atualizado — aguardando revisão':lang==='es'?'✓ Anuncio actualizado — en revisión':'✓ Post updated — back under review');
+    onUpdated && onUpdated({...item, ...patch});
+  };
+
+  const handleDelete = async () => {
+    if (!window.sb) return;
+    const confirm = window.confirm(lang==='pt'?'Deletar este anúncio? Não pode ser desfeito.':lang==='es'?'¿Eliminar este anuncio? No se puede deshacer.':'Delete this listing? This cannot be undone.');
+    if (!confirm) return;
+    setDeleting(true);
+    const { error } = await window.sb.from('marketplace').delete().eq('id', item._id);
+    setDeleting(false);
+    if (error) { if (showToast) showToast('❌ ' + error.message); return; }
+    if (showToast) showToast(lang==='pt'?'🗑️ Anúncio deletado':lang==='es'?'🗑️ Anuncio eliminado':'🗑️ Listing deleted');
+    onDeleted && onDeleted(item._id);
+  };
+
+  const inp = {style:{width:'100%',padding:'11px 13px',borderRadius:10,border:'1.5px solid var(--pg-ink-200)',background:'var(--pg-ink-50,#F7F9FB)',color:'var(--pg-ink-900)',fontSize:14,outline:'none',fontFamily:'inherit',transition:'border-color .15s'}};
+  const lbl = (text) => <div style={{fontSize:11,fontWeight:700,color:'var(--pg-ink-500)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:6}}>{text}</div>;
+
+  return (
+    <div style={{padding:'0 0 36px'}}>
+      {/* Hero image */}
+      <div style={{position:'relative', height:180, background:'linear-gradient(135deg,#e2e8f0,#cbd5e1)', overflow:'hidden', flexShrink:0}}>
+        <EquipImg category={item.cat||'Tools'} height={180}/>
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.20) 0%,transparent 50%,rgba(0,0,0,0.30) 100%)'}}/>
+        {/* Status badge */}
+        <span style={{
+          position:'absolute',top:14,left:16,
+          fontSize:11,fontWeight:700,padding:'5px 12px',borderRadius:8,
+          background:statusBg,color:statusColor,letterSpacing:'0.03em',
+        }}>{statusLabel}</span>
+        {/* Category badge */}
+        <span style={{
+          position:'absolute',top:14,right:16,
+          fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:8,
+          background:'rgba(0,0,0,0.50)',color:'#fff',letterSpacing:'0.06em',textTransform:'uppercase',
+        }}>{item.cat||'Tools'}</span>
+      </div>
+
+      <div style={{padding:'20px 20px 0'}}>
+        {!editing ? (
+          /* ── View mode ── */
+          <>
+            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12,marginBottom:16}}>
+              <div style={{flex:1,minWidth:0}}>
+                <h2 style={{margin:'0 0 6px',fontFamily:'var(--pg-font-display)',fontSize:22,fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.2,color:'var(--pg-ink-900)'}}>
+                  {item.name||'—'}
+                </h2>
+                {item.loc && (
+                  <div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,color:'var(--pg-ink-500)'}}>
+                    {Icon.pin(12,'var(--pg-ink-400)')} {item.loc}
+                  </div>
+                )}
+              </div>
+              <div style={{textAlign:'right',flexShrink:0}}>
+                <div style={{fontFamily:'var(--pg-font-display)',fontSize:28,fontWeight:800,color:'var(--pg-blue-500)',letterSpacing:'-0.03em',lineHeight:1}}>
+                  {item.priceMode==='neg'
+                    ? (lang==='pt'?'Neg.':lang==='es'?'Neg.':'Neg.')
+                    : item.price ? `$${Number(item.price).toLocaleString()}` : '—'}
+                </div>
+                {item.type==='rent' && <div style={{fontSize:11,color:'var(--pg-ink-400)',marginTop:2}}>/dia</div>}
+              </div>
+            </div>
+
+            {/* Details pills */}
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:20}}>
+              {item.condition && <span style={{fontSize:12,fontWeight:600,padding:'5px 12px',borderRadius:999,background:'var(--pg-blue-50)',color:'var(--pg-blue-700)',border:'1px solid var(--pg-blue-100)'}}>{item.condition}</span>}
+              {item.type && <span style={{fontSize:12,fontWeight:600,padding:'5px 12px',borderRadius:999,background:'var(--pg-ink-100)',color:'var(--pg-ink-700)'}}>{item.type}</span>}
+            </div>
+
+            {isPending && (
+              <div style={{padding:'12px 14px',borderRadius:12,background:'#FFFBEB',border:'1px solid #FDE68A',marginBottom:16,display:'flex',alignItems:'flex-start',gap:10}}>
+                <span style={{fontSize:20,lineHeight:1,flexShrink:0}}>⏳</span>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:'#92400E'}}>
+                    {lang==='pt'?'Aguardando aprovação do admin':lang==='es'?'Esperando aprobación del admin':'Awaiting admin approval'}
+                  </div>
+                  <div style={{fontSize:12,color:'#B45309',marginTop:2}}>
+                    {lang==='pt'?'Não aparece para outros usuários ainda.':lang==='es'?'Aún no visible para otros usuarios.':'Not visible to other users yet.'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setEditing(true)} style={{
+                flex:1,height:50,borderRadius:14,border:'none',cursor:'pointer',fontFamily:'inherit',
+                background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+                color:'#fff',fontSize:15,fontWeight:700,
+                boxShadow:'0 4px 14px rgba(0,119,182,0.35)',
+                display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                {lang==='pt'?'Editar anúncio':lang==='es'?'Editar anuncio':'Edit listing'}
+              </button>
+              <button onClick={handleDelete} disabled={deleting} style={{
+                width:50,height:50,borderRadius:14,border:'1.5px solid #FCA5A5',
+                background:'#FEF2F2',color:'#EF4444',cursor:'pointer',
+                display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,
+                opacity:deleting?0.6:1,
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+            </div>
+          </>
+        ) : (
+          /* ── Edit mode ── */
+          <>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+              <button onClick={()=>setEditing(false)} style={{width:34,height:34,borderRadius:'50%',border:'1.5px solid var(--pg-ink-200)',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                {Icon.chev(16,'var(--pg-ink-700)','left')}
+              </button>
+              <div>
+                <div style={{fontFamily:'var(--pg-font-display)',fontSize:17,fontWeight:700,color:'var(--pg-ink-900)'}}>
+                  {lang==='pt'?'Editar anúncio':lang==='es'?'Editar anuncio':'Edit listing'}
+                </div>
+                <div style={{fontSize:11.5,color:'var(--pg-ink-400)',marginTop:1}}>
+                  {lang==='pt'?'Salvar volta o anúncio para revisão':lang==='es'?'Guardar vuelve el anuncio a revisión':'Saving will send the post back for review'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{display:'flex',flexDirection:'column',gap:14}}>
+              <div>
+                {lbl(lang==='pt'?'Título':'Title')}
+                <input {...inp} value={form.name} onChange={e=>set('name',e.target.value)}/>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                <div>
+                  {lbl(lang==='pt'?'Preço ($)':'Price ($)')}
+                  <input {...inp} type="number" value={form.price} onChange={e=>set('price',e.target.value)}/>
+                </div>
+                <div>
+                  {lbl(lang==='pt'?'Modo':'Mode')}
+                  <select {...inp} value={form.priceMode} onChange={e=>set('priceMode',e.target.value)}>
+                    <option value="fixed">{lang==='pt'?'Fixo':'Fixed'}</option>
+                    <option value="neg">{lang==='pt'?'Negociável':'Negotiable'}</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                {lbl(lang==='pt'?'Localização':'Location')}
+                <input {...inp} value={form.loc} onChange={e=>set('loc',e.target.value)}/>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                <div>
+                  {lbl(lang==='pt'?'Categoria':'Category')}
+                  <input {...inp} value={form.cat} onChange={e=>set('cat',e.target.value)} placeholder="Pumps, Vacuum…"/>
+                </div>
+                <div>
+                  {lbl(lang==='pt'?'Condição':'Condition')}
+                  <input {...inp} value={form.condition} onChange={e=>set('condition',e.target.value)} placeholder="New, Used…"/>
+                </div>
+              </div>
+            </div>
+
+            {/* Review notice */}
+            <div style={{margin:'16px 0',padding:'10px 13px',borderRadius:10,background:'#FEF3C7',border:'1px solid #FDE68A',display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:16}}>⚠️</span>
+              <span style={{fontSize:12,color:'#92400E',fontWeight:500}}>
+                {lang==='pt'?'Ao salvar, o anúncio voltará para revisão do admin.':lang==='es'?'Al guardar, el anuncio volverá a revisión del admin.':'After saving, the listing goes back for admin review.'}
+              </span>
+            </div>
+
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setEditing(false)} style={{flex:1,height:50,borderRadius:14,border:'1.5px solid var(--pg-ink-200)',background:'transparent',color:'var(--pg-ink-700)',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                {lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}
+              </button>
+              <button onClick={handleSave} disabled={saving} style={{
+                flex:2,height:50,borderRadius:14,border:'none',cursor:'pointer',fontFamily:'inherit',
+                background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+                color:'#fff',fontSize:15,fontWeight:700,opacity:saving?0.7:1,
+                boxShadow:'0 4px 14px rgba(0,119,182,0.30)',
+              }}>
+                {saving?(lang==='pt'?'Salvando…':lang==='es'?'Guardando…':'Saving…'):(lang==='pt'?'Salvar alterações':lang==='es'?'Guardar cambios':'Save changes')}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MarketplaceScreen({ ctx }) {
   const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast } = ctx;
 
@@ -25,10 +250,11 @@ function MarketplaceScreen({ ctx }) {
     (user.email && m.author === user.email.split('@')[0])
   );
   const t = STRINGS[lang];
-  const [view,       setView]       = React.useState('buy');
-  const [cat,        setCat]        = React.useState('All');
-  const [q,          setQ]          = React.useState('');
-  const [selected,   setSelected]   = React.useState(null);
+  const [view,         setView]        = React.useState('buy');
+  const [cat,          setCat]         = React.useState('All');
+  const [q,            setQ]           = React.useState('');
+  const [selected,     setSelected]    = React.useState(null);
+  const [myPostDetail, setMyPostDetail]= React.useState(null); // own post detail/edit
   const [postOpen,   setPostOpen]   = React.useState(false);
   const [postMode,   setPostMode]   = React.useState(null); // 'sell'|'rent'|'route'
   const [priceRange, setPriceRange] = React.useState('all');  // equipment price filter
@@ -268,7 +494,7 @@ function MarketplaceScreen({ ctx }) {
                   : `$${item.price}`;
                 return (
                   <button key={item._id}
-                    onClick={()=> !isPending && openPublicProfile && openPublicProfile({name:fmtAuthor(item.author),rating:4.5,reviews:0,jobs:0,loc:item.loc})}
+                    onClick={()=> setMyPostDetail(item)}
                     className="pg-press"
                     style={{
                       padding:0, overflow:'hidden', position:'relative', cursor: isPending ? 'default' : 'pointer',
@@ -695,6 +921,22 @@ function MarketplaceScreen({ ctx }) {
       </div>
 
     </div>{/* end .pg-screen */}
+
+      {/* My post detail / edit sheet */}
+      <Sheet open={!!myPostDetail} onClose={()=>setMyPostDetail(null)} height="auto">
+        {myPostDetail && <MyPostDetailSheet
+          item={myPostDetail} lang={lang}
+          onClose={()=>setMyPostDetail(null)}
+          showToast={showToast}
+          onUpdated={(updated)=>{
+            setMyPostDetail(null);
+            if(ctx.liveMarket) ctx.liveMarket.splice(0); // will re-fetch via realtime
+          }}
+          onDeleted={(id)=>{
+            setMyPostDetail(null);
+          }}
+        />}
+      </Sheet>
 
       {/* Item detail sheet — outside pg-screen so backdrop covers correctly */}
       <Sheet open={!!selected} onClose={()=>setSelected(null)} height="78%">
