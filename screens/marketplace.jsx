@@ -545,21 +545,37 @@ function MarketplaceScreen({ ctx }) {
                       </div>
                       {/* Divider */}
                       <div style={{height:1, background:'var(--pg-ink-100)', margin:'10px 0'}}/>
-                      {/* Price */}
-                      <span style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800,
-                        color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
-                        letterSpacing:'-0.02em', lineHeight:1, display:'block'}}>
-                        {priceStr}
-                        {item.type==='rent' && !isPending && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>/dia</span>}
-                      </span>
-                      {/* Author — own line, never truncated */}
-                      <div style={{display:'flex', alignItems:'center', gap:5, marginTop:5}}>
-                        <div style={{width:20, height:20, borderRadius:'50%', background:'var(--pg-blue-100)',
-                          display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, flexShrink:0}}>👤</div>
-                        <span style={{fontSize:11, fontWeight:600, color:'var(--pg-ink-600)',
-                          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                          {fmtAuthor(item.author)}
-                        </span>
+                      {/* Price + author — same row, price as badge when negotiable */}
+                      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:4}}>
+                        {item.priceMode === 'neg' ? (
+                          <span style={{
+                            fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999,
+                            background: isPending ? 'var(--pg-ink-100)' : 'var(--pg-blue-50)',
+                            color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-600)',
+                            border: `1px solid ${isPending ? 'var(--pg-ink-200)' : 'var(--pg-blue-100)'}`,
+                            flexShrink:0,
+                          }}>
+                            🤝 {lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}
+                          </span>
+                        ) : (
+                          <span style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800,
+                            color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
+                            letterSpacing:'-0.02em', lineHeight:1, flexShrink:0}}>
+                            ${item.price}{item.type==='rent' && !isPending && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>/dia</span>}
+                          </span>
+                        )}
+                        <div style={{display:'flex', alignItems:'center', gap:4, minWidth:0}}>
+                          <div style={{width:22, height:22, borderRadius:'50%',
+                            background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+                            display:'flex', alignItems:'center', justifyContent:'center',
+                            color:'#fff', fontSize:9, fontWeight:700, flexShrink:0}}>
+                            {(fmtAuthor(item.author)[0]||'?').toUpperCase()}
+                          </div>
+                          <span style={{fontSize:11, fontWeight:600, color:'var(--pg-ink-600)',
+                            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0}}>
+                            {fmtAuthor(item.author)}
+                          </span>
+                        </div>
                       </div>
                       {isPending && (
                         <div style={{marginTop:8, fontSize:10.5, color:'#92710A', background:'#FFF8E1',
