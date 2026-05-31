@@ -4,7 +4,8 @@ function WorkScreen({ ctx }) {
   const { lang, openChat, goTab, openPostMenu, openApplicants, openJobDetail,
           openHiringAppDetail, openApplyJob,
           openVacSheet, openHiringSheet, openTechSheet, openDayPicker, openSchedule,
-          openPublicProfile } = ctx;
+          openPublicProfile,
+          liveJobs=[], liveTechs=[], liveVacations=[] } = ctx;
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState('hiring');
   const [vacTab, setVacTab] = React.useState('applied');
@@ -398,8 +399,8 @@ function WorkScreen({ ctx }) {
 
       {/* ── Content panels ── */}
       <div style={{padding:'14px 18px 0'}}>
-        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile}/>}
-        {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile}/>}
+        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={liveJobs}/>}
+        {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={liveTechs}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
                               onChat={openChat} onCreate={openVacSheet}
                               onViewApplicants={openApplicants}
@@ -552,7 +553,7 @@ function MyApplicationsSection({ apps, lang, onChat, type='hiring' }) {
 }
 
 // ── Card with company-style header ────────────────────────────
-function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile }) {
+function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile, liveJobs=[] }) {
   const Company = (s=20, c='var(--pg-blue-500)') => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="4" y="3" width="16" height="18" rx="2"/>
@@ -568,9 +569,47 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
   const cdlLbl = lang==='pt'?'Carteira de motorista obrigatória':lang==='es'?'Licencia de conducir requerida':'Driver license required';
   const eqProv = lang==='pt'?'Equipamento fornecido':lang==='es'?'Equipo provisto':'Equipment provided';
 
+  const contractLabel = (c) => ({
+    fullTime: lang==='pt'?'Full-time':lang==='es'?'Tiempo completo':'Full-time',
+    partTime: lang==='pt'?'Part-time':lang==='es'?'Medio tiempo':'Part-time',
+    contract: lang==='pt'?'Contrato':lang==='es'?'Contrato':'Contract',
+  }[c] || c);
+
   return (
     <>
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
+      {/* ── Live jobs posted by real users ── */}
+      {liveJobs.map(job => (
+        <article key={job._id} className="pg-card" style={{padding:'14px 16px', border:'1.5px solid var(--pg-aqua-400,#38bdf8)'}}>
+          <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6}}>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:15, fontWeight:700, color:'var(--pg-ink-900)', letterSpacing:'-0.01em'}}>{job.role}</div>
+              <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3, color:'var(--pg-ink-500)', fontSize:12}}>
+                {Icon.pin(11,'var(--pg-ink-400)')} {job.loc}
+              </div>
+            </div>
+            <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, marginLeft:8, letterSpacing:'0.05em'}}>NEW</span>
+          </div>
+          {job.desc ? <p style={{margin:'0 0 10px', fontSize:12.5, color:'var(--pg-ink-600)', lineHeight:1.45}}>{job.desc}</p> : null}
+          <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:8}}>
+            <span className="pg-chip" style={{fontSize:11}}>{contractLabel(job.contract)}</span>
+            {job.payMode !== 'neg' && job.pay
+              ? <span className="pg-chip pg-chip-aqua" style={{fontSize:11}}>${job.pay}{job.payMode==='weekly'?(lang==='pt'?'/sem':'/wk'):'/pool'}</span>
+              : null}
+            {job.payMode === 'neg' ? <span className="pg-chip" style={{fontSize:11}}>{lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}</span> : null}
+            {job.carReq === 'ownCar'      ? <span className="pg-chip" style={{fontSize:11}}>🚗 {lang==='pt'?'Carro próprio':lang==='es'?'Auto propio':'Own car'}</span> : null}
+            {job.carReq === 'companyCar'  ? <span className="pg-chip" style={{fontSize:11}}>🏢 {lang==='pt'?'Carro fornecido':lang==='es'?'Auto provisto':'Company car'}</span> : null}
+            {job.equipReq === 'ownEquip'  ? <span className="pg-chip" style={{fontSize:11}}>🔧 {lang==='pt'?'Equip. próprio':lang==='es'?'Equipo propio':'Own equip.'}</span> : null}
+          </div>
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:4}}>
+            <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>👤 {job.author}</span>
+            <button onClick={()=>onApply && onApply(job)} className="pg-btn pg-btn-primary" style={{height:34, padding:'0 16px', fontSize:12.5, borderRadius:999}}>
+              {t.apply}
+            </button>
+          </div>
+        </article>
+      ))}
+      {/* ── Static seed jobs ── */}
       {HIRING.map(h => (
         <article key={h.id} className="pg-card" style={{padding:'14px 16px 14px'}}>
           <button onClick={()=>openPublicProfile && openPublicProfile({ name:h.company, rating:4.8, reviews:64, jobs:120, loc:h.loc })}
@@ -807,7 +846,7 @@ function TechReviewSheet({ open, onClose, tech, lang='en' }) {
 }
 
 // ── Technicians — same card layout as Hiring ─────────────────
-function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile }) {
+function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[] }) {
   const [contactOpen, setContactOpen] = React.useState(null);
   const [ratingFor,   setRatingFor]   = React.useState(null);
 
@@ -841,6 +880,33 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile }) {
   return (
     <>
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
+      {/* ── Live techs registered by real users ── */}
+      {liveTechs.map(tech => (
+        <article key={tech._id} className="pg-card" style={{padding:'14px 16px', border:'1.5px solid var(--pg-aqua-400,#38bdf8)'}}>
+          <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
+            <Avatar name={tech.name} size={36}/>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{tech.name}</div>
+              <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:1}}>{tech.specialty} · {tech.loc}</div>
+            </div>
+            <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>
+          </div>
+          <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:10}}>
+            {tech.rateMode === 'fixed' && tech.rate
+              ? <span className="pg-chip pg-chip-aqua" style={{fontSize:12}}>
+                  ${tech.rate}{lang==='pt'?'/visita':lang==='es'?'/visita':'/visit'}
+                </span>
+              : <span className="pg-chip" style={{fontSize:12}}>{lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}</span>}
+            <span style={{display:'inline-flex', alignItems:'center', gap:4, fontSize:11, color:'var(--pg-ink-500)'}}>{Icon.pin(11,'var(--pg-ink-400)')} {tech.loc}</span>
+          </div>
+          <div style={{display:'flex', gap:8}}>
+            {tech.phone && <a href={`tel:${tech.phone}`} className="pg-btn pg-btn-ghost" style={{flex:1, height:36, fontSize:12.5, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:5, textDecoration:'none', color:'inherit'}}>
+              📞 {tech.phone}
+            </a>}
+          </div>
+        </article>
+      ))}
+      {/* ── Static seed techs ── */}
       {TECHS.map(tech => (
         <article key={tech.id} className="pg-card" style={{padding:'14px 16px 14px'}}>
           <button onClick={()=>openPublicProfile && openPublicProfile({ name:tech.name, rating:tech.rating, reviews:tech.jobs, jobs:tech.jobs, loc:tech.loc })}
@@ -1664,7 +1730,7 @@ function PostVacationSheet({ onClose, lang='en', onSubmit }) {
             )}
           </div>
         )}
-        <button onClick={onSubmit}
+        <button onClick={()=>onSubmit && onSubmit({ monthIdx, year, selectedDays:[...selectedDays], weekdayRegions, poolsPerWeekday, price, priceMode })}
           disabled={!isValid}
           className="pg-btn pg-btn-primary"
           style={{
@@ -2088,7 +2154,8 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
             {lang==='pt'?'Selecione os requisitos de veículo e equipamento':lang==='es'?'Selecciona los requisitos de vehículo y equipo':'Select vehicle and equipment requirements to continue'}
           </div>
         )}
-        <button onClick={onSubmit} disabled={!isValid} className="pg-btn pg-btn-primary"
+        <button onClick={()=>onSubmit && onSubmit({ role, loc, contract, payMode, pay, carReq, equipReq, desc })}
+          disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.briefcase(17, '#fff')} {submitLbl}
         </button>
@@ -2192,7 +2259,8 @@ function PostTechSheet({ onClose, lang='en', onSubmit }) {
       </div>
 
       <div style={{padding:'18px 18px 8px', position:'sticky', bottom:0, background:'#fff'}}>
-        <button onClick={onSubmit} disabled={!isValid} className="pg-btn pg-btn-primary"
+        <button onClick={()=>onSubmit && onSubmit({ name, specialty, loc, phone, email, rateMode, rate })}
+          disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.shield(17, '#fff')} {submitLbl}
         </button>

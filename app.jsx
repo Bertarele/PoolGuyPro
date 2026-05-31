@@ -232,6 +232,43 @@ function App() {
   const [helpOpen,       setHelpOpen]        = React.useState(false);
   const [privacyOpen,    setPrivacyOpen]     = React.useState(false);
 
+  // ── Live Firestore data ────────────────────────────────────
+  const [liveJobs,      setLiveJobs]      = React.useState([]);
+  const [liveTechs,     setLiveTechs]     = React.useState([]);
+  const [liveVacations, setLiveVacations] = React.useState([]);
+  const [liveMarket,    setLiveMarket]    = React.useState([]);
+
+  React.useEffect(() => {
+    if (!window.db) return;
+    const subs = [];
+    const listen = (col, setter) => {
+      try {
+        const unsub = window.db.collection(col)
+          .orderBy('createdAt', 'desc')
+          .onSnapshot(
+            snap => setter(snap.docs.map(d => ({ _id: d.id, ...d.data(), _live: true }))),
+            err  => console.warn('[Firebase]', col, err.message)
+          );
+        subs.push(unsub);
+      } catch (e) { console.warn('[Firebase] listen:', e.message); }
+    };
+    listen('jobs',        setLiveJobs);
+    listen('techs',       setLiveTechs);
+    listen('vacations',   setLiveVacations);
+    listen('marketplace', setLiveMarket);
+    return () => subs.forEach(u => u && u());
+  }, []);
+
+  // Helper: write a document to Firestore
+  const dbWrite = React.useCallback((col, data) => {
+    if (!window.db) return;
+    window.db.collection(col).add({
+      ...data,
+      author:    user.name,
+      createdAt: window.fsNow ? window.fsNow() : new Date().toISOString(),
+    }).catch(e => console.error('[Firebase] write error:', e.message));
+  }, [user.name]);
+
   // Sync tier tweak → user state
   React.useEffect(()=>{ setUser(u=>({...u, tier:t.tier})); }, [t.tier]);
 
@@ -284,6 +321,9 @@ function App() {
     openHelp:           ()    => setHelpOpen(true),
     openPrivacy:        ()    => setPrivacyOpen(true),
     onLogout:           ()    => { setIsLoggedIn(false); setTab('home'); },
+    // Live Firestore data
+    liveJobs, liveTechs, liveVacations, liveMarket,
+    dbWrite,
   };
 
   // Build confirmed-day map from accepted vacation applications (for conflict detection)
@@ -442,7 +482,7 @@ function App() {
             <PostVacationSheet
               lang={lang}
               onClose={()=>setVacSheetOpen(false)}
-              onSubmit={()=>{ setVacSheetOpen(false); showToast(lang==='pt'?'Férias publicadas ✓':lang==='es'?'Vacaciones publicadas ✓':'Vacation posted ✓'); }}
+              onSubmit={(data)=>{ setVacSheetOpen(false); if(data) dbWrite('vacations', data); showToast(lang==='pt'?'Férias publicadas ✓':lang==='es'?'Vacaciones publicadas ✓':'Vacation posted ✓'); }}
             />
           </Sheet>
           <Sheet open={!!dayPickerVac} onClose={()=>setDayPickerVac(null)} height="88%">
@@ -457,14 +497,14 @@ function App() {
             <PostHiringSheet
               lang={lang}
               onClose={()=>setHiringSheetOpen(false)}
-              onSubmit={()=>{ setHiringSheetOpen(false); showToast(lang==='pt'?'Vaga publicada ✓':lang==='es'?'Empleo publicado ✓':'Job posted ✓'); }}
+              onSubmit={(data)=>{ setHiringSheetOpen(false); if(data) dbWrite('jobs', data); showToast(lang==='pt'?'Vaga publicada ✓':lang==='es'?'Empleo publicado ✓':'Job posted ✓'); }}
             />
           </Sheet>
           <Sheet open={techSheetOpen} onClose={()=>setTechSheetOpen(false)} height="80%">
             <PostTechSheet
               lang={lang}
               onClose={()=>setTechSheetOpen(false)}
-              onSubmit={()=>{ setTechSheetOpen(false); showToast(lang==='pt'?'Perfil publicado ✓':lang==='es'?'Perfil publicado ✓':'Profile posted ✓'); }}
+              onSubmit={(data)=>{ setTechSheetOpen(false); if(data) dbWrite('techs', data); showToast(lang==='pt'?'Perfil publicado ✓':lang==='es'?'Perfil publicado ✓':'Profile posted ✓'); }}
             />
           </Sheet>
 

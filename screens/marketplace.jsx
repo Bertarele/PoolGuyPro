@@ -1,7 +1,7 @@
 // marketplace.jsx — navy header + dual seg + distance + categories
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, openChat, goTab, openPublicProfile } = ctx;
+  const { lang, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite } = ctx;
   const t = STRINGS[lang];
   const [view,       setView]       = React.useState('buy');
   const [cat,        setCat]        = React.useState('All');
@@ -225,7 +225,25 @@ function MarketplaceScreen({ ctx }) {
         {/* Equipment grid */}
         {isEquipment && (
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:14}}>
-            {list.length === 0 && (
+            {/* Live user-posted equipment items */}
+            {liveMarket.filter(m => m.type === mode).map(item => (
+              <div key={item._id} className="pg-card" style={{padding:'12px', border:'1.5px solid var(--pg-aqua-400,#38bdf8)', overflow:'hidden', position:'relative'}}>
+                <span style={{position:'absolute', top:8, right:8, fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:5, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', letterSpacing:'0.05em'}}>NEW</span>
+                <EquipImg category={item.cat || 'Tools'} height={80}/>
+                <div style={{marginTop:8}}>
+                  <div style={{fontSize:13, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3}}>{item.name}</div>
+                  <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:3}}>{item.loc}</div>
+                  <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:6}}>
+                    <span style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:700, color:'var(--pg-blue-500)'}}>
+                      {item.priceMode==='neg'?'Negoc.':('$'+item.price)}
+                    </span>
+                    <span style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>👤 {item.author}</span>
+                  </div>
+                  {openPublicProfile && <button onClick={()=>openPublicProfile({name:item.author,rating:4.5,reviews:0,jobs:0,loc:item.loc})} style={{width:'100%',marginTop:8,height:30,fontSize:12,fontFamily:'inherit',borderRadius:8,border:'none',background:'var(--pg-blue-100)',color:'var(--pg-blue-700)',fontWeight:600,cursor:'pointer'}}>{t.contact||'Contact'}</button>}
+                </div>
+              </div>
+            ))}
+            {list.length === 0 && liveMarket.filter(m=>m.type===mode).length === 0 && (
               <div style={{gridColumn:'1/-1', textAlign:'center', padding:'32px 20px', color:'var(--pg-ink-400)', fontSize:13}}>
                 {t.search}
               </div>
@@ -555,14 +573,14 @@ function MarketplaceScreen({ ctx }) {
       <Sheet open={postOpen && (postMode==='sell'||postMode==='rent')} onClose={()=>{ setPostMode(null); setPostOpen(false); }} height="86%">
         <PostEquipmentSheet lang={lang} t={t} mode={postMode}
           onClose={()=>{ setPostMode(null); setPostOpen(false); }}
-          onSubmit={()=>{ setPostMode(null); setPostOpen(false); }}/>
+          onSubmit={(data)=>{ setPostMode(null); setPostOpen(false); if(data && dbWrite) dbWrite('marketplace', data); }}/>
       </Sheet>
 
       {/* Sell route form */}
       <Sheet open={postOpen && postMode==='route'} onClose={()=>{ setPostMode(null); setPostOpen(false); }} height="86%">
         <PostRouteSheet lang={lang} t={t}
           onClose={()=>{ setPostMode(null); setPostOpen(false); }}
-          onSubmit={()=>{ setPostMode(null); setPostOpen(false); }}/>
+          onSubmit={(data)=>{ setPostMode(null); setPostOpen(false); if(data && dbWrite) dbWrite('marketplace', data); }}/>
       </Sheet>
     </div>
   );
@@ -1230,7 +1248,8 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
 
       {/* Submit */}
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
-        <button onClick={onSubmit} disabled={!isValid} className="pg-btn pg-btn-primary"
+        <button onClick={()=>onSubmit && onSubmit({ type:mode, name, cat, condition, price: priceMode==='neg'?'Negotiable':price, priceMode, loc })}
+          disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.cart(17,'#fff')} {submitLbl}
         </button>
@@ -1300,7 +1319,8 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
       </div>
 
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
-        <button onClick={onSubmit} disabled={!isValid} className="pg-btn pg-btn-primary"
+        <button onClick={()=>onSubmit && onSubmit({ type:'route', routeName, clients, revenue, asking, area })}
+          disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.pin(17,'#fff')} {t.postListingBtn}
         </button>
