@@ -154,10 +154,23 @@ const Icon = {
   ),
 };
 
-// ── Avatar (deterministic color from initials) ────────────────
+// ── Avatar (deterministic color from initials, or photo) ─────
 function Avatar({ name="?", size=40, src }) {
   const initials = name.split(' ').slice(0,2).map(p => p[0]).join('').toUpperCase();
   const hue = [...name].reduce((a,c)=>a+c.charCodeAt(0),0) % 360;
+  if (src) {
+    return (
+      <div className="pg-avatar" style={{
+        width:size, height:size, padding:0, overflow:'hidden', flexShrink:0,
+        background: `linear-gradient(155deg, oklch(0.68 0.12 ${hue}), oklch(0.45 0.16 ${(hue+30)%360}))`,
+      }}>
+        <img src={src} alt={name}
+          style={{width:'100%', height:'100%', objectFit:'cover', display:'block', borderRadius:'50%'}}
+          onError={e=>{ e.currentTarget.style.display='none'; }}
+        />
+      </div>
+    );
+  }
   return (
     <div className="pg-avatar" style={{
       width:size, height:size, fontSize:size*0.36,

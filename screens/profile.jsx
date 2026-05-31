@@ -29,15 +29,46 @@ function ProfileScreen({ ctx }) {
             {user.name.split(' ')[0]} <span style={{fontWeight:400, opacity:0.70}}>{user.name.split(' ').slice(1).join(' ')}</span>
           </div>
         </div>
-      } right={<IconButton dark onClick={openEditProfile}>{Icon.more(16,'#fff')}</IconButton>}>
+      } right={
+        <div style={{display:'flex', alignItems:'center', gap:6}}>
+          {/* Dark mode toggle — always visible on mobile */}
+          <button onClick={toggleDark} style={{
+            width:36, height:36, borderRadius:10, border:'none', cursor:'pointer',
+            background:'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center',
+            transition:'background .15s',
+          }} title={darkMode ? 'Light mode' : 'Dark mode'}>
+            {darkMode
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            }
+          </button>
+          <IconButton dark onClick={openEditProfile}>{Icon.more(16,'#fff')}</IconButton>
+        </div>
+      }>
 
         {/* Avatar + info row */}
         <div style={{display:'flex', alignItems:'center', gap:14, marginTop:10}}>
           <div style={{position:'relative', flexShrink:0}}>
-            <div style={{width:72, height:72, borderRadius:'50%', padding:3,
-              background:'linear-gradient(135deg, var(--pg-aqua-500) 0%, #0077B6 100%)'}}>
-              <Avatar name={user.name} size={66}/>
-            </div>
+            <button onClick={openEditProfile} style={{
+              border:'none', background:'none', padding:0, cursor:'pointer',
+              borderRadius:'50%', display:'block',
+            }}>
+              <div style={{width:72, height:72, borderRadius:'50%', padding:3,
+                background:'linear-gradient(135deg, var(--pg-aqua-500) 0%, #0077B6 100%)', position:'relative'}}>
+                <Avatar name={user.name} size={66} src={user.photoUrl}/>
+                {/* Camera overlay hint */}
+                <div style={{
+                  position:'absolute', inset:3, borderRadius:'50%',
+                  background:'rgba(0,0,0,0.28)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  opacity:0, transition:'opacity .15s',
+                }}
+                  onMouseEnter={e=>e.currentTarget.style.opacity=1}
+                  onMouseLeave={e=>e.currentTarget.style.opacity=0}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </div>
+              </div>
+            </button>
             <div style={{position:'absolute', bottom:1, right:1, width:22, height:22, borderRadius:'50%',
               background:'var(--pg-aqua-500)', border:'2.5px solid #011B5A',
               display:'flex', alignItems:'center', justifyContent:'center'}}>
@@ -159,6 +190,22 @@ function ProfileScreen({ ctx }) {
         {/* Settings */}
         <Section title={t.settings}>
           <div className="pg-card" style={{padding:0}}>
+            {/* Dark Mode — first row, most visible */}
+            <SettingRow
+              icon={darkMode
+                ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              }
+              label={lang==='pt'?'Modo Escuro':lang==='es'?'Modo Oscuro':'Dark Mode'}
+              right={
+                <div
+                  onClick={e=>{ e.stopPropagation(); toggleDark && toggleDark(); }}
+                  className={'pg-toggle' + (darkMode ? ' on' : '')}
+                  style={{flexShrink:0}}
+                />
+              }
+              onClick={toggleDark}
+            />
             <SettingRow icon={Icon.bell(18,'var(--pg-blue-500)')} label={t.notifications} detail={t.on} chev onClick={openPushNotif}/>
             <SettingRow icon={Icon.globe(18,'var(--pg-blue-500)')} label={t.languageLbl}
               detail={({en:t.english, pt:t.portuguese, es:t.spanish})[lang]} chev
@@ -170,18 +217,6 @@ function ProfileScreen({ ctx }) {
               label={lang==='pt'?'Enviar Feedback':lang==='es'?'Enviar Feedback':'Send Feedback'}
               detail={lang==='pt'?'Beta':'Beta'}
               chev onClick={openFeedback}/>
-            <SettingRow
-              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>}
-              label={lang==='pt'?'Modo Escuro':lang==='es'?'Modo Oscuro':'Dark Mode'}
-              right={
-                <div
-                  onClick={e=>{ e.stopPropagation(); toggleDark && toggleDark(); }}
-                  className={'pg-toggle' + (darkMode ? ' on' : '')}
-                  style={{flexShrink:0}}
-                />
-              }
-              onClick={toggleDark}
-            />
             <SettingRow icon={Icon.lock(18,'var(--pg-blue-500)')} label={t.privacy} chev last onClick={openPrivacy}/>
           </div>
         </Section>

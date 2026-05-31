@@ -2460,6 +2460,9 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
   const [experience,   setExperience]   = React.useState([]);
   const [addingExp,    setAddingExp]    = React.useState(false);
   const [newExp,       setNewExp]       = React.useState({company:'', role:'', duration:'', desc:''});
+  const [photoUrl,     setPhotoUrl]     = React.useState('');
+  const [photoUploading, setPhotoUploading] = React.useState(false);
+  const photoInputRef = React.useRef(null);
 
   const REGION_LIST = [
     'Fort Lauderdale, FL','Weston, FL','Plantation, FL','Davie, FL','Sunrise, FL',
@@ -2497,7 +2500,58 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
     setAddingExp(false);
     setNewExp({company:'', role:'', duration:'', desc:''});
     setEqInput('');
+    setPhotoUrl(user.photoUrl || '');
   }, [open]);
+
+  // ── Photo upload ──────────────────────────────────────────────
+  const handlePhotoFile = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setPhotoUploading(true);
+    try {
+      // Compress: max 400px (avatar size), JPEG 0.82
+      const blob = await new Promise(resolve => {
+        const img = new Image();
+        const src = URL.createObjectURL(file);
+        img.onload = () => {
+          const MAX = 400;
+          let w = img.width, h = img.height;
+          const min = Math.min(w, h); // crop to square
+          const sx = (w - min) / 2, sy = (h - min) / 2;
+          const out = Math.min(min, MAX);
+          const c = document.createElement('canvas');
+          c.width = out; c.height = out;
+          c.getContext('2d').drawImage(img, sx, sy, min, min, 0, 0, out, out);
+          URL.revokeObjectURL(src);
+          c.toBlob(b => resolve(b), 'image/jpeg', 0.82);
+        };
+        img.src = src;
+      });
+
+      let url = null;
+      if (window.sb && window.sb.storage) {
+        const path = 'avatars/' + (user.uid || Date.now()) + '.jpg';
+        const { data, error } = await window.sb.storage.from('post-images').upload(path, blob, { contentType:'image/jpeg' });
+        if (!error && data) {
+          const { data: ud } = window.sb.storage.from('post-images').getPublicUrl(path);
+          url = ud.publicUrl;
+        }
+      }
+      if (!url) {
+        url = await new Promise(res => {
+          const r = new FileReader();
+          r.onload = ev => res(ev.target.result);
+          r.readAsDataURL(blob);
+        });
+      }
+      setPhotoUrl(url);
+    } catch(err) {
+      console.warn('[Avatar upload]', err);
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
 
   const addEquipment = () => {
     const v = eqInput.trim();
@@ -2529,7 +2583,13 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
       hasCar, hasLicense, hasEquipment,
       equipment:   eqObj,
       experience:  expArr,
+      photoUrl:    photoUrl || prev.photoUrl || '',
     }));
+    // Also persist to Supabase profiles table if logged in
+    if (window.sb && user.uid) {
+      window.sb.from('profiles').update({ photo_url: photoUrl || '' }).eq('id', user.uid)
+        .then(({error}) => { if (error) console.warn('[Profile photo save]', error.message); });
+    }
     onClose();
   };
 
@@ -2583,6 +2643,59 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
           <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
             {Icon.x(16,'var(--pg-ink-700)')}
           </button>
+        </div>
+
+        {/* ── PROFILE PHOTO ── */}
+        <div style={{display:'flex', flexDirection:'column', alignItems:'center', marginBottom:24, gap:10}}>
+          <div style={{position:'relative'}}>
+            {/* Avatar ring */}
+            <div style={{
+              width:96, height:96, borderRadius:'50%', padding:3,
+              background:'linear-gradient(135deg, var(--pg-aqua-500) 0%, var(--pg-blue-600) 100%)',
+            }}>
+              <Avatar name={name || user.name || '?'} size={90} src={photoUrl}/>
+            </div>
+            {/* Camera button overlay */}
+            <button
+              onClick={()=>photoInputRef.current && photoInputRef.current.click()}
+              disabled={photoUploading}
+              style={{
+                position:'absolute', bottom:2, right:2,
+                width:30, height:30, borderRadius:'50%',
+                background: photoUploading ? 'var(--pg-ink-300)' : 'var(--pg-blue-500)',
+                border:'2.5px solid var(--pg-white)',
+                cursor: photoUploading ? 'default' : 'pointer',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                boxShadow:'0 2px 8px rgba(0,0,0,0.18)',
+              }}
+            >
+              {photoUploading
+                ? <span style={{fontSize:13}}>⏳</span>
+                : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              }
+            </button>
+          </div>
+
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-700)'}}>
+              {s('Profile photo','Foto de perfil','Foto de perfil')}
+            </div>
+            <div style={{fontSize:11.5, color:'var(--pg-ink-400)', marginTop:2}}>
+              {photoUploading
+                ? s('Uploading…','Enviando…','Subiendo…')
+                : s('Tap the camera icon to change','Toque o ícone de câmera para trocar','Toca el ícono de cámara para cambiar')
+              }
+            </div>
+          </div>
+
+          {/* Hidden file input — accepts both camera and gallery */}
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            style={{display:'none'}}
+            onChange={handlePhotoFile}
+          />
         </div>
 
         {/* ── BASIC INFO ── */}
