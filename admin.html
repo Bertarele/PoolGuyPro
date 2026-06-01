@@ -853,12 +853,14 @@ function AdminApp({ adminUser, onLogout }) {
                 <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Execute este SQL no Supabase → SQL Editor:</div>
               </div>
             </div>
-            <pre style={{background:'#0f1117',borderRadius:10,padding:'12px 14px',fontSize:11.5,color:'#7dd3fc',overflowX:'auto',lineHeight:1.7,border:'1px solid #1e293b',margin:'0 0 16px'}}>{`DROP POLICY IF EXISTS "Admins can update marketplace" ON marketplace;
+            <pre style={{background:'#0f1117',borderRadius:10,padding:'12px 14px',fontSize:11.5,color:'#7dd3fc',overflowX:'auto',lineHeight:1.7,border:'1px solid #1e293b',margin:'0 0 16px'}}>{`-- Marketplace
+DROP POLICY IF EXISTS "Admins can update marketplace" ON marketplace;
 DROP POLICY IF EXISTS "Admins can delete marketplace" ON marketplace;
 CREATE POLICY "Admins can update marketplace" ON marketplace FOR UPDATE
 USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
 CREATE POLICY "Admins can delete marketplace" ON marketplace FOR DELETE
 USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+-- Jobs / Techs / Vacations
 DROP POLICY IF EXISTS "Admins can delete jobs" ON jobs;
 DROP POLICY IF EXISTS "Admins can delete techs" ON techs;
 DROP POLICY IF EXISTS "Admins can delete vacations" ON vacations;
@@ -867,7 +869,15 @@ USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profile
 CREATE POLICY "Admins can delete techs" ON techs FOR DELETE
 USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
 CREATE POLICY "Admins can delete vacations" ON vacations FOR DELETE
-USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));`}</pre>
+USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+-- Profiles (usuarios)
+DROP POLICY IF EXISTS "Admins can delete profiles" ON profiles;
+DROP POLICY IF EXISTS "Admins can update any profile" ON profiles;
+CREATE POLICY "Admins can delete profiles" ON profiles FOR DELETE
+USING (EXISTS (SELECT 1 FROM profiles p2 WHERE p2.id = auth.uid() AND p2.role = 'admin'));
+CREATE POLICY "Admins can update any profile" ON profiles FOR UPDATE
+USING (EXISTS (SELECT 1 FROM profiles p2 WHERE p2.id = auth.uid() AND p2.role = 'admin'))
+WITH CHECK (EXISTS (SELECT 1 FROM profiles p2 WHERE p2.id = auth.uid() AND p2.role = 'admin'));`}</pre>
             <button onClick={()=>setRlsOpen(false)} style={{width:'100%',padding:'12px',borderRadius:12,border:'none',background:'#0EBAC7',color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer'}}>
               Entendido — vou executar o SQL
             </button>
