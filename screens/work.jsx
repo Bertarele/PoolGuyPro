@@ -585,35 +585,64 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
     contract: lang==='pt'?'Contrato':lang==='es'?'Contrato':'Contract',
   }[c] || c);
 
+  const [hiddenStatic, setHiddenStatic] = React.useState([]);
+
   return (
     <>
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
       {/* ── Live jobs posted by real users ── */}
       {liveJobs.map(job => (
-        <article key={job._id} className="pg-card" style={{padding:'14px 16px', border:'1.5px solid var(--pg-aqua-400,#38bdf8)'}}>
-          <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6}}>
-            <div style={{flex:1, minWidth:0}}>
-              <div style={{fontSize:15, fontWeight:700, color:'var(--pg-ink-900)', letterSpacing:'-0.01em'}}>{job.role}</div>
-              <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3, color:'var(--pg-ink-500)', fontSize:12}}>
-                {Icon.pin(11,'var(--pg-ink-400)')} {job.loc}
-              </div>
+        <article key={job._id} className="pg-card" style={{padding:'14px 16px'}}>
+          {/* Header: author name with building icon + NEW badge */}
+          <button onClick={()=>openPublicProfile && openPublicProfile({ name:job.author, rating:4.8, reviews:0, jobs:0, loc:job.loc })}
+            style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', width:'100%'}} className="pg-press">
+            <div style={{
+              width:28, height:28, borderRadius:7, background:'var(--pg-aqua-100)',
+              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+            }}>{Company(15, 'var(--pg-aqua-700)')}</div>
+            <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{job.author}</h3>
+            <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em', marginLeft:4}}>NEW</span>
+          </button>
+          {/* Job role as title + description */}
+          {job.role && <p style={{margin:'0 0 4px', fontSize:13.5, fontWeight:600, color:'var(--pg-ink-900)', lineHeight:1.3}}>{job.role}</p>}
+          {job.desc && <p style={{margin:'0 0 10px', fontSize:12.5, color:'var(--pg-ink-600)', lineHeight:1.45}}>{job.desc}</p>}
+          {/* Info rows — same pattern as static cards */}
+          <div style={{display:'flex', flexDirection:'column', gap:6, marginTop:job.desc?0:8, fontSize:12.5, color:'var(--pg-ink-500)'}}>
+            <div style={{display:'flex', alignItems:'center', gap:12, flexWrap:'wrap'}}>
+              {job.loc && <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Icon.pin(13,'var(--pg-ink-500)')} {job.loc}</span>}
+              {job.equipReq === 'companyEquip' && <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Briefcase(13)} {eqProv}</span>}
+              {job.equipReq === 'ownEquip'     && <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Briefcase(13)} {lang==='pt'?'Equip. próprio':lang==='es'?'Equipo propio':'Own equipment'}</span>}
             </div>
-            <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, marginLeft:8, letterSpacing:'0.05em'}}>NEW</span>
+            {job.carReq === 'companyCar' && (
+              <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
+                {License(13)} {lang==='pt'?'Carro da empresa incluso':lang==='es'?'Auto de empresa incluido':'Company car provided'}
+              </div>
+            )}
+            {job.carReq === 'ownCar' && (
+              <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
+                {License(13)} {lang==='pt'?'Carro próprio necessário':lang==='es'?'Auto propio requerido':'Own car required'}
+              </div>
+            )}
           </div>
-          {job.desc ? <p style={{margin:'0 0 10px', fontSize:12.5, color:'var(--pg-ink-600)', lineHeight:1.45}}>{job.desc}</p> : null}
-          <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:8}}>
-            <span className="pg-chip" style={{fontSize:11}}>{contractLabel(job.contract)}</span>
-            {job.payMode !== 'neg' && job.pay
-              ? <span className="pg-chip pg-chip-aqua" style={{fontSize:11}}>${job.pay}{job.payMode==='weekly'?(lang==='pt'?'/sem':'/wk'):'/pool'}</span>
-              : null}
-            {job.payMode === 'neg' ? <span className="pg-chip" style={{fontSize:11}}>{lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}</span> : null}
-            {job.carReq === 'ownCar'      ? <span className="pg-chip" style={{fontSize:11}}>🚗 {lang==='pt'?'Carro próprio':lang==='es'?'Auto propio':'Own car'}</span> : null}
-            {job.carReq === 'companyCar'  ? <span className="pg-chip" style={{fontSize:11}}>🏢 {lang==='pt'?'Carro fornecido':lang==='es'?'Auto provisto':'Company car'}</span> : null}
-            {job.equipReq === 'ownEquip'  ? <span className="pg-chip" style={{fontSize:11}}>🔧 {lang==='pt'?'Equip. próprio':lang==='es'?'Equipo propio':'Own equip.'}</span> : null}
-          </div>
-          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:4}}>
-            <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>👤 {job.author}</span>
-            <button onClick={()=>onApply && onApply(job)} className="pg-btn pg-btn-primary" style={{height:34, padding:'0 16px', fontSize:12.5, borderRadius:999}}>
+          {/* Contract chip */}
+          {job.contract && (
+            <div style={{display:'flex', gap:6, flexWrap:'wrap', marginTop:8}}>
+              <span className="pg-chip" style={{fontSize:11}}>{contractLabel(job.contract)}</span>
+            </div>
+          )}
+          <div className="pg-divider" style={{margin:'12px 0'}}/>
+          {/* Salary + Apply */}
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            <div style={{
+              fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700,
+              color: job.payMode === 'neg' ? 'var(--pg-aqua-700)' : 'var(--pg-blue-500)',
+              letterSpacing:'-0.01em',
+            }}>
+              {job.payMode === 'neg'
+                ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
+                : `$${job.pay}${job.payMode==='weekly'?(lang==='pt'?'/sem':'/wk'):'/pool'}`}
+            </div>
+            <button onClick={()=>onApply && onApply(job)} className="pg-btn pg-btn-primary" style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
               {t.apply}
             </button>
           </div>
@@ -641,7 +670,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
         </article>
       ))}
       {/* ── Static seed jobs ── */}
-      {HIRING.map(h => (
+      {HIRING.filter(h => !hiddenStatic.includes(h.id)).map(h => (
         <article key={h.id} className="pg-card" style={{padding:'14px 16px 14px'}}>
           <button onClick={()=>openPublicProfile && openPublicProfile({ name:h.company, rating:4.8, reviews:64, jobs:120, loc:h.loc })}
             style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', width:'100%'}} className="pg-press">
@@ -677,6 +706,25 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
             }}>{tr(h.pay, lang)}</div>
             <button onClick={()=>onApply && onApply(h)} className="pg-btn pg-btn-primary" style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>{t.apply}</button>
           </div>
+          {/* Admin quick-delete for static card */}
+          {user?.role === 'admin' && (
+            <div onClick={() => {
+              if (!window.confirm(lang==='pt'?`Excluir "${h.company}"?`:`Delete "${h.company}"?`)) return;
+              setHiddenStatic(prev => [...prev, h.id]);
+              showToast && showToast('🗑️ ' + (lang==='pt'?'Removido (sessão)':'Removed (session)'));
+            }} style={{
+              marginTop:8, padding:'6px 0', borderRadius:8, cursor:'pointer',
+              background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
+              fontSize:11, fontWeight:700, textAlign:'center',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+            </div>
+          )}
         </article>
       ))}
     </div>
@@ -878,8 +926,9 @@ function TechReviewSheet({ open, onClose, tech, lang='en' }) {
 
 // ── Technicians — same card layout as Hiring ─────────────────
 function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[], user, showToast, onDeleteTech }) {
-  const [contactOpen, setContactOpen] = React.useState(null);
-  const [ratingFor,   setRatingFor]   = React.useState(null);
+  const [contactOpen,  setContactOpen]  = React.useState(null);
+  const [ratingFor,    setRatingFor]    = React.useState(null);
+  const [hiddenStatic, setHiddenStatic] = React.useState([]);
 
   const Briefcase = (s=13, c='var(--pg-ink-500)') => Icon.briefcase(s, c);
   const Tool = (s=13, c='var(--pg-ink-500)') => (
@@ -959,7 +1008,7 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
         </article>
       ))}
       {/* ── Static seed techs ── */}
-      {TECHS.map(tech => (
+      {TECHS.filter(tech => !hiddenStatic.includes(tech.id)).map(tech => (
         <article key={tech.id} className="pg-card" style={{padding:'14px 16px 14px'}}>
           <button onClick={()=>openPublicProfile && openPublicProfile({ name:tech.name, rating:tech.rating, reviews:tech.jobs, jobs:tech.jobs, loc:tech.loc })}
             style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', width:'100%'}} className="pg-press">
@@ -1069,6 +1118,25 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
                   </div>
                 </div>
               )}
+            </div>
+          )}
+          {/* Admin quick-delete for static tech card */}
+          {user?.role === 'admin' && (
+            <div onClick={() => {
+              if (!window.confirm(lang==='pt'?`Excluir "${tech.name}"?`:`Delete "${tech.name}"?`)) return;
+              setHiddenStatic(prev => [...prev, tech.id]);
+              showToast && showToast('🗑️ ' + (lang==='pt'?'Removido (sessão)':'Removed (session)'));
+            }} style={{
+              marginTop:8, padding:'6px 0', borderRadius:8, cursor:'pointer',
+              background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
+              fontSize:11, fontWeight:700, textAlign:'center',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
             </div>
           )}
         </article>
@@ -1304,6 +1372,7 @@ function PoolRouteMap({ pools=[], style={}, doneIndices=null }) {
 
 // ── Vacation panel ────────────────────────────────────────────
 function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac }) {
+  const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const boost = {
     title: lang==='pt'
       ? 'Cobrir férias impulsiona seu perfil'
@@ -1430,13 +1499,13 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
         )}
 
         {/* ── Job-board style listing cards ── */}
-        {VACATION_LISTINGS.length === 0 ? (
+        {VACATION_LISTINGS.filter(v => !hiddenStatic.includes(v.id)).length === 0 && liveVacations.length === 0 ? (
           <div style={{textAlign:'center', padding:'28px 16px', color:'var(--pg-ink-400)', fontSize:13}}>
             {lang==='pt'?'Nenhuma vaga disponível agora':lang==='es'?'Sin vacantes disponibles ahora':'No vacations available right now'}
           </div>
         ) : (
           <div style={{display:'flex', flexDirection:'column', gap:14}}>
-            {VACATION_LISTINGS.map(v => {
+            {VACATION_LISTINGS.filter(v => !hiddenStatic.includes(v.id)).map(v => {
               const availDays = v.days.filter(d => !v.bookedDays.includes(d));
               const maxEarnings = availDays.length * v.poolsPerDay * v.pricePerPool;
               return (
@@ -1575,6 +1644,25 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
                     </button>
                   </div>
                 </div>
+                {/* Admin quick-delete for static vacation card */}
+                {user?.role === 'admin' && (
+                  <div onClick={() => {
+                    if (!window.confirm(lang==='pt'?`Excluir férias de "${v.owner}"?`:`Delete "${v.owner}"'s vacation?`)) return;
+                    setHiddenStatic(prev => [...prev, v.id]);
+                    showToast && showToast('🗑️ ' + (lang==='pt'?'Removido (sessão)':'Removed (session)'));
+                  }} style={{
+                    margin:'8px 14px 14px', padding:'6px 0', borderRadius:8, cursor:'pointer',
+                    background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
+                    fontSize:11, fontWeight:700, textAlign:'center',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
+                    {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+                  </div>
+                )}
               </article>
               );
             })}
