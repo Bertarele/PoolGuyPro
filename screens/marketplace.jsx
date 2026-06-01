@@ -731,14 +731,24 @@ function MarketplaceScreen({ ctx }) {
             {/* Live user-posted equipment items */}
             {liveMarket
               .filter(m => m.type === mode && (
+                user.role === 'admin' ||   // admin vê tudo (pending de qualquer um)
                 m.status === 'approved' ||
                 (m.status === 'pending' && isMyPost(m))
               ))
               .map(item => {
                 const isPending = item.status === 'pending';
-                const priceStr = item.priceMode === 'neg'
-                  ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
-                  : `$${item.price}`;
+                const canAdminDelete = user.role === 'admin' || isMyPost(item);
+                const handleQuickDelete = async (e) => {
+                  e.stopPropagation();
+                  const msg = lang==='pt'
+                    ? `Excluir "${item.name}"? Não pode ser desfeito.`
+                    : `Delete "${item.name}"? This cannot be undone.`;
+                  if (!window.confirm(msg)) return;
+                  const { error } = await window.sb.from('marketplace').delete().eq('id', item._id);
+                  if (error) { showToast && showToast('❌ ' + error.message); return; }
+                  showToast && showToast('🗑️ ' + (lang==='pt'?'Anúncio excluído':'Listing deleted'));
+                  if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(item._id);
+                };
                 return (
                   <button key={item._id}
                     onClick={()=> isMyPost(item) ? setMyPostDetail(item) : setViewListing(item)}
@@ -839,6 +849,25 @@ function MarketplaceScreen({ ctx }) {
                           ⏳ {lang==='pt'?'Em revisão':lang==='es'?'En revisión':'Under review'}
                         </div>
                       )}
+                      {/* Quick-delete button — admin ou dono do post */}
+                      {canAdminDelete && (
+                        <div onClick={handleQuickDelete}
+                          style={{
+                            marginTop:8, padding:'6px 0', borderRadius:8,
+                            background:'#FEF2F2', border:'1px solid #FCA5A5',
+                            color:'#EF4444', fontSize:11, fontWeight:700,
+                            textAlign:'center', cursor:'pointer',
+                            display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+                          }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                            <path d="M10 11v6"/><path d="M14 11v6"/>
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                          </svg>
+                          {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
@@ -857,8 +886,8 @@ function MarketplaceScreen({ ctx }) {
               </div>
             )}
 
-            {/* Static equipment items */}
-            {list.map(e => (
+            {/* Static equipment items — ocultos para admin (gerenciam só dados reais) */}
+            {user.role !== 'admin' && list.map(e => (
               <button key={e.id} onClick={()=>setSelected({...e, _type:'equipment'})}
                 className="pg-press"
                 style={{border:'none', textAlign:'left', cursor:'pointer', overflow:'hidden', padding:0,
