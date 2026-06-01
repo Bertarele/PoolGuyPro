@@ -597,9 +597,9 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
           <button onClick={()=>openPublicProfile && openPublicProfile({ name:job.author, rating:4.8, reviews:0, jobs:0, loc:job.loc })}
             style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', width:'100%'}} className="pg-press">
             <div style={{
-              width:28, height:28, borderRadius:7, background:'var(--pg-aqua-100)',
+              width:28, height:28, borderRadius:7, background:'var(--pg-blue-100)',
               display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-            }}>{Company(15, 'var(--pg-aqua-700)')}</div>
+            }}>{Company(15, 'var(--pg-blue-700)')}</div>
             <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{job.author}</h3>
             <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em', marginLeft:4}}>NEW</span>
           </button>
