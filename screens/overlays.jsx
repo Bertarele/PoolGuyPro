@@ -1,8 +1,18 @@
 // overlays.jsx — chat inbox + conversation, notifications, paywall, post-menu,
 //               language picker, applicants sheet
 
+// ── Chat helpers ──────────────────────────────────────────────
+function makeConvoId(uidA, uidB) {
+  return [uidA, uidB].sort().join('_');
+}
+function fmtMsgTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+}
+
 // ── Chat (inbox + conversation) ───────────────────────────────
-function ChatSheet({ open, onClose, lang='en', initialConvo=null }) {
+function ChatSheet({ open, onClose, lang='en', initialConvo=null, currentUser=null }) {
   const t = STRINGS[lang];
   const [activeConvo, setActiveConvo] = React.useState(initialConvo);
 
@@ -13,22 +23,48 @@ function ChatSheet({ open, onClose, lang='en', initialConvo=null }) {
     <Sheet open={open} onClose={onClose} height="86%">
       {activeConvo
         ? <ChatConversation convo={activeConvo} lang={lang} t={t}
-            onBack={()=>setActiveConvo(null)} onClose={onClose}/>
-        : <ChatInbox lang={lang} t={t} onSelect={setActiveConvo} onClose={onClose}/>
+            onBack={()=>setActiveConvo(null)} onClose={onClose} currentUser={currentUser}/>
+        : <ChatInbox lang={lang} t={t} onSelect={setActiveConvo} onClose={onClose} currentUser={currentUser}/>
       }
     </Sheet>
   );
 }
 
-function ChatInbox({ lang, t, onSelect, onClose }) {
-  const totalUnread = CHAT_CONVERSATIONS.reduce((s,c)=>s+c.unread, 0);
+function ChatInbox({ lang, t, onSelect, onClose, currentUser }) {
+  const [convos,  setConvos]  = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  const loadInbox = React.useCallback(async () => {
+    if (!window.sb || !currentUser?.uid) { setLoading(false); return; }
+    const { data } = await window.sb.from('messages').select('*').order('created_at', { ascending: false });
+    if (!data) { setLoading(false); return; }
+    const alive = data.filter(m => !m.deleted_at);
+    const map = {};
+    alive.forEach(m => {
+      const isMine      = m.sender_id === currentUser.uid;
+      const partnerId   = isMine ? m.receiver_id : m.sender_id;
+      const partnerName = isMine ? (m.receiver_name || '?') : m.sender_name;
+      const cid = makeConvoId(currentUser.uid, partnerId);
+      if (!map[cid]) map[cid] = { convoId: cid, receiverId: partnerId, name: partnerName, lastMsg: m.body, lastTime: m.created_at };
+    });
+    setConvos(Object.values(map));
+    setLoading(false);
+  }, [currentUser]);
+
+  React.useEffect(() => { loadInbox(); }, [loadInbox]);
+
+  const noChatsLbl    = lang==='pt' ? 'Nenhuma conversa ainda'       : lang==='es' ? 'Sin conversaciones'        : 'No conversations yet';
+  const noChatsSubLbl = lang==='pt' ? 'Clique em "Chat" em qualquer anúncio para começar.'
+                      : lang==='es' ? 'Haz clic en "Chat" en cualquier anuncio para empezar.'
+                      : 'Tap "Chat" on any listing to start.';
+
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
       <div style={{padding:'4px 16px 12px', borderBottom:'0.5px solid var(--pg-ink-200)', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0}}>
         <h2 style={{margin:0, fontSize:20, fontWeight:700, letterSpacing:'-0.02em'}}>
-          {t.inboxTitle}
-          {totalUnread > 0 && (
-            <span style={{marginLeft:8, fontSize:11, fontWeight:700, background:'var(--pg-blue-500)', color:'#fff', borderRadius:10, padding:'2px 7px'}}>{totalUnread}</span>
+          {t.inboxTitle || 'Messages'}
+          {convos.length > 0 && (
+            <span style={{marginLeft:8, fontSize:11, fontWeight:700, background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', borderRadius:10, padding:'2px 7px'}}>{convos.length}</span>
           )}
         </h2>
         <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
@@ -36,29 +72,29 @@ function ChatInbox({ lang, t, onSelect, onClose }) {
         </button>
       </div>
       <div style={{flex:1, overflow:'auto'}}>
-        {CHAT_CONVERSATIONS.length === 0 ? (
-          <div style={{textAlign:'center', color:'var(--pg-ink-400)', fontSize:14, padding:'40px 20px'}}>{t.noChats}</div>
-        ) : CHAT_CONVERSATIONS.map(c => (
-          <button key={c.id} onClick={()=>onSelect(c)} style={{
+        {loading ? (
+          <div style={{textAlign:'center', padding:'40px 20px', color:'var(--pg-ink-400)', fontSize:13}}>…</div>
+        ) : convos.length === 0 ? (
+          <div style={{textAlign:'center', padding:'48px 24px'}}>
+            <div style={{width:56, height:56, borderRadius:16, background:'var(--pg-blue-50)', margin:'0 auto 14px', display:'flex', alignItems:'center', justifyContent:'center'}}>
+              {Icon.msg(26,'var(--pg-blue-300)')}
+            </div>
+            <div style={{fontSize:15, fontWeight:700, color:'var(--pg-ink-700)', marginBottom:6}}>{noChatsLbl}</div>
+            <div style={{fontSize:13, color:'var(--pg-ink-400)', lineHeight:1.5}}>{noChatsSubLbl}</div>
+          </div>
+        ) : convos.map(c => (
+          <button key={c.convoId} onClick={()=>onSelect(c)} style={{
             display:'flex', alignItems:'center', gap:12, padding:'13px 16px',
             border:'none', background:'transparent', cursor:'pointer', width:'100%', textAlign:'left',
             borderBottom:'0.5px solid var(--pg-ink-100)', fontFamily:'inherit',
           }}>
-            <div style={{position:'relative', flexShrink:0}}>
-              <Avatar name={c.name} size={44}/>
-              {c.unread > 0 && (
-                <span style={{position:'absolute', top:-2, right:-2, width:16, height:16, borderRadius:'50%', background:'var(--pg-blue-500)', border:'2px solid #fff', fontSize:9, fontWeight:700, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center'}}>{c.unread}</span>
-              )}
-            </div>
+            <Avatar name={c.name} size={44}/>
             <div style={{flex:1, minWidth:0}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8}}>
-                <div style={{fontSize:14, fontWeight:c.unread>0?700:600, color:'var(--pg-ink-900)', letterSpacing:'-0.01em'}}>{c.name}</div>
-                <div style={{fontSize:11, color:'var(--pg-ink-400)', flexShrink:0}}>{tr(c.time, lang)}</div>
+                <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-900)', letterSpacing:'-0.01em'}}>{c.name}</div>
+                <div style={{fontSize:11, color:'var(--pg-ink-400)', flexShrink:0}}>{fmtMsgTime(c.lastTime)}</div>
               </div>
-              <div style={{fontSize:12.5, color:'var(--pg-ink-500)', marginTop:2, fontWeight:c.unread>0?600:400, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{tr(c.lastMsg, lang)}</div>
-              <div style={{fontSize:11, color:'var(--pg-blue-500)', marginTop:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                {Icon.bolt(10,'var(--pg-blue-500)')} {tr(c.context, lang)}
-              </div>
+              <div style={{fontSize:12.5, color:'var(--pg-ink-500)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{c.lastMsg}</div>
             </div>
           </button>
         ))}
@@ -67,120 +103,204 @@ function ChatInbox({ lang, t, onSelect, onClose }) {
   );
 }
 
-function ChatConversation({ convo, lang, t, onBack, onClose }) {
-  // Contextual seed messages based on conversation type
-  const isHiring = convo.type === 'hiring';
+function ChatConversation({ convo, lang, t, onBack, onClose, currentUser }) {
+  const isLive  = !!(currentUser?.uid && convo.receiverId);
+  const convoId = isLive ? makeConvoId(currentUser.uid, convo.receiverId) : null;
 
-  const seedHiring = lang==='pt' ? [
-    { id:1, from:'them', text:'Olá! Vi sua vaga de técnico de piscinas em Weston. Tenho 3 anos de experiência e veículo próprio. Muito interessado!', time:'09:14' },
-    { id:2, from:'me',   text:'Oi Ricardo! Perfeito, seu perfil está ótimo. CPO certificado é um diferencial. Podemos marcar uma entrevista essa semana?', time:'09:22' },
-    { id:3, from:'them', text:'Com certeza! Fico disponível qualquer dia. Que horário fica melhor pra você?', time:'09:24' },
-    { id:4, from:'me',   text:'Quinta às 10h você consegue? Meu escritório fica em Weston — mando o endereço se fechar.', time:'09:26' },
-    { id:5, from:'them', text:'Quinta às 10h me serve perfeitamente ✓', time:'09:28' },
-    { id:6, from:'me',   text:'Ótimo! Entrevista confirmada para quinta às 10h. Vou te mandar o endereço completo amanhã. 👍', time:'09:30' },
-  ] : lang==='es' ? [
-    { id:1, from:'them', text:'¡Hola! Vi tu vacante de técnico de piscinas en Weston. Tengo 3 años de experiencia y camioneta propia. ¡Muy interesado!', time:'09:14' },
-    { id:2, from:'me',   text:'¡Hola Ricardo! Perfecto, tu perfil está muy bien. El CPO certificado es un plus. ¿Podemos agendar una entrevista esta semana?', time:'09:22' },
-    { id:3, from:'them', text:'¡Por supuesto! Estoy disponible cualquier día. ¿Qué horario te queda mejor?', time:'09:24' },
-    { id:4, from:'me',   text:'¿El jueves a las 10am te funciona? Mi oficina está en Weston — te mando la dirección si confirmamos.', time:'09:26' },
-    { id:5, from:'them', text:'El jueves a las 10am me viene perfecto ✓', time:'09:28' },
-    { id:6, from:'me',   text:'¡Genial! Entrevista confirmada para el jueves a las 10am. Mañana te mando la dirección completa. 👍', time:'09:30' },
-  ] : [
-    { id:1, from:'them', text:'Hi! Saw your pool tech opening in Weston. I have 3 yrs experience and my own truck. Very interested!', time:'9:14 AM' },
-    { id:2, from:'me',   text:'Hey Ricardo! Great — your profile looks solid. CPO cert is a big plus. Can we schedule an interview this week?', time:'9:22 AM' },
-    { id:3, from:'them', text:'Absolutely! I\'m free any day this week. What time works best for you?', time:'9:24 AM' },
-    { id:4, from:'me',   text:'Thursday at 10am work for you? My office is in Weston — I\'ll send the address once we confirm.', time:'9:26 AM' },
-    { id:5, from:'them', text:'Thursday 10am works perfectly ✓', time:'9:28 AM' },
-    { id:6, from:'me',   text:'Perfect! Interview confirmed for Thursday at 10am. I\'ll send you the full address tomorrow. 👍', time:'9:30 AM' },
-  ];
-
-  const seedDefault = lang==='pt' ? [
-    { id:1, from:'them', text:'Oi! Vi seu anúncio da rota de terça — terça de manhã funciona pra mim.', time:'10:02' },
-    { id:2, from:'me',   text:'Ótimo. 6 piscinas de água salgada, todos os produtos no local. R$225/piscina ok?', time:'10:04' },
-    { id:3, from:'them', text:'Funciona. Posso ver o código do portão do condomínio?', time:'10:05' },
-    { id:4, from:'me',   text:'Mando assim que aceitar — regra do sistema. Vamos fechar?', time:'10:05' },
-  ] : lang==='es' ? [
-    { id:1, from:'them', text:'¡Hola! Vi tu publicación de la ruta del martes — martes en la mañana me funciona.', time:'10:02' },
-    { id:2, from:'me',   text:'Genial. 6 piscinas de agua salada, todos los productos en el sitio. ¿$45/piscina?', time:'10:04' },
-    { id:3, from:'them', text:'Funciona. ¿Puedo ver el código del portón del condominio?', time:'10:05' },
-    { id:4, from:'me',   text:'Te lo envío cuando aceptes — regla del sistema. ¿Lo cerramos?', time:'10:05' },
-  ] : [
-    { id:1, from:'them', text:'Hey! Saw your post for the Tuesday route — Tuesday morning works for me.', time:'10:02 AM' },
-    { id:2, from:'me',   text:'Great. 6 saltwater pools, all chemicals at site. Cool with $45/pool?', time:'10:04 AM' },
-    { id:3, from:'them', text:'Works. Can I see the gate code for the condo stop?', time:'10:05 AM' },
-    { id:4, from:'me',   text:'Sending it once you accept — system rule. Wanna lock it in?', time:'10:05 AM' },
-  ];
-
-  const seed = isHiring ? seedHiring : seedDefault;
-
-  const [messages, setMessages] = React.useState(seed);
-  React.useEffect(()=>{ setMessages(seed); }, [lang]);
-  const [draft, setDraft] = React.useState('');
+  const [messages,      setMessages]      = React.useState([]);
+  const [draft,         setDraft]         = React.useState('');
+  const [sending,       setSending]       = React.useState(false);
+  const [deleteConfirm, setDeleteConfirm] = React.useState(null);
   const scroller = React.useRef(null);
+  const pollRef  = React.useRef(null);
 
-  React.useEffect(()=>{
+  const fmtMsg = React.useCallback((m) => ({
+    id:        m.id,
+    from:      m.sender_id === currentUser?.uid ? 'me' : 'them',
+    text:      m.body,
+    time:      fmtMsgTime(m.created_at),
+    deleted:   !!m.deleted_at,
+    sender_id: m.sender_id,
+  }), [currentUser]);
+
+  const loadMessages = React.useCallback(async () => {
+    if (!isLive) return;
+    const { data } = await window.sb.from('messages').select('*').eq('conversation_id', convoId).order('created_at', { ascending: true });
+    if (data) setMessages(data.map(fmtMsg));
+  }, [convoId, isLive, fmtMsg]);
+
+  React.useEffect(() => {
+    if (!isLive) return;
+    loadMessages();
+    pollRef.current = setInterval(loadMessages, 3000);
+    return () => clearInterval(pollRef.current);
+  }, [loadMessages]);
+
+  React.useEffect(() => {
     if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
   }, [messages.length]);
 
-  const reply = lang==='pt'?'Beleza 👍':lang==='es'?'Perfecto 👍':'Sounds good 👍';
-  const now = t.justNow;
-
-  const send = () => {
-    if (!draft.trim()) return;
-    setMessages(m=>[...m, { id:Date.now(), from:'me', text:draft.trim(), time:now }]);
+  const send = async () => {
+    if (!draft.trim() || sending) return;
+    setSending(true);
+    const text = draft.trim();
     setDraft('');
-    setTimeout(()=>setMessages(m=>[...m, { id:Date.now()+1, from:'them', text:reply, time:now }]), 1200);
+    if (isLive) {
+      const myName = (currentUser.name && !currentUser.name.includes('@')) ? currentUser.name : (currentUser.email ? currentUser.email.split('@')[0] : 'User');
+      await window.sb.from('messages').insert({
+        conversation_id: convoId,
+        sender_id:       currentUser.uid,
+        receiver_id:     convo.receiverId,
+        sender_name:     myName,
+        receiver_name:   convo.name,
+        body:            text,
+      });
+      await loadMessages();
+    } else {
+      setMessages(m => [...m, { id: Date.now(), from:'me', text, time: fmtMsgTime(new Date().toISOString()), deleted: false }]);
+    }
+    setSending(false);
   };
 
+  const deleteMsg = async (msg) => {
+    setDeleteConfirm(null);
+    if (isLive && msg.id) {
+      await window.sb.from('messages').update({ deleted_at: new Date().toISOString() }).eq('id', msg.id);
+      await loadMessages();
+    } else {
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, deleted: true } : m));
+    }
+  };
+
+  const deletedLbl       = lang==='pt' ? 'Mensagem apagada'   : lang==='es' ? 'Mensaje eliminado'   : 'Message deleted';
+  const deleteLbl        = lang==='pt' ? 'Apagar'             : lang==='es' ? 'Eliminar'             : 'Delete';
+  const cancelLbl        = lang==='pt' ? 'Cancelar'           : lang==='es' ? 'Cancelar'             : 'Cancel';
+  const confirmDeleteLbl = lang==='pt' ? 'Apagar mensagem?'   : lang==='es' ? '¿Eliminar mensaje?'   : 'Delete message?';
+  const demoNotice       = lang==='pt' ? '💬 Modo demo — clique em "Chat" num anúncio real para conversar'
+                         : lang==='es' ? '💬 Modo demo — toca "Chat" en un anuncio real para chatear'
+                         : '💬 Demo mode — tap "Chat" on a real listing to start a live conversation';
+
   return (
-    <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
-      <div style={{display:'flex', alignItems:'center', gap:10, padding:'4px 14px 12px', borderBottom:'0.5px solid var(--pg-ink-200)'}}>
+    <div style={{display:'flex', flexDirection:'column', height:'100%', position:'relative'}}>
+      {/* Header */}
+      <div style={{display:'flex', alignItems:'center', gap:10, padding:'4px 14px 12px', borderBottom:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
         <button onClick={onBack} style={{border:'none', background:'transparent', cursor:'pointer', padding:6, color:'var(--pg-blue-600)', display:'flex'}}>
           {Icon.chev(18,'var(--pg-blue-600)','left')}
         </button>
         <Avatar name={convo.name} size={38}/>
         <div style={{flex:1, minWidth:0}}>
           <div style={{fontSize:14, fontWeight:600}}>{convo.name}</div>
-          <div style={{fontSize:11, color:'var(--pg-aqua-700)', display:'flex', alignItems:'center', gap:4}}>
-            <span style={{width:6, height:6, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/> {t.activeNow}
-          </div>
-        </div>
-        <IconButton>{Icon.more(16,'var(--pg-ink-700)')}</IconButton>
-      </div>
-      <div style={{padding:'10px 14px', background:'var(--pg-blue-50)', display:'flex', alignItems:'center', gap:10, borderBottom:'0.5px solid var(--pg-ink-200)'}}>
-        <div style={{width:34, height:34, borderRadius:8, flexShrink:0, background:'var(--pg-aqua-100)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-          {Icon.bolt(16,'var(--pg-aqua-700)')}
-        </div>
-        <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:12, fontWeight:600, color:'var(--pg-blue-700)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-            {tr(convo.context, lang)}
-          </div>
-        </div>
-        <button className="pg-btn pg-btn-primary" style={{height:30, padding:'0 12px', fontSize:12, flexShrink:0}}>{t.viewJob}</button>
-      </div>
-      <div ref={scroller} style={{flex:1, overflow:'auto', padding:'14px', display:'flex', flexDirection:'column', gap:8}}>
-        {messages.map(m => (
-          <div key={m.id} style={{display:'flex', justifyContent:m.from==='me'?'flex-end':'flex-start'}}>
-            <div style={{maxWidth:'78%'}}>
-              <div style={{padding:'9px 13px', borderRadius:16, fontSize:14, lineHeight:1.4,
-                background:m.from==='me'?'var(--pg-blue-500)':'var(--pg-ink-100)',
-                color:m.from==='me'?'#fff':'var(--pg-ink-900)',
-                borderBottomRightRadius:m.from==='me'?4:16, borderBottomLeftRadius:m.from==='me'?16:4,
-              }}>{m.text}</div>
-              <div style={{fontSize:10, color:'var(--pg-ink-500)', marginTop:3, padding:'0 4px', textAlign:m.from==='me'?'right':'left'}}>{m.time}</div>
+          {isLive ? (
+            <div style={{fontSize:11, color:'var(--pg-aqua-700)', display:'flex', alignItems:'center', gap:4}}>
+              <span style={{width:6, height:6, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/> Live
             </div>
+          ) : (
+            <div style={{fontSize:11, color:'var(--pg-ink-400)'}}>Demo</div>
+          )}
+        </div>
+      </div>
+
+      {/* Demo notice */}
+      {!isLive && (
+        <div style={{padding:'8px 14px', background:'oklch(0.97 0.03 80)', borderBottom:'0.5px solid oklch(0.90 0.05 80)', fontSize:11, color:'oklch(0.48 0.14 68)', textAlign:'center', lineHeight:1.4}}>
+          {demoNotice}
+        </div>
+      )}
+
+      {/* Messages */}
+      <div ref={scroller} style={{flex:1, overflow:'auto', padding:'14px', display:'flex', flexDirection:'column', gap:8}}>
+        {messages.length === 0 && !isLive && (
+          <div style={{textAlign:'center', color:'var(--pg-ink-400)', fontSize:13, marginTop:20}}>
+            {lang==='pt' ? 'Nenhuma mensagem ainda. Diga olá!' : lang==='es' ? '¡Ningún mensaje aún. Saluda!' : 'No messages yet. Say hi!'}
+          </div>
+        )}
+        {messages.map(m => (
+          <div key={m.id} style={{display:'flex', justifyContent: m.from==='me' ? 'flex-end' : 'flex-start', alignItems:'flex-end', gap:4}}>
+            {/* Trash icon — left of received messages */}
+            {m.from !== 'me' && !m.deleted && (
+              <button onClick={() => setDeleteConfirm(m.id)} style={{
+                border:'none', background:'transparent', cursor:'pointer', padding:'4px 2px',
+                opacity:0.4, flexShrink:0, display:'flex', alignItems:'center',
+                transition:'opacity .15s', borderRadius:6,
+              }} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.4}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-600)" strokeWidth="2.2" strokeLinecap="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/>
+                </svg>
+              </button>
+            )}
+
+            <div style={{maxWidth:'75%'}}>
+              {m.deleted ? (
+                <div style={{padding:'8px 12px', borderRadius:14, fontSize:13, fontStyle:'italic',
+                  background: m.from==='me' ? 'oklch(0.75 0.06 235)' : 'var(--pg-ink-150,#e8e8e8)',
+                  color: m.from==='me' ? 'rgba(255,255,255,0.55)' : 'var(--pg-ink-400)',
+                  borderBottomRightRadius: m.from==='me'?4:14, borderBottomLeftRadius: m.from==='me'?14:4,
+                }}>
+                  🗑 {deletedLbl}
+                </div>
+              ) : (
+                <div style={{padding:'9px 13px', borderRadius:16, fontSize:14, lineHeight:1.4,
+                  background: m.from==='me' ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+                  color: m.from==='me' ? '#fff' : 'var(--pg-ink-900)',
+                  borderBottomRightRadius: m.from==='me'?4:16, borderBottomLeftRadius: m.from==='me'?16:4,
+                  wordBreak:'break-word',
+                }}>{m.text}</div>
+              )}
+              <div style={{fontSize:10, color:'var(--pg-ink-400)', marginTop:3, padding:'0 4px', textAlign: m.from==='me'?'right':'left'}}>
+                {m.time}
+              </div>
+            </div>
+
+            {/* Trash icon — right of sent messages */}
+            {m.from === 'me' && !m.deleted && (
+              <button onClick={() => setDeleteConfirm(m.id)} style={{
+                border:'none', background:'transparent', cursor:'pointer', padding:'4px 2px',
+                opacity:0.35, flexShrink:0, display:'flex', alignItems:'center',
+                transition:'opacity .15s', borderRadius:6,
+              }} onMouseEnter={e=>e.currentTarget.style.opacity=0.9} onMouseLeave={e=>e.currentTarget.style.opacity=0.35}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-200)" strokeWidth="2.2" strokeLinecap="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/>
+                </svg>
+              </button>
+            )}
           </div>
         ))}
       </div>
-      <div style={{padding:'10px 12px 14px', borderTop:'0.5px solid var(--pg-ink-200)', display:'flex', gap:8, alignItems:'flex-end'}}>
+
+      {/* Delete confirm bottom sheet */}
+      {deleteConfirm && (() => {
+        const msg = messages.find(m => m.id === deleteConfirm);
+        if (!msg) return null;
+        return (
+          <div style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.42)', zIndex:50, display:'flex', alignItems:'flex-end'}}
+            onClick={() => setDeleteConfirm(null)}>
+            <div onClick={e=>e.stopPropagation()} style={{
+              width:'100%', background:'var(--pg-white)', borderRadius:'18px 18px 0 0',
+              padding:'20px 20px 36px', display:'flex', flexDirection:'column', gap:12,
+            }}>
+              <div style={{fontSize:15, fontWeight:700, textAlign:'center', color:'var(--pg-ink-900)'}}>{confirmDeleteLbl}</div>
+              <div style={{padding:'10px 14px', borderRadius:12, background:'var(--pg-ink-100)', fontSize:13.5, color:'var(--pg-ink-700)', lineHeight:1.45, maxHeight:70, overflow:'hidden', textOverflow:'ellipsis'}}>
+                {msg.text}
+              </div>
+              <button onClick={() => deleteMsg(msg)} style={{width:'100%', padding:'14px', border:'none', borderRadius:14, cursor:'pointer', fontFamily:'inherit', fontSize:15, fontWeight:700, background:'#EF4444', color:'#fff'}}>{deleteLbl}</button>
+              <button onClick={() => setDeleteConfirm(null)} style={{width:'100%', padding:'12px', border:'1px solid var(--pg-ink-200)', borderRadius:14, cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:600, background:'transparent', color:'var(--pg-ink-700)'}}>{cancelLbl}</button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Input */}
+      <div style={{padding:'10px 12px 14px', borderTop:'0.5px solid var(--pg-ink-200)', display:'flex', gap:8, alignItems:'flex-end', flexShrink:0}}>
         <div style={{flex:1, background:'var(--pg-ink-100)', borderRadius:18, padding:'10px 14px', display:'flex', alignItems:'center'}}>
           <input value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()}
-            placeholder={t.messagePh}
+            placeholder={t.messagePh || 'Type a message…'}
             style={{flex:1, border:'none', background:'transparent', outline:'none', fontSize:14, fontFamily:'inherit'}}/>
         </div>
-        <button onClick={send} className="pg-press" style={{
+        <button onClick={send} disabled={sending} className="pg-press" style={{
           width:42, height:42, borderRadius:'50%', border:'none', cursor:'pointer',
-          background:draft.trim()?'var(--pg-blue-500)':'var(--pg-ink-200)',
+          background: draft.trim() ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)',
           color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', transition:'background .15s',
         }}>{Icon.arrow(18,'#fff')}</button>
       </div>

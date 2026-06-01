@@ -268,8 +268,8 @@ function App() {
   const [county] = React.useState('Broward');
 
   // Overlays
-  const [chatOpen,       setChatOpen]      = React.useState(false);
-  const [chatConvoName,  setChatConvoName]  = React.useState(null);
+  const [chatOpen,         setChatOpen]        = React.useState(false);
+  const [chatConvoTarget,  setChatConvoTarget]  = React.useState(null); // string | { id, name }
   const [notifOpen,      setNotifOpen]      = React.useState(false);
   const [payOpen,        setPayOpen]        = React.useState(false);
   const [postMenuOpen,   setPostMenuOpen]   = React.useState(false);
@@ -320,14 +320,14 @@ function App() {
     // Normalizers — Supabase uses snake_case columns
     const normJob = r => ({ _id:r.id, _live:true, role:r.role, loc:r.loc, desc:r.description,
       contract:r.contract, payMode:r.pay_mode, pay:r.pay,
-      carReq:r.car_req, equipReq:r.equip_req, author:r.author });
+      carReq:r.car_req, equipReq:r.equip_req, author:r.author, author_id:r.author_id||null });
     const normTech = r => ({ _id:r.id, _live:true, name:r.name, specialty:r.specialty,
       loc:r.loc, phone:r.phone, email:r.email,
-      rateMode:r.rate_mode, rate:r.rate, author:r.author });
+      rateMode:r.rate_mode, rate:r.rate, author:r.author, author_id:r.author_id||null });
     const normVac = r => ({ _id:r.id, _live:true, monthIdx:r.month_idx, year:r.year,
       selectedDays:r.selected_days, weekdayRegions:r.weekday_regions,
       poolsPerWeekday:r.pools_per_weekday, price:r.price,
-      priceMode:r.price_mode, author:r.author });
+      priceMode:r.price_mode, author:r.author, author_id:r.author_id||null });
     const normMkt = r => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
       condition:r.condition, price:r.price, priceMode:r.price_mode,
       loc:r.loc, routeName:r.route_name, clients:r.clients,
@@ -386,16 +386,19 @@ function App() {
     const row = col === 'jobs' ? {
       role: data.role, loc: data.loc, contract: data.contract,
       pay_mode: data.payMode, pay: data.pay, car_req: data.carReq,
-      equip_req: data.equipReq, description: data.desc, author: authorName,
+      equip_req: data.equipReq, description: data.desc,
+      author: authorName, author_id: user.uid || null,
     } : col === 'techs' ? {
       name: data.name, specialty: data.specialty, loc: data.loc,
       phone: data.phone, email: data.email,
-      rate_mode: data.rateMode, rate: data.rate, author: authorName,
+      rate_mode: data.rateMode, rate: data.rate,
+      author: authorName, author_id: user.uid || null,
     } : col === 'vacations' ? {
       month_idx: data.monthIdx, year: data.year,
       selected_days: data.selectedDays, weekday_regions: data.weekdayRegions,
       pools_per_weekday: data.poolsPerWeekday,
-      price: data.price, price_mode: data.priceMode, author: authorName,
+      price: data.price, price_mode: data.priceMode,
+      author: authorName, author_id: user.uid || null,
     } : col === 'marketplace' ? {
       type: data.type, name: data.name, cat: data.cat,
       condition: data.condition, price: data.price,
@@ -445,7 +448,7 @@ function App() {
     lang, setLang,
     regionsByDay, setRegionsByDay, county,
     goTab:              switchTab,
-    openChat:           (name=null) => { setChatConvoName(name); setChatOpen(true); },
+    openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => setNotifOpen(true),
     openPaywall:        () => setPayOpen(true),
     openPostMenu:       () => setPostMenuOpen(true),
@@ -500,22 +503,18 @@ function App() {
       })));
   }, []);
 
-  // Find the conversation object matching chatConvoName, or create a stub for new chats
+  // Build initial convo from target — target can be a string (name only) or { id, name }
   const initialConvo = React.useMemo(() => {
-    if (!chatConvoName) return null;
-    const first = chatConvoName.split(' ')[0];
-    const found = CHAT_CONVERSATIONS.find(c => c.name.startsWith(first));
-    if (found) return found;
-    // Stub: open a new conversation directly without showing the inbox
+    if (!chatConvoTarget) return null;
+    const isObj = typeof chatConvoTarget === 'object' && chatConvoTarget !== null;
+    const receiverName = isObj ? chatConvoTarget.name : String(chatConvoTarget);
+    const receiverId   = isObj ? (chatConvoTarget.id || null) : null;
     return {
-      id: 'stub-' + chatConvoName,
-      name: chatConvoName,
-      unread: 0,
-      time:    { en:'just now', pt:'agora', es:'ahora' },
-      lastMsg: { en:'Start a conversation…', pt:'Inicie uma conversa…', es:'Inicia una conversación…' },
+      receiverId,
+      name: receiverName,
       context: { en:'Direct message', pt:'Mensagem direta', es:'Mensaje directo' },
     };
-  }, [chatConvoName, chatOpen]);
+  }, [chatConvoTarget, chatOpen]);
 
   // ── Responsive: detect desktop vs mobile ─────────────────────
   const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
@@ -539,8 +538,8 @@ function App() {
   const OverlayBundle = () => (
     <>
       <ChatSheet open={chatOpen}
-        onClose={()=>{ setChatOpen(false); setChatConvoName(null); }}
-        lang={lang} initialConvo={initialConvo}/>
+        onClose={()=>{ setChatOpen(false); setChatConvoTarget(null); }}
+        lang={lang} initialConvo={initialConvo} currentUser={user}/>
       <NotificationsSheet open={notifOpen} onClose={()=>setNotifOpen(false)} lang={lang}/>
       <PaywallSheet open={payOpen} onClose={()=>setPayOpen(false)} setUser={ctx.setUser} lang={lang}/>
       <PostMenuSheet open={postMenuOpen} onClose={()=>setPostMenuOpen(false)}

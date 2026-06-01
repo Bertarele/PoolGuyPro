@@ -187,7 +187,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
     : 'Unknown';
 
   const handleContact = () => {
-    if (openChat) openChat(item.author || 'Seller');
+    if (openChat) openChat(item.author_id ? { id: item.author_id, name: item.author || 'Seller' } : (item.author || 'Seller'));
     if (onClose) onClose();
   };
 
