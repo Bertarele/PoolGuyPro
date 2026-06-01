@@ -4,7 +4,8 @@ function WorkScreen({ ctx }) {
   const { lang, openChat, goTab, openPostMenu, openApplicants, openJobDetail,
           openHiringAppDetail, openApplyJob,
           openVacSheet, openHiringSheet, openTechSheet, openDayPicker, openSchedule,
-          openPublicProfile,
+          openPublicProfile, showToast,
+          removeJob, removeTech, removeVacation,
           liveJobs=[], liveTechs=[], liveVacations=[] } = ctx;
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState('hiring');
@@ -407,14 +408,15 @@ function WorkScreen({ ctx }) {
 
       {/* ── Content panels ── */}
       <div style={{padding:'14px 18px 0'}}>
-        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={liveJobs}/>}
-        {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={liveTechs}/>}
+        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={liveJobs} showToast={showToast} onDeleteJob={removeJob}/>}
+        {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={liveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
                               onChat={openChat} onCreate={openVacSheet}
                               onViewApplicants={openApplicants}
                               openDayPicker={openDayPicker}
                               openSchedule={openSchedule}
-                              openPublicProfile={openPublicProfile}/>}
+                              openPublicProfile={openPublicProfile}
+                              liveVacations={liveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
       </div>
 
     </div>
@@ -561,7 +563,7 @@ function MyApplicationsSection({ apps, lang, onChat, type='hiring' }) {
 }
 
 // ── Card with company-style header ────────────────────────────
-function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile, liveJobs=[] }) {
+function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile, liveJobs=[], showToast, onDeleteJob }) {
   const Company = (s=20, c='var(--pg-blue-500)') => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="4" y="3" width="16" height="18" rx="2"/>
@@ -615,6 +617,27 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
               {t.apply}
             </button>
           </div>
+          {/* Admin quick-delete */}
+          {user?.role === 'admin' && (
+            <div onClick={async () => {
+              if (!window.confirm(lang==='pt'?`Excluir vaga "${job.role}"?`:`Delete job "${job.role}"?`)) return;
+              const { error } = await window.sb.from('jobs').delete().eq('id', job._id);
+              if (error) { showToast && showToast('❌ ' + error.message); return; }
+              showToast && showToast('🗑️ ' + (lang==='pt'?'Vaga excluída':'Job deleted'));
+              onDeleteJob && onDeleteJob(job._id);
+            }} style={{
+              marginTop:8, padding:'6px 0', borderRadius:8, cursor:'pointer',
+              background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
+              fontSize:11, fontWeight:700, textAlign:'center',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+            </div>
+          )}
         </article>
       ))}
       {/* ── Static seed jobs ── */}
@@ -854,7 +877,7 @@ function TechReviewSheet({ open, onClose, tech, lang='en' }) {
 }
 
 // ── Technicians — same card layout as Hiring ─────────────────
-function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[] }) {
+function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[], user, showToast, onDeleteTech }) {
   const [contactOpen, setContactOpen] = React.useState(null);
   const [ratingFor,   setRatingFor]   = React.useState(null);
 
@@ -912,6 +935,27 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               📞 {tech.phone}
             </a>}
           </div>
+          {/* Admin quick-delete */}
+          {user?.role === 'admin' && (
+            <div onClick={async () => {
+              if (!window.confirm(lang==='pt'?`Excluir técnico "${tech.name}"?`:`Delete technician "${tech.name}"?`)) return;
+              const { error } = await window.sb.from('techs').delete().eq('id', tech._id);
+              if (error) { showToast && showToast('❌ ' + error.message); return; }
+              showToast && showToast('🗑️ ' + (lang==='pt'?'Técnico excluído':'Technician deleted'));
+              onDeleteTech && onDeleteTech(tech._id);
+            }} style={{
+              marginTop:8, padding:'6px 0', borderRadius:8, cursor:'pointer',
+              background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
+              fontSize:11, fontWeight:700, textAlign:'center',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+            </div>
+          )}
         </article>
       ))}
       {/* ── Static seed techs ── */}
@@ -1259,7 +1303,7 @@ function PoolRouteMap({ pools=[], style={}, doneIndices=null }) {
 }
 
 // ── Vacation panel ────────────────────────────────────────────
-function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApplicants, openDayPicker, openSchedule, openPublicProfile }) {
+function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac }) {
   const boost = {
     title: lang==='pt'
       ? 'Cobrir férias impulsiona seu perfil'
@@ -1338,6 +1382,52 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
             <div style={{fontSize:10.5, opacity:0.75, marginTop:1}}>{boost.chip}</div>
           </div>
         </div>
+
+        {/* ── Live vacation posts (Supabase) ── */}
+        {liveVacations.length > 0 && (
+          <div style={{display:'flex', flexDirection:'column', gap:12, marginBottom:12}}>
+            {liveVacations.map(vac => (
+              <article key={vac._id} className="pg-card" style={{padding:'14px 16px', border:'1.5px solid var(--pg-aqua-400,#38bdf8)'}}>
+                <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6}}>
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>
+                      {lang==='pt'?'Cobertura de Férias':lang==='es'?'Cobertura de Vacaciones':'Vacation Coverage'}
+                    </div>
+                    <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:2}}>
+                      👤 {vac.author}
+                    </div>
+                  </div>
+                  <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, marginLeft:8, letterSpacing:'0.05em'}}>NEW</span>
+                </div>
+                <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:6}}>
+                  {vac.price && <span className="pg-chip pg-chip-aqua" style={{fontSize:11}}>${vac.price}{vac.priceMode==='pool'?'/pool':'/day'}</span>}
+                  {vac.priceMode === 'neg' && <span className="pg-chip" style={{fontSize:11}}>{lang==='pt'?'Negociável':'Negotiable'}</span>}
+                </div>
+                {/* Admin quick-delete */}
+                {user?.role === 'admin' && (
+                  <div onClick={async () => {
+                    if (!window.confirm(lang==='pt'?'Excluir este registro de férias?':'Delete this vacation post?')) return;
+                    const { error } = await window.sb.from('vacations').delete().eq('id', vac._id);
+                    if (error) { showToast && showToast('❌ ' + error.message); return; }
+                    showToast && showToast('🗑️ ' + (lang==='pt'?'Férias excluídas':'Vacation deleted'));
+                    onDeleteVac && onDeleteVac(vac._id);
+                  }} style={{
+                    marginTop:8, padding:'6px 0', borderRadius:8, cursor:'pointer',
+                    background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
+                    fontSize:11, fontWeight:700, textAlign:'center',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
+                    {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
 
         {/* ── Job-board style listing cards ── */}
         {VACATION_LISTINGS.length === 0 ? (

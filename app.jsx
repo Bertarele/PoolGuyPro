@@ -483,8 +483,11 @@ function App() {
     // Live Firestore data
     liveJobs, liveTechs, liveVacations, liveMarket,
     dbWrite, showToast,
-    // Admin: remove a marketplace item from local state immediately (fallback if realtime is slow)
-    removeMarketItem: (id) => setLiveMarket(prev => prev.filter(m => m._id !== id)),
+    // Admin: remove items from local state immediately (fallback if realtime is slow)
+    removeMarketItem:  (id) => setLiveMarket(prev    => prev.filter(m => m._id !== id)),
+    removeJob:         (id) => setLiveJobs(prev      => prev.filter(j => j._id !== id)),
+    removeTech:        (id) => setLiveTechs(prev     => prev.filter(t => t._id !== id)),
+    removeVacation:    (id) => setLiveVacations(prev => prev.filter(v => v._id !== id)),
   };
 
   // Build confirmed-day map from accepted vacation applications (for conflict detection)
