@@ -1,46 +1,172 @@
 // marketplace.jsx — navy header + dual seg + distance + categories
 
+// ── Fullscreen Photo Viewer ───────────────────────────────────
+function PhotoViewer({ photos, startIdx=0, onClose }) {
+  const [idx, setIdx] = React.useState(startIdx);
+  const prev = (e) => { e.stopPropagation(); setIdx(i => (i - 1 + photos.length) % photos.length); };
+  const next = (e) => { e.stopPropagation(); setIdx(i => (i + 1) % photos.length); };
+
+  // Fechar com ESC
+  React.useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  // Travar scroll do body
+  React.useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  return (
+    <div onClick={onClose} style={{
+      position:'fixed', inset:0, zIndex:9999,
+      background:'rgba(0,0,0,0.96)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      flexDirection:'column',
+    }}>
+      {/* Barra superior */}
+      <div onClick={e=>e.stopPropagation()} style={{
+        position:'absolute', top:0, left:0, right:0,
+        padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between',
+        background:'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)',
+        zIndex:2,
+      }}>
+        <span style={{fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.70)'}}>
+          {photos.length > 1 ? `${idx + 1} / ${photos.length}` : ''}
+        </span>
+        <button onClick={onClose} style={{
+          width:36, height:36, borderRadius:'50%', border:'none', cursor:'pointer',
+          background:'rgba(255,255,255,0.15)', color:'#fff',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:20, lineHeight:1,
+        }}>×</button>
+      </div>
+
+      {/* Foto principal */}
+      <img
+        src={photos[idx]} alt=""
+        onClick={e => e.stopPropagation()}
+        style={{
+          maxWidth:'100%', maxHeight:'100%',
+          objectFit:'contain', display:'block',
+          userSelect:'none', borderRadius:4,
+        }}
+      />
+
+      {/* Arrows (múltiplas fotos) */}
+      {photos.length > 1 && (
+        <>
+          <button onClick={prev} style={{
+            position:'absolute', left:12, top:'50%', transform:'translateY(-50%)',
+            width:44, height:44, borderRadius:'50%', border:'none', cursor:'pointer',
+            background:'rgba(255,255,255,0.15)', color:'#fff', fontSize:22,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            backdropFilter:'blur(4px)',
+          }}>‹</button>
+          <button onClick={next} style={{
+            position:'absolute', right:12, top:'50%', transform:'translateY(-50%)',
+            width:44, height:44, borderRadius:'50%', border:'none', cursor:'pointer',
+            background:'rgba(255,255,255,0.15)', color:'#fff', fontSize:22,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            backdropFilter:'blur(4px)',
+          }}>›</button>
+        </>
+      )}
+
+      {/* Dots */}
+      {photos.length > 1 && (
+        <div onClick={e=>e.stopPropagation()} style={{
+          position:'absolute', bottom:24, left:'50%', transform:'translateX(-50%)',
+          display:'flex', gap:6,
+        }}>
+          {photos.map((_,i) => (
+            <div key={i} onClick={()=>setIdx(i)} style={{
+              width: i===idx ? 20 : 7, height:7, borderRadius:4, cursor:'pointer',
+              background: i===idx ? '#fff' : 'rgba(255,255,255,0.35)',
+              transition:'width .18s, background .18s',
+            }}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Photo Carousel ────────────────────────────────────────────
 function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
   const photos = urls.filter(Boolean);
   const [idx, setIdx] = React.useState(0);
-  const prev = () => setIdx(i => (i - 1 + photos.length) % photos.length);
-  const next = () => setIdx(i => (i + 1) % photos.length);
+  const [viewerOpen, setViewerOpen] = React.useState(false);
+  const prev = (e) => { e.stopPropagation(); setIdx(i => (i - 1 + photos.length) % photos.length); };
+  const next = (e) => { e.stopPropagation(); setIdx(i => (i + 1) % photos.length); };
 
   return (
-    <div style={{position:'relative', height, background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
-      {photos.length > 0
-        ? <img src={photos[idx]} alt="" style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
-        : <EquipImg category={fallbackCat} height={height}/>
-      }
-      <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.18) 0%,transparent 45%,rgba(0,0,0,0.25) 100%)',pointerEvents:'none'}}/>
+    <>
+      <div style={{position:'relative', height, background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
+        {photos.length > 0
+          ? <img
+              src={photos[idx]} alt=""
+              onClick={() => setViewerOpen(true)}
+              style={{width:'100%', height:'100%', objectFit:'cover', display:'block', cursor:'zoom-in'}}
+            />
+          : <EquipImg category={fallbackCat} height={height}/>
+        }
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.18) 0%,transparent 45%,rgba(0,0,0,0.25) 100%)',pointerEvents:'none'}}/>
 
-      {/* Arrows — only if multiple photos */}
-      {photos.length > 1 && (
-        <>
-          <button onClick={prev} style={{
-            position:'absolute', left:10, top:'50%', transform:'translateY(-50%)',
-            width:32, height:32, borderRadius:'50%', border:'none', cursor:'pointer',
-            background:'rgba(0,0,0,0.45)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
-          }}>‹</button>
-          <button onClick={next} style={{
-            position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
-            width:32, height:32, borderRadius:'50%', border:'none', cursor:'pointer',
-            background:'rgba(0,0,0,0.45)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
-          }}>›</button>
-          {/* Dot indicators */}
-          <div style={{position:'absolute', bottom:10, left:'50%', transform:'translateX(-50%)', display:'flex', gap:5}}>
-            {photos.map((_,i) => (
-              <div key={i} onClick={()=>setIdx(i)} style={{
-                width: i===idx ? 18 : 6, height:6, borderRadius:3, cursor:'pointer',
-                background: i===idx ? '#fff' : 'rgba(255,255,255,0.5)',
-                transition:'width .2s, background .2s',
-              }}/>
-            ))}
+        {/* Ícone de zoom (hint visual) */}
+        {photos.length > 0 && (
+          <div onClick={() => setViewerOpen(true)} style={{
+            position:'absolute', bottom:10, right:10, zIndex:2,
+            width:28, height:28, borderRadius:8, cursor:'zoom-in',
+            background:'rgba(0,0,0,0.40)', backdropFilter:'blur(4px)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
           </div>
-        </>
+        )}
+
+        {/* Arrows — only if multiple photos */}
+        {photos.length > 1 && (
+          <>
+            <button onClick={prev} style={{
+              position:'absolute', left:10, top:'50%', transform:'translateY(-50%)',
+              width:32, height:32, borderRadius:'50%', border:'none', cursor:'pointer',
+              background:'rgba(0,0,0,0.45)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
+            }}>‹</button>
+            <button onClick={next} style={{
+              position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
+              width:32, height:32, borderRadius:'50%', border:'none', cursor:'pointer',
+              background:'rgba(0,0,0,0.45)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
+            }}>›</button>
+            {/* Dot indicators */}
+            <div style={{position:'absolute', bottom:10, left:'50%', transform:'translateX(-50%)', display:'flex', gap:5}}>
+              {photos.map((_,i) => (
+                <div key={i} onClick={(e)=>{e.stopPropagation();setIdx(i);}} style={{
+                  width: i===idx ? 18 : 6, height:6, borderRadius:3, cursor:'pointer',
+                  background: i===idx ? '#fff' : 'rgba(255,255,255,0.5)',
+                  transition:'width .2s, background .2s',
+                }}/>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Fullscreen viewer */}
+      {viewerOpen && photos.length > 0 && (
+        <PhotoViewer
+          photos={photos}
+          startIdx={idx}
+          onClose={() => setViewerOpen(false)}
+        />
       )}
-    </div>
+    </>
   );
 }
 
