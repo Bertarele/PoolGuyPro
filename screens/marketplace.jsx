@@ -14,7 +14,7 @@ function timeAgo(iso, lang='en') {
 // ── Share bottom sheet ───────────────────────────────────────
 function ShareSheet({ item, lang, onClose, showToast }) {
   if (!item) return null;
-  const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyPro 👉 https://usapoolmarket.com`;
+  const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 https://usapoolmarket.com`;
   const enc = encodeURIComponent(txt);
   const btn = (label, icon, href, color, onClick) => (
     <a href={href||'#'} onClick={onClick||(e=>{if(!href){e.preventDefault();}})}
@@ -713,7 +713,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 }
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast } = ctx;
+  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat } = ctx;
 
   // Never show raw email as author — if author is an email, show the part before @
   const fmtAuthor = (a) => {
@@ -776,10 +776,23 @@ function MarketplaceScreen({ ctx }) {
     }
   };
 
-  const handleShare = (e, item) => {
+  const handleShare = async (e, item) => {
     if (e) e.stopPropagation();
-    const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyPro 👉 https://usapoolmarket.com`;
+    const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 https://usapoolmarket.com`;
     if (navigator.share) {
+      // Try to share with photo
+      const photoUrl = (item.photoUrls && item.photoUrls[0]) || item.photoUrl || null;
+      if (photoUrl) {
+        try {
+          const resp = await fetch(photoUrl);
+          const blob = await resp.blob();
+          const file = new File([blob], 'listing.jpg', { type: blob.type || 'image/jpeg' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ title: item.name, text: txt, files: [file] });
+            return;
+          }
+        } catch(err) { /* fall through to text-only */ }
+      }
       navigator.share({ title: item.name, text: txt, url: 'https://usapoolmarket.com' }).catch(()=>{});
     } else {
       setShareItem(item);
@@ -884,7 +897,7 @@ function MarketplaceScreen({ ctx }) {
             <IconButton dark onClick={() => openChat && openChat()}>
               {Icon.msg(20, '#fff')}
             </IconButton>
-            <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>
+            {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
           </div>
         }
       >

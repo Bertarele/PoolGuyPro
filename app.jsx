@@ -277,6 +277,9 @@ function App() {
   const [chatOpen,         setChatOpen]        = React.useState(false);
   const [chatConvoTarget,  setChatConvoTarget]  = React.useState(null); // string | { id, name }
   const [notifOpen,      setNotifOpen]      = React.useState(false);
+  // Unread badges — true = show red dot; cleared when overlay is opened
+  const [hasUnreadChat,  setHasUnreadChat]  = React.useState(true);
+  const [hasUnreadNotif, setHasUnreadNotif] = React.useState(true);
   const [payOpen,        setPayOpen]        = React.useState(false);
   const [postMenuOpen,   setPostMenuOpen]   = React.useState(false);
   const [postQPOpen,     setPostQPOpen]     = React.useState(false);
@@ -455,8 +458,9 @@ function App() {
     lang, setLang,
     regionsByDay, setRegionsByDay, county,
     goTab:              switchTab,
-    openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
-    openNotifications:  () => setNotifOpen(true),
+    openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); setHasUnreadChat(false); },
+    openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },
+    hasUnreadChat, hasUnreadNotif,
     openPaywall:        () => setPayOpen(true),
     openPostMenu:       () => setPostMenuOpen(true),
     openPost:           () => setPostQPOpen(true),

@@ -6,7 +6,8 @@ function WorkScreen({ ctx }) {
           openVacSheet, openHiringSheet, openTechSheet, openDayPicker, openSchedule,
           openPublicProfile, showToast,
           removeJob, removeTech, removeVacation,
-          liveJobs=[], liveTechs=[], liveVacations=[] } = ctx;
+          liveJobs=[], liveTechs=[], liveVacations=[],
+          hasUnreadChat } = ctx;
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState('hiring');
   const [vacTab, setVacTab] = React.useState('applied');
@@ -131,7 +132,7 @@ function WorkScreen({ ctx }) {
             <IconButton dark onClick={() => openChat && openChat()}>
               {Icon.msg(20, '#fff')}
             </IconButton>
-            <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>
+            {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
           </div>
         }
       >

@@ -1,7 +1,7 @@
 // quickpools.jsx — Google-Maps-style map with clickable pins + premium gate
 
 function QuickPoolsScreen({ ctx }) {
-  const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county } = ctx;
+  const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat } = ctx;
   const t = STRINGS[lang];
   const [selected, setSelected] = React.useState(null);
   const [highlighted, setHighlighted] = React.useState(null);
@@ -50,7 +50,7 @@ function QuickPoolsScreen({ ctx }) {
             <IconButton dark onClick={() => openChat && openChat()}>
               {Icon.msg(20, '#fff')}
             </IconButton>
-            <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>
+            {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
           </div>
         }
       >

@@ -4,7 +4,7 @@ function ProfileScreen({ ctx }) {
   const { lang, user, setUser, openPaywall, regions, openRegionEditor,
           openLanguagePicker, openApplicants, openVerification, openPushNotif, openFeedback,
           openEditProfile, onLogout, openHelp, openPrivacy,
-          darkMode, toggleDark, openChat } = ctx;
+          darkMode, toggleDark, openChat, hasUnreadChat } = ctx;
   const t = STRINGS[lang];
 
   const typeIcon = (type) => {
@@ -42,7 +42,7 @@ function ProfileScreen({ ctx }) {
             <IconButton dark onClick={() => openChat && openChat()}>
               {Icon.msg(20, '#fff')}
             </IconButton>
-            <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>
+            {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
           </div>
           {/* Dark mode toggle — always visible on mobile */}
           <button onClick={toggleDark} style={{
