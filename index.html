@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=117">
+  <link rel="stylesheet" href="tokens.css?v=118">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -41,6 +41,21 @@
 
     // Load saved session (now includes refresh_token as 'r')
     try { var _s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(_s&&_s.t) _tok=_s.t; } catch(e){}
+
+    // Check for OAuth callback (Google / provider redirect) — runs before anything else
+    try {
+      var _hash = window.location.hash;
+      if (_hash && _hash.indexOf('access_token=') !== -1) {
+        var _hp = new URLSearchParams(_hash.slice(1));
+        var _oat = _hp.get('access_token');
+        var _ort = _hp.get('refresh_token');
+        if (_oat) {
+          _tok = _oat;
+          window._pendingOAuth = { access_token: _oat, refresh_token: _ort };
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      }
+    } catch(e) {}
 
     // Persist session with both tokens
     function _saveSession(d) {
@@ -182,6 +197,20 @@
           return{data:{user:d.user||d},error:null};
         },
         getSession:async function(){
+          // Handle OAuth callback (Google sign-in redirect)
+          if (window._pendingOAuth) {
+            var pending = window._pendingOAuth;
+            window._pendingOAuth = null;
+            try {
+              var ru = await fetch(BASE+'/auth/v1/user', { headers:{'apikey':KEY,'Authorization':'Bearer '+pending.access_token} });
+              if (ru.ok) {
+                var ou = await ru.json();
+                _saveSession({ access_token: pending.access_token, refresh_token: pending.refresh_token, user: ou });
+                _startAutoRefresh();
+                return { data: { session: { user:{ id:ou.id, email:ou.email }, access_token: pending.access_token } } };
+              }
+            } catch(e) {}
+          }
           try{var s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(s&&s.u) return{data:{session:{user:s.u,access_token:s.t}}};}catch(e){}
           return{data:{session:null}};
         },
@@ -241,20 +270,20 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-  <script type="text/babel" src="ios-frame.jsx?v=117"></script>
-  <script type="text/babel" src="tweaks-panel.jsx?v=117"></script>
-  <script type="text/babel" src="components.jsx?v=117"></script>
-  <script type="text/babel" src="brand.jsx?v=117"></script>
-  <script type="text/babel" src="data.jsx?v=117"></script>
-  <script type="text/babel" src="screens/login.jsx?v=117"></script>
-  <script type="text/babel" src="screens/home.jsx?v=117"></script>
-  <script type="text/babel" src="screens/marketplace.jsx?v=117"></script>
-  <script type="text/babel" src="screens/quickpools.jsx?v=117"></script>
-  <script type="text/babel" src="screens/post.jsx?v=117"></script>
-  <script type="text/babel" src="screens/work.jsx?v=117"></script>
-  <script type="text/babel" src="screens/profile.jsx?v=117"></script>
-  <script type="text/babel" src="screens/overlays.jsx?v=117"></script>
-  <script type="text/babel" src="app.jsx?v=117"></script>
+  <script type="text/babel" src="ios-frame.jsx?v=118"></script>
+  <script type="text/babel" src="tweaks-panel.jsx?v=118"></script>
+  <script type="text/babel" src="components.jsx?v=118"></script>
+  <script type="text/babel" src="brand.jsx?v=118"></script>
+  <script type="text/babel" src="data.jsx?v=118"></script>
+  <script type="text/babel" src="screens/login.jsx?v=118"></script>
+  <script type="text/babel" src="screens/home.jsx?v=118"></script>
+  <script type="text/babel" src="screens/marketplace.jsx?v=118"></script>
+  <script type="text/babel" src="screens/quickpools.jsx?v=118"></script>
+  <script type="text/babel" src="screens/post.jsx?v=118"></script>
+  <script type="text/babel" src="screens/work.jsx?v=118"></script>
+  <script type="text/babel" src="screens/profile.jsx?v=118"></script>
+  <script type="text/babel" src="screens/overlays.jsx?v=118"></script>
+  <script type="text/babel" src="app.jsx?v=118"></script>
   <script>
     // Live reload: watch all JSX files for changes
     const _watchFiles = [

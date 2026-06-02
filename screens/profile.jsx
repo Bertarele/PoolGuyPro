@@ -132,6 +132,9 @@ function ProfileScreen({ ctx }) {
         {/* Subscription */}
         <SubscriptionCard user={user} setUser={setUser} openPaywall={openPaywall} t={t}/>
 
+        {/* Personal Info */}
+        <PersonalInfoCard user={user} setUser={setUser} lang={lang}/>
+
         {/* Regions */}
         <Section title={t.workRegions} action={t.edit} onAction={openRegionEditor}>
           <div className="pg-card" style={{padding:'12px 14px'}}>
@@ -263,6 +266,117 @@ function ProfileScreen({ ctx }) {
       </div>
     </div>
     </div>
+  );
+}
+
+function PersonalInfoCard({ user, setUser, lang }) {
+  const [editing,  setEditing]  = React.useState(false);
+  const [phone,    setPhone]    = React.useState(user.phone || '');
+  const [saving,   setSaving]   = React.useState(false);
+
+  const fmtPhone = (val) => {
+    const digits = val.replace(/\D/g, '').slice(0, 10);
+    if (digits.length >= 7) return '(' + digits.slice(0,3) + ') ' + digits.slice(3,6) + '-' + digits.slice(6);
+    if (digits.length >= 4) return '(' + digits.slice(0,3) + ') ' + digits.slice(3);
+    if (digits.length > 0)  return '(' + digits;
+    return digits;
+  };
+
+  const save = async () => {
+    if (!user.uid) { setEditing(false); return; }
+    setSaving(true);
+    await window.sb.from('profiles').update({ phone: phone.trim() }).eq('id', user.uid);
+    setUser(u => ({ ...u, phone: phone.trim() }));
+    setSaving(false);
+    setEditing(false);
+  };
+
+  const rowStyle = (last) => ({
+    display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
+    borderBottom: last ? 'none' : '0.5px solid var(--pg-ink-100)',
+  });
+  const iconBox = {
+    width:32, height:32, borderRadius:8, background:'var(--pg-blue-100)',
+    display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+  };
+
+  return (
+    <section>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
+        <h3 style={{margin:0, fontWeight:700, color:'var(--pg-ink-700)', letterSpacing:'-0.01em', textTransform:'uppercase', fontSize:11}}>
+          {lang==='pt'?'INFO PESSOAL':lang==='es'?'INFO PERSONAL':'PERSONAL INFO'}
+        </h3>
+        {!editing && (
+          <button onClick={() => { setPhone(user.phone||''); setEditing(true); }}
+            style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:13, fontWeight:600, cursor:'pointer'}}>
+            {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
+          </button>
+        )}
+      </div>
+      <div className="pg-card" style={{padding:0}}>
+        {/* Email — read only */}
+        <div style={rowStyle(false)}>
+          <div style={iconBox}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:1}}>EMAIL</div>
+            <div style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-900)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+              {user.email || '—'}
+            </div>
+          </div>
+          <span style={{fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:6, background:'var(--pg-ink-100)', color:'var(--pg-ink-500)'}}>
+            {lang==='pt'?'fixo':lang==='es'?'fijo':'fixed'}
+          </span>
+        </div>
+
+        {/* Phone — editable */}
+        <div style={rowStyle(true)}>
+          <div style={iconBox}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2" strokeLinecap="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.29 6.29l.94-.94a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </div>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:2}}>
+              {lang==='pt'?'TELEFONE':lang==='es'?'TELÉFONO':'PHONE'}
+            </div>
+            {editing ? (
+              <input
+                className="pg-field"
+                type="tel"
+                value={phone}
+                onChange={e => setPhone(fmtPhone(e.target.value))}
+                placeholder="(954) 000-0000"
+                style={{height:36, fontSize:13, width:'100%', padding:'6px 10px'}}
+                autoFocus
+              />
+            ) : (
+              <div style={{fontSize:13, fontWeight:500, color: user.phone ? 'var(--pg-ink-900)' : 'var(--pg-ink-400)'}}>
+                {user.phone || (lang==='pt'?'Adicionar telefone':lang==='es'?'Agregar teléfono':'Add phone number')}
+              </div>
+            )}
+          </div>
+          {editing && (
+            <div style={{display:'flex', gap:6, flexShrink:0, marginLeft:8}}>
+              <button onClick={() => setEditing(false)} style={{
+                height:32, padding:'0 10px', borderRadius:8, border:'1px solid var(--pg-ink-200)',
+                background:'transparent', color:'var(--pg-ink-500)', fontSize:12, fontWeight:600,
+                cursor:'pointer', fontFamily:'inherit',
+              }}>{lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}</button>
+              <button onClick={save} disabled={saving} style={{
+                height:32, padding:'0 12px', borderRadius:8, border:'none',
+                background:'var(--pg-blue-500)', color:'#fff', fontSize:12, fontWeight:700,
+                cursor:'pointer', fontFamily:'inherit', opacity: saving ? 0.7 : 1,
+              }}>{saving ? '…' : (lang==='pt'?'Salvar':lang==='es'?'Guardar':'Save')}</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
