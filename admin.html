@@ -523,17 +523,16 @@ function AdminApp({ adminUser, onLogout }) {
     let error = null;
 
     if (isUser) {
-      // Deleta da auth.users via RPC (cascateia para profiles automaticamente)
-      const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-      const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
-      const r = await fetch(BASE + '/rest/v1/rpc/admin_delete_user', {
-        method: 'POST',
-        headers: { 'apikey': KEY, 'Authorization': 'Bearer ' + (window._adminGetTok()||KEY), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: row.id }),
+      // Admin Auth API — deleta user + invalida todas as sessões imediatamente
+      const BASE_AUTH = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+      const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
+      const r = await fetch(BASE_AUTH + '/auth/v1/admin/users/' + row.id, {
+        method: 'DELETE',
+        headers: { 'apikey': SRK, 'Authorization': 'Bearer ' + SRK },
       });
       if (!r.ok) {
         let e = {}; try { e = await r.json(); } catch(x) {}
-        error = { message: e.message || e.hint || 'Erro ao excluir conta' };
+        error = { message: e.message || e.msg || 'Erro ao excluir conta (status ' + r.status + ')' };
       }
     } else {
       const res = await window.sb.from(table).delete().eq('id', row.id);
