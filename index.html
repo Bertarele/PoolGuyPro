@@ -124,9 +124,15 @@
     function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
 
     function makeBuilder(table){
-      var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null;
+      var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null, upsertConflict='';
       var run=async function(retried){
         var url=BASE+'/rest/v1/'+table, h=hdrs();
+        if(op==='upsert'){
+          var pref='resolution=merge-duplicates'+(upsertConflict?',on_conflict='+upsertConflict:'');
+          var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal,'+pref}),body:JSON.stringify(body)});
+          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Upsert failed '+r.status}};}
+          return{data:null,error:null};
+        }
         if(op==='insert'){
           var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
           if(!r.ok){
@@ -176,9 +182,12 @@
         select:function(c){sel=c||'*';return b;},
         eq:function(c,v){filters.push(c+'=eq.'+encodeURIComponent(v));return b;},
         neq:function(c,v){filters.push(c+'=neq.'+encodeURIComponent(v));return b;},
+        or:function(q){filters.push('or=('+q+')');return b;},
         order:function(c,opts){orderCol=c;orderAsc=opts?opts.ascending!==false:true;return b;},
+        limit:function(n){filters.push('limit='+n);return b;},
         single:function(){isSingle=true;return b;},
         insert:function(row){op='insert';body=row;return b;},
+        upsert:function(row,opts){op='upsert';body=row;upsertConflict=(opts&&opts.onConflict)||'';return b;},
         update:function(upd){op='update';body=upd;return b;},
         delete:function(){op='delete';return b;},
         then:function(res,rej){return run().then(res,rej);},
@@ -188,6 +197,14 @@
     }
 
     window.sb = {
+      rpc:async function(fn,params){
+        var h={'apikey':KEY,'Content-Type':'application/json'};
+        if(_tok) h['Authorization']='Bearer '+_tok;
+        var r=await fetch(BASE+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(params||{})});
+        var d; try{d=await r.json();}catch(e){d=null;}
+        if(!r.ok) return{data:null,error:{message:(d&&d.message)||('RPC failed '+r.status)}};
+        return{data:d,error:null};
+      },
       auth:{
         signInWithPassword:async function(creds){
           var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});

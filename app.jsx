@@ -273,13 +273,30 @@ function App() {
   });
   const [county] = React.useState('Broward');
 
+  // ── Real unread chat count from Supabase ─────────────────────
+  const recheckUnread = React.useCallback(async () => {
+    if (!window.sb) return;
+    try {
+      const { data } = await window.sb.rpc('get_my_unread_count', {});
+      setHasUnreadChat(typeof data === 'number' ? data > 0 : false);
+    } catch(e) {}
+  }, []);
+
+  // Poll unread every 30s while logged in
+  React.useEffect(() => {
+    if (!isLoggedIn) return;
+    recheckUnread();
+    const timer = setInterval(recheckUnread, 30000);
+    return () => clearInterval(timer);
+  }, [isLoggedIn, recheckUnread]);
+
   // Overlays
   const [chatOpen,         setChatOpen]        = React.useState(false);
   const [chatConvoTarget,  setChatConvoTarget]  = React.useState(null); // string | { id, name }
   const [notifOpen,      setNotifOpen]      = React.useState(false);
-  // Unread badges — true = show red dot; cleared when overlay is opened
-  const [hasUnreadChat,  setHasUnreadChat]  = React.useState(true);
-  const [hasUnreadNotif, setHasUnreadNotif] = React.useState(true);
+  // Unread badges — derived from real Supabase data
+  const [hasUnreadChat,  setHasUnreadChat]  = React.useState(false);
+  const [hasUnreadNotif, setHasUnreadNotif] = React.useState(true); // notifications still mock
   const [payOpen,        setPayOpen]        = React.useState(false);
   const [postMenuOpen,   setPostMenuOpen]   = React.useState(false);
   const [postQPOpen,     setPostQPOpen]     = React.useState(false);
@@ -458,7 +475,7 @@ function App() {
     lang, setLang,
     regionsByDay, setRegionsByDay, county,
     goTab:              switchTab,
-    openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); setHasUnreadChat(false); },
+    openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },
     hasUnreadChat, hasUnreadNotif,
     openPaywall:        () => setPayOpen(true),
@@ -549,8 +566,9 @@ function App() {
   const OverlayBundle = () => (
     <>
       <ChatSheet open={chatOpen}
-        onClose={()=>{ setChatOpen(false); setChatConvoTarget(null); }}
-        lang={lang} initialConvo={initialConvo} currentUser={user}/>
+        onClose={()=>{ setChatOpen(false); setChatConvoTarget(null); recheckUnread(); }}
+        lang={lang} initialConvo={initialConvo} currentUser={user}
+        onUnreadChange={recheckUnread}/>
       <NotificationsSheet open={notifOpen} onClose={()=>setNotifOpen(false)} lang={lang}/>
       <PaywallSheet open={payOpen} onClose={()=>setPayOpen(false)} setUser={ctx.setUser} lang={lang}/>
       <PostMenuSheet open={postMenuOpen} onClose={()=>setPostMenuOpen(false)}
