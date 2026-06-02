@@ -221,12 +221,14 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
 
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
 // canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
-function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, showToast, onDeleted, isSaved, onToggleSave, onShare }) {
+function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, showToast, onDeleted, isSaved, onToggleSave, onShare, liveMarket=[], onOpenListing }) {
   if (!item) return null;
   const [deleting,      setDeleting]     = React.useState(false);
   const [imgIdx,        setImgIdx]       = React.useState(0);
   const [viewerOpen,    setViewerOpen]   = React.useState(false);
   const [authorPhotoUrl,setAuthorPhotoUrl] = React.useState(null);
+  const [mapCoords,     setMapCoords]    = React.useState(null);
+  const [mapLoading,    setMapLoading]   = React.useState(false);
 
   // Fetch author profile photo when listing opens
   React.useEffect(() => {
@@ -236,6 +238,21 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       .then(({ data }) => { if (data?.photo_url) setAuthorPhotoUrl(data.photo_url); })
       .catch(() => {});
   }, [item?.author_id]);
+
+  // Geocode item.loc via Nominatim (OpenStreetMap — free, no API key)
+  React.useEffect(() => {
+    setMapCoords(null);
+    if (!item?.loc) return;
+    setMapLoading(true);
+    const q = encodeURIComponent(item.loc + (item.loc.toLowerCase().includes('fl') ? '' : ', FL'));
+    fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&email=feedback@usapoolmarket.com`)
+      .then(r => r.json())
+      .then(data => {
+        if (data && data[0]) setMapCoords({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
+      })
+      .catch(() => {})
+      .finally(() => setMapLoading(false));
+  }, [item?.loc]);
 
   const allPhotos = (item.photoUrls && item.photoUrls.length > 0) ? item.photoUrls : (item.photoUrl ? [item.photoUrl] : []);
   const periodSfx = item.type === 'rent'
@@ -506,6 +523,105 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         </div>
 
       </div>
+
+      {/* ── Location map ── */}
+      {item.loc && (
+        <div style={{padding:'0 18px 20px'}}>
+          <div className="pg-divider" style={{margin:'18px 0 16px'}}/>
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12}}>
+            <div style={{display:'flex', alignItems:'center', gap:6}}>
+              {Icon.pin(14,'var(--pg-ink-500)')}
+              <span style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-700)'}}>
+                {lang==='pt'?'Localização':lang==='es'?'Ubicación':'Location'}
+              </span>
+            </div>
+            <a href={`https://www.google.com/maps/search/${encodeURIComponent((item.loc||'')+', FL')}`}
+              target="_blank" rel="noreferrer"
+              style={{fontSize:12, fontWeight:600, color:'var(--pg-blue-500)', textDecoration:'none', display:'flex', alignItems:'center', gap:4}}>
+              {lang==='pt'?'Abrir no Maps':lang==='es'?'Abrir en Maps':'Open in Maps'} ↗
+            </a>
+          </div>
+          {mapCoords ? (
+            <div style={{borderRadius:14, overflow:'hidden', border:'1px solid var(--pg-ink-200)', height:180, position:'relative'}}>
+              <iframe
+                title="listing-location"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoords.lon-0.05},${mapCoords.lat-0.04},${mapCoords.lon+0.05},${mapCoords.lat+0.04}&layer=mapnik&marker=${mapCoords.lat},${mapCoords.lon}`}
+                style={{width:'100%', height:'100%', border:'none', display:'block'}}
+                loading="lazy"
+              />
+              {/* Location label overlay */}
+              <div style={{position:'absolute', bottom:10, left:10,
+                background:'rgba(0,0,0,0.60)', backdropFilter:'blur(6px)',
+                borderRadius:999, padding:'4px 10px',
+                fontSize:11, fontWeight:600, color:'#fff', display:'flex', alignItems:'center', gap:5}}>
+                {Icon.pin(10,'#fff')} {item.loc}
+              </div>
+            </div>
+          ) : mapLoading ? (
+            <div style={{height:180, borderRadius:14, background:'var(--pg-ink-100)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:'var(--pg-ink-400)'}}>
+              ⏳ {lang==='pt'?'Carregando mapa…':lang==='es'?'Cargando mapa…':'Loading map…'}
+            </div>
+          ) : (
+            <a href={`https://www.google.com/maps/search/${encodeURIComponent((item.loc||'')+', FL')}`}
+              target="_blank" rel="noreferrer"
+              style={{display:'flex', alignItems:'center', gap:10, padding:'14px 16px', borderRadius:12,
+                background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-200)', textDecoration:'none'}}>
+              {Icon.pin(16,'var(--pg-blue-500)')}
+              <span style={{fontSize:13, fontWeight:600, color:'var(--pg-blue-500)'}}>{item.loc}, FL</span>
+              <span style={{marginLeft:'auto', fontSize:11, color:'var(--pg-ink-400)'}}>↗</span>
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* ── More from this seller ── */}
+      {(() => {
+        const others = liveMarket.filter(m =>
+          m.author_id && m.author_id === item.author_id &&
+          m._id !== item._id &&
+          (m.status === 'approved' || m.status === 'active')
+        );
+        if (others.length === 0) return null;
+        const sellerName = authorDisplay;
+        return (
+          <div style={{paddingBottom:36}}>
+            <div className="pg-divider" style={{marginBottom:16}}/>
+            <div style={{padding:'0 18px 12px', fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>
+              {lang==='pt'?`Mais de ${sellerName}`:lang==='es'?`Más de ${sellerName}`:`More from ${sellerName}`}
+            </div>
+            <div className="pg-scroll-x" style={{padding:'0 18px', display:'flex', gap:12, paddingBottom:4}}>
+              {others.slice(0,8).map(m => (
+                <button key={m._id} onClick={()=>onOpenListing&&onOpenListing(m)}
+                  className="pg-press"
+                  style={{
+                    flexShrink:0, width:148, padding:0, border:'1px solid var(--pg-ink-200)',
+                    borderRadius:14, background:'var(--pg-white)', cursor:'pointer',
+                    textAlign:'left', fontFamily:'inherit', overflow:'hidden',
+                    display:'flex', flexDirection:'column', boxShadow:'var(--pg-shadow-1)',
+                  }}>
+                  <div style={{height:96, background:'var(--pg-ink-100)', overflow:'hidden', flexShrink:0}}>
+                    {(m.photoUrls && m.photoUrls[0]) || m.photoUrl
+                      ? <img src={(m.photoUrls&&m.photoUrls[0])||m.photoUrl} alt={m.name}
+                          style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                      : <EquipImg category={m.cat||'Tools'} height={96}/>
+                    }
+                  </div>
+                  <div style={{padding:'8px 10px 10px'}}>
+                    <div style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-900)', lineHeight:1.3,
+                      overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{m.name}</div>
+                    <div style={{fontSize:13, fontWeight:700, color:'var(--pg-blue-500)', marginTop:3}}>
+                      {m.priceMode==='neg'
+                        ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
+                        : `$${m.price}`}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Fullscreen photo viewer */}
       {viewerOpen && allPhotos.length > 0 && (
@@ -1670,6 +1786,8 @@ function MarketplaceScreen({ ctx }) {
             isSaved={savedIds.has(viewListing._id)}
             onToggleSave={() => toggleSave(null, viewListing._id)}
             onShare={() => handleShare(null, viewListing)}
+            liveMarket={liveMarket}
+            onOpenListing={openListing}
             onDeleted={(id) => {
               closeListing();
               setSavedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
