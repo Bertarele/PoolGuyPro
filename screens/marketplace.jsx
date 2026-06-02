@@ -256,7 +256,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const handleAuthorClick = async () => {
     if (!openPublicProfile) return;
     const base = {
-      name: authorDisplay,
+      uid:    item.author_id || null,
+      name:   authorDisplay,
       rating: undefined,   // undefined = no ratings yet (not 4.8 default)
       reviews: 0,
       jobs: 0,

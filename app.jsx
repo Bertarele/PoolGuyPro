@@ -599,7 +599,7 @@ function App() {
         onClose={()=>setApplicantsPost(null)}
         post={applicantsPost}
         lang={lang}
-        onChat={(name)=>{ setApplicantsPost(null); setChatConvoName(name); setChatOpen(true); }}
+        onChat={(name)=>{ setApplicantsPost(null); setChatConvoTarget(name); setChatOpen(true); }}
       />
       <VerificationSheet open={verifyOpen} onClose={()=>setVerifyOpen(false)} lang={lang}/>
       <WalletSheet open={walletOpen} onClose={()=>setWalletOpen(false)} lang={lang}/>
@@ -653,7 +653,7 @@ function App() {
         onClose={()=>setPublicProfileUser(null)}
         profile={publicProfileUser}
         lang={lang}
-        onChat={(name)=>{ setPublicProfileUser(null); setChatConvoName(name); setChatOpen(true); }}
+        onChat={(target)=>{ setPublicProfileUser(null); setChatConvoTarget(target); setChatOpen(true); }}
       />
       <HelpSheet open={helpOpen} onClose={()=>setHelpOpen(false)} lang={lang}/>
       <PrivacySheet open={privacyOpen} onClose={()=>setPrivacyOpen(false)} lang={lang}/>
