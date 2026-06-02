@@ -162,7 +162,11 @@ function App() {
   const screenRef = React.useRef(null);
 
   const switchTab = React.useCallback((newTab) => {
-    setTab(newTab);
+    setTab(prev => {
+      // Double-tap Home → reload page
+      if (prev === 'home' && newTab === 'home') { window.location.reload(); return prev; }
+      return newTab;
+    });
     // Scroll to top whenever a new tab is selected
     requestAnimationFrame(() => {
       if (screenRef.current) screenRef.current.scrollTop = 0;

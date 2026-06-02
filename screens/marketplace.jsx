@@ -2094,19 +2094,19 @@ function _PhotoPickerUnused({ photos, onAdd, onRemove, max=5, lang, title }) {
           zIndex:9999, display:'flex', alignItems:'flex-end', justifyContent:'center',
         }}>
           <div onClick={e=>e.stopPropagation()} style={{
-            background:'#fff', borderRadius:'20px 20px 0 0',
+            background:'var(--pg-white)', borderRadius:'20px 20px 0 0',
             padding:'16px 16px 32px', width:'100%', maxWidth:480,
             boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',
           }}>
             {/* Grabber */}
-            <div style={{width:40,height:4,borderRadius:2,background:'#e0e0e0',margin:'0 auto 18px'}}/>
+            <div style={{width:40,height:4,borderRadius:2,background:'var(--pg-ink-200)',margin:'0 auto 18px'}}/>
             <div style={{fontWeight:700, fontSize:16, textAlign:'center', marginBottom:18, color:'var(--pg-ink-900)'}}>
               {lang==='pt'?'Adicionar foto':lang==='es'?'Agregar foto':'Add photo'}
             </div>
             {/* Camera */}
             <button onClick={()=>camRef.current && camRef.current.click()} style={{
               width:'100%', padding:'15px 18px', marginBottom:10, borderRadius:14,
-              border:'1.5px solid var(--pg-ink-200)', background:'#fff',
+              border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)',
               display:'flex', alignItems:'center', gap:14, cursor:'pointer', fontFamily:'inherit',
             }}>
               <span style={{fontSize:28}}>📷</span>
@@ -2114,7 +2114,7 @@ function _PhotoPickerUnused({ photos, onAdd, onRemove, max=5, lang, title }) {
                 <div style={{fontWeight:700, fontSize:15, color:'var(--pg-ink-900)'}}>
                   {lang==='pt'?'Tirar foto':lang==='es'?'Tomar foto':'Take photo'}
                 </div>
-                <div style={{fontSize:12, color:'var(--pg-ink-400)', marginTop:2}}>
+                <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:2}}>
                   {lang==='pt'?'Usar câmera do celular':lang==='es'?'Usar cámara del celular':'Use your phone camera'}
                 </div>
               </div>
@@ -2122,7 +2122,7 @@ function _PhotoPickerUnused({ photos, onAdd, onRemove, max=5, lang, title }) {
             {/* Gallery */}
             <button onClick={()=>galRef.current && galRef.current.click()} style={{
               width:'100%', padding:'15px 18px', marginBottom:16, borderRadius:14,
-              border:'1.5px solid var(--pg-ink-200)', background:'#fff',
+              border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)',
               display:'flex', alignItems:'center', gap:14, cursor:'pointer', fontFamily:'inherit',
             }}>
               <span style={{fontSize:28}}>🖼️</span>
@@ -2130,7 +2130,7 @@ function _PhotoPickerUnused({ photos, onAdd, onRemove, max=5, lang, title }) {
                 <div style={{fontWeight:700, fontSize:15, color:'var(--pg-ink-900)'}}>
                   {lang==='pt'?'Escolher da galeria':lang==='es'?'Elegir de la galería':'Choose from gallery'}
                 </div>
-                <div style={{fontSize:12, color:'var(--pg-ink-400)', marginTop:2}}>
+                <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:2}}>
                   {lang==='pt'?'Acessar fotos salvas':lang==='es'?'Acceder a fotos guardadas':'Access saved photos'}
                 </div>
               </div>
@@ -2813,7 +2813,7 @@ function CityAutocomplete({ value, onChange, lang }) {
     ? ReactDOM.createPortal(
         <div style={{
           position:'absolute', top: dropPos.top, left: dropPos.left, width: dropPos.width,
-          zIndex: 2000, background:'#fff', borderRadius:12, padding:6,
+          zIndex: 2000, background:'var(--pg-white)', borderRadius:12, padding:6,
           border:'0.5px solid var(--pg-ink-200)',
           boxShadow:'0 8px 24px rgba(15,30,60,0.14)',
         }}>
