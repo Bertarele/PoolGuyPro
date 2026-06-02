@@ -236,6 +236,12 @@ function App() {
   // ── Boot sequence: getSession → refresh token → loadProfile → signal ready ──
   // Must complete BEFORE data fetch runs (authReady gates it)
   React.useEffect(() => {
+    // Force logout hook — called by Supabase client when token refresh fails (deleted account)
+    window.__pgForceLogout = () => {
+      setIsLoggedIn(false);
+      setTab('home');
+      setUser(u => ({ ...u, name:'', email:'', uid:'', role:'user' }));
+    };
     if (!window.sb) { setAuthReady(true); return; }
     (async () => {
       try {

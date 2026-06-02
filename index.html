@@ -79,11 +79,17 @@
           headers: { 'apikey': KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({ refresh_token: stored.r })
         });
-        if (!resp.ok) return false;
+        if (!resp.ok) {
+          // Refresh failed — conta deletada ou sessão inválida → limpa sessão e força logout
+          _tok = null;
+          try { localStorage.removeItem('pg_s'); } catch(e) {}
+          if (window.__pgForceLogout) window.__pgForceLogout();
+          console.warn('[PoolGuyPro] Token refresh failed — session cleared');
+          return false;
+        }
         var d = await resp.json();
         if (!d.access_token) return false;
         _tok = d.access_token;
-        // Preserve user info, update tokens
         try {
           localStorage.setItem('pg_s', JSON.stringify({
             t: d.access_token,
@@ -228,11 +234,11 @@
       removeChannel:function(){}
     };
 
-    // Auto-refresh: renew the token every 50 minutes while the tab is open
+    // Auto-refresh: renew the token every 4 minutes (JWT expires in 5 min)
     var _refreshTimer = null;
     function _startAutoRefresh() {
       _stopAutoRefresh();
-      _refreshTimer = setInterval(function(){ _refreshOnce(); }, 50 * 60 * 1000);
+      _refreshTimer = setInterval(function(){ _refreshOnce(); }, 4 * 60 * 1000);
     }
     function _stopAutoRefresh() {
       if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
