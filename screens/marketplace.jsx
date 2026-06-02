@@ -222,17 +222,20 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
 // canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
 function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, showToast, onDeleted, isSaved, onToggleSave, onShare }) {
   if (!item) return null;
-  const [deleting, setDeleting] = React.useState(false);
+  const [deleting,    setDeleting]   = React.useState(false);
+  const [imgIdx,      setImgIdx]     = React.useState(0);
+  const [viewerOpen,  setViewerOpen] = React.useState(false);
 
   const allPhotos = (item.photoUrls && item.photoUrls.length > 0) ? item.photoUrls : (item.photoUrl ? [item.photoUrl] : []);
   const periodSfx = item.type === 'rent'
     ? (item.rentPeriod === 'week' ? (lang==='pt'?'/sem':'/wk') : item.rentPeriod === 'month' ? (lang==='pt'?'/mês':'/mo') : (lang==='pt'?'/dia':'/day'))
     : '';
 
-  const authorInitial = (item.author || 'U')[0].toUpperCase();
   const authorDisplay = item.author
     ? (item.author.includes('@') ? item.author.split('@')[0] : item.author)
     : 'Unknown';
+  const locationLabel = [item.loc, item.cat].filter(Boolean).join(' · ');
+  const timeAgoLabel  = item.createdAt ? timeAgo(item.createdAt, lang) : '';
 
   const handleContact = () => {
     if (openChat) openChat(item.author_id ? { id: item.author_id, name: item.author || 'Seller' } : (item.author || 'Seller'));
@@ -255,26 +258,74 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
 
   return (
     <div style={{padding:'0 0 36px'}}>
-      {/* Photo carousel */}
-      <div style={{position:'relative'}}>
-        <PhotoCarousel urls={allPhotos} fallbackCat={item.cat||'Tools'} height={240}/>
-        {/* Type badge */}
-        <span style={{position:'absolute', top:14, left:16, zIndex:2,
+
+      {/* ── Photo section — same style as ItemPhotoCarousel ── */}
+      <div style={{position:'relative', height:240, overflow:'hidden', background:'#d6dfe8', flexShrink:0}}>
+        {allPhotos.length > 0
+          ? <img
+              src={allPhotos[imgIdx]} alt={item.name}
+              onClick={() => setViewerOpen(true)}
+              style={{width:'100%', height:'100%', objectFit:'cover', display:'block', cursor: allPhotos.length > 1 ? 'default' : 'zoom-in'}}
+            />
+          : <EquipImg category={item.cat||'Tools'} height={240}/>
+        }
+
+        {/* Type badge — top left */}
+        <span style={{position:'absolute', top:12, left:12, zIndex:2,
           fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:8,
           background: item.type==='rent' ? 'rgba(14,186,199,0.92)' : 'rgba(59,130,246,0.92)',
           color:'#fff', letterSpacing:'0.06em', backdropFilter:'blur(4px)', textTransform:'uppercase'}}>
           {item.type==='rent' ? (lang==='pt'?'ALUGUEL':lang==='es'?'ALQUILER':'RENTAL')
            : (lang==='pt'?'VENDA':lang==='es'?'VENTA':'FOR SALE')}
         </span>
-        {item.cat && (
-          <span style={{position:'absolute', top:14, right:16, zIndex:2,
-            fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:8,
-            background:'rgba(0,0,0,0.55)', color:'#fff', letterSpacing:'0.06em',
-            backdropFilter:'blur(4px)', textTransform:'uppercase'}}>{item.cat}</span>
+
+        {/* Counter badge — top right (only if multiple photos) */}
+        {allPhotos.length > 1 && (
+          <div style={{position:'absolute', top:12, right:12, zIndex:2,
+            background:'rgba(0,0,0,0.45)', borderRadius:999,
+            padding:'3px 10px', fontSize:11, fontWeight:700, color:'#fff'}}>
+            {imgIdx + 1} / {allPhotos.length}
+          </div>
         )}
-        {/* Admin badge */}
+
+        {/* Dots — bottom center */}
+        {allPhotos.length > 1 && (
+          <div style={{position:'absolute', bottom:10, left:0, right:0,
+            display:'flex', justifyContent:'center', gap:5, zIndex:2}}>
+            {allPhotos.map((_,i) => (
+              <button key={i} onClick={()=>setImgIdx(i)} style={{
+                width: i===imgIdx ? 18 : 6, height:6, borderRadius:3,
+                background: i===imgIdx ? '#fff' : 'rgba(255,255,255,0.50)',
+                border:'none', cursor:'pointer', padding:0, transition:'all .18s ease',
+              }}/>
+            ))}
+          </div>
+        )}
+
+        {/* Prev arrow */}
+        {imgIdx > 0 && (
+          <button onClick={()=>setImgIdx(i=>i-1)} style={{
+            position:'absolute', left:10, top:'50%', transform:'translateY(-50%)',
+            width:34, height:34, borderRadius:'50%', background:'rgba(255,255,255,0.88)',
+            border:'none', cursor:'pointer', fontSize:20, fontWeight:700, lineHeight:1,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:'0 2px 8px rgba(0,0,0,0.15)', zIndex:2,
+          }}>‹</button>
+        )}
+        {/* Next arrow */}
+        {imgIdx < allPhotos.length - 1 && (
+          <button onClick={()=>setImgIdx(i=>i+1)} style={{
+            position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
+            width:34, height:34, borderRadius:'50%', background:'rgba(255,255,255,0.88)',
+            border:'none', cursor:'pointer', fontSize:20, fontWeight:700, lineHeight:1,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:'0 2px 8px rgba(0,0,0,0.15)', zIndex:2,
+          }}>›</button>
+        )}
+
+        {/* Admin badge — bottom left */}
         {isAdmin && (
-          <span style={{position:'absolute', bottom:14, left:16, zIndex:2,
+          <span style={{position:'absolute', bottom:14, left:12, zIndex:2,
             fontSize:9.5, fontWeight:700, padding:'3px 9px', borderRadius:6,
             background:'rgba(239,68,68,0.85)', color:'#fff', letterSpacing:'0.05em'}}>
             🛡 ADMIN
@@ -282,78 +333,82 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
         )}
       </div>
 
-      {/* Content */}
-      <div style={{padding:'18px 20px 0'}}>
-        {/* Title + price */}
-        <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:14}}>
-          <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, letterSpacing:'-0.02em', lineHeight:1.2, color:'var(--pg-ink-900)', flex:1, minWidth:0}}>
-            {item.name}
-          </h2>
-          <div style={{textAlign:'right', flexShrink:0}}>
-            {item.priceMode === 'neg' ? (
-              <span style={{fontSize:13, fontWeight:700, padding:'5px 12px', borderRadius:999,
-                background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', border:'1px solid var(--pg-blue-100)', whiteSpace:'nowrap'}}>
-                🤝 {lang==='pt'?'Negociável':'Negotiable'}
+      {/* ── Content ── */}
+      <div style={{padding:'14px 18px 0'}}>
+
+        {/* Title */}
+        <h2 style={{margin:'0 0 8px', fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.02em', lineHeight:1.2, color:'var(--pg-ink-900)'}}>
+          {item.name}
+        </h2>
+
+        {/* Price + condition badge */}
+        <div style={{display:'flex', alignItems:'baseline', gap:6, marginTop:4}}>
+          {item.priceMode === 'neg' ? (
+            <span style={{fontSize:14, fontWeight:700, padding:'4px 13px', borderRadius:999,
+              background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', border:'1px solid var(--pg-blue-100)'}}>
+              🤝 {lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}
+            </span>
+          ) : (
+            <>
+              <span style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
+                ${item.price}{periodSfx && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}
               </span>
-            ) : (
-              <div>
-                <div style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:800, color:'var(--pg-blue-500)', letterSpacing:'-0.03em', lineHeight:1}}>
-                  ${item.price}
-                </div>
-                {periodSfx && <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:2, textAlign:'right'}}>{periodSfx}</div>}
-              </div>
-            )}
+              {item.condition && (
+                <span className="pg-chip" style={{marginLeft:6, padding:'2px 9px', fontSize:11, background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', borderColor:'transparent'}}>
+                  {item.condition}
+                </span>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Location · Category */}
+        {locationLabel ? (
+          <div style={{display:'flex', alignItems:'center', gap:5, marginTop:8, fontSize:13, color:'var(--pg-ink-700)'}}>
+            {Icon.pin(14,'var(--pg-ink-700)')} {locationLabel}
           </div>
-        </div>
+        ) : null}
 
-        {/* Condition / Location pills */}
-        <div style={{display:'flex', flexWrap:'wrap', gap:7, marginBottom:14}}>
-          {item.condition && <span style={{fontSize:12, fontWeight:600, padding:'4px 11px', borderRadius:999, background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', border:'1px solid var(--pg-blue-100)'}}>{item.condition}</span>}
-          {item.loc && <span style={{fontSize:12, fontWeight:600, padding:'4px 11px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>📍 {item.loc}</span>}
-        </div>
-
-        {/* Description */}
-        {item.description && (
-          <div style={{marginBottom:16, padding:'12px 14px', background:'var(--pg-ink-50)', borderRadius:12, border:'1px solid var(--pg-ink-150,var(--pg-ink-200))'}}>
-            <div style={{fontSize:10.5, fontWeight:700, color:'var(--pg-ink-400)', letterSpacing:'0.07em', textTransform:'uppercase', marginBottom:5}}>
-              {lang==='pt'?'DESCRIÇÃO':lang==='es'?'DESCRIPCIÓN':'DESCRIPTION'}
+        {/* Divider + Author row */}
+        <div className="pg-divider" style={{margin:'14px 0'}}/>
+        <div style={{display:'flex', alignItems:'center', gap:12}}>
+          <Avatar name={authorDisplay} size={44}/>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
+            <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:1}}>
+              {lang==='pt'?'✓ Membro verificado':lang==='es'?'✓ Miembro verificado':'✓ Verified member'}
+              {timeAgoLabel ? <span style={{color:'var(--pg-ink-400)'}}> · {timeAgoLabel}</span> : null}
             </div>
-            <div style={{fontSize:13.5, color:'var(--pg-ink-700)', lineHeight:1.55}}>{item.description}</div>
+          </div>
+          <span className="pg-chip pg-chip-aqua" style={{fontSize:11, flexShrink:0}}>Pool Guy</span>
+        </div>
+
+        {/* Description — plain text */}
+        {item.description ? (
+          <div style={{marginTop:14, fontSize:14, lineHeight:1.55, color:'var(--pg-ink-700)'}}>
+            {item.description}
+          </div>
+        ) : null}
+
+        {/* Admin info strip */}
+        {canDelete && (
+          <div style={{marginTop:14, padding:'9px 13px', borderRadius:10, background:'#FEF2F2', border:'1px solid #FCA5A5',
+            display:'flex', alignItems:'center', gap:8}}>
+            <span style={{fontSize:14}}>🛡</span>
+            <span style={{fontSize:12, color:'#DC2626', fontWeight:500}}>
+              {lang==='pt'?'Você está vendo este anúncio como admin. O botão 🗑️ remove definitivamente.':'You are viewing this as admin. The 🗑️ button permanently removes it.'}
+            </span>
           </div>
         )}
 
-        {/* Seller card */}
-        <div style={{display:'flex', alignItems:'center', gap:12, padding:'13px 15px',
-          background:'var(--pg-ink-50)', borderRadius:14, border:'1px solid var(--pg-ink-200)', marginBottom:16}}>
-          <div style={{width:44, height:44, borderRadius:'50%', flexShrink:0,
-            background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            color:'#fff', fontSize:17, fontWeight:700, letterSpacing:'-0.02em'}}>
-            {authorInitial}
-          </div>
-          <div style={{flex:1, minWidth:0}}>
-            <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
-            <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>
-              {lang==='pt'?'✓ Membro verificado':lang==='es'?'✓ Miembro verificado':'✓ Verified member'}
-            </div>
-          </div>
-          <div style={{fontSize:11, color:'var(--pg-ink-400)', flexShrink:0}}>Pool Guy</div>
-        </div>
-
-        {/* Action buttons */}
-        <div style={{display:'flex', gap:10}}>
-          <button onClick={handleContact} style={{
-            flex:1, height:52, borderRadius:14, border:'none', cursor:'pointer',
-            fontFamily:'inherit', fontSize:15, fontWeight:700,
-            background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-            color:'#fff', boxShadow:'0 4px 14px rgba(0,119,182,0.28)',
-            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-          }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            {lang==='pt'?'Entrar em contato':lang==='es'?'Contactar':'Contact Seller'}
+        {/* ── Action buttons ── */}
+        <div style={{display:'flex', gap:10, marginTop:14}}>
+          {/* Contact Seller — ghost style matching "Message" in ListingDetail */}
+          <button onClick={handleContact} className="pg-btn pg-btn-ghost" style={{flex:1, fontSize:14}}>
+            {Icon.msg(16,'var(--pg-blue-700)')}
+            {lang==='pt'?'Mensagem':lang==='es'?'Mensaje':'Message'}
           </button>
+
           {/* Save (heart) */}
           <button onClick={onToggleSave} style={{
             width:52, height:52, borderRadius:14, flexShrink:0, cursor:'pointer',
@@ -367,6 +422,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
           </button>
+
           {/* Share */}
           <button onClick={onShare} style={{
             width:52, height:52, borderRadius:14, flexShrink:0, cursor:'pointer',
@@ -378,14 +434,15 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
               <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
             </svg>
           </button>
-          {/* Delete button — visible for admins or the post's own author */}
+
+          {/* Delete — admin or author */}
           {canDelete && (
             <button onClick={handleAdminDelete} disabled={deleting} style={{
               width:52, height:52, borderRadius:14, border:'1.5px solid #FCA5A5',
               background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
               display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
               opacity: deleting ? 0.6 : 1,
-            }} title={lang==='pt'?'Excluir anúncio (admin)':'Delete listing (admin)'}>
+            }} title={lang==='pt'?'Excluir anúncio':'Delete listing'}>
               {deleting
                 ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" strokeDasharray="31.4" strokeDashoffset="10"/></svg>
                 : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -394,17 +451,12 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
           )}
         </div>
 
-        {/* Admin info strip */}
-        {canDelete && (
-          <div style={{marginTop:12, padding:'9px 13px', borderRadius:10, background:'#FEF2F2', border:'1px solid #FCA5A5',
-            display:'flex', alignItems:'center', gap:8}}>
-            <span style={{fontSize:14}}>🛡</span>
-            <span style={{fontSize:12, color:'#DC2626', fontWeight:500}}>
-              {lang==='pt'?'Você está vendo este anúncio como admin. O botão 🗑️ remove definitivamente.':'You are viewing this as admin. The 🗑️ button permanently removes it.'}
-            </span>
-          </div>
-        )}
       </div>
+
+      {/* Fullscreen photo viewer */}
+      {viewerOpen && allPhotos.length > 0 && (
+        <PhotoViewer photos={allPhotos} startIdx={imgIdx} onClose={() => setViewerOpen(false)}/>
+      )}
     </div>
   );
 }
