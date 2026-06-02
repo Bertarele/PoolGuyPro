@@ -910,10 +910,11 @@ function MarketplaceScreen({ ctx }) {
   const isMyPost = (m) => (
     // UID match — most reliable, works across sessions
     (user.uid && m.author_id && m.author_id === user.uid) ||
-    // Name/email fallbacks for older posts without author_id
-    (myAuthor && m.author === myAuthor) ||
-    (user.name && m.author === user.name) ||
-    (user.email && m.author === user.email.split('@')[0])
+    // Name/email fallbacks ONLY for legacy posts that have no author_id
+    // (prevents false-match when two users share the same display name)
+    (!m.author_id && myAuthor && m.author === myAuthor) ||
+    (!m.author_id && user.name && m.author === user.name) ||
+    (!m.author_id && user.email && m.author === user.email.split('@')[0])
   );
   const t = STRINGS[lang];
   const [view,         setView]        = React.useState('buy');
