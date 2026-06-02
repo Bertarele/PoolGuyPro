@@ -80,11 +80,14 @@
           body: JSON.stringify({ refresh_token: stored.r })
         });
         if (!resp.ok) {
-          // Refresh failed — conta deletada ou sessão inválida → limpa sessão e força logout
-          _tok = null;
-          try { localStorage.removeItem('pg_s'); } catch(e) {}
-          if (window.__pgForceLogout) window.__pgForceLogout();
-          console.warn('[PoolGuyPro] Token refresh failed — session cleared');
+          // 401/403 = conta deletada ou token revogado → força logout
+          // Outros erros (500, rede, etc.) = não desloga, apenas falha silenciosamente
+          if (resp.status === 401 || resp.status === 403) {
+            _tok = null;
+            try { localStorage.removeItem('pg_s'); } catch(e) {}
+            if (window.__pgForceLogout) window.__pgForceLogout();
+            console.warn('[PoolGuyPro] Token revoked — session cleared');
+          }
           return false;
         }
         var d = await resp.json();
