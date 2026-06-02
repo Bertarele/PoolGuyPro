@@ -220,7 +220,7 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
 
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
 // canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
-function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, showToast, onDeleted, isSaved, onToggleSave, onShare }) {
+function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, showToast, onDeleted, isSaved, onToggleSave, onShare }) {
   if (!item) return null;
   const [deleting,    setDeleting]   = React.useState(false);
   const [imgIdx,      setImgIdx]     = React.useState(0);
@@ -240,6 +240,31 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
   const handleContact = () => {
     if (openChat) openChat(item.author_id ? { id: item.author_id, name: item.author || 'Seller' } : (item.author || 'Seller'));
     if (onClose) onClose();
+  };
+
+  // Open seller public profile — fetch real data from Supabase
+  const handleAuthorClick = async () => {
+    if (!openPublicProfile) return;
+    const base = {
+      name: authorDisplay,
+      rating: undefined,   // undefined = no ratings yet (not 4.8 default)
+      reviews: 0,
+      jobs: 0,
+      loc: item.loc || 'Broward County, FL',
+    };
+    if (item.author_id && window.sb) {
+      try {
+        const { data } = await window.sb.from('profiles')
+          .select('name, region, role')
+          .eq('id', item.author_id)
+          .single();
+        if (data) {
+          if (data.name) base.name = data.name;
+          if (data.region) base.loc = data.region;
+        }
+      } catch(e) {}
+    }
+    openPublicProfile(base);
   };
 
   const handleAdminDelete = async () => {
@@ -369,9 +394,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
           </div>
         ) : null}
 
-        {/* Divider + Author row */}
+        {/* Divider + Author row — clickable to open profile */}
         <div className="pg-divider" style={{margin:'14px 0'}}/>
-        <div style={{display:'flex', alignItems:'center', gap:12}}>
+        <button onClick={handleAuthorClick} style={{
+          display:'flex', alignItems:'center', gap:12, width:'100%',
+          border:'none', background:'transparent', cursor: openPublicProfile ? 'pointer' : 'default',
+          textAlign:'left', padding:0, fontFamily:'inherit',
+        }}>
           <Avatar name={authorDisplay} size={44}/>
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
@@ -381,7 +410,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
             </div>
           </div>
           <span className="pg-chip pg-chip-aqua" style={{fontSize:11, flexShrink:0}}>Pool Guy</span>
-        </div>
+          {openPublicProfile && Icon.chev(14, 'var(--pg-ink-300)')}
+        </button>
 
         {/* Description — plain text */}
         {item.description ? (
@@ -1562,6 +1592,7 @@ function MarketplaceScreen({ ctx }) {
         {viewListing && <ViewListingSheet
           item={viewListing} lang={lang}
           openChat={openChat}
+          openPublicProfile={openPublicProfile}
           onClose={()=>setViewListing(null)}
           isAdmin={user.role === 'admin'}
           canDelete={user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id)}

@@ -3043,10 +3043,12 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
   }, [open]);
   if (!open || !profile) return null;
   const name = profile.name || 'User';
-  const rating = profile.rating || 4.8;
-  const reviews = profile.reviews || 0;
-  const jobs = profile.jobs || reviews;
-  const loc = profile.loc || 'South Florida';
+  // rating: undefined = not yet rated (new user); null or number = real value
+  const hasRating = profile.rating !== undefined && profile.rating !== null;
+  const rating  = hasRating ? profile.rating : 4.8; // 4.8 only for static/demo profiles
+  const reviews = profile.reviews !== undefined ? profile.reviews : 0;
+  const jobs    = profile.jobs !== undefined ? profile.jobs : reviews;
+  const loc     = profile.loc || 'South Florida';
 
   const msgLbl = lang==='pt'?'Mensagem':lang==='es'?'Mensaje':'Message';
   const jobsLbl = lang==='pt'?'Trabalhos':lang==='es'?'Trabajos':'Jobs';
@@ -3093,9 +3095,9 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
           {/* Stats */}
           <div style={{display:'flex', marginTop:18, paddingTop:14, borderTop:'1px solid rgba(255,255,255,0.10)', gap:0}}>
             {[
-              { val: rating, lbl: ratingLbl },
-              { val: jobs,   lbl: jobsLbl },
-              { val: (reviews > 50 ? '⭐ Pro' : reviews > 20 ? 'Expert' : 'Active'), lbl: 'Trust' },
+              { val: hasRating ? rating : '—', lbl: ratingLbl },
+              { val: jobs || '0',              lbl: jobsLbl },
+              { val: reviews > 50 ? '⭐ Pro' : reviews > 20 ? 'Expert' : reviews > 0 ? 'Active' : (lang==='pt'?'Novo':lang==='es'?'Nuevo':'New'), lbl: 'Trust' },
             ].map((s, i, arr) => (
               <React.Fragment key={i}>
                 <div style={{flex:1, textAlign:'center'}}>
@@ -3110,11 +3112,25 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
 
         {/* Stars + reviews */}
         <div style={{padding:'18px 20px 0', display:'flex', flexDirection:'column', gap:14}}>
-          <div style={{display:'flex', alignItems:'center', gap:10}}>
-            <Stars rating={rating} size={16}/>
-            <span style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, color:'var(--pg-ink-900)'}}>{rating}</span>
-            <span style={{fontSize:13, color:'var(--pg-ink-500)'}}>({reviews} {lang==='pt'?'avaliações':lang==='es'?'reseñas':'reviews'})</span>
-          </div>
+          {hasRating ? (
+            <div style={{display:'flex', alignItems:'center', gap:10}}>
+              <Stars rating={rating} size={16}/>
+              <span style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, color:'var(--pg-ink-900)'}}>{rating}</span>
+              <span style={{fontSize:13, color:'var(--pg-ink-500)'}}>({reviews} {lang==='pt'?'avaliações':lang==='es'?'reseñas':'reviews'})</span>
+            </div>
+          ) : (
+            <div style={{display:'flex', alignItems:'center', gap:8, padding:'10px 14px', borderRadius:12, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-200)'}}>
+              <span style={{fontSize:16}}>🌱</span>
+              <div>
+                <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-700)'}}>
+                  {lang==='pt'?'Novo membro':lang==='es'?'Nuevo miembro':'New member'}
+                </div>
+                <div style={{fontSize:11.5, color:'var(--pg-ink-400)', marginTop:1}}>
+                  {lang==='pt'?'Ainda sem avaliações':lang==='es'?'Aún sin reseñas':'No reviews yet'}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Badge */}
           {reviews > 50 && (
