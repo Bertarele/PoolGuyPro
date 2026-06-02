@@ -1516,13 +1516,15 @@ function NotificationsSheet({ open, onClose, lang='en' }) {
                   {n.kind==='rating'  && Icon.star(15,'#fff',true)}
                 </div>
                 <div style={{flex:1, minWidth:0}}>
-                  <div style={{display:'flex', justifyContent:'space-between', gap:8}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
                     <div style={{fontSize:13, fontWeight:600, letterSpacing:'-0.01em'}}>{title}</div>
-                    <div style={{fontSize:11, color:'var(--pg-ink-500)', whiteSpace:'nowrap'}}>{whenMap[n.whenKey]}</div>
+                    <div style={{display:'flex', alignItems:'center', gap:5, flexShrink:0}}>
+                      <div style={{fontSize:11, color:'var(--pg-ink-500)', whiteSpace:'nowrap'}}>{whenMap[n.whenKey]}</div>
+                      {n.unread && <span style={{width:8, height:8, borderRadius:'50%', background:'var(--pg-blue-500)', flexShrink:0}}/>}
+                    </div>
                   </div>
                   <div style={{fontSize:13, color:'var(--pg-ink-700)', marginTop:2, lineHeight:1.4}}>{body}</div>
                 </div>
-                {n.unread && <span style={{position:'absolute', top:18, right:8, width:8, height:8, borderRadius:'50%', background:'var(--pg-blue-500)'}}/>}
               </div>
             );
           })}
