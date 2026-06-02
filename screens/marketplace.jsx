@@ -14,7 +14,8 @@ function timeAgo(iso, lang='en') {
 // ── Share bottom sheet ───────────────────────────────────────
 function ShareSheet({ item, lang, onClose, showToast }) {
   if (!item) return null;
-  const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 https://usapoolmarket.com`;
+  const listingUrl = item._id ? `https://usapoolmarket.com/?listing=${item._id}` : 'https://usapoolmarket.com';
+  const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
   const enc = encodeURIComponent(txt);
   const btn = (label, icon, href, color, onClick) => (
     <a href={href||'#'} onClick={onClick||(e=>{if(!href){e.preventDefault();}})}
@@ -37,7 +38,7 @@ function ShareSheet({ item, lang, onClose, showToast }) {
           {btn('SMS','📱',`sms:?body=${enc}`,'#5AC8FA')}
           {btn(lang==='pt'?'Copiar':lang==='es'?'Copiar':'Copy','📋',null,
             'var(--pg-ink-100)',
-            (e)=>{ e.preventDefault(); navigator.clipboard&&navigator.clipboard.writeText(`${item.name} — https://usapoolmarket.com`).then(()=>{ if(showToast) showToast('✓ '+(lang==='pt'?'Link copiado!':'Link copied!')); onClose(); }); }
+            (e)=>{ e.preventDefault(); navigator.clipboard&&navigator.clipboard.writeText(`${item.name} — ${listingUrl}`).then(()=>{ if(showToast) showToast('✓ '+(lang==='pt'?'Link copiado!':'Link copied!')); onClose(); }); }
           )}
         </div>
         <button onClick={onClose} style={{width:'100%',height:46,borderRadius:13,border:'1.5px solid var(--pg-ink-200)',background:'transparent',color:'var(--pg-ink-600)',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
@@ -354,21 +355,21 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         {imgIdx > 0 && (
           <button onClick={()=>setImgIdx(i=>i-1)} style={{
             position:'absolute', left:10, top:'50%', transform:'translateY(-50%)',
-            width:34, height:34, borderRadius:'50%', background:'rgba(255,255,255,0.88)',
-            border:'none', cursor:'pointer', fontSize:20, fontWeight:700, lineHeight:1,
+            width:38, height:38, borderRadius:'50%', background:'rgba(255,255,255,0.92)',
+            border:'none', cursor:'pointer',
             display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow:'0 2px 8px rgba(0,0,0,0.15)', zIndex:2,
-          }}>‹</button>
+            boxShadow:'0 2px 10px rgba(0,0,0,0.25)', zIndex:2,
+          }}>{Icon.chev(22,'#111','left')}</button>
         )}
         {/* Next arrow */}
         {imgIdx < allPhotos.length - 1 && (
           <button onClick={()=>setImgIdx(i=>i+1)} style={{
             position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
-            width:34, height:34, borderRadius:'50%', background:'rgba(255,255,255,0.88)',
-            border:'none', cursor:'pointer', fontSize:20, fontWeight:700, lineHeight:1,
+            width:38, height:38, borderRadius:'50%', background:'rgba(255,255,255,0.92)',
+            border:'none', cursor:'pointer',
             display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow:'0 2px 8px rgba(0,0,0,0.15)', zIndex:2,
-          }}>›</button>
+            boxShadow:'0 2px 10px rgba(0,0,0,0.25)', zIndex:2,
+          }}>{Icon.chev(22,'#111','right')}</button>
         )}
 
         {/* Admin badge — bottom left */}
@@ -872,7 +873,8 @@ function MarketplaceScreen({ ctx }) {
 
   const handleShare = async (e, item) => {
     if (e) e.stopPropagation();
-    const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 https://usapoolmarket.com`;
+    const listingUrl = item._id ? `https://usapoolmarket.com/?listing=${item._id}` : 'https://usapoolmarket.com';
+    const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
     if (navigator.share) {
       // Try to share with photo
       const photoUrl = (item.photoUrls && item.photoUrls[0]) || item.photoUrl || null;
@@ -887,7 +889,7 @@ function MarketplaceScreen({ ctx }) {
           }
         } catch(err) { /* fall through to text-only */ }
       }
-      navigator.share({ title: item.name, text: txt, url: 'https://usapoolmarket.com' }).catch(()=>{});
+      navigator.share({ title: item.name, text: txt, url: listingUrl }).catch(()=>{});
     } else {
       setShareItem(item);
     }
@@ -1654,7 +1656,7 @@ function MarketplaceScreen({ ctx }) {
       {/* Other user's listing — full-screen view */}
       {viewListing && (
         <div style={{
-          position:'absolute', inset:0, zIndex:50, overflowY:'auto',
+          position:'fixed', inset:0, zIndex:200, overflowY:'auto',
           background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease',
         }}>
           <ViewListingSheet
