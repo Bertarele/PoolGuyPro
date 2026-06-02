@@ -307,8 +307,19 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           : <EquipImg category={item.cat||'Tools'} height={240}/>
         }
 
-        {/* Type badge — top left */}
-        <span style={{position:'absolute', top:12, left:12, zIndex:2,
+        {/* Back arrow — top left */}
+        <button onClick={onClose} style={{
+          position:'absolute', top:12, left:12, zIndex:3,
+          width:36, height:36, borderRadius:'50%',
+          background:'rgba(0,0,0,0.48)', backdropFilter:'blur(6px)',
+          border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+          WebkitBackdropFilter:'blur(6px)',
+        }}>
+          {Icon.chev(20,'#fff','left')}
+        </button>
+
+        {/* Type badge — shifted right of back arrow */}
+        <span style={{position:'absolute', top:16, left:58, zIndex:2,
           fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:8,
           background: item.type==='rent' ? 'rgba(14,186,199,0.92)' : 'rgba(59,130,246,0.92)',
           color:'#fff', letterSpacing:'0.06em', backdropFilter:'blur(4px)', textTransform:'uppercase'}}>
@@ -755,7 +766,16 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 }
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat } = ctx;
+  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink } = ctx;
+
+  // Normalize a raw Supabase marketplace row to app format
+  const normMktItem = (r) => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
+    condition:r.condition, price:r.price, priceMode:r.price_mode,
+    loc:r.loc, description:r.description||'',
+    author:r.author, author_id:r.author_id||null,
+    photoUrl:r.photo_url||null,
+    photoUrls:(r.photo_urls&&r.photo_urls.length>0)?r.photo_urls:(r.photo_url?[r.photo_url]:[]),
+    rentPeriod:r.rent_period||'day', status:r.status||'pending', createdAt:r.created_at||null });
 
   // Never show raw email as author — if author is an email, show the part before @
   const fmtAuthor = (a) => {
@@ -784,7 +804,8 @@ function MarketplaceScreen({ ctx }) {
   const [q,            setQ]           = React.useState('');
   const [selected,     setSelected]    = React.useState(null);
   const [myPostDetail, setMyPostDetail]= React.useState(null); // own post detail/edit
-  const [viewListing,  setViewListing] = React.useState(null); // other user's post — read-only view
+  const [viewListing,  setViewListing] = React.useState(null); // other user's post — full-screen view
+  const historyPushed = React.useRef(false);
   const [postOpen,   setPostOpen]   = React.useState(false);
   const [postMode,   setPostMode]   = React.useState(null); // 'sell'|'rent'|'route'
   const [priceRange, setPriceRange] = React.useState('all');  // equipment price filter
@@ -794,6 +815,37 @@ function MarketplaceScreen({ ctx }) {
   const [poolPrice,  setPoolPrice]  = React.useState('all');  // individual pools price filter
   const [savedIds,   setSavedIds]   = React.useState(new Set());
   const [shareItem,  setShareItem]  = React.useState(null);
+
+  // ── Listing open / close with URL state ──────────────────────
+  const openListing = React.useCallback((item) => {
+    setViewListing(item);
+    window.history.pushState({ pgListing: item._id }, '', '?listing=' + item._id);
+    historyPushed.current = true;
+  }, []);
+
+  const closeListing = React.useCallback(() => {
+    setViewListing(null);
+    if (historyPushed.current) {
+      historyPushed.current = false;
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
+
+  // Browser back button → close listing
+  React.useEffect(() => {
+    const handler = () => { if (historyPushed.current) { setViewListing(null); historyPushed.current = false; } };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []);
+
+  // Deep link — fetch listing from Supabase when ?listing=ID is in the URL
+  React.useEffect(() => {
+    if (!deepLinkListingId || !window.sb) return;
+    window.sb.from('marketplace').select('*').eq('id', deepLinkListingId).single()
+      .then(({ data }) => { if (data) { setViewListing(normMktItem(data)); historyPushed.current = true; } })
+      .catch(() => {})
+      .finally(() => { if (clearDeepLink) clearDeepLink(); });
+  }, [deepLinkListingId]); // eslint-disable-line
 
   // Load saved listing IDs for current user
   React.useEffect(() => {
@@ -1082,7 +1134,7 @@ function MarketplaceScreen({ ctx }) {
                 };
                 return (
                   <button key={item._id}
-                    onClick={()=> isMyPost(item) ? setMyPostDetail(item) : setViewListing(item)}
+                    onClick={()=> isMyPost(item) ? setMyPostDetail(item) : openListing(item)}
                     className="pg-press"
                     style={{
                       padding:0, overflow:'hidden', position:'relative', cursor: 'pointer',
@@ -1599,26 +1651,31 @@ function MarketplaceScreen({ ctx }) {
 
     </div>{/* end .pg-screen */}
 
-      {/* Other user's listing — read-only view + contact (admin or author gets delete button) */}
-      <Sheet open={!!viewListing} onClose={()=>setViewListing(null)} height="auto">
-        {viewListing && <ViewListingSheet
-          item={viewListing} lang={lang}
-          openChat={openChat}
-          openPublicProfile={openPublicProfile}
-          onClose={()=>setViewListing(null)}
-          isAdmin={user.role === 'admin'}
-          canDelete={user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id)}
-          showToast={showToast}
-          isSaved={savedIds.has(viewListing._id)}
-          onToggleSave={() => toggleSave(null, viewListing._id)}
-          onShare={() => handleShare(null, viewListing)}
-          onDeleted={(id) => {
-            setViewListing(null);
-            setSavedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
-            if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
-          }}
-        />}
-      </Sheet>
+      {/* Other user's listing — full-screen view */}
+      {viewListing && (
+        <div style={{
+          position:'absolute', inset:0, zIndex:50, overflowY:'auto',
+          background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease',
+        }}>
+          <ViewListingSheet
+            item={viewListing} lang={lang}
+            openChat={openChat}
+            openPublicProfile={openPublicProfile}
+            onClose={closeListing}
+            isAdmin={user.role === 'admin'}
+            canDelete={user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id)}
+            showToast={showToast}
+            isSaved={savedIds.has(viewListing._id)}
+            onToggleSave={() => toggleSave(null, viewListing._id)}
+            onShare={() => handleShare(null, viewListing)}
+            onDeleted={(id) => {
+              closeListing();
+              setSavedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+              if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
+            }}
+          />
+        </div>
+      )}
 
       {/* Share bottom sheet */}
       {shareItem && <ShareSheet item={shareItem} lang={lang} onClose={()=>setShareItem(null)} showToast={showToast}/>}

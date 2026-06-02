@@ -155,7 +155,10 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  const [tab, setTab] = React.useState('home');
+  // If launched via a listing deep link, start on market tab
+  const [tab, setTab] = React.useState(() => {
+    try { return new URLSearchParams(window.location.search).get('listing') ? 'market' : 'home'; } catch(e) { return 'home'; }
+  });
   const screenRef = React.useRef(null);
 
   const switchTab = React.useCallback((newTab) => {
@@ -323,6 +326,11 @@ function App() {
   const [helpOpen,       setHelpOpen]        = React.useState(false);
   const [privacyOpen,    setPrivacyOpen]     = React.useState(false);
 
+  // ── Deep link — ?listing=ID opens a specific listing ─────────
+  const [deepLinkListingId, setDeepLinkListingId] = React.useState(() => {
+    try { return new URLSearchParams(window.location.search).get('listing') || null; } catch(e) { return null; }
+  });
+
   // ── Dark mode ─────────────────────────────────────────────────
   const [darkMode, setDarkModeState] = React.useState(() => {
     try { return localStorage.getItem('pg_dark') === '1'; } catch(e) { return false; }
@@ -474,6 +482,8 @@ function App() {
     },
     lang, setLang,
     regionsByDay, setRegionsByDay, county,
+    deepLinkListingId,
+    clearDeepLink: () => setDeepLinkListingId(null),
     goTab:              switchTab,
     openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },
