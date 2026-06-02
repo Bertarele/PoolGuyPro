@@ -64,6 +64,7 @@
   var BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
   var KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
   var _tok = null;
+  window._adminGetTok = function(){ return _tok; };
   try { var s=JSON.parse(localStorage.getItem('pg_admin_s')||'null'); if(s&&s.t) _tok=s.t; } catch(e){}
 
   function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
@@ -123,6 +124,7 @@
         var d=await r.json();
         if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Credenciais inválidas'}};
         _tok=d.access_token;
+        window._adminGetTok = function(){ return _tok; };
         try{localStorage.setItem('pg_admin_s',JSON.stringify({t:d.access_token,u:{id:d.user.id,email:d.user.email}}));}catch(e){}
         return{data:{user:d.user,session:d},error:null};
       },
@@ -512,8 +514,32 @@ function AdminApp({ adminUser, onLogout }) {
   React.useEffect(()=>{ fetchAll(); },[]);
 
   const deleteRow = async (table, row) => {
-    if(!confirm('Excluir este registro? Não pode ser desfeito.')) return;
-    const {error} = await window.sb.from(table).delete().eq('id', row.id);
+    const isUser = table === 'profiles';
+    const msg = isUser
+      ? `Excluir a conta de "${row.name||row.email}"?\n\nIsso vai APAGAR a conta completamente — a pessoa perde o acesso imediatamente e não pode mais fazer login. Não pode ser desfeito.`
+      : 'Excluir este registro? Não pode ser desfeito.';
+    if(!confirm(msg)) return;
+
+    let error = null;
+
+    if (isUser) {
+      // Deleta da auth.users via RPC (cascateia para profiles automaticamente)
+      const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+      const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
+      const r = await fetch(BASE + '/rest/v1/rpc/admin_delete_user', {
+        method: 'POST',
+        headers: { 'apikey': KEY, 'Authorization': 'Bearer ' + (window._adminGetTok()||KEY), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: row.id }),
+      });
+      if (!r.ok) {
+        let e = {}; try { e = await r.json(); } catch(x) {}
+        error = { message: e.message || e.hint || 'Erro ao excluir conta' };
+      }
+    } else {
+      const res = await window.sb.from(table).delete().eq('id', row.id);
+      error = res.error;
+    }
+
     if(error){
       if(error.message&&(error.message.includes('RLS')||error.message.includes('policy')||error.message.includes('permission'))){
         setRlsOpen(true);
@@ -525,7 +551,7 @@ function AdminApp({ adminUser, onLogout }) {
     else if(table==='techs')  setTechs(p=>p.filter(r=>r.id!==row.id));
     else if(table==='profiles') setUsers(p=>p.filter(r=>r.id!==row.id));
     else if(table==='vacations') setVacs(p=>p.filter(r=>r.id!==row.id));
-    showToast('🗑️ Excluído.');
+    showToast(isUser ? '🗑️ Conta excluída — acesso revogado.' : '🗑️ Excluído.');
   };
 
   const approveMarket = async (row) => {
