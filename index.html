@@ -237,11 +237,11 @@
       removeChannel:function(){}
     };
 
-    // Auto-refresh: renew the token every 4 minutes (JWT expires in 5 min)
+    // Auto-refresh: renew the token every 18 minutes (JWT expires in 20 min)
     var _refreshTimer = null;
     function _startAutoRefresh() {
       _stopAutoRefresh();
-      _refreshTimer = setInterval(function(){ _refreshOnce(); }, 4 * 60 * 1000);
+      _refreshTimer = setInterval(function(){ _refreshOnce(); }, 18 * 60 * 1000);
     }
     function _stopAutoRefresh() {
       if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
