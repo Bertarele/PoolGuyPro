@@ -222,9 +222,19 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
 // canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
 function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, showToast, onDeleted, isSaved, onToggleSave, onShare }) {
   if (!item) return null;
-  const [deleting,    setDeleting]   = React.useState(false);
-  const [imgIdx,      setImgIdx]     = React.useState(0);
-  const [viewerOpen,  setViewerOpen] = React.useState(false);
+  const [deleting,      setDeleting]     = React.useState(false);
+  const [imgIdx,        setImgIdx]       = React.useState(0);
+  const [viewerOpen,    setViewerOpen]   = React.useState(false);
+  const [authorPhotoUrl,setAuthorPhotoUrl] = React.useState(null);
+
+  // Fetch author profile photo when listing opens
+  React.useEffect(() => {
+    setAuthorPhotoUrl(null);
+    if (!item?.author_id || !window.sb) return;
+    window.sb.from('profiles').select('photo_url').eq('id', item.author_id).single()
+      .then(({ data }) => { if (data?.photo_url) setAuthorPhotoUrl(data.photo_url); })
+      .catch(() => {});
+  }, [item?.author_id]);
 
   const allPhotos = (item.photoUrls && item.photoUrls.length > 0) ? item.photoUrls : (item.photoUrl ? [item.photoUrl] : []);
   const periodSfx = item.type === 'rent'
@@ -255,12 +265,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     if (item.author_id && window.sb) {
       try {
         const { data } = await window.sb.from('profiles')
-          .select('name, region, role')
+          .select('name, region, role, photo_url')
           .eq('id', item.author_id)
           .single();
         if (data) {
-          if (data.name) base.name = data.name;
-          if (data.region) base.loc = data.region;
+          if (data.name)      base.name  = data.name;
+          if (data.region)    base.loc   = data.region;
+          if (data.photo_url) base.photo = data.photo_url;
         }
       } catch(e) {}
     }
@@ -401,7 +412,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           border:'none', background:'transparent', cursor: openPublicProfile ? 'pointer' : 'default',
           textAlign:'left', padding:0, fontFamily:'inherit',
         }}>
-          <Avatar name={authorDisplay} size={44}/>
+          <Avatar name={authorDisplay} size={44} src={authorPhotoUrl || undefined}/>
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
             <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:1}}>

@@ -3125,7 +3125,7 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
 
           <div style={{display:'inline-block', position:'relative', marginBottom:12}}>
             <div style={{padding:3, borderRadius:'50%', background:'linear-gradient(135deg,var(--pg-aqua-500),#0D7280)'}}>
-              <Avatar name={name} size={72}/>
+              <Avatar name={name} size={72} src={profile.photo || undefined}/>
             </div>
             <div style={{position:'absolute', bottom:2, right:2, width:20, height:20, borderRadius:'50%',
               background:'var(--pg-aqua-500)', border:'2px solid #040D18',
