@@ -343,7 +343,8 @@ function App() {
       photoUrl: r.photo_url || null,
       photoUrls: (r.photo_urls && r.photo_urls.length > 0) ? r.photo_urls : (r.photo_url ? [r.photo_url] : []),
       rentPeriod: r.rent_period || 'day',
-      status: r.status || 'pending' });
+      status: r.status || 'pending',
+      createdAt: r.created_at || null });
 
     // Data fetch — runs AFTER auth is ready (authReady gate above)
     // Token was already refreshed in the boot sequence, so this should always work

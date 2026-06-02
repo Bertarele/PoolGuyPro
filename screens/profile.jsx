@@ -135,6 +135,9 @@ function ProfileScreen({ ctx }) {
         {/* Personal Info */}
         <PersonalInfoCard user={user} setUser={setUser} lang={lang}/>
 
+        {/* Saved listings */}
+        <SavedSection user={user} lang={lang}/>
+
         {/* Regions */}
         <Section title={t.workRegions} action={t.edit} onAction={openRegionEditor}>
           <div className="pg-card" style={{padding:'12px 14px'}}>
@@ -266,6 +269,90 @@ function ProfileScreen({ ctx }) {
       </div>
     </div>
     </div>
+  );
+}
+
+function SavedSection({ user, lang }) {
+  const [items, setItems] = React.useState(null); // null = loading
+
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb) { setItems([]); return; }
+    window.sb.from('saved_listings')
+      .select('listing_id, created_at, marketplace(id, name, price, price_mode, cat, loc, photo_url, type, status)')
+      .eq('user_id', user.uid)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) setItems(data.filter(r => r.marketplace && r.marketplace.status === 'approved'));
+        else setItems([]);
+      });
+  }, [user?.uid]);
+
+  const unsave = async (listingId) => {
+    setItems(prev => prev.filter(r => r.listing_id !== listingId));
+    await window.sb.from('saved_listings').delete().eq('user_id', user.uid).eq('listing_id', listingId);
+  };
+
+  const title = lang==='pt'?'SALVOS':lang==='es'?'GUARDADOS':'SAVED';
+
+  return (
+    <section>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
+        <h3 style={{margin:0, fontWeight:700, color:'var(--pg-ink-700)', letterSpacing:'-0.01em', textTransform:'uppercase', fontSize:11}}>{title}</h3>
+        {items && items.length > 0 && (
+          <span style={{fontSize:12, fontWeight:700, color:'var(--pg-blue-500)'}}>{items.length}</span>
+        )}
+      </div>
+      <div className="pg-card" style={{padding: items && items.length > 0 ? 0 : '16px 14px', overflow:'hidden'}}>
+        {items === null ? (
+          <div style={{padding:'16px 14px', fontSize:13, color:'var(--pg-ink-400)'}}>
+            {lang==='pt'?'Carregando…':lang==='es'?'Cargando…':'Loading…'}
+          </div>
+        ) : items.length === 0 ? (
+          <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:8, padding:'20px 14px', textAlign:'center'}}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-300)" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <div style={{fontSize:13, color:'var(--pg-ink-400)'}}>
+              {lang==='pt'?'Nenhum anúncio salvo ainda':lang==='es'?'Ningún anuncio guardado':' No saved listings yet'}
+            </div>
+          </div>
+        ) : items.map((r, idx) => {
+          const m = r.marketplace;
+          const isLast = idx === items.length - 1;
+          return (
+            <div key={r.listing_id} style={{
+              display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
+              borderBottom: isLast ? 'none' : '0.5px solid var(--pg-ink-100)',
+            }}>
+              {/* Thumbnail */}
+              <div style={{width:48, height:48, borderRadius:10, overflow:'hidden', flexShrink:0, background:'var(--pg-ink-100)'}}>
+                {m.photo_url
+                  ? <img src={m.photo_url} alt={m.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                  : <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20}}>📦</div>
+                }
+              </div>
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{fontSize:13, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:'var(--pg-ink-900)'}}>{m.name}</div>
+                <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:2}}>
+                  {m.price_mode==='neg' ? (lang==='pt'?'Negociável':'Negotiable') : (m.price ? `$${m.price}` : '—')}
+                  {m.loc ? ` · ${m.loc}` : ''}
+                </div>
+              </div>
+              {/* Unsave button */}
+              <button onClick={()=>unsave(r.listing_id)} style={{
+                width:32, height:32, borderRadius:8, border:'1px solid #FCA5A5',
+                background:'#FEF2F2', color:'#EF4444', cursor:'pointer', flexShrink:0,
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }} title={lang==='pt'?'Remover':'Remove'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

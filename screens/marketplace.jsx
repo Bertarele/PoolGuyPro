@@ -1,5 +1,53 @@
 // marketplace.jsx — navy header + dual seg + distance + categories
 
+// ── Time ago helper ──────────────────────────────────────────
+function timeAgo(iso, lang='en') {
+  if (!iso) return '';
+  const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (diff < 60)    return lang==='pt' ? 'agora'        : lang==='es' ? 'ahora'     : 'just now';
+  if (diff < 3600)  { const m=Math.floor(diff/60);   return lang==='pt'?`${m}min`  :lang==='es'?`${m}min`  :`${m}m ago`; }
+  if (diff < 86400) { const h=Math.floor(diff/3600);  return lang==='pt'?`${h}h`    :lang==='es'?`${h}h`    :`${h}h ago`; }
+  if (diff < 604800){ const d=Math.floor(diff/86400); return lang==='pt'?`${d}d`    :lang==='es'?`${d}d`    :`${d}d ago`; }
+  const w=Math.floor(diff/604800); return lang==='pt'?`${w}sem`:lang==='es'?`${w}sem`:`${w}w ago`;
+}
+
+// ── Share bottom sheet ───────────────────────────────────────
+function ShareSheet({ item, lang, onClose, showToast }) {
+  if (!item) return null;
+  const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyPro 👉 https://usapoolmarket.com`;
+  const enc = encodeURIComponent(txt);
+  const btn = (label, icon, href, color, onClick) => (
+    <a href={href||'#'} onClick={onClick||(e=>{if(!href){e.preventDefault();}})}
+      target={href?'_blank':undefined} rel="noreferrer"
+      style={{display:'flex',flexDirection:'column',alignItems:'center',gap:7,textDecoration:'none',flex:1}}>
+      <div style={{width:54,height:54,borderRadius:16,background:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,boxShadow:'0 2px 8px rgba(0,0,0,0.12)'}}>
+        {icon}
+      </div>
+      <span style={{fontSize:11,fontWeight:600,color:'var(--pg-ink-700)'}}>{label}</span>
+    </a>
+  );
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',zIndex:8000,display:'flex',alignItems:'flex-end'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{width:'100%',background:'var(--pg-white)',borderRadius:'22px 22px 0 0',padding:'20px 24px 40px',boxShadow:'0 -4px 32px rgba(0,0,0,0.15)'}}>
+        <div style={{width:36,height:4,borderRadius:999,background:'var(--pg-ink-200)',margin:'0 auto 18px'}}/>
+        <div style={{fontFamily:'var(--pg-font-display)',fontSize:16,fontWeight:700,color:'var(--pg-ink-900)',marginBottom:4}}>{lang==='pt'?'Compartilhar anúncio':lang==='es'?'Compartir anuncio':'Share listing'}</div>
+        <div style={{fontSize:13,color:'var(--pg-ink-500)',marginBottom:20,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+        <div style={{display:'flex',gap:16,justifyContent:'center',marginBottom:20}}>
+          {btn('WhatsApp','💬',`https://wa.me/?text=${enc}`,'#25D366')}
+          {btn('SMS','📱',`sms:?body=${enc}`,'#5AC8FA')}
+          {btn(lang==='pt'?'Copiar':lang==='es'?'Copiar':'Copy','📋',null,
+            'var(--pg-ink-100)',
+            (e)=>{ e.preventDefault(); navigator.clipboard&&navigator.clipboard.writeText(`${item.name} — https://usapoolmarket.com`).then(()=>{ if(showToast) showToast('✓ '+(lang==='pt'?'Link copiado!':'Link copied!')); onClose(); }); }
+          )}
+        </div>
+        <button onClick={onClose} style={{width:'100%',height:46,borderRadius:13,border:'1.5px solid var(--pg-ink-200)',background:'transparent',color:'var(--pg-ink-600)',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+          {lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Fullscreen Photo Viewer ───────────────────────────────────
 function PhotoViewer({ photos, startIdx=0, onClose }) {
   const [idx, setIdx] = React.useState(startIdx);
@@ -172,7 +220,7 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
 
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
 // canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
-function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, showToast, onDeleted }) {
+function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, showToast, onDeleted, isSaved, onToggleSave, onShare }) {
   if (!item) return null;
   const [deleting, setDeleting] = React.useState(false);
 
@@ -306,13 +354,28 @@ function ViewListingSheet({ item, lang, onClose, openChat, isAdmin, canDelete, s
             </svg>
             {lang==='pt'?'Entrar em contato':lang==='es'?'Contactar':'Contact Seller'}
           </button>
-          <button onClick={handleContact} style={{
-            width:52, height:52, borderRadius:14, border:'1.5px solid var(--pg-blue-200)',
-            background:'var(--pg-blue-50)', color:'var(--pg-blue-600)', cursor:'pointer',
-            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-          }} title={lang==='pt'?'Fazer oferta':'Make an offer'}>
+          {/* Save (heart) */}
+          <button onClick={onToggleSave} style={{
+            width:52, height:52, borderRadius:14, flexShrink:0, cursor:'pointer',
+            border: isSaved ? '1.5px solid #FCA5A5' : '1.5px solid var(--pg-ink-200)',
+            background: isSaved ? '#FEF2F2' : 'var(--pg-ink-50)',
+            color: isSaved ? '#EF4444' : 'var(--pg-ink-500)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            transition:'all .15s',
+          }} title={isSaved?(lang==='pt'?'Remover dos salvos':'Remove from saved'):(lang==='pt'?'Salvar':'Save')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={isSaved?'currentColor':'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+          {/* Share */}
+          <button onClick={onShare} style={{
+            width:52, height:52, borderRadius:14, flexShrink:0, cursor:'pointer',
+            border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-ink-50)',
+            color:'var(--pg-ink-500)', display:'flex', alignItems:'center', justifyContent:'center',
+          }} title={lang==='pt'?'Compartilhar':lang==='es'?'Compartir':'Share'}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
             </svg>
           </button>
           {/* Delete button — visible for admins or the post's own author */}
@@ -635,6 +698,41 @@ function MarketplaceScreen({ ctx }) {
   const [routePrice, setRoutePrice] = React.useState('all');  // routes price filter
   const [routeSub,   setRouteSub]   = React.useState('routes'); // 'routes' | 'pools'
   const [poolPrice,  setPoolPrice]  = React.useState('all');  // individual pools price filter
+  const [savedIds,   setSavedIds]   = React.useState(new Set());
+  const [shareItem,  setShareItem]  = React.useState(null);
+
+  // Load saved listing IDs for current user
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb) return;
+    window.sb.from('saved_listings').select('listing_id').eq('user_id', user.uid).then(({data}) => {
+      if (data) setSavedIds(new Set(data.map(r => r.listing_id)));
+    });
+  }, [user?.uid]);
+
+  const toggleSave = async (e, listingId) => {
+    if (e) e.stopPropagation();
+    if (!user?.uid) { showToast && showToast(lang==='pt'?'Faça login para salvar':lang==='es'?'Inicia sesión para guardar':'Login to save'); return; }
+    const isSaved = savedIds.has(listingId);
+    // Optimistic update
+    setSavedIds(prev => { const s = new Set(prev); isSaved ? s.delete(listingId) : s.add(listingId); return s; });
+    if (isSaved) {
+      await window.sb.from('saved_listings').delete().eq('user_id', user.uid).eq('listing_id', listingId);
+      showToast && showToast(lang==='pt'?'💔 Removido dos salvos':lang==='es'?'💔 Eliminado de guardados':'💔 Removed from saved');
+    } else {
+      await window.sb.from('saved_listings').insert({ user_id: user.uid, listing_id: listingId });
+      showToast && showToast(lang==='pt'?'❤️ Salvo!':lang==='es'?'❤️ Guardado!':'❤️ Saved!');
+    }
+  };
+
+  const handleShare = (e, item) => {
+    if (e) e.stopPropagation();
+    const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyPro 👉 https://usapoolmarket.com`;
+    if (navigator.share) {
+      navigator.share({ title: item.name, text: txt, url: 'https://usapoolmarket.com' }).catch(()=>{});
+    } else {
+      setShareItem(item);
+    }
+  };
 
   const catLabels = {
     All:{en:'All',pt:'Todos',es:'Todos'},
@@ -967,8 +1065,40 @@ function MarketplaceScreen({ ctx }) {
                             overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0}}>
                             {fmtAuthor(item.author)}
                           </span>
+                          {item.createdAt && (
+                            <span style={{fontSize:10, color:'var(--pg-ink-400)', flexShrink:0, marginLeft:2}}>
+                              · {timeAgo(item.createdAt, lang)}
+                            </span>
+                          )}
                         </div>
                       </div>
+                      {/* Heart + Share row */}
+                      {!isMyPost(item) && !isPending && (
+                        <div style={{display:'flex', gap:6, marginTop:8}}>
+                          <button onClick={(e)=>toggleSave(e, item._id)} style={{
+                            flex:1, height:30, borderRadius:8, cursor:'pointer', fontFamily:'inherit',
+                            border: savedIds.has(item._id) ? '1px solid #FCA5A5' : '1px solid var(--pg-ink-200)',
+                            background: savedIds.has(item._id) ? '#FEF2F2' : 'var(--pg-ink-50)',
+                            color: savedIds.has(item._id) ? '#EF4444' : 'var(--pg-ink-400)',
+                            display:'flex', alignItems:'center', justifyContent:'center', gap:4, fontSize:11, fontWeight:600,
+                          }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill={savedIds.has(item._id)?'currentColor':'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                            {savedIds.has(item._id) ? (lang==='pt'?'Salvo':lang==='es'?'Guardado':'Saved') : (lang==='pt'?'Salvar':lang==='es'?'Guardar':'Save')}
+                          </button>
+                          <button onClick={(e)=>handleShare(e, item)} style={{
+                            width:30, height:30, borderRadius:8, border:'1px solid var(--pg-ink-200)',
+                            background:'var(--pg-ink-50)', color:'var(--pg-ink-400)', cursor:'pointer',
+                            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+                          }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                       {isPending && (
                         <div style={{marginTop:8, fontSize:10.5, color:'#92710A', background:'#FFF8E1',
                           border:'0.5px solid #FFE082', borderRadius:6, padding:'4px 8px', textAlign:'center'}}>
@@ -1371,12 +1501,19 @@ function MarketplaceScreen({ ctx }) {
           isAdmin={user.role === 'admin'}
           canDelete={user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id)}
           showToast={showToast}
+          isSaved={savedIds.has(viewListing._id)}
+          onToggleSave={() => toggleSave(null, viewListing._id)}
+          onShare={() => handleShare(null, viewListing)}
           onDeleted={(id) => {
             setViewListing(null);
+            setSavedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
             if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
           }}
         />}
       </Sheet>
+
+      {/* Share bottom sheet */}
+      {shareItem && <ShareSheet item={shareItem} lang={lang} onClose={()=>setShareItem(null)} showToast={showToast}/>}
 
       {/* My post detail / edit sheet */}
       <Sheet open={!!myPostDetail} onClose={()=>setMyPostDetail(null)} height="auto">
