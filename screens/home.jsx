@@ -23,12 +23,13 @@ function HomeScreen({ ctx }) {
     : (user.email ? user.email.split('@')[0] : null);
 
   // My real posts from Supabase liveMarket
-  // author_id check is most reliable — works regardless of name changes
+  // UID is the only reliable check — name fallbacks only for legacy posts without author_id
+  // (prevents false-match when two users share the same display name)
   const myPosts = liveMarket.filter(m =>
     (user.uid && m.author_id && m.author_id === user.uid) ||
-    (myAuthor && m.author === myAuthor) ||
-    (user.name && m.author === user.name) ||
-    (user.email && m.author === user.email.split('@')[0])
+    (!m.author_id && myAuthor && m.author === myAuthor) ||
+    (!m.author_id && user.name && m.author === user.name) ||
+    (!m.author_id && user.email && m.author === user.email.split('@')[0])
   );
 
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
