@@ -1253,7 +1253,7 @@ function MarketplaceScreen({ ctx }) {
                 };
                 return (
                   <button key={item._id}
-                    onClick={()=> isMyPost(item) ? setMyPostDetail(item) : openListing(item)}
+                    onClick={()=> openListing(item)}
                     className="pg-press"
                     style={{
                       padding:0, overflow:'hidden', position:'relative', cursor: 'pointer',
