@@ -1740,7 +1740,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 }
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating, loadPendingRatings } = ctx;
+  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating, loadPendingRatings, darkMode=false } = ctx;
 
   // Normalize a raw Supabase marketplace row to app format
   const normMktItem = (r) => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
@@ -1972,12 +1972,18 @@ function MarketplaceScreen({ ctx }) {
       <button key={item._id} onClick={()=>openListing(item)} className="pg-press"
         style={{
           padding:0, overflow:'hidden', position:'relative', cursor: isSoldItem ? 'default' : 'pointer',
-          border: isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
+          border: (desktopMode && darkMode)
+            ? `1.5px solid ${isSoldItem ? '#30363D' : '#21262D'}`
+            : isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
           opacity: isPending ? 0.82 : isSoldItem ? 0.70 : 1,
           display:'flex', flexDirection:'column',
-          borderRadius:16, background: isSoldItem ? 'var(--pg-ink-50)' : 'var(--pg-white)', textAlign:'left', fontFamily:'inherit',
+          borderRadius:16,
+          background: (desktopMode && darkMode)
+            ? (isSoldItem ? '#161B22' : '#1C2128')
+            : (isSoldItem ? 'var(--pg-ink-50)' : 'var(--pg-white)'),
+          textAlign:'left', fontFamily:'inherit',
           boxShadow: desktopMode
-            ? '0 2px 12px rgba(0,0,0,0.07), 0 0 0 0 transparent'
+            ? (darkMode ? '0 2px 16px rgba(0,0,0,0.45), 0 0 0 0 transparent' : '0 2px 12px rgba(0,0,0,0.08), 0 0 0 0 transparent')
             : '0 1px 3px rgba(0,0,0,0.08)',
           transition:'box-shadow .18s, transform .12s',
           filter: isSoldItem ? 'grayscale(0.65)' : 'none',
@@ -2427,13 +2433,15 @@ function MarketplaceScreen({ ctx }) {
                     </div>
                   </div>
                 )}
-                {/* Static equipment items */}
-                {user.role !== 'admin' && list.map(e => (
+                {/* Static equipment items — shown for all users */}
+                {list.map(e => (
                   <button key={e.id} onClick={()=>setSelected({...e,_type:'equipment'})}
                     className="pg-press"
                     style={{border:'none', textAlign:'left', cursor:'pointer', overflow:'hidden', padding:0,
-                      borderRadius:16, background:'var(--pg-white)',
-                      boxShadow:'0 2px 12px rgba(0,0,0,0.07)', display:'flex', flexDirection:'column',
+                      borderRadius:16,
+                      background: darkMode ? '#1C2128' : 'var(--pg-white)',
+                      boxShadow: darkMode ? '0 2px 16px rgba(0,0,0,0.45)' : '0 2px 12px rgba(0,0,0,0.07)',
+                      display:'flex', flexDirection:'column',
                       transition:'box-shadow .18s',
                     }}>
                     <div style={{position:'relative', paddingTop:'62%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
@@ -2978,8 +2986,8 @@ function MarketplaceScreen({ ctx }) {
               </div>
             )}
 
-            {/* Static equipment items — ocultos para admin (gerenciam só dados reais) */}
-            {user.role !== 'admin' && list.map(e => (
+            {/* Static equipment items */}
+            {list.map(e => (
               <button key={e.id} onClick={()=>setSelected({...e, _type:'equipment'})}
                 className="pg-press"
                 style={{border:'none', textAlign:'left', cursor:'pointer', overflow:'hidden', padding:0,
