@@ -360,6 +360,14 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [authorPhotoUrl,setAuthorPhotoUrl] = React.useState(null);
   const [mapCoords,     setMapCoords]    = React.useState(null);
   const [mapLoading,    setMapLoading]   = React.useState(false);
+  const [isDesktop,     setIsDesktop]    = React.useState(() => window.innerWidth >= 900);
+
+  // Desktop detection
+  React.useEffect(() => {
+    const handler = () => setIsDesktop(window.innerWidth >= 900);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   // Fetch author profile photo when listing opens
   React.useEffect(() => {
@@ -442,6 +450,622 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     if (onClose) onClose();
   };
 
+  // ── Shared sub-components ─────────────────────────────────────
+  const isOwner = item.author_id && currentUser?.uid && item.author_id === currentUser.uid;
+  const isSold  = item.status === 'sold';
+
+  const TypeBadge = () => (
+    <span style={{
+      display:'inline-flex', alignItems:'center', gap:4,
+      fontSize:10, fontWeight:800, padding:'4px 10px', borderRadius:6,
+      background: item.type==='rent' ? '#0EBAC7' : 'var(--pg-blue-500)',
+      color:'#fff', letterSpacing:'0.07em', textTransform:'uppercase',
+    }}>
+      {item.type==='rent' ? (lang==='pt'?'ALUGUEL':'RENTAL') : (lang==='pt'?'VENDA':'FOR SALE')}
+    </span>
+  );
+
+  const PriceBlock = ({ large=false }) => (
+    <div style={{display:'flex', alignItems:'baseline', gap:8, flexWrap:'wrap'}}>
+      {item.priceMode === 'neg' ? (
+        <span style={{
+          fontSize: large?18:14, fontWeight:700, padding:'5px 14px', borderRadius:999,
+          background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', border:'1.5px solid var(--pg-blue-100)',
+        }}>
+          🤝 {lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}
+        </span>
+      ) : (
+        <>
+          <span style={{
+            fontFamily:'var(--pg-font-display)',
+            fontSize: large?38:30,
+            fontWeight:800, color:'var(--pg-blue-500)',
+            letterSpacing:'-0.03em', lineHeight:1,
+          }}>
+            ${item.price}
+            {periodSfx && <span style={{fontSize: large?16:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:3}}>{periodSfx}</span>}
+          </span>
+          {item.condition && (
+            <span style={{
+              fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:999,
+              background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', border:'none',
+            }}>{item.condition}</span>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  const SellerRow = ({ horizontal=false }) => (
+    <button onClick={handleAuthorClick} style={{
+      display:'flex', alignItems:'center', gap:12, width:'100%',
+      border:'none', background:'transparent', cursor: openPublicProfile ? 'pointer' : 'default',
+      textAlign:'left', padding:0, fontFamily:'inherit',
+    }}>
+      <Avatar name={authorDisplay} size={horizontal?48:44} src={authorPhotoUrl||undefined}/>
+      <div style={{flex:1, minWidth:0}}>
+        <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
+        <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:1}}>
+          {lang==='pt'?'✓ Membro verificado':'✓ Verified member'}
+          {timeAgoLabel ? <span style={{color:'var(--pg-ink-400)'}}> · {timeAgoLabel}</span> : null}
+        </div>
+      </div>
+      <span style={{
+        fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:999,
+        background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', border:'1px solid var(--pg-blue-100)',
+        flexShrink:0,
+      }}>Pool Guy</span>
+      {openPublicProfile && Icon.chev(14,'var(--pg-ink-300)')}
+    </button>
+  );
+
+  const ActionButtons = ({ vertical=false }) => (
+    <div style={{display:'flex', flexDirection: vertical?'column':'row', gap:10}}>
+      <button onClick={handleContact} style={{
+        flex:1, height:50, borderRadius:14, border:'none', cursor:'pointer',
+        fontFamily:'inherit', fontSize:15, fontWeight:700, color:'#fff',
+        background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+        boxShadow:'0 4px 16px rgba(0,119,182,0.30)',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+        transition:'all .15s',
+      }}>
+        {Icon.msg(18,'#fff')}
+        {lang==='pt'?'Enviar mensagem':lang==='es'?'Enviar mensaje':'Send Message'}
+      </button>
+      <div style={{display:'flex', gap:10}}>
+        <button onClick={onToggleSave} title={isSaved?(lang==='pt'?'Remover dos salvos':'Unsave'):(lang==='pt'?'Salvar':'Save')} style={{
+          width:50, height:50, borderRadius:14, cursor:'pointer', flexShrink:0,
+          border: isSaved ? '1.5px solid #FCA5A5' : '1.5px solid var(--pg-ink-200)',
+          background: isSaved ? '#FEF2F2' : 'var(--pg-ink-50)',
+          color: isSaved ? '#EF4444' : 'var(--pg-ink-500)',
+          display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill={isSaved?'currentColor':'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+        <button onClick={onShare} title={lang==='pt'?'Compartilhar':'Share'} style={{
+          width:50, height:50, borderRadius:14, cursor:'pointer', flexShrink:0,
+          border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-ink-50)',
+          color:'var(--pg-ink-500)', display:'flex', alignItems:'center', justifyContent:'center',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+        {canDelete && (
+          <button onClick={handleAdminDelete} disabled={deleting} title={lang==='pt'?'Excluir':'Delete'} style={{
+            width:50, height:50, borderRadius:14, cursor:'pointer', flexShrink:0,
+            border:'1.5px solid #FCA5A5', background:'#FEF2F2', color:'#EF4444',
+            display:'flex', alignItems:'center', justifyContent:'center', opacity: deleting?0.6:1,
+          }}>
+            {deleting
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeDasharray="31.4" strokeDashoffset="10"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            }
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  const MarkSoldBlock = () => (
+    <>
+      {isOwner && !isSold && (
+        <button onClick={()=>setMarkSoldOpen(true)} style={{
+          width:'100%', padding:'13px', borderRadius:14,
+          border:'1.5px solid #86EFAC', background:'#F0FDF4',
+          color:'#16A34A', cursor:'pointer', fontFamily:'inherit',
+          fontSize:14, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+          transition:'all .15s',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {lang==='pt'?'Marcar como vendido':lang==='es'?'Marcar como vendido':'Mark as Sold'}
+        </button>
+      )}
+      {isSold && (
+        <div style={{
+          padding:'12px 16px', borderRadius:12,
+          background:'linear-gradient(135deg,#F0FDF4,#DCFCE7)', border:'1.5px solid #86EFAC',
+          display:'flex', alignItems:'center', gap:10,
+        }}>
+          <div style={{
+            width:32, height:32, borderRadius:'50%', background:'#16A34A',
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div style={{fontSize:14, fontWeight:800, color:'#15803D'}}>
+              {lang==='pt'?'Vendido!':lang==='es'?'¡Vendido!':'Item Sold!'}
+            </div>
+            <div style={{fontSize:12, color:'#16A34A', marginTop:1}}>
+              {lang==='pt'?'Esta negociação foi concluída.':'This deal has been completed.'}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  // ── Location sub-component ────────────────────────────────────
+  const LocationSection = () => !item.loc ? null : (
+    <div>
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12}}>
+        <div style={{display:'flex', alignItems:'center', gap:6}}>
+          {Icon.pin(14,'var(--pg-ink-500)')}
+          <span style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-700)'}}>
+            {lang==='pt'?'Localização':lang==='es'?'Ubicación':'Location'}
+          </span>
+        </div>
+        <a href={`https://www.google.com/maps/search/${encodeURIComponent((item.loc||'')+', FL')}`}
+          target="_blank" rel="noreferrer"
+          style={{fontSize:12, fontWeight:600, color:'var(--pg-blue-500)', textDecoration:'none', display:'flex', alignItems:'center', gap:4}}>
+          {lang==='pt'?'Abrir no Maps':'Open in Maps'} ↗
+        </a>
+      </div>
+      {mapCoords ? (
+        <div style={{borderRadius:14, overflow:'hidden', border:'1px solid var(--pg-ink-200)', height:200, position:'relative'}}>
+          <iframe
+            title="listing-location"
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoords.lon-0.05},${mapCoords.lat-0.04},${mapCoords.lon+0.05},${mapCoords.lat+0.04}&layer=mapnik&marker=${mapCoords.lat},${mapCoords.lon}`}
+            style={{width:'100%', height:'100%', border:'none', display:'block'}}
+            loading="lazy"
+          />
+          <div style={{position:'absolute', bottom:10, left:10,
+            background:'rgba(0,0,0,0.60)', backdropFilter:'blur(6px)',
+            borderRadius:999, padding:'4px 10px',
+            fontSize:11, fontWeight:600, color:'#fff', display:'flex', alignItems:'center', gap:5}}>
+            {Icon.pin(10,'#fff')} {item.loc}
+          </div>
+        </div>
+      ) : mapLoading ? (
+        <div style={{height:200, borderRadius:14, background:'var(--pg-ink-100)',
+          display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:'var(--pg-ink-400)'}}>
+          {lang==='pt'?'Carregando mapa…':'Loading map…'}
+        </div>
+      ) : (
+        <a href={`https://www.google.com/maps/search/${encodeURIComponent((item.loc||'')+', FL')}`}
+          target="_blank" rel="noreferrer"
+          style={{display:'flex', alignItems:'center', gap:10, padding:'14px 16px', borderRadius:12,
+            background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-200)', textDecoration:'none'}}>
+          {Icon.pin(16,'var(--pg-blue-500)')}
+          <span style={{fontSize:13, fontWeight:600, color:'var(--pg-blue-500)'}}>{item.loc}, FL</span>
+          <span style={{marginLeft:'auto', fontSize:11, color:'var(--pg-ink-400)'}}>↗</span>
+        </a>
+      )}
+    </div>
+  );
+
+  // ── More from seller sub-component ───────────────────────────
+  const MoreFromSeller = () => {
+    const others = liveMarket.filter(m =>
+      m.author_id && m.author_id === item.author_id &&
+      m._id !== item._id &&
+      (m.status === 'approved' || m.status === 'active')
+    );
+    if (others.length === 0) return null;
+    return (
+      <div>
+        <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:12}}>
+          {lang==='pt'?`Mais de ${authorDisplay}`:lang==='es'?`Más de ${authorDisplay}`:`More from ${authorDisplay}`}
+        </div>
+        <div className="pg-scroll-x" style={{display:'flex', gap:12, paddingBottom:4}}>
+          {others.slice(0,8).map(m => (
+            <button key={m._id} onClick={()=>onOpenListing&&onOpenListing(m)}
+              className="pg-press"
+              style={{
+                flexShrink:0, width:156, padding:0, border:'1px solid var(--pg-ink-200)',
+                borderRadius:14, background:'var(--pg-white)', cursor:'pointer',
+                textAlign:'left', fontFamily:'inherit', overflow:'hidden',
+                display:'flex', flexDirection:'column', boxShadow:'var(--pg-shadow-1)',
+              }}>
+              <div style={{height:100, background:'var(--pg-ink-100)', overflow:'hidden', flexShrink:0}}>
+                {(m.photoUrls&&m.photoUrls[0])||m.photoUrl
+                  ? <img src={(m.photoUrls&&m.photoUrls[0])||m.photoUrl} alt={m.name}
+                      style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  : <NoPhotoPlaceholder height={100} small/>
+                }
+              </div>
+              <div style={{padding:'8px 10px 10px'}}>
+                <div style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-900)',lineHeight:1.3,
+                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.name}</div>
+                <div style={{fontSize:13,fontWeight:700,color:'var(--pg-blue-500)',marginTop:3}}>
+                  {m.priceMode==='neg'?(lang==='pt'?'Negociável':'Negotiable'):`$${m.price}`}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const MarkSoldSheetSlot = () => (
+    <Sheet open={markSoldOpen} onClose={()=>setMarkSoldOpen(false)} height="auto">
+      {markSoldOpen && (
+        <MarkSoldSheet
+          item={item} lang={lang} currentUser={currentUser}
+          onClose={()=>setMarkSoldOpen(false)}
+          showToast={showToast}
+          onSold={(sellerRating)=>{ setMarkSoldOpen(false); onAfterSold && onAfterSold(sellerRating); }}
+        />
+      )}
+    </Sheet>
+  );
+
+  // ══════════════════════════════════════════════════════════════
+  // ── DESKTOP LAYOUT (≥ 900px) ─────────────────────────────────
+  // ══════════════════════════════════════════════════════════════
+  if (isDesktop) {
+    return (
+      <div style={{minHeight:'100vh', background:'var(--pg-ink-50)'}}>
+
+        {/* ── Top navigation bar ── */}
+        <div style={{
+          position:'sticky', top:0, zIndex:50,
+          background:'var(--pg-white)',
+          borderBottom:'1px solid var(--pg-ink-150,var(--pg-ink-200))',
+          boxShadow:'0 1px 12px rgba(0,0,0,0.06)',
+        }}>
+          <div style={{maxWidth:1140, margin:'0 auto', padding:'0 32px', height:60,
+            display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            {/* Back button */}
+            <button onClick={onClose} style={{
+              display:'flex', alignItems:'center', gap:6, border:'none', background:'transparent',
+              cursor:'pointer', color:'var(--pg-blue-600)', fontWeight:600, fontSize:14,
+              fontFamily:'inherit', padding:'8px 0', borderRadius:8,
+            }}>
+              {Icon.chev(18,'var(--pg-blue-600)','left')}
+              {lang==='pt'?'Voltar ao Marketplace':lang==='es'?'Volver al Marketplace':'Back to Marketplace'}
+            </button>
+
+            {/* Breadcrumb */}
+            <div style={{fontSize:13, color:'var(--pg-ink-400)', display:'flex', alignItems:'center', gap:6}}>
+              <span style={{color:'var(--pg-ink-300)'}}>Marketplace</span>
+              <span style={{color:'var(--pg-ink-200)'}}>›</span>
+              <span style={{color:'var(--pg-ink-600)', fontWeight:600, maxWidth:280,
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{item.name}</span>
+            </div>
+
+            {/* Right actions */}
+            <div style={{display:'flex', gap:8}}>
+              <button onClick={onToggleSave} style={{
+                display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10,
+                border: isSaved?'1.5px solid #FCA5A5':'1.5px solid var(--pg-ink-200)',
+                background: isSaved?'#FEF2F2':'var(--pg-ink-50)',
+                color: isSaved?'#EF4444':'var(--pg-ink-500)',
+                cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600,
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={isSaved?'currentColor':'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                {isSaved?(lang==='pt'?'Salvo':'Saved'):(lang==='pt'?'Salvar':'Save')}
+              </button>
+              <button onClick={onShare} style={{
+                display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10,
+                border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-ink-50)',
+                color:'var(--pg-ink-500)', cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600,
+              }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+                {lang==='pt'?'Compartilhar':'Share'}
+              </button>
+              {canDelete && (
+                <button onClick={handleAdminDelete} disabled={deleting} style={{
+                  display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10,
+                  border:'1.5px solid #FCA5A5', background:'#FEF2F2', color:'#EF4444',
+                  cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600,
+                  opacity: deleting?0.6:1,
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                  {lang==='pt'?'Excluir':'Delete'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Main content grid ── */}
+        <div style={{maxWidth:1140, margin:'0 auto', padding:'36px 32px 80px'}}>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 420px', gap:36, alignItems:'start'}}>
+
+            {/* ── LEFT COLUMN: Photos + description + map + more ── */}
+            <div style={{display:'flex', flexDirection:'column', gap:32}}>
+
+              {/* Main photo */}
+              <div style={{borderRadius:20, overflow:'hidden', background:'var(--pg-ink-100)',
+                position:'relative', aspectRatio:'4/3',
+                boxShadow:'0 4px 32px rgba(0,0,0,0.10)'}}>
+                {allPhotos.length > 0
+                  ? <img
+                      src={allPhotos[imgIdx]} alt={item.name}
+                      onClick={()=>setViewerOpen(true)}
+                      style={{width:'100%', height:'100%', objectFit:'cover', display:'block',
+                        cursor:'zoom-in', transition:'transform .3s ease'}}
+                    />
+                  : <NoPhotoPlaceholder height='100%'/>
+                }
+
+                {/* Status badge */}
+                {isSold && (
+                  <div style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.45)',
+                    display:'flex', alignItems:'center', justifyContent:'center', zIndex:3}}>
+                    <div style={{
+                      background:'#16A34A', color:'#fff', borderRadius:16,
+                      padding:'12px 28px', fontSize:22, fontWeight:900,
+                      letterSpacing:'0.06em', textTransform:'uppercase',
+                      boxShadow:'0 4px 24px rgba(22,163,74,0.4)',
+                    }}>SOLD</div>
+                  </div>
+                )}
+
+                {/* Type badge */}
+                <div style={{position:'absolute', top:16, left:16, zIndex:4}}>
+                  <TypeBadge/>
+                </div>
+
+                {/* Admin badge */}
+                {isAdmin && (
+                  <span style={{position:'absolute', top:16, right:16, zIndex:4,
+                    fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:6,
+                    background:'rgba(239,68,68,0.85)', color:'#fff', letterSpacing:'0.05em'}}>
+                    🛡 ADMIN
+                  </span>
+                )}
+
+                {/* Nav arrows */}
+                {imgIdx > 0 && (
+                  <button onClick={()=>setImgIdx(i=>i-1)} style={{
+                    position:'absolute', left:14, top:'50%', transform:'translateY(-50%)',
+                    width:42, height:42, borderRadius:'50%', background:'rgba(255,255,255,0.92)',
+                    border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                    boxShadow:'0 2px 12px rgba(0,0,0,0.20)', zIndex:4, transition:'all .15s',
+                  }}>{Icon.chev(22,'#111','left')}</button>
+                )}
+                {imgIdx < allPhotos.length - 1 && (
+                  <button onClick={()=>setImgIdx(i=>i+1)} style={{
+                    position:'absolute', right:14, top:'50%', transform:'translateY(-50%)',
+                    width:42, height:42, borderRadius:'50%', background:'rgba(255,255,255,0.92)',
+                    border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                    boxShadow:'0 2px 12px rgba(0,0,0,0.20)', zIndex:4, transition:'all .15s',
+                  }}>{Icon.chev(22,'#111','right')}</button>
+                )}
+
+                {/* Photo counter */}
+                {allPhotos.length > 1 && (
+                  <div style={{position:'absolute', bottom:14, right:16, zIndex:4,
+                    background:'rgba(0,0,0,0.50)', backdropFilter:'blur(4px)',
+                    borderRadius:999, padding:'3px 10px', fontSize:11, fontWeight:700, color:'#fff'}}>
+                    {imgIdx+1} / {allPhotos.length}
+                  </div>
+                )}
+              </div>
+
+              {/* Thumbnails */}
+              {allPhotos.length > 1 && (
+                <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+                  {allPhotos.map((url, i) => (
+                    <button key={i} onClick={()=>setImgIdx(i)} style={{
+                      width:80, height:80, borderRadius:12, overflow:'hidden', padding:0,
+                      cursor:'pointer', flexShrink:0, transition:'all .15s',
+                      border: i===imgIdx
+                        ? '2.5px solid var(--pg-blue-500)'
+                        : '2px solid var(--pg-ink-200)',
+                      opacity: i===imgIdx ? 1 : 0.65,
+                      boxShadow: i===imgIdx ? '0 0 0 3px rgba(59,130,246,0.15)' : 'none',
+                    }}>
+                      <img src={url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Description */}
+              {item.description && (
+                <div style={{
+                  background:'var(--pg-white)', borderRadius:16, padding:'24px',
+                  border:'1px solid var(--pg-ink-200)', boxShadow:'0 1px 4px rgba(0,0,0,0.04)',
+                }}>
+                  <div style={{fontSize:11, fontWeight:800, color:'var(--pg-ink-400)',
+                    letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>
+                    {lang==='pt'?'DESCRIÇÃO':'DESCRIPTION'}
+                  </div>
+                  <div style={{fontSize:15, lineHeight:1.7, color:'var(--pg-ink-700)'}}>
+                    {item.description}
+                  </div>
+                </div>
+              )}
+
+              {/* Location */}
+              {item.loc && (
+                <div style={{
+                  background:'var(--pg-white)', borderRadius:16, padding:'24px',
+                  border:'1px solid var(--pg-ink-200)', boxShadow:'0 1px 4px rgba(0,0,0,0.04)',
+                }}>
+                  <LocationSection/>
+                </div>
+              )}
+
+              {/* More from seller */}
+              <MoreFromSeller/>
+            </div>
+
+            {/* ── RIGHT COLUMN: Sticky info panel ── */}
+            <div style={{position:'sticky', top:76, display:'flex', flexDirection:'column', gap:0}}>
+              <div style={{
+                background:'var(--pg-white)', borderRadius:20, overflow:'hidden',
+                border:'1px solid var(--pg-ink-200)',
+                boxShadow:'0 4px 24px rgba(0,0,0,0.08)',
+              }}>
+                {/* Header with type + status */}
+                <div style={{
+                  padding:'20px 24px 0',
+                  borderBottom:'1px solid var(--pg-ink-100)',
+                }}>
+                  <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:14}}>
+                    <TypeBadge/>
+                    {isSold && (
+                      <span style={{
+                        fontSize:10, fontWeight:800, padding:'4px 10px', borderRadius:6,
+                        background:'#DCFCE7', color:'#15803D', letterSpacing:'0.07em',
+                      }}>✓ SOLD</span>
+                    )}
+                    {item.status === 'pending' && (
+                      <span style={{
+                        fontSize:10, fontWeight:800, padding:'4px 10px', borderRadius:6,
+                        background:'#FEF3C7', color:'#92400E', letterSpacing:'0.07em',
+                      }}>⏳ PENDING</span>
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <h1 style={{
+                    margin:'0 0 10px', fontFamily:'var(--pg-font-display)',
+                    fontSize:24, fontWeight:800, letterSpacing:'-0.02em',
+                    lineHeight:1.2, color:'var(--pg-ink-900)',
+                  }}>{item.name}</h1>
+
+                  {/* Price */}
+                  <div style={{marginBottom:10}}>
+                    <PriceBlock large/>
+                  </div>
+
+                  {/* Location */}
+                  {item.loc && (
+                    <div style={{display:'flex', alignItems:'center', gap:5, marginBottom:18,
+                      fontSize:13, color:'var(--pg-ink-500)'}}>
+                      {Icon.pin(13,'var(--pg-ink-400)')} {locationLabel}
+                    </div>
+                  )}
+                </div>
+
+                {/* Seller */}
+                <div style={{padding:'18px 24px', borderBottom:'1px solid var(--pg-ink-100)'}}>
+                  <div style={{fontSize:11, fontWeight:800, color:'var(--pg-ink-400)',
+                    letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>
+                    {lang==='pt'?'VENDEDOR':lang==='es'?'VENDEDOR':'SELLER'}
+                  </div>
+                  <SellerRow horizontal/>
+                </div>
+
+                {/* Admin notice */}
+                {canDelete && (
+                  <div style={{
+                    margin:'16px 24px 0',
+                    padding:'10px 14px', borderRadius:10,
+                    background:'#FEF2F2', border:'1px solid #FCA5A5',
+                    display:'flex', alignItems:'center', gap:8,
+                  }}>
+                    <span style={{fontSize:14, flexShrink:0}}>🛡</span>
+                    <span style={{fontSize:12, color:'#DC2626', fontWeight:500, lineHeight:1.4}}>
+                      {lang==='pt'
+                        ? 'Visualizando como admin — 🗑️ remove definitivamente.'
+                        : 'Viewing as admin — 🗑️ permanently removes listing.'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div style={{padding:'18px 24px', display:'flex', flexDirection:'column', gap:10}}>
+                  {/* Message button */}
+                  <button onClick={handleContact} style={{
+                    width:'100%', height:52, borderRadius:14, border:'none', cursor:'pointer',
+                    fontFamily:'inherit', fontSize:15, fontWeight:700, color:'#fff',
+                    background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+                    boxShadow:'0 4px 18px rgba(0,119,182,0.30)',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:9,
+                    transition:'all .15s',
+                  }}>
+                    {Icon.msg(18,'#fff')}
+                    {lang==='pt'?'Enviar mensagem':'Send Message'}
+                  </button>
+
+                  {/* Mark as Sold */}
+                  <MarkSoldBlock/>
+                </div>
+
+                {/* Listed date */}
+                {timeAgoLabel && (
+                  <div style={{
+                    padding:'12px 24px 20px', textAlign:'center',
+                    fontSize:12, color:'var(--pg-ink-400)',
+                    borderTop:'1px solid var(--pg-ink-100)',
+                  }}>
+                    {lang==='pt'?`Publicado ${timeAgoLabel}`:`Listed ${timeAgoLabel}`}
+                  </div>
+                )}
+              </div>
+
+              {/* Safety tip card */}
+              <div style={{
+                marginTop:16, padding:'14px 18px', borderRadius:14,
+                background:'var(--pg-white)', border:'1px solid var(--pg-ink-200)',
+                boxShadow:'0 1px 4px rgba(0,0,0,0.04)',
+              }}>
+                <div style={{display:'flex', gap:10, alignItems:'flex-start'}}>
+                  <div style={{
+                    width:32, height:32, borderRadius:10, background:'var(--pg-blue-50)',
+                    display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-600)" strokeWidth="2" strokeLinecap="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-800)', marginBottom:2}}>
+                      {lang==='pt'?'Dica de segurança':'Safety Tip'}
+                    </div>
+                    <div style={{fontSize:11.5, color:'var(--pg-ink-500)', lineHeight:1.5}}>
+                      {lang==='pt'
+                        ? 'Sempre se conheçam antes de trocar dinheiro. Prefira locais públicos.'
+                        : 'Always meet in a public place. Never send payment before seeing the item.'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Fullscreen photo viewer */}
+        {viewerOpen && allPhotos.length > 0 && (
+          <PhotoViewer photos={allPhotos} startIdx={imgIdx} onClose={()=>setViewerOpen(false)}/>
+        )}
+        <MarkSoldSheetSlot/>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // ── MOBILE LAYOUT (< 900px) — original design kept ───────────
+  // ══════════════════════════════════════════════════════════════
   return (
     <div style={{padding:'0 0 36px'}}>
 
