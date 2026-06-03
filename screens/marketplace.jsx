@@ -2101,7 +2101,7 @@ function MarketplaceScreen({ ctx }) {
     ));
     return (
       <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
-      <div style={{height:'100%', overflowY:'auto', background:'var(--pg-ink-50)'}}>
+      <div style={{height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
 
         {/* ── HERO HEADER ───────────────────────────────────────── */}
         <div style={{
