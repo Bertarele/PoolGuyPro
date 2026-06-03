@@ -22,14 +22,17 @@ function HomeScreen({ ctx }) {
     ? user.name
     : (user.email ? user.email.split('@')[0] : null);
 
-  // My real posts from Supabase liveMarket
+  // My real posts from Supabase liveMarket — active only (exclude sold)
   // UID is the only reliable check — name fallbacks only for legacy posts without author_id
   // (prevents false-match when two users share the same display name)
   const myPosts = liveMarket.filter(m =>
-    (user.uid && m.author_id && m.author_id === user.uid) ||
-    (!m.author_id && myAuthor && m.author === myAuthor) ||
-    (!m.author_id && user.name && m.author === user.name) ||
-    (!m.author_id && user.email && m.author === user.email.split('@')[0])
+    m.status !== 'sold' &&
+    (
+      (user.uid && m.author_id && m.author_id === user.uid) ||
+      (!m.author_id && myAuthor && m.author === myAuthor) ||
+      (!m.author_id && user.name && m.author === user.name) ||
+      (!m.author_id && user.email && m.author === user.email.split('@')[0])
+    )
   );
 
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);

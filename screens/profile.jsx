@@ -138,6 +138,9 @@ function ProfileScreen({ ctx }) {
         {/* Saved listings */}
         <SavedSection user={user} lang={lang}/>
 
+        {/* Sales history */}
+        <HistorySection user={user} lang={lang}/>
+
         {/* Regions */}
         <Section title={t.workRegions} action={t.edit} onAction={openRegionEditor}>
           <div className="pg-card" style={{padding:'12px 14px'}}>
@@ -533,6 +536,129 @@ function SettingRow({ icon, label, detail, chev, last, onClick, right }) {
       {right}
       {chev && Icon.chev(14,'var(--pg-ink-400)')}
     </div>
+  );
+}
+
+// ── History Section — sold listings ────────────────────────────
+function HistorySection({ user, lang }) {
+  const [items,    setItems]   = React.useState(null); // null = loading
+  const [expanded, setExpanded] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb) { setItems([]); return; }
+    window.sb.from('marketplace')
+      .select('id, name, price, price_mode, cat, loc, photo_url, type, status, sold_at, created_at')
+      .eq('author_id', user.uid)
+      .eq('status', 'sold')
+      .order('sold_at', { ascending: false })
+      .then(({ data }) => {
+        setItems(data || []);
+      });
+  }, [user?.uid]);
+
+  const title  = lang==='pt'?'HISTÓRICO':lang==='es'?'HISTORIAL':'HISTORY';
+  const fmtDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString(lang==='pt'?'pt-BR':lang==='es'?'es-MX':'en-US', { month:'short', day:'numeric', year:'numeric' });
+  };
+  const fmtType = (type) => {
+    if (type==='sell') return lang==='pt'?'Venda':lang==='es'?'Venta':'Sold';
+    if (type==='rent') return lang==='pt'?'Aluguel':lang==='es'?'Renta':'Rental';
+    if (type==='route') return lang==='pt'?'Rota':lang==='es'?'Ruta':'Route';
+    return lang==='pt'?'Marketplace':'Marketplace';
+  };
+
+  const visibleItems = expanded ? (items||[]) : (items||[]).slice(0, 3);
+
+  return (
+    <section>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
+        <h3 style={{margin:0, fontWeight:700, color:'var(--pg-ink-700)', letterSpacing:'-0.01em', textTransform:'uppercase', fontSize:11}}>
+          {title}
+        </h3>
+        {items && items.length > 0 && (
+          <span style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-500)'}}>{items.length}</span>
+        )}
+      </div>
+      <div className="pg-card" style={{padding: items && items.length > 0 ? 0 : '16px 14px', overflow:'hidden'}}>
+        {items === null ? (
+          <div style={{padding:'16px 14px', fontSize:13, color:'var(--pg-ink-400)'}}>
+            {lang==='pt'?'Carregando…':lang==='es'?'Cargando…':'Loading…'}
+          </div>
+        ) : items.length === 0 ? (
+          <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:8, padding:'20px 14px', textAlign:'center'}}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-300)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+              <path d="M8 14h.01M12 14h.01"/>
+            </svg>
+            <div style={{fontSize:13, color:'var(--pg-ink-400)'}}>
+              {lang==='pt'?'Nenhuma venda ainda':lang==='es'?'Sin ventas aún':'No completed sales yet'}
+            </div>
+          </div>
+        ) : (
+          <>
+            {visibleItems.map((m, idx) => {
+              const isLast = idx === visibleItems.length - 1 && (!expanded || items.length <= 3);
+              return (
+                <div key={m.id} style={{
+                  display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
+                  borderBottom: isLast ? 'none' : '0.5px solid var(--pg-ink-100)',
+                }}>
+                  {/* Thumbnail */}
+                  <div style={{width:48, height:48, borderRadius:10, overflow:'hidden', flexShrink:0,
+                    background:'var(--pg-ink-100)', position:'relative'}}>
+                    {m.photo_url
+                      ? <img src={m.photo_url} alt={m.name} style={{width:'100%', height:'100%', objectFit:'cover', filter:'grayscale(0.5)'}}/>
+                      : <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18}}>📦</div>
+                    }
+                    {/* Sold overlay badge */}
+                    <div style={{
+                      position:'absolute', bottom:0, left:0, right:0,
+                      background:'rgba(0,0,0,0.55)', fontSize:8, fontWeight:800, color:'#fff',
+                      textAlign:'center', letterSpacing:'0.06em', padding:'2px 0',
+                    }}>SOLD</div>
+                  </div>
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{fontSize:13, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:'var(--pg-ink-900)'}}>{m.name}</div>
+                    <div style={{display:'flex', alignItems:'center', gap:6, marginTop:2, flexWrap:'wrap'}}>
+                      <span style={{fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:5,
+                        background:'var(--pg-ink-100)', color:'var(--pg-ink-500)', letterSpacing:'0.04em'}}>
+                        {fmtType(m.type)}
+                      </span>
+                      {m.price_mode !== 'neg' && m.price && (
+                        <span style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-700)'}}>
+                          ${m.price}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{fontSize:11, color:'var(--pg-ink-400)', textAlign:'right', flexShrink:0}}>
+                    <div style={{fontWeight:600, color:'#16A34A', fontSize:10, letterSpacing:'0.04em', marginBottom:2}}>✓ SOLD</div>
+                    {m.sold_at && <div>{fmtDate(m.sold_at)}</div>}
+                  </div>
+                </div>
+              );
+            })}
+            {items.length > 3 && (
+              <button onClick={()=>setExpanded(!expanded)} style={{
+                width:'100%', padding:'11px', border:'none', background:'transparent',
+                color:'var(--pg-blue-500)', fontSize:13, fontWeight:600, cursor:'pointer',
+                borderTop:'0.5px solid var(--pg-ink-100)', fontFamily:'inherit',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+              }}>
+                {expanded
+                  ? (lang==='pt'?'Ver menos':lang==='es'?'Ver menos':'Show less')
+                  : (lang==='pt'?`Ver mais ${items.length-3}`:lang==='es'?`Ver ${items.length-3} más`:`Show ${items.length-3} more`)}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <polyline points={expanded?"18 15 12 9 6 15":"6 9 12 15 18 9"}/>
+                </svg>
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </section>
   );
 }
 

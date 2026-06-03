@@ -314,6 +314,23 @@ function App() {
     if (isLoggedIn && user?.uid) loadPendingRatings();
   }, [isLoggedIn, user?.uid, loadPendingRatings]);
 
+  // ── Buyer rating prompt: show centered popup on home tab visit ─
+  // Reset "shown" flag every time user leaves home tab (so next visit shows again)
+  React.useEffect(() => {
+    if (tab !== 'home') {
+      ratingPromptShownThisVisit.current = false;
+    }
+  }, [tab]);
+  // Show popup when user arrives on home tab and has pending ratings
+  React.useEffect(() => {
+    if (tab === 'home' && pendingRatings.length > 0 && !ratingPromptShownThisVisit.current) {
+      ratingPromptShownThisVisit.current = true;
+      // Small delay so the home screen renders first
+      const timer = setTimeout(() => setRatingPromptOpen(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [tab, pendingRatings.length]); // eslint-disable-line
+
   // Overlays
   const [chatOpen,         setChatOpen]        = React.useState(false);
   const [chatConvoTarget,  setChatConvoTarget]  = React.useState(null); // string | { id, name }
@@ -348,6 +365,8 @@ function App() {
   const [privacyOpen,      setPrivacyOpen]     = React.useState(false);
   const [pendingRatings,   setPendingRatings]  = React.useState([]); // ratings to submit
   const [activeRating,     setActiveRating]    = React.useState(null); // current RatingSheet
+  const [ratingPromptOpen, setRatingPromptOpen] = React.useState(false); // buyer popup
+  const ratingPromptShownThisVisit = React.useRef(false); // avoid double-showing per tab visit
 
   // ── Deep link — ?listing=ID opens a specific listing ─────────
   const [deepLinkListingId, setDeepLinkListingId] = React.useState(() => {
@@ -719,6 +738,18 @@ function App() {
           setPendingRatings(prev => prev.filter(r => r.id !== id));
           setActiveRating(null);
         }}
+      />
+      {/* ── Buyer Rating Prompt — centered popup when buyer has pending rating ── */}
+      <BuyerRatingPromptModal
+        open={ratingPromptOpen}
+        pendingRatings={pendingRatings}
+        lang={lang}
+        currentUser={user}
+        onRateNow={(rating) => {
+          setRatingPromptOpen(false);
+          setTimeout(() => setActiveRating(rating), 180);
+        }}
+        onClose={() => setRatingPromptOpen(false)}
       />
     </>
   );

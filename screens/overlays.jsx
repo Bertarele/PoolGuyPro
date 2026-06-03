@@ -3501,10 +3501,129 @@ function PrivacySheet({ open, onClose, lang='en' }) {
   );
 }
 
+// ── Buyer Rating Prompt Modal — centered popup (not a bottom sheet) ───────────
+// Shown automatically when buyer has a pending rating to submit
+function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUser, onRateNow, onClose }) {
+  const [toProfile, setToProfile] = React.useState(null);
+  const rating = pendingRatings[0] || null;
+
+  React.useEffect(() => {
+    if (!open || !rating?.to_id || !window.sb) { setToProfile(null); return; }
+    window.sb.from('profiles').select('name,photo_url').eq('id', rating.to_id).single()
+      .then(({ data }) => { if (data) setToProfile(data); })
+      .catch(() => {});
+  }, [open, rating?.to_id]);
+
+  if (!open || !rating) return null;
+
+  const toName = toProfile?.name || rating.to_name || rating.from_name || '?';
+  const listingName = rating.listing_name || '';
+  const count = pendingRatings.length;
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position:'fixed', inset:0, zIndex:2000,
+        background:'rgba(0,0,0,0.55)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        padding:'20px',
+        backdropFilter:'blur(3px)',
+        animation:'fadeIn .18s ease-out',
+      }}
+    >
+      <div
+        onClick={e=>e.stopPropagation()}
+        style={{
+          width:'100%', maxWidth:360,
+          background:'var(--pg-white)',
+          borderRadius:22,
+          padding:'28px 24px 24px',
+          boxShadow:'0 24px 80px rgba(0,0,0,0.30)',
+          animation:'slideUp .22s ease-out',
+        }}
+      >
+        {/* Star icon header */}
+        <div style={{textAlign:'center', marginBottom:20}}>
+          <div style={{
+            width:56, height:56, borderRadius:18,
+            background:'linear-gradient(135deg,#FEF3C7,#FDE68A)',
+            border:'1.5px solid #FCD34D',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            margin:'0 auto 14px',
+          }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </div>
+          <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', fontFamily:'var(--pg-font-display)', marginBottom:6}}>
+            {lang==='pt'?'Avaliação pendente!':lang==='es'?'¡Evaluación pendiente!':'Pending Rating!'}
+          </div>
+          <div style={{fontSize:13.5, color:'var(--pg-ink-600)', lineHeight:1.5}}>
+            {lang==='pt'
+              ? `Você comprou "${listingName}" de ${toName}. Como foi a experiência?`
+              : lang==='es'
+                ? `Compraste "${listingName}" de ${toName}. ¿Cómo fue la experiencia?`
+                : `You bought "${listingName}" from ${toName}. How was your experience?`}
+          </div>
+        </div>
+
+        {/* Seller avatar */}
+        <div style={{
+          display:'flex', alignItems:'center', gap:10,
+          padding:'10px 12px', borderRadius:12,
+          background:'var(--pg-blue-50)', border:'1px solid var(--pg-blue-100)',
+          marginBottom:20,
+        }}>
+          <Avatar name={toName} size={38} src={toProfile?.photo_url || undefined}/>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{toName}</div>
+            <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>
+              {lang==='pt'?'Vendedor':lang==='es'?'Vendedor':'Seller'}
+            </div>
+          </div>
+          {count > 1 && (
+            <span style={{fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:8,
+              background:'var(--pg-blue-500)', color:'#fff'}}>
+              +{count - 1}
+            </span>
+          )}
+        </div>
+
+        {/* Buttons */}
+        <button
+          onClick={() => { onRateNow(rating); }}
+          style={{
+            width:'100%', padding:'15px', borderRadius:14, border:'none',
+            cursor:'pointer', fontFamily:'inherit', fontSize:15, fontWeight:700,
+            color:'#fff', marginBottom:10,
+            background:'linear-gradient(135deg,#F59E0B,#D97706)',
+            boxShadow:'0 4px 16px rgba(245,158,11,0.35)',
+          }}
+        >
+          {lang==='pt'?'⭐ Avaliar agora':lang==='es'?'⭐ Evaluar ahora':'⭐ Rate Now'}
+        </button>
+        <button
+          onClick={onClose}
+          style={{
+            width:'100%', padding:'13px', borderRadius:14,
+            border:'1.5px solid var(--pg-ink-200)', background:'transparent',
+            cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:600,
+            color:'var(--pg-ink-600)',
+          }}
+        >
+          {lang==='pt'?'Avaliar depois':lang==='es'?'Evaluar después':'Rate Later'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 Object.assign(window, {
   ChatSheet, NotificationsSheet, PaywallSheet, PostMenuSheet, Toast,
   LanguagePickerSheet, ApplicantsSheet, VerificationSheet, PushNotifSheet,
   WalletSheet, WorkLifecycleSheet, ReviewSheet, HiringAppDetailSheet,
   ApplyJobSheet, EditProfileSheet,
   PublicProfileSheet, HelpSheet, PrivacySheet,
+  BuyerRatingPromptModal,
 });

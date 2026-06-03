@@ -254,7 +254,7 @@ function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) 
     try {
       // Update listing status (silently succeeds even if already sold — idempotent)
       const { error: e1 } = await window.sb.from('marketplace')
-        .update({ status: 'sold', buyer_id: selected.id })
+        .update({ status: 'sold', buyer_id: selected.id, sold_at: new Date().toISOString() })
         .eq('id', item._id);
       if (e1) throw e1;
 
@@ -1749,7 +1749,14 @@ function MarketplaceScreen({ ctx }) {
     author:r.author, author_id:r.author_id||null,
     photoUrl:r.photo_url||null,
     photoUrls:(r.photo_urls&&r.photo_urls.length>0)?r.photo_urls:(r.photo_url?[r.photo_url]:[]),
-    rentPeriod:r.rent_period||'day', status:r.status||'pending', createdAt:r.created_at||null });
+    rentPeriod:r.rent_period||'day', status:r.status||'pending',
+    createdAt:r.created_at||null, soldAt:r.sold_at||null });
+
+  // Returns true if a sold item should still appear in marketplace (< 24h after sold)
+  const isSoldRecently = (item) =>
+    item.status === 'sold' &&
+    item.soldAt &&
+    (Date.now() - new Date(item.soldAt).getTime()) < 86400000;
 
   // Never show raw email as author — if author is an email, show the part before @
   const fmtAuthor = (a) => {
@@ -1964,15 +1971,16 @@ function MarketplaceScreen({ ctx }) {
     return (
       <button key={item._id} onClick={()=>openListing(item)} className="pg-press"
         style={{
-          padding:0, overflow:'hidden', position:'relative', cursor:'pointer',
-          border: isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid #86EFAC' : '1.5px solid var(--pg-blue-100)',
-          opacity: isPending ? 0.82 : 1,
+          padding:0, overflow:'hidden', position:'relative', cursor: isSoldItem ? 'default' : 'pointer',
+          border: isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
+          opacity: isPending ? 0.82 : isSoldItem ? 0.70 : 1,
           display:'flex', flexDirection:'column',
-          borderRadius:16, background:'var(--pg-white)', textAlign:'left', fontFamily:'inherit',
+          borderRadius:16, background: isSoldItem ? 'var(--pg-ink-50)' : 'var(--pg-white)', textAlign:'left', fontFamily:'inherit',
           boxShadow: desktopMode
             ? '0 2px 12px rgba(0,0,0,0.07), 0 0 0 0 transparent'
             : '0 1px 3px rgba(0,0,0,0.08)',
           transition:'box-shadow .18s, transform .12s',
+          filter: isSoldItem ? 'grayscale(0.65)' : 'none',
         }}>
         {/* Photo */}
         <div style={{position:'relative', paddingTop: desktopMode ? '62%' : '72%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
@@ -1991,9 +1999,9 @@ function MarketplaceScreen({ ctx }) {
             </span>
           )}
           {isSoldItem && (
-            <span style={{position:'absolute', top:10, left:10, fontSize:9.5, fontWeight:800, padding:'3px 8px', borderRadius:6,
-              background:'rgba(22,163,74,0.90)', color:'#fff', backdropFilter:'blur(4px)', letterSpacing:'0.05em'}}>
-              ✓ SOLD
+            <span style={{position:'absolute', top:10, left:10, fontSize:9.5, fontWeight:800, padding:'3px 10px', borderRadius:6,
+              background:'rgba(100,100,100,0.90)', color:'#fff', backdropFilter:'blur(4px)', letterSpacing:'0.08em'}}>
+              SOLD
             </span>
           )}
           <span style={{position:'absolute', top:10, right:10, fontSize:9, fontWeight:700, padding:'3px 8px', borderRadius:6,
@@ -2089,7 +2097,7 @@ function MarketplaceScreen({ ctx }) {
   // ══════════════════════════════════════════════════════════════
   if (isDesktop) {
     const liveEquipment = liveMarket.filter(m => m.type === mode && (
-      user.role==='admin' || m.status==='approved' || (m.status==='pending'&&isMyPost(m))
+      user.role==='admin' || m.status==='approved' || (m.status==='pending'&&isMyPost(m)) || isSoldRecently(m)
     ));
     return (
       <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
@@ -2784,7 +2792,8 @@ function MarketplaceScreen({ ctx }) {
               .filter(m => m.type === mode && (
                 user.role === 'admin' ||   // admin vê tudo (pending de qualquer um)
                 m.status === 'approved' ||
-                (m.status === 'pending' && isMyPost(m))
+                (m.status === 'pending' && isMyPost(m)) ||
+                isSoldRecently(m)
               ))
               .map(item => {
                 const isPending = item.status === 'pending';
