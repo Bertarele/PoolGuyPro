@@ -3,11 +3,17 @@
 function QuickPoolsScreen({ ctx }) {
   const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat } = ctx;
   const t = STRINGS[lang];
-  const [selected, setSelected] = React.useState(null);
+  const [selected,    setSelected]    = React.useState(null);
   const [highlighted, setHighlighted] = React.useState(null);
-  const [applied, setApplied] = React.useState({});
+  const [applied,     setApplied]     = React.useState({});
+  const [isDesktop,   setIsDesktop]   = React.useState(() => window.innerWidth >= 900);
 
-  // Union of all selected cities across days (for the notif summary chip strip)
+  React.useEffect(() => {
+    const h = () => setIsDesktop(window.innerWidth >= 900);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
+
   const notifCities = React.useMemo(() => {
     const set = new Set();
     Object.values(regionsByDay || {}).forEach(arr => (arr||[]).forEach(c => set.add(c)));
@@ -28,6 +34,373 @@ function QuickPoolsScreen({ ctx }) {
     setTimeout(()=>setHighlighted(null), 1800);
   };
 
+  // ── Shared job card (used on mobile + desktop) ────────────────
+  const JobCard = ({ j, compact=false }) => {
+    const isApplied    = !!applied[j.id];
+    const isHighlighted = highlighted === j.id;
+    const locked       = user.tier === 'free';
+
+    return (
+      <article key={j.id}
+        ref={el => { cardRefs.current[j.id] = el; }}
+        onClick={()=>setSelected(j)}
+        style={{
+          background:'var(--pg-white)', borderRadius:16, cursor:'pointer',
+          border: isHighlighted
+            ? '1.5px solid var(--pg-blue-400)'
+            : '1px solid var(--pg-ink-200)',
+          boxShadow: isHighlighted
+            ? '0 0 0 3px rgba(0,119,182,0.12), 0 6px 20px rgba(0,119,182,0.15)'
+            : '0 2px 8px rgba(0,0,0,0.05)',
+          transition:'all .2s ease',
+          overflow:'hidden',
+        }}>
+
+        {/* Top accent strip */}
+        <div style={{
+          height:3, width:'100%',
+          background: isApplied
+            ? 'linear-gradient(90deg,#16A34A,#22C55E)'
+            : locked
+              ? 'linear-gradient(90deg,#6B7280,#9CA3AF)'
+              : 'linear-gradient(90deg,#0077B6,#38BDF8)',
+        }}/>
+
+        <div style={{padding: compact ? '14px 16px' : '16px 18px'}}>
+          {/* Row 1: time + pools + price */}
+          <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:10}}>
+            <div style={{flex:1, minWidth:0}}>
+              {/* When + applied badge */}
+              <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap'}}>
+                <span style={{
+                  display:'inline-flex', alignItems:'center', gap:4,
+                  fontSize:11, fontWeight:600, color:'var(--pg-ink-500)',
+                }}>
+                  {Icon.clock(11,'var(--pg-ink-400)')} {tr(j.when,lang)}
+                </span>
+                {isApplied && (
+                  <span style={{
+                    fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:999,
+                    background:'#DCFCE7', color:'#15803D', letterSpacing:'0.04em',
+                  }}>✓ {t.applied}</span>
+                )}
+                {locked && (
+                  <span style={{
+                    fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:999,
+                    background:'var(--pg-ink-100)', color:'var(--pg-ink-500)', letterSpacing:'0.04em',
+                    display:'inline-flex', alignItems:'center', gap:3,
+                  }}>
+                    {Icon.lock(9,'var(--pg-ink-400)')} Premium
+                  </span>
+                )}
+              </div>
+              {/* Title */}
+              <h3 style={{
+                margin:'0 0 6px', fontFamily:'var(--pg-font-display)',
+                fontSize: compact?15:17, fontWeight:800, letterSpacing:'-0.02em', lineHeight:1.2,
+                color:'var(--pg-ink-900)',
+              }}>{tr(j.title,lang)}</h3>
+              {/* Location */}
+              <div style={{display:'flex', alignItems:'center', gap:5, fontSize:12, color:'var(--pg-ink-500)'}}>
+                {Icon.pin(12,'var(--pg-blue-400)')}
+                <span>{j.loc}</span>
+                <span style={{color:'var(--pg-ink-300)'}}>·</span>
+                <span>{tr(j.dist,lang)}</span>
+              </div>
+            </div>
+
+            {/* Price block */}
+            <div style={{
+              flexShrink:0, textAlign:'right', padding:'8px 12px',
+              borderRadius:12, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-100)',
+              minWidth:72,
+            }}>
+              <div style={{fontSize:10, fontWeight:600, color:'var(--pg-ink-400)', letterSpacing:'0.04em', marginBottom:2}}>
+                {j.pools} {j.pools>1?t.poolsWord:(lang==='pt'?'piscina':'pool')}
+              </div>
+              {j.price === 'neg' ? (
+                <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-700)'}}>{t.negotiable}</div>
+              ) : (
+                <>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800,
+                    color: locked?'var(--pg-ink-400)':'var(--pg-blue-500)',
+                    letterSpacing:'-0.03em', lineHeight:1,
+                    filter: locked ? 'blur(4px)' : 'none',
+                  }}>${j.price}</div>
+                  <div style={{fontSize:9.5, color:'var(--pg-ink-400)', marginTop:1}}>{t.perPool}</div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{height:1, background:'var(--pg-ink-100)', margin:'0 0 12px'}}/>
+
+          {/* Row 2: poster + action */}
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:10}}>
+            <div style={{display:'flex', alignItems:'center', gap:10, minWidth:0}}>
+              <Avatar name={j.poster} size={32}/>
+              <div>
+                <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)', lineHeight:1.2}}>{j.poster}</div>
+                <div style={{display:'flex', alignItems:'center', gap:4, marginTop:2}}>
+                  <Stars rating={j.rating} size={10}/>
+                  <span style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:500}}>{j.rating}</span>
+                </div>
+              </div>
+            </div>
+
+            {locked ? (
+              <button onClick={(e)=>{e.stopPropagation();openPaywall();}} style={{
+                height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
+                background:'var(--pg-ink-900)', color:'#fff', fontFamily:'inherit',
+                fontSize:12, fontWeight:700, display:'flex', alignItems:'center', gap:6,
+                boxShadow:'0 3px 10px rgba(0,0,0,0.20)',
+              }}>
+                {Icon.lock(12,'#fff')} {t.unlock}
+              </button>
+            ) : isApplied ? (
+              <div style={{
+                height:36, padding:'0 16px', borderRadius:999,
+                background:'#DCFCE7', border:'1px solid #86EFAC',
+                color:'#15803D', fontSize:12, fontWeight:700,
+                display:'flex', alignItems:'center', gap:6,
+              }}>
+                {Icon.check(13,'#15803D')} {t.applied}
+              </div>
+            ) : (
+              <button onClick={(e)=>{e.stopPropagation();setApplied({...applied,[j.id]:true});}} style={{
+                height:36, padding:'0 18px', borderRadius:999, border:'none', cursor:'pointer',
+                background:'linear-gradient(135deg,#0077B6,#023E8A)',
+                color:'#fff', fontFamily:'inherit', fontSize:13, fontWeight:700,
+                boxShadow:'0 3px 10px rgba(0,119,182,0.30)', transition:'all .15s',
+              }}>{t.apply}</button>
+            )}
+          </div>
+        </div>
+      </article>
+    );
+  };
+
+  // ── Sheet (mobile + desktop share the same) ───────────────────
+  const JobSheet = () => (
+    <Sheet open={!!selected} onClose={()=>setSelected(null)} height="86%">
+      {selected && (
+        <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
+          applied={!!applied[selected.id]}
+          onApply={()=>setApplied({...applied,[selected.id]:true})}
+          onUnlock={openPaywall}
+          onChat={openChat}
+          onClose={()=>setSelected(null)}
+        />
+      )}
+    </Sheet>
+  );
+
+  // ══════════════════════════════════════════════════════════════
+  // ── DESKTOP LAYOUT ────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════
+  if (isDesktop) {
+    return (
+      <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
+      <div style={{height:'100%', overflowY:'auto', background:'var(--pg-ink-50)'}}>
+
+        {/* ── HERO ─────────────────────────────────────────────── */}
+        <div style={{
+          background:'linear-gradient(135deg, #011B5A 0%, #0077B6 55%, #0096C7 100%)',
+          padding:'28px 40px 32px', position:'relative', overflow:'hidden',
+        }}>
+          {/* Decorative */}
+          <div style={{position:'absolute', top:-80, right:-80, width:280, height:280,
+            borderRadius:'50%', background:'rgba(255,255,255,0.03)', pointerEvents:'none'}}/>
+          <div style={{position:'absolute', bottom:-50, left:160, width:200, height:200,
+            borderRadius:'50%', background:'rgba(255,255,255,0.03)', pointerEvents:'none'}}/>
+
+          {/* Top row */}
+          <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24}}>
+            <div style={{display:'flex', alignItems:'center', gap:14}}>
+              <div style={{
+                width:52, height:52, borderRadius:16, flexShrink:0,
+                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.75" strokeLinecap="round">
+                  <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
+                  <path d="M2 17 Q6 13 10 17 Q14 21 18 17 Q20 15 22 17"/>
+                  <circle cx="12" cy="5" r="2"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.50)',
+                  letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:3}}>
+                  QUICK POOLS · {(county||'BROWARD').toUpperCase()} COUNTY
+                </div>
+                <div style={{fontFamily:'var(--pg-font-display)', fontSize:28, fontWeight:800,
+                  color:'#fff', letterSpacing:'-0.03em', lineHeight:1}}>
+                  {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Quick Pools'}
+                </div>
+                <div style={{fontSize:13, color:'rgba(255,255,255,0.55)', marginTop:4}}>
+                  {lang==='pt'?'Trabalhos temporários de piscina perto de você':'Temporary pool jobs near you in South Florida'}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{display:'flex', gap:10, alignItems:'center'}}>
+              <button onClick={()=>openChat&&openChat()} style={{
+                width:44, height:44, borderRadius:13,
+                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
+                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                color:'#fff', position:'relative',
+              }}>
+                {Icon.msg(20,'#fff')}
+                {hasUnreadChat && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
+                  borderRadius:'50%', background:'#FF3B30', border:'2px solid #011B5A'}}/>}
+              </button>
+              <button onClick={()=>openPost&&openPost()} style={{
+                height:44, padding:'0 20px', borderRadius:13,
+                background:'#fff', border:'none', cursor:'pointer',
+                fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700,
+                color:'var(--pg-blue-700)', display:'flex', alignItems:'center', gap:8,
+                boxShadow:'0 4px 16px rgba(0,0,0,0.15)', transition:'all .15s',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post Job'}
+              </button>
+            </div>
+          </div>
+
+          {/* Notif regions + stats */}
+          <div style={{display:'grid', gridTemplateColumns:'1fr auto', gap:16, alignItems:'stretch'}}>
+            {/* Notification config card */}
+            <div style={{
+              background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)',
+              borderRadius:14, padding:'14px 18px', backdropFilter:'blur(8px)',
+              display:'flex', alignItems:'center', gap:16,
+            }}>
+              <div style={{
+                width:40, height:40, borderRadius:11, flexShrink:0,
+                background:'rgba(56,189,248,0.20)', border:'1px solid rgba(56,189,248,0.25)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                {Icon.bell(18,'rgba(255,255,255,0.85)')}
+              </div>
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)',
+                  letterSpacing:'0.10em', textTransform:'uppercase', marginBottom:3}}>
+                  {lang==='pt'?'NOTIFICAÇÕES POR DIA':'DAILY NOTIFICATIONS'}
+                </div>
+                <div style={{fontSize:13, fontWeight:600, color:'#fff',
+                  whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                  {notifCities.length > 0
+                    ? notifCities.slice(0,4).join(' · ') + (notifCities.length>4?` +${notifCities.length-4}`:'')
+                    : (lang==='pt'?'Nenhuma cidade configurada':'No cities configured')}
+                </div>
+                <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2}}>
+                  {activeDayCount}/7 {lang==='pt'?'dias ativos':'days active'}
+                </div>
+              </div>
+              <button onClick={openRegionEditor} style={{
+                height:36, padding:'0 14px', borderRadius:10, flexShrink:0,
+                border:'1px solid rgba(56,189,248,0.40)', background:'rgba(56,189,248,0.15)',
+                color:'#fff', fontFamily:'inherit', fontSize:12, fontWeight:700, cursor:'pointer',
+                display:'flex', alignItems:'center', gap:6, transition:'all .15s',
+              }}>
+                {Icon.cal(13,'#fff')} {lang==='pt'?'Editar':'Edit'}
+              </button>
+            </div>
+
+            {/* Stats pills */}
+            <div style={{display:'flex', flexDirection:'column', gap:8}}>
+              {[
+                { value: jobs.length, label: lang==='pt'?'vagas abertas':'open jobs', color:'#38BDF8' },
+                { value: `${activeDayCount}/7`, label: lang==='pt'?'dias ativos':'active days', color:'#34D399' },
+              ].map((s,i) => (
+                <div key={i} style={{
+                  background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)',
+                  borderRadius:10, padding:'10px 16px',
+                  display:'flex', alignItems:'center', gap:10,
+                }}>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, color:s.color, lineHeight:1}}>{s.value}</div>
+                  <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', lineHeight:1.3}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── CONTENT: Map left + Jobs right ───────────────────── */}
+        <div style={{display:'grid', gridTemplateColumns:'420px 1fr', gap:0, minHeight:'calc(100vh - 300px)'}}>
+
+          {/* Left: sticky map */}
+          <div style={{
+            position:'sticky', top:0, height:'calc(100vh - 0px)',
+            borderRight:'1px solid var(--pg-ink-200)',
+            background:'var(--pg-white)', overflow:'hidden', flexShrink:0,
+          }}>
+            <LeafletMapBlock jobs={jobs} highlighted={highlighted} onPinClick={(j)=>scrollToJob(j.id)} fullHeight/>
+
+            {/* Info overlay */}
+            <div style={{
+              position:'absolute', top:16, left:16, right:16, zIndex:400,
+              background:'rgba(255,255,255,0.95)', backdropFilter:'blur(12px)',
+              borderRadius:12, padding:'10px 14px',
+              border:'1px solid rgba(255,255,255,0.8)',
+              boxShadow:'0 4px 16px rgba(0,0,0,0.12)',
+              display:'flex', alignItems:'center', gap:8,
+            }}>
+              {Icon.bell(13,'var(--pg-blue-600)')}
+              <div style={{fontSize:11.5, color:'var(--pg-blue-700)', lineHeight:1.4, flex:1}}>
+                {lang==='pt'
+                  ? <><b>{county} County</b> — clique nos pins para ver detalhes</>
+                  : <><b>{county} County</b> — click pins to jump to job details</>}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: job list */}
+          <div style={{padding:'28px 32px 60px', background:'var(--pg-ink-50)'}}>
+            {/* Header */}
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20}}>
+              <div>
+                <div style={{fontSize:20, fontWeight:800, color:'var(--pg-ink-900)',
+                  fontFamily:'var(--pg-font-display)', letterSpacing:'-0.02em', lineHeight:1}}>
+                  {lang==='pt'?`${jobs.length} vagas disponíveis`:lang==='es'?`${jobs.length} trabajos disponibles`:`${jobs.length} jobs available`}
+                </div>
+                <div style={{fontSize:13, color:'var(--pg-ink-500)', marginTop:4}}>
+                  {lang==='pt'?`Broward County · ordenado por proximidade`:`${county} County · sorted by proximity`}
+                </div>
+              </div>
+              {user.tier==='free' && (
+                <div style={{
+                  display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:999,
+                  background:'linear-gradient(135deg,var(--pg-blue-50),#E0F2FE)',
+                  border:'1px solid var(--pg-blue-100)',
+                }}>
+                  {Icon.lock(12,'var(--pg-blue-600)')}
+                  <span style={{fontSize:12, fontWeight:700, color:'var(--pg-blue-700)'}}>
+                    {lang==='pt'?'Premium para se candidatar':'Premium to apply'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Cards */}
+            <div style={{display:'flex', flexDirection:'column', gap:12}}>
+              {jobs.map(j => <JobCard key={j.id} j={j}/>)}
+            </div>
+          </div>
+        </div>
+      </div>
+      <JobSheet/>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // ── MOBILE LAYOUT ─────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════
   return (
     <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
     <div className="pg-screen" style={{paddingBottom:110, height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
@@ -37,24 +410,32 @@ function QuickPoolsScreen({ ctx }) {
           <div>
             <h1 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em'}}>{t.quickPools}</h1>
             <div style={{fontSize:11.5, opacity:0.75, marginTop:3}}>
-              {lang==='pt'
-                ? `Todos os trabalhos em ${county}`
-                : lang==='es'
-                  ? `Todos los trabajos en ${county}`
-                  : `All jobs in ${county} County`}
+              {lang==='pt'?`Todos os trabalhos em ${county}`:lang==='es'?`Todos los trabajos en ${county}`:`All jobs in ${county} County`}
             </div>
           </div>
         }
         right={
-          <div style={{position:'relative', display:'inline-flex'}}>
-            <IconButton dark onClick={() => openChat && openChat()}>
-              {Icon.msg(20, '#fff')}
-            </IconButton>
-            {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
+          <div style={{display:'flex', gap:8, alignItems:'center'}}>
+            <button onClick={()=>openPost&&openPost()} style={{
+              height:32, padding:'0 12px', borderRadius:10, border:'none', cursor:'pointer',
+              background:'rgba(255,255,255,0.15)', color:'#fff', fontFamily:'inherit',
+              fontSize:12, fontWeight:700, display:'flex', alignItems:'center', gap:5,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              {lang==='pt'?'Publicar':'Post'}
+            </button>
+            <div style={{position:'relative', display:'inline-flex'}}>
+              <IconButton dark onClick={()=>openChat&&openChat()}>
+                {Icon.msg(20,'#fff')}
+              </IconButton>
+              {hasUnreadChat && <span style={{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #011B5A',pointerEvents:'none'}}/>}
+            </div>
           </div>
         }
       >
-        {/* Notification regions indicator */}
+        {/* Notification regions */}
         <div style={{
           marginTop:12, display:'flex', alignItems:'center', justifyContent:'space-between',
           background:'rgba(255,255,255,0.10)', borderRadius:12, padding:'10px 14px',
@@ -62,148 +443,73 @@ function QuickPoolsScreen({ ctx }) {
         }}>
           <div style={{minWidth:0, flex:1}}>
             <div style={{fontSize:10, opacity:0.7, letterSpacing:'0.06em', fontWeight:700, display:'flex', alignItems:'center', gap:5}}>
-              {Icon.bell(11, 'rgba(255,255,255,0.85)')}
-              {lang==='pt' ? 'NOTIFIC. POR DIA' : lang==='es' ? 'NOTIF. POR DÍA' : 'NOTIF. BY DAY'}
+              {Icon.bell(11,'rgba(255,255,255,0.85)')}
+              {lang==='pt'?'NOTIFIC. POR DIA':lang==='es'?'NOTIF. POR DÍA':'NOTIF. BY DAY'}
             </div>
             <div style={{fontSize:12.5, fontWeight:600, marginTop:3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
               {notifCities.length > 0
-                ? notifCities.slice(0,3).join(' · ') + (notifCities.length > 3 ? ` +${notifCities.length-3}` : '')
-                : (lang==='pt'?'Nenhuma cidade configurada':lang==='es'?'Sin ciudades configuradas':'No cities set')}
+                ? notifCities.slice(0,3).join(' · ')+(notifCities.length>3?` +${notifCities.length-3}`:'')
+                : (lang==='pt'?'Nenhuma cidade configurada':'No cities set')}
             </div>
             <div style={{fontSize:10, opacity:0.6, marginTop:2}}>
-              {activeDayCount}/7 {lang==='pt'?'dias ativos':lang==='es'?'días activos':'days active'}
+              {activeDayCount}/7 {lang==='pt'?'dias ativos':'days active'}
             </div>
           </div>
           <button onClick={openRegionEditor} style={{
             border:'0.5px solid rgba(52,205,216,0.55)', background:'rgba(14,186,199,0.28)', color:'#fff',
             height:30, padding:'0 12px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer',
             display:'inline-flex', alignItems:'center', gap:5, flexShrink:0,
-          }}>{Icon.cal(13, '#fff')} {t.edit}</button>
+          }}>{Icon.cal(13,'#fff')} {t.edit}</button>
         </div>
       </NavyBar>
 
-      {/* Real Leaflet map */}
+      {/* Map */}
       <div style={{padding:'14px 18px 0'}}>
         <LeafletMapBlock jobs={jobs} highlighted={highlighted} onPinClick={(j)=>scrollToJob(j.id)}/>
       </div>
 
-      {/* Job list */}
-      <div style={{padding:'14px 18px 0', display:'flex', flexDirection:'column', gap:10}}>
+      {/* Info banner */}
+      <div style={{padding:'12px 18px 0'}}>
         <div style={{
           padding:'10px 12px', borderRadius:11, background:'var(--pg-blue-50)',
           border:'0.5px solid var(--pg-blue-100)',
           display:'flex', alignItems:'flex-start', gap:9,
         }}>
-          <div style={{flexShrink:0, marginTop:1}}>{Icon.bell(14, 'var(--pg-blue-700)')}</div>
+          <div style={{flexShrink:0, marginTop:1}}>{Icon.bell(14,'var(--pg-blue-700)')}</div>
           <div style={{fontSize:11.5, color:'var(--pg-blue-700)', lineHeight:1.4}}>
             {lang==='pt'
               ? <>Mostrando <b>todos os trabalhos do condado de {county}</b>. Você só será <b>notificado</b> dos trabalhos nas cidades e dias configurados.</>
-              : lang==='es'
-                ? <>Mostrando <b>todos los trabajos del condado de {county}</b>. Solo recibirás <b>notificaciones</b> de trabajos en las ciudades y días configurados.</>
-                : <>Showing <b>all jobs in {county} County</b>. You're only <b>notified</b> for jobs in your configured cities and days.</>}
+              : <>Showing <b>all jobs in {county} County</b>. You're only <b>notified</b> for jobs in your configured cities and days.</>}
           </div>
         </div>
-
-        <div style={{
-          fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700,
-          color:'var(--pg-ink-700)', letterSpacing:'-0.01em',
-          display:'flex', alignItems:'center', justifyContent:'space-between',
-        }}>
-          <span>{lang==='pt'?`${jobs.length} trabalhos disponíveis`:lang==='es'?`${jobs.length} trabajos disponibles`:`${jobs.length} jobs available`}</span>
-          {user.tier === 'free' && (
-            <span style={{fontSize:11, color:'var(--pg-aqua-700)', display:'inline-flex', alignItems:'center', gap:4, fontWeight:600}}>
-              {Icon.lock(11, 'var(--pg-aqua-700)')} {lang==='pt'?'Premium aplica':lang==='es'?'Premium postula':'Premium applies'}
-            </span>
-          )}
-        </div>
-
-        {jobs.map(j => {
-          const isApplied = !!applied[j.id];
-          const isHighlighted = highlighted === j.id;
-          return (
-            <article key={j.id}
-              ref={el => { cardRefs.current[j.id] = el; }}
-              className="pg-card pg-card-tap" onClick={()=>setSelected(j)}
-              style={{
-                padding:14,
-                transition: 'box-shadow .25s ease, transform .25s ease',
-                boxShadow: isHighlighted ? '0 0 0 2px var(--pg-aqua-500), 0 8px 20px oklch(0.72 0.14 178 / 0.25)' : 'var(--pg-shadow-1)',
-              }}>
-              <div style={{display:'flex', justifyContent:'space-between', gap:10, alignItems:'flex-start'}}>
-                <div style={{flex:1, minWidth:0}}>
-                  <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:6, flexWrap:'wrap'}}>
-                    {isApplied && <span className="pg-badge pg-badge-applied">✓ {t.applied}</span>}
-                    <span style={{fontSize:11, color:'var(--pg-ink-500)', display:'inline-flex', alignItems:'center', gap:4}}>
-                      {Icon.clock(11, 'var(--pg-ink-500)')} {tr(j.when, lang)}
-                    </span>
-                  </div>
-                  <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.015em', lineHeight:1.25}}>{tr(j.title, lang)}</h3>
-                  <div style={{display:'flex', alignItems:'center', gap:6, marginTop:5, fontSize:12, color:'var(--pg-ink-500)'}}>
-                    {Icon.pin(12, 'var(--pg-ink-500)')} {j.loc} · {tr(j.dist, lang)}
-                  </div>
-                </div>
-                <div style={{textAlign:'right'}}>
-                  <div style={{fontSize:11, color:'var(--pg-ink-500)'}}>{j.pools} {j.pools>1?t.poolsWord:(lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}</div>
-                  {j.price === 'neg' ? (
-                    <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-700)', marginTop:2}}>{t.negotiable}</div>
-                  ) : (
-                    <>
-                      <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', marginTop:2}}>${j.price}</div>
-                      <div style={{fontSize:10, color:'var(--pg-ink-500)'}}>{t.perPool}</div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:12}}>
-                <div style={{display:'flex', alignItems:'center', gap:8, minWidth:0}}>
-                  <Avatar name={j.poster} size={26}/>
-                  <div style={{minWidth:0}}>
-                    <div style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-700)'}}>{j.poster}</div>
-                    <div style={{display:'flex', alignItems:'center', gap:3, fontSize:11, color:'var(--pg-ink-500)'}}>
-                      <Stars rating={j.rating} size={9}/> {j.rating}
-                    </div>
-                  </div>
-                </div>
-                {user.tier === 'free' ? (
-                  <button onClick={(e)=>{e.stopPropagation(); openPaywall();}} className="pg-btn pg-btn-outline" style={{height:34, padding:'0 12px', fontSize:12, borderRadius:999}}>
-                    {Icon.lock(12, 'var(--pg-ink-700)')} {t.unlock}
-                  </button>
-                ) : isApplied ? (
-                  <button className="pg-btn pg-btn-ghost" style={{height:34, padding:'0 14px', fontSize:13, borderRadius:999}}>
-                    {Icon.check(14, 'var(--pg-blue-700)')} {t.applied}
-                  </button>
-                ) : (
-                  <button onClick={(e)=>{e.stopPropagation(); setApplied({...applied,[j.id]:true});}}
-                          className="pg-btn pg-btn-primary" style={{height:34, padding:'0 14px', fontSize:13, borderRadius:999}}>
-                    {t.apply}
-                  </button>
-                )}
-              </div>
-            </article>
-          );
-        })}
       </div>
 
-    </div>{/* end .pg-screen */}
-
-      <Sheet open={!!selected} onClose={()=>setSelected(null)} height="86%">
-        {selected && (
-          <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
-            applied={!!applied[selected.id]}
-            onApply={()=>setApplied({...applied,[selected.id]:true})}
-            onUnlock={openPaywall}
-            onChat={openChat}
-            onClose={()=>setSelected(null)}
-          />
+      {/* Count row */}
+      <div style={{padding:'12px 18px 0', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+        <div style={{fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:800,
+          color:'var(--pg-ink-900)', letterSpacing:'-0.01em'}}>
+          {lang==='pt'?`${jobs.length} vagas disponíveis`:lang==='es'?`${jobs.length} trabajos disponibles`:`${jobs.length} jobs available`}
+        </div>
+        {user.tier==='free' && (
+          <span style={{fontSize:11, color:'var(--pg-blue-600)', display:'inline-flex', alignItems:'center', gap:4, fontWeight:700}}>
+            {Icon.lock(11,'var(--pg-blue-600)')} Premium
+          </span>
         )}
-      </Sheet>
+      </div>
+
+      {/* Job list */}
+      <div style={{padding:'10px 18px 0', display:'flex', flexDirection:'column', gap:10}}>
+        {jobs.map(j => <JobCard key={j.id} j={j} compact/>)}
+      </div>
+
+    </div>
+    <JobSheet/>
     </div>
   );
 }
 
 // ── Real interactive map with Leaflet ────────────────────────
-function LeafletMapBlock({ jobs, highlighted, onPinClick }) {
+function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
   const containerRef = React.useRef(null);
   const mapRef       = React.useRef(null);
   const markersRef   = React.useRef({});
@@ -289,7 +595,12 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick }) {
   }, [highlighted]);
 
   return (
-    <div className="pg-card" style={{ height:200, overflow:'hidden', padding:0, border:'0.5px solid var(--pg-ink-200)', borderRadius:14 }}>
+    <div style={{
+      height: fullHeight ? '100%' : 200, overflow:'hidden', padding:0,
+      border: fullHeight ? 'none' : '0.5px solid var(--pg-ink-200)',
+      borderRadius: fullHeight ? 0 : 14,
+      background:'var(--pg-ink-100)',
+    }}>
       <div ref={containerRef} style={{ height:'100%', width:'100%' }}/>
     </div>
   );
