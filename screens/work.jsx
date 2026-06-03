@@ -67,6 +67,14 @@ function WorkScreen({ ctx }) {
 
   const activeJobs = MY_APPLICATIONS.filter(a => ['accepted','in_progress'].includes(a.status));
 
+  // ── Desktop state ──────────────────────────────────────────────
+  const [isDesktop, setIsDesktop] = React.useState(() => window.innerWidth >= 900);
+  React.useEffect(() => {
+    const fn = () => setIsDesktop(window.innerWidth >= 900);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+
   const tabs = [
     { id:'hiring', label:t.hiring },
     { id:'techs',  label:lang==='pt'?'Técnicos':lang==='es'?'Técnicos':'Techs' },
@@ -107,6 +115,386 @@ function WorkScreen({ ctx }) {
       {Icon.plus(24,'#fff')}
     </button>
   );
+
+  // ── My Activity data (shared between desktop + mobile) ────────
+  const myAppsHiring   = MY_APPLICATIONS.filter(a => a.type === 'hiring');
+  const myAppsVac      = typeof VACATIONS_APPLIED !== 'undefined' ? VACATIONS_APPLIED : [];
+  const myPostsHiring  = MY_POSTS.filter(p => p.type === 'hiring');
+  const myPostsVac     = MY_POSTS.filter(p => p.type === 'vacation');
+
+  const currentMyApps  = sub === 'hiring' ? myAppsHiring : myAppsVac;
+  const currentMyPosts = sub === 'hiring' ? myPostsHiring : myPostsVac;
+
+  // ── Desktop layout ─────────────────────────────────────────────
+  if (isDesktop) {
+    const heroTitle = sub === 'hiring'
+      ? (lang==='pt'?'Vagas de Emprego':lang==='es'?'Ofertas de Trabajo':'Job Openings')
+      : sub === 'techs'
+        ? (lang==='pt'?'Técnicos Disponíveis':lang==='es'?'Técnicos Disponibles':'Available Techs')
+        : (lang==='pt'?'Cobertura de Férias':lang==='es'?'Cobertura de Vacaciones':'Vacation Cover');
+
+    const heroSub = sub === 'hiring'
+      ? (lang==='pt'?'Oportunidades de emprego em South Florida':lang==='es'?'Oportunidades de empleo en South Florida':'Job opportunities in South Florida')
+      : sub === 'techs'
+        ? (lang==='pt'?'Técnicos especializados disponíveis na região':lang==='es'?'Técnicos especializados disponibles en la región':'Specialized technicians available in the region')
+        : (lang==='pt'?'Cubra férias e impulsione seu perfil':lang==='es'?'Cubre vacaciones y mejora tu perfil':'Cover vacations and boost your profile');
+
+    const StatPill = ({ icon, count, label }) => (
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 16px',borderRadius:999,background:'rgba(255,255,255,0.10)',border:'1px solid rgba(255,255,255,0.18)'}}>
+        <div style={{width:24,height:24,borderRadius:7,background:'rgba(255,255,255,0.12)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          {icon}
+        </div>
+        <div>
+          <div style={{fontSize:16,fontWeight:700,fontFamily:'var(--pg-font-display)',color:'#fff',lineHeight:1}}>{count}</div>
+          <div style={{fontSize:10,color:'rgba(255,255,255,0.55)',lineHeight:1,marginTop:1}}>{label}</div>
+        </div>
+      </div>
+    );
+
+    const appsLbl    = lang==='pt'?'Candidaturas':lang==='es'?'Solicitudes':'Applications';
+    const myPostsLbl = lang==='pt'?'Meus Posts':lang==='es'?'Mis Posts':'My Posts';
+    const emptyApps  = lang==='pt'?'Nenhuma candidatura ainda':lang==='es'?'Sin solicitudes aún':'No applications yet';
+    const emptyPosts = lang==='pt'?'Nenhum post publicado':lang==='es'?'Sin publicaciones':'No posts yet';
+
+    return (
+      <div style={{width:'100%',height:'100%',overflowY:'auto',background:'var(--pg-bg)'}}>
+
+        {/* ── HERO ── */}
+        <div style={{
+          background:'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)',
+          padding:'28px 36px 0',
+          position:'relative',overflow:'hidden',
+        }}>
+          {/* decorative orbs */}
+          <div style={{position:'absolute',top:-60,right:60,width:220,height:220,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,180,255,0.13) 0%,transparent 70%)',pointerEvents:'none'}}/>
+          <div style={{position:'absolute',bottom:-40,left:200,width:160,height:160,borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%)',pointerEvents:'none'}}/>
+          {/* grid overlay */}
+          <div style={{position:'absolute',inset:0,opacity:0.03,backgroundImage:'linear-gradient(rgba(255,255,255,0.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.8) 1px,transparent 1px)',backgroundSize:'40px 40px',pointerEvents:'none'}}/>
+
+          {/* Top row: title + actions */}
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18,position:'relative'}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:6,display:'flex',alignItems:'center',gap:6}}>
+                {Icon.briefcase(13,'rgba(255,255,255,0.45)')}
+                {lang==='pt'?'WORK · SOUTH FLORIDA':lang==='es'?'WORK · SOUTH FLORIDA':'WORK · SOUTH FLORIDA'}
+              </div>
+              <h1 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:32,fontWeight:800,color:'#fff',letterSpacing:'-0.03em',lineHeight:1.05}}>
+                {heroTitle}
+              </h1>
+              <p style={{margin:'6px 0 0',fontSize:13.5,color:'rgba(255,255,255,0.60)',fontWeight:400}}>
+                {heroSub}
+              </p>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginTop:4}}>
+              <button onClick={()=>openChat&&openChat()} style={{
+                width:40,height:40,borderRadius:12,
+                background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.20)',
+                display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',
+                position:'relative',
+              }}>
+                {Icon.msg(19,'#fff')}
+                {hasUnreadChat&&<span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #0077B6'}}/>}
+              </button>
+              <button onClick={handlePostBtn} style={{
+                height:40,padding:'0 22px',borderRadius:12,
+                background:'linear-gradient(135deg,rgba(255,255,255,0.20),rgba(255,255,255,0.10))',
+                border:'1px solid rgba(255,255,255,0.30)',
+                color:'#fff',fontFamily:'inherit',fontSize:14,fontWeight:700,
+                cursor:'pointer',display:'flex',alignItems:'center',gap:8,
+                boxShadow:'0 4px 14px rgba(0,0,0,0.20)',
+              }}>
+                {postBtn.icon(16,'#fff')}
+                {lang==='pt'?'+ Publicar':lang==='es'?'+ Publicar':'+ Post'} {postBtn.label}
+              </button>
+            </div>
+          </div>
+
+          {/* Stats strip */}
+          <div style={{display:'flex',alignItems:'center',gap:10,paddingBottom:20,position:'relative',flexWrap:'wrap'}}>
+            {sub === 'hiring' && <>
+              <StatPill icon={Icon.briefcase(13,'rgba(255,255,255,0.80)')} count={HIRING.length + liveJobs.length} label={lang==='pt'?'vagas':lang==='es'?'empleos':'openings'}/>
+              <StatPill icon={Icon.check(13,'rgba(255,255,255,0.80)')} count={myAppsHiring.length} label={lang==='pt'?'candidaturas':lang==='es'?'solicitudes':'applied'}/>
+              <div style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)'}}>
+                {Icon.pin(12,'rgba(255,255,255,0.55)')}
+                <span style={{fontSize:12,color:'rgba(255,255,255,0.55)',fontWeight:500}}>South Florida</span>
+              </div>
+            </>}
+            {sub === 'techs' && <>
+              <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.80)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>} count={TECHS.length + liveTechs.length} label={lang==='pt'?'técnicos':lang==='es'?'técnicos':'techs'}/>
+              <div style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)'}}>
+                {Icon.pin(12,'rgba(255,255,255,0.55)')}
+                <span style={{fontSize:12,color:'rgba(255,255,255,0.55)',fontWeight:500}}>South Florida</span>
+              </div>
+            </>}
+            {sub === 'vac' && <>
+              <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.80)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>} count={VACATION_LISTINGS.length + liveVacations.length} label={lang==='pt'?'coberturas':lang==='es'?'coberturas':'covers'}/>
+              <StatPill icon={Icon.cal(13,'rgba(255,255,255,0.80)')} count={myAppsVac.length} label={lang==='pt'?'aplicadas':lang==='es'?'aplicadas':'applied'}/>
+            </>}
+          </div>
+
+          {/* Sub-tab bar (inside hero bottom, darker band) */}
+          <div style={{
+            display:'flex',gap:4,
+            background:'rgba(0,0,0,0.22)',
+            borderTop:'1px solid rgba(255,255,255,0.10)',
+            margin:'0 -36px',
+            padding:'6px 36px',
+          }}>
+            {tabs.map(s => {
+              const on = sub === s.id;
+              return (
+                <button key={s.id} onClick={()=>setSub(s.id)} style={{
+                  padding:'8px 20px',borderRadius:9,border:'none',cursor:'pointer',
+                  background: on ? 'rgba(255,255,255,0.15)' : 'transparent',
+                  color: on ? '#fff' : 'rgba(255,255,255,0.55)',
+                  fontWeight: on ? 700 : 500,fontSize:13.5,letterSpacing:'-0.01em',
+                  display:'inline-flex',alignItems:'center',gap:7,
+                  fontFamily:'inherit',transition:'all .15s ease',
+                  borderBottom: on ? '2px solid rgba(255,255,255,0.70)' : '2px solid transparent',
+                  borderBottomLeftRadius:0,borderBottomRightRadius:0,
+                }}>
+                  {subIcons[s.id](15, on ? '#fff' : 'rgba(255,255,255,0.50)')}
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Body: sidebar + content ── */}
+        <div style={{display:'flex',gap:0,alignItems:'flex-start',padding:'28px 36px',maxWidth:1400,margin:'0 auto'}}>
+
+          {/* LEFT SIDEBAR */}
+          <div style={{width:300,flexShrink:0,position:'sticky',top:28,maxHeight:'calc(100vh - 120px)',overflowY:'auto',marginRight:28}}>
+
+            {/* My Activity — only for hiring + vacation */}
+            {(sub === 'hiring' || sub === 'vac') && (
+              <div className="pg-card" style={{padding:'16px 16px 18px',marginBottom:16}}>
+                {/* Header */}
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:14}}>
+                  <div style={{width:3,height:16,borderRadius:2,background:'var(--pg-blue-500)',flexShrink:0}}/>
+                  <span style={{fontSize:11,fontWeight:700,letterSpacing:'0.07em',color:'var(--pg-ink-600)',textTransform:'uppercase'}}>
+                    {lang==='pt'?'Minha Atividade':lang==='es'?'Mi Actividad':'My Activity'}
+                  </span>
+                </div>
+                {/* Inner tabs */}
+                <div style={{display:'flex',gap:0,background:'var(--pg-ink-100)',borderRadius:10,padding:3,marginBottom:14}}>
+                  {[
+                    {id:'applications',label:appsLbl,count:currentMyApps.length},
+                    {id:'myposts',label:myPostsLbl,count:currentMyPosts.length},
+                  ].map(tab => {
+                    const on = myActivityTab === tab.id;
+                    return (
+                      <button key={tab.id} onClick={()=>setMyActivityTab(tab.id)} style={{
+                        flex:1,padding:'7px 4px',border:'none',borderRadius:8,cursor:'pointer',
+                        background: on ? '#fff' : 'transparent',
+                        color: on ? 'var(--pg-blue-600)' : 'var(--pg-ink-500)',
+                        fontFamily:'inherit',fontSize:12,fontWeight: on ? 700 : 500,
+                        boxShadow: on ? '0 1px 4px rgba(15,30,60,0.12)' : 'none',
+                        transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                      }}>
+                        {tab.label}
+                        {tab.count > 0 && (
+                          <span style={{fontSize:10,fontWeight:700,minWidth:16,height:16,borderRadius:999,padding:'0 4px',background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-300)',color:'#fff',display:'inline-flex',alignItems:'center',justifyContent:'center'}}>
+                            {tab.count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Applications list */}
+                {myActivityTab === 'applications' && (
+                  currentMyApps.length === 0
+                    ? <div style={{textAlign:'center',padding:'12px 0 4px',color:'var(--pg-ink-400)',fontSize:12.5}}>{emptyApps}</div>
+                    : currentMyApps.map((app, i) => {
+                        if (sub === 'hiring') {
+                          const isPending  = app.status === 'pending';
+                          const isAccepted = app.status === 'accepted' || app.status === 'in_progress';
+                          const isRejected = app.status === 'rejected';
+                          const statusCfg = isPending
+                            ? {label:lang==='pt'?'Aguardando':lang==='es'?'Pendiente':'Pending',color:'oklch(0.48 0.14 68)',bg:'oklch(0.96 0.05 68)'}
+                            : isAccepted
+                              ? {label:lang==='pt'?'Aceito ✓':lang==='es'?'Aceptado ✓':'Accepted ✓',color:'var(--pg-blue-600)',bg:'var(--pg-blue-50)'}
+                              : {label:lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected',color:'oklch(0.45 0.18 20)',bg:'oklch(0.95 0.04 20)'};
+                          return (
+                            <div key={app.id} onClick={()=>openHiringAppDetail&&openHiringAppDetail(app)}
+                              style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)',cursor:'pointer'}}>
+                              <div style={{
+                                width:8,height:8,borderRadius:'50%',flexShrink:0,
+                                background: isAccepted ? 'var(--pg-blue-500)' : isPending ? 'oklch(0.75 0.14 68)' : 'oklch(0.60 0.18 20)',
+                              }}/>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{app.company}</div>
+                                <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginTop:2}}>
+                                  <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:statusCfg.bg,color:statusCfg.color}}>{statusCfg.label}</span>
+                                  <span style={{fontSize:11,color:'var(--pg-ink-400)'}}>· {tr(app.pay,lang)}</span>
+                                </div>
+                              </div>
+                              {Icon.chev(13,'var(--pg-ink-300)')}
+                            </div>
+                          );
+                        }
+                        // Vacation app
+                        const isAwaiting = app.status === 'awaiting';
+                        const isAcc      = app.status === 'accepted';
+                        const sCfg = isAwaiting
+                          ? {label:lang==='pt'?'Aguardando':lang==='es'?'Pendiente':'Pending',color:'oklch(0.48 0.14 68)',bg:'oklch(0.96 0.05 68)'}
+                          : isAcc
+                            ? {label:lang==='pt'?'Confirmado ✓':lang==='es'?'Confirmado ✓':'Confirmed ✓',color:'var(--pg-blue-600)',bg:'var(--pg-blue-50)'}
+                            : {label:app.status,color:'var(--pg-ink-500)',bg:'var(--pg-ink-100)'};
+                        return (
+                          <div key={app.id} onClick={()=>openSchedule&&openSchedule(app)}
+                            style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)',cursor:'pointer'}}>
+                            <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,background:isAcc?'var(--pg-blue-500)':'oklch(0.75 0.14 68)'}}/>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{app.owner}</div>
+                              <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginTop:2}}>
+                                <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:sCfg.bg,color:sCfg.color}}>{sCfg.label}</span>
+                                <span style={{fontSize:11,color:'var(--pg-ink-400)'}}>· ${app.pricePerPool}{lang==='pt'?'/pisc':'/pool'}</span>
+                              </div>
+                            </div>
+                            {Icon.chev(13,'var(--pg-ink-300)')}
+                          </div>
+                        );
+                      })
+                )}
+
+                {/* My Posts list */}
+                {myActivityTab === 'myposts' && (
+                  currentMyPosts.length === 0
+                    ? <div style={{textAlign:'center',padding:'12px 0 4px',color:'var(--pg-ink-400)',fontSize:12.5}}>{emptyPosts}</div>
+                    : currentMyPosts.map(post => {
+                        const pending   = post.applicants ? post.applicants.filter(a=>a.status==='pending').length : 0;
+                        const totalApps = post.applicants ? post.applicants.length : 0;
+                        return (
+                          <div key={post.id} onClick={()=>openApplicants&&openApplicants(post)}
+                            style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)',cursor:'pointer'}}>
+                            <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,background:'var(--pg-blue-500)'}}/>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{tr(post.title,lang)}</div>
+                              <div style={{display:'flex',alignItems:'center',gap:6,marginTop:2}}>
+                                <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:'var(--pg-blue-100)',color:'var(--pg-blue-700)'}}>
+                                  {lang==='pt'?'ABERTA':lang==='es'?'ABIERTA':'OPEN'}
+                                </span>
+                                {pending > 0 && <span style={{fontSize:11,color:'oklch(0.48 0.14 68)',fontWeight:700}}>{pending} {lang==='pt'?'pend.':'pend.'}</span>}
+                                {totalApps > 0 && <span style={{fontSize:11,color:'var(--pg-blue-500)',fontWeight:600}}>{totalApps} apps</span>}
+                              </div>
+                            </div>
+                            {Icon.chev(13,'var(--pg-ink-300)')}
+                          </div>
+                        );
+                      })
+                )}
+              </div>
+            )}
+
+            {/* Techs sidebar — CTA card */}
+            {sub === 'techs' && (
+              <div style={{
+                borderRadius:18,overflow:'hidden',
+                background:'linear-gradient(135deg,#011B5A 0%,#0077B6 100%)',
+                padding:'20px 18px 22px',color:'#fff',
+                boxShadow:'0 8px 28px rgba(0,30,100,0.20)',
+              }}>
+                <div style={{width:44,height:44,borderRadius:14,background:'rgba(255,255,255,0.15)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:14}}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 7a4 4 0 1 0-5 5l-6 6 3 3 6-6a4 4 0 0 0 5-5l-3 3-3-3z"/></svg>
+                </div>
+                <div style={{fontSize:17,fontWeight:700,letterSpacing:'-0.02em',marginBottom:6}}>
+                  {lang==='pt'?'Ofereça seus serviços':lang==='es'?'Ofrece tus servicios':'Offer your services'}
+                </div>
+                <div style={{fontSize:12.5,color:'rgba(255,255,255,0.70)',lineHeight:1.5,marginBottom:16}}>
+                  {lang==='pt'?'Publique seu perfil como técnico e receba contatos de pool guys da região.'
+                  :lang==='es'?'Publica tu perfil como técnico y recibe contactos de pool guys de la región.'
+                  :'Post your tech profile and receive contacts from pool guys in the area.'}
+                </div>
+                <button onClick={()=>openTechSheet&&openTechSheet()} style={{
+                  width:'100%',height:40,borderRadius:10,border:'none',cursor:'pointer',
+                  background:'rgba(255,255,255,0.20)',color:'#fff',
+                  fontFamily:'inherit',fontSize:13,fontWeight:700,
+                }}>
+                  {lang==='pt'?'Publicar perfil →':lang==='es'?'Publicar perfil →':'Post profile →'}
+                </button>
+              </div>
+            )}
+
+            {/* Vacation sidebar — boost card */}
+            {sub === 'vac' && (
+              <div style={{
+                borderRadius:18,overflow:'hidden',
+                background:'linear-gradient(135deg,oklch(0.26 0.10 232) 0%,oklch(0.38 0.14 200) 100%)',
+                padding:'20px 18px 22px',color:'#fff',
+                boxShadow:'0 8px 28px rgba(0,30,100,0.20)',
+              }}>
+                <div style={{width:44,height:44,borderRadius:14,background:'oklch(0.85 0.15 90)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:14}}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="oklch(0.26 0.10 232)">
+                    <path d="M12 2l2.39 7.36H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.15L2 9.36h7.61z"/>
+                  </svg>
+                </div>
+                <div style={{fontSize:17,fontWeight:700,letterSpacing:'-0.02em',marginBottom:6}}>
+                  {lang==='pt'?'Cubra férias e cresça':lang==='es'?'Cubre vacaciones y crece':'Cover vacations and grow'}
+                </div>
+                <div style={{fontSize:12.5,color:'rgba(255,255,255,0.70)',lineHeight:1.5,marginBottom:14}}>
+                  {lang==='pt'?'Pool guys que cobrem férias aparecem no topo das buscas e ganham mais avaliações.'
+                  :lang==='es'?'Los pool guys que cubren vacaciones aparecen arriba en las búsquedas y ganan más reseñas.'
+                  :'Pool guys who cover vacations appear at the top of searches and earn more reviews.'}
+                </div>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                  {(lang==='pt'?['+ Visibilidade','+ Avaliações','+ Renda']:lang==='es'?['+ Visibilidad','+ Reseñas','+ Ingresos']:['+ Visibility','+ Reviews','+ Income']).map(t=>(
+                    <span key={t} style={{fontSize:11,fontWeight:600,padding:'3px 9px',borderRadius:999,background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.20)',color:'rgba(255,255,255,0.88)'}}>
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT MAIN CONTENT */}
+          <div style={{flex:1,minWidth:0}}>
+            {/* Content label */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+              <div>
+                <h2 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:20,fontWeight:700,letterSpacing:'-0.02em',color:'var(--pg-ink-900)'}}>
+                  {sub==='hiring'
+                    ? (lang==='pt'?'Vagas Disponíveis':lang==='es'?'Empleos Disponibles':'Available Jobs')
+                    : sub==='techs'
+                      ? (lang==='pt'?'Técnicos na Região':lang==='es'?'Técnicos en la Región':'Techs in the Region')
+                      : (lang==='pt'?'Coberturas Disponíveis':lang==='es'?'Coberturas Disponibles':'Available Covers')}
+                </h2>
+                <div style={{fontSize:12,color:'var(--pg-ink-500)',marginTop:2}}>
+                  {sub==='hiring'
+                    ? `${HIRING.length + liveJobs.length} ${lang==='pt'?'vagas · Broward County':lang==='es'?'empleos · Broward County':'openings · Broward County'}`
+                    : sub==='techs'
+                      ? `${TECHS.length + liveTechs.length} ${lang==='pt'?'técnicos · South Florida':lang==='es'?'técnicos · South Florida':'techs · South Florida'}`
+                      : `${VACATION_LISTINGS.length + liveVacations.length} ${lang==='pt'?'coberturas disponíveis':lang==='es'?'coberturas disponibles':'covers available'}`}
+                </div>
+              </div>
+              <button onClick={handlePostBtn} style={{
+                height:38,padding:'0 18px',borderRadius:10,
+                background:'var(--pg-blue-500)',color:'#fff',
+                border:'none',cursor:'pointer',fontFamily:'inherit',
+                fontSize:13,fontWeight:700,display:'flex',alignItems:'center',gap:7,
+                boxShadow:'0 3px 10px rgba(0,119,182,0.30)',
+              }}>
+                {Icon.plus(15,'#fff')}
+                {postBtn.label}
+              </button>
+            </div>
+
+            {/* Panel content */}
+            <div style={{display:'flex',flexDirection:'column',gap:14}}>
+              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={liveJobs} showToast={showToast} onDeleteJob={removeJob}/>}
+              {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={liveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
+              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={liveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // ── END desktop ────────────────────────────────────────────────
 
   return (
     <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>

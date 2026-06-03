@@ -507,6 +507,7 @@ function App() {
     regionsByDay, setRegionsByDay, county,
     deepLinkListingId,
     clearDeepLink: () => setDeepLinkListingId(null),
+    openListingById: (id) => { setDeepLinkListingId(id); switchTab('market'); },
     goTab:              switchTab,
     openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },

@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], hasUnreadChat, hasUnreadNotif } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], hasUnreadChat, hasUnreadNotif, openListingById } = ctx;
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
 
@@ -194,7 +194,7 @@ function HomeScreen({ ctx }) {
                       ? `$${item.price}`
                       : '—';
                 return (
-                  <button key={item._id} onClick={()=>goTab('market')} className="pg-press" style={{
+                  <button key={item._id} onClick={()=>openListingById ? openListingById(item._id) : goTab('market')} className="pg-press" style={{
                     display:'flex', alignItems:'center', gap:12,
                     padding:'10px 12px', borderRadius:14,
                     border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
