@@ -152,6 +152,39 @@ function NavyBar({ title, leftBack, onBack, right, children, wave=true }) {
   );
 }
 
+// ── No-photo placeholder — shown when a listing has no uploaded image ──
+function NoPhotoPlaceholder({ height = 108, small = false }) {
+  const iconSize  = small ? 24 : 36;
+  const logoSize  = small ? 20 : 28;
+  const fontSize  = small ? 9  : 11;
+  return (
+    <div style={{
+      height, display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', gap: small ? 5 : 8,
+      background:'var(--pg-ink-100)', userSelect:'none',
+    }}>
+      {/* Camera icon */}
+      <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none"
+        stroke="var(--pg-ink-300)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="7" width="18" height="13" rx="2"/>
+        <circle cx="12" cy="13.5" r="3"/>
+        <path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/>
+        <line x1="17" y1="11" x2="17.01" y2="11"/>
+      </svg>
+      {/* App logo mark */}
+      <FloodMark size={logoSize}/>
+      {/* Label */}
+      <span style={{
+        fontSize, fontWeight: 700, letterSpacing:'0.06em',
+        color:'var(--pg-ink-400)', fontFamily:'var(--pg-font-display)',
+        textTransform:'uppercase',
+      }}>
+        {small ? 'No photo' : 'No photo available'}
+      </span>
+    </div>
+  );
+}
+
 // ── Equipment imagery — real pool-equipment photos via loremflickr ──
 function EquipImg({ category, height=108 }) {
   const [loaded, setLoaded] = React.useState(false);

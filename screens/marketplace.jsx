@@ -161,7 +161,7 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
               onClick={() => setViewerOpen(true)}
               style={{width:'100%', height:'100%', objectFit:'cover', display:'block', cursor:'zoom-in'}}
             />
-          : <EquipImg category={fallbackCat} height={height}/>
+          : <NoPhotoPlaceholder height={height}/>
         }
         <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.18) 0%,transparent 45%,rgba(0,0,0,0.25) 100%)',pointerEvents:'none'}}/>
 
@@ -322,7 +322,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               onClick={() => setViewerOpen(true)}
               style={{width:'100%', height:'100%', objectFit:'cover', display:'block', cursor: allPhotos.length > 1 ? 'default' : 'zoom-in'}}
             />
-          : <EquipImg category={item.cat||'Tools'} height={240}/>
+          : <NoPhotoPlaceholder height={240}/>
         }
 
         {/* Back arrow — top left */}
@@ -604,7 +604,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                     {(m.photoUrls && m.photoUrls[0]) || m.photoUrl
                       ? <img src={(m.photoUrls&&m.photoUrls[0])||m.photoUrl} alt={m.name}
                           style={{width:'100%', height:'100%', objectFit:'cover'}}/>
-                      : <EquipImg category={m.cat||'Tools'} height={96}/>
+                      : <NoPhotoPlaceholder height={96} small/>
                     }
                   </div>
                   <div style={{padding:'8px 10px 10px'}}>
@@ -1268,7 +1268,7 @@ function MarketplaceScreen({ ctx }) {
                       <div style={{position:'absolute', inset:0}}>
                         {item.photoUrl
                           ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
-                          : <EquipImg category={item.cat || 'Tools'} height={'100%'}/>
+                          : <NoPhotoPlaceholder height={'100%'}/>
                         }
                       </div>
                       {/* Gradient overlay for badges */}
@@ -1677,7 +1677,10 @@ function MarketplaceScreen({ ctx }) {
             {routeSub === 'routes' && list.map(r => (
               <div key={r.id} className="pg-card pg-card-tap" onClick={()=>setSelected({...r, _type:'route'})} style={{padding:14, display:'flex', gap:12}}>
                 <div style={{width:90, height:90, borderRadius:12, overflow:'hidden', flexShrink:0}}>
-                  <EquipImg category="Routes" height={90}/>
+                  {(r.photoUrls && r.photoUrls[0]) || r.photoUrl
+                    ? <img src={(r.photoUrls&&r.photoUrls[0])||r.photoUrl} alt={r.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                    : <NoPhotoPlaceholder height={90} small/>
+                  }
                 </div>
                 <div style={{flex:1, minWidth:0}}>
                   <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:3}}>
