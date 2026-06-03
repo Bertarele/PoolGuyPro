@@ -252,17 +252,11 @@ function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) 
     if (!selected || !window.sb || !currentUser?.uid) return;
     setConfirming(true);
     try {
-      // Update listing status — use .select() to verify at least 1 row was updated
-      const { data: updRows, error: e1 } = await window.sb.from('marketplace')
+      // Update listing status
+      const { error: e1 } = await window.sb.from('marketplace')
         .update({ status: 'sold', buyer_id: selected.id })
-        .eq('id', item._id)
-        .select('id');
+        .eq('id', item._id);
       if (e1) throw e1;
-      if (!updRows || updRows.length === 0) {
-        throw new Error(lang==='pt'
-          ? 'Não foi possível marcar como vendido. Tente novamente.'
-          : 'Could not mark as sold. Please try again.');
-      }
 
       // Insert pending ratings for both parties (seller → buyer and buyer → seller placeholder)
       await window.sb.from('ratings').insert([
@@ -547,6 +541,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         {lang==='pt'?'Enviar mensagem':lang==='es'?'Enviar mensaje':'Send Message'}
       </button>
       <div style={{display:'flex', gap:10}}>
+        {!isOwner && (
         <button onClick={onToggleSave} title={isSaved?(lang==='pt'?'Remover dos salvos':'Unsave'):(lang==='pt'?'Salvar':'Save')} style={{
           width:50, height:50, borderRadius:14, cursor:'pointer', flexShrink:0,
           border: isSaved ? '1.5px solid #FCA5A5' : '1.5px solid var(--pg-ink-200)',
@@ -558,6 +553,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
         </button>
+        )}
         <button onClick={onShare} title={lang==='pt'?'Compartilhar':'Share'} style={{
           width:50, height:50, borderRadius:14, cursor:'pointer', flexShrink:0,
           border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-ink-50)',
@@ -765,6 +761,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
             {/* Right actions */}
             <div style={{display:'flex', gap:8}}>
+              {!isOwner && (
               <button onClick={onToggleSave} style={{
                 display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10,
                 border: isSaved?'1.5px solid #FCA5A5':'1.5px solid var(--pg-ink-200)',
@@ -777,6 +774,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 </svg>
                 {isSaved?(lang==='pt'?'Salvo':'Saved'):(lang==='pt'?'Salvar':'Save')}
               </button>
+              )}
               <button onClick={onShare} style={{
                 display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10,
                 border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-ink-50)',
@@ -1249,7 +1247,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             {lang==='pt'?'Mensagem':lang==='es'?'Mensaje':'Message'}
           </button>
 
-          {/* Save (heart) */}
+          {/* Save (heart) — only for other users' posts */}
+          {!isOwner && (
           <button onClick={onToggleSave} style={{
             width:52, height:52, borderRadius:14, flexShrink:0, cursor:'pointer',
             border: isSaved ? '1.5px solid #FCA5A5' : '1.5px solid var(--pg-ink-200)',
@@ -1262,6 +1261,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
           </button>
+          )}
 
           {/* Share */}
           <button onClick={onShare} style={{
