@@ -257,19 +257,24 @@ function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) 
         .eq('id', item._id);
       if (e1) throw e1;
 
-      await window.sb.from('ratings').insert([
+      const { data: ratingRows } = await window.sb.from('ratings').insert([
+        // Seller rates buyer
         { listing_id: item._id, listing_name: item.name || '',
           from_id: currentUser.uid, from_name: currentUser.name || currentUser.email || '',
           to_id: selected.id, stars: null, comment: '', pending: true },
+        // Buyer rates seller (seller creates the placeholder on buyer's behalf)
         { listing_id: item._id, listing_name: item.name || '',
           from_id: selected.id, from_name: selected.name,
           to_id: currentUser.uid, stars: null, comment: '', pending: true },
-      ]);
+      ]).select();
 
       showToast && showToast('✅ ' + (lang==='pt'
-        ? 'Vendido! Ambos receberão solicitação de avaliação.'
-        : 'Sold! Both parties will receive a rating request.'));
-      onSold && onSold();
+        ? 'Vendido! Avalie o comprador agora.'
+        : 'Sold! Rate the buyer now.'));
+
+      // Find the seller's own pending rating to open it immediately
+      const sellerRating = (ratingRows || []).find(r => r.from_id === currentUser.uid);
+      onSold && onSold(sellerRating || null);
     } catch(e) {
       showToast && showToast('❌ ' + (e.message || 'Error'));
     } finally {
@@ -346,7 +351,7 @@ function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) 
 
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
 // canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
-function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, currentUser, showToast, onDeleted, isSaved, onToggleSave, onShare, liveMarket=[], onOpenListing }) {
+function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, currentUser, showToast, onDeleted, isSaved, onToggleSave, onShare, liveMarket=[], onOpenListing, onAfterSold }) {
   if (!item) return null;
   const [deleting,      setDeleting]     = React.useState(false);
   const [markSoldOpen,  setMarkSoldOpen] = React.useState(false);
@@ -648,8 +653,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           )}
         </div>
 
-        {/* Mark as Sold — only for listing owner (not admin), only when not yet sold */}
-        {!isAdmin && canDelete && item.status !== 'sold' && (
+        {/* Mark as Sold — for the listing author (works even if user is admin) */}
+        {item.author_id && currentUser?.uid && item.author_id === currentUser.uid && item.status !== 'sold' && (
           <button onClick={()=>setMarkSoldOpen(true)} style={{
             width:'100%', marginTop:10, padding:'13px', borderRadius:14,
             border:'1.5px solid #86EFAC', background:'#F0FDF4',
@@ -788,7 +793,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             item={item} lang={lang} currentUser={currentUser}
             onClose={()=>setMarkSoldOpen(false)}
             showToast={showToast}
-            onSold={()=>{ setMarkSoldOpen(false); onClose && onClose(); }}
+            onSold={(sellerRating)=>{ setMarkSoldOpen(false); onAfterSold && onAfterSold(sellerRating); }}
           />
         )}
       </Sheet>
@@ -1087,7 +1092,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 }
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating } = ctx;
+  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating, loadPendingRatings } = ctx;
 
   // Normalize a raw Supabase marketplace row to app format
   const normMktItem = (r) => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
@@ -2020,6 +2025,16 @@ function MarketplaceScreen({ ctx }) {
             onShare={() => handleShare(null, viewListing)}
             liveMarket={liveMarket}
             onOpenListing={openListing}
+            onAfterSold={(sellerRating) => {
+              // Mark item as sold in local state immediately (no need to wait for realtime)
+              setViewListing(prev => prev ? { ...prev, status: 'sold' } : null);
+              // Open the rating sheet immediately so seller can rate the buyer now
+              if (sellerRating && openRating) {
+                openRating(sellerRating);
+              } else if (loadPendingRatings) {
+                loadPendingRatings();
+              }
+            }}
             onDeleted={(id) => {
               closeListing();
               setSavedIds(prev => { const s = new Set(prev); s.delete(id); return s; });

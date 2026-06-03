@@ -539,6 +539,7 @@ function App() {
     openPrivacy:        ()    => setPrivacyOpen(true),
     pendingRatings,
     openRating: (r) => setActiveRating(r),
+    loadPendingRatings,
     darkMode, toggleDark,
     onLogout: () => {
       if (window.sb) window.sb.auth.signOut();
