@@ -252,23 +252,33 @@ function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) 
     if (!selected || !window.sb || !currentUser?.uid) return;
     setConfirming(true);
     try {
-      // Update listing status
+      // Update listing status (silently succeeds even if already sold — idempotent)
       const { error: e1 } = await window.sb.from('marketplace')
         .update({ status: 'sold', buyer_id: selected.id })
         .eq('id', item._id);
       if (e1) throw e1;
 
-      // Insert pending ratings for both parties (seller → buyer and buyer → seller placeholder)
-      await window.sb.from('ratings').insert([
-        { listing_id: item._id, listing_name: item.name || '',
-          from_id: currentUser.uid, from_name: currentUser.name || currentUser.email || '',
-          to_id: selected.id, stars: null, comment: '', pending: true },
-        { listing_id: item._id, listing_name: item.name || '',
-          from_id: selected.id, from_name: selected.name,
-          to_id: currentUser.uid, stars: null, comment: '', pending: true },
-      ]);
+      // Guard: check if ratings already exist for this listing to prevent duplicates on retry
+      const { data: existing } = await window.sb.from('ratings')
+        .select('id, from_id, pending')
+        .eq('listing_id', item._id)
+        .limit(10);
 
-      // Fetch the seller's own pending rating via a separate SELECT (more reliable than insert+select)
+      const hasSellerRating = (existing || []).some(r => r.from_id === currentUser.uid);
+      if (!hasSellerRating) {
+        // First time: insert pending ratings for both parties
+        await window.sb.from('ratings').insert([
+          { listing_id: item._id, listing_name: item.name || '',
+            from_id: currentUser.uid, from_name: currentUser.name || currentUser.email || '',
+            to_id: selected.id, stars: null, comment: '', pending: true },
+          { listing_id: item._id, listing_name: item.name || '',
+            from_id: selected.id, from_name: selected.name,
+            to_id: currentUser.uid, stars: null, comment: '', pending: true },
+        ]);
+      }
+      // If ratings already exist (retry case), skip insert — just fetch the existing one
+
+      // Fetch the seller's pending rating (only pending=true — if already submitted, don't reopen)
       const { data: myRatings } = await window.sb.from('ratings')
         .select('*')
         .eq('listing_id', item._id)
@@ -2557,12 +2567,15 @@ function MarketplaceScreen({ ctx }) {
             onShare={()=>handleShare(null,viewListing)}
             liveMarket={liveMarket} onOpenListing={openListing}
             onAfterSold={(sellerRating)=>{
-              // Update local state immediately (realtime will also fire)
+              // Mark as sold in local state (realtime subscription will also update liveMarket)
               setViewListing(prev=>prev?{...prev,status:'sold'}:null);
-              // Close the listing view so the rating sheet is clearly visible
-              setTimeout(()=>setViewListing(null), 300);
-              if(sellerRating&&openRating) openRating(sellerRating);
-              else { loadPendingRatings && loadPendingRatings(); }
+              // Wait for the MarkSoldSheet animation to complete (220ms), then close the
+              // listing view and open the rating sheet without any visual overlap/flash
+              setTimeout(()=>{
+                setViewListing(null);
+                if(sellerRating&&openRating) openRating(sellerRating);
+                else if(loadPendingRatings) loadPendingRatings();
+              }, 280);
             }}
             onDeleted={(id)=>{ closeListing(); setSavedIds(prev=>{const s=new Set(prev);s.delete(id);return s;}); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}
           />
@@ -3332,14 +3345,15 @@ function MarketplaceScreen({ ctx }) {
             onAfterSold={(sellerRating) => {
               // Mark item as sold in local state immediately (no need to wait for realtime)
               setViewListing(prev => prev ? { ...prev, status: 'sold' } : null);
-              // Close the listing view after a brief moment so rating sheet is visible
-              setTimeout(() => setViewListing(null), 300);
-              // Open the rating sheet immediately so seller can rate the buyer now
-              if (sellerRating && openRating) {
-                openRating(sellerRating);
-              } else if (loadPendingRatings) {
-                loadPendingRatings();
-              }
+              // Wait for MarkSoldSheet animation to finish before opening RatingSheet
+              setTimeout(() => {
+                setViewListing(null);
+                if (sellerRating && openRating) {
+                  openRating(sellerRating);
+                } else if (loadPendingRatings) {
+                  loadPendingRatings();
+                }
+              }, 280);
             }}
             onDeleted={(id) => {
               closeListing();
