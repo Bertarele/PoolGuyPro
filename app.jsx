@@ -314,23 +314,6 @@ function App() {
     if (isLoggedIn && user?.uid) loadPendingRatings();
   }, [isLoggedIn, user?.uid, loadPendingRatings]);
 
-  // ── Buyer rating prompt: show centered popup on home tab visit ─
-  // Reset "shown" flag every time user leaves home tab (so next visit shows again)
-  React.useEffect(() => {
-    if (tab !== 'home') {
-      ratingPromptShownThisVisit.current = false;
-    }
-  }, [tab]);
-  // Show popup when user arrives on home tab and has pending ratings
-  React.useEffect(() => {
-    if (tab === 'home' && pendingRatings.length > 0 && !ratingPromptShownThisVisit.current) {
-      ratingPromptShownThisVisit.current = true;
-      // Small delay so the home screen renders first
-      const timer = setTimeout(() => setRatingPromptOpen(true), 600);
-      return () => clearTimeout(timer);
-    }
-  }, [tab, pendingRatings.length]); // eslint-disable-line
-
   // Overlays
   const [chatOpen,         setChatOpen]        = React.useState(false);
   const [chatConvoTarget,  setChatConvoTarget]  = React.useState(null); // string | { id, name }
@@ -367,6 +350,22 @@ function App() {
   const [activeRating,     setActiveRating]    = React.useState(null); // current RatingSheet
   const [ratingPromptOpen, setRatingPromptOpen] = React.useState(false); // buyer popup
   const ratingPromptShownThisVisit = React.useRef(false); // avoid double-showing per tab visit
+
+  // ── Buyer rating prompt: show centered popup on home tab visit ─
+  // Reset "shown" flag every time user leaves home tab (so next visit shows again)
+  React.useEffect(() => {
+    if (tab !== 'home') {
+      ratingPromptShownThisVisit.current = false;
+    }
+  }, [tab]);
+  // Show popup when user arrives on home tab and has pending ratings
+  React.useEffect(() => {
+    if (tab === 'home' && pendingRatings.length > 0 && !ratingPromptShownThisVisit.current) {
+      ratingPromptShownThisVisit.current = true;
+      const timer = setTimeout(() => setRatingPromptOpen(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [tab, pendingRatings.length]); // eslint-disable-line
 
   // ── Deep link — ?listing=ID opens a specific listing ─────────
   const [deepLinkListingId, setDeepLinkListingId] = React.useState(() => {
