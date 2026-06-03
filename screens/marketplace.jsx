@@ -219,11 +219,137 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
   );
 }
 
+// ── Mark as Sold Sheet ───────────────────────────────────────────────────────
+function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) {
+  const [contacts,    setContacts]   = React.useState([]);
+  const [loading,     setLoading]    = React.useState(true);
+  const [selected,    setSelected]   = React.useState(null);
+  const [confirming,  setConfirming] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!window.sb || !currentUser?.uid) { setLoading(false); return; }
+    window.sb.from('conversations')
+      .select('id,participant_1,participant_2,name_1,name_2')
+      .or(`participant_1.eq.${currentUser.uid},participant_2.eq.${currentUser.uid}`)
+      .order('last_message_at', { ascending: false })
+      .then(({ data }) => {
+        if (!data) { setLoading(false); return; }
+        const seen = new Set();
+        const mapped = data.reduce((acc, c) => {
+          const amP1 = c.participant_1 === currentUser.uid;
+          const id   = amP1 ? c.participant_2 : c.participant_1;
+          const name = amP1 ? (c.name_2 || '?') : (c.name_1 || '?');
+          if (id && id !== currentUser.uid && !seen.has(id)) { seen.add(id); acc.push({ id, name }); }
+          return acc;
+        }, []);
+        setContacts(mapped);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [currentUser]);
+
+  const handleConfirm = async () => {
+    if (!selected || !window.sb || !currentUser?.uid) return;
+    setConfirming(true);
+    try {
+      const { error: e1 } = await window.sb.from('marketplace')
+        .update({ status: 'sold', buyer_id: selected.id })
+        .eq('id', item._id);
+      if (e1) throw e1;
+
+      await window.sb.from('ratings').insert([
+        { listing_id: item._id, listing_name: item.name || '',
+          from_id: currentUser.uid, from_name: currentUser.name || currentUser.email || '',
+          to_id: selected.id, stars: null, comment: '', pending: true },
+        { listing_id: item._id, listing_name: item.name || '',
+          from_id: selected.id, from_name: selected.name,
+          to_id: currentUser.uid, stars: null, comment: '', pending: true },
+      ]);
+
+      showToast && showToast('✅ ' + (lang==='pt'
+        ? 'Vendido! Ambos receberão solicitação de avaliação.'
+        : 'Sold! Both parties will receive a rating request.'));
+      onSold && onSold();
+    } catch(e) {
+      showToast && showToast('❌ ' + (e.message || 'Error'));
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  return (
+    <div style={{padding:'20px 18px 36px'}}>
+      <div style={{width:40,height:4,borderRadius:2,background:'var(--pg-ink-200)',margin:'-6px auto 20px'}}/>
+      <div style={{fontSize:18,fontWeight:800,color:'var(--pg-ink-900)',fontFamily:'var(--pg-font-display)',marginBottom:4}}>
+        🤝 {lang==='pt' ? 'Marcar como vendido' : 'Mark as Sold'}
+      </div>
+      <div style={{fontSize:13,color:'var(--pg-ink-500)',marginBottom:6}}>
+        {lang==='pt' ? `Quem comprou "${item.name}"?` : `Who bought "${item.name}"?`}
+      </div>
+      <div style={{fontSize:12,color:'var(--pg-ink-400)',marginBottom:20}}>
+        {lang==='pt'
+          ? '⭐ Ambos receberão um pedido de avaliação após confirmação.'
+          : '⭐ Both parties will be asked to rate each other after confirmation.'}
+      </div>
+
+      {loading ? (
+        <div style={{textAlign:'center',padding:'28px 0',color:'var(--pg-ink-400)',fontSize:13}}>
+          {lang==='pt' ? 'Carregando contatos...' : 'Loading contacts...'}
+        </div>
+      ) : contacts.length === 0 ? (
+        <div style={{textAlign:'center',padding:'28px 0',color:'var(--pg-ink-400)',fontSize:13,lineHeight:1.6,background:'var(--pg-ink-50)',borderRadius:12}}>
+          <div style={{fontSize:28,marginBottom:8}}>💬</div>
+          {lang==='pt'
+            ? 'Nenhuma conversa encontrada.\nA negociação foi feita fora do app.'
+            : 'No conversations found.\nThe deal was made outside the app.'}
+        </div>
+      ) : (
+        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20,maxHeight:260,overflowY:'auto'}}>
+          {contacts.map(c => (
+            <button key={c.id} onClick={() => setSelected(c)} style={{
+              padding:'12px 14px', borderRadius:12,
+              border: '1.5px solid ' + (selected?.id === c.id ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)'),
+              background: selected?.id === c.id ? 'var(--pg-blue-50)' : 'var(--pg-white)',
+              display:'flex', alignItems:'center', gap:12, cursor:'pointer',
+              fontFamily:'inherit', textAlign:'left', transition:'all .12s',
+            }}>
+              <Avatar name={c.name} size={36}/>
+              <span style={{fontSize:14,fontWeight:600,color:'var(--pg-ink-900)',flex:1}}>{c.name}</span>
+              {selected?.id === c.id && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <button onClick={handleConfirm} disabled={!selected || confirming} style={{
+        width:'100%', padding:'15px', borderRadius:14, border:'none', cursor: selected ? 'pointer' : 'default',
+        fontFamily:'inherit', fontSize:15, fontWeight:700, color:'#fff',
+        background: selected ? 'linear-gradient(135deg,#16A34A,#15803D)' : 'var(--pg-ink-200)',
+        opacity: confirming ? 0.7 : 1, transition:'all .15s',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+      }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        {confirming ? '...' : (lang==='pt' ? 'Confirmar venda' : 'Confirm Sale')}
+      </button>
+      <button onClick={onClose} style={{
+        width:'100%', marginTop:10, padding:'12px', borderRadius:14, border:'none',
+        cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:600,
+        background:'var(--pg-ink-100)', color:'var(--pg-ink-600)',
+      }}>
+        {lang==='pt' ? 'Cancelar' : 'Cancel'}
+      </button>
+    </div>
+  );
+}
+
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
 // canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
-function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, showToast, onDeleted, isSaved, onToggleSave, onShare, liveMarket=[], onOpenListing }) {
+function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, currentUser, showToast, onDeleted, isSaved, onToggleSave, onShare, liveMarket=[], onOpenListing }) {
   if (!item) return null;
   const [deleting,      setDeleting]     = React.useState(false);
+  const [markSoldOpen,  setMarkSoldOpen] = React.useState(false);
   const [imgIdx,        setImgIdx]       = React.useState(0);
   const [viewerOpen,    setViewerOpen]   = React.useState(false);
   const [authorPhotoUrl,setAuthorPhotoUrl] = React.useState(null);
@@ -796,6 +922,45 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
               </button>
             </div>
+
+            {/* Mark as Sold — only for real owner (not admin), only when not yet sold */}
+            {!isAdmin && item.status !== 'sold' && (
+              <button onClick={()=>setMarkSoldOpen(true)} style={{
+                width:'100%', marginTop:10, padding:'13px', borderRadius:14,
+                border:'1.5px solid #86EFAC', background:'#F0FDF4',
+                color:'#16A34A', cursor:'pointer', fontFamily:'inherit',
+                fontSize:14, fontWeight:700,
+                display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                transition:'all .15s',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                {lang==='pt' ? 'Marcar como vendido' : lang==='es' ? 'Marcar como vendido' : 'Mark as Sold'}
+              </button>
+            )}
+            {item.status === 'sold' && (
+              <div style={{
+                marginTop:10, padding:'10px 14px', borderRadius:12,
+                background:'#F0FDF4', border:'1px solid #86EFAC',
+                display:'flex', alignItems:'center', gap:8,
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span style={{fontSize:13, fontWeight:700, color:'#16A34A'}}>
+                  {lang==='pt' ? 'Vendido!' : lang==='es' ? '¡Vendido!' : 'Sold!'}
+                </span>
+              </div>
+            )}
+
+            {/* MarkSoldSheet */}
+            <Sheet open={markSoldOpen} onClose={()=>setMarkSoldOpen(false)} height="auto">
+              {markSoldOpen && (
+                <MarkSoldSheet
+                  item={item} lang={lang} currentUser={currentUser}
+                  onClose={()=>setMarkSoldOpen(false)}
+                  showToast={showToast}
+                  onSold={()=>{ setMarkSoldOpen(false); onClose && onClose(); }}
+                />
+              )}
+            </Sheet>
           </>
         ) : (
           /* ── Edit mode ── */
@@ -883,7 +1048,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 }
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink } = ctx;
+  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating } = ctx;
 
   // Normalize a raw Supabase marketplace row to app format
   const normMktItem = (r) => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
@@ -1150,6 +1315,29 @@ function MarketplaceScreen({ ctx }) {
           </div>
         </div>
       </NavyBar>
+
+      {/* ── Pending ratings banner ── */}
+      {pendingRatings.length > 0 && (
+        <div style={{margin:'12px 18px 0', padding:'12px 14px', borderRadius:14,
+          background:'linear-gradient(135deg,#FFFBEB,#FEF3C7)', border:'1.5px solid #FDE68A',
+          display:'flex', alignItems:'center', gap:12, cursor:'pointer'}}
+          onClick={()=>openRating && openRating(pendingRatings[0])}>
+          <div style={{fontSize:26, lineHeight:1, flexShrink:0}}>⭐</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13, fontWeight:700, color:'#92400E'}}>
+              {lang==='pt'
+                ? `Você tem ${pendingRatings.length} avaliação${pendingRatings.length>1?'ções':''} pendente${pendingRatings.length>1?'s':''}!`
+                : `You have ${pendingRatings.length} pending rating${pendingRatings.length>1?'s':''}!`}
+            </div>
+            <div style={{fontSize:12, color:'#B45309', marginTop:2}}>
+              {lang==='pt'
+                ? `Avalie: "${pendingRatings[0].listing_name || 'anúncio'}"`
+                : `Rate: "${pendingRatings[0].listing_name || 'listing'}"`}
+            </div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      )}
 
       <div style={{padding:'0 18px 16px'}}>
         {/* Filter card */}
@@ -1786,6 +1974,7 @@ function MarketplaceScreen({ ctx }) {
             onClose={closeListing}
             isAdmin={user.role === 'admin'}
             canDelete={user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id)}
+            currentUser={user}
             showToast={showToast}
             isSaved={savedIds.has(viewListing._id)}
             onToggleSave={() => toggleSave(null, viewListing._id)}

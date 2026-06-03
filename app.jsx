@@ -297,6 +297,23 @@ function App() {
     return () => clearInterval(timer);
   }, [isLoggedIn, recheckUnread]);
 
+  // ── Load pending ratings (transactions where user needs to rate) ─────────
+  const loadPendingRatings = React.useCallback(async () => {
+    if (!window.sb || !user?.uid) return;
+    try {
+      const { data } = await window.sb.from('ratings')
+        .select('id,listing_id,listing_name,from_id,from_name,to_id,stars,created_at')
+        .eq('from_id', user.uid)
+        .eq('pending', true)
+        .order('created_at', { ascending: true });
+      setPendingRatings(data || []);
+    } catch(e) {}
+  }, [user?.uid]);
+
+  React.useEffect(() => {
+    if (isLoggedIn && user?.uid) loadPendingRatings();
+  }, [isLoggedIn, user?.uid, loadPendingRatings]);
+
   // Overlays
   const [chatOpen,         setChatOpen]        = React.useState(false);
   const [chatConvoTarget,  setChatConvoTarget]  = React.useState(null); // string | { id, name }
@@ -327,8 +344,10 @@ function App() {
   const [applyJob,       setApplyJob]       = React.useState(null);
   const [editProfileOpen,setEditProfileOpen]= React.useState(false);
   const [publicProfileUser, setPublicProfileUser] = React.useState(null);
-  const [helpOpen,       setHelpOpen]        = React.useState(false);
-  const [privacyOpen,    setPrivacyOpen]     = React.useState(false);
+  const [helpOpen,         setHelpOpen]        = React.useState(false);
+  const [privacyOpen,      setPrivacyOpen]     = React.useState(false);
+  const [pendingRatings,   setPendingRatings]  = React.useState([]); // ratings to submit
+  const [activeRating,     setActiveRating]    = React.useState(null); // current RatingSheet
 
   // ── Deep link — ?listing=ID opens a specific listing ─────────
   const [deepLinkListingId, setDeepLinkListingId] = React.useState(() => {
@@ -491,7 +510,7 @@ function App() {
     goTab:              switchTab,
     openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },
-    hasUnreadChat, hasUnreadNotif,
+    hasUnreadChat, hasUnreadNotif: hasUnreadNotif || pendingRatings.length > 0,
     openPaywall:        () => setPayOpen(true),
     openPostMenu:       () => setPostMenuOpen(true),
     openPost:           () => setPostQPOpen(true),
@@ -518,6 +537,8 @@ function App() {
     openPublicProfile:  (u)   => setPublicProfileUser(u),
     openHelp:           ()    => setHelpOpen(true),
     openPrivacy:        ()    => setPrivacyOpen(true),
+    pendingRatings,
+    openRating: (r) => setActiveRating(r),
     darkMode, toggleDark,
     onLogout: () => {
       if (window.sb) window.sb.auth.signOut();
@@ -684,6 +705,19 @@ function App() {
         open={pushNotifOpen} onClose={()=>setPushNotifOpen(false)} lang={lang}
         onEnabled={()=>{ setPushNotifOpen(false); showToast(lang==='pt'?'Notificações ativadas ✓':lang==='es'?'Notificaciones activadas ✓':'Notifications enabled ✓'); }}/>
       <FeedbackSheet open={feedbackOpen} onClose={()=>setFeedbackOpen(false)} lang={lang}/>
+      {/* ── Rating Sheet — shown when user has a pending rating to submit ── */}
+      <RatingSheet
+        open={!!activeRating}
+        rating={activeRating}
+        lang={lang}
+        currentUser={user}
+        showToast={showToast}
+        onClose={()=>setActiveRating(null)}
+        onDone={(id)=>{
+          setPendingRatings(prev => prev.filter(r => r.id !== id));
+          setActiveRating(null);
+        }}
+      />
     </>
   );
 

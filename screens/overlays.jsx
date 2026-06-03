@@ -3091,17 +3091,43 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
 
 // ── Public user profile sheet ────────────────────────────────
 function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
+  const [realRatings, setRealRatings] = React.useState(null); // null = not loaded yet
+
   React.useEffect(() => {
     if (open) { _lockScreen(); return () => _unlockScreen(); }
   }, [open]);
+
+  // Load real ratings from Supabase whenever the profile changes
+  React.useEffect(() => {
+    setRealRatings(null);
+    if (!open || !profile?.uid || !window.sb) return;
+    window.sb.from('ratings')
+      .select('id,stars,comment,from_id,from_name,listing_name,created_at')
+      .eq('to_id', profile.uid)
+      .eq('pending', false)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => { setRealRatings(data || []); })
+      .catch(() => { setRealRatings([]); });
+  }, [open, profile?.uid]);
+
   if (!open || !profile) return null;
   const name = profile.name || 'User';
-  // rating: undefined = not yet rated (new user); null or number = real value
-  const hasRating = profile.rating !== undefined && profile.rating !== null;
-  const rating  = hasRating ? profile.rating : 4.8; // 4.8 only for static/demo profiles
-  const reviews = profile.reviews !== undefined ? profile.reviews : 0;
-  const jobs    = profile.jobs !== undefined ? profile.jobs : reviews;
-  const loc     = profile.loc || 'South Florida';
+
+  // Use real ratings if loaded, otherwise fall back to profile prop
+  const ratingList   = realRatings || [];
+  const completedRat = ratingList.filter(r => r.stars);
+  const avgRating    = completedRat.length > 0
+    ? Math.round((completedRat.reduce((s,r)=>s+r.stars,0)/completedRat.length)*10)/10
+    : null;
+  const reviewCount  = completedRat.length;
+
+  // If Supabase data is loaded use it; otherwise fall back to profile prop
+  const hasRating = realRatings !== null ? reviewCount > 0 : (profile.rating !== undefined && profile.rating !== null);
+  const rating    = realRatings !== null ? avgRating : (profile.rating ?? 4.8);
+  const reviews   = realRatings !== null ? reviewCount : (profile.reviews ?? 0);
+  const jobs      = profile.jobs !== undefined ? profile.jobs : reviews;
+  const loc       = profile.loc || 'South Florida';
 
   const msgLbl = lang==='pt'?'Mensagem':lang==='es'?'Mensaje':'Message';
   const jobsLbl = lang==='pt'?'Trabalhos':lang==='es'?'Trabajos':'Jobs';
@@ -3197,11 +3223,160 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
             </div>
           )}
 
+          {/* Real reviews list */}
+          {realRatings !== null && completedRat.length > 0 && (
+            <div style={{marginTop:4}}>
+              <div style={{fontSize:10.5, fontWeight:700, color:'var(--pg-ink-400)', letterSpacing:'0.07em', textTransform:'uppercase', marginBottom:10}}>
+                {lang==='pt' ? 'Avaliações' : lang==='es' ? 'Reseñas' : 'Reviews'}
+              </div>
+              <div style={{display:'flex', flexDirection:'column', gap:10, maxHeight:220, overflowY:'auto'}}>
+                {completedRat.slice(0,8).map(r => (
+                  <div key={r.id} style={{padding:'10px 12px', borderRadius:11, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-100)'}}>
+                    <div style={{display:'flex', alignItems:'center', gap:8, marginBottom: r.comment ? 6 : 0}}>
+                      <Avatar name={r.from_name || '?'} size={26}/>
+                      <span style={{fontSize:12.5, fontWeight:700, color:'var(--pg-ink-800)', flex:1}}>{r.from_name || '?'}</span>
+                      <div style={{display:'flex', gap:1}}>
+                        {[1,2,3,4,5].map(n => (
+                          <svg key={n} width="12" height="12" viewBox="0 0 24 24"
+                            fill={n<=r.stars?'#F59E0B':'none'}
+                            stroke={n<=r.stars?'#F59E0B':'var(--pg-ink-300)'}
+                            strokeWidth="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                    {r.comment ? (
+                      <p style={{margin:0, fontSize:12.5, color:'var(--pg-ink-600)', lineHeight:1.5}}>{r.comment}</p>
+                    ) : null}
+                    {r.listing_name && (
+                      <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:4}}>
+                        🏷 {r.listing_name}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Action */}
           <button onClick={()=>{ onClose(); onChat && onChat(profile.uid ? { id: profile.uid, name } : name); }}
             className="pg-btn pg-btn-primary" style={{width:'100%', height:50, fontSize:15, borderRadius:14, marginTop:4}}>
             {Icon.msg(16,'#fff')}
             <span style={{marginLeft:6}}>{msgLbl}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Rating Sheet — submit a pending rating ──────────────────────────────────
+function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToast }) {
+  const [stars,      setStars]      = React.useState(0);
+  const [hovered,    setHovered]    = React.useState(0);
+  const [comment,    setComment]    = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
+  const [toProfile,  setToProfile]  = React.useState(null);
+
+  React.useEffect(() => {
+    if (!open) { setStars(0); setComment(''); setToProfile(null); return; }
+    if (!rating?.to_id || !window.sb) return;
+    window.sb.from('profiles').select('name,photo_url').eq('id', rating.to_id).single()
+      .then(({ data }) => { if (data) setToProfile(data); })
+      .catch(() => {});
+  }, [open, rating?.to_id]);
+
+  if (!open || !rating) return null;
+
+  const toName = toProfile?.name || rating.to_name || '?';
+  const labels = { 1:'Poor', 2:'Fair', 3:'Good', 4:'Very Good', 5:'Excellent!' };
+  const labelspt = { 1:'Péssimo', 2:'Ruim', 3:'Ok', 4:'Bom', 5:'Excelente!' };
+
+  const handleSubmit = async () => {
+    if (!stars || !window.sb) return;
+    setSubmitting(true);
+    try {
+      const { error } = await window.sb.from('ratings')
+        .update({ stars, comment, pending: false })
+        .eq('id', rating.id)
+        .eq('from_id', currentUser.uid);
+      if (error) throw error;
+      showToast && showToast('⭐ ' + (lang==='pt' ? 'Avaliação enviada!' : 'Rating submitted!'));
+      onDone && onDone(rating.id);
+    } catch(e) {
+      showToast && showToast('❌ ' + (e.message || 'Error'));
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="pg-sheet-backdrop" style={{zIndex:1200}} onClick={onClose}>
+      <div className="pg-sheet" style={{padding:'0 0 36px', zIndex:1201}} onClick={e=>e.stopPropagation()}>
+        <div className="pg-sheet-grabber"/>
+        <div style={{padding:'4px 18px 24px'}}>
+          {/* Header */}
+          <div style={{textAlign:'center', marginBottom:24}}>
+            <Avatar name={toName} size={64} src={toProfile?.photo_url || undefined}/>
+            <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', fontFamily:'var(--pg-font-display)', marginTop:12}}>
+              {lang==='pt' ? `Avalie ${toName}` : `Rate ${toName}`}
+            </div>
+            <div style={{fontSize:12.5, color:'var(--pg-ink-500)', marginTop:4}}>
+              {lang==='pt' ? 'Transação' : 'Transaction'}: <strong>"{rating.listing_name || ''}"</strong>
+            </div>
+          </div>
+
+          {/* Stars */}
+          <div style={{display:'flex', justifyContent:'center', gap:6, marginBottom:6}}>
+            {[1,2,3,4,5].map(n => (
+              <button key={n} onClick={()=>setStars(n)}
+                onMouseEnter={()=>setHovered(n)} onMouseLeave={()=>setHovered(0)}
+                style={{background:'none', border:'none', cursor:'pointer', padding:'4px', lineHeight:1,
+                  transition:'transform .1s', transform:(hovered||stars)>=n?'scale(1.18)':'scale(1)'}}>
+                <svg width="38" height="38" viewBox="0 0 24 24"
+                  fill={(hovered||stars)>=n?'#F59E0B':'none'}
+                  stroke={(hovered||stars)>=n?'#F59E0B':'var(--pg-ink-300)'}
+                  strokeWidth="1.8" strokeLinecap="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </button>
+            ))}
+          </div>
+          <div style={{textAlign:'center', height:20, marginBottom:16}}>
+            {(hovered||stars)>0 && (
+              <span style={{fontSize:13, fontWeight:700, color:'#F59E0B'}}>
+                {lang==='pt' ? labelspt[hovered||stars] : labels[hovered||stars]}
+              </span>
+            )}
+          </div>
+
+          {/* Comment */}
+          <textarea value={comment} onChange={e=>setComment(e.target.value)}
+            placeholder={lang==='pt' ? 'Comentário opcional (max 280 caracteres)...' : 'Optional comment (max 280 chars)...'}
+            maxLength={280}
+            style={{
+              width:'100%', minHeight:80, borderRadius:12, border:'1.5px solid var(--pg-ink-200)',
+              padding:'10px 12px', fontFamily:'inherit', fontSize:14, resize:'none',
+              background:'var(--pg-white)', color:'var(--pg-ink-900)', outline:'none', boxSizing:'border-box',
+            }}
+          />
+
+          <button onClick={handleSubmit} disabled={!stars||submitting} style={{
+            width:'100%', marginTop:12, padding:'15px', borderRadius:14, border:'none',
+            cursor:stars?'pointer':'default', fontFamily:'inherit', fontSize:15, fontWeight:700,
+            color:'#fff',
+            background:stars?'linear-gradient(135deg,#F59E0B,#D97706)':'var(--pg-ink-200)',
+            opacity:submitting?0.7:1, transition:'all .15s',
+          }}>
+            {submitting ? '...' : (lang==='pt' ? 'Enviar avaliação' : 'Submit Rating')}
+          </button>
+          <button onClick={onClose} style={{
+            width:'100%', marginTop:10, padding:'12px', borderRadius:14, border:'none',
+            cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600,
+            background:'var(--pg-ink-100)', color:'var(--pg-ink-600)',
+          }}>
+            {lang==='pt' ? 'Avaliar depois' : 'Rate Later'}
           </button>
         </div>
       </div>
