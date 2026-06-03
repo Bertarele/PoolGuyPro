@@ -648,6 +648,33 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           )}
         </div>
 
+        {/* Mark as Sold — only for listing owner (not admin), only when not yet sold */}
+        {!isAdmin && canDelete && item.status !== 'sold' && (
+          <button onClick={()=>setMarkSoldOpen(true)} style={{
+            width:'100%', marginTop:10, padding:'13px', borderRadius:14,
+            border:'1.5px solid #86EFAC', background:'#F0FDF4',
+            color:'#16A34A', cursor:'pointer', fontFamily:'inherit',
+            fontSize:14, fontWeight:700,
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            transition:'all .15s',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {lang==='pt' ? 'Marcar como vendido' : lang==='es' ? 'Marcar como vendido' : 'Mark as Sold'}
+          </button>
+        )}
+        {item.status === 'sold' && (
+          <div style={{
+            marginTop:10, padding:'10px 14px', borderRadius:12,
+            background:'#F0FDF4', border:'1px solid #86EFAC',
+            display:'flex', alignItems:'center', gap:8,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style={{fontSize:13, fontWeight:700, color:'#16A34A'}}>
+              {lang==='pt' ? 'Vendido!' : lang==='es' ? '¡Vendido!' : 'Sold!'}
+            </span>
+          </div>
+        )}
+
       </div>
 
       {/* ── Location map ── */}
@@ -753,6 +780,18 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       {viewerOpen && allPhotos.length > 0 && (
         <PhotoViewer photos={allPhotos} startIdx={imgIdx} onClose={() => setViewerOpen(false)}/>
       )}
+
+      {/* Mark as Sold sheet */}
+      <Sheet open={markSoldOpen} onClose={()=>setMarkSoldOpen(false)} height="auto">
+        {markSoldOpen && (
+          <MarkSoldSheet
+            item={item} lang={lang} currentUser={currentUser}
+            onClose={()=>setMarkSoldOpen(false)}
+            showToast={showToast}
+            onSold={()=>{ setMarkSoldOpen(false); onClose && onClose(); }}
+          />
+        )}
+      </Sheet>
     </div>
   );
 }
