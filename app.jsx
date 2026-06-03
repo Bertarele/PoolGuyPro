@@ -723,211 +723,363 @@ function App() {
   );
 
   // ════════════════════════════════════════════════════════════════
-  // DESKTOP LAYOUT
+  // DESKTOP LAYOUT — professional sidebar, no top header bar
   // ════════════════════════════════════════════════════════════════
   if (!isMobile) {
-    // Display name: never show raw email — use name from profile, fallback to username part of email
-  const displayName = (user.name && !user.name.includes('@'))
-    ? user.name
-    : (user.email ? user.email.split('@')[0] : 'User');
-  const avatarLetter = (displayName[0] || '?').toUpperCase();
+    const displayName = (user.name && !user.name.includes('@'))
+      ? user.name
+      : (user.email ? user.email.split('@')[0] : 'User');
+    const avatarLetter = (displayName[0] || '?').toUpperCase();
+
+    // SVG icon set — consistent 1.75 stroke, Lucide style
+    const NavIcon = ({ id, active }) => {
+      const c = active ? '#fff' : 'rgba(255,255,255,0.45)';
+      const w = 1.75;
+      switch(id) {
+        case 'home': return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        );
+        case 'market': return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+        );
+        case 'quick': return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round">
+            <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
+            <path d="M2 17 Q6 13 10 17 Q14 21 18 17 Q20 15 22 17"/>
+            <circle cx="12" cy="5" r="2"/>
+          </svg>
+        );
+        case 'work': return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+        );
+        case 'profile': return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        );
+        default: return null;
+      }
+    };
+
+    const navItems = [
+      { id:'home',    label: lang==='pt'?'Início':'Home' },
+      { id:'market',  label: lang==='pt'?'Marketplace':'Marketplace' },
+      { id:'quick',   label: 'Quick Pools' },
+      { id:'work',    label: lang==='pt'?'Trabalho':'Work' },
+      { id:'profile', label: lang==='pt'?'Perfil':'Profile' },
+    ];
+
+    // Contextual "Post" action per tab
+    const postAction = tab==='market' ? ()=>setMarketPostOpen(true)
+      : tab==='quick'  ? ()=>setPostQPOpen(true)
+      : tab==='work'   ? ()=>setPostMenuOpen(true)
+      : null;
+    const postLabel = lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post';
+
     return (
-      <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',background:'var(--pg-bg)',position:'relative',overflow:'hidden'}}>
+      <div style={{width:'100%',height:'100%',display:'flex',overflow:'hidden',background:'var(--pg-bg)',position:'relative'}}>
 
-        {/* ── Top header bar ── */}
-        <header style={{
-          height:56, flexShrink:0, zIndex:20,
-          background:'linear-gradient(90deg,#0a1628 0%,#0d1f3c 220px,#fff 220px)',
-          borderBottom:'1px solid rgba(0,0,0,0.10)',
-          display:'flex', alignItems:'center', gap:0,
-          boxShadow:'0 2px 8px rgba(0,0,0,0.10)',
-        }}>
-          {/* Logo — aligned with sidebar */}
-          <div style={{
-            width:220, flexShrink:0, padding:'0 20px',
-            display:'flex', alignItems:'center', gap:10,
+        {/* ── SIDEBAR ────────────────────────────────────────── */}
+        {isLoggedIn && (
+          <nav style={{
+            width:240, flexShrink:0, zIndex:10,
+            background:'linear-gradient(180deg,#08152B 0%,#0B1D38 60%,#0D2144 100%)',
+            display:'flex', flexDirection:'column',
+            overflowY:'auto', overflowX:'hidden',
+            boxShadow:'2px 0 20px rgba(0,0,0,0.25)',
           }}>
-            <div style={{
-              width:32, height:32, borderRadius:9,
-              background:'linear-gradient(135deg,#007AFF 0%,#38bdf8 100%)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:18, boxShadow:'0 2px 8px rgba(0,122,255,0.45)',
-            }}>🌊</div>
-            <div>
-              <div style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:'#fff',lineHeight:1.1,letterSpacing:'-0.02em'}}>PoolGuyX</div>
-              <div style={{fontSize:8.5,color:'rgba(255,255,255,0.45)',letterSpacing:'0.08em',textTransform:'uppercase',lineHeight:1}}>Florida Pool Network</div>
-            </div>
-          </div>
 
-          {/* Page title */}
-          <div style={{flex:1, padding:'0 28px', display:'flex', alignItems:'center', gap:12}}>
-            {isLoggedIn && desktopTabLabel && (
-              <span style={{fontSize:16,fontWeight:700,color:'#1C1C1E',letterSpacing:'-0.01em'}}>
-                {desktopTabLabel.label}
-              </span>
-            )}
-          </div>
-
-          {/* Right actions */}
-          <div style={{padding:'0 16px', display:'flex', alignItems:'center', gap:8}}>
-            {isLoggedIn && (
-              <>
-                {/* Post button */}
-                {(tab==='market'||tab==='quick'||tab==='work') && (
-                  <button onClick={tab==='market'?()=>setMarketPostOpen(true):tab==='quick'?()=>setPostQPOpen(true):()=>setPostMenuOpen(true)} style={{
-                    height:34, padding:'0 16px', borderRadius:9, border:'none',
-                    background:'linear-gradient(135deg,#007AFF 0%,#0056CC 100%)',
-                    color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer',
-                    fontFamily:'inherit', display:'flex', alignItems:'center', gap:6,
-                    boxShadow:'0 2px 8px rgba(0,122,255,0.30)',
-                  }}>
-                    <span style={{fontSize:14}}>+</span>
-                    {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
-                  </button>
-                )}
-                {/* Notifications */}
-                <button onClick={()=>setNotifOpen(true)} style={{
-                  width:34, height:34, borderRadius:9, border:'1px solid rgba(0,0,0,0.09)',
-                  background:'#f5f5f5', display:'flex', alignItems:'center', justifyContent:'center',
-                  cursor:'pointer', fontSize:16,
-                }}>🔔</button>
-                {/* User avatar + name */}
-                <div style={{display:'flex',alignItems:'center',gap:8,padding:'4px 10px',borderRadius:9,border:'1px solid rgba(0,0,0,0.09)',background:'#f5f5f5',cursor:'pointer'}}
-                  onClick={()=>switchTab('profile')}>
-                  <div style={{
-                    width:26,height:26,borderRadius:'50%',
-                    background:'linear-gradient(135deg,#007AFF,#0056CC)',
-                    display:'flex',alignItems:'center',justifyContent:'center',
-                    color:'#fff',fontSize:11,fontWeight:700,flexShrink:0,
-                  }}>{avatarLetter}</div>
-                  <span style={{fontSize:12,fontWeight:600,color:'#1C1C1E',maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                    {displayName}
-                  </span>
+            {/* ── Brand ── */}
+            <div style={{padding:'28px 20px 20px', flexShrink:0}}>
+              <div style={{display:'flex', alignItems:'center', gap:12}}>
+                <div style={{
+                  width:40, height:40, borderRadius:12, flexShrink:0,
+                  background:'linear-gradient(135deg,#0077B6,#023E8A)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  boxShadow:'0 4px 12px rgba(0,119,182,0.45)',
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.75" strokeLinecap="round">
+                    <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
+                    <path d="M2 17 Q6 13 10 17 Q14 21 18 17 Q20 15 22 17"/>
+                    <circle cx="12" cy="5" r="2"/>
+                  </svg>
                 </div>
-                {/* Logout */}
-                <button onClick={ctx.onLogout} style={{
-                  height:34, padding:'0 12px', borderRadius:9,
-                  border:'1px solid rgba(0,0,0,0.09)', background:'#f5f5f5',
-                  color:'#8E8E93', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                <div>
+                  <div style={{fontFamily:'var(--pg-font-display)',fontSize:17,fontWeight:800,color:'#fff',letterSpacing:'-0.02em',lineHeight:1}}>PoolGuyX</div>
+                  <div style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,0.35)',letterSpacing:'0.10em',textTransform:'uppercase',marginTop:3}}>Florida Pool Network</div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── User card ── */}
+            <div style={{
+              margin:'0 12px 20px', padding:'12px 14px', borderRadius:14,
+              background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)',
+              display:'flex', alignItems:'center', gap:10, cursor:'pointer',
+              transition:'background .15s',
+            }} onClick={()=>switchTab('profile')}>
+              <div style={{
+                width:36, height:36, borderRadius:11, flexShrink:0,
+                background:'linear-gradient(135deg,#0077B6,#023E8A)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                color:'#fff', fontSize:14, fontWeight:700,
+                boxShadow:'0 3px 8px rgba(0,119,182,0.35)',
+              }}>{avatarLetter}</div>
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{fontSize:13, fontWeight:700, color:'#fff',
+                  overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', lineHeight:1.2}}>
+                  {displayName}
+                </div>
+                <div style={{fontSize:10.5, color:'rgba(255,255,255,0.40)', marginTop:2, lineHeight:1}}>
+                  {user.role==='admin'?'Administrator':'Pool Guy'}
+                </div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+
+            {/* ── Section label ── */}
+            <div style={{padding:'0 20px 8px'}}>
+              <div style={{fontSize:9.5, fontWeight:700, color:'rgba(255,255,255,0.25)',
+                letterSpacing:'0.12em', textTransform:'uppercase'}}>
+                {lang==='pt'?'NAVEGAÇÃO':'NAVIGATION'}
+              </div>
+            </div>
+
+            {/* ── Nav items ── */}
+            <div style={{padding:'0 10px', display:'flex', flexDirection:'column', gap:2}}>
+              {navItems.map(item => {
+                const active = tab === item.id;
+                return (
+                  <button key={item.id} onClick={()=>switchTab(item.id)} style={{
+                    display:'flex', alignItems:'center', gap:12,
+                    padding:'11px 14px', borderRadius:12, border:'none', cursor:'pointer',
+                    background: active
+                      ? 'linear-gradient(135deg,rgba(0,119,182,0.35),rgba(0,119,182,0.15))'
+                      : 'transparent',
+                    fontFamily:'inherit', textAlign:'left', transition:'all .15s',
+                    position:'relative',
+                  }}>
+                    {/* Active indicator pill */}
+                    {active && (
+                      <div style={{
+                        position:'absolute', left:0, top:'20%', bottom:'20%',
+                        width:3, borderRadius:'0 3px 3px 0',
+                        background:'linear-gradient(to bottom,#38BDF8,#0077B6)',
+                      }}/>
+                    )}
+                    {/* Icon container */}
+                    <div style={{
+                      width:34, height:34, borderRadius:10, flexShrink:0,
+                      background: active ? 'rgba(0,119,182,0.35)' : 'rgba(255,255,255,0.06)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      transition:'all .15s',
+                      border: active ? '1px solid rgba(56,189,248,0.20)' : '1px solid transparent',
+                    }}>
+                      <NavIcon id={item.id} active={active}/>
+                    </div>
+                    <span style={{
+                      fontSize:14, fontWeight: active?700:500,
+                      color: active ? '#fff' : 'rgba(255,255,255,0.50)',
+                      letterSpacing:'-0.01em', transition:'all .15s',
+                    }}>{item.label}</span>
+                    {/* Notification dot for chat/notif */}
+                    {item.id==='home' && (hasUnreadChat||hasUnreadNotif) && (
+                      <div style={{marginLeft:'auto', width:7, height:7, borderRadius:'50%',
+                        background:'#38BDF8', boxShadow:'0 0 6px rgba(56,189,248,0.6)'}}/>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Post CTA ── */}
+            {postAction && (
+              <div style={{padding:'20px 12px 0'}}>
+                <div style={{height:1, background:'rgba(255,255,255,0.07)', margin:'0 4px 20px'}}/>
+                <button onClick={postAction} style={{
+                  width:'100%', padding:'12px 16px', borderRadius:13, border:'none', cursor:'pointer',
+                  background:'linear-gradient(135deg,#0077B6,#023E8A)',
+                  fontFamily:'inherit', color:'#fff', fontSize:13, fontWeight:700,
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  boxShadow:'0 4px 16px rgba(0,119,182,0.35)', transition:'all .15s',
+                  letterSpacing:'-0.01em',
                 }}>
-                  {lang==='pt'?'Sair':lang==='es'?'Salir':'Logout'}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  {postLabel}
                 </button>
-              </>
+              </div>
             )}
-          </div>
-        </header>
 
-        {/* ── Body: sidebar + content ── */}
-        <div style={{flex:1, display:'flex', overflow:'hidden', position:'relative'}}>
+            {/* Spacer */}
+            <div style={{flex:1}}/>
 
-          {/* Sidebar */}
-          {isLoggedIn && (
-            <nav style={{
-              width:220, flexShrink:0,
-              background:'linear-gradient(180deg,#0a1628 0%,#0d1f3c 100%)',
-              display:'flex', flexDirection:'column',
-              padding:'20px 10px 16px',
-              overflowY:'auto', zIndex:5,
-            }}>
-              {desktopNavItems.map(item => (
-                <button key={item.id} onClick={()=>switchTab(item.id)} style={{
-                  display:'flex', alignItems:'center', gap:11,
-                  padding:'11px 14px', borderRadius:11, border:'none', cursor:'pointer',
-                  background: tab===item.id ? 'rgba(0,122,255,0.22)' : 'transparent',
-                  color: tab===item.id ? '#fff' : 'rgba(255,255,255,0.55)',
-                  fontWeight: tab===item.id ? 700 : 500,
-                  fontSize:14, fontFamily:'inherit',
-                  textAlign:'left', marginBottom:3,
-                  transition:'all .14s',
-                  borderLeft: tab===item.id ? '3px solid #007AFF' : '3px solid transparent',
+            {/* ── Utilities ── */}
+            <div style={{padding:'0 10px 10px', display:'flex', flexDirection:'column', gap:1}}>
+              <div style={{height:1, background:'rgba(255,255,255,0.07)', margin:'0 4px 8px'}}/>
+
+              {/* Notifications */}
+              <button onClick={()=>setNotifOpen(true)} style={{
+                display:'flex', alignItems:'center', gap:12,
+                padding:'10px 14px', borderRadius:12, border:'none', cursor:'pointer',
+                background:'transparent', fontFamily:'inherit', textAlign:'left', transition:'background .15s',
+                position:'relative',
+              }}>
+                <div style={{
+                  width:34, height:34, borderRadius:10, flexShrink:0,
+                  background:'rgba(255,255,255,0.06)', border:'1px solid transparent',
+                  display:'flex', alignItems:'center', justifyContent:'center', position:'relative',
                 }}>
-                  <span style={{fontSize:18,lineHeight:1}}>{item.emoji}</span>
-                  <span>{item.label}</span>
-                </button>
-              ))}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.40)" strokeWidth="1.75" strokeLinecap="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                  {(hasUnreadNotif||pendingRatings.length>0) && (
+                    <div style={{position:'absolute', top:4, right:4, width:7, height:7, borderRadius:'50%',
+                      background:'#FF3B30', border:'1.5px solid #0B1D38'}}/>
+                  )}
+                </div>
+                <span style={{fontSize:13, fontWeight:500, color:'rgba(255,255,255,0.45)', letterSpacing:'-0.01em'}}>
+                  {lang==='pt'?'Notificações':'Notifications'}
+                </span>
+              </button>
 
-              <div style={{flex:1}}/>
+              {/* Messages */}
+              <button onClick={()=>setChatOpen(true)} style={{
+                display:'flex', alignItems:'center', gap:12,
+                padding:'10px 14px', borderRadius:12, border:'none', cursor:'pointer',
+                background:'transparent', fontFamily:'inherit', textAlign:'left', transition:'background .15s',
+              }}>
+                <div style={{
+                  width:34, height:34, borderRadius:10, flexShrink:0,
+                  background:'rgba(255,255,255,0.06)', border:'1px solid transparent',
+                  display:'flex', alignItems:'center', justifyContent:'center', position:'relative',
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.40)" strokeWidth="1.75" strokeLinecap="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  {hasUnreadChat && (
+                    <div style={{position:'absolute', top:4, right:4, width:7, height:7, borderRadius:'50%',
+                      background:'#38BDF8', border:'1.5px solid #0B1D38'}}/>
+                  )}
+                </div>
+                <span style={{fontSize:13, fontWeight:500, color:'rgba(255,255,255,0.45)', letterSpacing:'-0.01em'}}>
+                  {lang==='pt'?'Mensagens':'Messages'}
+                </span>
+              </button>
 
-              {/* Dark mode toggle */}
+              {/* Dark mode */}
               <button onClick={toggleDark} style={{
-                display:'flex', alignItems:'center', gap:11,
-                padding:'10px 14px', borderRadius:11, border:'none', cursor:'pointer',
-                background: darkMode ? 'rgba(245,158,11,0.12)' : 'transparent',
-                color: darkMode ? '#F59E0B' : 'rgba(255,255,255,0.35)',
-                fontSize:13, fontFamily:'inherit', textAlign:'left', transition:'all .15s',
+                display:'flex', alignItems:'center', gap:12,
+                padding:'10px 14px', borderRadius:12, border:'none', cursor:'pointer',
+                background: darkMode ? 'rgba(245,158,11,0.08)' : 'transparent',
+                fontFamily:'inherit', textAlign:'left', transition:'all .15s',
               }}>
-                {darkMode
-                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                }
-                <span>{darkMode ? 'Light mode' : 'Dark mode'}</span>
+                <div style={{
+                  width:34, height:34, borderRadius:10, flexShrink:0,
+                  background: darkMode ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.06)',
+                  border: darkMode ? '1px solid rgba(245,158,11,0.20)' : '1px solid transparent',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  {darkMode
+                    ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="1.75" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.40)" strokeWidth="1.75" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  }
+                </div>
+                <span style={{fontSize:13, fontWeight:500,
+                  color: darkMode ? '#F59E0B' : 'rgba(255,255,255,0.45)',
+                  letterSpacing:'-0.01em'}}>
+                  {darkMode ? (lang==='pt'?'Modo claro':'Light mode') : (lang==='pt'?'Modo escuro':'Dark mode')}
+                </span>
               </button>
 
+              {/* Feedback */}
               <button onClick={()=>setFeedbackOpen(true)} style={{
-                display:'flex', alignItems:'center', gap:11,
-                padding:'10px 14px', borderRadius:11, border:'none', cursor:'pointer',
-                background:'transparent', color:'rgba(255,255,255,0.35)',
-                fontSize:13, fontFamily:'inherit', textAlign:'left',
+                display:'flex', alignItems:'center', gap:12,
+                padding:'10px 14px', borderRadius:12, border:'none', cursor:'pointer',
+                background:'transparent', fontFamily:'inherit', textAlign:'left', transition:'background .15s',
               }}>
-                <span style={{fontSize:16}}>💬</span>
-                <span>Feedback</span>
+                <div style={{width:34,height:34,borderRadius:10,flexShrink:0,
+                  background:'rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.75" strokeLinecap="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    <line x1="9" y1="10" x2="15" y2="10"/>
+                  </svg>
+                </div>
+                <span style={{fontSize:13, fontWeight:500, color:'rgba(255,255,255,0.35)', letterSpacing:'-0.01em'}}>Feedback</span>
               </button>
 
-              {/* Divider */}
-              <div style={{height:'1px', background:'rgba(255,255,255,0.08)', margin:'6px 4px'}}/>
+              <div style={{height:1, background:'rgba(255,255,255,0.06)', margin:'6px 4px'}}/>
 
               {/* Logout */}
               <button onClick={ctx.onLogout} style={{
-                display:'flex', alignItems:'center', gap:11,
-                padding:'10px 14px', borderRadius:11, border:'none', cursor:'pointer',
-                background:'transparent', color:'rgba(239,68,68,0.55)',
-                fontSize:13, fontFamily:'inherit', textAlign:'left', transition:'all .15s',
+                display:'flex', alignItems:'center', gap:12,
+                padding:'10px 14px', borderRadius:12, border:'none', cursor:'pointer',
+                background:'transparent', fontFamily:'inherit', textAlign:'left', transition:'all .15s',
               }}
-                onMouseEnter={e=>{ e.currentTarget.style.background='rgba(239,68,68,0.10)'; e.currentTarget.style.color='#EF4444'; }}
-                onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='rgba(239,68,68,0.55)'; }}
+                onMouseEnter={e=>{ e.currentTarget.style.background='rgba(239,68,68,0.08)'; }}
+                onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/>
-                  <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-                <span>{lang==='pt'?'Sair':lang==='es'?'Salir':'Log out'}</span>
-              </button>
-            </nav>
-          )}
-
-          {/* Main content — position:relative so screens can use position:absolute inside */}
-          <div style={{flex:1, position:'relative', overflow:'hidden', background:'var(--pg-bg)'}}>
-            {!isLoggedIn ? (
-              /* Login — centered card */
-              <div style={{
-                position:'absolute', inset:0, overflowY:'auto',
-                display:'flex', alignItems:'center', justifyContent:'center',
-                background:'linear-gradient(135deg,#eef2f7 0%,#e8f0fe 100%)',
-                padding:'40px 24px',
-              }}>
-                <div style={{
-                  background:'var(--pg-white)', borderRadius:24,
-                  boxShadow:'0 20px 60px rgba(0,0,0,0.12)',
-                  overflow:'hidden', width:'100%', maxWidth:420,
-                }}>
-                  <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
+                <div style={{width:34,height:34,borderRadius:10,flexShrink:0,
+                  background:'rgba(239,68,68,0.08)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(239,68,68,0.60)" strokeWidth="1.75" strokeLinecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
                 </div>
+                <span style={{fontSize:13, fontWeight:500, color:'rgba(239,68,68,0.55)', letterSpacing:'-0.01em'}}>
+                  {lang==='pt'?'Sair':'Log out'}
+                </span>
+              </button>
+
+              {/* Version tag */}
+              <div style={{padding:'10px 14px 4px', textAlign:'center'}}>
+                <span style={{fontSize:9.5, color:'rgba(255,255,255,0.15)', letterSpacing:'0.06em'}}>PoolGuyX v1.3.0 · Beta</span>
               </div>
-            ) : (
-              /* Screens — position:absolute so height:100% inside screens resolves correctly,
-                 fixing scroll. ref goes here so switchTab scrolls to top. */
-              <div ref={screenRef} data-pg-screen style={{
-                position:'absolute', inset:0, overflowY:'auto', overflowX:'hidden',
+            </div>
+          </nav>
+        )}
+
+        {/* ── MAIN CONTENT ───────────────────────────────────── */}
+        <div style={{flex:1, position:'relative', overflow:'hidden', background:'var(--pg-bg)'}}>
+          {!isLoggedIn ? (
+            <div style={{
+              position:'absolute', inset:0, overflowY:'auto',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              background:'linear-gradient(135deg,#eef2f7 0%,#e8f0fe 100%)',
+              padding:'40px 24px',
+            }}>
+              <div style={{
+                background:'var(--pg-white)', borderRadius:24,
+                boxShadow:'0 20px 60px rgba(0,0,0,0.12)',
+                overflow:'hidden', width:'100%', maxWidth:420,
               }}>
-                {tab==='home'    && <HomeScreen ctx={ctx}/>}
-                {tab==='market'  && <MarketplaceScreen ctx={ctx}/>}
-                {tab==='quick'   && <QuickPoolsScreen ctx={ctx}/>}
-                {tab==='work'    && <WorkScreen ctx={ctx}/>}
-                {tab==='profile' && <ProfileScreen ctx={ctx}/>}
+                <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div ref={screenRef} data-pg-screen style={{
+              position:'absolute', inset:0, overflowY:'auto', overflowX:'hidden',
+            }}>
+              {tab==='home'    && <HomeScreen ctx={ctx}/>}
+              {tab==='market'  && <MarketplaceScreen ctx={ctx}/>}
+              {tab==='quick'   && <QuickPoolsScreen ctx={ctx}/>}
+              {tab==='work'    && <WorkScreen ctx={ctx}/>}
+              {tab==='profile' && <ProfileScreen ctx={ctx}/>}
+            </div>
+          )}
         </div>
 
         {/* Overlays */}
@@ -936,11 +1088,9 @@ function App() {
         {/* Tweaks panel */}
         <TweaksPanel>
           <TweakSection label="Subscription tier"/>
-          <TweakRadio value={t.tier} options={['free','premium','pro']}
-            onChange={v=>{ setTweak('tier', v); }}/>
+          <TweakRadio value={t.tier} options={['free','premium','pro']} onChange={v=>setTweak('tier',v)}/>
           <TweakSection label="Language"/>
-          <TweakRadio value={lang} options={['en','pt','es']}
-            onChange={v=>setLang(v)}/>
+          <TweakRadio value={lang} options={['en','pt','es']} onChange={v=>setLang(v)}/>
           <TweakSection label="Quick jumps"/>
           <TweakButton onClick={()=>setIsLoggedIn(false)}>Show login screen</TweakButton>
           <TweakButton onClick={()=>setChatOpen(true)}>Open chat</TweakButton>
