@@ -252,29 +252,43 @@ function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) 
     if (!selected || !window.sb || !currentUser?.uid) return;
     setConfirming(true);
     try {
-      const { error: e1 } = await window.sb.from('marketplace')
+      // Update listing status — use .select() to verify at least 1 row was updated
+      const { data: updRows, error: e1 } = await window.sb.from('marketplace')
         .update({ status: 'sold', buyer_id: selected.id })
-        .eq('id', item._id);
+        .eq('id', item._id)
+        .select('id');
       if (e1) throw e1;
+      if (!updRows || updRows.length === 0) {
+        throw new Error(lang==='pt'
+          ? 'Não foi possível marcar como vendido. Tente novamente.'
+          : 'Could not mark as sold. Please try again.');
+      }
 
-      const { data: ratingRows } = await window.sb.from('ratings').insert([
-        // Seller rates buyer
+      // Insert pending ratings for both parties (seller → buyer and buyer → seller placeholder)
+      await window.sb.from('ratings').insert([
         { listing_id: item._id, listing_name: item.name || '',
           from_id: currentUser.uid, from_name: currentUser.name || currentUser.email || '',
           to_id: selected.id, stars: null, comment: '', pending: true },
-        // Buyer rates seller (seller creates the placeholder on buyer's behalf)
         { listing_id: item._id, listing_name: item.name || '',
           from_id: selected.id, from_name: selected.name,
           to_id: currentUser.uid, stars: null, comment: '', pending: true },
-      ]).select();
+      ]);
+
+      // Fetch the seller's own pending rating via a separate SELECT (more reliable than insert+select)
+      const { data: myRatings } = await window.sb.from('ratings')
+        .select('*')
+        .eq('listing_id', item._id)
+        .eq('from_id', currentUser.uid)
+        .eq('pending', true)
+        .limit(1);
+
+      const sellerRating = myRatings?.[0] || null;
 
       showToast && showToast('✅ ' + (lang==='pt'
         ? 'Vendido! Avalie o comprador agora.'
         : 'Sold! Rate the buyer now.'));
 
-      // Find the seller's own pending rating to open it immediately
-      const sellerRating = (ratingRows || []).find(r => r.from_id === currentUser.uid);
-      onSold && onSold(sellerRating || null);
+      onSold && onSold(sellerRating);
     } catch(e) {
       showToast && showToast('❌ ' + (e.message || 'Error'));
     } finally {
@@ -2543,9 +2557,12 @@ function MarketplaceScreen({ ctx }) {
             onShare={()=>handleShare(null,viewListing)}
             liveMarket={liveMarket} onOpenListing={openListing}
             onAfterSold={(sellerRating)=>{
+              // Update local state immediately (realtime will also fire)
               setViewListing(prev=>prev?{...prev,status:'sold'}:null);
+              // Close the listing view so the rating sheet is clearly visible
+              setTimeout(()=>setViewListing(null), 300);
               if(sellerRating&&openRating) openRating(sellerRating);
-              else if(loadPendingRatings) loadPendingRatings();
+              else { loadPendingRatings && loadPendingRatings(); }
             }}
             onDeleted={(id)=>{ closeListing(); setSavedIds(prev=>{const s=new Set(prev);s.delete(id);return s;}); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}
           />
@@ -3315,6 +3332,8 @@ function MarketplaceScreen({ ctx }) {
             onAfterSold={(sellerRating) => {
               // Mark item as sold in local state immediately (no need to wait for realtime)
               setViewListing(prev => prev ? { ...prev, status: 'sold' } : null);
+              // Close the listing view after a brief moment so rating sheet is visible
+              setTimeout(() => setViewListing(null), 300);
               // Open the rating sheet immediately so seller can rate the buyer now
               if (sellerRating && openRating) {
                 openRating(sellerRating);

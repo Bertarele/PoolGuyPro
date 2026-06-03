@@ -3312,8 +3312,8 @@ function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToa
   };
 
   return (
-    <div className="pg-sheet-backdrop" style={{zIndex:1200}} onClick={onClose}>
-      <div className="pg-sheet" style={{padding:'0 0 36px', zIndex:1201}} onClick={e=>e.stopPropagation()}>
+    <div className="pg-sheet-backdrop" style={{zIndex:1200, position:'fixed'}} onClick={onClose}>
+      <div className="pg-sheet" style={{padding:'0 0 36px', position:'relative', zIndex:1201}} onClick={e=>e.stopPropagation()}>
         <div className="pg-sheet-grabber"/>
         <div style={{padding:'4px 18px 24px'}}>
           {/* Header */}
