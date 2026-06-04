@@ -1232,7 +1232,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   }}>
                     {Icon.msg(18, isRent && !isOwner ? 'var(--pg-blue-700)' : '#fff')}
                     {lang==='pt'?'Enviar mensagem':'Message'}
-                  </button>
+                  </button>}
 
                   {/* Owner: rental requests panel when no requests yet */}
                   {isRent && isOwner && <OwnerRequestsBlock/>}
