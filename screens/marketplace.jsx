@@ -379,6 +379,11 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [mapCoords,     setMapCoords]    = React.useState(null);
   const [mapLoading,    setMapLoading]   = React.useState(false);
   const [isDesktop,     setIsDesktop]    = React.useState(() => window.innerWidth >= 900);
+  // Rental request state
+  const isRent = item.type === 'rent';
+  const [reqStatus,     setReqStatus]    = React.useState(null); // null|'pending'|'approved'|'declined'
+  const [reqLoading,    setReqLoading]   = React.useState(false);
+  const [ownerRequests, setOwnerRequests]= React.useState([]); // for owner — list of requests
 
   // Desktop detection
   React.useEffect(() => {
@@ -386,6 +391,25 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     window.addEventListener('resize', handler);
     return () => window.removeEventListener('resize', handler);
   }, []);
+
+  // Load rental requests (for rent items)
+  React.useEffect(() => {
+    if (!isRent || !currentUser?.uid || !window.sb) return;
+    window.sb.from('rental_requests')
+      .select('id, status, requester_id, requester_name, created_at')
+      .eq('listing_id', item._id)
+      .then(({ data }) => {
+        if (!data) return;
+        const isOwnerLocal = item.author_id && item.author_id === currentUser.uid;
+        if (isOwnerLocal) {
+          setOwnerRequests(data);
+        } else {
+          const mine = data.find(r => r.requester_id === currentUser.uid);
+          if (mine) setReqStatus(mine.status);
+        }
+      })
+      .catch(() => {});
+  }, [item._id, isRent, currentUser?.uid]); // eslint-disable-line
 
   // Fetch author profile photo when listing opens
   React.useEffect(() => {
@@ -425,6 +449,41 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const handleContact = () => {
     if (openChat) openChat(item.author_id ? { id: item.author_id, name: item.author || 'Seller' } : (item.author || 'Seller'));
     if (onClose) onClose();
+  };
+
+  const handleRequestRental = async () => {
+    if (!currentUser?.uid || reqStatus || !window.sb) return;
+    setReqLoading(true);
+    const { error } = await window.sb.from('rental_requests').insert({
+      listing_id: item._id,
+      listing_name: item.name || '',
+      requester_id: currentUser.uid,
+      requester_name: currentUser.name || (currentUser.email||'').split('@')[0] || 'User',
+      owner_id: item.author_id,
+    });
+    setReqLoading(false);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    setReqStatus('pending');
+    showToast && showToast(lang==='pt'?'✓ Pedido enviado! Converse com o dono pela inbox.':'✓ Request sent! Chat with the owner via inbox.');
+    // Auto-open chat with owner so they can discuss terms
+    if (openChat && item.author_id) {
+      setTimeout(() => {
+        if (onClose) onClose();
+        openChat({ id: item.author_id, name: item.author || 'Owner' });
+      }, 600);
+    }
+  };
+
+  const handleOwnerDecision = async (requestId, newStatus) => {
+    if (!window.sb) return;
+    const { error } = await window.sb.from('rental_requests')
+      .update({ status: newStatus, responded_at: new Date().toISOString() })
+      .eq('id', requestId);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: newStatus} : r));
+    showToast && showToast(newStatus === 'approved'
+      ? (lang==='pt'?'✓ Aluguel aprovado!':'✓ Rental approved!')
+      : (lang==='pt'?'Pedido recusado':'Request declined'));
   };
 
   // Open seller public profile — fetch real data from Supabase
@@ -589,6 +648,118 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       </div>
     </div>
   );
+
+  // ── Rental request button (for non-owner renters) ─────────────
+  const RequestRentalBlock = () => {
+    if (!isRent || isOwner || isSold) return null;
+    if (reqStatus === 'approved') return (
+      <div style={{padding:'13px 16px', borderRadius:14, background:'linear-gradient(135deg,#F0FDF4,#DCFCE7)',
+        border:'1.5px solid #86EFAC', display:'flex', alignItems:'center', gap:10}}>
+        <div style={{width:30,height:30,borderRadius:'50%',background:'#16A34A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <div style={{fontSize:13,fontWeight:800,color:'#15803D'}}>{lang==='pt'?'Aluguel aprovado!':'Rental approved!'}</div>
+          <div style={{fontSize:11.5,color:'#16A34A',marginTop:1}}>{lang==='pt'?'O dono aprovou seu pedido.':'The owner approved your request.'}</div>
+        </div>
+      </div>
+    );
+    if (reqStatus === 'declined') return (
+      <div style={{padding:'12px 14px',borderRadius:14,background:'#FEF2F2',border:'1.5px solid #FCA5A5',display:'flex',alignItems:'center',gap:10}}>
+        <span style={{fontSize:18,flexShrink:0}}>❌</span>
+        <div style={{fontSize:13,fontWeight:600,color:'#DC2626'}}>{lang==='pt'?'Pedido não aprovado':'Request not approved'}</div>
+      </div>
+    );
+    if (reqStatus === 'pending') return (
+      <div style={{padding:'13px 16px',borderRadius:14,background:'#FFFBEB',border:'1.5px solid #FDE68A',display:'flex',alignItems:'center',gap:10}}>
+        <span style={{fontSize:16,flexShrink:0}}>⏳</span>
+        <div>
+          <div style={{fontSize:13,fontWeight:700,color:'#92400E'}}>{lang==='pt'?'Pedido enviado!':'Request sent!'}</div>
+          <div style={{fontSize:11.5,color:'#B45309',marginTop:1}}>{lang==='pt'?'Aguardando resposta do dono.':'Waiting for owner\'s response.'}</div>
+        </div>
+      </div>
+    );
+    return (
+      <button onClick={handleRequestRental} disabled={reqLoading} style={{
+        width:'100%', height:52, borderRadius:14, border:'none', cursor: reqLoading?'default':'pointer',
+        fontFamily:'inherit', fontSize:15, fontWeight:700, color:'#fff',
+        background: reqLoading ? 'var(--pg-ink-300)' : 'linear-gradient(135deg,#0EBAC7,#0891A8)',
+        boxShadow:'0 4px 16px rgba(14,186,199,0.35)',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:9,
+        transition:'all .15s', opacity: reqLoading ? 0.7 : 1,
+      }}>
+        {reqLoading
+          ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeDasharray="31.4" strokeDashoffset="10"/></svg>
+          : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        }
+        {lang==='pt'?'Solicitar aluguel':lang==='es'?'Solicitar alquiler':'Request Rental'}
+      </button>
+    );
+  };
+
+  // ── Owner's rental requests panel ─────────────────────────────
+  const OwnerRequestsBlock = () => {
+    if (!isRent || !isOwner) return null;
+    if (ownerRequests.length === 0) return (
+      <div style={{padding:'12px 14px',borderRadius:12,background:'var(--pg-ink-50)',border:'1px solid var(--pg-ink-200)',
+        display:'flex',alignItems:'center',gap:10}}>
+        <span style={{fontSize:16}}>📭</span>
+        <span style={{fontSize:12,color:'var(--pg-ink-500)'}}>
+          {lang==='pt'?'Nenhum pedido de aluguel ainda.':'No rental requests yet.'}
+        </span>
+      </div>
+    );
+    return (
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {ownerRequests.map(req => {
+          const isPend = req.status === 'pending';
+          const isAppr = req.status === 'approved';
+          return (
+            <div key={req.id} style={{
+              padding:'12px 14px',borderRadius:14,
+              background: isAppr ? '#F0FDF4' : isPend ? '#FFFBEB' : '#FEF2F2',
+              border: `1.5px solid ${isAppr?'#86EFAC':isPend?'#FDE68A':'#FCA5A5'}`,
+            }}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom: isPend ? 10 : 0}}>
+                <Avatar name={req.requester_name||'?'} size={32}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{req.requester_name||'User'}</div>
+                  <div style={{fontSize:11,color:'var(--pg-ink-500)'}}>
+                    {isAppr?(lang==='pt'?'✓ Aprovado':'✓ Approved'):isPend?(lang==='pt'?'⏳ Pendente':'⏳ Pending'):(lang==='pt'?'✗ Recusado':'✗ Declined')}
+                  </div>
+                </div>
+                <button onClick={()=>{ if(openChat) openChat({id:req.requester_id,name:req.requester_name||'User'}); if(onClose)onClose(); }}
+                  style={{border:'none',background:'var(--pg-ink-100)',cursor:'pointer',borderRadius:10,
+                    width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  {Icon.msg(14,'var(--pg-ink-600)')}
+                </button>
+              </div>
+              {isPend && (
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>handleOwnerDecision(req.id,'approved')} style={{
+                    flex:1,height:36,borderRadius:10,border:'none',cursor:'pointer',
+                    background:'#16A34A',color:'#fff',fontSize:13,fontWeight:700,fontFamily:'inherit',
+                    display:'flex',alignItems:'center',justifyContent:'center',gap:6,
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    {lang==='pt'?'Aprovar':'Approve'}
+                  </button>
+                  <button onClick={()=>handleOwnerDecision(req.id,'declined')} style={{
+                    flex:1,height:36,borderRadius:10,border:'none',cursor:'pointer',
+                    background:'#EF4444',color:'#fff',fontSize:13,fontWeight:700,fontFamily:'inherit',
+                    display:'flex',alignItems:'center',justifyContent:'center',gap:6,
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    {lang==='pt'?'Recusar':'Decline'}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const MarkSoldBlock = () => (
     <>
@@ -992,7 +1163,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 <div style={{padding:'18px 24px', borderBottom:'1px solid var(--pg-ink-100)'}}>
                   <div style={{fontSize:11, fontWeight:800, color:'var(--pg-ink-400)',
                     letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>
-                    {lang==='pt'?'VENDEDOR':lang==='es'?'VENDEDOR':'SELLER'}
+                    {isRent ? (lang==='pt'?'PROPRIETÁRIO':'OWNER') : (lang==='pt'?'VENDEDOR':lang==='es'?'VENDEDOR':'SELLER')}
                   </div>
                   <SellerRow horizontal/>
                 </div>
@@ -1014,23 +1185,44 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   </div>
                 )}
 
+                {/* Rental requests panel (owner only) */}
+                {isRent && isOwner && ownerRequests.length > 0 && (
+                  <div style={{padding:'18px 24px', borderBottom:'1px solid var(--pg-ink-100)'}}>
+                    <div style={{fontSize:11, fontWeight:800, color:'var(--pg-ink-400)',
+                      letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>
+                      {lang==='pt'?`PEDIDOS DE ALUGUEL (${ownerRequests.length})`:`RENTAL REQUESTS (${ownerRequests.length})`}
+                    </div>
+                    <OwnerRequestsBlock/>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div style={{padding:'18px 24px', display:'flex', flexDirection:'column', gap:10}}>
+                  {/* Request Rental (rent items, non-owner) */}
+                  {isRent && !isOwner && <RequestRentalBlock/>}
+
                   {/* Message button */}
                   <button onClick={handleContact} style={{
-                    width:'100%', height:52, borderRadius:14, border:'none', cursor:'pointer',
-                    fontFamily:'inherit', fontSize:15, fontWeight:700, color:'#fff',
-                    background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-                    boxShadow:'0 4px 18px rgba(0,119,182,0.30)',
+                    width:'100%', height: isRent && !isOwner ? 46 : 52, borderRadius:14, border:'none', cursor:'pointer',
+                    fontFamily:'inherit', fontSize: isRent && !isOwner ? 14 : 15, fontWeight:700,
+                    color: isRent && !isOwner ? 'var(--pg-blue-700)' : '#fff',
+                    background: isRent && !isOwner
+                      ? 'transparent'
+                      : 'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+                    border: isRent && !isOwner ? '1.5px solid var(--pg-blue-200)' : 'none',
+                    boxShadow: isRent && !isOwner ? 'none' : '0 4px 18px rgba(0,119,182,0.30)',
                     display:'flex', alignItems:'center', justifyContent:'center', gap:9,
                     transition:'all .15s',
                   }}>
-                    {Icon.msg(18,'#fff')}
-                    {lang==='pt'?'Enviar mensagem':'Send Message'}
+                    {Icon.msg(18, isRent && !isOwner ? 'var(--pg-blue-700)' : '#fff')}
+                    {lang==='pt'?'Enviar mensagem':'Message'}
                   </button>
 
-                  {/* Mark as Sold */}
-                  <MarkSoldBlock/>
+                  {/* Owner: rental requests panel when no requests yet */}
+                  {isRent && isOwner && <OwnerRequestsBlock/>}
+
+                  {/* Mark as Sold (sell items only) */}
+                  {!isRent && <MarkSoldBlock/>}
                 </div>
 
                 {/* Listed date */}
@@ -1249,6 +1441,23 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           </div>
         )}
 
+        {/* ── Request Rental (rent items, non-owner) ── */}
+        {isRent && !isOwner && (
+          <div style={{marginTop:14}}>
+            <RequestRentalBlock/>
+          </div>
+        )}
+
+        {/* ── Owner rental requests ── */}
+        {isRent && isOwner && (
+          <div style={{marginTop:14}}>
+            <div style={{fontSize:11,fontWeight:800,color:'var(--pg-ink-400)',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:10}}>
+              {lang==='pt'?`PEDIDOS DE ALUGUEL (${ownerRequests.length})`:`RENTAL REQUESTS (${ownerRequests.length})`}
+            </div>
+            <OwnerRequestsBlock/>
+          </div>
+        )}
+
         {/* ── Action buttons ── */}
         <div style={{display:'flex', gap:10, marginTop:14}}>
           {/* Contact Seller — ghost style matching "Message" in ListingDetail */}
@@ -1301,8 +1510,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           )}
         </div>
 
-        {/* Mark as Sold — for the listing author (works even if user is admin) */}
-        {item.author_id && currentUser?.uid && item.author_id === currentUser.uid && item.status !== 'sold' && (
+        {/* Mark as Sold — for the listing author (sell items only) */}
+        {!isRent && item.author_id && currentUser?.uid && item.author_id === currentUser.uid && item.status !== 'sold' && (
           <button onClick={()=>setMarkSoldOpen(true)} style={{
             width:'100%', marginTop:10, padding:'13px', borderRadius:14,
             border:'1.5px solid #86EFAC', background:'#F0FDF4',
@@ -4121,6 +4330,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
   const [priceMode,   setPriceMode]  = React.useState('fixed');
   const [rentPeriod,  setRentPeriod] = React.useState('day'); // 'day'|'week'|'month'
   const [photos,      setPhotos]     = React.useState([]);
+  const [disclaimerChecked, setDisclaimerChecked] = React.useState(false);
 
   const isRent = mode === 'rent';
   const headLbl   = isRent ? t.pmRentEq   : t.pmSellEq;
@@ -4148,7 +4358,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
     { id:'parts',   label:t.forPartsLbl },
   ];
 
-  const isValid = name.trim().length > 2 && (priceMode === 'neg' || price.trim().length > 0) && loc.trim().length > 2;
+  const isValid = name.trim().length > 2 && (priceMode === 'neg' || price.trim().length > 0) && loc.trim().length > 2 && (!isRent || disclaimerChecked);
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
@@ -4265,6 +4475,38 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
 
       {/* Submit */}
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
+        {/* Disclaimer — rent only */}
+        {isRent && (
+          <button onClick={()=>setDisclaimerChecked(v=>!v)} style={{
+            display:'flex', alignItems:'flex-start', gap:12,
+            width:'100%', padding:'12px 14px', borderRadius:13, marginBottom:12,
+            border: disclaimerChecked ? '1.5px solid #0EBAC7' : '1.5px solid var(--pg-ink-200)',
+            background: disclaimerChecked ? 'rgba(14,186,199,0.06)' : 'var(--pg-ink-50)',
+            cursor:'pointer', textAlign:'left', fontFamily:'inherit',
+            transition:'all .15s',
+          }}>
+            <div style={{
+              width:20, height:20, borderRadius:6, flexShrink:0, marginTop:1,
+              border: disclaimerChecked ? '2px solid #0EBAC7' : '2px solid var(--pg-ink-300)',
+              background: disclaimerChecked ? '#0EBAC7' : 'transparent',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              transition:'all .12s',
+            }}>
+              {disclaimerChecked && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              )}
+            </div>
+            <div style={{fontSize:12, lineHeight:1.5, color:'var(--pg-ink-700)'}}>
+              <b style={{color:'var(--pg-ink-900)', display:'block', marginBottom:2}}>
+                {lang==='pt'?'Responsabilidade pelo equipamento':'Equipment Liability'}
+              </b>
+              {lang==='pt'
+                ? 'Declaro que me responsabilizo totalmente pelo equipamento disponibilizado para aluguel. O PoolGuyPro não se responsabiliza por perdas, danos ou furtos do equipamento durante o período de aluguel.'
+                : 'I acknowledge full responsibility for the equipment listed for rental. PoolGuyPro is not liable for any loss, damage, or theft of the equipment during the rental period.'}
+            </div>
+          </button>
+        )}
+
         <button onClick={()=>onSubmit && onSubmit({ type:mode, name, description, cat, condition, price: priceMode==='neg'?'Negotiable':price, priceMode, loc, rentPeriod: isRent ? rentPeriod : null, photoUrl: photos[0]||null, photos })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>

@@ -270,14 +270,22 @@
     window.sb.storage = {
       from: function(bucket){
         return {
-          upload: async function(path, file, opts){
+          upload: async function(path, file, opts, _retried){
             var ct = (opts&&opts.contentType) || (file&&file.type) || 'application/octet-stream';
             var r = await fetch(BASE+'/storage/v1/object/'+bucket+'/'+path, {
               method:'POST',
               headers:{'apikey':KEY,'Authorization':'Bearer '+(_tok||KEY),'Content-Type':ct,'x-upsert':'true'},
               body: file,
             });
-            if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Upload failed '+r.status}};}
+            if(!r.ok){
+              var e={}; try{e=await r.json();}catch(x){}
+              // Auto-retry once after token refresh if JWT expired
+              if(!_retried && _isExpired(e.message||e.error||'')){
+                var ok = await _refreshOnce();
+                if(ok) return window.sb.storage.from(bucket).upload(path, file, opts, true);
+              }
+              return{data:null,error:{message:e.message||'Upload failed '+r.status}};
+            }
             return{data:{path:path},error:null};
           },
           getPublicUrl: function(path){
@@ -303,7 +311,7 @@
   <script type="text/babel" src="data.jsx?v=119"></script>
   <script type="text/babel" src="screens/login.jsx?v=119"></script>
   <script type="text/babel" src="screens/home.jsx?v=119"></script>
-  <script type="text/babel" src="screens/marketplace.jsx?v=120"></script>
+  <script type="text/babel" src="screens/marketplace.jsx?v=121"></script>
   <script type="text/babel" src="screens/quickpools.jsx?v=119"></script>
   <script type="text/babel" src="screens/post.jsx?v=119"></script>
   <script type="text/babel" src="screens/work.jsx?v=119"></script>
