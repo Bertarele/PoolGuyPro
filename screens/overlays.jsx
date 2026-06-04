@@ -21,8 +21,16 @@ function ChatSheet({ open, onClose, lang='en', initialConvo=null, currentUser=nu
   const t = STRINGS[lang];
   const [activeConvo, setActiveConvo] = React.useState(initialConvo);
 
-  React.useEffect(() => { setActiveConvo(initialConvo); }, [initialConvo, open]);
-  React.useEffect(() => { if (!open) setTimeout(()=>setActiveConvo(null), 300); }, [open]);
+  // When a specific convo target arrives, navigate into it immediately.
+  // Separate from the `open` effect to avoid double-firing when both change together.
+  React.useEffect(() => {
+    if (initialConvo) setActiveConvo(initialConvo);
+  }, [initialConvo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset active convo after sheet closes (wait for close animation ~300ms).
+  React.useEffect(() => {
+    if (!open) { const t = setTimeout(() => setActiveConvo(null), 300); return () => clearTimeout(t); }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Sheet open={open} onClose={onClose} height="86%">

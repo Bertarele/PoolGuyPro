@@ -505,10 +505,12 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     setReqStatus('pending');
     showToast && showToast(lang==='pt'?'✓ Pedido enviado! Converse com o dono pela inbox.':'✓ Request sent! Chat with the owner via inbox.');
     if (openChat && item.author_id) {
+      // Open chat FIRST so the sheet starts animating in, THEN close the listing
+      // overlay — prevents the double-open flicker caused by the reverse order.
       setTimeout(() => {
-        if (onClose) onClose();
         openChat({ id: item.author_id, name: item.author || 'Owner' });
-      }, 600);
+        setTimeout(() => { if (onClose) onClose(); }, 80);
+      }, 500);
     }
   };
 

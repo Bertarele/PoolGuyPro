@@ -608,6 +608,8 @@ function App() {
   }, []);
 
   // Build initial convo from target — target can be a string (name only) or { id, name }
+  // NOTE: chatOpen intentionally NOT in deps — it's irrelevant to the convo object shape
+  // and caused double-recompute (triggering the ChatSheet effect twice) when open changed.
   const initialConvo = React.useMemo(() => {
     if (!chatConvoTarget) return null;
     const isObj = typeof chatConvoTarget === 'object' && chatConvoTarget !== null;
@@ -618,7 +620,7 @@ function App() {
       name: receiverName,
       context: { en:'Direct message', pt:'Mensagem direta', es:'Mensaje directo' },
     };
-  }, [chatConvoTarget, chatOpen]);
+  }, [chatConvoTarget]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Responsive: detect desktop vs mobile ─────────────────────
   const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
