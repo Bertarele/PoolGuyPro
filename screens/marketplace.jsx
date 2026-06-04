@@ -2657,48 +2657,45 @@ function MarketplaceScreen({ ctx }) {
         </div>
 
         {/* ── TAB NAVIGATION ────────────────────────────────────── */}
+        {/* ── Tab bar ─────────────────────────────────────────── */}
         <div style={{
-          background:'var(--pg-white)', borderBottom:'1px solid var(--pg-ink-200)',
-          boxShadow:'0 1px 8px rgba(0,0,0,0.05)',
-          padding:'0 40px',
-          display:'flex', alignItems:'center', gap:0,
+          background:'var(--pg-white)',
+          borderBottom:'1px solid var(--pg-ink-200)',
+          padding:'10px 32px',
+          display:'flex', alignItems:'center', gap:12,
           position:'sticky', top:0, zIndex:20,
+          boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
         }}>
-          {[
-            { id:'buy',    icon: Icon.cart(18, view==='buy'?'var(--pg-blue-600)':'var(--pg-ink-400)'),
-              label: lang==='pt'?'Comprar':'Buy', sub: lang==='pt'?'Equipamentos à venda':'Equipment for sale' },
-            { id:'rent',   icon: Icon.key(18, view==='rent'?'var(--pg-blue-600)':'var(--pg-ink-400)'),
-              label: lang==='pt'?'Alugar':'Rent', sub: lang==='pt'?'Para alugar':'For rent' },
-            { id:'routes', icon: Icon.pin(18, view==='routes'?'var(--pg-blue-600)':'var(--pg-ink-400)'),
-              label: lang==='pt'?'Rotas':'Routes', sub: lang==='pt'?'Rotas e piscinas':'Routes & pools' },
-          ].map(tab => {
-            const on = view === tab.id;
-            return (
-              <button key={tab.id} onClick={()=>{ setView(tab.id); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); setQ(''); }}
-                style={{
-                  display:'flex', alignItems:'center', gap:10,
-                  padding:'16px 24px', borderBottom: on?'2.5px solid var(--pg-blue-500)':'2.5px solid transparent',
-                  background:'transparent', border:'none', borderBottom: on?'2.5px solid var(--pg-blue-500)':'2.5px solid transparent',
-                  cursor:'pointer', fontFamily:'inherit', transition:'all .15s',
-                  marginRight:8,
-                }}>
-                <div style={{
-                  width:36, height:36, borderRadius:10, flexShrink:0,
-                  background: on ? 'var(--pg-blue-50)' : 'var(--pg-ink-100)',
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  transition:'all .15s',
-                }}>
-                  {tab.icon}
-                </div>
-                <div style={{textAlign:'left'}}>
-                  <div style={{fontSize:14, fontWeight:700, color: on?'var(--pg-blue-600)':'var(--pg-ink-700)', lineHeight:1}}>
-                    {tab.label}
-                  </div>
-                  <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:2}}>{tab.sub}</div>
-                </div>
-              </button>
-            );
-          })}
+          {/* Pill container */}
+          <div style={{
+            display:'inline-flex', alignItems:'center', gap:3,
+            background:'var(--pg-ink-100)', borderRadius:14, padding:4,
+          }}>
+            {[
+              { id:'buy',    icon: Icon.cart,  label: lang==='pt'?'Comprar':'Buy' },
+              { id:'rent',   icon: Icon.key,   label: lang==='pt'?'Alugar':'Rent' },
+              { id:'routes', icon: Icon.pin,   label: lang==='pt'?'Rotas':'Routes' },
+            ].map(tab => {
+              const on = view === tab.id;
+              return (
+                <button key={tab.id}
+                  onClick={()=>{ setView(tab.id); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); setQ(''); }}
+                  style={{
+                    display:'flex', alignItems:'center', gap:7,
+                    padding:'9px 20px', borderRadius:10, border:'none', cursor:'pointer',
+                    fontFamily:'inherit', fontSize:14, fontWeight: on?700:500,
+                    background: on ? 'var(--pg-white)' : 'transparent',
+                    color: on ? 'var(--pg-blue-600)' : 'var(--pg-ink-400)',
+                    boxShadow: on ? '0 2px 10px rgba(0,0,0,0.10)' : 'none',
+                    transition:'all .18s ease',
+                    letterSpacing:'-0.01em',
+                  }}>
+                  {tab.icon(15, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)')}
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
 
           {/* Pending ratings pill */}
           {pendingRatings.length > 0 && (
@@ -3158,25 +3155,26 @@ function MarketplaceScreen({ ctx }) {
         {/* Filter card */}
         <div className="pg-card" style={{padding:'12px', marginTop:-6, display:'flex', flexDirection:'column', gap:12}}>
           {/* 3-option segmented */}
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6}}>
+          {/* Mobile tab bar — pill style */}
+          <div style={{
+            display:'flex', gap:4, padding:4,
+            background:'var(--pg-ink-100)', borderRadius:14,
+          }}>
             {['buy','rent','routes'].map(v => {
               const on = view === v;
               return (
-                <button key={v} onClick={()=>{ setView(v); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); }} style={{
-                  display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4,
-                  padding:'10px 6px', borderRadius:11, border:'none', cursor:'pointer',
-                  background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
-                  color: on ? '#fff' : 'var(--pg-ink-700)',
-                  fontFamily:'inherit', transition:'all .15s ease',
-                  boxShadow: on ? '0 4px 10px oklch(0.58 0.16 235 / 0.30)' : 'none',
-                }}>
-                  <div style={{
-                    width:28, height:28, borderRadius:'50%',
-                    background: on ? 'rgba(255,255,255,0.18)' : 'var(--pg-white)',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                  }}>{tabIcons[v](15, on ? '#fff' : 'var(--pg-blue-700)')}</div>
-                  <span style={{fontSize:13, fontWeight:700, letterSpacing:'-0.005em'}}>{tabLabels[v]}</span>
-                  <span style={{fontSize:9.5, opacity:0.75, lineHeight:1.1, textAlign:'center'}}>{tabSubs[v]}</span>
+                <button key={v}
+                  onClick={()=>{ setView(v); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); }}
+                  style={{
+                    flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+                    padding:'9px 4px', borderRadius:10, border:'none', cursor:'pointer',
+                    fontFamily:'inherit', transition:'all .18s ease',
+                    background: on ? 'var(--pg-white)' : 'transparent',
+                    color: on ? 'var(--pg-blue-600)' : 'var(--pg-ink-400)',
+                    boxShadow: on ? '0 2px 10px rgba(0,0,0,0.10)' : 'none',
+                  }}>
+                  {tabIcons[v](16, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)')}
+                  <span style={{fontSize:11.5, fontWeight: on?700:500, letterSpacing:'-0.01em'}}>{tabLabels[v]}</span>
                 </button>
               );
             })}

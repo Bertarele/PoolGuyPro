@@ -835,12 +835,7 @@ function App() {
       { id:'profile', label: lang==='pt'?'Perfil':'Profile' },
     ];
 
-    // Contextual "Post" action per tab
-    const postAction = tab==='market' ? ()=>setMarketPostOpen(true)
-      : tab==='quick'  ? ()=>setPostQPOpen(true)
-      : tab==='work'   ? ()=>setPostMenuOpen(true)
-      : null;
-    const postLabel = lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post';
+    // Post button removed from sidebar — each screen has its own inline post button
 
     return (
       <div style={{width:'100%',height:'100%',display:'flex',overflow:'hidden',background:'var(--pg-bg)',position:'relative'}}>
@@ -958,25 +953,7 @@ function App() {
               })}
             </div>
 
-            {/* ── Post CTA ── */}
-            {postAction && (
-              <div style={{padding:'20px 12px 0'}}>
-                <div style={{height:1, background:'rgba(255,255,255,0.07)', margin:'0 4px 20px'}}/>
-                <button onClick={postAction} style={{
-                  width:'100%', padding:'12px 16px', borderRadius:13, border:'none', cursor:'pointer',
-                  background:'linear-gradient(135deg,#0077B6,#023E8A)',
-                  fontFamily:'inherit', color:'#fff', fontSize:13, fontWeight:700,
-                  display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-                  boxShadow:'0 4px 16px rgba(0,119,182,0.35)', transition:'all .15s',
-                  letterSpacing:'-0.01em',
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                  {postLabel}
-                </button>
-              </div>
-            )}
+            {/* Post CTA removed — each screen has its own inline post button */}
 
             {/* Spacer */}
             <div style={{flex:1}}/>
