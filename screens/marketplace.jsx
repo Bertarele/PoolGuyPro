@@ -381,11 +381,19 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [isDesktop,     setIsDesktop]    = React.useState(() => window.innerWidth >= 900);
   // Rental request state
   const isRent = item.type === 'rent';
-  const [reqStatus,     setReqStatus]    = React.useState(null); // null|'pending'|'approved'|'declined'
+  const [reqStatus,     setReqStatus]    = React.useState(null); // null|'pending'|'approved'|'declined'|'completed'|'disputed'
   const [reqLoading,    setReqLoading]   = React.useState(false);
   const [ownerRequests, setOwnerRequests]= React.useState([]); // for owner — list of requests
   const [reqPeriod,     setReqPeriod]    = React.useState(null); // 'day'|'week'|'month'
   const [reqQty,        setReqQty]       = React.useState(1);
+  const [myRequestId,   setMyRequestId]  = React.useState(null); // renter's own request id
+  // Rating state
+  const [ratingSheet,   setRatingSheet]   = React.useState(null); // null | {requestId,rateeId,rateeName}
+  const [ratingStars,   setRatingStars]   = React.useState(0);
+  const [ratingComment, setRatingComment] = React.useState('');
+  const [ratingLoading, setRatingLoading] = React.useState(false);
+  const [ratingHover,   setRatingHover]   = React.useState(0);
+  const [hasRated,      setHasRated]      = React.useState(false);
 
   // Compute available rental periods from item (multi-price new items, or single-period legacy)
   const availablePeriods = React.useMemo(() => {
@@ -426,7 +434,17 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           setOwnerRequests(data);
         } else {
           const mine = data.find(r => r.requester_id === currentUser.uid);
-          if (mine) setReqStatus(mine.status);
+          if (mine) {
+            setReqStatus(mine.status);
+            setMyRequestId(mine.id);
+            if (mine.status === 'completed' && window.sb) {
+              window.sb.from('rental_ratings')
+                .select('id').eq('request_id', mine.id).eq('rater_id', currentUser.uid)
+                .maybeSingle()
+                .then(({ data: rd }) => { if (rd) setHasRated(true); })
+                .catch(() => {});
+            }
+          }
         }
       })
       .catch(() => {});
@@ -524,6 +542,46 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     showToast && showToast(newStatus === 'approved'
       ? (lang==='pt'?'✓ Aluguel aprovado!':'✓ Rental approved!')
       : (lang==='pt'?'Pedido recusado':'Request declined'));
+  };
+
+  const handleMarkReturned = async (requestId, req) => {
+    if (!window.sb) return;
+    const { error } = await window.sb.from('rental_requests')
+      .update({ status: 'completed' })
+      .eq('id', requestId);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: 'completed'} : r));
+    showToast && showToast(lang==='pt' ? '✓ Marcado como devolvido!' : '✓ Marked as returned!');
+    setRatingStars(0); setRatingComment('');
+    setRatingSheet({ requestId, rateeId: req.requester_id, rateeName: req.requester_name || 'Renter' });
+  };
+
+  const handleReportProblem = async (requestId) => {
+    if (!window.sb) return;
+    const { error } = await window.sb.from('rental_requests')
+      .update({ status: 'disputed' })
+      .eq('id', requestId);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: 'disputed'} : r));
+    showToast && showToast(lang==='pt' ? '⚠ Problema reportado. Converse pelo chat.' : '⚠ Issue reported. Contact via chat.');
+  };
+
+  const handleSubmitRating = async () => {
+    if (!ratingSheet || ratingStars === 0 || ratingLoading || !window.sb || !currentUser?.uid) return;
+    setRatingLoading(true);
+    const { error } = await window.sb.from('rental_ratings').insert({
+      request_id: ratingSheet.requestId,
+      rater_id:   currentUser.uid,
+      ratee_id:   ratingSheet.rateeId,
+      listing_id: item._id,
+      stars:      ratingStars,
+      comment:    ratingComment.trim() || null,
+    });
+    setRatingLoading(false);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    showToast && showToast(lang==='pt' ? '⭐ Avaliação enviada! Obrigado.' : '⭐ Rating submitted! Thank you.');
+    setHasRated(true);
+    setRatingSheet(null);
   };
 
   // Open seller public profile — fetch real data from Supabase
@@ -696,13 +754,46 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
     // Status cards (same for static/live)
     if (reqStatus === 'approved') return (
-      <div style={{padding:'13px 16px',borderRadius:14,background:'rgba(22,163,74,0.12)',border:'1.5px solid rgba(22,163,74,0.4)',display:'flex',alignItems:'center',gap:10}}>
-        <div style={{width:30,height:30,borderRadius:'50%',background:'#16A34A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <div style={{padding:'13px 16px',borderRadius:14,background:'rgba(14,186,199,0.10)',border:'1.5px solid rgba(14,186,199,0.40)',display:'flex',alignItems:'center',gap:10}}>
+        <div style={{width:30,height:30,borderRadius:'50%',background:'#0EBAC7',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
         </div>
         <div>
-          <div style={{fontSize:13,fontWeight:800,color:'#22C55E'}}>{lang==='pt'?'Aluguel aprovado!':'Rental approved!'}</div>
-          <div style={{fontSize:11.5,color:'#22C55E',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou seu pedido.':'The owner approved your request.'}</div>
+          <div style={{fontSize:13,fontWeight:800,color:'#0EBAC7'}}>{lang==='pt'?'🔄 Em andamento!':'🔄 In progress!'}</div>
+          <div style={{fontSize:11.5,color:'#0EBAC7',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou. Aproveite!':'The owner approved. Enjoy!'}</div>
+        </div>
+      </div>
+    );
+    if (reqStatus === 'completed') return (
+      <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(22,163,74,0.4)'}}>
+        <div style={{padding:'13px 16px',background:'rgba(22,163,74,0.12)',display:'flex',alignItems:'center',gap:10}}>
+          <div style={{width:30,height:30,borderRadius:'50%',background:'#16A34A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:800,color:'#22C55E'}}>{lang==='pt'?'Aluguel concluído!':'Rental completed!'}</div>
+            <div style={{fontSize:11.5,color:'#22C55E',opacity:0.8,marginTop:1}}>
+              {hasRated ? (lang==='pt'?'Obrigado pela avaliação! ⭐':'Thanks for rating! ⭐') : (lang==='pt'?'Avalie sua experiência abaixo.':'Rate your experience below.')}
+            </div>
+          </div>
+        </div>
+        {!hasRated && (
+          <button
+            onClick={()=>{ setRatingStars(0); setRatingComment(''); setRatingSheet({ requestId: myRequestId, rateeId: item.author_id, rateeName: item.author || 'Owner' }); }}
+            style={{width:'100%',padding:'11px',border:'none',borderTop:'1px solid rgba(22,163,74,0.25)',cursor:'pointer',fontFamily:'inherit',
+              background:'#16A34A',color:'#fff',fontSize:13,fontWeight:700,
+              display:'flex',alignItems:'center',justifyContent:'center',gap:7}}>
+            ⭐ {lang==='pt'?'Avaliar o dono':'Rate the owner'}
+          </button>
+        )}
+      </div>
+    );
+    if (reqStatus === 'disputed') return (
+      <div style={{padding:'12px 14px',borderRadius:14,background:'rgba(245,158,11,0.10)',border:'1.5px solid rgba(245,158,11,0.40)',display:'flex',alignItems:'center',gap:10}}>
+        <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
+        <div>
+          <div style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>{lang==='pt'?'Problema reportado':'Issue reported'}</div>
+          <div style={{fontSize:11.5,color:'#F59E0B',opacity:0.8,marginTop:1}}>{lang==='pt'?'Entre em contato pelo chat para resolver.':'Contact via chat to resolve this.'}</div>
         </div>
       </div>
     );
@@ -854,10 +945,21 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         {ownerRequests.map(req => {
           const isPend = req.status === 'pending';
           const isAppr = req.status === 'approved';
-          // rgba backgrounds work in both light and dark mode
-          const rowBg     = isAppr ? 'rgba(22,163,74,0.12)'  : isPend ? 'rgba(245,158,11,0.12)'  : 'rgba(239,68,68,0.12)';
-          const rowBorder = isAppr ? 'rgba(22,163,74,0.40)'  : isPend ? 'rgba(245,158,11,0.40)'  : 'rgba(239,68,68,0.40)';
-          const statusColor = isAppr ? '#22C55E' : isPend ? '#F59E0B' : '#F87171';
+          const isComp = req.status === 'completed';
+          const isDisp = req.status === 'disputed';
+          // rgba backgrounds — work in both light and dark mode
+          const rowBg     = isComp ? 'rgba(22,163,74,0.12)'  : isAppr ? 'rgba(14,186,199,0.10)' : isPend ? 'rgba(245,158,11,0.12)' : isDisp ? 'rgba(245,158,11,0.10)' : 'rgba(239,68,68,0.12)';
+          const rowBorder = isComp ? 'rgba(22,163,74,0.40)'  : isAppr ? 'rgba(14,186,199,0.40)' : isPend ? 'rgba(245,158,11,0.40)' : isDisp ? 'rgba(245,158,11,0.40)' : 'rgba(239,68,68,0.40)';
+          const statusColor = isComp ? '#22C55E' : isAppr ? '#0EBAC7' : isPend ? '#F59E0B' : isDisp ? '#F59E0B' : '#F87171';
+          const statusLabel = isComp
+            ? (lang==='pt'?'✓ Devolvido':'✓ Returned')
+            : isAppr
+              ? (lang==='pt'?'🔄 Em andamento':'🔄 In progress')
+              : isPend
+                ? (lang==='pt'?'⏳ Pendente':'⏳ Pending')
+                : isDisp
+                  ? (lang==='pt'?'⚠ Problema reportado':'⚠ Issue reported')
+                  : (lang==='pt'?'✗ Recusado':'✗ Declined');
           return (
             <div key={req.id} style={{
               padding:'12px 14px',borderRadius:14,
@@ -869,9 +971,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 <Avatar name={req.requester_name||'?'} size={32}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{req.requester_name||'User'}</div>
-                  <div style={{fontSize:11,fontWeight:600,color:statusColor,marginTop:1}}>
-                    {isAppr?(lang==='pt'?'✓ Aprovado':'✓ Approved'):isPend?(lang==='pt'?'⏳ Pendente':'⏳ Pending'):(lang==='pt'?'✗ Recusado':'✗ Declined')}
-                  </div>
+                  <div style={{fontSize:11,fontWeight:600,color:statusColor,marginTop:1}}>{statusLabel}</div>
                 </div>
                 <button onClick={()=>{ if(openChat) openChat({id:req.requester_id,name:req.requester_name||'User'}); if(onClose)onClose(); }}
                   style={{border:'none',background:'var(--pg-ink-200)',cursor:'pointer',borderRadius:10,
@@ -922,6 +1022,29 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     {lang==='pt'?'Recusar':'Decline'}
+                  </button>
+                </div>
+              )}
+
+              {/* Mark Returned / Report Problem — only for in-progress (approved) */}
+              {isAppr && (
+                <div style={{display:'flex',gap:8,marginTop:10}}>
+                  <button onClick={()=>handleMarkReturned(req.id, req)} style={{
+                    flex:2,height:36,borderRadius:10,border:'none',cursor:'pointer',
+                    background:'#16A34A',color:'#fff',fontSize:12,fontWeight:700,fontFamily:'inherit',
+                    display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                  }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    {lang==='pt'?'Devolvido':'Returned'}
+                  </button>
+                  <button onClick={()=>handleReportProblem(req.id)} style={{
+                    flex:1,height:36,borderRadius:10,cursor:'pointer',fontFamily:'inherit',
+                    border:'1.5px solid rgba(245,158,11,0.5)',
+                    background:'rgba(245,158,11,0.08)',color:'#F59E0B',fontSize:12,fontWeight:700,
+                    display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                  }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {lang==='pt'?'Problema':'Issue'}
                   </button>
                 </div>
               )}
@@ -1076,6 +1199,84 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       )}
     </Sheet>
   );
+
+  // ── Rating overlay — floats above both desktop and mobile layouts ─
+  const RatingOverlay = () => {
+    if (!ratingSheet) return null;
+    const starLabels   = ['','⭐ Very bad','😐 OK','🙂 Good','😊 Very good','🌟 Excellent'];
+    const starLabelsPt = ['','⭐ Muito ruim','😐 Regular','🙂 Bom','😊 Muito bom','🌟 Excelente'];
+    return (
+      <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.55)',zIndex:9500,display:'flex',alignItems:'flex-end'}}
+        onClick={()=>setRatingSheet(null)}>
+        <div onClick={e=>e.stopPropagation()}
+          style={{width:'100%',maxWidth:520,margin:'0 auto',background:'var(--pg-white)',
+            borderRadius:'22px 22px 0 0',padding:'24px 24px 44px',
+            boxShadow:'0 -8px 40px rgba(0,0,0,0.18)'}}>
+          {/* Handle */}
+          <div style={{width:36,height:4,borderRadius:999,background:'var(--pg-ink-200)',margin:'0 auto 20px'}}/>
+          {/* Title */}
+          <div style={{fontSize:20,fontWeight:800,color:'var(--pg-ink-900)',fontFamily:'var(--pg-font-display)',textAlign:'center',marginBottom:4}}>
+            {lang==='pt'?'Avalie sua experiência':'Rate your experience'}
+          </div>
+          <div style={{fontSize:13,color:'var(--pg-ink-500)',textAlign:'center',marginBottom:24}}>
+            {lang==='pt'
+              ? `Como foi seu aluguel com ${ratingSheet.rateeName}?`
+              : `How was your rental with ${ratingSheet.rateeName}?`}
+          </div>
+          {/* Stars */}
+          <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:20}}>
+            {[1,2,3,4,5].map(s => (
+              <button key={s}
+                onMouseEnter={()=>setRatingHover(s)}
+                onMouseLeave={()=>setRatingHover(0)}
+                onClick={()=>setRatingStars(s)}
+                style={{background:'none',border:'none',cursor:'pointer',padding:'4px 2px',fontSize:40,lineHeight:1,
+                  color:(ratingHover||ratingStars)>=s?'#F59E0B':'var(--pg-ink-200)',
+                  transition:'color .1s, transform .12s',
+                  transform:(ratingHover||ratingStars)>=s?'scale(1.18)':'scale(1)'}}>
+                ★
+              </button>
+            ))}
+          </div>
+          {/* Star label */}
+          {ratingStars > 0 && (
+            <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'var(--pg-ink-600)',marginBottom:18,marginTop:-8}}>
+              {(lang==='pt'?starLabelsPt:starLabels)[ratingStars]}
+            </div>
+          )}
+          {/* Comment */}
+          <textarea
+            value={ratingComment}
+            onChange={e=>setRatingComment(e.target.value)}
+            maxLength={200}
+            placeholder={lang==='pt'?'Comentário opcional (máx. 200 caracteres)...':'Optional comment (max. 200 chars)...'}
+            rows={3}
+            style={{width:'100%',borderRadius:12,border:'1.5px solid var(--pg-ink-200)',background:'var(--pg-ink-50)',
+              color:'var(--pg-ink-900)',fontFamily:'inherit',fontSize:14,padding:'11px 13px',
+              resize:'none',boxSizing:'border-box',outline:'none',marginBottom:16,display:'block'}}
+          />
+          {/* Submit */}
+          <button onClick={handleSubmitRating}
+            disabled={ratingStars===0||ratingLoading}
+            style={{width:'100%',height:50,borderRadius:14,border:'none',
+              cursor:ratingStars===0?'not-allowed':'pointer',fontFamily:'inherit',
+              fontSize:15,fontWeight:800,color:'#fff',marginBottom:10,
+              background:ratingStars===0?'var(--pg-ink-300)':'linear-gradient(135deg,#F59E0B,#D97706)',
+              opacity:ratingStars===0?0.5:1,transition:'all .15s'}}>
+            {ratingLoading
+              ? (lang==='pt'?'Enviando...':'Sending...')
+              : (lang==='pt'?'Enviar avaliação':'Submit rating')}
+          </button>
+          <button onClick={()=>setRatingSheet(null)}
+            style={{width:'100%',height:42,borderRadius:12,border:'1.5px solid var(--pg-ink-200)',
+              background:'transparent',color:'var(--pg-ink-500)',fontSize:14,fontWeight:600,
+              cursor:'pointer',fontFamily:'inherit'}}>
+            {lang==='pt'?'Agora não':'Not now'}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // ══════════════════════════════════════════════════════════════
   // ── DESKTOP LAYOUT (≥ 900px) ─────────────────────────────────
@@ -1457,6 +1658,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           <PhotoViewer photos={allPhotos} startIdx={imgIdx} onClose={()=>setViewerOpen(false)}/>
         )}
         <MarkSoldSheetSlot/>
+        <RatingOverlay/>
       </div>
     );
   }
@@ -1839,6 +2041,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           />
         )}
       </Sheet>
+      <RatingOverlay/>
     </div>
   );
 }
