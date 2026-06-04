@@ -1450,7 +1450,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 }
 
 // ── My Post Detail / Edit Sheet ───────────────────────────────
-function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDeleted }) {
+function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDeleted, openRating }) {
   const [editing, setEditing]   = React.useState(false);
   const [saving,  setSaving]    = React.useState(false);
   const [deleting,setDeleting]  = React.useState(false);
@@ -1649,7 +1649,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
                   item={item} lang={lang} currentUser={currentUser}
                   onClose={()=>setMarkSoldOpen(false)}
                   showToast={showToast}
-                  onSold={()=>{ setMarkSoldOpen(false); onClose && onClose(); }}
+                  onSold={(sellerRating)=>{ setMarkSoldOpen(false); onClose && onClose(); if(sellerRating && openRating) setTimeout(()=>openRating(sellerRating), 220); }}
                 />
               )}
             </Sheet>
@@ -2600,6 +2600,7 @@ function MarketplaceScreen({ ctx }) {
       {shareItem && <ShareSheet item={shareItem} lang={lang} onClose={()=>setShareItem(null)} showToast={showToast}/>}
       <Sheet open={!!myPostDetail} onClose={()=>setMyPostDetail(null)} height="auto">
         {myPostDetail && <MyPostDetailSheet item={myPostDetail} lang={lang} onClose={()=>setMyPostDetail(null)} showToast={showToast}
+          openRating={openRating}
           onUpdated={()=>{ setMyPostDetail(null); if(ctx.liveMarket)ctx.liveMarket.splice(0); }}
           onDeleted={(id)=>{ setMyPostDetail(null); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}/>}
       </Sheet>
@@ -3390,6 +3391,7 @@ function MarketplaceScreen({ ctx }) {
           item={myPostDetail} lang={lang}
           onClose={()=>setMyPostDetail(null)}
           showToast={showToast}
+          openRating={openRating}
           onUpdated={(updated)=>{
             setMyPostDetail(null);
             if(ctx.liveMarket) ctx.liveMarket.splice(0); // will re-fetch via realtime
