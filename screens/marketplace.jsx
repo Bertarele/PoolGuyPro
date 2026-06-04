@@ -729,24 +729,28 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         {ownerRequests.map(req => {
           const isPend = req.status === 'pending';
           const isAppr = req.status === 'approved';
+          // rgba backgrounds work in both light and dark mode
+          const rowBg     = isAppr ? 'rgba(22,163,74,0.12)'  : isPend ? 'rgba(245,158,11,0.12)'  : 'rgba(239,68,68,0.12)';
+          const rowBorder = isAppr ? 'rgba(22,163,74,0.40)'  : isPend ? 'rgba(245,158,11,0.40)'  : 'rgba(239,68,68,0.40)';
+          const statusColor = isAppr ? '#22C55E' : isPend ? '#F59E0B' : '#F87171';
           return (
             <div key={req.id} style={{
               padding:'12px 14px',borderRadius:14,
-              background: isAppr ? '#F0FDF4' : isPend ? '#FFFBEB' : '#FEF2F2',
-              border: `1.5px solid ${isAppr?'#86EFAC':isPend?'#FDE68A':'#FCA5A5'}`,
+              background: rowBg,
+              border: `1.5px solid ${rowBorder}`,
             }}>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom: isPend ? 10 : 0}}>
                 <Avatar name={req.requester_name||'?'} size={32}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{req.requester_name||'User'}</div>
-                  <div style={{fontSize:11,color:'var(--pg-ink-500)'}}>
+                  <div style={{fontSize:11,fontWeight:600,color:statusColor,marginTop:1}}>
                     {isAppr?(lang==='pt'?'✓ Aprovado':'✓ Approved'):isPend?(lang==='pt'?'⏳ Pendente':'⏳ Pending'):(lang==='pt'?'✗ Recusado':'✗ Declined')}
                   </div>
                 </div>
                 <button onClick={()=>{ if(openChat) openChat({id:req.requester_id,name:req.requester_name||'User'}); if(onClose)onClose(); }}
-                  style={{border:'none',background:'var(--pg-ink-100)',cursor:'pointer',borderRadius:10,
-                    width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                  {Icon.msg(14,'var(--pg-ink-600)')}
+                  style={{border:'none',background:'var(--pg-ink-200)',cursor:'pointer',borderRadius:10,
+                    width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  {Icon.msg(15,'var(--pg-ink-700)')}
                 </button>
               </div>
               {isPend && (
