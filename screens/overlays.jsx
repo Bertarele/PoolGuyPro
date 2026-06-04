@@ -3498,12 +3498,17 @@ function PrivacySheet({ open, onClose, lang='en' }) {
 
 // ── Buyer Rating Prompt Modal — centered popup (not a bottom sheet) ───────────
 // Shown automatically when buyer has a pending rating to submit
-function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUser, onRateNow, onClose }) {
-  const [toProfile, setToProfile] = React.useState(null);
+function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUser, onRateNow, onClose, showToast }) {
+  const [toProfile,  setToProfile]  = React.useState(null);
+  const [stars,      setStars]      = React.useState(0);
+  const [hovered,    setHovered]    = React.useState(0);
+  const [comment,    setComment]    = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
+
   const rating = pendingRatings[0] || null;
 
   React.useEffect(() => {
-    if (!open || !rating?.to_id || !window.sb) { setToProfile(null); return; }
+    if (!open || !rating?.to_id || !window.sb) { setToProfile(null); setStars(0); setComment(''); return; }
     window.sb.from('profiles').select('name,photo_url').eq('id', rating.to_id).single()
       .then(({ data }) => { if (data) setToProfile(data); })
       .catch(() => {});
@@ -3511,9 +3516,28 @@ function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUse
 
   if (!open || !rating) return null;
 
-  const toName = toProfile?.name || rating.to_name || rating.from_name || '?';
+  const toName      = toProfile?.name || rating.to_name || rating.from_name || '?';
   const listingName = rating.listing_name || '';
-  const count = pendingRatings.length;
+  const count       = pendingRatings.length;
+  const labels      = { 1:'Poor', 2:'Fair', 3:'Good', 4:'Very Good', 5:'Excellent!' };
+  const labelspt    = { 1:'Péssimo', 2:'Ruim', 3:'Ok', 4:'Bom', 5:'Excelente!' };
+
+  const handleSubmit = async () => {
+    if (!stars || !window.sb) return;
+    setSubmitting(true);
+    try {
+      const { error } = await window.sb.from('ratings')
+        .update({ stars, comment, pending: false })
+        .eq('id', rating.id)
+        .eq('from_id', currentUser.uid);
+      if (error) throw error;
+      showToast && showToast('⭐ ' + (lang==='pt' ? 'Avaliação enviada!' : 'Rating submitted!'));
+      onRateNow && onRateNow(null); // signal done (null = don't open RatingSheet again)
+    } catch(e) {
+      showToast && showToast('❌ ' + (e.message || 'Error'));
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div
@@ -3530,84 +3554,120 @@ function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUse
       <div
         onClick={e=>e.stopPropagation()}
         style={{
-          width:'100%', maxWidth:360,
+          width:'100%', maxWidth:380,
           background:'var(--pg-white)',
-          borderRadius:22,
+          borderRadius:24,
           padding:'28px 24px 24px',
           boxShadow:'0 24px 80px rgba(0,0,0,0.30)',
           animation:'slideUp .22s ease-out',
         }}
       >
-        {/* Star icon header */}
-        <div style={{textAlign:'center', marginBottom:20}}>
-          <div style={{
-            width:56, height:56, borderRadius:18,
-            background:'linear-gradient(135deg,#FEF3C7,#FDE68A)',
-            border:'1.5px solid #FCD34D',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            margin:'0 auto 14px',
-          }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
+        {/* Header — avatar + name */}
+        <div style={{display:'flex', flexDirection:'column', alignItems:'center', marginBottom:20}}>
+          <div style={{position:'relative', marginBottom:12}}>
+            <Avatar name={toName} size={64} src={toProfile?.photo_url || undefined}/>
+            <div style={{
+              position:'absolute', bottom:-4, right:-4,
+              width:22, height:22, borderRadius:'50%',
+              background:'linear-gradient(135deg,#F59E0B,#D97706)',
+              border:'2px solid var(--pg-white)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="#fff" stroke="#fff" strokeWidth="1">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </div>
           </div>
-          <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', fontFamily:'var(--pg-font-display)', marginBottom:6}}>
-            {lang==='pt'?'Avaliação pendente!':lang==='es'?'¡Evaluación pendiente!':'Pending Rating!'}
+          <div style={{fontSize:17, fontWeight:800, color:'var(--pg-ink-900)', fontFamily:'var(--pg-font-display)', marginBottom:4}}>
+            {lang==='pt' ? `Avalie ${toName}` : lang==='es' ? `Evalúa a ${toName}` : `Rate ${toName}`}
           </div>
-          <div style={{fontSize:13.5, color:'var(--pg-ink-600)', lineHeight:1.5}}>
+          <div style={{fontSize:12.5, color:'var(--pg-ink-500)', textAlign:'center', lineHeight:1.5}}>
             {lang==='pt'
-              ? `Você comprou "${listingName}" de ${toName}. Como foi a experiência?`
-              : lang==='es'
-                ? `Compraste "${listingName}" de ${toName}. ¿Cómo fue la experiencia?`
-                : `You bought "${listingName}" from ${toName}. How was your experience?`}
+              ? `Comprou "${listingName}"`
+              : lang==='es' ? `Compró "${listingName}"`
+              : `Purchased "${listingName}"`}
+            {count > 1 && (
+              <span style={{marginLeft:8, fontSize:11, fontWeight:700, padding:'2px 7px', borderRadius:6,
+                background:'var(--pg-blue-500)', color:'#fff', verticalAlign:'middle'}}>
+                +{count - 1}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Seller avatar */}
-        <div style={{
-          display:'flex', alignItems:'center', gap:10,
-          padding:'10px 12px', borderRadius:12,
-          background:'var(--pg-blue-50)', border:'1px solid var(--pg-blue-100)',
-          marginBottom:20,
-        }}>
-          <Avatar name={toName} size={38} src={toProfile?.photo_url || undefined}/>
-          <div style={{flex:1, minWidth:0}}>
-            <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{toName}</div>
-            <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>
-              {lang==='pt'?'Vendedor':lang==='es'?'Vendedor':'Seller'}
-            </div>
-          </div>
-          {count > 1 && (
-            <span style={{fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:8,
-              background:'var(--pg-blue-500)', color:'#fff'}}>
-              +{count - 1}
+        {/* Stars */}
+        <div style={{display:'flex', justifyContent:'center', gap:4, marginBottom:6}}>
+          {[1,2,3,4,5].map(n => (
+            <button key={n}
+              onClick={()=>setStars(n)}
+              onMouseEnter={()=>setHovered(n)}
+              onMouseLeave={()=>setHovered(0)}
+              style={{
+                background:'none', border:'none', cursor:'pointer', padding:'4px', lineHeight:1,
+                transition:'transform .12s',
+                transform:(hovered||stars)>=n ? 'scale(1.22)' : 'scale(1)',
+              }}>
+              <svg width="40" height="40" viewBox="0 0 24 24"
+                fill={(hovered||stars)>=n ? '#F59E0B' : 'none'}
+                stroke={(hovered||stars)>=n ? '#F59E0B' : 'var(--pg-ink-200)'}
+                strokeWidth="1.8" strokeLinecap="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
+          ))}
+        </div>
+        <div style={{textAlign:'center', height:22, marginBottom:14}}>
+          {(hovered||stars) > 0 && (
+            <span style={{fontSize:13, fontWeight:700, color:'#F59E0B'}}>
+              {lang==='pt' ? labelspt[hovered||stars] : labels[hovered||stars]}
             </span>
           )}
         </div>
 
-        {/* Buttons */}
+        {/* Comment */}
+        <textarea
+          value={comment} onChange={e=>setComment(e.target.value)}
+          placeholder={lang==='pt' ? 'Comentário opcional...' : lang==='es' ? 'Comentario opcional...' : 'Optional comment...'}
+          maxLength={280}
+          rows={3}
+          style={{
+            width:'100%', borderRadius:13, border:'1.5px solid var(--pg-ink-200)',
+            padding:'10px 12px', fontFamily:'inherit', fontSize:14, resize:'none',
+            background:'var(--pg-ink-50)', color:'var(--pg-ink-900)', outline:'none',
+            boxSizing:'border-box', lineHeight:1.5, marginBottom:14,
+            transition:'border-color .15s',
+          }}
+          onFocus={e=>e.target.style.borderColor='var(--pg-blue-300)'}
+          onBlur={e=>e.target.style.borderColor='var(--pg-ink-200)'}
+        />
+
+        {/* Submit */}
         <button
-          onClick={() => { onRateNow(rating); }}
+          onClick={handleSubmit}
+          disabled={!stars || submitting}
           style={{
             width:'100%', padding:'15px', borderRadius:14, border:'none',
-            cursor:'pointer', fontFamily:'inherit', fontSize:15, fontWeight:700,
+            cursor: stars ? 'pointer' : 'default',
+            fontFamily:'inherit', fontSize:15, fontWeight:700,
             color:'#fff', marginBottom:10,
-            background:'linear-gradient(135deg,#F59E0B,#D97706)',
-            boxShadow:'0 4px 16px rgba(245,158,11,0.35)',
+            background: stars ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'var(--pg-ink-200)',
+            boxShadow: stars ? '0 4px 16px rgba(245,158,11,0.35)' : 'none',
+            opacity: submitting ? 0.7 : 1,
+            transition:'all .15s',
           }}
         >
-          {lang==='pt'?'⭐ Avaliar agora':lang==='es'?'⭐ Evaluar ahora':'⭐ Rate Now'}
+          {submitting ? '...' : (lang==='pt' ? 'Enviar avaliação' : lang==='es' ? 'Enviar evaluación' : 'Submit Rating')}
         </button>
         <button
           onClick={onClose}
           style={{
-            width:'100%', padding:'13px', borderRadius:14,
-            border:'1.5px solid var(--pg-ink-200)', background:'transparent',
-            cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:600,
-            color:'var(--pg-ink-600)',
+            width:'100%', padding:'12px', borderRadius:14,
+            border:'none', background:'transparent',
+            cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600,
+            color:'var(--pg-ink-400)',
           }}
         >
-          {lang==='pt'?'Avaliar depois':lang==='es'?'Evaluar después':'Rate Later'}
+          {lang==='pt' ? 'Avaliar depois' : lang==='es' ? 'Evaluar después' : 'Rate Later'}
         </button>
       </div>
     </div>

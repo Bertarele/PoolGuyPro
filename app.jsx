@@ -741,15 +741,17 @@ function App() {
           setActiveRating(null);
         }}
       />
-      {/* ── Buyer Rating Prompt — centered popup when buyer has pending rating ── */}
+      {/* ── Buyer Rating Prompt — centered popup with inline stars+comment ── */}
       <BuyerRatingPromptModal
         open={ratingPromptOpen}
         pendingRatings={pendingRatings}
         lang={lang}
         currentUser={user}
+        showToast={showToast}
         onRateNow={(rating) => {
+          // rating=null means submitted inline; just close + refresh pending list
           setRatingPromptOpen(false);
-          setTimeout(() => setActiveRating(rating), 180);
+          if (loadPendingRatings) setTimeout(loadPendingRatings, 300);
         }}
         onClose={() => setRatingPromptOpen(false)}
       />
