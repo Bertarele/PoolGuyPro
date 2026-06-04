@@ -600,7 +600,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
   const ActionButtons = ({ vertical=false }) => (
     <div style={{display:'flex', flexDirection: vertical?'column':'row', gap:10}}>
-      <button onClick={handleContact} style={{
+      {!isOwner && <button onClick={handleContact} style={{
         flex:1, height:50, borderRadius:14, border:'none', cursor:'pointer',
         fontFamily:'inherit', fontSize:15, fontWeight:700, color:'#fff',
         background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
@@ -610,7 +610,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       }}>
         {Icon.msg(18,'#fff')}
         {lang==='pt'?'Enviar mensagem':lang==='es'?'Enviar mensaje':'Send Message'}
-      </button>
+      </button>}
       <div style={{display:'flex', gap:10}}>
         {!isOwner && (
         <button onClick={onToggleSave} title={isSaved?(lang==='pt'?'Remover dos salvos':'Unsave'):(lang==='pt'?'Salvar':'Save')} style={{
@@ -1229,22 +1229,22 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   {/* Request Rental (rent items, non-owner) */}
                   {isRent && !isOwner && <RequestRentalBlock/>}
 
-                  {/* Message button */}
-                  <button onClick={handleContact} style={{
-                    width:'100%', height: isRent && !isOwner ? 46 : 52, borderRadius:14, cursor:'pointer',
-                    fontFamily:'inherit', fontSize: isRent && !isOwner ? 14 : 15, fontWeight:700,
-                    color: isRent && !isOwner ? 'var(--pg-blue-700)' : '#fff',
-                    background: isRent && !isOwner
+                  {/* Message button — only for other users' listings */}
+                  {!isOwner && <button onClick={handleContact} style={{
+                    width:'100%', height: isRent ? 46 : 52, borderRadius:14, cursor:'pointer',
+                    fontFamily:'inherit', fontSize: isRent ? 14 : 15, fontWeight:700,
+                    color: isRent ? 'var(--pg-blue-700)' : '#fff',
+                    background: isRent
                       ? 'transparent'
                       : 'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-                    border: isRent && !isOwner ? '1.5px solid var(--pg-blue-200)' : 'none',
-                    boxShadow: isRent && !isOwner ? 'none' : '0 4px 18px rgba(0,119,182,0.30)',
+                    border: isRent ? '1.5px solid var(--pg-blue-200)' : 'none',
+                    boxShadow: isRent ? 'none' : '0 4px 18px rgba(0,119,182,0.30)',
                     display:'flex', alignItems:'center', justifyContent:'center', gap:9,
                     transition:'all .15s',
                   }}>
-                    {Icon.msg(18, isRent && !isOwner ? 'var(--pg-blue-700)' : '#fff')}
+                    {Icon.msg(18, isRent ? 'var(--pg-blue-700)' : '#fff')}
                     {lang==='pt'?'Mensagem':'Message'}
-                  </button>
+                  </button>}
 
                   {/* Owner: rental requests panel */}
                   {isRent && isOwner && <OwnerRequestsBlock/>}
@@ -1489,11 +1489,11 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
         {/* ── Action buttons ── */}
         <div style={{display:'flex', gap:10, marginTop:14}}>
-          {/* Contact / Message */}
-          <button onClick={handleContact} className="pg-btn pg-btn-ghost" style={{flex:1, fontSize:14}}>
+          {/* Contact / Message — only for other users' listings */}
+          {!isOwner && <button onClick={handleContact} className="pg-btn pg-btn-ghost" style={{flex:1, fontSize:14}}>
             {Icon.msg(16,'var(--pg-blue-700)')}
             {lang==='pt'?'Mensagem':lang==='es'?'Mensaje':'Message'}
-          </button>
+          </button>}
 
           {/* Save (heart) — only for other users' live posts */}
           {!isOwner && !isStatic && (
