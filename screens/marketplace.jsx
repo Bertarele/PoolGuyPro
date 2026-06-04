@@ -2686,20 +2686,34 @@ function MarketplaceScreen({ ctx }) {
             {isEquipment && (
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px,1fr))', gap:16, marginBottom:24}}>
                 {liveEquipment.map(item => renderLiveCard(item, true))}
-                {liveEquipment.length === 0 && list.length === 0 && (
+                {liveEquipment.length === 0 && (view === 'rent' || list.length === 0) && (
                   <div style={{gridColumn:'1/-1', textAlign:'center', padding:'64px 20px',
                     background:'var(--pg-white)', borderRadius:16, border:'1px solid var(--pg-ink-200)'}}>
-                    <div style={{fontSize:40, marginBottom:12}}>🔍</div>
+                    <div style={{fontSize:40, marginBottom:12}}>{view==='rent'?'🔑':'🔍'}</div>
                     <div style={{fontSize:15, fontWeight:700, color:'var(--pg-ink-700)', marginBottom:6}}>
-                      {lang==='pt'?'Nenhum item encontrado':'No items found'}
+                      {view==='rent'
+                        ? (lang==='pt'?'Nenhum item para alugar ainda':'No rental listings yet')
+                        : (lang==='pt'?'Nenhum item encontrado':'No items found')}
                     </div>
-                    <div style={{fontSize:13, color:'var(--pg-ink-400)'}}>
-                      {lang==='pt'?'Tente outros filtros ou categorias':'Try different filters or categories'}
+                    <div style={{fontSize:13, color:'var(--pg-ink-400)', marginBottom: view==='rent'?16:0}}>
+                      {view==='rent'
+                        ? (lang==='pt'?'Seja o primeiro a publicar um item para aluguel!':'Be the first to post a rental listing!')
+                        : (lang==='pt'?'Tente outros filtros ou categorias':'Try different filters or categories')}
                     </div>
+                    {view==='rent' && (
+                      <button onClick={()=>{ setPostOpen(true); setPostMode('rent'); }} style={{
+                        height:44, padding:'0 24px', borderRadius:12, border:'none', cursor:'pointer',
+                        background:'linear-gradient(135deg,#0EBAC7,#0891A8)', color:'#fff',
+                        fontFamily:'inherit', fontSize:14, fontWeight:700,
+                        boxShadow:'0 4px 16px rgba(14,186,199,0.35)',
+                      }}>
+                        + {lang==='pt'?'Publicar para aluguel':'Post a rental'}
+                      </button>
+                    )}
                   </div>
                 )}
-                {/* Static equipment items — shown for all users */}
-                {list.map(e => (
+                {/* Static equipment items — shown only on Buy tab, not Rent */}
+                {view !== 'rent' && list.map(e => (
                   <button key={e.id} onClick={()=>openListing(normStatic(e))}
                     className="pg-press"
                     style={{border:'none', textAlign:'left', cursor:'pointer', overflow:'hidden', padding:0,
@@ -3240,20 +3254,35 @@ function MarketplaceScreen({ ctx }) {
               })}
 
             {/* Empty state */}
-            {list.length === 0 && liveMarket.filter(m=>m.type===mode && (m.status==='approved'||(m.status==='pending'&&isMyPost(m)))).length === 0 && (
+            {liveMarket.filter(m=>m.type===mode && (m.status==='approved'||(m.status==='pending'&&isMyPost(m)))).length === 0
+             && (view === 'rent' || list.length === 0) && (
               <div style={{gridColumn:'1/-1', textAlign:'center', padding:'48px 20px'}}>
-                <div style={{fontSize:36, marginBottom:12}}>🔍</div>
+                <div style={{fontSize:36, marginBottom:12}}>{view==='rent'?'🔑':'🔍'}</div>
                 <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-700)', marginBottom:4}}>
-                  {lang==='pt'?'Nenhum item encontrado':lang==='es'?'No se encontraron artículos':'No items found'}
+                  {view==='rent'
+                    ? (lang==='pt'?'Nenhum item para alugar ainda':lang==='es'?'Sin artículos en alquiler aún':'No rental listings yet')
+                    : (lang==='pt'?'Nenhum item encontrado':lang==='es'?'No se encontraron artículos':'No items found')}
                 </div>
-                <div style={{fontSize:12, color:'var(--pg-ink-400)'}}>
-                  {lang==='pt'?'Tente outros filtros ou categorias':lang==='es'?'Prueba otros filtros o categorías':'Try different filters or categories'}
+                <div style={{fontSize:12, color:'var(--pg-ink-400)', marginBottom: view==='rent'?14:0}}>
+                  {view==='rent'
+                    ? (lang==='pt'?'Seja o primeiro a publicar!':lang==='es'?'¡Sé el primero en publicar!':'Be the first to post a rental!')
+                    : (lang==='pt'?'Tente outros filtros ou categorias':lang==='es'?'Prueba otros filtros o categorías':'Try different filters or categories')}
                 </div>
+                {view==='rent' && (
+                  <button onClick={()=>{ setPostOpen(true); setPostMode('rent'); }} style={{
+                    height:40, padding:'0 20px', borderRadius:11, border:'none', cursor:'pointer',
+                    background:'linear-gradient(135deg,#0EBAC7,#0891A8)', color:'#fff',
+                    fontFamily:'inherit', fontSize:13, fontWeight:700,
+                    boxShadow:'0 4px 12px rgba(14,186,199,0.30)',
+                  }}>
+                    + {lang==='pt'?'Publicar para aluguel':lang==='es'?'Publicar alquiler':'Post a rental'}
+                  </button>
+                )}
               </div>
             )}
 
-            {/* Static equipment items */}
-            {list.map(e => (
+            {/* Static equipment items — shown only on Buy tab, not Rent */}
+            {view !== 'rent' && list.map(e => (
               <button key={e.id} onClick={()=>openListing(normStatic(e))}
                 className="pg-press"
                 style={{border:'none', textAlign:'left', cursor:'pointer', overflow:'hidden', padding:0,
