@@ -528,7 +528,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   };
 
   // ── Shared sub-components ─────────────────────────────────────
-  const isOwner = item.author_id && currentUser?.uid && item.author_id === currentUser.uid;
+  const isStatic = !item._live; // demo item from EQUIPMENT array — no DB entry
+  const isOwner = !isStatic && item.author_id && currentUser?.uid && item.author_id === currentUser.uid;
   const isSold  = item.status === 'sold';
 
   const TypeBadge = () => (
@@ -942,7 +943,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
             {/* Right actions */}
             <div style={{display:'flex', gap:8}}>
-              {!isOwner && (
+              {!isOwner && !isStatic && (
               <button onClick={onToggleSave} style={{
                 display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10,
                 border: isSaved?'1.5px solid #FCA5A5':'1.5px solid var(--pg-ink-200)',
@@ -967,7 +968,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 </svg>
                 {lang==='pt'?'Compartilhar':'Share'}
               </button>
-              {canDelete && (
+              {canDelete && !isStatic && (
                 <button onClick={handleAdminDelete} disabled={deleting} style={{
                   display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10,
                   border:'1.5px solid #FCA5A5', background:'#FEF2F2', color:'#EF4444',
@@ -1159,7 +1160,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   )}
                 </div>
 
-                {/* Seller */}
+                {/* Seller — hidden for static demo items */}
+                {!isStatic && (
                 <div style={{padding:'18px 24px', borderBottom:'1px solid var(--pg-ink-100)'}}>
                   <div style={{fontSize:11, fontWeight:800, color:'var(--pg-ink-400)',
                     letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>
@@ -1167,6 +1169,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   </div>
                   <SellerRow horizontal/>
                 </div>
+                )}
 
                 {/* Admin notice */}
                 {canDelete && (
@@ -1198,11 +1201,24 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
                 {/* Actions */}
                 <div style={{padding:'18px 24px', display:'flex', flexDirection:'column', gap:10}}>
-                  {/* Request Rental (rent items, non-owner) */}
-                  {isRent && !isOwner && <RequestRentalBlock/>}
+                  {/* Request Rental (rent items, non-owner, live) */}
+                  {isRent && !isOwner && !isStatic && <RequestRentalBlock/>}
 
-                  {/* Message button */}
-                  <button onClick={handleContact} style={{
+                  {/* Demo notice for static items */}
+                  {isStatic && (
+                    <div style={{padding:'12px 14px', borderRadius:12, background:'var(--pg-blue-50)', border:'1px solid var(--pg-blue-100)',
+                      display:'flex', alignItems:'center', gap:10}}>
+                      <span style={{fontSize:16, flexShrink:0}}>💡</span>
+                      <div style={{fontSize:12, color:'var(--pg-blue-700)', lineHeight:1.5}}>
+                        {lang==='pt'
+                          ? 'Este é um item demonstrativo. Itens reais são publicados por pool guys cadastrados.'
+                          : 'This is a demo item. Real listings are posted by registered pool guys.'}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Message button — hidden for static items */}
+                  {!isStatic && <button onClick={handleContact} style={{
                     width:'100%', height: isRent && !isOwner ? 46 : 52, borderRadius:14, border:'none', cursor:'pointer',
                     fontFamily:'inherit', fontSize: isRent && !isOwner ? 14 : 15, fontWeight:700,
                     color: isRent && !isOwner ? 'var(--pg-blue-700)' : '#fff',
@@ -1404,8 +1420,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           </div>
         ) : null}
 
-        {/* Divider + Author row — clickable to open profile */}
-        <div className="pg-divider" style={{margin:'14px 0'}}/>
+        {/* Divider + Author row — hidden for static demo items */}
+        {!isStatic && <><div className="pg-divider" style={{margin:'14px 0'}}/>
         <button onClick={handleAuthorClick} style={{
           display:'flex', alignItems:'center', gap:12, width:'100%',
           border:'none', background:'transparent', cursor: openPublicProfile ? 'pointer' : 'default',
@@ -1431,7 +1447,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         ) : null}
 
         {/* Admin info strip */}
-        {canDelete && (
+        {canDelete && !isStatic && (
           <div style={{marginTop:14, padding:'9px 13px', borderRadius:10, background:'#FEF2F2', border:'1px solid #FCA5A5',
             display:'flex', alignItems:'center', gap:8}}>
             <span style={{fontSize:14}}>🛡</span>
@@ -1440,11 +1456,25 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             </span>
           </div>
         )}
+        </>}
 
-        {/* ── Request Rental (rent items, non-owner) ── */}
-        {isRent && !isOwner && (
+        {/* ── Request Rental (rent items, non-owner, live only) ── */}
+        {isRent && !isOwner && !isStatic && (
           <div style={{marginTop:14}}>
             <RequestRentalBlock/>
+          </div>
+        )}
+
+        {/* Demo notice for static items (mobile) */}
+        {isStatic && (
+          <div style={{marginTop:14, padding:'12px 14px', borderRadius:12, background:'var(--pg-blue-50)', border:'1px solid var(--pg-blue-100)',
+            display:'flex', alignItems:'center', gap:10}}>
+            <span style={{fontSize:16}}>💡</span>
+            <div style={{fontSize:12, color:'var(--pg-blue-700)', lineHeight:1.5}}>
+              {lang==='pt'
+                ? 'Item demonstrativo. Itens reais são publicados por pool guys cadastrados.'
+                : 'Demo item. Real listings are posted by registered pool guys.'}
+            </div>
           </div>
         )}
 
@@ -1458,16 +1488,16 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           </div>
         )}
 
-        {/* ── Action buttons ── */}
-        <div style={{display:'flex', gap:10, marginTop:14}}>
-          {/* Contact Seller — ghost style matching "Message" in ListingDetail */}
+        {/* ── Action buttons (live items only) ── */}
+        {!isStatic && <div style={{display:'flex', gap:10, marginTop:14}}>
+          {/* Contact Seller */}
           <button onClick={handleContact} className="pg-btn pg-btn-ghost" style={{flex:1, fontSize:14}}>
             {Icon.msg(16,'var(--pg-blue-700)')}
             {lang==='pt'?'Mensagem':lang==='es'?'Mensaje':'Message'}
           </button>
 
-          {/* Save (heart) — only for other users' posts */}
-          {!isOwner && (
+          {/* Save (heart) — only for other users' live posts */}
+          {!isOwner && !isStatic && (
           <button onClick={onToggleSave} style={{
             width:52, height:52, borderRadius:14, flexShrink:0, cursor:'pointer',
             border: isSaved ? '1.5px solid #FCA5A5' : '1.5px solid var(--pg-ink-200)',
@@ -1494,8 +1524,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             </svg>
           </button>
 
-          {/* Delete — admin or author */}
-          {canDelete && (
+          {/* Delete — admin or author, live items only */}
+          {canDelete && !isStatic && (
             <button onClick={handleAdminDelete} disabled={deleting} style={{
               width:52, height:52, borderRadius:14, border:'1.5px solid #FCA5A5',
               background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
@@ -1508,7 +1538,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               }
             </button>
           )}
-        </div>
+        </div>}
 
         {/* Mark as Sold — for the listing author (sell items only) */}
         {!isRent && item.author_id && currentUser?.uid && item.author_id === currentUser.uid && item.status !== 'sold' && (
@@ -2011,9 +2041,36 @@ function MarketplaceScreen({ ctx }) {
   // ── Listing open / close with URL state ──────────────────────
   const openListing = React.useCallback((item) => {
     setViewListing(item);
-    window.history.pushState({ pgListing: item._id }, '', '?listing=' + item._id);
-    historyPushed.current = true;
+    // Only push URL for live Supabase items (have real UUID _id)
+    if (item._live) {
+      window.history.pushState({ pgListing: item._id }, '', '?listing=' + item._id);
+      historyPushed.current = true;
+    }
   }, []);
+
+  // Normalize a static EQUIPMENT array item → ViewListingSheet format
+  const normStatic = React.useCallback((e) => ({
+    _id: 'static-' + e.id,
+    _live: false,
+    type: e.mode || 'sell',
+    name: e.name || '',
+    cat: e.category || '',
+    condition: typeof e.condition === 'object' ? (e.condition[lang] || e.condition.en || '') : (e.condition || ''),
+    price: String(e.price || ''),
+    priceMode: 'fixed',
+    loc: e.loc || '',
+    description: '',
+    author: null,
+    author_id: null,
+    photoUrl: null,
+    photoUrls: [],
+    rentPeriod: e.unit
+      ? (e.unit.en === '/week' ? 'week' : e.unit.en === '/month' ? 'month' : 'day')
+      : null,
+    status: 'approved',
+    createdAt: null,
+    soldAt: null,
+  }), [lang]);
 
   const closeListing = React.useCallback(() => {
     setViewListing(null);
@@ -2644,7 +2701,7 @@ function MarketplaceScreen({ ctx }) {
                 )}
                 {/* Static equipment items — shown for all users */}
                 {list.map(e => (
-                  <button key={e.id} onClick={()=>setSelected({...e,_type:'equipment'})}
+                  <button key={e.id} onClick={()=>openListing(normStatic(e))}
                     className="pg-press"
                     style={{border:'none', textAlign:'left', cursor:'pointer', overflow:'hidden', padding:0,
                       borderRadius:16,
@@ -3198,7 +3255,7 @@ function MarketplaceScreen({ ctx }) {
 
             {/* Static equipment items */}
             {list.map(e => (
-              <button key={e.id} onClick={()=>setSelected({...e, _type:'equipment'})}
+              <button key={e.id} onClick={()=>openListing(normStatic(e))}
                 className="pg-press"
                 style={{border:'none', textAlign:'left', cursor:'pointer', overflow:'hidden', padding:0,
                   borderRadius:14, background:'var(--pg-white)',
