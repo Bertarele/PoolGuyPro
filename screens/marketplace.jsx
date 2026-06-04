@@ -2862,10 +2862,9 @@ function MarketplaceScreen({ ctx }) {
             onShare={()=>handleShare(null,viewListing)}
             liveMarket={liveMarket} onOpenListing={openListing}
             onAfterSold={(sellerRating)=>{
-              // Mark as sold in local state (realtime subscription will also update liveMarket)
+              // Update liveMarket immediately (realtime subscription is stubbed)
+              if(ctx&&ctx.updateMarketItem&&viewListing) ctx.updateMarketItem(viewListing._id, {status:'sold'});
               setViewListing(prev=>prev?{...prev,status:'sold'}:null);
-              // Wait for the MarkSoldSheet animation to complete (220ms), then close the
-              // listing view and open the rating sheet without any visual overlap/flash
               setTimeout(()=>{
                 setViewListing(null);
                 if(sellerRating&&openRating) openRating(sellerRating);
@@ -3655,9 +3654,9 @@ function MarketplaceScreen({ ctx }) {
             liveMarket={liveMarket}
             onOpenListing={openListing}
             onAfterSold={(sellerRating) => {
-              // Mark item as sold in local state immediately (no need to wait for realtime)
+              // Update liveMarket immediately (realtime subscription is stubbed)
+              if (ctx && ctx.updateMarketItem && viewListing) ctx.updateMarketItem(viewListing._id, { status: 'sold' });
               setViewListing(prev => prev ? { ...prev, status: 'sold' } : null);
-              // Wait for MarkSoldSheet animation to finish before opening RatingSheet
               setTimeout(() => {
                 setViewListing(null);
                 if (sellerRating && openRating) {

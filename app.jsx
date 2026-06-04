@@ -571,7 +571,9 @@ function App() {
     liveJobs, liveTechs, liveVacations, liveMarket,
     dbWrite, showToast,
     // Admin: remove items from local state immediately (fallback if realtime is slow)
-    removeMarketItem:  (id) => setLiveMarket(prev    => prev.filter(m => m._id !== id)),
+    removeMarketItem:  (id) => setLiveMarket(prev => prev.filter(m => m._id !== id)),
+    // Update item in local state (e.g. mark as sold without waiting for realtime)
+    updateMarketItem:  (id, patch) => setLiveMarket(prev => prev.map(m => m._id === id ? {...m, ...patch} : m)),
     removeJob:         (id) => setLiveJobs(prev      => prev.filter(j => j._id !== id)),
     removeTech:        (id) => setLiveTechs(prev     => prev.filter(t => t._id !== id)),
     removeVacation:    (id) => setLiveVacations(prev => prev.filter(v => v._id !== id)),

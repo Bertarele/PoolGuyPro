@@ -3288,9 +3288,7 @@ function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToa
       .catch(() => {});
   }, [open, rating?.to_id]);
 
-  if (!open || !rating) return null;
-
-  const toName = toProfile?.name || rating.to_name || '?';
+  const toName = toProfile?.name || rating?.to_name || '?';
   const labels = { 1:'Poor', 2:'Fair', 3:'Good', 4:'Very Good', 5:'Excellent!' };
   const labelspt = { 1:'Péssimo', 2:'Ruim', 3:'Ok', 4:'Bom', 5:'Excelente!' };
 
@@ -3312,75 +3310,72 @@ function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToa
   };
 
   return (
-    <div className="pg-sheet-backdrop" style={{zIndex:1200, position:'fixed'}} onClick={onClose}>
-      <div className="pg-sheet" style={{padding:'0 0 36px', position:'relative', zIndex:1201}} onClick={e=>e.stopPropagation()}>
-        <div className="pg-sheet-grabber"/>
-        <div style={{padding:'4px 18px 24px'}}>
-          {/* Header */}
-          <div style={{textAlign:'center', marginBottom:24}}>
-            <Avatar name={toName} size={64} src={toProfile?.photo_url || undefined}/>
-            <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', fontFamily:'var(--pg-font-display)', marginTop:12}}>
-              {lang==='pt' ? `Avalie ${toName}` : `Rate ${toName}`}
-            </div>
-            <div style={{fontSize:12.5, color:'var(--pg-ink-500)', marginTop:4}}>
-              {lang==='pt' ? 'Transação' : 'Transaction'}: <strong>"{rating.listing_name || ''}"</strong>
-            </div>
+    <Sheet open={open} onClose={onClose} height="auto">
+      <div style={{padding:'4px 18px 32px'}}>
+        {/* Header */}
+        <div style={{textAlign:'center', marginBottom:24}}>
+          <Avatar name={toName} size={64} src={toProfile?.photo_url || undefined}/>
+          <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', fontFamily:'var(--pg-font-display)', marginTop:12}}>
+            {lang==='pt' ? `Avalie ${toName}` : `Rate ${toName}`}
           </div>
-
-          {/* Stars */}
-          <div style={{display:'flex', justifyContent:'center', gap:6, marginBottom:6}}>
-            {[1,2,3,4,5].map(n => (
-              <button key={n} onClick={()=>setStars(n)}
-                onMouseEnter={()=>setHovered(n)} onMouseLeave={()=>setHovered(0)}
-                style={{background:'none', border:'none', cursor:'pointer', padding:'4px', lineHeight:1,
-                  transition:'transform .1s', transform:(hovered||stars)>=n?'scale(1.18)':'scale(1)'}}>
-                <svg width="38" height="38" viewBox="0 0 24 24"
-                  fill={(hovered||stars)>=n?'#F59E0B':'none'}
-                  stroke={(hovered||stars)>=n?'#F59E0B':'var(--pg-ink-300)'}
-                  strokeWidth="1.8" strokeLinecap="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
-              </button>
-            ))}
+          <div style={{fontSize:12.5, color:'var(--pg-ink-500)', marginTop:4}}>
+            {lang==='pt' ? 'Transação' : 'Transaction'}: <strong>"{rating?.listing_name || ''}"</strong>
           </div>
-          <div style={{textAlign:'center', height:20, marginBottom:16}}>
-            {(hovered||stars)>0 && (
-              <span style={{fontSize:13, fontWeight:700, color:'#F59E0B'}}>
-                {lang==='pt' ? labelspt[hovered||stars] : labels[hovered||stars]}
-              </span>
-            )}
-          </div>
-
-          {/* Comment */}
-          <textarea value={comment} onChange={e=>setComment(e.target.value)}
-            placeholder={lang==='pt' ? 'Comentário opcional (max 280 caracteres)...' : 'Optional comment (max 280 chars)...'}
-            maxLength={280}
-            style={{
-              width:'100%', minHeight:80, borderRadius:12, border:'1.5px solid var(--pg-ink-200)',
-              padding:'10px 12px', fontFamily:'inherit', fontSize:14, resize:'none',
-              background:'var(--pg-white)', color:'var(--pg-ink-900)', outline:'none', boxSizing:'border-box',
-            }}
-          />
-
-          <button onClick={handleSubmit} disabled={!stars||submitting} style={{
-            width:'100%', marginTop:12, padding:'15px', borderRadius:14, border:'none',
-            cursor:stars?'pointer':'default', fontFamily:'inherit', fontSize:15, fontWeight:700,
-            color:'#fff',
-            background:stars?'linear-gradient(135deg,#F59E0B,#D97706)':'var(--pg-ink-200)',
-            opacity:submitting?0.7:1, transition:'all .15s',
-          }}>
-            {submitting ? '...' : (lang==='pt' ? 'Enviar avaliação' : 'Submit Rating')}
-          </button>
-          <button onClick={onClose} style={{
-            width:'100%', marginTop:10, padding:'12px', borderRadius:14, border:'none',
-            cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600,
-            background:'var(--pg-ink-100)', color:'var(--pg-ink-600)',
-          }}>
-            {lang==='pt' ? 'Avaliar depois' : 'Rate Later'}
-          </button>
         </div>
+
+        {/* Stars */}
+        <div style={{display:'flex', justifyContent:'center', gap:6, marginBottom:6}}>
+          {[1,2,3,4,5].map(n => (
+            <button key={n} onClick={()=>setStars(n)}
+              onMouseEnter={()=>setHovered(n)} onMouseLeave={()=>setHovered(0)}
+              style={{background:'none', border:'none', cursor:'pointer', padding:'4px', lineHeight:1,
+                transition:'transform .1s', transform:(hovered||stars)>=n?'scale(1.18)':'scale(1)'}}>
+              <svg width="38" height="38" viewBox="0 0 24 24"
+                fill={(hovered||stars)>=n?'#F59E0B':'none'}
+                stroke={(hovered||stars)>=n?'#F59E0B':'var(--pg-ink-300)'}
+                strokeWidth="1.8" strokeLinecap="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
+          ))}
+        </div>
+        <div style={{textAlign:'center', height:20, marginBottom:16}}>
+          {(hovered||stars)>0 && (
+            <span style={{fontSize:13, fontWeight:700, color:'#F59E0B'}}>
+              {lang==='pt' ? labelspt[hovered||stars] : labels[hovered||stars]}
+            </span>
+          )}
+        </div>
+
+        {/* Comment */}
+        <textarea value={comment} onChange={e=>setComment(e.target.value)}
+          placeholder={lang==='pt' ? 'Comentário opcional (max 280 caracteres)...' : 'Optional comment (max 280 chars)...'}
+          maxLength={280}
+          style={{
+            width:'100%', minHeight:80, borderRadius:12, border:'1.5px solid var(--pg-ink-200)',
+            padding:'10px 12px', fontFamily:'inherit', fontSize:14, resize:'none',
+            background:'var(--pg-white)', color:'var(--pg-ink-900)', outline:'none', boxSizing:'border-box',
+          }}
+        />
+
+        <button onClick={handleSubmit} disabled={!stars||submitting} style={{
+          width:'100%', marginTop:12, padding:'15px', borderRadius:14, border:'none',
+          cursor:stars?'pointer':'default', fontFamily:'inherit', fontSize:15, fontWeight:700,
+          color:'#fff',
+          background:stars?'linear-gradient(135deg,#F59E0B,#D97706)':'var(--pg-ink-200)',
+          opacity:submitting?0.7:1, transition:'all .15s',
+        }}>
+          {submitting ? '...' : (lang==='pt' ? 'Enviar avaliação' : 'Submit Rating')}
+        </button>
+        <button onClick={onClose} style={{
+          width:'100%', marginTop:10, padding:'12px', borderRadius:14, border:'none',
+          cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600,
+          background:'var(--pg-ink-100)', color:'var(--pg-ink-600)',
+        }}>
+          {lang==='pt' ? 'Avaliar depois' : 'Rate Later'}
+        </button>
       </div>
-    </div>
+    </Sheet>
   );
 }
 
