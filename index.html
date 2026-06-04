@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=124">
+  <link rel="stylesheet" href="tokens.css?v=126">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -80,9 +80,9 @@
           body: JSON.stringify({ refresh_token: stored.r })
         });
         if (!resp.ok) {
-          // 401/403 = conta deletada ou token revogado → força logout
+          // 400/401/403 = refresh token inválido/expirado/revogado → força logout
           // Outros erros (500, rede, etc.) = não desloga, apenas falha silenciosamente
-          if (resp.status === 401 || resp.status === 403) {
+          if (resp.status === 400 || resp.status === 401 || resp.status === 403) {
             _tok = null;
             try { localStorage.removeItem('pg_s'); } catch(e) {}
             if (window.__pgForceLogout) window.__pgForceLogout();
@@ -137,7 +137,7 @@
           var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
           if(!r.ok){
             var e={}; try{e=await r.json();}catch(x){}
-            if(!retried && _isExpired(e.message||e.msg||'')) {
+            if(!retried && (r.status===401 || _isExpired(e.message||e.msg||''))) {
               var ok = await _refreshOnce();
               if(ok) return run(true);
             }
@@ -150,7 +150,7 @@
           var r=await fetch(url+(qs?'?'+qs:''),{method:'PATCH',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
           if(!r.ok){
             var e={}; try{e=await r.json();}catch(x){}
-            if(!retried && _isExpired(e.message||e.msg||'')) {
+            if(!retried && (r.status===401 || _isExpired(e.message||e.msg||''))) {
               var ok = await _refreshOnce();
               if(ok) return run(true);
             }
@@ -161,7 +161,14 @@
         if(op==='delete'){
           var qs=filters.join('&');
           var r=await fetch(url+(qs?'?'+qs:''),{method:'DELETE',headers:h});
-          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Delete failed '+r.status}};}
+          if(!r.ok){
+            var e={}; try{e=await r.json();}catch(x){}
+            if(!retried && (r.status===401 || _isExpired(e.message||e.msg||''))) {
+              var ok = await _refreshOnce();
+              if(ok) return run(true);
+            }
+            return{data:null,error:{message:e.message||'Delete failed '+r.status}};
+          }
           return{data:null,error:null};
         }
         var p=['select='+encodeURIComponent(sel)];
@@ -304,20 +311,20 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-  <script type="text/babel" src="ios-frame.jsx?v=124"></script>
-  <script type="text/babel" src="tweaks-panel.jsx?v=124"></script>
-  <script type="text/babel" src="components.jsx?v=124"></script>
-  <script type="text/babel" src="brand.jsx?v=124"></script>
-  <script type="text/babel" src="data.jsx?v=124"></script>
-  <script type="text/babel" src="screens/login.jsx?v=124"></script>
-  <script type="text/babel" src="screens/home.jsx?v=124"></script>
+  <script type="text/babel" src="ios-frame.jsx?v=126"></script>
+  <script type="text/babel" src="tweaks-panel.jsx?v=126"></script>
+  <script type="text/babel" src="components.jsx?v=126"></script>
+  <script type="text/babel" src="brand.jsx?v=126"></script>
+  <script type="text/babel" src="data.jsx?v=126"></script>
+  <script type="text/babel" src="screens/login.jsx?v=126"></script>
+  <script type="text/babel" src="screens/home.jsx?v=126"></script>
   <script type="text/babel" src="screens/marketplace.jsx?v=125"></script>
-  <script type="text/babel" src="screens/quickpools.jsx?v=124"></script>
-  <script type="text/babel" src="screens/post.jsx?v=124"></script>
-  <script type="text/babel" src="screens/work.jsx?v=124"></script>
-  <script type="text/babel" src="screens/profile.jsx?v=124"></script>
-  <script type="text/babel" src="screens/overlays.jsx?v=124"></script>
-  <script type="text/babel" src="app.jsx?v=124"></script>
+  <script type="text/babel" src="screens/quickpools.jsx?v=126"></script>
+  <script type="text/babel" src="screens/post.jsx?v=126"></script>
+  <script type="text/babel" src="screens/work.jsx?v=126"></script>
+  <script type="text/babel" src="screens/profile.jsx?v=126"></script>
+  <script type="text/babel" src="screens/overlays.jsx?v=126"></script>
+  <script type="text/babel" src="app.jsx?v=126"></script>
   <script>
     // Live reload: watch all JSX files for changes
     const _watchFiles = [
