@@ -892,7 +892,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   {req.quantity && (
                     <span style={{fontSize:11,fontWeight:600,padding:'3px 9px',borderRadius:999,
                       background:'var(--pg-ink-100)',color:'var(--pg-ink-700)',border:'1px solid var(--pg-ink-200)'}}>
-                      ×{req.quantity} {getPeriodLabel(req.period||'day', req.quantity)}
+                      ×{req.quantity} {getPeriodLabel(req.period||'day', req.quantity > 1 ? 2 : 1).replace(/^\d+\s*/,'')}
                     </span>
                   )}
                   {req.total_price && (
