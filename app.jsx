@@ -411,7 +411,8 @@ function App() {
       author:r.author, author_id:r.author_id || null,
       photoUrl: r.photo_url || null,
       photoUrls: (r.photo_urls && r.photo_urls.length > 0) ? r.photo_urls : (r.photo_url ? [r.photo_url] : []),
-      rentPeriod: r.rent_period || 'day',
+      rentPeriod: r.rent_period || null,
+      rentPrices: r.rent_prices || null,
       status: r.status || 'pending',
       createdAt: r.created_at || null,
       soldAt: r.sold_at || null });
@@ -487,6 +488,7 @@ function App() {
       photo_url: data.photoUrl || null,
       photo_urls: (data.photos && data.photos.length > 0) ? data.photos : (data.photoUrl ? [data.photoUrl] : []),
       rent_period: data.rentPeriod || null,
+      rent_prices: data.rentPrices || null,
       status: 'pending',
     } : { ...data, author: authorName };
 

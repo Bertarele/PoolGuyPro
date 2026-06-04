@@ -384,6 +384,27 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [reqStatus,     setReqStatus]    = React.useState(null); // null|'pending'|'approved'|'declined'
   const [reqLoading,    setReqLoading]   = React.useState(false);
   const [ownerRequests, setOwnerRequests]= React.useState([]); // for owner — list of requests
+  const [reqPeriod,     setReqPeriod]    = React.useState(null); // 'day'|'week'|'month'
+  const [reqQty,        setReqQty]       = React.useState(1);
+
+  // Compute available rental periods from item (multi-price new items, or single-period legacy)
+  const availablePeriods = React.useMemo(() => {
+    if (item.rentPrices && typeof item.rentPrices === 'object') {
+      const order = ['day','week','month'];
+      return order
+        .filter(k => item.rentPrices[k] && Number(item.rentPrices[k]) > 0)
+        .map(k => ({ period: k, price: Number(item.rentPrices[k]) }));
+    }
+    // Legacy: single period from rent_period + price
+    const p = item.rentPeriod || 'day';
+    return [{ period: p, price: Number(item.price) || 0 }];
+  }, [item.rentPrices, item.rentPeriod, item.price]);
+
+  // Init selected period when listing changes
+  React.useEffect(() => {
+    if (availablePeriods.length > 0) setReqPeriod(availablePeriods[0].period);
+    setReqQty(1);
+  }, [item._id]); // eslint-disable-line
 
   // Desktop detection
   React.useEffect(() => {
@@ -396,7 +417,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   React.useEffect(() => {
     if (!isRent || !currentUser?.uid || !window.sb) return;
     window.sb.from('rental_requests')
-      .select('id, status, requester_id, requester_name, created_at')
+      .select('id, status, requester_id, requester_name, created_at, period, quantity, total_price')
       .eq('listing_id', item._id)
       .then(({ data }) => {
         if (!data) return;
@@ -436,9 +457,21 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   }, [item?.loc]);
 
   const allPhotos = (item.photoUrls && item.photoUrls.length > 0) ? item.photoUrls : (item.photoUrl ? [item.photoUrl] : []);
-  const periodSfx = item.type === 'rent'
-    ? (item.rentPeriod === 'week' ? (lang==='pt'?'/sem':'/wk') : item.rentPeriod === 'month' ? (lang==='pt'?'/mês':'/mo') : (lang==='pt'?'/dia':'/day'))
-    : '';
+
+  // Helper: suffix label for a given period key
+  const getPeriodSfx = (p) => p==='week'?(lang==='pt'?'/sem':'/wk'):p==='month'?(lang==='pt'?'/mês':'/mo'):(lang==='pt'?'/dia':'/day');
+  const getPeriodLabel = (p,qty=1) => {
+    const n = qty > 1 ? qty+' ' : '';
+    if (p==='week')  return n+(lang==='pt'?(qty>1?'semanas':'semana'):(qty>1?'weeks':'week'));
+    if (p==='month') return n+(lang==='pt'?(qty>1?'meses':'mês'):(qty>1?'months':'month'));
+    return n+(lang==='pt'?(qty>1?'dias':'dia'):(qty>1?'days':'day'));
+  };
+
+  // For card/header price display: cheapest period if multi, else single
+  const displayPrice = availablePeriods.length > 0 ? availablePeriods[0].price : (item.price || 0);
+  const displayPeriod = availablePeriods.length > 0 ? availablePeriods[0].period : (item.rentPeriod || 'day');
+  const periodSfx = item.type === 'rent' ? getPeriodSfx(displayPeriod) : '';
+  const hasMultiPeriod = availablePeriods.length > 1;
 
   const authorDisplay = item.author
     ? (item.author.includes('@') ? item.author.split('@')[0] : item.author)
@@ -453,20 +486,24 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   };
 
   const handleRequestRental = async () => {
-    if (!currentUser?.uid || reqStatus || !window.sb) return;
+    if (!currentUser?.uid || reqStatus || !window.sb || !reqPeriod) return;
+    const periodEntry = availablePeriods.find(p => p.period === reqPeriod);
+    const totalPrice  = periodEntry ? periodEntry.price * reqQty : 0;
     setReqLoading(true);
     const { error } = await window.sb.from('rental_requests').insert({
-      listing_id: item._id,
-      listing_name: item.name || '',
-      requester_id: currentUser.uid,
+      listing_id:     item._id,
+      listing_name:   item.name || '',
+      requester_id:   currentUser.uid,
       requester_name: currentUser.name || (currentUser.email||'').split('@')[0] || 'User',
-      owner_id: item.author_id,
+      owner_id:       item.author_id,
+      period:         reqPeriod,
+      quantity:       reqQty,
+      total_price:    totalPrice,
     });
     setReqLoading(false);
     if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
     setReqStatus('pending');
     showToast && showToast(lang==='pt'?'✓ Pedido enviado! Converse com o dono pela inbox.':'✓ Request sent! Chat with the owner via inbox.');
-    // Auto-open chat with owner so they can discuss terms
     if (openChat && item.author_id) {
       setTimeout(() => {
         if (onClose) onClose();
@@ -651,64 +688,150 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     </div>
   );
 
-  // ── Rental request button (for non-owner renters) ─────────────
+  // ── Rental request block (for non-owner renters) ──────────────
   const RequestRentalBlock = () => {
     if (!isRent || isOwner || isSold) return null;
-    if (isStatic) return (
-      <button onClick={()=>showToast&&showToast(lang==='pt'?'💡 Item demonstrativo — publique seu item real no marketplace!':'💡 Demo item — post your own listing to rent it out!')}
-        style={{
-          width:'100%', height:52, borderRadius:14, border:'none', cursor:'pointer',
-          fontFamily:'inherit', fontSize:15, fontWeight:700, color:'#fff',
-          background:'linear-gradient(135deg,#0EBAC7,#0891A8)',
-          boxShadow:'0 4px 16px rgba(14,186,199,0.35)',
-          display:'flex', alignItems:'center', justifyContent:'center', gap:9,
-        }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        {lang==='pt'?'Solicitar aluguel':lang==='es'?'Solicitar alquiler':'Request Rental'}
-      </button>
-    );
+
+    // Status cards (same for static/live)
     if (reqStatus === 'approved') return (
-      <div style={{padding:'13px 16px', borderRadius:14, background:'linear-gradient(135deg,#F0FDF4,#DCFCE7)',
-        border:'1.5px solid #86EFAC', display:'flex', alignItems:'center', gap:10}}>
+      <div style={{padding:'13px 16px',borderRadius:14,background:'rgba(22,163,74,0.12)',border:'1.5px solid rgba(22,163,74,0.4)',display:'flex',alignItems:'center',gap:10}}>
         <div style={{width:30,height:30,borderRadius:'50%',background:'#16A34A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
         <div>
-          <div style={{fontSize:13,fontWeight:800,color:'#15803D'}}>{lang==='pt'?'Aluguel aprovado!':'Rental approved!'}</div>
-          <div style={{fontSize:11.5,color:'#16A34A',marginTop:1}}>{lang==='pt'?'O dono aprovou seu pedido.':'The owner approved your request.'}</div>
+          <div style={{fontSize:13,fontWeight:800,color:'#22C55E'}}>{lang==='pt'?'Aluguel aprovado!':'Rental approved!'}</div>
+          <div style={{fontSize:11.5,color:'#22C55E',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou seu pedido.':'The owner approved your request.'}</div>
         </div>
       </div>
     );
     if (reqStatus === 'declined') return (
-      <div style={{padding:'12px 14px',borderRadius:14,background:'#FEF2F2',border:'1.5px solid #FCA5A5',display:'flex',alignItems:'center',gap:10}}>
+      <div style={{padding:'12px 14px',borderRadius:14,background:'rgba(239,68,68,0.1)',border:'1.5px solid rgba(239,68,68,0.35)',display:'flex',alignItems:'center',gap:10}}>
         <span style={{fontSize:18,flexShrink:0}}>❌</span>
-        <div style={{fontSize:13,fontWeight:600,color:'#DC2626'}}>{lang==='pt'?'Pedido não aprovado':'Request not approved'}</div>
+        <div style={{fontSize:13,fontWeight:600,color:'#F87171'}}>{lang==='pt'?'Pedido não aprovado':'Request not approved'}</div>
       </div>
     );
     if (reqStatus === 'pending') return (
-      <div style={{padding:'13px 16px',borderRadius:14,background:'#FFFBEB',border:'1.5px solid #FDE68A',display:'flex',alignItems:'center',gap:10}}>
+      <div style={{padding:'13px 16px',borderRadius:14,background:'rgba(245,158,11,0.1)',border:'1.5px solid rgba(245,158,11,0.4)',display:'flex',alignItems:'center',gap:10}}>
         <span style={{fontSize:16,flexShrink:0}}>⏳</span>
         <div>
-          <div style={{fontSize:13,fontWeight:700,color:'#92400E'}}>{lang==='pt'?'Pedido enviado!':'Request sent!'}</div>
-          <div style={{fontSize:11.5,color:'#B45309',marginTop:1}}>{lang==='pt'?'Aguardando resposta do dono.':'Waiting for owner\'s response.'}</div>
+          <div style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>{lang==='pt'?'Pedido enviado!':'Request sent!'}</div>
+          <div style={{fontSize:11.5,color:'#F59E0B',opacity:0.8,marginTop:1}}>{lang==='pt'?'Aguardando resposta do dono.':'Waiting for owner\'s response.'}</div>
         </div>
       </div>
     );
-    return (
-      <button onClick={handleRequestRental} disabled={reqLoading} style={{
-        width:'100%', height:52, borderRadius:14, border:'none', cursor: reqLoading?'default':'pointer',
-        fontFamily:'inherit', fontSize:15, fontWeight:700, color:'#fff',
-        background: reqLoading ? 'var(--pg-ink-300)' : 'linear-gradient(135deg,#0EBAC7,#0891A8)',
-        boxShadow:'0 4px 16px rgba(14,186,199,0.35)',
-        display:'flex', alignItems:'center', justifyContent:'center', gap:9,
-        transition:'all .15s', opacity: reqLoading ? 0.7 : 1,
-      }}>
-        {reqLoading
-          ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeDasharray="31.4" strokeDashoffset="10"/></svg>
-          : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        }
-        {lang==='pt'?'Solicitar aluguel':lang==='es'?'Solicitar alquiler':'Request Rental'}
+
+    if (isStatic) return (
+      <button onClick={()=>showToast&&showToast(lang==='pt'?'💡 Item demonstrativo — publique seu item real no marketplace!':'💡 Demo item — post your own listing to rent it out!')}
+        style={{width:'100%',height:52,borderRadius:14,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:700,color:'#fff',
+          background:'linear-gradient(135deg,#0EBAC7,#0891A8)',boxShadow:'0 4px 16px rgba(14,186,199,0.35)',
+          display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {lang==='pt'?'Solicitar aluguel':'Request Rental'}
       </button>
+    );
+
+    // ── Rental form card ────────────────────────────────────────
+    const selPeriodEntry = availablePeriods.find(p => p.period === reqPeriod) || availablePeriods[0];
+    const totalPrice = selPeriodEntry ? selPeriodEntry.price * reqQty : 0;
+
+    return (
+      <div style={{borderRadius:16, border:'1.5px solid var(--pg-ink-200)', overflow:'hidden', background:'var(--pg-white)'}}>
+        {/* Header */}
+        <div style={{padding:'11px 14px', background:'var(--pg-ink-50)', borderBottom:'1px solid var(--pg-ink-200)',
+          display:'flex', alignItems:'center', gap:8}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0EBAC7" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>
+            {lang==='pt'?'Solicitar aluguel':'Request Rental'}
+          </span>
+        </div>
+
+        <div style={{padding:'14px', display:'flex', flexDirection:'column', gap:14}}>
+
+          {/* Period selector — only shown when multiple periods available */}
+          {availablePeriods.length > 1 && (
+            <div>
+              <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', textTransform:'uppercase',
+                letterSpacing:'0.07em', marginBottom:8}}>
+                {lang==='pt'?'Escolha o período':'Choose period'}
+              </div>
+              <div style={{display:'flex', gap:8}}>
+                {availablePeriods.map(({period, price}) => {
+                  const isOn = reqPeriod === period;
+                  return (
+                    <button key={period} onClick={()=>setReqPeriod(period)} style={{
+                      flex:1, padding:'10px 6px', borderRadius:12, border:'none', cursor:'pointer',
+                      background: isOn ? '#0EBAC7' : 'var(--pg-ink-100)',
+                      fontFamily:'inherit', transition:'all .12s',
+                      boxShadow: isOn ? '0 3px 10px rgba(14,186,199,0.3)' : 'none',
+                    }}>
+                      <div style={{fontSize:14, fontWeight:800, color: isOn?'#fff':'var(--pg-ink-900)'}}>
+                        {getPeriodSfx(period)}
+                      </div>
+                      <div style={{fontSize:12, fontWeight:600, color: isOn?'rgba(255,255,255,0.85)':'var(--pg-ink-500)', marginTop:2}}>
+                        ${price}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Quantity stepper */}
+          <div>
+            <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', textTransform:'uppercase',
+              letterSpacing:'0.07em', marginBottom:8}}>
+              {lang==='pt'?'Quantidade':'Quantity'}
+            </div>
+            <div style={{display:'flex', alignItems:'center', gap:10}}>
+              <button onClick={()=>setReqQty(q=>Math.max(1,q-1))} style={{
+                width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
+                background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit',
+                fontSize:20, fontWeight:400, color:'var(--pg-ink-900)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>−</button>
+              <span style={{fontSize:20, fontWeight:800, color:'var(--pg-ink-900)', minWidth:28, textAlign:'center'}}>{reqQty}</span>
+              <button onClick={()=>setReqQty(q=>Math.min(52,q+1))} style={{
+                width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
+                background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit',
+                fontSize:20, fontWeight:400, color:'var(--pg-ink-900)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>+</button>
+              <span style={{fontSize:13, color:'var(--pg-ink-500)', marginLeft:4}}>
+                {selPeriodEntry ? getPeriodLabel(selPeriodEntry.period, reqQty) : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Total */}
+          <div style={{padding:'10px 12px', borderRadius:12, background:'var(--pg-ink-50)',
+            border:'1px solid var(--pg-ink-200)', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            <span style={{fontSize:13, color:'var(--pg-ink-500)', fontWeight:600}}>
+              {lang==='pt'?'Total estimado':'Estimated total'}
+            </span>
+            <span style={{fontSize:20, fontWeight:800, color:'#0EBAC7', fontFamily:'var(--pg-font-display)'}}>
+              ${totalPrice.toLocaleString()}
+            </span>
+          </div>
+
+          {/* Submit */}
+          <button onClick={handleRequestRental} disabled={reqLoading || !reqPeriod} style={{
+            width:'100%', height:50, borderRadius:13, border:'none',
+            cursor: (reqLoading||!reqPeriod)?'default':'pointer',
+            fontFamily:'inherit', fontSize:15, fontWeight:700, color:'#fff',
+            background: (reqLoading||!reqPeriod) ? 'var(--pg-ink-300)' : 'linear-gradient(135deg,#0EBAC7,#0891A8)',
+            boxShadow:'0 4px 14px rgba(14,186,199,0.30)',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            transition:'all .15s', opacity:(reqLoading||!reqPeriod)?0.6:1,
+          }}>
+            {reqLoading
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeDasharray="31.4" strokeDashoffset="10"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            }
+            {lang==='pt'?'Enviar pedido':'Send Request'}
+          </button>
+        </div>
+      </div>
     );
   };
 
@@ -739,7 +862,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               background: rowBg,
               border: `1.5px solid ${rowBorder}`,
             }}>
-              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom: isPend ? 10 : 0}}>
+              {/* Row header: avatar + name + status + message btn */}
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
                 <Avatar name={req.requester_name||'?'} size={32}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{req.requester_name||'User'}</div>
@@ -753,8 +877,34 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   {Icon.msg(15,'var(--pg-ink-700)')}
                 </button>
               </div>
+
+              {/* Request details: period, qty, total */}
+              {(req.period || req.quantity) && (
+                <div style={{display:'flex',gap:6,marginTop:8,flexWrap:'wrap'}}>
+                  {req.period && (
+                    <span style={{fontSize:11,fontWeight:700,padding:'3px 9px',borderRadius:999,
+                      background:'rgba(14,186,199,0.15)',color:'#0EBAC7',border:'1px solid rgba(14,186,199,0.3)'}}>
+                      {getPeriodSfx(req.period)}
+                    </span>
+                  )}
+                  {req.quantity && (
+                    <span style={{fontSize:11,fontWeight:600,padding:'3px 9px',borderRadius:999,
+                      background:'var(--pg-ink-100)',color:'var(--pg-ink-700)',border:'1px solid var(--pg-ink-200)'}}>
+                      ×{req.quantity} {getPeriodLabel(req.period||'day', req.quantity)}
+                    </span>
+                  )}
+                  {req.total_price && (
+                    <span style={{fontSize:11,fontWeight:800,padding:'3px 9px',borderRadius:999,
+                      background:'rgba(22,163,74,0.12)',color:'#22C55E',border:'1px solid rgba(22,163,74,0.3)',marginLeft:'auto'}}>
+                      ${Number(req.total_price).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Approve / Decline buttons — only for pending */}
               {isPend && (
-                <div style={{display:'flex',gap:8}}>
+                <div style={{display:'flex',gap:8,marginTop:10}}>
                   <button onClick={()=>handleOwnerDecision(req.id,'approved')} style={{
                     flex:1,height:36,borderRadius:10,border:'none',cursor:'pointer',
                     background:'#16A34A',color:'#fff',fontSize:13,fontWeight:700,fontFamily:'inherit',
@@ -1715,8 +1865,11 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
     ? (lang==='pt'?'⏳ Em revisão':lang==='es'?'⏳ En revisión':'⏳ Under review')
     : (lang==='pt'?'✓ Ativo':lang==='es'?'✓ Activo':'✓ Active');
 
+  const _sfxOf = p => p==='week'?(lang==='pt'?'/sem':'/wk'):p==='month'?(lang==='pt'?'/mês':'/mo'):(lang==='pt'?'/dia':'/day');
   const periodSfx = item.type === 'rent'
-    ? (item.rentPeriod === 'week' ? (lang==='pt'?'/sem':'/wk') : item.rentPeriod === 'month' ? (lang==='pt'?'/mês':'/mo') : (lang==='pt'?'/dia':'/day'))
+    ? (item.rentPrices && typeof item.rentPrices === 'object'
+        ? Object.entries(item.rentPrices).filter(([,v])=>v>0).map(([k,v])=>`$${v}${_sfxOf(k)}`).join(' · ')
+        : `$${item.price}${_sfxOf(item.rentPeriod||'day')}`)
     : '';
 
   const handleSave = async () => {
@@ -1991,7 +2144,7 @@ function MarketplaceScreen({ ctx }) {
     author:r.author, author_id:r.author_id||null,
     photoUrl:r.photo_url||null,
     photoUrls:(r.photo_urls&&r.photo_urls.length>0)?r.photo_urls:(r.photo_url?[r.photo_url]:[]),
-    rentPeriod:r.rent_period||'day', status:r.status||'pending',
+    rentPeriod:r.rent_period||null, rentPrices:r.rent_prices||null, status:r.status||'pending',
     createdAt:r.created_at||null, soldAt:r.sold_at||null });
 
   // Returns true if a sold item should still appear in marketplace (< 24h after sold)
@@ -3176,9 +3329,21 @@ function MarketplaceScreen({ ctx }) {
                           <span style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800,
                             color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
                             letterSpacing:'-0.02em', lineHeight:1, flexShrink:0}}>
-                            ${item.price}{item.type==='rent' && !isPending && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>
-                              {item.rentPeriod==='week' ? (lang==='pt'?'/sem':'/wk') : item.rentPeriod==='month' ? (lang==='pt'?'/mês':'/mo') : (lang==='pt'?'/dia':'/day')}
-                            </span>}
+                            {(() => {
+                              if (item.type !== 'rent' || isPending) return `$${item.price}`;
+                              // Multi-period: show cheapest rate with "from" prefix
+                              if (item.rentPrices && typeof item.rentPrices==='object') {
+                                const order=['day','week','month'];
+                                const entries=order.filter(k=>item.rentPrices[k]&&item.rentPrices[k]>0).map(k=>({k,v:item.rentPrices[k]}));
+                                if (entries.length===0) return `$${item.price}`;
+                                const first=entries[0];
+                                const sfx=first.k==='week'?(lang==='pt'?'/sem':'/wk'):first.k==='month'?(lang==='pt'?'/mês':'/mo'):(lang==='pt'?'/dia':'/day');
+                                return <>{entries.length>1&&<span style={{fontSize:10,fontWeight:600,color:'var(--pg-ink-400)',marginRight:2}}>{lang==='pt'?'de':'from'}</span>}${first.v}<span style={{fontSize:11,fontWeight:500,color:'var(--pg-ink-400)',marginLeft:2}}>{sfx}</span></>;
+                              }
+                              // Legacy single period
+                              const sfx=item.rentPeriod==='week'?(lang==='pt'?'/sem':'/wk'):item.rentPeriod==='month'?(lang==='pt'?'/mês':'/mo'):(lang==='pt'?'/dia':'/day');
+                              return <>${item.price}<span style={{fontSize:11,fontWeight:500,color:'var(--pg-ink-400)',marginLeft:2}}>{sfx}</span></>;
+                            })()}
                           </span>
                         )}
                         <div style={{display:'flex', alignItems:'center', gap:4, minWidth:0}}>
@@ -4416,7 +4581,9 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
   const [price,       setPrice]      = React.useState('');
   const [loc,         setLoc]        = React.useState('');
   const [priceMode,   setPriceMode]  = React.useState('fixed');
-  const [rentPeriod,  setRentPeriod] = React.useState('day'); // 'day'|'week'|'month'
+  // Multi-period rental pricing
+  const [rentEnabled, setRentEnabled] = React.useState({ day: true, week: false, month: false });
+  const [rentPrices,  setRentPrices]  = React.useState({ day: '', week: '', month: '' });
   const [photos,      setPhotos]     = React.useState([]);
   const [disclaimerChecked, setDisclaimerChecked] = React.useState(false);
 
@@ -4428,11 +4595,12 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
   const submitLbl = t.postListingBtn;
 
   const periodOptions = [
-    { id:'day',   label: lang==='pt'?'Por dia':lang==='es'?'Por día':'/day',    sfx: lang==='pt'?'/dia':lang==='es'?'/día':'/day' },
-    { id:'week',  label: lang==='pt'?'Por semana':lang==='es'?'Por semana':'/week', sfx: lang==='pt'?'/sem':lang==='es'?'/sem':'/wk' },
-    { id:'month', label: lang==='pt'?'Por mês':lang==='es'?'Por mes':'/month',  sfx: lang==='pt'?'/mês':lang==='es'?'/mes':'/mo' },
+    { id:'day',   label: lang==='pt'?'Por dia':lang==='es'?'Por día':'Per day',    sfx: lang==='pt'?'/dia':lang==='es'?'/día':'/day' },
+    { id:'week',  label: lang==='pt'?'Por semana':lang==='es'?'Por semana':'Per week', sfx: lang==='pt'?'/sem':lang==='es'?'/sem':'/wk' },
+    { id:'month', label: lang==='pt'?'Por mês':lang==='es'?'Por mes':'Per month',  sfx: lang==='pt'?'/mês':lang==='es'?'/mes':'/mo' },
   ];
-  const priceSfx = isRent ? (periodOptions.find(p=>p.id===rentPeriod)?.sfx || '/day') : '';
+  // At least one period must be enabled with a valid price
+  const hasAnyRentPrice = isRent && periodOptions.some(p => rentEnabled[p.id] && rentPrices[p.id].trim().length > 0);
 
   const cats = ['Pumps','Filters','Vacuum','Heaters','Tools'];
   const catLabels = { Pumps:lang==='pt'?'Bombas':lang==='es'?'Bombas':'Pumps', Filters:lang==='pt'?'Filtros':lang==='es'?'Filtros':'Filters',
@@ -4446,7 +4614,8 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
     { id:'parts',   label:t.forPartsLbl },
   ];
 
-  const isValid = name.trim().length > 2 && (priceMode === 'neg' || price.trim().length > 0) && loc.trim().length > 2 && (!isRent || disclaimerChecked);
+  const isValid = name.trim().length > 2 && loc.trim().length > 2
+    && (isRent ? (hasAnyRentPrice && disclaimerChecked) : (priceMode === 'neg' || price.trim().length > 0));
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
@@ -4522,35 +4691,83 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
         <div>
           <FormLabel>{priceLbl}</FormLabel>
 
-          {/* Rent period selector */}
+          {/* Multi-period pricing for rent */}
           {isRent && (
-            <div style={{display:'flex', gap:8, marginBottom:12}}>
-              {periodOptions.map(p => (
-                <button key={p.id} onClick={()=>setRentPeriod(p.id)} style={{
-                  flex:1, padding:'10px 6px', borderRadius:12, border:'none', cursor:'pointer',
-                  fontFamily:'inherit', fontSize:13, fontWeight:700, transition:'all .12s',
-                  background: rentPeriod===p.id ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
-                  color: rentPeriod===p.id ? '#fff' : 'var(--pg-ink-600)',
-                  boxShadow: rentPeriod===p.id ? '0 3px 10px rgba(0,119,182,0.30)' : 'none',
-                }}>{p.label}</button>
-              ))}
+            <div style={{display:'flex', flexDirection:'column', gap:10}}>
+              {periodOptions.map(p => {
+                const on = rentEnabled[p.id];
+                return (
+                  <div key={p.id} style={{
+                    borderRadius:13, border: on ? '1.5px solid var(--pg-blue-500)' : '1.5px solid var(--pg-ink-200)',
+                    background: on ? 'rgba(0,122,255,0.04)' : 'var(--pg-ink-50)',
+                    overflow:'hidden', transition:'all .15s',
+                  }}>
+                    {/* Toggle header */}
+                    <button onClick={()=>setRentEnabled(prev=>({...prev,[p.id]:!prev[p.id]}))} style={{
+                      width:'100%', padding:'12px 14px', border:'none', background:'transparent',
+                      cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:10, textAlign:'left',
+                    }}>
+                      {/* Checkbox */}
+                      <div style={{
+                        width:20, height:20, borderRadius:6, flexShrink:0,
+                        border: on ? '2px solid var(--pg-blue-500)' : '2px solid var(--pg-ink-300)',
+                        background: on ? 'var(--pg-blue-500)' : 'transparent',
+                        display:'flex', alignItems:'center', justifyContent:'center', transition:'all .12s',
+                      }}>
+                        {on && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                      </div>
+                      <span style={{fontSize:14, fontWeight:700, color: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-700)', flex:1}}>
+                        {p.label}
+                      </span>
+                      {on && rentPrices[p.id] && (
+                        <span style={{fontSize:13, fontWeight:800, color:'var(--pg-blue-500)'}}>
+                          ${rentPrices[p.id]}{p.sfx}
+                        </span>
+                      )}
+                    </button>
+                    {/* Price input — shown when enabled */}
+                    {on && (
+                      <div style={{padding:'0 14px 14px', position:'relative'}}>
+                        <span style={{position:'absolute', left:26, top:'50%', transform:'translateY(-50%)',
+                          fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
+                        <input className="pg-field" value={rentPrices[p.id]}
+                          onChange={e=>setRentPrices(prev=>({...prev,[p.id]:e.target.value}))}
+                          placeholder="0" type="number"
+                          style={{height:52, paddingLeft:36, paddingRight:50,
+                            fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}/>
+                        <span style={{position:'absolute', right:26, top:'50%', transform:'translateY(-50%)',
+                          fontSize:13, fontWeight:600, color:'var(--pg-ink-400)'}}>{p.sfx}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {!hasAnyRentPrice && (
+                <div style={{fontSize:12, color:'var(--pg-ink-400)', textAlign:'center', padding:'2px 0'}}>
+                  {lang==='pt'?'Selecione pelo menos um período e informe o preço':'Select at least one period and enter a price'}
+                </div>
+              )}
             </div>
           )}
 
+          {/* Sell: fixed or negotiable */}
           {!isRent && (
-            <div className="pg-seg" style={{marginBottom:10}}>
-              <button className={`pg-seg-btn ${priceMode==='fixed'?'on':''}`} onClick={()=>setPriceMode('fixed')}>{t.fixedPrice}</button>
-              <button className={`pg-seg-btn ${priceMode==='neg'?'on':''}`} onClick={()=>setPriceMode('neg')}>{t.priceNeg}</button>
-            </div>
-          )}
-          {(isRent || priceMode==='fixed') && (
-            <div style={{position:'relative'}}>
-              <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
-              <input className="pg-field" value={price} onChange={e=>setPrice(e.target.value)}
-                placeholder="0" type="number"
-                style={{height:56, paddingLeft:36, fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}/>
-              {priceSfx && <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:600, color:'var(--pg-ink-400)'}}>{priceSfx}</span>}
-            </div>
+            <>
+              <div className="pg-seg" style={{marginBottom:10}}>
+                <button className={`pg-seg-btn ${priceMode==='fixed'?'on':''}`} onClick={()=>setPriceMode('fixed')}>{t.fixedPrice}</button>
+                <button className={`pg-seg-btn ${priceMode==='neg'?'on':''}`} onClick={()=>setPriceMode('neg')}>{t.priceNeg}</button>
+              </div>
+              {priceMode==='fixed' && (
+                <div style={{position:'relative'}}>
+                  <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)',
+                    fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
+                  <input className="pg-field" value={price} onChange={e=>setPrice(e.target.value)}
+                    placeholder="0" type="number"
+                    style={{height:56, paddingLeft:36, fontSize:22, fontWeight:700,
+                      color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}/>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -4595,7 +4812,26 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
           </button>
         )}
 
-        <button onClick={()=>onSubmit && onSubmit({ type:mode, name, description, cat, condition, price: priceMode==='neg'?'Negotiable':price, priceMode, loc, rentPeriod: isRent ? rentPeriod : null, photoUrl: photos[0]||null, photos })}
+        <button onClick={()=>{
+            // Build rentPrices map from enabled periods with a valid price
+            const builtRentPrices = isRent
+              ? Object.fromEntries(
+                  periodOptions
+                    .filter(p => rentEnabled[p.id] && rentPrices[p.id].trim().length > 0)
+                    .map(p => [p.id, parseFloat(rentPrices[p.id])])
+                )
+              : null;
+            // cheapest period price for the main price column (used in card/sort)
+            const cheapestPrice = isRent
+              ? Math.min(...Object.values(builtRentPrices || {}).filter(v=>v>0))
+              : (priceMode==='neg' ? 'Negotiable' : price);
+            onSubmit && onSubmit({
+              type: mode, name, description, cat, condition,
+              price: cheapestPrice, priceMode: isRent ? 'fixed' : priceMode,
+              loc, rentPeriod: null, rentPrices: builtRentPrices,
+              photoUrl: photos[0]||null, photos,
+            });
+          }}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.cart(17,'#fff')} {submitLbl}
