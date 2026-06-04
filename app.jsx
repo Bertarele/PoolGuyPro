@@ -435,6 +435,18 @@ function App() {
     };
     doFetch().catch(e => console.warn('[Supabase] fetch:', e.message));
 
+    // Refresh marketplace when tab regains focus (catches deletes/updates from other devices/tabs)
+    const doMarketRefresh = async () => {
+      if (!window.sb) return;
+      const { data } = await window.sb.from('marketplace').select('*').order('created_at', { ascending: false });
+      if (data) setLiveMarket(data.map(normMkt));
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') doMarketRefresh(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    // Also poll every 60s so even without focus-switch the data stays fresh
+    const pollTimer = setInterval(doMarketRefresh, 60000);
+
     // Real-time subscriptions
     const channel = window.sb.channel('app-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jobs' },
@@ -453,7 +465,11 @@ function App() {
         if (status === 'SUBSCRIBED') console.log('[Supabase] real-time ativo ✓');
       });
 
-    return () => { window.sb.removeChannel(channel); };
+    return () => {
+      window.sb.removeChannel(channel);
+      document.removeEventListener('visibilitychange', onVisible);
+      clearInterval(pollTimer);
+    };
   }, [authReady]); // runs once authReady flips true — guaranteed after token refresh + loadProfile
 
   // Helper: insert row into Supabase
