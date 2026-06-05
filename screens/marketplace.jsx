@@ -1986,9 +1986,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           <PhotoViewer photos={allPhotos} startIdx={imgIdx} onClose={()=>setViewerOpen(false)}/>
         )}
         <MarkSoldSheetSlot/>
-        <RatingOverlay/>
-        <DisputeFormSheet/>
-        <AfterPhotoSheet/>
+        {RatingOverlay()}
+        {DisputeFormSheet()}
+        {AfterPhotoSheet()}
         <input type="file" accept="image/*" capture="environment" ref={beforePhotoRef} onChange={handleBeforePhotoFile} style={{display:'none'}}/>
         <input type="file" accept="image/*" capture="environment" ref={afterPhotoRef}  onChange={handleAfterPhotoFile}  style={{display:'none'}}/>
       </div>
@@ -2373,9 +2373,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           />
         )}
       </Sheet>
-      <RatingOverlay/>
-      <DisputeFormSheet/>
-      <AfterPhotoSheet/>
+      {RatingOverlay()}
+      {DisputeFormSheet()}
+      {AfterPhotoSheet()}
       <input type="file" accept="image/*" capture="environment" ref={beforePhotoRef} onChange={handleBeforePhotoFile} style={{display:'none'}}/>
       <input type="file" accept="image/*" capture="environment" ref={afterPhotoRef}  onChange={handleAfterPhotoFile}  style={{display:'none'}}/>
     </div>
