@@ -4,7 +4,7 @@ function ProfileScreen({ ctx }) {
   const { lang, user, setUser, openPaywall, regions, openRegionEditor,
           openLanguagePicker, openApplicants, openVerification, openPushNotif, openFeedback,
           openEditProfile, onLogout, openHelp, openPrivacy,
-          darkMode, toggleDark, openChat, hasUnreadChat } = ctx;
+          darkMode, toggleDark, openChat, hasUnreadChat, requestVerification } = ctx;
   const t = STRINGS[lang];
 
   const typeIcon = (type) => {
@@ -134,6 +134,90 @@ function ProfileScreen({ ctx }) {
 
         {/* Personal Info */}
         <PersonalInfoCard user={user} setUser={setUser} lang={lang}/>
+
+        {/* ── Identity verification card ── */}
+        {(() => {
+          const hasName  = !!(user.name && !user.name.includes('@') && user.name.trim().length > 1);
+          const hasPhone = !!(user.phone?.trim());
+          const hasPhoto = !!(user.photoUrl);
+          const profileComplete = hasName && hasPhone && hasPhoto;
+
+          if (user.verified) return (
+            <div style={{borderRadius:14,padding:'14px 16px',
+              background:'rgba(22,163,74,0.08)',border:'1.5px solid rgba(22,163,74,0.3)',
+              display:'flex',alignItems:'center',gap:12}}>
+              <div style={{width:38,height:38,borderRadius:'50%',background:'#16A34A',flexShrink:0,
+                display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div>
+                <div style={{fontSize:14,fontWeight:800,color:'#16A34A'}}>
+                  {lang==='pt'?'✓ Identidade verificada':'✓ Identity verified'}
+                </div>
+                <div style={{fontSize:12,color:'#16A34A',opacity:0.8,marginTop:2}}>
+                  {lang==='pt'?'Seu badge verde aparece para quem ver seus posts e pedidos de aluguel.':'Your green badge is visible on your posts and rental requests.'}
+                </div>
+              </div>
+            </div>
+          );
+
+          if (user.verificationRequested) return (
+            <div style={{borderRadius:14,padding:'14px 16px',
+              background:'rgba(245,158,11,0.08)',border:'1.5px solid rgba(245,158,11,0.3)',
+              display:'flex',alignItems:'center',gap:12}}>
+              <span style={{fontSize:24,flexShrink:0}}>⏳</span>
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:'#F59E0B'}}>
+                  {lang==='pt'?'Verificação em análise':'Verification under review'}
+                </div>
+                <div style={{fontSize:12,color:'#F59E0B',opacity:0.8,marginTop:2}}>
+                  {lang==='pt'?'Nossa equipe vai analisar em breve. Você será notificado.':'Our team will review shortly. You will be notified.'}
+                </div>
+              </div>
+            </div>
+          );
+
+          return (
+            <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid var(--pg-ink-200)'}}>
+              {/* Incomplete warning */}
+              {!profileComplete && (
+                <div style={{padding:'12px 16px',background:'rgba(245,158,11,0.06)',borderBottom:'1px solid rgba(245,158,11,0.2)'}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'#F59E0B',marginBottom:6}}>
+                    {lang==='pt'?'⚠ Complete seu perfil para alugar equipamentos:':'⚠ Complete your profile to rent equipment:'}
+                  </div>
+                  {!hasPhoto && <div style={{fontSize:12,color:'#F59E0B',marginBottom:2}}>• {lang==='pt'?'Adicione uma foto de perfil':'Add a profile photo'}</div>}
+                  {!hasName  && <div style={{fontSize:12,color:'#F59E0B',marginBottom:2}}>• {lang==='pt'?'Adicione seu nome completo':'Add your full name'}</div>}
+                  {!hasPhone && <div style={{fontSize:12,color:'#F59E0B',marginBottom:2}}>• {lang==='pt'?'Adicione seu telefone':'Add your phone number'}</div>}
+                </div>
+              )}
+              {/* Verification request */}
+              <div style={{padding:'14px 16px',background:'var(--pg-white)',display:'flex',alignItems:'center',gap:12}}>
+                <div style={{width:38,height:38,borderRadius:'50%',background:'var(--pg-ink-100)',flexShrink:0,
+                  display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  {Icon.shield(18,'var(--pg-ink-500)')}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:14,fontWeight:700,color:'var(--pg-ink-900)'}}>
+                    {lang==='pt'?'Verificar identidade':'Verify identity'}
+                  </div>
+                  <div style={{fontSize:12,color:'var(--pg-ink-500)',marginTop:2}}>
+                    {lang==='pt'?'Badge ✓ verde nos seus posts e pedidos de aluguel.':'Green ✓ badge on your posts and rental requests.'}
+                  </div>
+                </div>
+                <button
+                  onClick={async () => { if (requestVerification) await requestVerification(); }}
+                  disabled={!profileComplete}
+                  style={{padding:'9px 16px',borderRadius:10,border:'none',cursor:profileComplete?'pointer':'not-allowed',
+                    fontFamily:'inherit',fontSize:13,fontWeight:700,
+                    background:profileComplete?'#16A34A':'var(--pg-ink-200)',
+                    color:profileComplete?'#fff':'var(--pg-ink-400)',flexShrink:0,
+                    opacity:profileComplete?1:0.6,transition:'all .15s'}}>
+                  {lang==='pt'?'Solicitar':'Request'}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Saved listings */}
         <SavedSection user={user} lang={lang}/>

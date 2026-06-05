@@ -376,6 +376,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [imgIdx,        setImgIdx]       = React.useState(0);
   const [viewerOpen,    setViewerOpen]   = React.useState(false);
   const [authorPhotoUrl,setAuthorPhotoUrl] = React.useState(null);
+  const [authorVerified,setAuthorVerified] = React.useState(false);
   const [mapCoords,     setMapCoords]    = React.useState(null);
   const [mapLoading,    setMapLoading]   = React.useState(false);
   const [isDesktop,     setIsDesktop]    = React.useState(() => window.innerWidth >= 900);
@@ -439,7 +440,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   React.useEffect(() => {
     if (!isRent || !currentUser?.uid || !window.sb) return;
     window.sb.from('rental_requests')
-      .select('id, status, requester_id, requester_name, created_at, period, quantity, total_price')
+      .select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified')
       .eq('listing_id', item._id)
       .then(({ data }) => {
         if (!data) return;
@@ -507,10 +508,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
   // Fetch author profile photo when listing opens
   React.useEffect(() => {
-    setAuthorPhotoUrl(null);
+    setAuthorPhotoUrl(null); setAuthorVerified(false);
     if (!item?.author_id || !window.sb) return;
-    window.sb.from('profiles').select('photo_url').eq('id', item.author_id).single()
-      .then(({ data }) => { if (data?.photo_url) setAuthorPhotoUrl(data.photo_url); })
+    window.sb.from('profiles').select('photo_url, verified').eq('id', item.author_id).single()
+      .then(({ data }) => {
+        if (data?.photo_url) setAuthorPhotoUrl(data.photo_url);
+        if (data?.verified)  setAuthorVerified(true);
+      })
       .catch(() => {});
   }, [item?.author_id]);
 
@@ -568,10 +572,11 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       listing_name:   item.name || '',
       requester_id:   currentUser.uid,
       requester_name: currentUser.name || (currentUser.email||'').split('@')[0] || 'User',
-      owner_id:       item.author_id,
-      period:         reqPeriod,
-      quantity:       reqQty,
-      total_price:    totalPrice,
+      owner_id:           item.author_id,
+      period:             reqPeriod,
+      quantity:           reqQty,
+      total_price:        totalPrice,
+      requester_verified: currentUser.verified || false,
     });
     setReqLoading(false);
     if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
@@ -845,10 +850,19 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     }}>
       <Avatar name={authorDisplay} size={horizontal?48:44} src={authorPhotoUrl||undefined}/>
       <div style={{flex:1, minWidth:0}}>
-        <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
+        <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+          <span style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{authorDisplay}</span>
+          {authorVerified && (
+            <span style={{fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:999,
+              background:'rgba(22,163,74,0.12)',color:'#16A34A',border:'1px solid rgba(22,163,74,0.3)',
+              display:'inline-flex',alignItems:'center',gap:3,flexShrink:0}}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              {lang==='pt'?'Verificado':'Verified'}
+            </span>
+          )}
+        </div>
         <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:1}}>
-          {lang==='pt'?'✓ Membro verificado':'✓ Verified member'}
-          {timeAgoLabel ? <span style={{color:'var(--pg-ink-400)'}}> · {timeAgoLabel}</span> : null}
+          {timeAgoLabel ? <span style={{color:'var(--pg-ink-400)'}}>{timeAgoLabel}</span> : null}
         </div>
       </div>
       <span style={{
@@ -916,6 +930,42 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   // ── Rental request block (for non-owner renters) ──────────────
   const RequestRentalBlock = () => {
     if (!isRent || isOwner || isSold) return null;
+
+    // ── Profile completeness gate (B) ────────────────────────────
+    if (currentUser?.uid && reqStatus === null) {
+      const hasName  = !!(currentUser?.name && !currentUser.name.includes('@') && currentUser.name.trim().length > 1);
+      const hasPhone = !!(currentUser?.phone?.trim());
+      const hasPhoto = !!(currentUser?.photoUrl);
+      if (!hasName || !hasPhone || !hasPhoto) {
+        const missing = [
+          !hasPhoto && (lang==='pt'?'📷 Foto de perfil':'📷 Profile photo'),
+          !hasName  && (lang==='pt'?'👤 Nome completo':'👤 Full name'),
+          !hasPhone && (lang==='pt'?'📞 Telefone':'📞 Phone number'),
+        ].filter(Boolean);
+        return (
+          <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(245,158,11,0.4)'}}>
+            <div style={{padding:'13px 16px',background:'rgba(245,158,11,0.08)',display:'flex',gap:10,alignItems:'flex-start'}}>
+              <span style={{fontSize:22,flexShrink:0}}>🔒</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:800,color:'#F59E0B',marginBottom:3}}>
+                  {lang==='pt'?'Perfil incompleto':'Incomplete profile'}
+                </div>
+                <div style={{fontSize:12,color:'#F59E0B',opacity:0.85,marginBottom:8}}>
+                  {lang==='pt'?'Para alugar equipamentos, complete seu perfil:':'To rent equipment, complete your profile:'}
+                </div>
+                {missing.map((m,i)=>(
+                  <div key={i} style={{fontSize:12,fontWeight:600,color:'#F59E0B',marginBottom:3}}>• {m}</div>
+                ))}
+              </div>
+            </div>
+            <div style={{padding:'10px 16px',background:'rgba(245,158,11,0.04)',borderTop:'1px solid rgba(245,158,11,0.2)',
+              fontSize:12,color:'var(--pg-ink-500)',textAlign:'center'}}>
+              {lang==='pt'?'Vá em ⚙ Perfil no menu para completar seus dados.':'Go to ⚙ Profile in the menu to complete your info.'}
+            </div>
+          </div>
+        );
+      }
+    }
 
     // Status cards (same for static/live)
     if (reqStatus === 'approved') return (
@@ -1135,7 +1185,17 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               <div style={{display:'flex',alignItems:'center',gap:8}}>
                 <Avatar name={req.requester_name||'?'} size={32}/>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{req.requester_name||'User'}</div>
+                  <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
+                    <span style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{req.requester_name||'User'}</span>
+                    {req.requester_verified && (
+                      <span style={{fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:999,flexShrink:0,
+                        background:'rgba(22,163,74,0.12)',color:'#16A34A',border:'1px solid rgba(22,163,74,0.3)',
+                        display:'inline-flex',alignItems:'center',gap:2}}>
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        {lang==='pt'?'Verificado':'Verified'}
+                      </span>
+                    )}
+                  </div>
                   <div style={{fontSize:11,fontWeight:600,color:statusColor,marginTop:1}}>{statusLabel}</div>
                 </div>
                 <button onClick={()=>{ if(openChat) openChat({id:req.requester_id,name:req.requester_name||'User'}); if(onClose)onClose(); }}

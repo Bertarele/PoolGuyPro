@@ -222,13 +222,15 @@ function App() {
     const cleanName = (rawName && !rawName.includes('@')) ? rawName : '';
     setUser(u => ({
       ...u,
-      name:     cleanName,
-      phone:    profile?.phone    || '',
-      region:   profile?.region   || '',
-      role:     profile?.role     || 'user',
-      photoUrl: profile?.photo_url || '',
-      email:    sbUser.email,
-      uid:      sbUser.id,
+      name:                 cleanName,
+      phone:                profile?.phone    || '',
+      region:               profile?.region   || '',
+      role:                 profile?.role     || 'user',
+      photoUrl:             profile?.photo_url || '',
+      email:                sbUser.email,
+      uid:                  sbUser.id,
+      verified:             profile?.verified             || false,
+      verificationRequested:profile?.verification_requested || false,
     }));
   }, []);
 
@@ -559,6 +561,13 @@ function App() {
     openLanguagePicker: () => setLangPickerOpen(true),
     openApplicants:     (post) => setApplicantsPost(post),
     openVerification:   () => setVerifyOpen(true),
+    requestVerification: async () => {
+      if (!window.sb || !user.uid) return;
+      const { error } = await window.sb.from('profiles').update({ verification_requested: true }).eq('id', user.uid);
+      if (error) { showToast && showToast('❌ ' + error.message); return; }
+      setUser(u => ({ ...u, verificationRequested: true }));
+      showToast && showToast('✓ Verificação solicitada! Nossa equipe vai analisar em breve.');
+    },
     openPushNotif:      () => setPushNotifOpen(true),
     openWallet:         () => setWalletOpen(true),
     openJobDetail:      (app) => setJobDetailApp(app),
