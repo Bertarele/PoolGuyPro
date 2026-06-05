@@ -476,6 +476,181 @@ function EditMarketModal({ row, onClose, onSave }) {
   );
 }
 
+// ── Modal de perfil completo do usuário ───────────────────────
+function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
+  const [profile,   setProfile]   = React.useState(null);
+  const [stats,     setStats]     = React.useState({});
+  const [photos,    setPhotos]    = React.useState({ before:[], after:[] });
+  const [loading,   setLoading]   = React.useState(true);
+
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+  const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
+
+  React.useEffect(() => {
+    if (!userId) return;
+    const load = async () => {
+      setLoading(true);
+      // Fetch profile via service role (bypasses RLS, gets email too)
+      const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+      const [profRes, authRes, disputesAsReporter, disputesAsReported, ratingsRes, rentalsRes, photosRes] = await Promise.all([
+        window.sb.from('profiles').select('*').eq('id', userId).single(),
+        fetch(BASE + '/auth/v1/admin/users/' + userId, { headers:{ apikey:SRK, Authorization:'Bearer '+SRK } }).then(r=>r.json()).catch(()=>({})),
+        window.sb.from('dispute_reports').select('id').eq('reporter_id', userId),
+        window.sb.from('dispute_reports').select('id').eq('reported_user_id', userId),
+        window.sb.from('rental_ratings').select('stars').eq('ratee_id', userId),
+        window.sb.from('rental_requests').select('id,status').eq('requester_id', userId),
+        disputeRequestId
+          ? window.sb.from('rental_photos').select('type,photo_url').eq('request_id', disputeRequestId)
+          : Promise.resolve({ data: [] }),
+      ]);
+      setProfile({ ...(profRes.data||{}), email: authRes.email || profRes.data?.email || '' });
+      const stars = ratingsRes.data?.map(r=>r.stars)||[];
+      const avgStars = stars.length ? (stars.reduce((a,b)=>a+b,0)/stars.length).toFixed(1) : null;
+      setStats({
+        reportedBy:    (disputesAsReporter.data||[]).length,
+        reportedAgainst: (disputesAsReported.data||[]).length,
+        rentals:       (rentalsRes.data||[]).length,
+        avgRating:     avgStars,
+        ratingCount:   stars.length,
+      });
+      if (photosRes.data) {
+        setPhotos({
+          before: photosRes.data.filter(p=>p.type==='before').map(p=>p.photo_url),
+          after:  photosRes.data.filter(p=>p.type==='after').map(p=>p.photo_url),
+        });
+      }
+      setLoading(false);
+    };
+    load();
+  }, [userId]);
+
+  const InfoRow = ({label, value, highlight}) => value ? (
+    <div style={{padding:'9px 12px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b'}}>
+      <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>{label}</div>
+      <div style={{fontSize:13,fontWeight:500,color:highlight||'#cbd5e1'}}>{value}</div>
+    </div>
+  ) : null;
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:3000,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#1a1f2e',borderRadius:20,width:'100%',maxWidth:560,border:'1px solid #334155',boxShadow:'0 32px 80px rgba(0,0,0,0.7)',overflow:'hidden'}}>
+
+        {/* Header bar */}
+        <div style={{background:'#13161f',padding:'14px 18px',borderBottom:'1px solid #1e293b',display:'flex',alignItems:'center',gap:12}}>
+          <div style={{fontSize:14,fontWeight:700,color:'#f1f5f9',flex:1}}>👤 Perfil do usuário</div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',fontSize:18,lineHeight:1}}>×</button>
+        </div>
+
+        {loading ? (
+          <div style={{padding:48,textAlign:'center',color:'#64748b'}}>Carregando...</div>
+        ) : (
+          <div style={{padding:'20px',maxHeight:'80vh',overflowY:'auto'}}>
+
+            {/* Avatar + name */}
+            <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:20}}>
+              {profile?.photo_url
+                ? <img src={profile.photo_url} alt="" style={{width:72,height:72,borderRadius:'50%',objectFit:'cover',border:'2px solid #334155'}}/>
+                : <div style={{width:72,height:72,borderRadius:'50%',background:'#0EBAC720',border:'2px solid #0EBAC740',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:700,color:'#0EBAC7'}}>
+                    {(profile?.name||userName||'?')[0].toUpperCase()}
+                  </div>
+              }
+              <div>
+                <div style={{fontSize:20,fontWeight:800,color:'#f1f5f9'}}>{profile?.name || userName || '—'}</div>
+                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Membro desde {fmtDate(profile?.created_at)}</div>
+                {stats.avgRating && (
+                  <div style={{fontSize:13,marginTop:4}}>
+                    {'★'.repeat(Math.round(stats.avgRating))}{'☆'.repeat(5-Math.round(stats.avgRating))}
+                    <span style={{color:'#94a3b8',marginLeft:6}}>{stats.avgRating} ({stats.ratingCount} avaliação{stats.ratingCount!==1?'ões':''})</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Info grid */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:16}}>
+              <InfoRow label="E-mail" value={profile?.email} highlight="#0EBAC7"/>
+              <InfoRow label="Telefone" value={profile?.phone}/>
+              <InfoRow label="Região" value={profile?.region}/>
+              <InfoRow label="Função" value={profile?.role==='admin'?'🛡 Admin':'👤 Usuário'}/>
+              <InfoRow label="ID do usuário" value={userId?.slice(0,16)+'…'}/>
+              <InfoRow label="Status" value={profile?.banned_at ? '🚫 Banido' : '✅ Ativo'} highlight={profile?.banned_at?'#ef4444':'#22c55e'}/>
+            </div>
+
+            {/* Stats */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:7,marginBottom:16}}>
+              {[
+                { label:'Aluguéis', value: stats.rentals||0, color:'#0EBAC7' },
+                { label:'Reports feitos', value: stats.reportedBy||0, color:'#F59E0B' },
+                { label:'Reports recebidos', value: stats.reportedAgainst||0, color:'#EF4444' },
+              ].map(s=>(
+                <div key={s.label} style={{background:'#0f1117',borderRadius:10,padding:'12px',textAlign:'center',border:'1px solid #1e293b'}}>
+                  <div style={{fontSize:24,fontWeight:800,color:s.color}}>{s.value}</div>
+                  <div style={{fontSize:10,color:'#64748b',marginTop:3,fontWeight:600}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Before/after photos from THIS dispute */}
+            {(photos.before.length > 0 || photos.after.length > 0) && (
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>
+                  📷 Fotos do aluguel desta reclamação
+                </div>
+                {photos.before.length > 0 && (
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontSize:11,color:'#0EBAC7',fontWeight:600,marginBottom:6}}>Estado ANTES:</div>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      {photos.before.map((url,i)=>(
+                        <a key={i} href={url} target="_blank" rel="noreferrer">
+                          <img src={url} alt="" style={{width:80,height:80,objectFit:'cover',borderRadius:10,border:'2px solid #0EBAC750',cursor:'pointer'}}/>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {photos.after.length > 0 && (
+                  <div>
+                    <div style={{fontSize:11,color:'#22c55e',fontWeight:600,marginBottom:6}}>Estado DEPOIS:</div>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      {photos.after.map((url,i)=>(
+                        <a key={i} href={url} target="_blank" rel="noreferrer">
+                          <img src={url} alt="" style={{width:80,height:80,objectFit:'cover',borderRadius:10,border:'2px solid #22c55e50',cursor:'pointer'}}/>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Contact actions */}
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              {profile?.email && (
+                <a href={`mailto:${profile.email}?subject=PoolGuyX - Ocorrência de aluguel`}
+                  style={{flex:1,height:44,borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+                    background:'#0EBAC715',border:'1px solid #0EBAC740',color:'#0EBAC7',fontWeight:700,fontSize:13,textDecoration:'none'}}>
+                  ✉ Enviar e-mail
+                </a>
+              )}
+              {profile?.phone && (
+                <a href={`tel:${profile.phone}`}
+                  style={{flex:1,height:44,borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+                    background:'#22c55e15',border:'1px solid #22c55e40',color:'#22c55e',fontWeight:700,fontSize:13,textDecoration:'none'}}>
+                  📞 Ligar
+                </a>
+              )}
+              <button onClick={onClose}
+                style={{flex:1,height:44,borderRadius:12,border:'1px solid #334155',background:'transparent',color:'#64748b',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── App Admin ─────────────────────────────────────────────────
 function AdminApp({ adminUser, onLogout }) {
   const [section,    setSection]    = React.useState('dashboard');
@@ -488,6 +663,8 @@ function AdminApp({ adminUser, onLogout }) {
   const [vacs,       setVacs]       = React.useState([]);
   const [disputes,   setDisputes]   = React.useState([]);
   const [loading,    setLoading]    = React.useState(false);
+  const [viewUserModal, setViewUserModal] = React.useState(null); // {userId,userName,disputeRequestId}
+  const [editingNote,   setEditingNote]   = React.useState({}); // {disputeId: noteText}
   const [toast,      setToast]      = React.useState(null);
   const [marketTab,  setMarketTab]  = React.useState('pending');
   const [editRow,    setEditRow]    = React.useState(null);
@@ -606,6 +783,14 @@ function AdminApp({ adminUser, onLogout }) {
     setDisputes(p => p.map(d => d.id===row.id ? {...d, status:'resolved'} : d));
     setUsers(p => p.filter(u => u.id !== row.reported_user_id));
     showToast('🚫 Usuário banido e conta excluída.');
+  };
+
+  const saveAdminNote = async (disputeId) => {
+    const note = editingNote[disputeId] ?? '';
+    const { error } = await window.sb.from('dispute_reports').update({ admin_note: note }).eq('id', disputeId);
+    if (error) { showToast('❌ '+error.message, false); return; }
+    setDisputes(p => p.map(d => d.id===disputeId ? {...d, admin_note: note} : d));
+    showToast('✓ Nota salva.');
   };
 
   const navItems = [
@@ -886,12 +1071,17 @@ function AdminApp({ adminUser, onLogout }) {
             const sevColor = { minor:'#EAB308', serious:'#F59E0B', critical:'#EF4444' };
             const sevLabel = { minor:'🟡 Leve', serious:'🟠 Sério', critical:'🔴 Crítico' };
             const stColor  = { pending:'#F59E0B', resolved:'#22c55e' };
+            const guideText = {
+              minor:    '💡 Resolução sugerida: Entre em contato com as partes por e-mail/telefone e ouça os dois lados. Geralmente resolvido com conversa.',
+              serious:  '⚠️ Resolução sugerida: Solicite fotos de evidência às partes. Se confirmado dano, aplique aviso ao renter. Reincidência = banimento.',
+              critical: '🚨 Resolução sugerida: Item não devolvido é crime (apropriação indébita). Colete prints do chat, fotos antes/depois e ID. Considere banimento imediato e oriente o proprietário a registrar B.O.',
+            };
             return (
               <div>
                 <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>
                   Reclamações <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({disputes.length} total · {disputeCount} pendente{disputeCount!==1?'s':''})</span>
                 </h1>
-                <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Reports de problemas em aluguéis enviados por proprietários.</p>
+                <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Reports de problemas em aluguéis. Clique nos nomes para ver perfil completo.</p>
 
                 {disputes.length === 0 && !loading && (
                   <div style={{padding:48,textAlign:'center',color:'#475569',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
@@ -900,63 +1090,112 @@ function AdminApp({ adminUser, onLogout }) {
                   </div>
                 )}
 
-                <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                <div style={{display:'flex',flexDirection:'column',gap:14}}>
                   {disputes.map(d => {
                     const isPending = d.status === 'pending';
+                    const noteVal = editingNote[d.id] ?? (d.admin_note || '');
                     return (
                       <div key={d.id} style={{
-                        background:'#1a1f2e',borderRadius:14,border:`1px solid ${isPending?sevColor[d.severity]+'40':'#1e293b'}`,
-                        padding:'16px 18px',
+                        background:'#1a1f2e',borderRadius:16,
+                        border:`1px solid ${isPending ? sevColor[d.severity]+'50' : '#1e293b'}`,
+                        overflow:'hidden',
                       }}>
-                        {/* Header */}
-                        <div style={{display:'flex',alignItems:'flex-start',gap:12,marginBottom:10}}>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:5}}>
-                              <span style={{fontSize:12,fontWeight:800,padding:'3px 10px',borderRadius:999,
-                                background:sevColor[d.severity]+'20',color:sevColor[d.severity],border:'1px solid '+sevColor[d.severity]+'50'}}>
-                                {sevLabel[d.severity]||d.severity}
-                              </span>
-                              <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,
-                                background:stColor[d.status]+'20',color:stColor[d.status]||'#64748b',border:'1px solid '+(stColor[d.status]||'#334155')+'50'}}>
-                                {d.status==='pending'?'⏳ Pendente':'✓ Resolvido'}
-                              </span>
-                              <span style={{fontSize:11,color:'#475569',marginLeft:'auto'}}>{fmtDateTime(d.created_at)}</span>
-                            </div>
-                            <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9',marginBottom:2}}>
-                              📋 {d.listing_name||'Item de aluguel'}
-                            </div>
-                            <div style={{fontSize:12,color:'#64748b'}}>
-                              👤 Reportado por: <span style={{color:'#94a3b8',fontWeight:600}}>{d.reporter_name||'—'}</span>
-                              {'  '}⚠ Reportado: <span style={{color:'#f87171',fontWeight:600}}>{d.reported_name||'—'}</span>
-                            </div>
+                        {/* Severity strip */}
+                        <div style={{height:3,background:isPending?sevColor[d.severity]:'#1e293b'}}/>
+                        <div style={{padding:'16px 18px'}}>
+
+                          {/* Header row */}
+                          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:10}}>
+                            <span style={{fontSize:12,fontWeight:800,padding:'3px 10px',borderRadius:999,
+                              background:sevColor[d.severity]+'20',color:sevColor[d.severity],border:'1px solid '+sevColor[d.severity]+'40'}}>
+                              {sevLabel[d.severity]||d.severity}
+                            </span>
+                            <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,
+                              background:(stColor[d.status]||'#64748b')+'20',color:stColor[d.status]||'#64748b',
+                              border:'1px solid '+(stColor[d.status]||'#334155')+'40'}}>
+                              {d.status==='pending'?'⏳ Pendente':'✓ Resolvido'}
+                            </span>
+                            <span style={{fontSize:11,color:'#475569',marginLeft:'auto'}}>{fmtDateTime(d.created_at)}</span>
                           </div>
-                        </div>
-                        {/* Description */}
-                        <div style={{background:'#0f1117',borderRadius:10,padding:'10px 12px',marginBottom:12,border:'1px solid #1e293b'}}>
-                          <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>DESCRIÇÃO</div>
-                          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6,whiteSpace:'pre-wrap'}}>{d.description}</div>
-                        </div>
-                        {/* Admin note */}
-                        {d.admin_note && (
-                          <div style={{background:'rgba(99,102,241,0.08)',borderRadius:10,padding:'8px 12px',marginBottom:12,border:'1px solid rgba(99,102,241,0.2)',fontSize:12,color:'#818cf8'}}>
-                            📝 Nota admin: {d.admin_note}
+
+                          {/* Listing */}
+                          <div style={{fontSize:14,fontWeight:700,color:'#f1f5f9',marginBottom:10}}>
+                            📋 {d.listing_name||'Item de aluguel'}
                           </div>
-                        )}
-                        {/* Actions */}
-                        {isPending && (
+
+                          {/* Parties — CLICKABLE names */}
+                          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+                            <button onClick={()=>setViewUserModal({userId:d.reporter_id,userName:d.reporter_name,disputeRequestId:d.rental_request_id})}
+                              style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit',transition:'border-color .15s'}}
+                              onMouseEnter={e=>e.currentTarget.style.borderColor='#0EBAC7'} onMouseLeave={e=>e.currentTarget.style.borderColor='#1e293b'}>
+                              <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>👤 Proprietário (reportou)</div>
+                              <div style={{fontSize:13,fontWeight:700,color:'#0EBAC7'}}>{d.reporter_name||'—'}</div>
+                              <div style={{fontSize:10,color:'#475569',marginTop:2}}>Clique para ver perfil</div>
+                            </button>
+                            <button onClick={()=>setViewUserModal({userId:d.reported_user_id,userName:d.reported_name,disputeRequestId:d.rental_request_id})}
+                              style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit',transition:'border-color .15s'}}
+                              onMouseEnter={e=>e.currentTarget.style.borderColor='#ef4444'} onMouseLeave={e=>e.currentTarget.style.borderColor='#1e293b'}>
+                              <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>⚠ Renter (reportado)</div>
+                              <div style={{fontSize:13,fontWeight:700,color:'#f87171'}}>{d.reported_name||'—'}</div>
+                              <div style={{fontSize:10,color:'#475569',marginTop:2}}>Clique para ver perfil</div>
+                            </button>
+                          </div>
+
+                          {/* Description */}
+                          <div style={{background:'#0f1117',borderRadius:10,padding:'10px 12px',marginBottom:12,border:'1px solid #1e293b'}}>
+                            <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>DESCRIÇÃO DO PROBLEMA</div>
+                            <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.65,whiteSpace:'pre-wrap'}}>{d.description}</div>
+                          </div>
+
+                          {/* Resolution guide */}
+                          {isPending && (
+                            <div style={{background:`rgba(${d.severity==='critical'?'239,68,68':d.severity==='serious'?'245,158,11':'234,179,8'},0.06)`,
+                              borderRadius:10,padding:'10px 12px',marginBottom:12,
+                              border:`1px solid rgba(${d.severity==='critical'?'239,68,68':d.severity==='serious'?'245,158,11':'234,179,8'},0.2)`,
+                              fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+                              {guideText[d.severity]||guideText.serious}
+                            </div>
+                          )}
+
+                          {/* Admin note */}
+                          <div style={{marginBottom:12}}>
+                            <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:6}}>📝 Nota interna (admin)</div>
+                            <textarea
+                              value={noteVal}
+                              onChange={e=>setEditingNote(prev=>({...prev,[d.id]:e.target.value}))}
+                              placeholder="Anote aqui o que foi decidido, histórico de contato, etc..."
+                              rows={2}
+                              style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:9,
+                                color:'#cbd5e1',fontFamily:'inherit',fontSize:12.5,padding:'9px 11px',
+                                resize:'vertical',boxSizing:'border-box',outline:'none',lineHeight:1.5}}
+                            />
+                            {noteVal !== (d.admin_note||'') && (
+                              <button onClick={()=>saveAdminNote(d.id)}
+                                style={{marginTop:5,padding:'5px 14px',borderRadius:8,border:'none',cursor:'pointer',
+                                  background:'#6366f1',color:'#fff',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+                                💾 Salvar nota
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Actions */}
                           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                            <button className="act-btn act-btn-ok" onClick={()=>resolveDispute(d)}>
-                              ✓ Marcar resolvido
-                            </button>
-                            <button className="act-btn act-btn-red" onClick={()=>banUserFromDispute(d)}
-                              style={{background:'rgba(239,68,68,0.12)',borderColor:'rgba(239,68,68,0.4)',color:'#ef4444'}}>
-                              🚫 Banir {d.reported_name||'usuário'}
-                            </button>
+                            {isPending && (<>
+                              <button className="act-btn act-btn-ok" onClick={()=>resolveDispute(d)} style={{padding:'7px 14px'}}>
+                                ✓ Marcar resolvido
+                              </button>
+                              <button onClick={()=>banUserFromDispute(d)}
+                                style={{padding:'7px 14px',borderRadius:8,border:'1px solid rgba(239,68,68,0.4)',
+                                  background:'rgba(239,68,68,0.1)',color:'#ef4444',fontSize:11,fontWeight:700,
+                                  cursor:'pointer',fontFamily:'inherit',display:'inline-flex',alignItems:'center',gap:4}}>
+                                🚫 Banir renter
+                              </button>
+                            </>)}
+                            {!isPending && d.resolved_at && (
+                              <span style={{fontSize:11,color:'#475569',padding:'4px 0'}}>✓ Resolvido em {fmtDateTime(d.resolved_at)}</span>
+                            )}
                           </div>
-                        )}
-                        {!isPending && d.resolved_at && (
-                          <div style={{fontSize:11,color:'#475569'}}>Resolvido em {fmtDateTime(d.resolved_at)}</div>
-                        )}
+                        </div>
                       </div>
                     );
                   })}
@@ -967,6 +1206,16 @@ function AdminApp({ adminUser, onLogout }) {
 
         </div>{/* fim padding */}
       </div>{/* fim admin-main */}
+
+      {/* ── Modal perfil usuário (reclamações) ── */}
+      {viewUserModal && (
+        <UserDetailModal
+          userId={viewUserModal.userId}
+          userName={viewUserModal.userName}
+          disputeRequestId={viewUserModal.disputeRequestId}
+          onClose={()=>setViewUserModal(null)}
+        />
+      )}
 
       {/* ── Modal View ── */}
       {viewRow && <ViewMarketModal row={viewRow} onClose={()=>setViewRow(null)} onApprove={approveMarket} onReject={rejectMarket}/>}
