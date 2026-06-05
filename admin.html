@@ -479,40 +479,59 @@ function EditMarketModal({ row, onClose, onSave }) {
 
 // ── Modal de perfil completo do usuário ───────────────────────
 function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
-  const [profile,   setProfile]   = React.useState(null);
-  const [stats,     setStats]     = React.useState({});
-  const [photos,    setPhotos]    = React.useState({ before:[], after:[] });
-  const [loading,   setLoading]   = React.useState(true);
+  const [profile,      setProfile]      = React.useState(null);
+  const [stats,        setStats]        = React.useState({});
+  const [photos,       setPhotos]       = React.useState({ before:[], after:[] });
+  const [loading,      setLoading]      = React.useState(true);
+  // Warnings
+  const [warnings,     setWarnings]     = React.useState([]);
+  const [showWarnForm, setShowWarnForm] = React.useState(false);
+  const [warnSeverity, setWarnSeverity] = React.useState('warning');
+  const [warnReason,   setWarnReason]   = React.useState('');
+  const [warnSaving,   setWarnSaving]   = React.useState(false);
+  // Ban
+  const [banned,       setBanned]       = React.useState(false);
+  const [banSaving,    setBanSaving]    = React.useState(false);
+  // Dispute history
+  const [disputes,     setDisputes]     = React.useState([]);
 
-  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
   const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
 
   React.useEffect(() => {
     if (!userId) return;
     const load = async () => {
       setLoading(true);
-      // Fetch profile via service role (bypasses RLS, gets email too)
       const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-      const [profRes, authRes, disputesAsReporter, disputesAsReported, ratingsRes, rentalsRes, photosRes] = await Promise.all([
+      const [profRes, authRes, disputesAsReporter, disputesAsReported, ratingsRes, rentalsRes, photosRes, warningsRes] = await Promise.all([
         window.sb.from('profiles').select('*').eq('id', userId).single(),
         fetch(BASE + '/auth/v1/admin/users/' + userId, { headers:{ apikey:SRK, Authorization:'Bearer '+SRK } }).then(r=>r.json()).catch(()=>({})),
-        window.sb.from('dispute_reports').select('id').eq('reporter_id', userId),
-        window.sb.from('dispute_reports').select('id').eq('reported_user_id', userId),
+        window.sb.from('dispute_reports').select('id,listing_name,severity,status,created_at').eq('reporter_id', userId).order('created_at',{ascending:false}),
+        window.sb.from('dispute_reports').select('id,listing_name,severity,status,resolution_action,created_at').eq('reported_user_id', userId).order('created_at',{ascending:false}),
         window.sb.from('rental_ratings').select('stars').eq('ratee_id', userId),
         window.sb.from('rental_requests').select('id,status').eq('requester_id', userId),
         disputeRequestId
           ? window.sb.from('rental_photos').select('type,photo_url').eq('request_id', disputeRequestId)
           : Promise.resolve({ data: [] }),
+        window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at', {ascending:false}),
       ]);
-      setProfile({ ...(profRes.data||{}), email: authRes.email || profRes.data?.email || '' });
+      const prof = profRes.data || {};
+      setProfile({ ...prof, email: authRes.email || prof.email || '' });
+      setBanned(prof.banned || false);
+      setWarnings(warningsRes.data || []);
+      const allDisputes = [
+        ...(disputesAsReported.data||[]).map(d=>({...d,role:'reported'})),
+        ...(disputesAsReporter.data||[]).map(d=>({...d,role:'reporter'})),
+      ].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      setDisputes(allDisputes);
       const stars = ratingsRes.data?.map(r=>r.stars)||[];
       const avgStars = stars.length ? (stars.reduce((a,b)=>a+b,0)/stars.length).toFixed(1) : null;
       setStats({
-        reportedBy:    (disputesAsReporter.data||[]).length,
+        reportedBy:      (disputesAsReporter.data||[]).length,
         reportedAgainst: (disputesAsReported.data||[]).length,
-        rentals:       (rentalsRes.data||[]).length,
-        avgRating:     avgStars,
-        ratingCount:   stars.length,
+        rentals:         (rentalsRes.data||[]).length,
+        avgRating:       avgStars,
+        ratingCount:     stars.length,
       });
       if (photosRes.data) {
         setPhotos({
@@ -524,6 +543,32 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
     };
     load();
   }, [userId]);
+
+  const addWarning = async () => {
+    if (!warnReason.trim()) return;
+    setWarnSaving(true);
+    await window.sb.from('user_warnings').insert({
+      user_id: userId, dispute_id: disputeRequestId||null, reason: warnReason, severity: warnSeverity,
+    });
+    const { data } = await window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at',{ascending:false});
+    setWarnings(data||[]);
+    setShowWarnForm(false); setWarnReason('');
+    setWarnSaving(false);
+  };
+
+  const toggleBan = async () => {
+    const newBan = !banned;
+    if (newBan && !confirm(`Banir ${profile?.name||userName}?\nIsso vai bloquear o acesso à conta.`)) return;
+    setBanSaving(true);
+    await window.sb.from('profiles').update({ banned: newBan, ban_reason: newBan ? 'Banido pelo admin' : null }).eq('id', userId);
+    if (newBan) {
+      await window.sb.from('user_warnings').insert({ user_id: userId, reason: 'Conta banida pelo admin', severity: 'banned' });
+      const { data } = await window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at',{ascending:false});
+      setWarnings(data||[]);
+    }
+    setBanned(newBan);
+    setBanSaving(false);
+  };
 
   const InfoRow = ({label, value, highlight}) => value ? (
     <div style={{padding:'9px 12px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b'}}>
@@ -555,7 +600,7 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
                     {(profile?.name||userName||'?')[0].toUpperCase()}
                   </div>
               }
-              <div>
+              <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:20,fontWeight:800,color:'#f1f5f9'}}>{profile?.name || userName || '—'}</div>
                 <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Membro desde {fmtDate(profile?.created_at)}</div>
                 {stats.avgRating && (
@@ -564,6 +609,26 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
                     <span style={{color:'#94a3b8',marginLeft:6}}>{stats.avgRating} ({stats.ratingCount} avaliação{stats.ratingCount!==1?'ões':''})</span>
                   </div>
                 )}
+                <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:6}}>
+                  {warnings.length > 0 && (
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
+                      background:'#ef444420',color:'#ef4444',border:'1px solid #ef444440'}}>
+                      ⚠️ {warnings.length} aviso{warnings.length!==1?'s':''} no histórico
+                    </span>
+                  )}
+                  {banned && (
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
+                      background:'#ef444430',color:'#ef4444',border:'1px solid #ef444460'}}>
+                      🚫 BANIDO
+                    </span>
+                  )}
+                  {profile?.verified && (
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
+                      background:'#22c55e20',color:'#22c55e',border:'1px solid #22c55e40'}}>
+                      ✓ Verificado
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -624,6 +689,103 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
               </div>
             )}
 
+            {/* Warning history */}
+            {warnings.length > 0 && (
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>
+                  ⚠️ Histórico de avisos ({warnings.length})
+                </div>
+                {warnings.map((w,i)=>{
+                  const sevColor = w.severity==='banned'?'#ef4444':w.severity==='suspension'?'#f97316':'#f59e0b';
+                  return (
+                    <div key={w.id||i} style={{padding:'8px 10px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b',marginBottom:6}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                        <span style={{fontSize:10,fontWeight:700,padding:'1px 8px',borderRadius:999,
+                          background:sevColor+'20',color:sevColor,border:'1px solid '+sevColor+'40'}}>
+                          {w.severity==='banned'?'🚫 Banimento':w.severity==='suspension'?'🔒 Suspensão':'⚠️ Aviso'}
+                        </span>
+                        <span style={{fontSize:10,color:'#475569'}}>{fmtDate(w.created_at)}</span>
+                      </div>
+                      <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.5}}>{w.reason}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Dispute history */}
+            {disputes.length > 0 && (
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>
+                  📋 Histórico de reclamações ({disputes.length})
+                </div>
+                {disputes.map((d,i)=>{
+                  const isReported = d.role === 'reported';
+                  const sevColor = d.severity==='critical'?'#ef4444':d.severity==='serious'?'#f59e0b':'#EAB308';
+                  return (
+                    <div key={d.id||i} style={{display:'flex',gap:10,alignItems:'center',padding:'7px 10px',
+                      background:'#0f1117',borderRadius:8,border:'1px solid #1e293b',marginBottom:5}}>
+                      <span style={{fontSize:10,fontWeight:700,padding:'1px 7px',borderRadius:999,
+                        background:isReported?'#ef444415':'#0EBAC715',color:isReported?'#f87171':'#0EBAC7',
+                        border:`1px solid ${isReported?'#ef444440':'#0EBAC740'}`,flexShrink:0}}>
+                        {isReported?'🎯 Reportado':'📢 Reportou'}
+                      </span>
+                      <div style={{flex:1,minWidth:0,fontSize:12,color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                        {d.listing_name||'Item'} — <span style={{color:sevColor}}>{d.severity}</span>
+                        {d.status==='resolved'&&<span style={{color:'#22c55e',marginLeft:4}}>✓</span>}
+                      </div>
+                      <span style={{fontSize:10,color:'#475569',flexShrink:0}}>{fmtDate(d.created_at)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Admin actions */}
+            <div style={{marginBottom:14,display:'flex',flexDirection:'column',gap:8}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:2}}>
+                🛡 Ações administrativas
+              </div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <button onClick={()=>setShowWarnForm(!showWarnForm)} style={{
+                  height:36,padding:'0 14px',borderRadius:9,border:'1px solid #f59e0b50',
+                  background:'#f59e0b10',color:'#f59e0b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  ➕ Adicionar aviso
+                </button>
+                <button onClick={toggleBan} disabled={banSaving} style={{
+                  height:36,padding:'0 14px',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
+                  border:`1px solid ${banned?'#22c55e50':'#ef444450'}`,
+                  background:banned?'#22c55e10':'#ef444410',color:banned?'#22c55e':'#ef4444',opacity:banSaving?0.7:1}}>
+                  {banSaving?'…':banned?'✅ Desbanir':'🚫 Banir conta'}
+                </button>
+              </div>
+              {showWarnForm && (
+                <div style={{background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',padding:'12px'}}>
+                  <div style={{display:'flex',gap:8,marginBottom:8}}>
+                    <select value={warnSeverity} onChange={e=>setWarnSeverity(e.target.value)} style={{
+                      flex:1,padding:'7px 10px',borderRadius:8,border:'1px solid #334155',background:'#1a1f2e',
+                      color:'#f1f5f9',fontFamily:'inherit',fontSize:12,outline:'none'}}>
+                      <option value="warning">⚠️ Aviso</option>
+                      <option value="suspension">🔒 Suspensão</option>
+                      <option value="banned">🚫 Banimento</option>
+                    </select>
+                  </div>
+                  <textarea value={warnReason} onChange={e=>setWarnReason(e.target.value)}
+                    placeholder="Motivo do aviso..."
+                    rows={2}
+                    style={{width:'100%',background:'#1a1f2e',border:'1px solid #334155',borderRadius:8,
+                      color:'#f1f5f9',fontFamily:'inherit',fontSize:12,padding:'8px 10px',
+                      resize:'none',boxSizing:'border-box',outline:'none',lineHeight:1.5,marginBottom:8}}/>
+                  <div style={{display:'flex',gap:7}}>
+                    <button onClick={()=>setShowWarnForm(false)} style={{flex:1,height:34,borderRadius:8,border:'1px solid #334155',background:'transparent',color:'#64748b',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                    <button onClick={addWarning} disabled={warnSaving||!warnReason.trim()} style={{flex:2,height:34,borderRadius:8,border:'none',background:'#f59e0b',color:'#000',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',opacity:warnReason.trim()&&!warnSaving?1:0.5}}>
+                      {warnSaving?'Salvando…':'💾 Confirmar aviso'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Contact actions */}
             <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
               {profile?.email && (
@@ -652,6 +814,134 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
   );
 }
 
+// ── Modal resolução de disputa ────────────────────────────────
+function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
+  const [message,  setMessage]  = React.useState('');
+  const [action,   setAction]   = React.useState('none');
+  const [saving,   setSaving]   = React.useState(false);
+  const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
+  const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+
+  const actions = [
+    { value:'none',       label:'Nenhuma ação',         desc:'Apenas registrar a resolução',                                color:'#64748b' },
+    { value:'warning',    label:'⚠️ Aviso formal',      desc:'Registrar aviso no histórico do renter',                     color:'#f59e0b' },
+    { value:'suspension', label:'🔒 Suspensão',          desc:'Marcar conta como suspensa no sistema',                      color:'#f97316' },
+    { value:'ban',        label:'🚫 Banimento',          desc:'Excluir a conta permanentemente — IRREVERSÍVEL',             color:'#ef4444' },
+  ];
+
+  const handleConfirm = async () => {
+    if (!message.trim()) { alert('Adicione uma mensagem de resolução pública.'); return; }
+    if (action === 'ban' && !confirm(`Banir e excluir a conta de "${dispute.reported_name}"?\n\nEssa ação é IRREVERSÍVEL.`)) return;
+    setSaving(true);
+    try {
+      const now = new Date().toISOString();
+      // 1. Resolve dispute
+      await window.sb.from('dispute_reports').update({
+        status: 'resolved', resolution_message: message, resolution_action: action, resolved_at: now,
+      }).eq('id', dispute.id);
+      // 2. Update rental request status
+      if (dispute.rental_request_id) {
+        await window.sb.from('rental_requests').update({ status: 'resolved' }).eq('id', dispute.rental_request_id);
+      }
+      // 3. Create warning record
+      if (action !== 'none') {
+        const sev = action === 'ban' ? 'banned' : action === 'suspension' ? 'suspension' : 'warning';
+        await window.sb.from('user_warnings').insert({
+          user_id: dispute.reported_user_id, dispute_id: dispute.id, reason: message, severity: sev,
+        });
+      }
+      // 4. Ban: delete auth user
+      if (action === 'ban') {
+        const r = await fetch(BASE + '/auth/v1/admin/users/' + dispute.reported_user_id, {
+          method: 'DELETE', headers: { apikey: SRK, Authorization: 'Bearer ' + SRK },
+        });
+        if (!r.ok) { let e={}; try{e=await r.json();}catch(x){} throw new Error(e.message||'Erro ao banir'); }
+      }
+      // 5. Suspension: mark banned in profiles
+      if (action === 'suspension') {
+        await window.sb.from('profiles').update({ banned: true, ban_reason: message }).eq('id', dispute.reported_user_id);
+      }
+      onResolved(dispute.id, { status:'resolved', resolution_message:message, resolution_action:action, resolved_at:now });
+      showToast(action==='ban'?'🚫 Usuário banido e reclamação resolvida.':action==='suspension'?'🔒 Suspensão aplicada e reclamação resolvida.':'✓ Reclamação resolvida com sucesso.');
+      onClose();
+    } catch(e) { alert('Erro: '+e.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.88)',zIndex:3500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#1a1f2e',borderRadius:20,width:'100%',maxWidth:500,border:'1px solid #334155',boxShadow:'0 32px 80px rgba(0,0,0,0.7)'}}>
+        {/* Header */}
+        <div style={{background:'#13161f',padding:'14px 18px',borderBottom:'1px solid #1e293b',borderRadius:'20px 20px 0 0',display:'flex',alignItems:'center',gap:10}}>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:15,color:'#f1f5f9'}}>✅ Resolver Reclamação</div>
+            <div style={{fontSize:12,color:'#64748b',marginTop:2}}>📋 {dispute.listing_name||'Item de aluguel'} · Renter: {dispute.reported_name||'—'}</div>
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',fontSize:20,lineHeight:1}}>×</button>
+        </div>
+
+        <div style={{padding:'18px 20px 20px',display:'flex',flexDirection:'column',gap:16}}>
+          {/* Action selection */}
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>AÇÃO PARA O RENTER</div>
+            <div style={{display:'flex',flexDirection:'column',gap:7}}>
+              {actions.map(a=>(
+                <label key={a.value} onClick={()=>setAction(a.value)} style={{
+                  display:'flex',alignItems:'flex-start',gap:10,padding:'10px 12px',borderRadius:10,cursor:'pointer',
+                  background:action===a.value?a.color+'15':'#0f1117',
+                  border:`1px solid ${action===a.value?a.color+'60':'#1e293b'}`,transition:'all .15s',
+                }}>
+                  <div style={{width:16,height:16,borderRadius:'50%',border:`2px solid ${action===a.value?a.color:'#334155'}`,
+                    background:action===a.value?a.color:'transparent',flexShrink:0,marginTop:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    {action===a.value&&<div style={{width:6,height:6,borderRadius:'50%',background:'#fff'}}/>}
+                  </div>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:action===a.value?a.color:'#cbd5e1'}}>{a.label}</div>
+                    <div style={{fontSize:11,color:'#64748b',marginTop:1}}>{a.desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Resolution message */}
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>
+              MENSAGEM PÚBLICA <span style={{color:'#ef4444'}}>*</span>
+            </div>
+            <textarea
+              value={message}
+              onChange={e=>setMessage(e.target.value)}
+              placeholder="Descreva a resolução — essa mensagem será exibida para ambas as partes no app..."
+              rows={3}
+              style={{width:'100%',background:'#0f1117',border:'1px solid #334155',borderRadius:10,
+                color:'#f1f5f9',fontFamily:'inherit',fontSize:13,padding:'10px 12px',
+                resize:'vertical',boxSizing:'border-box',outline:'none',lineHeight:1.6}}
+            />
+            <div style={{fontSize:11,color:'#475569',marginTop:4}}>
+              💬 Ambas as partes verão essa mensagem no aplicativo
+            </div>
+          </div>
+
+          {/* Confirm buttons */}
+          <div style={{display:'flex',gap:10,marginTop:4}}>
+            <button onClick={onClose} style={{flex:1,height:46,borderRadius:12,border:'1px solid #334155',background:'transparent',color:'#94a3b8',fontWeight:600,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>
+              Cancelar
+            </button>
+            <button onClick={handleConfirm} disabled={saving||!message.trim()} style={{
+              flex:2,height:46,borderRadius:12,border:'none',cursor:message.trim()&&!saving?'pointer':'not-allowed',fontFamily:'inherit',
+              fontWeight:700,fontSize:14,color:'#fff',opacity:message.trim()&&!saving?1:0.55,
+              background:action==='ban'?'linear-gradient(135deg,#ef4444,#dc2626)':action==='suspension'?'linear-gradient(135deg,#f97316,#ea580c)':action==='warning'?'linear-gradient(135deg,#f59e0b,#d97706)':'linear-gradient(135deg,#22c55e,#16a34a)',
+            }}>
+              {saving?'Processando…':action==='ban'?'🚫 Banir e Resolver':action==='suspension'?'🔒 Suspender e Resolver':action==='warning'?'⚠️ Avisar e Resolver':'✓ Confirmar Resolução'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── App Admin ─────────────────────────────────────────────────
 function AdminApp({ adminUser, onLogout }) {
   const [section,    setSection]    = React.useState('dashboard');
@@ -663,8 +953,10 @@ function AdminApp({ adminUser, onLogout }) {
   const [market,     setMarket]     = React.useState([]);
   const [vacs,       setVacs]       = React.useState([]);
   const [disputes,   setDisputes]   = React.useState([]);
+  const [warnings,   setWarnings]   = React.useState([]); // all user_warnings
   const [loading,    setLoading]    = React.useState(false);
   const [viewUserModal, setViewUserModal] = React.useState(null); // {userId,userName,disputeRequestId}
+  const [resolveModal,  setResolveModal]  = React.useState(null); // dispute object
   const [editingNote,   setEditingNote]   = React.useState({}); // {disputeId: noteText}
   const [toast,      setToast]      = React.useState(null);
   const [marketTab,  setMarketTab]  = React.useState('pending');
@@ -676,13 +968,14 @@ function AdminApp({ adminUser, onLogout }) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [u,j,tc,m,v,d] = await Promise.all([
+    const [u,j,tc,m,v,d,w] = await Promise.all([
       window.sb.from('profiles').select('*').order('created_at',{ascending:false}),
       window.sb.from('jobs').select('*').order('created_at',{ascending:false}),
       window.sb.from('techs').select('*').order('created_at',{ascending:false}),
       window.sb.from('marketplace').select('*').order('created_at',{ascending:false}),
       window.sb.from('vacations').select('*').order('created_at',{ascending:false}),
       window.sb.from('dispute_reports').select('*').order('created_at',{ascending:false}),
+      window.sb.from('user_warnings').select('*').order('created_at',{ascending:false}),
     ]);
     if(u.data) setUsers(u.data);
     if(j.data) setJobs(j.data);
@@ -690,6 +983,7 @@ function AdminApp({ adminUser, onLogout }) {
     if(m.data) setMarket(m.data);
     if(v.data) setVacs(v.data);
     if(d.data) setDisputes(d.data);
+    if(w.data) setWarnings(w.data);
     setStats({ users:u.data?.length??0, jobs:j.data?.length??0, techs:tc.data?.length??0, market:m.data?.length??0, vacs:v.data?.length??0, disputes:d.data?.filter(x=>x.status==='pending')?.length??0 });
     setLoading(false);
   };
@@ -775,27 +1069,7 @@ function AdminApp({ adminUser, onLogout }) {
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
   const fmtDateTime = (d) => d ? new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
 
-  const resolveDispute = async (row) => {
-    const { error } = await window.sb.from('dispute_reports').update({ status:'resolved', resolved_at: new Date().toISOString() }).eq('id', row.id);
-    if (error) { showToast('❌ '+error.message, false); return; }
-    setDisputes(p => p.map(d => d.id===row.id ? {...d, status:'resolved', resolved_at:new Date().toISOString()} : d));
-    showToast('✓ Reclamação marcada como resolvida.');
-  };
-
-  const banUserFromDispute = async (row) => {
-    if (!confirm(`Banir e excluir a conta de "${row.reported_name}" (${row.reported_user_id})?\n\nEssa ação é IRREVERSÍVEL — o usuário perderá o acesso imediatamente.`)) return;
-    const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
-    const BASE_AUTH = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-    const r = await fetch(BASE_AUTH + '/auth/v1/admin/users/' + row.reported_user_id, {
-      method: 'DELETE',
-      headers: { 'apikey': SRK, 'Authorization': 'Bearer ' + SRK },
-    });
-    if (!r.ok) { let e={}; try{e=await r.json();}catch(x){} showToast('❌ '+(e.message||'Erro ao banir'), false); return; }
-    await window.sb.from('dispute_reports').update({ status:'resolved', admin_note:'User banned', resolved_at: new Date().toISOString() }).eq('id', row.id);
-    setDisputes(p => p.map(d => d.id===row.id ? {...d, status:'resolved'} : d));
-    setUsers(p => p.filter(u => u.id !== row.reported_user_id));
-    showToast('🚫 Usuário banido e conta excluída.');
-  };
+  const resolveDispute = (row) => { setResolveModal(row); };
 
   const saveAdminNote = async (disputeId) => {
     const note = editingNote[disputeId] ?? '';
@@ -1140,6 +1414,7 @@ function AdminApp({ adminUser, onLogout }) {
                   {disputes.map(d => {
                     const isPending = d.status === 'pending';
                     const noteVal = editingNote[d.id] ?? (d.admin_note || '');
+                    const reportedWarnCount = warnings.filter(w => w.user_id === d.reported_user_id).length;
                     return (
                       <div key={d.id} style={{
                         background:'#1a1f2e',borderRadius:16,
@@ -1183,6 +1458,11 @@ function AdminApp({ adminUser, onLogout }) {
                               onMouseEnter={e=>e.currentTarget.style.borderColor='#ef4444'} onMouseLeave={e=>e.currentTarget.style.borderColor='#1e293b'}>
                               <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>⚠ Renter (reportado)</div>
                               <div style={{fontSize:13,fontWeight:700,color:'#f87171'}}>{d.reported_name||'—'}</div>
+                              {reportedWarnCount > 0 && (
+                                <div style={{fontSize:10,fontWeight:700,color:'#ef4444',marginTop:3,padding:'1px 7px',borderRadius:999,background:'#ef444415',border:'1px solid #ef444430',display:'inline-block'}}>
+                                  ⚠️ {reportedWarnCount} aviso{reportedWarnCount!==1?'s':''} anteriore{reportedWarnCount!==1?'s':''}
+                                </div>
+                              )}
                               <div style={{fontSize:10,color:'#475569',marginTop:2}}>Clique para ver perfil</div>
                             </button>
                           </div>
@@ -1225,20 +1505,32 @@ function AdminApp({ adminUser, onLogout }) {
                           </div>
 
                           {/* Actions */}
-                          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                            {isPending && (<>
-                              <button className="act-btn act-btn-ok" onClick={()=>resolveDispute(d)} style={{padding:'7px 14px'}}>
-                                ✓ Marcar resolvido
+                          <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'flex-start'}}>
+                            {isPending && (
+                              <button className="act-btn act-btn-ok" onClick={()=>resolveDispute(d)} style={{padding:'7px 16px',fontSize:12}}>
+                                ✅ Resolver...
                               </button>
-                              <button onClick={()=>banUserFromDispute(d)}
-                                style={{padding:'7px 14px',borderRadius:8,border:'1px solid rgba(239,68,68,0.4)',
-                                  background:'rgba(239,68,68,0.1)',color:'#ef4444',fontSize:11,fontWeight:700,
-                                  cursor:'pointer',fontFamily:'inherit',display:'inline-flex',alignItems:'center',gap:4}}>
-                                🚫 Banir renter
-                              </button>
-                            </>)}
-                            {!isPending && d.resolved_at && (
-                              <span style={{fontSize:11,color:'#475569',padding:'4px 0'}}>✓ Resolvido em {fmtDateTime(d.resolved_at)}</span>
+                            )}
+                            {!isPending && (
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:11,color:'#22c55e',fontWeight:600,marginBottom:4}}>
+                                  ✓ Resolvido{d.resolved_at ? ' em '+fmtDateTime(d.resolved_at) : ''}
+                                  {d.resolution_action && d.resolution_action!=='none' && (
+                                    <span style={{marginLeft:8,fontSize:10,fontWeight:700,padding:'1px 8px',borderRadius:999,
+                                      background:d.resolution_action==='ban'?'#ef444420':d.resolution_action==='suspension'?'#f9741620':'#f59e0b20',
+                                      color:d.resolution_action==='ban'?'#ef4444':d.resolution_action==='suspension'?'#f97316':'#f59e0b',
+                                      border:`1px solid ${d.resolution_action==='ban'?'#ef444440':d.resolution_action==='suspension'?'#f9741640':'#f59e0b40'}`}}>
+                                      {d.resolution_action==='ban'?'🚫 Conta banida':d.resolution_action==='suspension'?'🔒 Suspensão':'⚠️ Aviso'}
+                                    </span>
+                                  )}
+                                </div>
+                                {d.resolution_message && (
+                                  <div style={{fontSize:12,color:'#94a3b8',padding:'8px 10px',background:'#0f1117',
+                                    borderRadius:8,border:'1px solid #1e293b',lineHeight:1.5,fontStyle:'italic'}}>
+                                    📢 "{d.resolution_message}"
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1252,6 +1544,26 @@ function AdminApp({ adminUser, onLogout }) {
 
         </div>{/* fim padding */}
       </div>{/* fim admin-main */}
+
+      {/* ── Modal resolução de disputa ── */}
+      {resolveModal && (
+        <ResolveDisputeModal
+          dispute={resolveModal}
+          onClose={()=>setResolveModal(null)}
+          showToast={showToast}
+          onResolved={(id, updated) => {
+            setDisputes(p => p.map(d => d.id===id ? {...d,...updated} : d));
+            if (updated.resolution_action && updated.resolution_action !== 'none') {
+              // Refresh warnings list
+              window.sb.from('user_warnings').select('*').order('created_at',{ascending:false})
+                .then(({data}) => { if(data) setWarnings(data); });
+            }
+            if (updated.resolution_action === 'ban') {
+              setUsers(p => p.filter(u => u.id !== resolveModal.reported_user_id));
+            }
+          }}
+        />
+      )}
 
       {/* ── Modal perfil usuário (reclamações) ── */}
       {viewUserModal && (

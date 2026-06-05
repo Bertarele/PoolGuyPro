@@ -382,7 +382,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [isDesktop,     setIsDesktop]    = React.useState(() => window.innerWidth >= 900);
   // Rental request state
   const isRent = item.type === 'rent';
-  const [reqStatus,     setReqStatus]    = React.useState(null); // null|'pending'|'approved'|'declined'|'completed'|'disputed'
+  const [reqStatus,     setReqStatus]    = React.useState(null); // null|'pending'|'approved'|'declined'|'completed'|'disputed'|'resolved'
+  const [resolvedMessage, setResolvedMessage] = React.useState(''); // admin's public resolution message
   const [reqLoading,    setReqLoading]   = React.useState(false);
   const [ownerRequests, setOwnerRequests]= React.useState([]); // for owner — list of requests
   const [reqPeriod,     setReqPeriod]    = React.useState(null); // 'day'|'week'|'month'
@@ -457,6 +458,16 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 .select('id').eq('request_id', mine.id).eq('rater_id', currentUser.uid)
                 .maybeSingle()
                 .then(({ data: rd }) => { if (rd) setHasRated(true); })
+                .catch(() => {});
+            }
+            if (mine.status === 'resolved' && window.sb) {
+              window.sb.from('dispute_reports')
+                .select('resolution_message')
+                .eq('rental_request_id', mine.id)
+                .order('created_at', { ascending: false })
+                .then(({ data: dd }) => {
+                  if (dd && dd[0]) setResolvedMessage(dd[0].resolution_message || '');
+                })
                 .catch(() => {});
             }
           }
@@ -1008,8 +1019,24 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
         <div>
           <div style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>{lang==='pt'?'Problema reportado':'Issue reported'}</div>
-          <div style={{fontSize:11.5,color:'#F59E0B',opacity:0.8,marginTop:1}}>{lang==='pt'?'Entre em contato pelo chat para resolver.':'Contact via chat to resolve this.'}</div>
+          <div style={{fontSize:11.5,color:'#F59E0B',opacity:0.8,marginTop:1}}>{lang==='pt'?'Nossa equipe vai analisar em breve.':'Our team will review this shortly.'}</div>
         </div>
+      </div>
+    );
+    if (reqStatus === 'resolved') return (
+      <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(99,102,241,0.40)'}}>
+        <div style={{padding:'12px 14px',background:'rgba(99,102,241,0.10)',display:'flex',alignItems:'center',gap:10}}>
+          <span style={{fontSize:18,flexShrink:0}}>✅</span>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:'#818CF8'}}>{lang==='pt'?'Ocorrência resolvida pelo suporte':'Case resolved by support'}</div>
+            <div style={{fontSize:11.5,color:'#818CF8',opacity:0.8,marginTop:1}}>{lang==='pt'?'Nossa equipe analisou e encerrou esta ocorrência.':'Our team reviewed and closed this case.'}</div>
+          </div>
+        </div>
+        {resolvedMessage ? (
+          <div style={{padding:'10px 14px',background:'rgba(99,102,241,0.06)',borderTop:'1px solid rgba(99,102,241,0.2)',fontSize:13,color:'#818CF8',lineHeight:1.6,fontStyle:'italic'}}>
+            "{resolvedMessage}"
+          </div>
+        ) : null}
       </div>
     );
     if (reqStatus === 'declined') return (

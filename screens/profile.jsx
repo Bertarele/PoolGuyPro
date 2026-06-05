@@ -444,9 +444,57 @@ function SavedSection({ user, lang }) {
 }
 
 function PersonalInfoCard({ user, setUser, lang }) {
-  const [editing,  setEditing]  = React.useState(false);
-  const [phone,    setPhone]    = React.useState(user.phone || '');
-  const [saving,   setSaving]   = React.useState(false);
+  const [editing,    setEditing]    = React.useState(false);
+  const [phone,      setPhone]      = React.useState(user.phone || '');
+  const [saving,     setSaving]     = React.useState(false);
+  // Phone OTP verification
+  const [otpSent,    setOtpSent]    = React.useState(false);
+  const [otpCode,    setOtpCode]    = React.useState('');
+  const [otpLoading, setOtpLoading] = React.useState(false);
+  const [otpError,   setOtpError]   = React.useState('');
+  const SB_URL = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
+
+  const sendOtp = async () => {
+    const digits = (user.phone||'').replace(/\D/g,'');
+    if (digits.length < 10) { setOtpError(lang==='pt'?'Telefone inválido — mínimo 10 dígitos':'Invalid phone — minimum 10 digits'); return; }
+    const E164 = '+1' + digits;
+    setOtpLoading(true); setOtpError('');
+    try {
+      const s = await window.sb.auth.getSession();
+      const jwt = s?.data?.session?.access_token;
+      if (!jwt) throw new Error(lang==='pt'?'Sessão expirada — faça login novamente':'Session expired — please log in again');
+      const res = await fetch(SB_URL + '/auth/v1/user', {
+        method: 'PUT',
+        headers: { apikey: SB_KEY, Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: E164 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.msg || data.message || data.error_description || 'Erro ao enviar SMS');
+      setOtpSent(true);
+    } catch(e) { setOtpError(e.message); }
+    finally { setOtpLoading(false); }
+  };
+
+  const verifyOtp = async () => {
+    if (!otpCode.trim()) return;
+    const digits = (user.phone||'').replace(/\D/g,'');
+    const E164 = '+1' + digits;
+    setOtpLoading(true); setOtpError('');
+    try {
+      const res = await fetch(SB_URL + '/auth/v1/verify', {
+        method: 'POST',
+        headers: { apikey: SB_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'phone_change', phone: E164, token: otpCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.msg || data.message || data.error_description || (lang==='pt'?'Código inválido':'Invalid code'));
+      await window.sb.from('profiles').update({ phone_verified: true }).eq('id', user.uid);
+      setUser(u => ({ ...u, phoneVerified: true }));
+      setOtpSent(false); setOtpCode(''); setOtpError('');
+    } catch(e) { setOtpError(e.message); }
+    finally { setOtpLoading(false); }
+  };
 
   const fmtPhone = (val) => {
     const digits = val.replace(/\D/g, '').slice(0, 10);
@@ -507,7 +555,7 @@ function PersonalInfoCard({ user, setUser, lang }) {
           </span>
         </div>
 
-        {/* Phone — editable */}
+        {/* Phone — editable + OTP verification */}
         <div style={rowStyle(true)}>
           <div style={iconBox}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2" strokeLinecap="round">
@@ -515,8 +563,14 @@ function PersonalInfoCard({ user, setUser, lang }) {
             </svg>
           </div>
           <div style={{flex:1, minWidth:0}}>
-            <div style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:2}}>
+            <div style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:2, display:'flex', alignItems:'center', gap:6}}>
               {lang==='pt'?'TELEFONE':lang==='es'?'TELÉFONO':'PHONE'}
+              {user.phoneVerified && !editing && (
+                <span style={{fontSize:9, fontWeight:800, padding:'1px 6px', borderRadius:999,
+                  background:'rgba(22,163,74,0.12)', color:'#16A34A', border:'1px solid rgba(22,163,74,0.3)', letterSpacing:'0.04em'}}>
+                  ✓ {lang==='pt'?'VERIFICADO':lang==='es'?'VERIFICADO':'VERIFIED'}
+                </span>
+              )}
             </div>
             {editing ? (
               <input
@@ -528,11 +582,53 @@ function PersonalInfoCard({ user, setUser, lang }) {
                 style={{height:36, fontSize:13, width:'100%', padding:'6px 10px'}}
                 autoFocus
               />
+            ) : otpSent ? (
+              /* OTP code entry */
+              <div style={{display:'flex', flexDirection:'column', gap:7, marginTop:4}}>
+                <div style={{fontSize:12, color:'var(--pg-ink-500)'}}>
+                  📱 {lang==='pt'?'Código enviado para':'Code sent to'} {user.phone}
+                </div>
+                <div style={{display:'flex', gap:6}}>
+                  <input
+                    type="number"
+                    value={otpCode}
+                    onChange={e=>setOtpCode(e.target.value.slice(0,6))}
+                    placeholder="000000"
+                    style={{flex:1, height:36, borderRadius:8, border:'1.5px solid var(--pg-ink-200)',
+                      background:'var(--pg-bg)', color:'var(--pg-ink-900)', fontSize:18, fontWeight:700,
+                      textAlign:'center', letterSpacing:'0.15em', outline:'none', fontFamily:'inherit'}}
+                    autoFocus
+                  />
+                  <button onClick={verifyOtp} disabled={otpLoading||!otpCode} style={{
+                    height:36, padding:'0 12px', borderRadius:8, border:'none',
+                    background:otpCode?'#16A34A':'var(--pg-ink-200)', color:otpCode?'#fff':'var(--pg-ink-400)',
+                    fontSize:12, fontWeight:700, cursor:otpCode?'pointer':'not-allowed', fontFamily:'inherit',
+                  }}>{otpLoading?'…':(lang==='pt'?'Confirmar':'Confirm')}</button>
+                  <button onClick={()=>{setOtpSent(false);setOtpCode('');setOtpError('');}} style={{
+                    height:36, padding:'0 8px', borderRadius:8, border:'1px solid var(--pg-ink-200)',
+                    background:'transparent', color:'var(--pg-ink-500)', fontSize:11, cursor:'pointer', fontFamily:'inherit',
+                  }}>✕</button>
+                </div>
+                {otpError && <div style={{fontSize:11, color:'#EF4444'}}>{otpError}</div>}
+                <button onClick={sendOtp} style={{background:'none',border:'none',color:'var(--pg-blue-500)',fontSize:11,cursor:'pointer',textAlign:'left',padding:0}}>
+                  {lang==='pt'?'Reenviar código':'Resend code'}
+                </button>
+              </div>
             ) : (
-              <div style={{fontSize:13, fontWeight:500, color: user.phone ? 'var(--pg-ink-900)' : 'var(--pg-ink-400)'}}>
-                {user.phone || (lang==='pt'?'Adicionar telefone':lang==='es'?'Agregar teléfono':'Add phone number')}
+              <div style={{display:'flex', alignItems:'center', gap:8}}>
+                <div style={{fontSize:13, fontWeight:500, color: user.phone ? 'var(--pg-ink-900)' : 'var(--pg-ink-400)', flex:1}}>
+                  {user.phone || (lang==='pt'?'Adicionar telefone':lang==='es'?'Agregar teléfono':'Add phone number')}
+                </div>
+                {user.phone && !user.phoneVerified && !editing && (
+                  <button onClick={sendOtp} disabled={otpLoading} style={{
+                    height:28, padding:'0 10px', borderRadius:7, border:'1px solid rgba(14,186,199,0.5)',
+                    background:'rgba(14,186,199,0.08)', color:'#0EBAC7', fontSize:11, fontWeight:700,
+                    cursor:'pointer', fontFamily:'inherit', flexShrink:0, opacity:otpLoading?0.7:1,
+                  }}>{otpLoading?'…':(lang==='pt'?'📱 Verificar':'📱 Verify')}</button>
+                )}
               </div>
             )}
+            {otpError && !otpSent && <div style={{fontSize:11, color:'#EF4444', marginTop:4}}>{otpError}</div>}
           </div>
           {editing && (
             <div style={{display:'flex', gap:6, flexShrink:0, marginLeft:8}}>

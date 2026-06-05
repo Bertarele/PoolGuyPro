@@ -231,6 +231,8 @@ function App() {
       uid:                  sbUser.id,
       verified:             profile?.verified             || false,
       verificationRequested:profile?.verification_requested || false,
+      phoneVerified:        profile?.phone_verified        || false,
+      banned:               profile?.banned                || false,
     }));
   }, []);
 
