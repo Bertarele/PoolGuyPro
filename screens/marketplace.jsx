@@ -2506,9 +2506,11 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
 // ── My Post Detail / Edit Sheet ───────────────────────────────
 function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDeleted, openRating }) {
-  const [editing, setEditing]   = React.useState(false);
-  const [saving,  setSaving]    = React.useState(false);
-  const [deleting,setDeleting]  = React.useState(false);
+  const [editing,      setEditing]      = React.useState(false);
+  const [saving,       setSaving]       = React.useState(false);
+  const [deleting,     setDeleting]     = React.useState(false);
+  const [activeRental, setActiveRental] = React.useState(null);  // rental_request blocking edit
+  const [rentLoaded,   setRentLoaded]   = React.useState(false);
   const [form,    setForm]      = React.useState({
     name:        item.name        || '',
     description: item.description || '',
@@ -2519,6 +2521,22 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
     cat:         item.cat         || '',
   });
   const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  // Check for active rental on mount (only for rent-type listings)
+  React.useEffect(() => {
+    if (!window.sb || !item._id || item.type !== 'rent') { setRentLoaded(true); return; }
+    window.sb.from('rental_requests')
+      .select('id, status, requester_name, start_date, end_date')
+      .eq('listing_id', item._id)
+      .in('status', ['pending', 'approved'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data[0]) setActiveRental(data[0]);
+        setRentLoaded(true);
+      })
+      .catch(() => setRentLoaded(true));
+  }, [item._id]);
 
   const allPhotos = (item.photoUrls && item.photoUrls.length > 0) ? item.photoUrls : (item.photoUrl ? [item.photoUrl] : []);
   const isPending   = item.status === 'pending';
@@ -2538,6 +2556,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
   const handleSave = async () => {
     if (!window.sb) return;
     setSaving(true);
+    // Keep current status — no need to send back for review just for price/desc edits
     const patch = {
       name:        form.name,
       description: form.description || null,
@@ -2546,12 +2565,12 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
       loc:         form.loc,
       condition:   form.condition,
       cat:         form.cat,
-      status:      'pending',
     };
     const { error } = await window.sb.from('marketplace').update(patch).eq('id', item._id);
     setSaving(false);
     if (error) { if (showToast) showToast('❌ ' + error.message); return; }
-    if (showToast) showToast(lang==='pt'?'✓ Anúncio atualizado — aguardando revisão':'✓ Post updated — back under review');
+    if (showToast) showToast(lang==='pt'?'✓ Anúncio atualizado':'✓ Listing updated');
+    setEditing(false);
     onUpdated && onUpdated({...item, ...patch});
   };
 
@@ -2651,17 +2670,51 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
               </div>
             )}
 
+            {/* Active rental lock banner */}
+            {activeRental && (
+              <div style={{marginBottom:12,padding:'11px 14px',borderRadius:12,
+                background:'rgba(245,158,11,0.10)',border:'1.5px solid rgba(245,158,11,0.35)',
+                display:'flex',alignItems:'flex-start',gap:10}}>
+                <span style={{fontSize:20,flexShrink:0,lineHeight:1.2}}>🔒</span>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:'#B45309'}}>
+                    {lang==='pt'?'Edição bloqueada — aluguel em andamento':'Edit locked — active rental in progress'}
+                  </div>
+                  <div style={{fontSize:11.5,color:'#92400E',marginTop:2,lineHeight:1.5}}>
+                    {activeRental.requester_name
+                      ? (lang==='pt'
+                          ? `${activeRental.requester_name} está usando este equipamento.`
+                          : `${activeRental.requester_name} is currently renting this equipment.`)
+                      : (lang==='pt'
+                          ? 'Alguém está usando este equipamento no momento.'
+                          : 'This equipment is currently being rented.')}
+                    {' '}{lang==='pt'?'Edições só são permitidas quando o equipamento estiver disponível.':'Edits are only allowed when the equipment is available.'}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Action buttons */}
             <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setEditing(true)} style={{
-                flex:1,height:50,borderRadius:14,border:'none',cursor:'pointer',fontFamily:'inherit',
-                background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-                color:'#fff',fontSize:15,fontWeight:700,
-                boxShadow:'0 4px 14px rgba(0,119,182,0.35)',
+              <button onClick={()=>{ if(!activeRental) setEditing(true); }} disabled={!!activeRental || !rentLoaded} style={{
+                flex:1,height:50,borderRadius:14,border:'none',cursor:activeRental?'not-allowed':'pointer',fontFamily:'inherit',
+                background: activeRental
+                  ? 'rgba(0,0,0,0.08)'
+                  : 'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+                color: activeRental ? 'var(--pg-ink-400)' : '#fff',
+                fontSize:15,fontWeight:700,
+                boxShadow: activeRental ? 'none' : '0 4px 14px rgba(0,119,182,0.35)',
                 display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+                opacity: !rentLoaded ? 0.5 : 1,
+                transition:'all .2s',
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                {lang==='pt'?'Editar anúncio':lang==='es'?'Editar anuncio':'Edit listing'}
+                {activeRental
+                  ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                }
+                {activeRental
+                  ? (lang==='pt'?'Edição bloqueada':'Edit locked')
+                  : (lang==='pt'?'Editar anúncio':lang==='es'?'Editar anuncio':'Edit listing')}
               </button>
               <button onClick={handleDelete} disabled={deleting} style={{
                 width:50,height:50,borderRadius:14,border:'1.5px solid #FCA5A5',
@@ -2724,7 +2777,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
                   {lang==='pt'?'Editar anúncio':lang==='es'?'Editar anuncio':'Edit listing'}
                 </div>
                 <div style={{fontSize:11.5,color:'var(--pg-ink-400)',marginTop:1}}>
-                  {lang==='pt'?'Salvar volta o anúncio para revisão':lang==='es'?'Guardar vuelve el anuncio a revisión':'Saving will send the post back for review'}
+                  {lang==='pt'?'Alterações salvas instantaneamente':lang==='es'?'Los cambios se guardan al instante':'Changes are saved instantly'}
                 </div>
               </div>
             </div>
@@ -2769,15 +2822,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
               </div>
             </div>
 
-            {/* Review notice */}
-            <div style={{margin:'16px 0',padding:'10px 13px',borderRadius:10,background:'#FEF3C7',border:'1px solid #FDE68A',display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:16}}>⚠️</span>
-              <span style={{fontSize:12,color:'#92400E',fontWeight:500}}>
-                {lang==='pt'?'Ao salvar, o anúncio voltará para revisão do admin.':lang==='es'?'Al guardar, el anuncio volverá a revisión del admin.':'After saving, the listing goes back for admin review.'}
-              </span>
-            </div>
-
-            <div style={{display:'flex',gap:10}}>
+            <div style={{display:'flex',gap:10,marginTop:16}}>
               <button onClick={()=>setEditing(false)} style={{flex:1,height:50,borderRadius:14,border:'1.5px solid var(--pg-ink-200)',background:'transparent',color:'var(--pg-ink-700)',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                 {lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}
               </button>
