@@ -1613,10 +1613,16 @@ USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))
 -- Marketplace
 DROP POLICY IF EXISTS "Admins can update marketplace" ON marketplace;
 DROP POLICY IF EXISTS "Admins can delete marketplace" ON marketplace;
+DROP POLICY IF EXISTS "Authors can delete own marketplace" ON marketplace;
+DROP POLICY IF EXISTS "Authors can update own marketplace" ON marketplace;
 CREATE POLICY "Admins can update marketplace" ON marketplace FOR UPDATE
 USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
 CREATE POLICY "Admins can delete marketplace" ON marketplace FOR DELETE
 USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+CREATE POLICY "Authors can delete own marketplace" ON marketplace FOR DELETE
+USING (auth.uid() = author_id);
+CREATE POLICY "Authors can update own marketplace" ON marketplace FOR UPDATE
+USING (auth.uid() = author_id) WITH CHECK (auth.uid() = author_id);
 -- Jobs / Techs / Vacations
 DROP POLICY IF EXISTS "Admins can delete jobs" ON jobs;
 DROP POLICY IF EXISTS "Admins can delete techs" ON techs;
