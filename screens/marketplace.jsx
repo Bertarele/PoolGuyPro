@@ -382,8 +382,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [isDesktop,     setIsDesktop]    = React.useState(() => window.innerWidth >= 900);
   // Rental request state
   const isRent = item.type === 'rent';
-  const [reqStatus,     setReqStatus]    = React.useState(null); // null|'pending'|'approved'|'declined'|'completed'|'disputed'|'resolved'
-  const [resolvedMessage, setResolvedMessage] = React.useState(''); // admin's public resolution message
+  const [reqStatus,          setReqStatus]          = React.useState(null); // null|'pending'|'approved'|'declined'|'completed'|'disputed'|'resolved'
+  const [resolvedMessage,    setResolvedMessage]    = React.useState(''); // admin's public resolution message
+  const [listingOccupied,    setListingOccupied]    = React.useState(false); // another user has an approved rental
+  const [dismissedDecisions, setDismissedDecisions] = React.useState(new Set()); // reqIds owner dismissed keep/remove prompt
   const [reqLoading,    setReqLoading]   = React.useState(false);
   const [ownerRequests, setOwnerRequests]= React.useState([]); // for owner — list of requests
   const [reqPeriod,     setReqPeriod]    = React.useState(null); // 'day'|'week'|'month'
@@ -478,6 +480,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 })
                 .catch(() => {});
             }
+          } else {
+            // No request from this user — check if listing is occupied by someone else
+            const hasActiveRental = data.some(r => r.status === 'approved');
+            if (hasActiveRental) setListingOccupied(true);
           }
         }
       })
@@ -989,6 +995,34 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       }
     }
 
+    // Listing occupied by another renter
+    if (listingOccupied && !reqStatus) return (
+      <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(245,158,11,0.45)'}}>
+        <div style={{padding:'14px 16px',background:'rgba(245,158,11,0.09)',display:'flex',alignItems:'flex-start',gap:12}}>
+          <div style={{width:38,height:38,borderRadius:'50%',background:'rgba(245,158,11,0.18)',
+            display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:20}}>
+            🔒
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:800,color:'#D97706',marginBottom:3}}>
+              {lang==='pt'?'Equipamento em uso':'Equipment in use'}
+            </div>
+            <div style={{fontSize:12,color:'#B45309',lineHeight:1.55}}>
+              {lang==='pt'
+                ? 'Este equipamento está alugado no momento e não está disponível para novas solicitações.'
+                : 'This equipment is currently rented and unavailable for new requests.'}
+            </div>
+          </div>
+        </div>
+        <div style={{padding:'10px 16px',background:'rgba(245,158,11,0.05)',
+          borderTop:'1px solid rgba(245,158,11,0.2)',fontSize:12,color:'var(--pg-ink-500)',textAlign:'center'}}>
+          {lang==='pt'
+            ? '💡 Salve este anúncio para ser notificado quando estiver disponível.'
+            : '💡 Save this listing to be notified when it becomes available.'}
+        </div>
+      </div>
+    );
+
     // Status cards (same for static/live)
     if (reqStatus === 'approved') return (
       <div style={{padding:'13px 16px',borderRadius:14,background:'rgba(14,186,199,0.10)',border:'1.5px solid rgba(14,186,199,0.40)',display:'flex',alignItems:'center',gap:10}}>
@@ -1267,6 +1301,53 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                       ${Number(req.total_price).toLocaleString()}
                     </span>
                   )}
+                </div>
+              )}
+
+              {/* Keep or Remove prompt — only for completed, not yet dismissed */}
+              {isComp && !dismissedDecisions.has(req.id) && (
+                <div style={{marginTop:10,borderRadius:12,overflow:'hidden',border:'1px solid rgba(22,163,74,0.30)'}}>
+                  <div style={{padding:'10px 13px',background:'rgba(22,163,74,0.08)'}}>
+                    <div style={{fontSize:12.5,fontWeight:700,color:'#15803D',marginBottom:2}}>
+                      {lang==='pt'?'🎉 Aluguel concluído!':'🎉 Rental completed!'}
+                    </div>
+                    <div style={{fontSize:11.5,color:'#16A34A',lineHeight:1.5}}>
+                      {lang==='pt'
+                        ? 'Deseja manter este anúncio disponível para outros aluguéis, ou prefere removê-lo?'
+                        : 'Would you like to keep this listing available for future rentals, or remove it?'}
+                    </div>
+                  </div>
+                  <div style={{display:'flex',gap:0}}>
+                    <button
+                      onClick={()=> setDismissedDecisions(prev => { const s = new Set(prev); s.add(req.id); return s; })}
+                      style={{flex:1,padding:'10px 6px',border:'none',borderTop:'1px solid rgba(22,163,74,0.20)',borderRight:'1px solid rgba(22,163,74,0.20)',
+                        cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,
+                        background:'rgba(22,163,74,0.10)',color:'#15803D',
+                        display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      {lang==='pt'?'Manter ativo':'Keep active'}
+                    </button>
+                    <button
+                      onClick={async ()=>{
+                        if (!window.sb) return;
+                        const ok = window.confirm(lang==='pt'
+                          ? 'Remover o anúncio do marketplace? Não pode ser desfeito.'
+                          : 'Remove this listing from the marketplace? This cannot be undone.');
+                        if (!ok) return;
+                        const { error } = await window.sb.from('marketplace').delete().eq('id', item._id);
+                        if (error) { showToast && showToast('❌ ' + error.message); return; }
+                        showToast && showToast(lang==='pt'?'🗑️ Anúncio removido':'🗑️ Listing removed');
+                        onDeleted && onDeleted(item._id);
+                        onClose && onClose();
+                      }}
+                      style={{flex:1,padding:'10px 6px',border:'none',borderTop:'1px solid rgba(239,68,68,0.20)',
+                        cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,
+                        background:'rgba(239,68,68,0.06)',color:'#EF4444',
+                        display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                      {lang==='pt'?'Remover anúncio':'Remove listing'}
+                    </button>
+                  </div>
                 </div>
               )}
 
