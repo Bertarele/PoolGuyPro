@@ -387,6 +387,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [listingOccupied,    setListingOccupied]    = React.useState(false); // another user has an approved rental
   const [dismissedDecisions, setDismissedDecisions] = React.useState(new Set()); // reqIds owner dismissed keep/remove prompt
   const [reqLoading,    setReqLoading]   = React.useState(false);
+  const [cancelLoading, setCancelLoading]= React.useState(false);
   const [ownerRequests, setOwnerRequests]= React.useState([]); // for owner — list of requests
   const [reqPeriod,     setReqPeriod]    = React.useState(null); // 'day'|'week'|'month'
   const [reqQty,        setReqQty]       = React.useState(1);
@@ -626,6 +627,37 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     showToast && showToast(newStatus === 'approved'
       ? (lang==='pt'?'✓ Aluguel aprovado!':'✓ Rental approved!')
       : (lang==='pt'?'Pedido recusado':'Request declined'));
+  };
+
+  const handleCancelRequest = async () => {
+    if (!window.sb || !myRequestId) return;
+    const ok = window.confirm(lang==='pt'
+      ? 'Cancelar o pedido de aluguel? Esta ação não pode ser desfeita.'
+      : 'Cancel the rental request? This cannot be undone.');
+    if (!ok) return;
+    setCancelLoading(true);
+    const { error } = await window.sb.from('rental_requests')
+      .update({ status: 'cancelled' })
+      .eq('id', myRequestId);
+    setCancelLoading(false);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    setReqStatus('cancelled');
+    setListingOccupied(false);
+    showToast && showToast(lang==='pt'?'Pedido cancelado.':'Request cancelled.');
+  };
+
+  const handleOwnerCancelRental = async (requestId) => {
+    if (!window.sb) return;
+    const ok = window.confirm(lang==='pt'
+      ? 'Cancelar este aluguel em andamento? O renter será notificado pelo chat.'
+      : 'Cancel this active rental? The renter will be notified via chat.');
+    if (!ok) return;
+    const { error } = await window.sb.from('rental_requests')
+      .update({ status: 'cancelled' })
+      .eq('id', requestId);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: 'cancelled'} : r));
+    showToast && showToast(lang==='pt'?'Aluguel cancelado.':'Rental cancelled.');
   };
 
   const handleMarkReturned = async (requestId, req) => {
@@ -1025,14 +1057,26 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
     // Status cards (same for static/live)
     if (reqStatus === 'approved') return (
-      <div style={{padding:'13px 16px',borderRadius:14,background:'rgba(14,186,199,0.10)',border:'1.5px solid rgba(14,186,199,0.40)',display:'flex',alignItems:'center',gap:10}}>
-        <div style={{width:30,height:30,borderRadius:'50%',background:'#0EBAC7',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+      <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(14,186,199,0.40)'}}>
+        <div style={{padding:'13px 16px',background:'rgba(14,186,199,0.10)',display:'flex',alignItems:'center',gap:10}}>
+          <div style={{width:30,height:30,borderRadius:'50%',background:'#0EBAC7',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:'#0EBAC7'}}>{lang==='pt'?'🔄 Em andamento!':'🔄 In progress!'}</div>
+            <div style={{fontSize:11.5,color:'#0EBAC7',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou. Aproveite!':'The owner approved. Enjoy!'}</div>
+          </div>
         </div>
-        <div>
-          <div style={{fontSize:13,fontWeight:800,color:'#0EBAC7'}}>{lang==='pt'?'🔄 Em andamento!':'🔄 In progress!'}</div>
-          <div style={{fontSize:11.5,color:'#0EBAC7',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou. Aproveite!':'The owner approved. Enjoy!'}</div>
-        </div>
+        <button onClick={handleCancelRequest} disabled={cancelLoading} style={{
+          width:'100%',padding:'9px',border:'none',borderTop:'1px solid rgba(14,186,199,0.15)',
+          cursor:'pointer',fontFamily:'inherit',fontSize:11.5,fontWeight:600,
+          background:'rgba(239,68,68,0.05)',color:'#EF4444',
+          display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+          opacity:cancelLoading?0.6:1,
+        }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          {cancelLoading?(lang==='pt'?'Cancelando…':'Cancelling…'):(lang==='pt'?'Cancelar aluguel':'Cancel rental')}
+        </button>
       </div>
     );
     if (reqStatus === 'completed') return (
@@ -1090,13 +1134,34 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         <div style={{fontSize:13,fontWeight:600,color:'#F87171'}}>{lang==='pt'?'Pedido não aprovado':'Request not approved'}</div>
       </div>
     );
-    if (reqStatus === 'pending') return (
-      <div style={{padding:'13px 16px',borderRadius:14,background:'rgba(245,158,11,0.1)',border:'1.5px solid rgba(245,158,11,0.4)',display:'flex',alignItems:'center',gap:10}}>
-        <span style={{fontSize:16,flexShrink:0}}>⏳</span>
+    if (reqStatus === 'cancelled') return (
+      <div style={{padding:'12px 14px',borderRadius:14,background:'rgba(107,114,128,0.10)',border:'1.5px solid rgba(107,114,128,0.30)',display:'flex',alignItems:'center',gap:10}}>
+        <span style={{fontSize:18,flexShrink:0}}>🚫</span>
         <div>
-          <div style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>{lang==='pt'?'Pedido enviado!':'Request sent!'}</div>
-          <div style={{fontSize:11.5,color:'#F59E0B',opacity:0.8,marginTop:1}}>{lang==='pt'?'Aguardando resposta do dono.':'Waiting for owner\'s response.'}</div>
+          <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-500)'}}>{lang==='pt'?'Pedido cancelado':'Request cancelled'}</div>
+          <div style={{fontSize:11.5,color:'var(--pg-ink-400)',marginTop:1}}>{lang==='pt'?'Você cancelou este pedido.':'You cancelled this request.'}</div>
         </div>
+      </div>
+    );
+    if (reqStatus === 'pending') return (
+      <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(245,158,11,0.4)'}}>
+        <div style={{padding:'13px 16px',background:'rgba(245,158,11,0.10)',display:'flex',alignItems:'center',gap:10}}>
+          <span style={{fontSize:16,flexShrink:0}}>⏳</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>{lang==='pt'?'Pedido enviado!':'Request sent!'}</div>
+            <div style={{fontSize:11.5,color:'#F59E0B',opacity:0.8,marginTop:1}}>{lang==='pt'?'Aguardando resposta do dono.':'Waiting for owner\'s response.'}</div>
+          </div>
+        </div>
+        <button onClick={handleCancelRequest} disabled={cancelLoading} style={{
+          width:'100%',padding:'10px',border:'none',borderTop:'1px solid rgba(245,158,11,0.2)',
+          cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,
+          background:'rgba(239,68,68,0.06)',color:'#EF4444',
+          display:'flex',alignItems:'center',justifyContent:'center',gap:6,
+          opacity:cancelLoading?0.6:1,
+        }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          {cancelLoading?(lang==='pt'?'Cancelando…':'Cancelling…'):(lang==='pt'?'Cancelar pedido':'Cancel request')}
+        </button>
       </div>
     );
 
@@ -1230,15 +1295,16 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     return (
       <div style={{display:'flex',flexDirection:'column',gap:8}}>
         {ownerRequests.map(req => {
-          const isPend     = req.status === 'pending';
-          const isAppr     = req.status === 'approved';
-          const isComp     = req.status === 'completed';
-          const isDisp     = req.status === 'disputed';
-          const isResolved = req.status === 'resolved';
+          const isPend      = req.status === 'pending';
+          const isAppr      = req.status === 'approved';
+          const isComp      = req.status === 'completed';
+          const isDisp      = req.status === 'disputed';
+          const isResolved  = req.status === 'resolved';
+          const isCancelled = req.status === 'cancelled';
           // rgba backgrounds — work in both light and dark mode
-          const rowBg     = isComp ? 'rgba(22,163,74,0.12)' : isAppr ? 'rgba(14,186,199,0.10)' : isPend ? 'rgba(245,158,11,0.12)' : isDisp ? 'rgba(245,158,11,0.10)' : isResolved ? 'rgba(99,102,241,0.10)' : 'rgba(239,68,68,0.12)';
-          const rowBorder = isComp ? 'rgba(22,163,74,0.40)' : isAppr ? 'rgba(14,186,199,0.40)' : isPend ? 'rgba(245,158,11,0.40)' : isDisp ? 'rgba(245,158,11,0.40)' : isResolved ? 'rgba(99,102,241,0.40)' : 'rgba(239,68,68,0.40)';
-          const statusColor = isComp ? '#22C55E' : isAppr ? '#0EBAC7' : isPend ? '#F59E0B' : isDisp ? '#F59E0B' : isResolved ? '#818CF8' : '#F87171';
+          const rowBg     = isComp ? 'rgba(22,163,74,0.12)' : isAppr ? 'rgba(14,186,199,0.10)' : isPend ? 'rgba(245,158,11,0.12)' : isDisp ? 'rgba(245,158,11,0.10)' : isResolved ? 'rgba(99,102,241,0.10)' : isCancelled ? 'rgba(107,114,128,0.08)' : 'rgba(239,68,68,0.12)';
+          const rowBorder = isComp ? 'rgba(22,163,74,0.40)' : isAppr ? 'rgba(14,186,199,0.40)' : isPend ? 'rgba(245,158,11,0.40)' : isDisp ? 'rgba(245,158,11,0.40)' : isResolved ? 'rgba(99,102,241,0.40)' : isCancelled ? 'rgba(107,114,128,0.25)' : 'rgba(239,68,68,0.40)';
+          const statusColor = isComp ? '#22C55E' : isAppr ? '#0EBAC7' : isPend ? '#F59E0B' : isDisp ? '#F59E0B' : isResolved ? '#818CF8' : isCancelled ? 'var(--pg-ink-400)' : '#F87171';
           const statusLabel = isComp
             ? (lang==='pt'?'✓ Devolvido':'✓ Returned')
             : isAppr
@@ -1249,7 +1315,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   ? (lang==='pt'?'⚠ Problema reportado':'⚠ Issue reported')
                   : isResolved
                     ? (lang==='pt'?'✅ Resolvido pelo suporte':'✅ Resolved by support')
-                    : (lang==='pt'?'✗ Recusado':'✗ Declined');
+                    : isCancelled
+                      ? (lang==='pt'?'🚫 Cancelado':'🚫 Cancelled')
+                      : (lang==='pt'?'✗ Recusado':'✗ Declined');
           return (
             <div key={req.id} style={{
               padding:'12px 14px',borderRadius:14,
@@ -1438,6 +1506,16 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                       {lang==='pt'?'Problema':'Issue'}
                     </button>
                   </div>
+                  {/* Owner cancel active rental */}
+                  <button onClick={()=>handleOwnerCancelRental(req.id)} style={{
+                    width:'100%',marginTop:6,padding:'7px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',
+                    border:'1px solid rgba(107,114,128,0.30)',background:'rgba(107,114,128,0.06)',
+                    color:'var(--pg-ink-400)',fontSize:11,fontWeight:600,
+                    display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    {lang==='pt'?'Cancelar aluguel':'Cancel rental'}
+                  </button>
                 </>
               )}
             </div>
