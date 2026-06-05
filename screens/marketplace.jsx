@@ -395,7 +395,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [ratingComment, setRatingComment] = React.useState('');
   const [ratingLoading, setRatingLoading] = React.useState(false);
   const [ratingHover,   setRatingHover]   = React.useState(0);
-  const [hasRated,      setHasRated]      = React.useState(false);
+  const [hasRated,          setHasRated]          = React.useState(false);
+  const [ownerRatedRequests, setOwnerRatedRequests] = React.useState(new Set()); // requestIds owner already rated after resolved
   // Dispute form
   const [disputeForm,     setDisputeForm]     = React.useState(null); // null | {requestId, req}
   const [disputeSeverity, setDisputeSeverity] = React.useState('serious');
@@ -448,6 +449,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         const isOwnerLocal = item.author_id && item.author_id === currentUser.uid;
         if (isOwnerLocal) {
           setOwnerRequests(data);
+          // Check which resolved requests the owner has already rated
+          const resolvedIds = data.filter(r => r.status === 'resolved').map(r => r.id);
+          if (resolvedIds.length > 0 && window.sb) {
+            window.sb.from('rental_ratings').select('request_id').eq('rater_id', currentUser.uid)
+              .then(({ data: rd }) => { if (rd) setOwnerRatedRequests(new Set(rd.map(r => r.request_id))); })
+              .catch(() => {});
+          }
         } else {
           const mine = data.find(r => r.requester_id === currentUser.uid);
           if (mine) {
@@ -762,6 +770,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
     showToast && showToast(lang==='pt' ? '⭐ Avaliação enviada! Obrigado.' : '⭐ Rating submitted! Thank you.');
     setHasRated(true);
+    // Track owner rating for resolved requests
+    if (ratingSheet.requestId) {
+      setOwnerRatedRequests(prev => { const n = new Set(prev); n.add(ratingSheet.requestId); return n; });
+    }
     setRatingSheet(null);
   };
 
@@ -1278,6 +1290,27 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     {lang==='pt'?'Recusar':'Decline'}
                   </button>
+                </div>
+              )}
+
+              {/* Rate renter — only for resolved disputes */}
+              {isResolved && (
+                <div style={{marginTop:10}}>
+                  {!ownerRatedRequests.has(req.id) ? (
+                    <button onClick={()=>{ setRatingStars(0); setRatingComment(''); setRatingSheet({ requestId:req.id, rateeId:req.requester_id, rateeName:req.requester_name||'Renter' }); }} style={{
+                      width:'100%',height:36,borderRadius:10,border:'none',cursor:'pointer',fontFamily:'inherit',
+                      background:'linear-gradient(135deg,#F59E0B,#D97706)',color:'#fff',
+                      fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                    }}>
+                      ⭐ {lang==='pt'?'Avaliar o renter':'Rate the renter'}
+                    </button>
+                  ) : (
+                    <div style={{fontSize:11,color:'#818CF8',fontWeight:600,textAlign:'center',padding:'5px 0',
+                      display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#818CF8" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      {lang==='pt'?'Renter avaliado':'Renter rated'}
+                    </div>
+                  )}
                 </div>
               )}
 
