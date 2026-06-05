@@ -496,9 +496,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     img.src = src;
   });
 
-  // Load before/after photos for owner's in-progress/completed requests
+  // Load before/after photos for owner's requests (all non-pending/declined)
   React.useEffect(() => {
-    const active = ownerRequests.filter(r => r.status === 'approved' || r.status === 'completed');
+    const active = ownerRequests.filter(r => ['approved','completed','disputed','resolved'].includes(r.status));
     if (!active.length || !window.sb) return;
     Promise.all(active.map(r =>
       window.sb.from('rental_photos').select('type, photo_url').eq('request_id', r.id)
@@ -1185,14 +1185,15 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     return (
       <div style={{display:'flex',flexDirection:'column',gap:8}}>
         {ownerRequests.map(req => {
-          const isPend = req.status === 'pending';
-          const isAppr = req.status === 'approved';
-          const isComp = req.status === 'completed';
-          const isDisp = req.status === 'disputed';
+          const isPend     = req.status === 'pending';
+          const isAppr     = req.status === 'approved';
+          const isComp     = req.status === 'completed';
+          const isDisp     = req.status === 'disputed';
+          const isResolved = req.status === 'resolved';
           // rgba backgrounds — work in both light and dark mode
-          const rowBg     = isComp ? 'rgba(22,163,74,0.12)'  : isAppr ? 'rgba(14,186,199,0.10)' : isPend ? 'rgba(245,158,11,0.12)' : isDisp ? 'rgba(245,158,11,0.10)' : 'rgba(239,68,68,0.12)';
-          const rowBorder = isComp ? 'rgba(22,163,74,0.40)'  : isAppr ? 'rgba(14,186,199,0.40)' : isPend ? 'rgba(245,158,11,0.40)' : isDisp ? 'rgba(245,158,11,0.40)' : 'rgba(239,68,68,0.40)';
-          const statusColor = isComp ? '#22C55E' : isAppr ? '#0EBAC7' : isPend ? '#F59E0B' : isDisp ? '#F59E0B' : '#F87171';
+          const rowBg     = isComp ? 'rgba(22,163,74,0.12)' : isAppr ? 'rgba(14,186,199,0.10)' : isPend ? 'rgba(245,158,11,0.12)' : isDisp ? 'rgba(245,158,11,0.10)' : isResolved ? 'rgba(99,102,241,0.10)' : 'rgba(239,68,68,0.12)';
+          const rowBorder = isComp ? 'rgba(22,163,74,0.40)' : isAppr ? 'rgba(14,186,199,0.40)' : isPend ? 'rgba(245,158,11,0.40)' : isDisp ? 'rgba(245,158,11,0.40)' : isResolved ? 'rgba(99,102,241,0.40)' : 'rgba(239,68,68,0.40)';
+          const statusColor = isComp ? '#22C55E' : isAppr ? '#0EBAC7' : isPend ? '#F59E0B' : isDisp ? '#F59E0B' : isResolved ? '#818CF8' : '#F87171';
           const statusLabel = isComp
             ? (lang==='pt'?'✓ Devolvido':'✓ Returned')
             : isAppr
@@ -1201,7 +1202,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 ? (lang==='pt'?'⏳ Pendente':'⏳ Pending')
                 : isDisp
                   ? (lang==='pt'?'⚠ Problema reportado':'⚠ Issue reported')
-                  : (lang==='pt'?'✗ Recusado':'✗ Declined');
+                  : isResolved
+                    ? (lang==='pt'?'✅ Resolvido pelo suporte':'✅ Resolved by support')
+                    : (lang==='pt'?'✗ Recusado':'✗ Declined');
           return (
             <div key={req.id} style={{
               padding:'12px 14px',borderRadius:14,

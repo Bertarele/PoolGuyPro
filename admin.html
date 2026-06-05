@@ -1599,7 +1599,18 @@ function AdminApp({ adminUser, onLogout }) {
                 <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Execute este SQL no Supabase → SQL Editor:</div>
               </div>
             </div>
-            <pre style={{background:'#0f1117',borderRadius:10,padding:'12px 14px',fontSize:11.5,color:'#7dd3fc',overflowX:'auto',lineHeight:1.7,border:'1px solid #1e293b',margin:'0 0 16px'}}>{`-- Marketplace
+            <pre style={{background:'#0f1117',borderRadius:10,padding:'12px 14px',fontSize:11.5,color:'#7dd3fc',overflowX:'auto',lineHeight:1.7,border:'1px solid #1e293b',margin:'0 0 16px'}}>{`-- Dispute reports & Rental requests (admin resolve)
+DROP POLICY IF EXISTS "Admins can update dispute_reports" ON dispute_reports;
+DROP POLICY IF EXISTS "Admins can update rental_requests" ON rental_requests;
+CREATE POLICY "Admins can update dispute_reports" ON dispute_reports FOR UPDATE
+USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can update rental_requests" ON rental_requests FOR UPDATE
+USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+-- User warnings (admin manage)
+DROP POLICY IF EXISTS "Admins manage warnings" ON user_warnings;
+CREATE POLICY "Admins manage warnings" ON user_warnings FOR ALL
+USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+-- Marketplace
 DROP POLICY IF EXISTS "Admins can update marketplace" ON marketplace;
 DROP POLICY IF EXISTS "Admins can delete marketplace" ON marketplace;
 CREATE POLICY "Admins can update marketplace" ON marketplace FOR UPDATE
