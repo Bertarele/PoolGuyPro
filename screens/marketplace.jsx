@@ -4732,10 +4732,15 @@ function MarketplaceScreen({ ctx }) {
               <div key={r.id||r._liveId} className="pg-card pg-card-tap"
                 onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
                 style={{padding:14, display:'flex', gap:12, position:'relative'}}>
-                <div style={{width:90, height:90, borderRadius:12, overflow:'hidden', flexShrink:0}}>
+                <div style={{width:90, height:90, borderRadius:12, overflow:'hidden', flexShrink:0,
+                  background:'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-800))',
+                  display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3}}>
                   {(r.photoUrls && r.photoUrls[0]) || r.photoUrl
                     ? <img src={(r.photoUrls&&r.photoUrls[0])||r.photoUrl} alt={r.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
-                    : <NoPhotoPlaceholder height={90} small/>
+                    : <>
+                        <div style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:800, color:'#fff', lineHeight:1}}>{r.clients||r.pools||'?'}</div>
+                        <div style={{fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.60)', letterSpacing:'0.06em', textTransform:'uppercase'}}>POOLS</div>
+                      </>
                   }
                 </div>
                 <div style={{flex:1, minWidth:0}}>
