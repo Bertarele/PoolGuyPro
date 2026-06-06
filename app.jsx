@@ -633,6 +633,7 @@ function App() {
       receiverId,
       name: receiverName,
       context: { en:'Direct message', pt:'Mensagem direta', es:'Mensaje directo' },
+      listingContext: isObj ? (chatConvoTarget.listingContext || null) : null,
     };
   }, [chatConvoTarget]); // eslint-disable-line react-hooks/exhaustive-deps
 

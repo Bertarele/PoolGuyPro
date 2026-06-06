@@ -265,6 +265,48 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
         </button>
       </div>
 
+      {/* Listing context card */}
+      {convo.listingContext && (
+        <div style={{
+          margin:'0 12px', padding:'10px 12px',
+          borderRadius:12, border:'1px solid var(--pg-ink-200)',
+          background:'var(--pg-ink-50)',
+          display:'flex', alignItems:'center', gap:10,
+          flexShrink:0,
+        }}>
+          {convo.listingContext.photoUrl ? (
+            <img src={convo.listingContext.photoUrl} alt=""
+              style={{width:48, height:48, borderRadius:8, objectFit:'cover', flexShrink:0, border:'1px solid var(--pg-ink-200)'}}/>
+          ) : (
+            <div style={{width:48, height:48, borderRadius:8, background:'var(--pg-ink-200)',
+              flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="1.5" strokeLinecap="round">
+                <rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3"/>
+                <path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/>
+              </svg>
+            </div>
+          )}
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-800)',
+              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+              {convo.listingContext.name}
+            </div>
+            <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:2}}>
+              {convo.listingContext.priceMode === 'neg'
+                ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
+                : convo.listingContext.price
+                  ? `$${Number(convo.listingContext.price).toLocaleString()}`
+                  : ''}
+              {convo.listingContext.type === 'rent' ? (lang==='pt'?' · Aluguel':' · Rental') : convo.listingContext.type === 'sell' ? (lang==='pt'?' · Venda':' · For sale') : ''}
+            </div>
+          </div>
+          <div style={{fontSize:10, fontWeight:600, color:'var(--pg-ink-400)',
+            padding:'3px 7px', borderRadius:999, background:'var(--pg-ink-200)', flexShrink:0}}>
+            {lang==='pt'?'Anúncio':lang==='es'?'Anuncio':'Listing'}
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <div ref={scroller} style={{flex:1, overflow:'auto', padding:'14px 14px 4px', display:'flex', flexDirection:'column', gap:8}}>
         {messages.length === 0 && isLive && (

@@ -582,9 +582,19 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const locationLabel = [item.loc, item.cat].filter(Boolean).join(' · ');
   const timeAgoLabel  = item.createdAt ? timeAgo(item.createdAt, lang) : '';
 
+  const _listingCtx = () => ({
+    name:     item.name || '',
+    photoUrl: (item.photoUrls && item.photoUrls[0]) || item.photoUrl || null,
+    price:    item.price,
+    priceMode:item.priceMode,
+    type:     item.type,
+  });
+
   const handleContact = () => {
     if (isStatic) { showToast && showToast(lang==='pt'?'💡 Item demonstrativo — sem vendedor real.':'💡 Demo item — no real seller to contact.'); return; }
-    if (openChat) openChat(item.author_id ? { id: item.author_id, name: item.author || 'Seller' } : (item.author || 'Seller'));
+    if (openChat) openChat(item.author_id
+      ? { id: item.author_id, name: item.author || 'Seller', listingContext: _listingCtx() }
+      : (item.author || 'Seller'));
     if (onClose) onClose();
   };
 
@@ -614,7 +624,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       // Close listing first, THEN open chat — prevents chat from flickering due to listing re-render
       if (onClose) onClose();
       setTimeout(() => {
-        openChat({ id: item.author_id, name: item.author || 'Owner' });
+        openChat({ id: item.author_id, name: item.author || 'Owner', listingContext: _listingCtx() });
       }, 280);
     }
   };
@@ -785,13 +795,6 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     setDisputeLoading(false);
     showToast && showToast(lang==='pt' ? '⚠ Problema reportado e enviado para análise.' : '⚠ Issue reported and sent for review.');
     setDisputeForm(null);
-    // Option C: auto-open chat with renter
-    if (openChat && req.requester_id) {
-      setTimeout(() => {
-        openChat({ id: req.requester_id, name: req.requester_name || 'Renter' });
-        setTimeout(() => { if (onClose) onClose(); }, 80);
-      }, 400);
-    }
   };
 
   const handleSubmitRating = async () => {
