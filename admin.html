@@ -960,6 +960,7 @@ function AdminApp({ adminUser, onLogout }) {
   const [editingNote,   setEditingNote]   = React.useState({}); // {disputeId: noteText}
   const [toast,      setToast]      = React.useState(null);
   const [marketTab,  setMarketTab]  = React.useState('pending');
+  const [disputeTab, setDisputeTab] = React.useState('pending');
   const [editRow,    setEditRow]    = React.useState(null);
   const [viewRow,    setViewRow]    = React.useState(null);
   const [rlsOpen,    setRlsOpen]    = React.useState(false);
@@ -1396,22 +1397,51 @@ function AdminApp({ adminUser, onLogout }) {
               serious:  '⚠️ Resolução sugerida: Solicite fotos de evidência às partes. Se confirmado dano, aplique aviso ao renter. Reincidência = banimento.',
               critical: '🚨 Resolução sugerida: Item não devolvido é crime (apropriação indébita). Colete prints do chat, fotos antes/depois e ID. Considere banimento imediato e oriente o proprietário a registrar B.O.',
             };
+            const pendingDisputes  = disputes.filter(d => d.status === 'pending');
+            const resolvedDisputes = disputes.filter(d => d.status !== 'pending');
+            const visibleDisputes  = disputeTab === 'pending' ? pendingDisputes : resolvedDisputes;
             return (
               <div>
                 <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>
-                  Reclamações <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({disputes.length} total · {disputeCount} pendente{disputeCount!==1?'s':''})</span>
+                  Reclamações
                 </h1>
-                <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Reports de problemas em aluguéis. Clique nos nomes para ver perfil completo.</p>
+                <p style={{fontSize:13,color:'#64748b',marginBottom:16}}>Reports de problemas em aluguéis. Clique nos nomes para ver perfil completo.</p>
 
-                {disputes.length === 0 && !loading && (
+                {/* Tabs */}
+                <div style={{display:'flex',gap:6,marginBottom:20}}>
+                  {[
+                    { id:'pending',  label:'Pendentes',  count: pendingDisputes.length,  color:'#F59E0B' },
+                    { id:'resolved', label:'Resolvidos', count: resolvedDisputes.length, color:'#22c55e' },
+                  ].map(tab => (
+                    <button key={tab.id} onClick={()=>setDisputeTab(tab.id)} style={{
+                      padding:'7px 16px', borderRadius:10, border:'none', cursor:'pointer',
+                      fontFamily:'inherit', fontSize:13, fontWeight:700, transition:'all .15s',
+                      background: disputeTab===tab.id ? tab.color+'22' : '#1a1f2e',
+                      color: disputeTab===tab.id ? tab.color : '#64748b',
+                      outline: disputeTab===tab.id ? `1.5px solid ${tab.color}55` : '1.5px solid #1e293b',
+                      display:'flex', alignItems:'center', gap:7,
+                    }}>
+                      {tab.label}
+                      <span style={{
+                        fontSize:11, fontWeight:800, padding:'1px 7px', borderRadius:999,
+                        background: disputeTab===tab.id ? tab.color+'33' : '#0f1117',
+                        color: disputeTab===tab.id ? tab.color : '#475569',
+                      }}>{tab.count}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {visibleDisputes.length === 0 && !loading && (
                   <div style={{padding:48,textAlign:'center',color:'#475569',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
-                    <div style={{fontSize:32,marginBottom:8}}>✅</div>
-                    <div style={{fontWeight:600}}>Nenhuma reclamação registrada.</div>
+                    <div style={{fontSize:32,marginBottom:8}}>{disputeTab==='pending'?'✅':'📂'}</div>
+                    <div style={{fontWeight:600}}>
+                      {disputeTab==='pending' ? 'Nenhuma reclamação pendente.' : 'Nenhuma reclamação resolvida ainda.'}
+                    </div>
                   </div>
                 )}
 
                 <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                  {disputes.map(d => {
+                  {visibleDisputes.map(d => {
                     const isPending = d.status === 'pending';
                     const noteVal = editingNote[d.id] ?? (d.admin_note || '');
                     const reportedWarnCount = warnings.filter(w => w.user_id === d.reported_user_id).length;
