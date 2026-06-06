@@ -326,7 +326,7 @@ function App() {
   const [notifOpen,      setNotifOpen]      = React.useState(false);
   // Unread badges — derived from real Supabase data
   const [hasUnreadChat,  setHasUnreadChat]  = React.useState(false);
-  const [hasUnreadNotif, setHasUnreadNotif] = React.useState(true); // notifications still mock
+  const [hasUnreadNotif, setHasUnreadNotif] = React.useState(false);
   const [payOpen,        setPayOpen]        = React.useState(false);
   const [postMenuOpen,   setPostMenuOpen]   = React.useState(false);
   const [postQPOpen,     setPostQPOpen]     = React.useState(false);
@@ -477,6 +477,18 @@ function App() {
       clearInterval(pollTimer);
     };
   }, [authReady]); // runs once authReady flips true — guaranteed after token refresh + loadProfile
+
+  // Notifications unread badge — fetch count + real-time
+  React.useEffect(() => {
+    if (!authReady || !user?.uid || !window.sb) return;
+    window.sb.from('notifications').select('id').eq('user_id', user.uid).eq('read', false)
+      .then(({ data }) => { if (data) setHasUnreadNotif(data.length > 0); });
+    const ch = window.sb.channel('notif-badge-' + user.uid)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'notifications', filter:`user_id=eq.${user.uid}` },
+        () => setHasUnreadNotif(true))
+      .subscribe();
+    return () => window.sb.removeChannel(ch);
+  }, [authReady, user?.uid]);
 
   // Helper: insert row into Supabase
   const dbWrite = React.useCallback((col, data) => {
@@ -662,7 +674,7 @@ function App() {
         onClose={()=>{ setChatOpen(false); setChatConvoTarget(null); recheckUnread(); }}
         lang={lang} initialConvo={initialConvo} currentUser={user}
         onUnreadChange={recheckUnread}/>
-      <NotificationsSheet open={notifOpen} onClose={()=>setNotifOpen(false)} lang={lang}/>
+      <NotificationsSheet open={notifOpen} onClose={()=>setNotifOpen(false)} lang={lang} user={user} onUnreadChange={(c)=>setHasUnreadNotif(c>0)}/>
       <PaywallSheet open={payOpen} onClose={()=>setPayOpen(false)} setUser={ctx.setUser} lang={lang}/>
       <PostMenuSheet open={postMenuOpen} onClose={()=>setPostMenuOpen(false)}
         onPickQuickPool={()=>setPostQPOpen(true)} lang={lang}/>

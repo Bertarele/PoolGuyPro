@@ -555,6 +555,13 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
     const { data: fresh } = await window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at',{ascending:false});
     const allWarn = fresh || [];
     setWarnings(allWarn);
+    // Notificar usuário
+    const ptLabel = { leve:'Leve (+1pt)', medio:'Médio (+2pts)', grave:'Grave (+5pts)' };
+    window.sb.from('notifications').insert({
+      user_id: userId, type: 'warning',
+      title: `Você recebeu uma advertência — ${ptLabel[warnSeverity]||warnSeverity}`,
+      body: warnReason,
+    }).catch(()=>{});
     // Auto-ban se atingir 5 pontos
     const total = allWarn.reduce((s,w)=>s+(warnPtMap[w.severity]||1),0);
     if (total >= 5 && !banned) {
@@ -1675,6 +1682,21 @@ function AdminApp({ adminUser, onLogout }) {
               // Refresh warnings list
               window.sb.from('user_warnings').select('*').order('created_at',{ascending:false})
                 .then(({data}) => { if(data) setWarnings(data); });
+              // Notificar o usuário reportado
+              if (action === 'warning') {
+                const wLabel = { leve:'Leve (+1pt)', medio:'Médio (+2pts)', grave:'Grave (+5pts)' };
+                window.sb.from('notifications').insert({
+                  user_id: dispute.reported_user_id, type: 'warning',
+                  title: `Você recebeu uma advertência — ${wLabel[warnWeight]||warnWeight}`,
+                  body: message,
+                }).catch(()=>{});
+              } else if (action === 'ban') {
+                window.sb.from('notifications').insert({
+                  user_id: dispute.reported_user_id, type: 'warning',
+                  title: 'Sua conta foi banida',
+                  body: message,
+                }).catch(()=>{});
+              }
             }
             if (updated.resolution_action === 'ban') {
               setUsers(p => p.filter(u => u.id !== resolveModal.reported_user_id));

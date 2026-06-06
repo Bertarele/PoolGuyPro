@@ -1538,47 +1538,152 @@ function PushNotifSheet({ open, onClose, lang='en', onEnabled }) {
 }
 
 // ── Notifications ─────────────────────────────────────────────
-function NotificationsSheet({ open, onClose, lang='en' }) {
-  const t = STRINGS[lang];
-  const whenMap = { justNow:t.justNow, min8:'8m', hours2:'2h', yesterday:t.yesterday };
+function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange }) {
+  const [notifs,  setNotifs]  = React.useState(null); // null = loading
+  const [marking, setMarking] = React.useState(false);
+
+  // Fetch on open
+  React.useEffect(() => {
+    if (!open || !user?.uid || !window.sb) return;
+    window.sb.from('notifications')
+      .select('*').eq('user_id', user.uid)
+      .order('created_at', { ascending: false }).limit(60)
+      .then(({ data }) => {
+        setNotifs(data || []);
+        if (onUnreadChange) onUnreadChange((data||[]).filter(n=>!n.read).length);
+      });
+  }, [open, user?.uid]);
+
+  // Real-time new notifications
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb) return;
+    const ch = window.sb.channel('notifs-ui-' + user.uid)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'notifications', filter:`user_id=eq.${user.uid}` },
+        p => { setNotifs(prev => prev ? [p.new, ...prev] : [p.new]); if (onUnreadChange) onUnreadChange(c => (c||0)+1); })
+      .subscribe();
+    return () => window.sb.removeChannel(ch);
+  }, [user?.uid]);
+
+  // Mark all read when sheet opens (with a short delay so user sees the unread state first)
+  React.useEffect(() => {
+    if (!open || !user?.uid || !window.sb || marking) return;
+    if (!notifs || !notifs.some(n=>!n.read)) return;
+    const t = setTimeout(() => {
+      setMarking(true);
+      window.sb.from('notifications').update({ read:true }).eq('user_id',user.uid).eq('read',false)
+        .then(() => {
+          setNotifs(prev => prev ? prev.map(n=>({...n,read:true})) : prev);
+          if (onUnreadChange) onUnreadChange(0);
+          setMarking(false);
+        });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [open, notifs]);
+
+  const markAllNow = () => {
+    if (!window.sb || !user?.uid) return;
+    window.sb.from('notifications').update({ read:true }).eq('user_id',user.uid).eq('read',false).then(() => {
+      setNotifs(prev => prev ? prev.map(n=>({...n,read:true})) : prev);
+      if (onUnreadChange) onUnreadChange(0);
+    });
+  };
+
+  const iconFor = (type) => {
+    if (type==='rental_request')   return Icon.key(17,'#fff');
+    if (type==='rental_approved')  return Icon.check(17,'#fff');
+    if (type==='rental_declined')  return Icon.x(17,'#fff');
+    if (type==='rental_cancelled') return Icon.x(17,'#fff');
+    if (type==='rental_completed') return Icon.check(17,'#fff');
+    if (type==='warning')          return <span style={{fontSize:18}}>⚠️</span>;
+    if (type==='dispute_resolved') return Icon.shield(16,'#fff');
+    return Icon.bolt(17,'#fff');
+  };
+  const colorFor = (type) => {
+    if (type==='rental_request')   return '#0EBAC7';
+    if (type==='rental_approved')  return '#22C55E';
+    if (type==='rental_declined'||type==='rental_cancelled') return '#EF4444';
+    if (type==='rental_completed') return '#16A34A';
+    if (type==='warning')          return '#F59E0B';
+    if (type==='dispute_resolved') return '#6366F1';
+    return '#3B82F6';
+  };
+  const fmtTime = (d) => {
+    const mins = Math.floor((Date.now()-new Date(d).getTime())/60000);
+    if (mins < 1)  return lang==='pt'?'agora':lang==='es'?'ahora':'now';
+    if (mins < 60) return `${mins}m`;
+    const hrs = Math.floor(mins/60);
+    if (hrs < 24)  return `${hrs}h`;
+    const days = Math.floor(hrs/24);
+    if (days===1)  return lang==='pt'?'ontem':lang==='es'?'ayer':'yesterday';
+    return `${days}d`;
+  };
+
+  const hasUnread = notifs && notifs.some(n=>!n.read);
+
   return (
     <Sheet open={open} onClose={onClose} height="72%">
       <div style={{padding:'4px 18px 30px'}}>
+        {/* Header */}
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14}}>
-          <h2 style={{margin:0, fontSize:20, fontWeight:700, letterSpacing:'-0.02em'}}>{t.notifsTitle}</h2>
-          <button style={{border:'none', background:'transparent', color:'var(--pg-blue-600)', fontSize:13, fontWeight:600, cursor:'pointer'}}>{t.markAllRead}</button>
+          <h2 style={{margin:0, fontSize:20, fontWeight:700, letterSpacing:'-0.02em'}}>
+            {lang==='pt'?'Notificações':lang==='es'?'Notificaciones':'Notifications'}
+          </h2>
+          {hasUnread && (
+            <button onClick={markAllNow} style={{border:'none', background:'transparent', color:'var(--pg-blue-600)', fontSize:13, fontWeight:600, cursor:'pointer'}}>
+              {lang==='pt'?'Marcar tudo lido':lang==='es'?'Marcar todo leído':'Mark all read'}
+            </button>
+          )}
         </div>
-        <div style={{display:'flex', flexDirection:'column', gap:2}}>
-          {NOTIFICATIONS.map(n => {
-            const title = n.kind==='message' ? `${n.who} ${t[n.titleKey]}` : t[n.titleKey];
-            const body  = n.kind==='message' ? tr(n.quote, lang) :
-                          n.kind==='apply'   ? `${n.who} ${t[n.bodyKey]}` :
-                          n.kind==='rating'  ? `${n.who} ${t[n.bodyKey]}` : t[n.bodyKey];
-            return (
+
+        {/* Loading */}
+        {notifs === null && (
+          <div style={{padding:'48px 0', textAlign:'center', color:'var(--pg-ink-400)', fontSize:13}}>
+            {lang==='pt'?'Carregando…':lang==='es'?'Cargando…':'Loading…'}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {notifs !== null && notifs.length === 0 && (
+          <div style={{padding:'48px 0', textAlign:'center'}}>
+            <div style={{fontSize:40, marginBottom:12}}>🔔</div>
+            <div style={{fontSize:15, fontWeight:700, color:'var(--pg-ink-700)', marginBottom:6}}>
+              {lang==='pt'?'Nenhuma notificação':lang==='es'?'Sin notificaciones':'No notifications yet'}
+            </div>
+            <div style={{fontSize:13, color:'var(--pg-ink-400)', lineHeight:1.55, maxWidth:260, margin:'0 auto'}}>
+              {lang==='pt'
+                ?'Você será avisado sobre pedidos de aluguel, aprovações e advertências.'
+                :lang==='es'
+                ?'Te avisaremos sobre solicitudes de alquiler, aprobaciones y advertencias.'
+                :'You\'ll be notified about rental requests, approvals, and warnings.'}
+            </div>
+          </div>
+        )}
+
+        {/* List */}
+        {notifs !== null && notifs.length > 0 && (
+          <div style={{display:'flex', flexDirection:'column', gap:2}}>
+            {notifs.map(n => (
               <div key={n.id} style={{display:'flex', gap:12, padding:'12px 8px', borderRadius:10,
-                background:n.unread?'var(--pg-blue-50)':'transparent', cursor:'pointer', position:'relative'}}>
-                <div style={{width:38, height:38, borderRadius:'50%', flexShrink:0,
-                  background:n.kind==='job'?'var(--pg-aqua-500)':n.kind==='message'?'var(--pg-blue-500)':n.kind==='apply'?'var(--pg-aqua-700)':'oklch(0.78 0.15 80)',
+                background:n.read?'transparent':'var(--pg-blue-50)', position:'relative'}}>
+                <div style={{width:40, height:40, borderRadius:'50%', flexShrink:0,
+                  background:colorFor(n.type),
                   display:'flex', alignItems:'center', justifyContent:'center', color:'#fff'}}>
-                  {n.kind==='job'     && Icon.bolt(18,'#fff')}
-                  {n.kind==='message' && Icon.msg(16,'#fff')}
-                  {n.kind==='apply'   && Icon.check(16,'#fff')}
-                  {n.kind==='rating'  && Icon.star(15,'#fff',true)}
+                  {iconFor(n.type)}
                 </div>
                 <div style={{flex:1, minWidth:0}}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
-                    <div style={{fontSize:13, fontWeight:600, letterSpacing:'-0.01em'}}>{title}</div>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8}}>
+                    <div style={{fontSize:13, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3}}>{n.title}</div>
                     <div style={{display:'flex', alignItems:'center', gap:5, flexShrink:0}}>
-                      <div style={{fontSize:11, color:'var(--pg-ink-500)', whiteSpace:'nowrap'}}>{whenMap[n.whenKey]}</div>
-                      {n.unread && <span style={{width:8, height:8, borderRadius:'50%', background:'var(--pg-blue-500)', flexShrink:0}}/>}
+                      <div style={{fontSize:11, color:'var(--pg-ink-400)', whiteSpace:'nowrap'}}>{fmtTime(n.created_at)}</div>
+                      {!n.read && <span style={{width:8, height:8, borderRadius:'50%', background:'var(--pg-blue-500)', flexShrink:0}}/>}
                     </div>
                   </div>
-                  <div style={{fontSize:13, color:'var(--pg-ink-700)', marginTop:2, lineHeight:1.4}}>{body}</div>
+                  {n.body && <div style={{fontSize:12.5, color:'var(--pg-ink-600)', marginTop:3, lineHeight:1.45}}>{n.body}</div>}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </Sheet>
   );
