@@ -3296,6 +3296,24 @@ function MarketplaceScreen({ ctx }) {
   const isEquipment = view === 'buy' || view === 'rent';
   const mode = view === 'rent' ? 'rent' : 'sell';
 
+  // Rotas reais do banco (type='route', aprovadas ou próprias pendentes)
+  const liveRoutes = liveMarket
+    .filter(m => m.type === 'route' && (m.status === 'approved' || (m.status === 'pending' && isMyPost(m))))
+    .map(m => ({
+      id: m._id, _live: true, _liveId: m._id,
+      _author: m.author, _authorId: m.author_id,
+      name: m.name || m.routeName || '',
+      clients: m.clients ? String(m.clients) : '?',
+      area: m.area || m.loc || '',
+      revenue: m.revenue ? `$${Number(m.revenue).toLocaleString()}/mo` : '',
+      est: Number(m.asking) || 0,
+      photoUrl: m.photoUrl || null,
+      photoUrls: m.photoUrls || [],
+      status: m.status,
+    }));
+  // Combina rotas reais (primeiro) + rotas demo estáticas
+  const allRoutes = [...liveRoutes, ...POOL_ROUTES];
+
   const list = isEquipment
     ? EQUIPMENT.filter(e =>
         e.mode === mode &&
@@ -3314,8 +3332,8 @@ function MarketplaceScreen({ ctx }) {
            (poolPrice === '1500-3k' && p.est >= 1500 && p.est <= 3000) ||
            (poolPrice === 'o3k'   && p.est > 3000))
         )
-      : POOL_ROUTES.filter(r =>
-          (routeRegion === 'all' || r.area.toLowerCase().includes(routeRegion.toLowerCase())) &&
+      : allRoutes.filter(r =>
+          (routeRegion === 'all' || (r.area||'').toLowerCase().includes(routeRegion.toLowerCase())) &&
           (routePrice === 'all' ||
            (routePrice === 'u5k'   && r.est < 5000) ||
            (routePrice === '5k-8k' && r.est >= 5000 && r.est <= 8000) ||
@@ -3341,7 +3359,7 @@ function MarketplaceScreen({ ctx }) {
   const sellForView = { buy:'sell', rent:'rent', routes:'route' };
 
   const totalItems = EQUIPMENT.length;
-  const totalRoutes = POOL_ROUTES.length;
+  const totalRoutes = allRoutes.length;
   const locationLbl = lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South Florida';
 
   // Desktop detection
@@ -3928,10 +3946,14 @@ function MarketplaceScreen({ ctx }) {
                 {/* Route cards in 2-column grid on desktop */}
                 <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(360px,1fr))', gap:16}}>
                   {list.map(r => (
-                    <div key={r.id} style={{
-                      background:'var(--pg-white)', borderRadius:16, overflow:'hidden',
-                      border:'1px solid var(--pg-ink-200)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
-                    }}>
+                    <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m) openListing(m); } else setSelected({...r, _type:'route'}); }}
+                      style={{
+                        background:'var(--pg-white)', borderRadius:16, overflow:'hidden',
+                        border:'1px solid var(--pg-ink-200)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
+                        cursor:'pointer', transition:'box-shadow .15s',
+                      }}
+                      onMouseEnter={e=>e.currentTarget.style.boxShadow='0 4px 20px rgba(0,119,182,0.18)'}
+                      onMouseLeave={e=>e.currentTarget.style.boxShadow='0 2px 12px rgba(0,0,0,0.06)'}>
                       <div style={{display:'flex', alignItems:'stretch'}}>
                         <div style={{width:100, flexShrink:0, background:'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-800))',
                           display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4, padding:'16px 8px'}}>
@@ -3967,7 +3989,7 @@ function MarketplaceScreen({ ctx }) {
                                 ${(r.est||r.asking||0).toLocaleString()}
                               </div>
                             </div>
-                            <button onClick={()=>openChat&&openChat()} style={{
+                            <button onClick={(e)=>{ e.stopPropagation(); r._live&&r._authorId ? openChat({id:r._authorId,name:r._author||'Seller'}) : openChat&&openChat(); }} style={{
                               padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer',
                               background:'var(--pg-blue-500)', color:'#fff',
                               fontFamily:'inherit', fontSize:13, fontWeight:700,
@@ -4511,7 +4533,7 @@ function MarketplaceScreen({ ctx }) {
                 { id:'routes', icon: Icon.pin,
                   label: lang==='pt'?'Rotas':lang==='es'?'Rutas':'Routes',
                   sub:   lang==='pt'?'5+ piscinas':lang==='es'?'5+ piscinas':'5+ pools',
-                  count: POOL_ROUTES.length },
+                  count: allRoutes.length },
                 { id:'pools',
                   icon: (s,c) => (
                     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -4686,7 +4708,9 @@ function MarketplaceScreen({ ctx }) {
 
             {/* Route cards */}
             {routeSub === 'routes' && list.map(r => (
-              <div key={r.id} className="pg-card pg-card-tap" onClick={()=>setSelected({...r, _type:'route'})} style={{padding:14, display:'flex', gap:12}}>
+              <div key={r.id||r._liveId} className="pg-card pg-card-tap"
+                onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m) openListing(m); } else setSelected({...r, _type:'route'}); }}
+                style={{padding:14, display:'flex', gap:12, position:'relative'}}>
                 <div style={{width:90, height:90, borderRadius:12, overflow:'hidden', flexShrink:0}}>
                   {(r.photoUrls && r.photoUrls[0]) || r.photoUrl
                     ? <img src={(r.photoUrls&&r.photoUrls[0])||r.photoUrl} alt={r.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
@@ -4698,19 +4722,22 @@ function MarketplaceScreen({ ctx }) {
                     <span className="pg-badge" style={{background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', fontSize:9}}>
                       ROTA
                     </span>
+                    {r._live && r.status==='pending' && (
+                      <span className="pg-badge" style={{background:'#FEF9C3', color:'#854D0E', fontSize:9}}>⏳ PENDENTE</span>
+                    )}
                     <span style={{fontSize:11, color:'var(--pg-ink-400)', fontWeight:500}}>{r.clients} {t.poolsWord}</span>
                   </div>
                   <div style={{fontSize:14, fontWeight:600, letterSpacing:'-0.01em', lineHeight:1.25}}>{tr(r.name, lang)}</div>
                   <div style={{display:'flex', gap:8, alignItems:'center', marginTop:5, flexWrap:'wrap'}}>
-                    <span className="pg-chip pg-chip-aqua" style={{padding:'3px 8px', fontSize:11}}>{tr(r.revenue, lang)}</span>
+                    {r.revenue && <span className="pg-chip pg-chip-aqua" style={{padding:'3px 8px', fontSize:11}}>{tr(r.revenue, lang)}</span>}
                     <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>{r.area}</span>
                   </div>
                   <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:8}}>
                     <div>
                       <div style={{fontSize:10, color:'var(--pg-ink-400)'}}>{t.asking}</div>
-                      <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${r.est.toLocaleString()}</div>
+                      <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${(r.est||0).toLocaleString()}</div>
                     </div>
-                    <button onClick={()=>openChat()} className="pg-btn pg-btn-primary" style={{height:34, padding:'0 14px', fontSize:13}}>
+                    <button onClick={(e)=>{ e.stopPropagation(); r._live&&r._authorId ? openChat({id:r._authorId,name:r._author||'Seller'}) : openChat(); }} className="pg-btn pg-btn-primary" style={{height:34, padding:'0 14px', fontSize:13}}>
                       {t.contact}
                     </button>
                   </div>
