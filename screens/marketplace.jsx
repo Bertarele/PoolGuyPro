@@ -1059,26 +1059,14 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
     // Status cards (same for static/live)
     if (reqStatus === 'approved') return (
-      <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(14,186,199,0.40)'}}>
-        <div style={{padding:'13px 16px',background:'rgba(14,186,199,0.10)',display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:30,height:30,borderRadius:'50%',background:'#0EBAC7',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
-          </div>
-          <div>
-            <div style={{fontSize:13,fontWeight:800,color:'#0EBAC7'}}>{lang==='pt'?'🔄 Em andamento!':'🔄 In progress!'}</div>
-            <div style={{fontSize:11.5,color:'#0EBAC7',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou. Aproveite!':'The owner approved. Enjoy!'}</div>
-          </div>
+      <div style={{padding:'13px 16px',borderRadius:14,background:'rgba(14,186,199,0.10)',border:'1.5px solid rgba(14,186,199,0.40)',display:'flex',alignItems:'center',gap:10}}>
+        <div style={{width:30,height:30,borderRadius:'50%',background:'#0EBAC7',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
         </div>
-        <button onClick={handleCancelRequest} disabled={cancelLoading} style={{
-          width:'100%',padding:'9px',border:'none',borderTop:'1px solid rgba(14,186,199,0.15)',
-          cursor:'pointer',fontFamily:'inherit',fontSize:11.5,fontWeight:600,
-          background:'rgba(239,68,68,0.05)',color:'#EF4444',
-          display:'flex',alignItems:'center',justifyContent:'center',gap:5,
-          opacity:cancelLoading?0.6:1,
-        }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          {cancelLoading?(lang==='pt'?'Cancelando…':'Cancelling…'):(lang==='pt'?'Cancelar aluguel':'Cancel rental')}
-        </button>
+        <div>
+          <div style={{fontSize:13,fontWeight:800,color:'#0EBAC7'}}>{lang==='pt'?'🔄 Em andamento!':'🔄 In progress!'}</div>
+          <div style={{fontSize:11.5,color:'#0EBAC7',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou. Aproveite!':'The owner approved. Enjoy!'}</div>
+        </div>
       </div>
     );
     if (reqStatus === 'completed') return (
