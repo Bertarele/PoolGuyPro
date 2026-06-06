@@ -171,16 +171,6 @@ function NoPhotoPlaceholder({ height = 108, small = false }) {
         <path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/>
         <line x1="17" y1="11" x2="17.01" y2="11"/>
       </svg>
-      {/* App logo mark */}
-      <FloodMark size={logoSize}/>
-      {/* Label */}
-      <span style={{
-        fontSize, fontWeight: 700, letterSpacing:'0.06em',
-        color:'var(--pg-ink-400)', fontFamily:'var(--pg-font-display)',
-        textTransform:'uppercase',
-      }}>
-        {small ? 'No photo' : 'No photo available'}
-      </span>
     </div>
   );
 }
