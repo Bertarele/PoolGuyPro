@@ -5830,7 +5830,6 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
   const [revenue,   setRevenue]   = React.useState('');
   const [asking,    setAsking]    = React.useState('');
   const [area,      setArea]      = React.useState('');
-  const [photos,    setPhotos]    = React.useState([]);
 
   const isValid = routeName.trim().length > 2 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
@@ -5844,17 +5843,6 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
       </div>
 
       <div style={{flex:1, overflow:'auto', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
-
-        {/* Photos */}
-        <PhotoPicker
-          photos={photos}
-          onAdd={url=>setPhotos(p=>[...p,url])}
-          onRemove={url=>setPhotos(p=>p.filter(u=>u!==url))}
-          max={5} lang={lang}
-          title={lang==='pt'?'Fotos da rota':lang==='es'?'Fotos de la ruta':'Route photos'}
-        />
-
-        <div style={{height:0, borderTop:'0.5px solid var(--pg-ink-200)'}}/>
 
         {/* Escrow notice */}
         <div style={{
@@ -5897,7 +5885,7 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
       </div>
 
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
-        <button onClick={()=>onSubmit && onSubmit({ type:'route', routeName, clients, revenue, asking, area, photoUrl: photos[0]||null, photos })}
+        <button onClick={()=>onSubmit && onSubmit({ type:'route', routeName, clients, revenue, asking, area, photoUrl: null, photos: [] })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.pin(17,'#fff')} {t.postListingBtn}
