@@ -405,6 +405,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [disputeSeverity, setDisputeSeverity] = React.useState('serious');
   const [disputeDesc,     setDisputeDesc]     = React.useState('');
   const [disputeLoading,  setDisputeLoading]  = React.useState(false);
+  const [disputePhotos,   setDisputePhotos]   = React.useState([]); // [{file, preview}]
   // Rental photos (before/after)
   const [requestPhotos,  setRequestPhotos]  = React.useState({}); // {reqId:{before:[],after:[]}}
   const [addingPhotoFor, setAddingPhotoFor] = React.useState(null); // reqId being photo'd
@@ -776,9 +777,25 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     if (!disputeForm || !disputeDesc.trim() || !window.sb || !currentUser?.uid) return;
     setDisputeLoading(true);
     const { requestId, req } = disputeForm;
-    // Mark request as disputed
+
+    // 1. Upload evidence photos
+    const evidenceUrls = [];
+    for (const p of disputePhotos) {
+      try {
+        const raw = p.file.name.split('.').pop().toLowerCase();
+        const ext = /^(jpg|jpeg|png|webp|gif|heic)$/.test(raw) ? raw : 'jpg';
+        const path = `dispute-evidence/${currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: upErr } = await window.sb.storage.from('post-images').upload(path, p.file, { contentType: p.file.type, upsert: false });
+        if (!upErr) {
+          const { data: pub } = window.sb.storage.from('post-images').getPublicUrl(path);
+          if (pub?.publicUrl) evidenceUrls.push(pub.publicUrl);
+        }
+      } catch(e) {}
+    }
+
+    // 2. Mark request as disputed
     await window.sb.from('rental_requests').update({ status: 'disputed' }).eq('id', requestId);
-    // Insert dispute report
+    // 3. Insert dispute report
     await window.sb.from('dispute_reports').insert({
       rental_request_id: requestId,
       reporter_id:       currentUser.uid,
@@ -790,11 +807,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       reporter_name:     currentUser.name || (currentUser.email||'').split('@')[0] || 'Owner',
       reported_name:     req.requester_name || 'Renter',
       status:            'pending',
+      evidence_urls:     evidenceUrls,
     });
     setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: 'disputed'} : r));
     setDisputeLoading(false);
     showToast && showToast(lang==='pt' ? '⚠ Problema reportado e enviado para análise.' : '⚠ Issue reported and sent for review.');
     setDisputeForm(null);
+    setDisputePhotos([]);
   };
 
   const handleSubmitRating = async () => {
@@ -1775,25 +1794,55 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       { id:'critical', emoji:'🔴', label:lang==='pt'?'Crítico':'Critical',desc:lang==='pt'?'Não devolvido':'Not returned' },
     ];
     const sevColor = { minor:'#EAB308', serious:'#F59E0B', critical:'#EF4444' };
+
+    const addPhotos = (files) => {
+      const arr = Array.from(files).filter(f=>f.type.startsWith('image/')).slice(0, 5 - disputePhotos.length);
+      const items = arr.map(file => ({ file, preview: URL.createObjectURL(file) }));
+      setDisputePhotos(prev => [...prev, ...items].slice(0, 5));
+    };
+    const removePhoto = (idx) => {
+      setDisputePhotos(prev => { URL.revokeObjectURL(prev[idx].preview); return prev.filter((_,i)=>i!==idx); });
+    };
+
     return (
       <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.55)',zIndex:9600,display:'flex',alignItems:'flex-end'}}
-        onClick={()=>setDisputeForm(null)}>
+        onClick={()=>{ setDisputeForm(null); setDisputePhotos([]); }}>
         <div onClick={e=>e.stopPropagation()}
           style={{width:'100%',maxWidth:520,margin:'0 auto',background:'var(--pg-white)',
-            borderRadius:'22px 22px 0 0',padding:'24px 24px 44px',boxShadow:'0 -8px 40px rgba(0,0,0,0.2)'}}>
-          <div style={{width:36,height:4,borderRadius:999,background:'var(--pg-ink-200)',margin:'0 auto 20px'}}/>
+            borderRadius:'22px 22px 0 0',padding:'20px 20px 44px',boxShadow:'0 -8px 40px rgba(0,0,0,0.2)',
+            maxHeight:'92vh',overflowY:'auto'}}>
+
+          <div style={{width:36,height:4,borderRadius:999,background:'var(--pg-ink-200)',margin:'0 auto 18px'}}/>
+
           <div style={{fontSize:19,fontWeight:800,color:'var(--pg-ink-900)',marginBottom:4}}>
             ⚠ {lang==='pt'?'Reportar problema':'Report an issue'}
           </div>
-          <div style={{fontSize:12.5,color:'var(--pg-ink-500)',marginBottom:20}}>
+          <div style={{fontSize:12.5,color:'var(--pg-ink-500)',marginBottom:16}}>
             {lang==='pt'
               ?`Este report será analisado pela equipe PoolGuyX e pode resultar em penalidades para ${disputeForm.req.requester_name||'o renter'}.`
               :`This report will be reviewed by PoolGuyX and may result in penalties for ${disputeForm.req.requester_name||'the renter'}.`}
           </div>
+
+          {/* Banner de evidências */}
+          <div style={{borderRadius:12,padding:'12px 14px',marginBottom:18,
+            background:'rgba(59,130,246,0.07)',border:'1.5px solid rgba(59,130,246,0.25)'}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#3B82F6',marginBottom:4}}>
+              📎 {lang==='pt'?'Adicione o máximo de provas possível':lang==='es'?'Agrega el máximo de pruebas posible':'Add as much evidence as possible'}
+            </div>
+            <div style={{fontSize:12,color:'#3B82F6',lineHeight:1.55,opacity:0.85}}>
+              {lang==='pt'
+                ?'Nossa equipe técnica vai analisar todas as fotos e informações antes de tomar qualquer decisão. Prints, fotos do estado do equipamento e comprovantes aumentam suas chances de resolução.'
+                :lang==='es'
+                ?'Nuestro equipo técnico analizará todas las fotos e información antes de tomar cualquier decisión. Capturas de pantalla, fotos del equipamiento y comprobantes aumentan tus posibilidades de resolución.'
+                :'Our technical team will review all photos and information before making any decision. Screenshots, equipment condition photos and proof of communication increase your chances of resolution.'}
+            </div>
+          </div>
+
+          {/* Gravidade */}
           <div style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-700)',marginBottom:8}}>
             {lang==='pt'?'Gravidade:':'Severity:'}
           </div>
-          <div style={{display:'flex',gap:7,marginBottom:18}}>
+          <div style={{display:'flex',gap:7,marginBottom:16}}>
             {sevs.map(s=>(
               <button key={s.id} onClick={()=>setDisputeSeverity(s.id)} style={{
                 flex:1,padding:'10px 6px',borderRadius:12,cursor:'pointer',fontFamily:'inherit',
@@ -1806,16 +1855,64 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               </button>
             ))}
           </div>
+
+          {/* Descrição */}
+          <div style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-700)',marginBottom:6}}>
+            {lang==='pt'?'Descrição detalhada:':lang==='es'?'Descripción detallada:':'Detailed description:'}
+          </div>
           <textarea
             value={disputeDesc}
             onChange={e=>setDisputeDesc(e.target.value)}
             maxLength={500}
-            placeholder={lang==='pt'?'Descreva o problema com detalhes (obrigatório)...':'Describe the issue in detail (required)...'}
+            placeholder={lang==='pt'?'Descreva o problema com o máximo de detalhes possível...':lang==='es'?'Describe el problema con el máximo de detalle posible...':'Describe the issue with as much detail as possible...'}
             rows={4}
             style={{width:'100%',borderRadius:12,border:'1.5px solid var(--pg-ink-200)',background:'var(--pg-ink-50)',
               color:'var(--pg-ink-900)',fontFamily:'inherit',fontSize:14,padding:'11px 13px',
               resize:'none',boxSizing:'border-box',outline:'none',marginBottom:16,display:'block'}}
           />
+
+          {/* Upload de fotos */}
+          <div style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-700)',marginBottom:8}}>
+            📷 {lang==='pt'?`Fotos como prova (${disputePhotos.length}/5)`:lang==='es'?`Fotos como prueba (${disputePhotos.length}/5)`:`Evidence photos (${disputePhotos.length}/5)`}
+          </div>
+
+          {/* Grid de previews */}
+          {disputePhotos.length > 0 && (
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:10}}>
+              {disputePhotos.map((p,i)=>(
+                <div key={i} style={{position:'relative',width:76,height:76,borderRadius:10,overflow:'hidden',flexShrink:0,
+                  border:'1.5px solid var(--pg-ink-200)'}}>
+                  <img src={p.preview} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  <button onClick={()=>removePhoto(i)} style={{
+                    position:'absolute',top:2,right:2,width:20,height:20,borderRadius:'50%',border:'none',
+                    background:'rgba(0,0,0,0.65)',color:'#fff',fontSize:11,fontWeight:900,
+                    cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1,padding:0}}>
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Botão de adicionar fotos */}
+          {disputePhotos.length < 5 && (
+            <label style={{
+              display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+              height:44,borderRadius:12,border:'1.5px dashed var(--pg-ink-300)',
+              background:'var(--pg-ink-50)',cursor:'pointer',marginBottom:16,
+              fontSize:13,fontWeight:600,color:'var(--pg-ink-500)',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              {lang==='pt'?'Adicionar fotos':lang==='es'?'Agregar fotos':'Add photos'}
+              <input type="file" accept="image/*" multiple style={{display:'none'}}
+                onChange={e=>{ addPhotos(e.target.files); e.target.value=''; }}/>
+            </label>
+          )}
+
+          {/* Botão de enviar */}
           <button onClick={handleReportProblemFull}
             disabled={!disputeDesc.trim()||disputeLoading}
             style={{width:'100%',height:50,borderRadius:14,border:'none',
@@ -1823,13 +1920,15 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               fontSize:15,fontWeight:800,color:'#fff',marginBottom:10,
               background:!disputeDesc.trim()?'var(--pg-ink-300)':'linear-gradient(135deg,#EF4444,#DC2626)',
               opacity:!disputeDesc.trim()?0.5:1,transition:'all .15s'}}>
-            {disputeLoading?(lang==='pt'?'Enviando...':'Sending...'):(lang==='pt'?'Enviar report':'Submit report')}
+            {disputeLoading
+              ? (lang==='pt'?`Enviando${disputePhotos.length>0?` ${disputePhotos.length} foto${disputePhotos.length>1?'s':''}...`:'...'}`:lang==='es'?'Enviando...':'Sending...')
+              : (lang==='pt'?'Enviar report':lang==='es'?'Enviar reporte':'Submit report')}
           </button>
-          <button onClick={()=>setDisputeForm(null)}
+          <button onClick={()=>{ setDisputeForm(null); setDisputePhotos([]); }}
             style={{width:'100%',height:42,borderRadius:12,border:'1.5px solid var(--pg-ink-200)',
               background:'transparent',color:'var(--pg-ink-500)',fontSize:14,fontWeight:600,
               cursor:'pointer',fontFamily:'inherit'}}>
-            {lang==='pt'?'Cancelar':'Cancel'}
+            {lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}
           </button>
         </div>
       </div>

@@ -1569,6 +1569,28 @@ function AdminApp({ adminUser, onLogout }) {
                             <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.65,whiteSpace:'pre-wrap'}}>{d.description}</div>
                           </div>
 
+                          {/* Evidence photos */}
+                          {d.evidence_urls && d.evidence_urls.length > 0 && (
+                            <div style={{marginBottom:12}}>
+                              <div style={{fontSize:10,fontWeight:700,color:'#3B82F6',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>
+                                📎 PROVAS ENVIADAS ({d.evidence_urls.length} foto{d.evidence_urls.length!==1?'s':''})
+                              </div>
+                              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                                {d.evidence_urls.map((url,i)=>(
+                                  <a key={i} href={url} target="_blank" rel="noreferrer">
+                                    <img src={url} alt={`Prova ${i+1}`} style={{
+                                      width:90,height:90,objectFit:'cover',borderRadius:10,
+                                      border:'2px solid #3B82F650',cursor:'pointer',
+                                      transition:'border-color .15s',
+                                    }}
+                                    onMouseEnter={e=>e.currentTarget.style.borderColor='#3B82F6'}
+                                    onMouseLeave={e=>e.currentTarget.style.borderColor='#3B82F650'}/>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Resolution guide */}
                           {isPending && (
                             <div style={{background:`rgba(${d.severity==='critical'?'239,68,68':d.severity==='serious'?'245,158,11':'234,179,8'},0.06)`,
