@@ -486,7 +486,7 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
   // Warnings
   const [warnings,     setWarnings]     = React.useState([]);
   const [showWarnForm, setShowWarnForm] = React.useState(false);
-  const [warnSeverity, setWarnSeverity] = React.useState('warning');
+  const [warnSeverity, setWarnSeverity] = React.useState('leve');
   const [warnReason,   setWarnReason]   = React.useState('');
   const [warnSaving,   setWarnSaving]   = React.useState(false);
   // Ban
@@ -544,14 +544,23 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
     load();
   }, [userId]);
 
+  const warnPtMap = { leve:1, medio:2, grave:5 };
+
   const addWarning = async () => {
     if (!warnReason.trim()) return;
     setWarnSaving(true);
     await window.sb.from('user_warnings').insert({
       user_id: userId, dispute_id: disputeRequestId||null, reason: warnReason, severity: warnSeverity,
     });
-    const { data } = await window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at',{ascending:false});
-    setWarnings(data||[]);
+    const { data: fresh } = await window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at',{ascending:false});
+    const allWarn = fresh || [];
+    setWarnings(allWarn);
+    // Auto-ban se atingir 5 pontos
+    const total = allWarn.reduce((s,w)=>s+(warnPtMap[w.severity]||1),0);
+    if (total >= 5 && !banned) {
+      await window.sb.from('profiles').update({ banned: true, ban_reason: 'Banido automaticamente por acúmulo de advertências.' }).eq('id', userId);
+      setBanned(true);
+    }
     setShowWarnForm(false); setWarnReason('');
     setWarnSaving(false);
   };
@@ -569,6 +578,8 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
     setBanned(newBan);
     setBanSaving(false);
   };
+
+  const totalWarnPts = warnings.reduce((s,w)=>s+(warnPtMap[w.severity]||1),0);
 
   const InfoRow = ({label, value, highlight}) => value ? (
     <div style={{padding:'9px 12px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b'}}>
@@ -612,8 +623,9 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
                 <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:6}}>
                   {warnings.length > 0 && (
                     <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
-                      background:'#ef444420',color:'#ef4444',border:'1px solid #ef444440'}}>
-                      ⚠️ {warnings.length} aviso{warnings.length!==1?'s':''} no histórico
+                      background:totalWarnPts>=5?'#ef444430':'#ef444420',
+                      color:'#ef4444',border:`1px solid ${totalWarnPts>=5?'#ef444460':'#ef444440'}`}}>
+                      ⚠️ {totalWarnPts}/5 pontos{totalWarnPts>=5?' · BANIDO':''}
                     </span>
                   )}
                   {banned && (
@@ -692,17 +704,32 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
             {/* Warning history */}
             {warnings.length > 0 && (
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>
-                  ⚠️ Histórico de avisos ({warnings.length})
+                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8,
+                  display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span>⚠️ Advertências ({warnings.length})</span>
+                  <span style={{fontSize:12,fontWeight:800,color:totalWarnPts>=5?'#ef4444':totalWarnPts>=3?'#f97316':'#f59e0b'}}>
+                    {totalWarnPts}/5 pontos
+                  </span>
+                </div>
+                {/* Barra de progresso */}
+                <div style={{height:6,borderRadius:99,background:'#0f1117',marginBottom:10,overflow:'hidden',border:'1px solid #1e293b'}}>
+                  <div style={{height:'100%',borderRadius:99,transition:'width .4s',
+                    background:totalWarnPts>=5?'#ef4444':totalWarnPts>=3?'#f97316':'#f59e0b',
+                    width:`${Math.min(100,(totalWarnPts/5)*100)}%`}}/>
                 </div>
                 {warnings.map((w,i)=>{
-                  const sevColor = w.severity==='banned'?'#ef4444':w.severity==='suspension'?'#f97316':'#f59e0b';
+                  const isBan  = w.severity==='banned'||w.severity==='ban';
+                  const isSusp = w.severity==='suspension';
+                  const isGrave= w.severity==='grave';
+                  const isMedio= w.severity==='medio';
+                  const sevColor = isBan?'#ef4444':isSusp?'#ef4444':isGrave?'#ef4444':isMedio?'#f97316':'#f59e0b';
+                  const sevLabel = isBan?'🚫 Banimento':isSusp?'🔒 Suspensão':isGrave?'⚠️ Grave +5pt':isMedio?'⚠️ Médio +2pt':'⚠️ Leve +1pt';
                   return (
                     <div key={w.id||i} style={{padding:'8px 10px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b',marginBottom:6}}>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
                         <span style={{fontSize:10,fontWeight:700,padding:'1px 8px',borderRadius:999,
                           background:sevColor+'20',color:sevColor,border:'1px solid '+sevColor+'40'}}>
-                          {w.severity==='banned'?'🚫 Banimento':w.severity==='suspension'?'🔒 Suspensão':'⚠️ Aviso'}
+                          {sevLabel}
                         </span>
                         <span style={{fontSize:10,color:'#475569'}}>{fmtDate(w.created_at)}</span>
                       </div>
@@ -750,7 +777,7 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
                 <button onClick={()=>setShowWarnForm(!showWarnForm)} style={{
                   height:36,padding:'0 14px',borderRadius:9,border:'1px solid #f59e0b50',
                   background:'#f59e0b10',color:'#f59e0b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  ➕ Adicionar aviso
+                  ➕ Adicionar advertência
                 </button>
                 <button onClick={toggleBan} disabled={banSaving} style={{
                   height:36,padding:'0 14px',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
@@ -765,9 +792,9 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
                     <select value={warnSeverity} onChange={e=>setWarnSeverity(e.target.value)} style={{
                       flex:1,padding:'7px 10px',borderRadius:8,border:'1px solid #334155',background:'#1a1f2e',
                       color:'#f1f5f9',fontFamily:'inherit',fontSize:12,outline:'none'}}>
-                      <option value="warning">⚠️ Aviso</option>
-                      <option value="suspension">🔒 Suspensão</option>
-                      <option value="banned">🚫 Banimento</option>
+                      <option value="leve">⚠️ Leve (+1 ponto)</option>
+                      <option value="medio">🟠 Médio (+2 pontos)</option>
+                      <option value="grave">🔴 Grave (+5 pontos = ban automático)</option>
                     </select>
                   </div>
                   <textarea value={warnReason} onChange={e=>setWarnReason(e.target.value)}
@@ -778,8 +805,10 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
                       resize:'none',boxSizing:'border-box',outline:'none',lineHeight:1.5,marginBottom:8}}/>
                   <div style={{display:'flex',gap:7}}>
                     <button onClick={()=>setShowWarnForm(false)} style={{flex:1,height:34,borderRadius:8,border:'1px solid #334155',background:'transparent',color:'#64748b',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
-                    <button onClick={addWarning} disabled={warnSaving||!warnReason.trim()} style={{flex:2,height:34,borderRadius:8,border:'none',background:'#f59e0b',color:'#000',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',opacity:warnReason.trim()&&!warnSaving?1:0.5}}>
-                      {warnSaving?'Salvando…':'💾 Confirmar aviso'}
+                    <button onClick={addWarning} disabled={warnSaving||!warnReason.trim()} style={{flex:2,height:34,borderRadius:8,border:'none',
+                      background:warnSeverity==='grave'?'#ef4444':warnSeverity==='medio'?'#f97316':'#f59e0b',
+                      color:'#fff',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',opacity:warnReason.trim()&&!warnSaving?1:0.5}}>
+                      {warnSaving?'Salvando…':'💾 Confirmar advertência'}
                     </button>
                   </div>
                 </div>
@@ -816,17 +845,23 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
 
 // ── Modal resolução de disputa ────────────────────────────────
 function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
-  const [message,  setMessage]  = React.useState('');
-  const [action,   setAction]   = React.useState('none');
-  const [saving,   setSaving]   = React.useState(false);
+  const [message,    setMessage]    = React.useState('');
+  const [action,     setAction]     = React.useState('none');
+  const [warnWeight, setWarnWeight] = React.useState('leve');
+  const [saving,     setSaving]     = React.useState(false);
   const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
   const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
 
   const actions = [
-    { value:'none',       label:'Nenhuma ação',         desc:'Apenas registrar a resolução',                                color:'#64748b' },
-    { value:'warning',    label:'⚠️ Aviso formal',      desc:'Registrar aviso no histórico do renter',                     color:'#f59e0b' },
-    { value:'suspension', label:'🔒 Suspensão',          desc:'Marcar conta como suspensa no sistema',                      color:'#f97316' },
-    { value:'ban',        label:'🚫 Banimento',          desc:'Excluir a conta permanentemente — IRREVERSÍVEL',             color:'#ef4444' },
+    { value:'none',    label:'Nenhuma ação',    desc:'Apenas registrar a resolução sem penalidade',    color:'#64748b' },
+    { value:'warning', label:'⚠️ Advertência', desc:'Adicionar pontos de advertência ao renter (acúmulo de 5 pts = ban automático)', color:'#f59e0b' },
+    { value:'ban',     label:'🚫 Banimento',    desc:'Banir a conta permanentemente — IRREVERSÍVEL',   color:'#ef4444' },
+  ];
+
+  const warnWeights = [
+    { value:'leve',  label:'Leve',  pts:1, color:'#f59e0b' },
+    { value:'medio', label:'Médio', pts:2, color:'#f97316' },
+    { value:'grave', label:'Grave', pts:5, color:'#ef4444', note:'ban automático' },
   ];
 
   const handleConfirm = async () => {
@@ -844,8 +879,8 @@ function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
         await window.sb.from('rental_requests').update({ status: 'resolved' }).eq('id', dispute.rental_request_id);
       }
       // 3. Create warning record
-      if (action !== 'none') {
-        const sev = action === 'ban' ? 'banned' : action === 'suspension' ? 'suspension' : 'warning';
+      if (action === 'warning' || action === 'ban') {
+        const sev = action === 'ban' ? 'banned' : warnWeight;
         await window.sb.from('user_warnings').insert({
           user_id: dispute.reported_user_id, dispute_id: dispute.id, reason: message, severity: sev,
         });
@@ -857,12 +892,20 @@ function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
         });
         if (!r.ok) { let e={}; try{e=await r.json();}catch(x){} throw new Error(e.message||'Erro ao banir'); }
       }
-      // 5. Suspension: mark banned in profiles
-      if (action === 'suspension') {
-        await window.sb.from('profiles').update({ banned: true, ban_reason: message }).eq('id', dispute.reported_user_id);
+      // 5. Auto-ban se acumular >= 5 pontos
+      if (action === 'warning') {
+        const ptMap = { leve:1, medio:2, grave:5 };
+        const { data: allWarn } = await window.sb.from('user_warnings').select('severity').eq('user_id', dispute.reported_user_id);
+        const total = (allWarn||[]).reduce((s,w)=>s+(ptMap[w.severity]||1),0);
+        if (total >= 5) {
+          await window.sb.from('profiles').update({ banned: true, ban_reason: 'Banido automaticamente por acúmulo de advertências.' }).eq('id', dispute.reported_user_id);
+        }
       }
+      // Refresh warnings list
+      window.sb.from('user_warnings').select('*').order('created_at',{ascending:false})
+        .then(({data}) => { if(data) setWarnings(data); });
       onResolved(dispute.id, { status:'resolved', resolution_message:message, resolution_action:action, resolved_at:now });
-      showToast(action==='ban'?'🚫 Usuário banido e reclamação resolvida.':action==='suspension'?'🔒 Suspensão aplicada e reclamação resolvida.':'✓ Reclamação resolvida com sucesso.');
+      showToast(action==='ban'?'🚫 Usuário banido e reclamação resolvida.':action==='warning'?`⚠️ Advertência (${warnWeight}) aplicada e reclamação resolvida.`:'✓ Reclamação resolvida com sucesso.');
       onClose();
     } catch(e) { alert('Erro: '+e.message); }
     finally { setSaving(false); }
@@ -902,6 +945,28 @@ function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
                 </label>
               ))}
             </div>
+            {/* Seletor de peso — só aparece quando "Advertência" está selecionado */}
+            {action === 'warning' && (
+              <div style={{marginTop:10,padding:'12px',borderRadius:10,background:'#0f1117',border:'1px solid #f59e0b30'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#f59e0b',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>
+                  PESO DA ADVERTÊNCIA
+                </div>
+                <div style={{display:'flex',gap:7}}>
+                  {warnWeights.map(w=>(
+                    <button key={w.value} onClick={()=>setWarnWeight(w.value)} style={{
+                      flex:1,padding:'8px 6px',borderRadius:8,cursor:'pointer',fontFamily:'inherit',
+                      border:`1px solid ${warnWeight===w.value?w.color+'80':'#334155'}`,
+                      background:warnWeight===w.value?w.color+'18':'transparent',
+                      transition:'all .15s',
+                    }}>
+                      <div style={{fontSize:13,fontWeight:800,color:warnWeight===w.value?w.color:'#94a3b8'}}>+{w.pts}pt</div>
+                      <div style={{fontSize:10,fontWeight:700,color:warnWeight===w.value?w.color:'#64748b',marginTop:2}}>{w.label}</div>
+                      {w.note && <div style={{fontSize:9,color:'#ef4444',marginTop:2}}>{w.note}</div>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Resolution message */}
@@ -931,9 +996,9 @@ function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
             <button onClick={handleConfirm} disabled={saving||!message.trim()} style={{
               flex:2,height:46,borderRadius:12,border:'none',cursor:message.trim()&&!saving?'pointer':'not-allowed',fontFamily:'inherit',
               fontWeight:700,fontSize:14,color:'#fff',opacity:message.trim()&&!saving?1:0.55,
-              background:action==='ban'?'linear-gradient(135deg,#ef4444,#dc2626)':action==='suspension'?'linear-gradient(135deg,#f97316,#ea580c)':action==='warning'?'linear-gradient(135deg,#f59e0b,#d97706)':'linear-gradient(135deg,#22c55e,#16a34a)',
+              background:action==='ban'?'linear-gradient(135deg,#ef4444,#dc2626)':action==='warning'&&warnWeight==='grave'?'linear-gradient(135deg,#ef4444,#dc2626)':action==='warning'&&warnWeight==='medio'?'linear-gradient(135deg,#f97316,#ea580c)':action==='warning'?'linear-gradient(135deg,#f59e0b,#d97706)':'linear-gradient(135deg,#22c55e,#16a34a)',
             }}>
-              {saving?'Processando…':action==='ban'?'🚫 Banir e Resolver':action==='suspension'?'🔒 Suspender e Resolver':action==='warning'?'⚠️ Avisar e Resolver':'✓ Confirmar Resolução'}
+              {saving?'Processando…':action==='ban'?'🚫 Banir e Resolver':action==='warning'?`⚠️ Advertência ${warnWeight} e Resolver`:'✓ Confirmar Resolução'}
             </button>
           </div>
         </div>
@@ -1444,7 +1509,7 @@ function AdminApp({ adminUser, onLogout }) {
                   {visibleDisputes.map(d => {
                     const isPending = d.status === 'pending';
                     const noteVal = editingNote[d.id] ?? (d.admin_note || '');
-                    const reportedWarnCount = warnings.filter(w => w.user_id === d.reported_user_id).length;
+                    const reportedWarnPts = warnings.filter(w=>w.user_id===d.reported_user_id).reduce((s,w)=>s+({leve:1,medio:2,grave:5,warning:1,suspension:3,banned:5}[w.severity]||1),0);
                     return (
                       <div key={d.id} style={{
                         background:'#1a1f2e',borderRadius:16,
@@ -1488,9 +1553,10 @@ function AdminApp({ adminUser, onLogout }) {
                               onMouseEnter={e=>e.currentTarget.style.borderColor='#ef4444'} onMouseLeave={e=>e.currentTarget.style.borderColor='#1e293b'}>
                               <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>⚠ Renter (reportado)</div>
                               <div style={{fontSize:13,fontWeight:700,color:'#f87171'}}>{d.reported_name||'—'}</div>
-                              {reportedWarnCount > 0 && (
-                                <div style={{fontSize:10,fontWeight:700,color:'#ef4444',marginTop:3,padding:'1px 7px',borderRadius:999,background:'#ef444415',border:'1px solid #ef444430',display:'inline-block'}}>
-                                  ⚠️ {reportedWarnCount} aviso{reportedWarnCount!==1?'s':''} anteriore{reportedWarnCount!==1?'s':''}
+                              {reportedWarnPts > 0 && (
+                                <div style={{fontSize:10,fontWeight:700,color:reportedWarnPts>=5?'#ef4444':'#f97316',marginTop:3,padding:'1px 7px',borderRadius:999,
+                                  background:reportedWarnPts>=5?'#ef444415':'#f9741615',border:`1px solid ${reportedWarnPts>=5?'#ef444430':'#f9741630'}`,display:'inline-block'}}>
+                                  ⚠️ {reportedWarnPts}/5 pts{reportedWarnPts>=5?' · BANIDO':''}
                                 </div>
                               )}
                               <div style={{fontSize:10,color:'#475569',marginTop:2}}>Clique para ver perfil</div>

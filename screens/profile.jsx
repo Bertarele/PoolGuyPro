@@ -135,69 +135,128 @@ function ProfileScreen({ ctx }) {
         {/* Personal Info */}
         <PersonalInfoCard user={user} setUser={setUser} lang={lang}/>
 
-        {/* ── Warnings received from admin ── */}
+        {/* ── Advertências recebidas do admin ── */}
         {(() => {
-          const [warnings, setWarnings] = React.useState(null); // null = loading, [] = none
+          const [warnings,  setWarnings]  = React.useState(null); // null = loading, [] = none
+          const [newIds,    setNewIds]    = React.useState(new Set());
+
           React.useEffect(() => {
             if (!user?.uid || !window.sb) return;
             window.sb.from('user_warnings').select('id,reason,severity,created_at')
               .eq('user_id', user.uid)
               .order('created_at', { ascending: false })
-              .then(({ data }) => setWarnings(data || []))
+              .then(({ data }) => {
+                const all = data || [];
+                setWarnings(all);
+                // Detectar advertências novas via localStorage
+                try {
+                  const seenRaw = localStorage.getItem('pg_seen_warn_' + user.uid);
+                  const seen = seenRaw ? new Set(JSON.parse(seenRaw)) : new Set();
+                  const fresh = new Set(all.filter(w => !seen.has(w.id)).map(w => w.id));
+                  if (fresh.size > 0) setNewIds(fresh);
+                  // Marcar como vistas após 4s
+                  setTimeout(() => {
+                    const allIds = all.map(w => w.id);
+                    localStorage.setItem('pg_seen_warn_' + user.uid, JSON.stringify(allIds));
+                    setNewIds(new Set());
+                  }, 4000);
+                } catch(e) {}
+              })
               .catch(() => setWarnings([]));
           }, [user?.uid]);
+
           if (!warnings || warnings.length === 0) return null;
-          const severityColor = (s) => s === 'ban' ? '#EF4444' : s === 'suspension' ? '#F97316' : '#F59E0B';
-          const severityBg    = (s) => s === 'ban' ? 'rgba(239,68,68,0.08)' : s === 'suspension' ? 'rgba(249,115,22,0.08)' : 'rgba(245,158,11,0.08)';
-          const severityBorder= (s) => s === 'ban' ? 'rgba(239,68,68,0.30)' : s === 'suspension' ? 'rgba(249,115,22,0.30)' : 'rgba(245,158,11,0.30)';
-          const severityLabel = (s) => {
-            if (s === 'ban')        return lang==='pt'?'Banimento':'Ban';
-            if (s === 'suspension') return lang==='pt'?'Suspensão':'Suspension';
-            return lang==='pt'?'Aviso':'Warning';
+
+          // Mapa de pontos
+          const ptMap  = { leve:1, medio:2, grave:5, warning:1, suspension:3, banned:5 };
+          const totalPts = warnings.reduce((s,w)=>s+(ptMap[w.severity]||1),0);
+          const pctBar   = Math.min(100,(totalPts/5)*100);
+          const barColor = totalPts>=5?'#EF4444':totalPts>=3?'#F97316':'#F59E0B';
+
+          const warnLabel = (s) => {
+            if (s==='banned'||s==='ban') return lang==='pt'?'Banimento':lang==='es'?'Baneo':'Ban';
+            if (s==='suspension')        return lang==='pt'?'Suspensão':lang==='es'?'Suspensión':'Suspension';
+            if (s==='grave')             return lang==='pt'?'Grave':lang==='es'?'Grave':'Severe';
+            if (s==='medio')             return lang==='pt'?'Médio':lang==='es'?'Medio':'Moderate';
+            return lang==='pt'?'Leve':lang==='es'?'Leve':'Light';
           };
+          const warnPts  = (s) => s==='grave'?5:s==='medio'?2:s==='banned'||s==='ban'?5:s==='suspension'?3:1;
+          const warnColor= (s) => (s==='banned'||s==='ban'||s==='grave')?'#EF4444':s==='medio'?'#F97316':'#F59E0B';
+
           const fmtDate = (d) => new Date(d).toLocaleDateString(lang==='pt'?'pt-BR':lang==='es'?'es-ES':'en-US', { day:'2-digit', month:'short', year:'numeric' });
+
+          const headerTitle = lang==='pt'
+            ? `Você tem ${warnings.length} advertência${warnings.length!==1?'s':''} — ${totalPts}/5 pontos`
+            : lang==='es'
+            ? `Tienes ${warnings.length} advertencia${warnings.length!==1?'s':''} — ${totalPts}/5 puntos`
+            : `You have ${warnings.length} warning${warnings.length!==1?'s':''} — ${totalPts}/5 points`;
+
+          const headerSub = lang==='pt'
+            ? 'Ao acumular 5 pontos sua conta é banida automaticamente.'
+            : lang==='es'
+            ? 'Al acumular 5 puntos tu cuenta es baneada automáticamente.'
+            : 'Reaching 5 points results in an automatic account ban.';
+
           return (
-            <div style={{borderRadius:16,overflow:'hidden',border:`1.5px solid ${severityBorder(warnings[0].severity)}`}}>
+            <div style={{borderRadius:16,overflow:'hidden',border:`1.5px solid ${barColor}50`}}>
               {/* Header */}
-              <div style={{padding:'13px 16px',background:severityBg(warnings[0].severity),
+              <div style={{padding:'13px 16px',background:`rgba(${totalPts>=5?'239,68,68':totalPts>=3?'249,115,22':'245,158,11'},0.09)`,
                 display:'flex',alignItems:'center',gap:10}}>
-                <div style={{width:36,height:36,borderRadius:'50%',flexShrink:0,
-                  background:severityBg(warnings[0].severity),border:`1.5px solid ${severityBorder(warnings[0].severity)}`,
+                <div style={{width:38,height:38,borderRadius:'50%',flexShrink:0,
+                  background:`rgba(${totalPts>=5?'239,68,68':totalPts>=3?'249,115,22':'245,158,11'},0.15)`,
+                  border:`1.5px solid ${barColor}50`,
                   display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>
-                  ⚠️
+                  {newIds.size>0?'🆕':'⚠️'}
                 </div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:800,color:severityColor(warnings[0].severity)}}>
-                    {warnings.length === 1
-                      ? (lang==='pt'?'Você recebeu 1 aviso da equipe de suporte':lang==='es'?'Recibiste 1 aviso del equipo de soporte':'You received 1 warning from our support team')
-                      : (lang==='pt'?`Você recebeu ${warnings.length} avisos da equipe de suporte`:lang==='es'?`Recibiste ${warnings.length} avisos del equipo de soporte`:`You received ${warnings.length} warnings from our support team`)}
-                  </div>
-                  <div style={{fontSize:11.5,color:severityColor(warnings[0].severity),opacity:0.8,marginTop:2}}>
-                    {lang==='pt'?'Violar os termos repetidamente pode resultar em suspensão ou banimento.'
-                      :lang==='es'?'Violar los términos repetidamente puede resultar en suspensión o baneo.'
-                      :'Repeated violations may result in suspension or a permanent ban.'}
-                  </div>
+                  <div style={{fontSize:13,fontWeight:800,color:barColor}}>{headerTitle}</div>
+                  <div style={{fontSize:11.5,color:barColor,opacity:0.8,marginTop:2}}>{headerSub}</div>
                 </div>
               </div>
-              {/* Warning list */}
-              {warnings.map((w, i) => (
-                <div key={w.id} style={{
-                  padding:'11px 16px',
-                  borderTop: i > 0 ? `1px solid ${severityBorder(w.severity)}` : `1px solid ${severityBorder(w.severity)}`,
-                  background: i % 2 === 0 ? 'var(--pg-white)' : 'var(--pg-ink-50)',
-                  display:'flex',alignItems:'flex-start',gap:10,
-                }}>
-                  <div style={{marginTop:2,flexShrink:0,fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:999,
-                    color:severityColor(w.severity),background:severityBg(w.severity),
-                    border:`1px solid ${severityBorder(w.severity)}`,whiteSpace:'nowrap'}}>
-                    {severityLabel(w.severity)}
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,color:'var(--pg-ink-800)',lineHeight:1.5}}>{w.reason}</div>
-                    <div style={{fontSize:11,color:'var(--pg-ink-400)',marginTop:3}}>{fmtDate(w.created_at)}</div>
-                  </div>
+              {/* Barra de progresso */}
+              <div style={{padding:'10px 16px 2px',background:'var(--pg-ink-50)'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                  <span style={{fontSize:10,fontWeight:700,color:'var(--pg-ink-400)',textTransform:'uppercase',letterSpacing:'.06em'}}>
+                    {lang==='pt'?'Pontos acumulados':lang==='es'?'Puntos acumulados':'Accumulated points'}
+                  </span>
+                  <span style={{fontSize:12,fontWeight:800,color:barColor}}>{totalPts}/5</span>
                 </div>
-              ))}
+                <div style={{height:7,borderRadius:99,background:'var(--pg-ink-200)',overflow:'hidden',marginBottom:10}}>
+                  <div style={{height:'100%',borderRadius:99,background:barColor,width:`${pctBar}%`,transition:'width .5s ease'}}/>
+                </div>
+              </div>
+              {/* Lista de advertências */}
+              {warnings.map((w, i) => {
+                const isNew = newIds.has(w.id);
+                const c     = warnColor(w.severity);
+                return (
+                  <div key={w.id} style={{
+                    padding:'11px 16px',
+                    borderTop:`1px solid ${c}20`,
+                    background: isNew ? `rgba(${c.replace('#','').match(/../g).map(x=>parseInt(x,16)).join(',')},0.06)` : (i%2===0?'var(--pg-white)':'var(--pg-ink-50)'),
+                    display:'flex',alignItems:'flex-start',gap:10,
+                  }}>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,flexShrink:0,marginTop:1}}>
+                      <div style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:999,
+                        color:c,background:`${c}18`,border:`1px solid ${c}40`,whiteSpace:'nowrap'}}>
+                        {warnLabel(w.severity)}
+                      </div>
+                      {(w.severity!=='banned'&&w.severity!=='ban'&&w.severity!=='suspension') && (
+                        <div style={{fontSize:9,fontWeight:700,color:c,opacity:0.75}}>+{warnPts(w.severity)}pt</div>
+                      )}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      {isNew && (
+                        <div style={{fontSize:10,fontWeight:700,color:c,marginBottom:3}}>
+                          🆕 {lang==='pt'?'Nova advertência':lang==='es'?'Nueva advertencia':'New warning'}
+                        </div>
+                      )}
+                      <div style={{fontSize:13,color:'var(--pg-ink-800)',lineHeight:1.5}}>{w.reason}</div>
+                      <div style={{fontSize:11,color:'var(--pg-ink-400)',marginTop:3}}>{fmtDate(w.created_at)}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           );
         })()}
