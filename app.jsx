@@ -271,7 +271,9 @@ function App() {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [lang, setLangState] = React.useState(t.lang);
+  const [lang, setLangState] = React.useState(() => {
+    try { return localStorage.getItem('pg_lang') || t.lang; } catch(e) { return t.lang; }
+  });
   // Per-weekday region preferences for notifications
   const [regionsByDay, setRegionsByDay] = React.useState({
     mon: ['Pompano Beach','Fort Lauderdale'],
@@ -530,6 +532,7 @@ function App() {
   const setLang = (l) => {
     setLangState(l);
     setTweak('lang', l);
+    try { localStorage.setItem('pg_lang', l); } catch(e) {}
   };
 
   const showToast = (msg) => {
