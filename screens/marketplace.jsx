@@ -589,7 +589,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   };
 
   const handleRequestRental = async () => {
-    if (!currentUser?.uid || reqStatus || !window.sb || !reqPeriod) return;
+    // Allow re-request after cancelled or declined — those are terminal but recoverable states
+    const blockedStatuses = ['pending','approved','completed','disputed','resolved'];
+    if (!currentUser?.uid || blockedStatuses.includes(reqStatus) || !window.sb || !reqPeriod) return;
     const periodEntry = availablePeriods.find(p => p.period === reqPeriod);
     const totalPrice  = periodEntry ? periodEntry.price * reqQty : 0;
     setReqLoading(true);
@@ -1129,18 +1131,43 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       </div>
     );
     if (reqStatus === 'declined') return (
-      <div style={{padding:'12px 14px',borderRadius:14,background:'rgba(239,68,68,0.1)',border:'1.5px solid rgba(239,68,68,0.35)',display:'flex',alignItems:'center',gap:10}}>
-        <span style={{fontSize:18,flexShrink:0}}>❌</span>
-        <div style={{fontSize:13,fontWeight:600,color:'#F87171'}}>{lang==='pt'?'Pedido não aprovado':'Request not approved'}</div>
+      <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(239,68,68,0.35)'}}>
+        <div style={{padding:'12px 14px',background:'rgba(239,68,68,0.08)',display:'flex',alignItems:'center',gap:10}}>
+          <span style={{fontSize:18,flexShrink:0}}>❌</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#F87171'}}>{lang==='pt'?'Pedido não aprovado':'Request not approved'}</div>
+            <div style={{fontSize:11.5,color:'#F87171',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono recusou este pedido.':'The owner declined this request.'}</div>
+          </div>
+        </div>
+        <button onClick={()=>{ setReqStatus(null); setMyRequestId(null); }} style={{
+          width:'100%',padding:'10px',border:'none',borderTop:'1px solid rgba(239,68,68,0.15)',
+          cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,
+          background:'rgba(14,186,199,0.06)',color:'#0EBAC7',
+          display:'flex',alignItems:'center',justifyContent:'center',gap:6,
+        }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          {lang==='pt'?'Tentar novamente':'Try again'}
+        </button>
       </div>
     );
     if (reqStatus === 'cancelled') return (
-      <div style={{padding:'12px 14px',borderRadius:14,background:'rgba(107,114,128,0.10)',border:'1.5px solid rgba(107,114,128,0.30)',display:'flex',alignItems:'center',gap:10}}>
-        <span style={{fontSize:18,flexShrink:0}}>🚫</span>
-        <div>
-          <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-500)'}}>{lang==='pt'?'Pedido cancelado':'Request cancelled'}</div>
-          <div style={{fontSize:11.5,color:'var(--pg-ink-400)',marginTop:1}}>{lang==='pt'?'Você cancelou este pedido.':'You cancelled this request.'}</div>
+      <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(107,114,128,0.30)'}}>
+        <div style={{padding:'12px 14px',background:'rgba(107,114,128,0.08)',display:'flex',alignItems:'center',gap:10}}>
+          <span style={{fontSize:18,flexShrink:0}}>🚫</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-500)'}}>{lang==='pt'?'Pedido cancelado':'Request cancelled'}</div>
+            <div style={{fontSize:11.5,color:'var(--pg-ink-400)',marginTop:1}}>{lang==='pt'?'Este pedido foi cancelado.':'This request was cancelled.'}</div>
+          </div>
         </div>
+        <button onClick={()=>{ setReqStatus(null); setMyRequestId(null); }} style={{
+          width:'100%',padding:'10px',border:'none',borderTop:'1px solid rgba(107,114,128,0.15)',
+          cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,
+          background:'rgba(14,186,199,0.06)',color:'#0EBAC7',
+          display:'flex',alignItems:'center',justifyContent:'center',gap:6,
+        }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          {lang==='pt'?'Fazer novo pedido':'Make a new request'}
+        </button>
       </div>
     );
     if (reqStatus === 'pending') return (
