@@ -2900,7 +2900,14 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
                 )}
               </div>
               <div style={{textAlign:'right',flexShrink:0}}>
-                {item.priceMode==='neg' ? (
+                {item.type==='route' ? (
+                  <div>
+                    <div style={{fontFamily:'var(--pg-font-display)',fontSize:26,fontWeight:800,color:'var(--pg-blue-500)',letterSpacing:'-0.03em',lineHeight:1}}>
+                      {item.asking ? `$${Number(item.asking).toLocaleString()}` : '—'}
+                    </div>
+                    <div style={{fontSize:10,color:'var(--pg-ink-400)',marginTop:2}}>{lang==='pt'?'Pedindo':lang==='es'?'Pidiendo':'Asking'}</div>
+                  </div>
+                ) : item.priceMode==='neg' ? (
                   <span style={{fontSize:13,fontWeight:700,padding:'5px 12px',borderRadius:999,
                     background:'var(--pg-blue-50)',color:'var(--pg-blue-700)',border:'1px solid var(--pg-blue-100)',whiteSpace:'nowrap'}}>
                     🤝 {lang==='pt'?'Negociável':'Negotiable'}
@@ -2918,8 +2925,18 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 
             {/* Details pills */}
             <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:14}}>
-              {item.condition && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-blue-50)',color:'var(--pg-blue-700)',border:'1px solid var(--pg-blue-100)'}}>{item.condition}</span>}
-              {item.type && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-ink-100)',color:'var(--pg-ink-700)'}}>{item.type}</span>}
+              {item.type==='route' ? (
+                <>
+                  {item.clients && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-blue-50)',color:'var(--pg-blue-700)',border:'1px solid var(--pg-blue-100)'}}>🏊 {item.clients} {lang==='pt'?'piscinas':'pools'}</span>}
+                  {item.revenue && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'rgba(16,185,129,0.08)',color:'#065F46',border:'1px solid rgba(16,185,129,0.25)'}}>💰 ${Number(item.revenue).toLocaleString()}/mo</span>}
+                  {item.area && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-ink-100)',color:'var(--pg-ink-700)'}}>{item.area}</span>}
+                </>
+              ) : (
+                <>
+                  {item.condition && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-blue-50)',color:'var(--pg-blue-700)',border:'1px solid var(--pg-blue-100)'}}>{item.condition}</span>}
+                  {item.type && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-ink-100)',color:'var(--pg-ink-700)'}}>{item.type}</span>}
+                </>
+              )}
             </div>
 
             {/* Description */}
@@ -3002,8 +3019,8 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
               </button>
             </div>
 
-            {/* Mark as Sold — only for real owner (not admin), only when not yet sold */}
-            {!isAdmin && item.status !== 'sold' && (
+            {/* Mark as Sold — only for equipment (not routes), not admin, not yet sold */}
+            {item.type !== 'route' && !isAdmin && item.status !== 'sold' && (
               <button onClick={()=>setMarkSoldOpen(true)} style={{
                 width:'100%', marginTop:10, padding:'13px', borderRadius:14,
                 border:'1.5px solid #86EFAC', background:'#F0FDF4',
@@ -3946,7 +3963,7 @@ function MarketplaceScreen({ ctx }) {
                 {/* Route cards in 2-column grid on desktop */}
                 <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(360px,1fr))', gap:16}}>
                   {list.map(r => (
-                    <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m) openListing(m); } else setSelected({...r, _type:'route'}); }}
+                    <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
                       style={{
                         background:'var(--pg-white)', borderRadius:16, overflow:'hidden',
                         border:'1px solid var(--pg-ink-200)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
@@ -3989,7 +4006,11 @@ function MarketplaceScreen({ ctx }) {
                                 ${(r.est||r.asking||0).toLocaleString()}
                               </div>
                             </div>
-                            <button onClick={(e)=>{ e.stopPropagation(); r._live&&r._authorId ? openChat({id:r._authorId,name:r._author||'Seller'}) : openChat&&openChat(); }} style={{
+                            <button onClick={(e)=>{ e.stopPropagation();
+                              if(r._live&&r._authorId){
+                                openChat({id:r._authorId,name:r._author||'Seller',listingContext:{name:tr(r.name,lang),photoUrl:(r.photoUrls&&r.photoUrls[0])||r.photoUrl||null,price:r.est,priceMode:'fixed',type:'route'}});
+                              } else { openChat&&openChat(); }
+                            }} style={{
                               padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer',
                               background:'var(--pg-blue-500)', color:'#fff',
                               fontFamily:'inherit', fontSize:13, fontWeight:700,
@@ -4709,7 +4730,7 @@ function MarketplaceScreen({ ctx }) {
             {/* Route cards */}
             {routeSub === 'routes' && list.map(r => (
               <div key={r.id||r._liveId} className="pg-card pg-card-tap"
-                onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m) openListing(m); } else setSelected({...r, _type:'route'}); }}
+                onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
                 style={{padding:14, display:'flex', gap:12, position:'relative'}}>
                 <div style={{width:90, height:90, borderRadius:12, overflow:'hidden', flexShrink:0}}>
                   {(r.photoUrls && r.photoUrls[0]) || r.photoUrl
@@ -4737,7 +4758,11 @@ function MarketplaceScreen({ ctx }) {
                       <div style={{fontSize:10, color:'var(--pg-ink-400)'}}>{t.asking}</div>
                       <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${(r.est||0).toLocaleString()}</div>
                     </div>
-                    <button onClick={(e)=>{ e.stopPropagation(); r._live&&r._authorId ? openChat({id:r._authorId,name:r._author||'Seller'}) : openChat(); }} className="pg-btn pg-btn-primary" style={{height:34, padding:'0 14px', fontSize:13}}>
+                    <button onClick={(e)=>{ e.stopPropagation();
+                      if(r._live&&r._authorId){
+                        openChat({id:r._authorId,name:r._author||'Seller',listingContext:{name:tr(r.name,lang),photoUrl:(r.photoUrls&&r.photoUrls[0])||r.photoUrl||null,price:r.est,priceMode:'fixed',type:'route'}});
+                      } else { openChat(); }
+                    }} className="pg-btn pg-btn-primary" style={{height:34, padding:'0 14px', fontSize:13}}>
                       {t.contact}
                     </button>
                   </div>
