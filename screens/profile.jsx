@@ -135,6 +135,73 @@ function ProfileScreen({ ctx }) {
         {/* Personal Info */}
         <PersonalInfoCard user={user} setUser={setUser} lang={lang}/>
 
+        {/* ── Warnings received from admin ── */}
+        {(() => {
+          const [warnings, setWarnings] = React.useState(null); // null = loading, [] = none
+          React.useEffect(() => {
+            if (!user?.uid || !window.sb) return;
+            window.sb.from('user_warnings').select('id,reason,severity,created_at')
+              .eq('user_id', user.uid)
+              .order('created_at', { ascending: false })
+              .then(({ data }) => setWarnings(data || []))
+              .catch(() => setWarnings([]));
+          }, [user?.uid]);
+          if (!warnings || warnings.length === 0) return null;
+          const severityColor = (s) => s === 'ban' ? '#EF4444' : s === 'suspension' ? '#F97316' : '#F59E0B';
+          const severityBg    = (s) => s === 'ban' ? 'rgba(239,68,68,0.08)' : s === 'suspension' ? 'rgba(249,115,22,0.08)' : 'rgba(245,158,11,0.08)';
+          const severityBorder= (s) => s === 'ban' ? 'rgba(239,68,68,0.30)' : s === 'suspension' ? 'rgba(249,115,22,0.30)' : 'rgba(245,158,11,0.30)';
+          const severityLabel = (s) => {
+            if (s === 'ban')        return lang==='pt'?'Banimento':'Ban';
+            if (s === 'suspension') return lang==='pt'?'Suspensão':'Suspension';
+            return lang==='pt'?'Aviso':'Warning';
+          };
+          const fmtDate = (d) => new Date(d).toLocaleDateString(lang==='pt'?'pt-BR':lang==='es'?'es-ES':'en-US', { day:'2-digit', month:'short', year:'numeric' });
+          return (
+            <div style={{borderRadius:16,overflow:'hidden',border:`1.5px solid ${severityBorder(warnings[0].severity)}`}}>
+              {/* Header */}
+              <div style={{padding:'13px 16px',background:severityBg(warnings[0].severity),
+                display:'flex',alignItems:'center',gap:10}}>
+                <div style={{width:36,height:36,borderRadius:'50%',flexShrink:0,
+                  background:severityBg(warnings[0].severity),border:`1.5px solid ${severityBorder(warnings[0].severity)}`,
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>
+                  ⚠️
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:800,color:severityColor(warnings[0].severity)}}>
+                    {warnings.length === 1
+                      ? (lang==='pt'?'Você recebeu 1 aviso da equipe de suporte':lang==='es'?'Recibiste 1 aviso del equipo de soporte':'You received 1 warning from our support team')
+                      : (lang==='pt'?`Você recebeu ${warnings.length} avisos da equipe de suporte`:lang==='es'?`Recibiste ${warnings.length} avisos del equipo de soporte`:`You received ${warnings.length} warnings from our support team`)}
+                  </div>
+                  <div style={{fontSize:11.5,color:severityColor(warnings[0].severity),opacity:0.8,marginTop:2}}>
+                    {lang==='pt'?'Violar os termos repetidamente pode resultar em suspensão ou banimento.'
+                      :lang==='es'?'Violar los términos repetidamente puede resultar en suspensión o baneo.'
+                      :'Repeated violations may result in suspension or a permanent ban.'}
+                  </div>
+                </div>
+              </div>
+              {/* Warning list */}
+              {warnings.map((w, i) => (
+                <div key={w.id} style={{
+                  padding:'11px 16px',
+                  borderTop: i > 0 ? `1px solid ${severityBorder(w.severity)}` : `1px solid ${severityBorder(w.severity)}`,
+                  background: i % 2 === 0 ? 'var(--pg-white)' : 'var(--pg-ink-50)',
+                  display:'flex',alignItems:'flex-start',gap:10,
+                }}>
+                  <div style={{marginTop:2,flexShrink:0,fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:999,
+                    color:severityColor(w.severity),background:severityBg(w.severity),
+                    border:`1px solid ${severityBorder(w.severity)}`,whiteSpace:'nowrap'}}>
+                    {severityLabel(w.severity)}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,color:'var(--pg-ink-800)',lineHeight:1.5}}>{w.reason}</div>
+                    <div style={{fontSize:11,color:'var(--pg-ink-400)',marginTop:3}}>{fmtDate(w.created_at)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* ── Identity verification card ── */}
         {(() => {
           const hasName  = !!(user.name && !user.name.includes('@') && user.name.trim().length > 1);

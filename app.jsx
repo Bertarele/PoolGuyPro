@@ -1164,8 +1164,47 @@ function App() {
         </div>
       )}
 
+      {/* ── Suspended screen ── */}
+      {isLoggedIn && user.banned && (
+        <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',
+          alignItems:'center',justifyContent:'center',padding:'32px 24px',
+          background:'var(--pg-white)',zIndex:200,textAlign:'center'}}>
+          <div style={{width:72,height:72,borderRadius:'50%',background:'rgba(239,68,68,0.1)',
+            display:'flex',alignItems:'center',justifyContent:'center',marginBottom:20}}>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+            </svg>
+          </div>
+          <div style={{fontSize:22,fontWeight:800,color:'var(--pg-ink-900)',marginBottom:8,fontFamily:'var(--pg-font-display)'}}>
+            {lang==='pt'?'Conta suspensa':lang==='es'?'Cuenta suspendida':'Account suspended'}
+          </div>
+          <div style={{fontSize:14,color:'var(--pg-ink-500)',lineHeight:1.6,maxWidth:320,marginBottom:28}}>
+            {lang==='pt'
+              ? 'Sua conta foi suspensa pela equipe de suporte devido a uma violação dos termos de uso.'
+              : lang==='es'
+              ? 'Tu cuenta fue suspendida por el equipo de soporte debido a una violación de los términos de uso.'
+              : 'Your account has been suspended by the support team due to a violation of our terms of use.'}
+          </div>
+          <div style={{padding:'14px 20px',borderRadius:14,background:'rgba(239,68,68,0.06)',
+            border:'1px solid rgba(239,68,68,0.2)',fontSize:13,color:'#EF4444',maxWidth:320,lineHeight:1.6,marginBottom:28}}>
+            {lang==='pt'
+              ? 'Se você acredita que isso foi um erro, entre em contato com o suporte pelo e-mail:'
+              : lang==='es'
+              ? 'Si crees que esto fue un error, contacta al soporte en:'
+              : 'If you believe this was a mistake, contact support at:'}
+            <br/><strong>support@usapoolmarket.com</strong>
+          </div>
+          <button onClick={()=>{ window.sb && window.sb.auth.signOut(); setIsLoggedIn(false); }}
+            style={{padding:'12px 28px',borderRadius:12,border:'1.5px solid var(--pg-ink-200)',
+              background:'transparent',color:'var(--pg-ink-600)',fontSize:14,fontWeight:600,
+              cursor:'pointer',fontFamily:'inherit'}}>
+            {lang==='pt'?'Sair da conta':lang==='es'?'Cerrar sesión':'Sign out'}
+          </button>
+        </div>
+      )}
+
       {/* ── Main app ── */}
-      {isLoggedIn && (
+      {isLoggedIn && !user.banned && (
         <>
           {/* Screen content */}
           <div ref={screenRef} data-pg-screen style={{position:'absolute', inset:0, paddingBottom:72, overflow:'auto'}}>
