@@ -1056,7 +1056,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
             </button>
           </div>
           {/* Owner — close listing (already hired) */}
-          {user?.uid && user.uid === job.author_id && (
+          {user?.uid && user.uid === job.author_id && user?.role !== 'admin' && (
             <div onClick={async () => {
               const msg = lang==='pt'?`Encerrar a vaga "${job.role}"? Isso indica que você já preencheu a posição.`
                 :lang==='es'?`¿Cerrar la oferta "${job.role}"? Esto indica que ya cubriste el puesto.`
@@ -1417,7 +1417,7 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
             </a>}
           </div>
           {/* Owner — remove own profile */}
-          {user?.uid && user.uid === tech.author_id && (
+          {user?.uid && user.uid === tech.author_id && user?.role !== 'admin' && (
             <div onClick={async () => {
               const msg = lang==='pt'?'Remover seu perfil de técnico? Você pode republicar quando quiser.'
                 :lang==='es'?'¿Eliminar tu perfil de técnico? Puedes volver a publicar cuando quieras.'
@@ -1928,7 +1928,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
                   {vac.priceMode === 'neg' && <span className="pg-chip" style={{fontSize:11}}>{lang==='pt'?'Negociável':'Negotiable'}</span>}
                 </div>
                 {/* Owner — close vacation post */}
-                {user?.uid && user.uid === vac.author_id && (
+                {user?.uid && user.uid === vac.author_id && user?.role !== 'admin' && (
                   <div onClick={async () => {
                     const msg = lang==='pt'?'Encerrar sua cobertura de férias? Isso indica que você encontrou alguém.'
                       :lang==='es'?'¿Cerrar tu cobertura de vacaciones? Indica que ya encontraste a alguien.'
