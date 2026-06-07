@@ -2861,26 +2861,44 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
 }
 
 // ── Hiring Application Detail Sheet ──────────────────────────
-function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
-  // Fetch fresh data from DB when opened for a live application (avoids stale rejection reason etc.)
+function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw }) {
+  // Fetch fresh data from DB when opened — avoids stale rejection reason / status
   const [freshApp, setFreshApp] = React.useState(null);
-  React.useEffect(() => {
-    if (!open) { setFreshApp(null); return; }
+  const [withdrawing, setWithdrawing] = React.useState(false);
+
+  const fetchFresh = React.useCallback(async () => {
     if (!app?.id || !window.sb) return;
-    window.sb.from('job_applications').select('*').eq('id', app.id).single()
-      .then(({ data }) => {
-        if (!data) return;
-        setFreshApp({
-          ...app,
-          status:       data.status || app.status,
-          rejectReason: data.reject_reason || null,
-          interview:    data.interview_day ? {
-            day:  { en: data.interview_day, pt: data.interview_day, es: data.interview_day },
-            time: data.interview_time || '',
-          } : null,
-        });
-      });
+    // Use array select (no .single()) to avoid 406 errors in custom client
+    const { data } = await window.sb.from('job_applications').select('*').eq('id', app.id);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return;
+    setFreshApp({
+      ...app,
+      status:       row.status || app.status,
+      rejectReason: row.reject_reason || null,
+      interview:    row.interview_day ? {
+        day:  { en: row.interview_day, pt: row.interview_day, es: row.interview_day },
+        time: row.interview_time || '',
+      } : null,
+    });
+  }, [app?.id]); // eslint-disable-line
+
+  React.useEffect(() => {
+    if (!open) { setFreshApp(null); setWithdrawing(false); return; }
+    fetchFresh();
+    // Poll every 5s while sheet is open so status/reason updates appear promptly
+    const t = setInterval(fetchFresh, 5000);
+    return () => clearInterval(t);
   }, [open, app?.id]); // eslint-disable-line
+
+  const handleWithdraw = async () => {
+    if (!app?.id || !window.sb) return;
+    setWithdrawing(true);
+    await window.sb.from('job_applications').delete().eq('id', app.id);
+    setWithdrawing(false);
+    onWithdraw && onWithdraw(app.id);
+    onClose();
+  };
 
   const display = freshApp || app;
   if (!display) return null;
@@ -3114,8 +3132,8 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
           </button>
         )}
         {isPending && (
-          <button className="pg-btn pg-btn-ghost" style={{width:'100%', height:46, fontSize:14, borderRadius:14, color:'var(--pg-danger)'}}>
-            {withdrawLbl}
+          <button onClick={handleWithdraw} disabled={withdrawing} className="pg-btn pg-btn-ghost" style={{width:'100%', height:46, fontSize:14, borderRadius:14, color:'var(--pg-danger)', opacity: withdrawing ? 0.5 : 1}}>
+            {withdrawing ? (lang==='pt'?'Retirando…':lang==='es'?'Retirando…':'Withdrawing…') : withdrawLbl}
           </button>
         )}
         {isRejected && (

@@ -497,12 +497,14 @@ function App() {
       if (document.visibilityState !== 'visible') return;
       doMarketRefresh();
       doCountsRefresh(); // also refresh applicant counts on tab focus
+      if (user?.uid) loadLiveApplications(user.uid); // refresh candidate application statuses
     };
     document.addEventListener('visibilitychange', onVisible);
 
-    // Poll marketplace every 60s + applicant counts every 30s
+    // Poll marketplace every 60s + applicant counts every 30s + applications every 30s
     const pollTimer  = setInterval(doMarketRefresh, 60000);
     const countTimer = setInterval(doCountsRefresh, 30000);
+    const appsTimer  = setInterval(() => { if (user?.uid) loadLiveApplications(user.uid); }, 30000);
 
     // Real-time subscriptions
     const channel = window.sb.channel('app-realtime')
@@ -559,6 +561,7 @@ function App() {
       document.removeEventListener('visibilitychange', onVisible);
       clearInterval(pollTimer);
       clearInterval(countTimer);
+      clearInterval(appsTimer);
     };
   }, [authReady]); // runs once authReady flips true — guaranteed after token refresh + loadProfile
 
@@ -890,7 +893,11 @@ function App() {
       <PrivacySheet open={privacyOpen} onClose={()=>setPrivacyOpen(false)} lang={lang}/>
       <HiringAppDetailSheet
         open={!!hiringAppDetail} onClose={()=>setHiringAppDetail(null)}
-        app={hiringAppDetail} lang={lang}/>
+        app={hiringAppDetail} lang={lang}
+        onWithdraw={(appId) => {
+          setHiringAppDetail(null);
+          loadLiveApplications(user?.uid);
+        }}/>
       <Sheet open={!!scheduleApp} onClose={()=>setScheduleApp(null)} height="95%">
         <ScheduleSheet
           app={scheduleApp} lang={lang}
