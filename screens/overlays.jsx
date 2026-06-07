@@ -530,7 +530,23 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
       .order('created_at', { ascending: false });
     setLoading(false);
     if (error) { console.warn('[ApplicantsSheet] fetch error:', error.message); return; }
-    setApplicants((data || []).map(normApp));
+    const apps = (data || []).map(normApp);
+    setApplicants(apps);
+    // Fetch current profile photos for all applicants in one batch
+    const ids = apps.map(a => a.applicant_id).filter(Boolean);
+    if (ids.length && window.sb) {
+      window.sb.from('profiles').select('id,photo_url').in('id', ids)
+        .then(({ data: pdata }) => {
+          if (!pdata) return;
+          const photoMap = {};
+          pdata.forEach(p => { if (p.photo_url) photoMap[p.id] = p.photo_url; });
+          setApplicants(prev => prev.map(a =>
+            (a.applicant_id && photoMap[a.applicant_id])
+              ? { ...a, profile: { ...a.profile, photoUrl: photoMap[a.applicant_id] } }
+              : a
+          ));
+        });
+    }
   }, [lang]);
 
   React.useEffect(() => {
@@ -967,8 +983,14 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
                     </>
                   )}
                   {a.status === 'rejected' && (
-                    <button onClick={()=>updateStatus(a.id,'pending')}
-                      className="pg-btn pg-btn-ghost" style={{flex:1, height:34, fontSize:12, borderRadius:999}}>
+                    <button onClick={async () => {
+                      // Restore: clear status + reject_reason
+                      setApplicants(prev => prev.map(a2 => a2.id===a.id ? {...a2, status:'pending', rejectReason:null} : a2));
+                      const found = applicants.find(ap => ap.id === a.id);
+                      if (post?._live && found?._dbId) {
+                        await dbUpdate(found._dbId, { status:'pending', reject_reason: null });
+                      }
+                    }} className="pg-btn pg-btn-ghost" style={{flex:1, height:34, fontSize:12, borderRadius:999}}>
                       {lang==='pt'?'Restaurar':lang==='es'?'Restaurar':'Restore'}
                     </button>
                   )}
@@ -1240,15 +1262,24 @@ function InterviewSchedulerSheet({ open, onClose, applicant, lang='en', onConfir
 
 // ── Applicant Profile Preview Sheet ───────────────────────────
 function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
-  const [reviewLang, setReviewLang] = React.useState(lang);
-  const [realRatings, setRealRatings] = React.useState(null); // null = loading
+  const [reviewLang,  setReviewLang]  = React.useState(lang);
+  const [realRatings, setRealRatings] = React.useState(null);
+  const [livePhoto,   setLivePhoto]   = React.useState(null); // fetched from profiles table
 
   React.useEffect(() => { if (open) setReviewLang(lang); }, [open, lang]);
 
-  // Load real ratings from Supabase
+  // Fetch applicant's current profile photo + real ratings from Supabase
   React.useEffect(() => {
     setRealRatings(null);
+    setLivePhoto(null);
     if (!open || !applicant?.applicant_id || !window.sb) return;
+    // Photo from profiles table (always fresh, even for old applications)
+    window.sb.from('profiles').select('photo_url').eq('id', applicant.applicant_id)
+      .then(({ data }) => {
+        const row = Array.isArray(data) ? data[0] : null;
+        if (row?.photo_url) setLivePhoto(row.photo_url);
+      });
+    // Real ratings
     window.sb.from('ratings')
       .select('id,stars,comment,from_name,created_at')
       .eq('to_id', applicant.applicant_id)
@@ -1319,7 +1350,7 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
         {/* Header */}
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18}}>
           <div style={{display:'flex', alignItems:'center', gap:14}}>
-            <Avatar name={applicant.name} size={64} src={prof.photoUrl || undefined}/>
+            <Avatar name={applicant.name} size={64} src={livePhoto || prof.photoUrl || undefined}/>
             <div>
               <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.02em'}}>{applicant.name}</div>
               <div style={{display:'flex', alignItems:'center', gap:6, marginTop:4, flexWrap:'wrap'}}>
@@ -2871,21 +2902,29 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw }) {
   const [withdrawing, setWithdrawing] = React.useState(false);
 
   const fetchFresh = React.useCallback(async () => {
-    if (!app?.id || !window.sb) return;
-    // Use array select (no .single()) to avoid 406 errors in custom client
-    const { data } = await window.sb.from('job_applications').select('*').eq('id', app.id);
-    const row = Array.isArray(data) ? data[0] : data;
-    if (!row) return;
+    if (!window.sb) return;
+    // Fetch by id if available, fall back to job_id+applicant_id for robustness
+    let data = null;
+    if (app?.id) {
+      const res = await window.sb.from('job_applications').select('*').eq('id', app.id);
+      data = Array.isArray(res.data) ? res.data[0] : null;
+    }
+    if (!data && app?.job_id) {
+      // Fallback: match by job_id (job_id is stored in liveApplications)
+      const res = await window.sb.from('job_applications').select('*').eq('job_id', app.job_id);
+      data = Array.isArray(res.data) ? res.data[0] : null;
+    }
+    if (!data) return;
     setFreshApp({
       ...app,
-      status:       row.status || app.status,
-      rejectReason: row.reject_reason || null,
-      interview:    row.interview_day ? {
-        day:  { en: row.interview_day, pt: row.interview_day, es: row.interview_day },
-        time: row.interview_time || '',
+      status:       data.status || app.status,
+      rejectReason: data.reject_reason || null,
+      interview:    data.interview_day ? {
+        day:  { en: data.interview_day, pt: data.interview_day, es: data.interview_day },
+        time: data.interview_time || '',
       } : null,
     });
-  }, [app?.id]); // eslint-disable-line
+  }, [app?.id, app?.job_id]); // eslint-disable-line
 
   React.useEffect(() => {
     if (!open) { setFreshApp(null); setWithdrawing(false); return; }
@@ -3036,7 +3075,7 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw }) {
             <div style={{fontSize:10.5, fontWeight:700, letterSpacing:'0.07em', color:'oklch(0.55 0.15 20)', marginBottom:7}}>
               {reasonLbl.toUpperCase()}
             </div>
-            <div style={{fontSize:13, color:'var(--pg-ink-600)', lineHeight:1.55, fontStyle:'italic'}}>
+            <div style={{fontSize:13.5, color:'oklch(0.30 0.12 20)', lineHeight:1.55, fontStyle:'italic', fontWeight:500}}>
               "{tr(display.rejectReason, lang)}"
             </div>
           </div>
