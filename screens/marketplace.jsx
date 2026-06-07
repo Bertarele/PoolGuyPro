@@ -3178,10 +3178,12 @@ function MarketplaceScreen({ ctx }) {
     createdAt:r.created_at||null, soldAt:r.sold_at||null });
 
   // Returns true if a sold item should still appear in marketplace (< 24h after sold)
-  const isSoldRecently = (item) =>
-    item.status === 'sold' &&
-    item.soldAt &&
-    (Date.now() - new Date(item.soldAt).getTime()) < 86400000;
+  // Show sold items for 7 days (for all users) OR indefinitely for own items
+  const isSoldVisible = (item) =>
+    item.status === 'sold' && (
+      isMyPost(item) ||
+      (item.soldAt && (Date.now() - new Date(item.soldAt).getTime()) < 7 * 86400000)
+    );
 
   // Never show raw email as author — if author is an email, show the part before @
   const fmtAuthor = (a) => {
@@ -3573,7 +3575,7 @@ function MarketplaceScreen({ ctx }) {
   // ══════════════════════════════════════════════════════════════
   if (isDesktop) {
     const liveEquipment = liveMarket.filter(m => m.type === mode && (
-      user.role==='admin' || m.status==='approved' || (m.status==='pending'&&isMyPost(m)) || isSoldRecently(m)
+      user.role==='admin' || m.status==='approved' || (m.status==='pending'&&isMyPost(m)) || isSoldVisible(m)
     ));
     return (
       <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
@@ -4291,10 +4293,11 @@ function MarketplaceScreen({ ctx }) {
                 user.role === 'admin' ||   // admin vê tudo (pending de qualquer um)
                 m.status === 'approved' ||
                 (m.status === 'pending' && isMyPost(m)) ||
-                isSoldRecently(m)
+                isSoldVisible(m)
               ))
               .map(item => {
                 const isPending = item.status === 'pending';
+                const isSoldItem = item.status === 'sold';
                 const canAdminDelete = user.role === 'admin' || isMyPost(item);
                 const handleQuickDelete = async (e) => {
                   e.stopPropagation();
@@ -4309,15 +4312,19 @@ function MarketplaceScreen({ ctx }) {
                 };
                 return (
                   <button key={item._id}
-                    onClick={()=> openListing(item)}
-                    className="pg-press"
+                    onClick={()=> isSoldItem ? (isMyPost(item) ? setMyPostDetail(item) : null) : openListing(item)}
+                    className={isSoldItem ? '' : 'pg-press'}
                     style={{
-                      padding:0, overflow:'hidden', position:'relative', cursor: 'pointer',
-                      border: isPending ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
-                      opacity: isPending ? 0.82 : 1,
+                      padding:0, overflow:'hidden', position:'relative',
+                      cursor: isSoldItem ? (isMyPost(item) ? 'pointer' : 'default') : 'pointer',
+                      border: isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
+                      opacity: isPending ? 0.82 : isSoldItem ? 0.65 : 1,
                       display:'flex', flexDirection:'column',
-                      borderRadius:14, background:'var(--pg-white)', textAlign:'left', fontFamily:'inherit',
+                      borderRadius:14,
+                      background: isSoldItem ? 'var(--pg-ink-50)' : 'var(--pg-white)',
+                      textAlign:'left', fontFamily:'inherit',
                       boxShadow:'0 1px 3px rgba(0,0,0,0.08)',
+                      filter: isSoldItem ? 'grayscale(0.6)' : 'none',
                     }}>
                     {/* Photo area — enforced 4:3 ratio */}
                     <div style={{position:'relative', paddingTop:'72%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
@@ -4330,7 +4337,18 @@ function MarketplaceScreen({ ctx }) {
                       {/* Gradient overlay for badges */}
                       <div style={{position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 45%, transparent 60%, rgba(0,0,0,0.10) 100%)', pointerEvents:'none'}}/>
                       {/* Status badge top-left — only for own posts */}
-                      {isMyPost(item) && (
+                      {/* SOLD badge — top-left (takes priority over MY LISTING) */}
+                      {isSoldItem ? (
+                        <span style={{
+                          position:'absolute', top:10, left:10,
+                          fontSize:9.5, fontWeight:800, padding:'3px 10px', borderRadius:6,
+                          letterSpacing:'0.10em',
+                          background:'rgba(30,30,30,0.88)', color:'#fff',
+                          backdropFilter:'blur(4px)',
+                        }}>
+                          {lang==='pt'?'VENDIDO':lang==='es'?'VENDIDO':'SOLD'}
+                        </span>
+                      ) : isMyPost(item) && (
                         <span style={{
                           position:'absolute', top:10, left:10,
                           fontSize:9.5, fontWeight:700, padding:'3px 8px', borderRadius:6,
@@ -4369,7 +4387,15 @@ function MarketplaceScreen({ ctx }) {
                       <div style={{height:1, background:'var(--pg-ink-100)', margin:'10px 0'}}/>
                       {/* Price + author — same row, price as badge when negotiable */}
                       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:4}}>
-                        {item.priceMode === 'neg' ? (
+                        {isSoldItem ? (
+                          <span style={{
+                            fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999,
+                            background:'var(--pg-ink-100)', color:'var(--pg-ink-400)',
+                            border:'1px solid var(--pg-ink-200)', flexShrink:0,
+                          }}>
+                            {lang==='pt'?'✓ Vendido':lang==='es'?'✓ Vendido':'✓ Sold'}
+                          </span>
+                        ) : item.priceMode === 'neg' ? (
                           <span style={{
                             fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999,
                             background: isPending ? 'var(--pg-ink-100)' : 'var(--pg-blue-50)',
@@ -4418,8 +4444,8 @@ function MarketplaceScreen({ ctx }) {
                           )}
                         </div>
                       </div>
-                      {/* Heart + Share row */}
-                      {!isMyPost(item) && !isPending && (
+                      {/* Heart + Share row — hide for sold items */}
+                      {!isMyPost(item) && !isPending && !isSoldItem && (
                         <div style={{display:'flex', gap:6, marginTop:8}}>
                           <button onClick={(e)=>toggleSave(e, item._id)} style={{
                             flex:1, height:30, borderRadius:8, cursor:'pointer', fontFamily:'inherit',
