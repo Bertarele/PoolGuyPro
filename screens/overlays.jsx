@@ -479,14 +479,15 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user }) {
 
   // Normalize a DB row from job_applications → UI applicant shape
   const normApp = (row) => ({
-    id:       row.id,
-    _dbId:    row.id,
-    name:     row.applicant_name || '?',
-    rating:   row.applicant_rating || 0,
-    jobs:     row.applicant_jobs  || 0,
-    status:   row.status || 'pending',
-    note:     row.note   || null,
-    when:     relTime(row.created_at),
+    id:           row.id,
+    _dbId:        row.id,
+    applicant_id: row.applicant_id || null, // UUID needed to open live chat
+    name:         row.applicant_name || '?',
+    rating:       row.applicant_rating || 0,
+    jobs:         row.applicant_jobs  || 0,
+    status:       row.status || 'pending',
+    note:         row.note   || null,
+    when:         relTime(row.created_at),
     rejectReason: row.reject_reason || null,
     interview: row.interview_day ? {
       day:  { en: row.interview_day, pt: row.interview_day, es: row.interview_day },
@@ -839,7 +840,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user }) {
                 )}
 
                 <div style={{display:'flex', gap:7, marginTop:11, flexWrap:'wrap'}}>
-                  <button onClick={()=>{ onChat(a.name); onClose(); }}
+                  <button onClick={()=>{ onChat(a.applicant_id ? { id: a.applicant_id, name: a.name } : a.name); onClose(); }}
                     className="pg-btn pg-btn-ghost" style={{height:34, padding:'0 12px', fontSize:12, borderRadius:999, flexShrink:0}}>
                     {Icon.msg(13,'var(--pg-blue-700)')} {t.chatBtn}
                   </button>

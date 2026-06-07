@@ -166,23 +166,28 @@ function WorkScreen({ ctx }) {
     });
 
   // Live applications (I applied to other people's jobs) → appear in My Applications
-  const myLiveApps = liveApplications.map(a => ({
-    id:           a.id,
-    _live:        true,
-    type:         'hiring',
-    company:      a.job_company || a.job_role || '?',
-    title:        { en: a.job_role || a.job_company || '', pt: a.job_role || a.job_company || '', es: a.job_role || a.job_company || '' },
-    pay:          { en:'', pt:'', es:'' },
-    loc:          '',
-    status:       a.status || 'pending',
-    when:         relTime(a.created_at),
-    interview:    a.interview_day ? {
-      day:  { en: a.interview_day, pt: a.interview_day, es: a.interview_day },
-      time: a.interview_time || '',
-    } : null,
-    rejectReason: a.reject_reason || null,
-    job_id:       a.job_id,
-  }));
+  const myLiveApps = liveApplications.map(a => {
+    // Cross-reference liveJobs to get the author_id so we can open a live chat with the employer
+    const relatedJob = liveJobs.find(j => j._id === a.job_id);
+    return {
+      id:           a.id,
+      _live:        true,
+      type:         'hiring',
+      company:      a.job_company || a.job_role || '?',
+      title:        { en: a.job_role || a.job_company || '', pt: a.job_role || a.job_company || '', es: a.job_role || a.job_company || '' },
+      pay:          { en:'', pt:'', es:'' },
+      loc:          '',
+      status:       a.status || 'pending',
+      when:         relTime(a.created_at),
+      interview:    a.interview_day ? {
+        day:  { en: a.interview_day, pt: a.interview_day, es: a.interview_day },
+        time: a.interview_time || '',
+      } : null,
+      rejectReason: a.reject_reason || null,
+      job_id:       a.job_id,
+      author_id:    relatedJob?.author_id || null, // employer UUID for live chat
+    };
+  });
 
   // Merge: live first, then static (so real data is prominent)
   const myAppsHiring  = [...myLiveApps, ...staticAppsHiring];
@@ -991,7 +996,7 @@ function MyApplicationsSection({ apps, lang, onChat, type='hiring' }) {
 
                 {/* Actions */}
                 <div style={{display:'flex', gap:8, paddingTop:10, borderTop:'0.5px solid var(--pg-ink-100)'}}>
-                  <button onClick={()=>onChat(app.company)} className="pg-btn pg-btn-ghost"
+                  <button onClick={()=>onChat(app.author_id ? { id: app.author_id, name: app.company } : app.company)} className="pg-btn pg-btn-ghost"
                     style={{height:34, padding:'0 14px', fontSize:12.5, borderRadius:999}}>
                     {Icon.msg(13, 'var(--pg-blue-700)')}
                   </button>
@@ -1828,7 +1833,7 @@ function AcceptedVacCard({ v, lang, onChat, onSchedule, openPublicProfile }) {
 
         {/* Action row */}
         <div style={{display:'flex', gap:8, marginTop:12, paddingTop:10, borderTop:'0.5px solid var(--pg-ink-100)'}}>
-          <button onClick={()=>onChat(v.owner)} className="pg-btn pg-btn-ghost"
+          <button onClick={()=>onChat(v.author_id ? { id: v.author_id, name: v.owner || v.author || '?' } : (v.owner || v.author || '?'))} className="pg-btn pg-btn-ghost"
             style={{height:34, padding:'0 14px', fontSize:12.5, borderRadius:999}}>
             {Icon.msg(13, 'var(--pg-blue-700)')}
           </button>

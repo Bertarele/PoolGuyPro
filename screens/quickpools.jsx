@@ -697,7 +697,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         background:'linear-gradient(180deg, transparent, var(--pg-white) 25%)',
         display:'flex', gap:10, marginTop:14,
       }}>
-        <button onClick={()=>onChat()} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
+        <button onClick={()=>onChat(job.author_id ? { id: job.author_id, name: job.poster } : job.poster)} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
           {Icon.msg(16, 'var(--pg-blue-700)')} {t.contact}
         </button>
         <button onClick={locked ? onUnlock : onApply} className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`} style={{flex:2, borderRadius:999}}>
