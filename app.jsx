@@ -400,6 +400,8 @@ function App() {
   const [liveVacations,    setLiveVacations]    = React.useState([]);
   const [liveMarket,       setLiveMarket]       = React.useState([]);
   const [liveApplications, setLiveApplications] = React.useState([]); // current user's job applications
+  // { [job_id]: { total, pending } } — applicant counts for jobs the current user owns
+  const [jobApplicantCounts, setJobApplicantCounts] = React.useState({});
 
   React.useEffect(() => {
     if (!window.sb || !authReady) return;
@@ -442,8 +444,24 @@ function App() {
       if (tc.data) setLiveTechs(tc.data.map(normTech));
       if (v.data)  setLiveVacations(v.data.map(normVac));
       if (m.data)  setLiveMarket(m.data.map(normMkt));
-      // Log errors but never call signOut here — auth layer manages sessions
       if (m.error) console.warn('[Supabase] marketplace fetch error:', m.error.message);
+      // Load applicant counts for all jobs (used in "My Posts" badge display)
+      if (j.data && j.data.length > 0) {
+        const jobIds = j.data.map(r => r.id);
+        const { data: appRows } = await window.sb
+          .from('job_applications')
+          .select('job_id, status')
+          .in('job_id', jobIds);
+        if (appRows) {
+          const counts = {};
+          appRows.forEach(row => {
+            if (!counts[row.job_id]) counts[row.job_id] = { total: 0, pending: 0 };
+            counts[row.job_id].total++;
+            if (row.status === 'pending') counts[row.job_id].pending++;
+          });
+          setJobApplicantCounts(counts);
+        }
+      }
     };
     doFetch().catch(e => console.warn('[Supabase] fetch:', e.message));
 
@@ -647,7 +665,7 @@ function App() {
     },
     // Live Firestore data
     liveJobs, liveTechs, liveVacations, liveMarket,
-    liveApplications,
+    liveApplications, jobApplicantCounts,
     refreshLiveApplications: () => loadLiveApplications(user?.uid),
     dbWrite, showToast,
     // Admin: remove items from local state immediately (fallback if realtime is slow)

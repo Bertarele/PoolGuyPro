@@ -7,7 +7,7 @@ function WorkScreen({ ctx }) {
           openPublicProfile, showToast,
           removeJob, removeTech, removeVacation,
           liveJobs=[], liveTechs=[], liveVacations=[],
-          liveApplications=[],
+          liveApplications=[], jobApplicantCounts={},
           hasUnreadChat, openNotifications, hasUnreadNotif } = ctx;
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState('hiring');
@@ -141,18 +141,23 @@ function WorkScreen({ ctx }) {
   // Live jobs created by me → appear in My Posts
   const myLiveJobs = liveJobs
     .filter(j => j.author_id && user.uid && j.author_id === user.uid)
-    .map(j => ({
-      id:    j._id,
-      _id:   j._id,
-      _live: true,
-      type:  'hiring',
-      title: { en: j.role, pt: j.role, es: j.role },
-      loc:   j.loc || '',
-      date:  { en:'Live', pt:'Publicado', es:'Publicado' },
-      status:'open',
-      pay:   j.pay ? { en: j.pay, pt: j.pay, es: j.pay } : null,
-      applicants: [], // loaded fresh in ApplicantsSheet
-    }));
+    .map(j => {
+      const counts = jobApplicantCounts[j._id] || { total: 0, pending: 0 };
+      return {
+        id:    j._id,
+        _id:   j._id,
+        _live: true,
+        type:  'hiring',
+        title: { en: j.role, pt: j.role, es: j.role },
+        loc:   j.loc || '',
+        date:  { en:'Live', pt:'Publicado', es:'Publicado' },
+        status:'open',
+        pay:   j.pay ? { en: j.pay, pt: j.pay, es: j.pay } : null,
+        applicants: Array(counts.total).fill({ status: 'pending' }).map((_,i) =>
+          i < counts.pending ? { status:'pending' } : { status:'accepted' }
+        ),
+      };
+    });
 
   // Live applications (I applied to other people's jobs) → appear in My Applications
   const myLiveApps = liveApplications.map(a => ({

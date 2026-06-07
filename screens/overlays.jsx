@@ -2481,22 +2481,23 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
 
   const handleSubmit = async () => {
     setSaving(true);
-    try {
-      const uid = user?.uid || user?.id || null;
-      if (window.sb && uid) {
-        await window.sb.from('job_applications').insert({
-          job_id:          job._id || job.id || null,
-          job_company:     jobCompany,
-          job_role:        jobRole,
-          applicant_id:    uid,
-          applicant_name:  user.name || '',
-          applicant_rating:user.rating || null,
-          applicant_jobs:  user.reviews || 0,
-          note:            note.trim() || null,
-          status:          'pending',
-        });
-      }
-    } catch(e) { /* non-blocking — continue even if save fails */ }
+    const uid = user?.uid || user?.id || null;
+    if (window.sb && uid) {
+      const { error } = await window.sb.from('job_applications').insert({
+        job_id:          job._id || job.id || null,
+        job_company:     jobCompany,
+        job_role:        jobRole,
+        applicant_id:    uid,
+        applicant_name:  user.name || '',
+        applicant_rating:user.rating || null,
+        applicant_jobs:  user.reviews || 0,
+        note:            note.trim() || null,
+        status:          'pending',
+      });
+      if (error) console.error('[ApplyJob] insert error:', error.code, error.message);
+    } else {
+      console.warn('[ApplyJob] skipped — no uid or sb:', { uid, hasSb: !!window.sb });
+    }
     setSaving(false);
     setSubmitted(true);
     setTimeout(() => onSubmit && onSubmit(), 2000);
