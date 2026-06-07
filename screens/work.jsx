@@ -1020,6 +1020,18 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
                 {License(13)} {lang==='pt'?'Carro próprio necessário':lang==='es'?'Auto propio requerido':'Own car required'}
               </div>
             )}
+            {job.licenseReq === 'required' && (
+              <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M7 11h4M7 14h6M15 10h2v4h-2z"/></svg>
+                Driver's license required
+              </div>
+            )}
+            {job.licenseReq === 'notRequired' && (
+              <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12h6"/></svg>
+                No driver's license needed
+              </div>
+            )}
           </div>
           {/* Contract chip */}
           {job.contract && (
@@ -2746,9 +2758,10 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
   const [contract, setContract] = React.useState('fullTime');
   const [payMode,  setPayMode]  = React.useState('perPool');
   const [pay,      setPay]      = React.useState('');
-  const [carReq,   setCarReq]   = React.useState('');
-  const [equipReq, setEquipReq] = React.useState('');
-  const [desc,     setDesc]     = React.useState('');
+  const [carReq,     setCarReq]     = React.useState('');
+  const [equipReq,   setEquipReq]   = React.useState('');
+  const [licenseReq, setLicenseReq] = React.useState('');
+  const [desc,       setDesc]       = React.useState('');
 
   const headLbl     = lang==='pt'?'Publicar vaga':lang==='es'?'Publicar empleo':'Post a job';
   const roleLbl     = lang==='pt'?'Título do cargo':lang==='es'?'Título del puesto':'Job title';
@@ -2802,7 +2815,22 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
     },
   ];
 
-  const isValid = role.trim().length > 0 && loc.trim().length > 0 && carReq !== '' && equipReq !== '';
+  const licenseOptions = [
+    {
+      id:'required',
+      icon: c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M7 11h4M7 14h6M15 10h2v4h-2z"/></svg>,
+      label:    "Driver's license required",
+      sublabel: 'Valid state-issued driver\'s license',
+    },
+    {
+      id:'notRequired',
+      icon: c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12h6"/></svg>,
+      label:    "Driver's license not required",
+      sublabel: 'No license needed for this role',
+    },
+  ];
+
+  const isValid = role.trim().length > 0 && loc.trim().length > 0 && carReq !== '' && equipReq !== '' && licenseReq !== '';
 
   return (
     <div style={{padding:'8px 0 24px'}}>
@@ -2881,6 +2909,10 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
           <HiringRequirementCard options={carOptions} value={carReq} onChange={setCarReq}/>
         </HiringFormSection>
 
+        <HiringFormSection label="Driver's License">
+          <HiringRequirementCard options={licenseOptions} value={licenseReq} onChange={setLicenseReq}/>
+        </HiringFormSection>
+
         <HiringFormSection label={lang==='pt'?'Equipamentos':lang==='es'?'Equipos':'Equipment'}>
           <HiringRequirementCard options={equipOptions} value={equipReq} onChange={setEquipReq}/>
         </HiringFormSection>
@@ -2894,12 +2926,12 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
       </div>
 
       <div style={{padding:'20px 18px 8px', position:'sticky', bottom:0, background:'#fff', borderTop:'0.5px solid var(--pg-ink-100)'}}>
-        {!isValid && (carReq === '' || equipReq === '') && (
+        {!isValid && (carReq === '' || licenseReq === '' || equipReq === '') && (
           <div style={{fontSize:11.5, color:'var(--pg-ink-400)', textAlign:'center', marginBottom:10}}>
-            {lang==='pt'?'Selecione os requisitos de veículo e equipamento':lang==='es'?'Selecciona los requisitos de vehículo y equipo':'Select vehicle and equipment requirements to continue'}
+            {lang==='pt'?'Selecione os requisitos de veículo, driver\'s license e equipamento':lang==='es'?'Selecciona los requisitos de vehículo, licencia y equipo':'Select vehicle, license and equipment requirements to continue'}
           </div>
         )}
-        <button onClick={()=>onSubmit && onSubmit({ role, loc, contract, payMode, pay, carReq, equipReq, desc, photoUrl: null })}
+        <button onClick={()=>onSubmit && onSubmit({ role, loc, contract, payMode, pay, carReq, licenseReq, equipReq, desc, photoUrl: null })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.briefcase(17, '#fff')} {submitLbl}

@@ -406,7 +406,7 @@ function App() {
     // Normalizers — Supabase uses snake_case columns
     const normJob = r => ({ _id:r.id, _live:true, role:r.role, loc:r.loc, desc:r.description,
       contract:r.contract, payMode:r.pay_mode, pay:r.pay,
-      carReq:r.car_req, equipReq:r.equip_req, author:r.author, author_id:r.author_id||null });
+      carReq:r.car_req, licenseReq:r.license_req, equipReq:r.equip_req, author:r.author, author_id:r.author_id||null });
     const normTech = r => ({ _id:r.id, _live:true, name:r.name, specialty:r.specialty,
       loc:r.loc, phone:r.phone, email:r.email,
       rateMode:r.rate_mode, rate:r.rate, author:r.author, author_id:r.author_id||null });
@@ -503,7 +503,7 @@ function App() {
     const row = col === 'jobs' ? {
       role: data.role, loc: data.loc, contract: data.contract,
       pay_mode: data.payMode, pay: data.pay, car_req: data.carReq,
-      equip_req: data.equipReq, description: data.desc,
+      license_req: data.licenseReq, equip_req: data.equipReq, description: data.desc,
       author: authorName, author_id: user.uid || null,
     } : col === 'techs' ? {
       name: data.name, specialty: data.specialty, loc: data.loc,
