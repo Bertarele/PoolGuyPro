@@ -1038,7 +1038,12 @@ function App() {
                 display:'flex', alignItems:'center', justifyContent:'center',
                 color:'#fff', fontSize:14, fontWeight:700,
                 boxShadow:'0 3px 8px rgba(0,119,182,0.35)',
-              }}>{avatarLetter}</div>
+                overflow:'hidden',
+              }}>
+                {user.photoUrl
+                  ? <img src={user.photoUrl} alt={displayName} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} onError={e=>{e.currentTarget.style.display='none';}}/>
+                  : avatarLetter}
+              </div>
               <div style={{flex:1, minWidth:0}}>
                 <div style={{fontSize:13, fontWeight:700, color:'#fff',
                   overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', lineHeight:1.2}}>
@@ -1355,7 +1360,7 @@ function App() {
           </div>
 
           {/* Tab bar */}
-          <TabBar tab={tab} setTab={switchTab} lang={lang}/>
+          <TabBar tab={tab} setTab={switchTab} lang={lang} user={user}/>
 
           {/* Floating action button */}
           {(tab === 'market' || tab === 'quick') && (

@@ -342,7 +342,7 @@ function IconButton({ children, onClick, badge, dark=false }) {
 }
 
 // ── Tab bar (5 tabs, center elevated) ─────────────────────────
-function TabBar({ tab, setTab, lang='en' }) {
+function TabBar({ tab, setTab, lang='en', user }) {
   const t = STRINGS[lang];
   const tabs = [
     { id:'home',   label:t.home,        icon:Icon.home },
@@ -364,6 +364,23 @@ function TabBar({ tab, setTab, lang='en' }) {
               <span className="pg-tab-label" style={{color: on ? 'var(--pg-aqua-700)' : 'var(--pg-ink-700)', fontWeight:700}}>
                 {tb.label}
               </span>
+            </button>
+          );
+        }
+        if (tb.id === 'profile' && user?.photoUrl) {
+          return (
+            <button key={tb.id} className={`pg-tab ${on?'pg-tab-on':''}`} onClick={()=>setTab(tb.id)}>
+              <div style={{
+                width:26, height:26, borderRadius:'50%', overflow:'hidden', flexShrink:0,
+                border: on ? '2px solid var(--pg-blue-500)' : '2px solid transparent',
+                transition:'border-color .15s',
+              }}>
+                <img src={user.photoUrl} alt={user.name||''}
+                  style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}
+                  onError={e=>{e.currentTarget.parentElement.innerHTML = Icon.user(22, on?'var(--pg-blue-500)':'var(--pg-ink-500)').outerHTML||'';}}
+                />
+              </div>
+              <span className="pg-tab-label">{tb.label}</span>
             </button>
           );
         }

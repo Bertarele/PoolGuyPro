@@ -2725,7 +2725,7 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
             background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-100)',
             marginBottom:10,
           }}>
-            <Avatar name={safeUser.name} size={38}/>
+            <Avatar name={safeUser.name} size={38} src={safeUser.photoUrl || undefined}/>
             <div>
               <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{safeUser.name}</div>
               <div style={{display:'flex', alignItems:'center', gap:4, marginTop:2}}>
