@@ -582,7 +582,11 @@ function App() {
       .select('*')
       .eq('applicant_id', uid)
       .order('created_at', { ascending: false });
-    if (data) setLiveApplications(data);
+    if (data) setLiveApplications(data.map(r => ({
+      ...r,
+      _live:        true,
+      rejectReason: r.reject_reason || null,
+    })));
   }, []);
 
   React.useEffect(() => {

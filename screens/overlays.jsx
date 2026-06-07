@@ -2866,7 +2866,7 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
   const [freshApp, setFreshApp] = React.useState(null);
   React.useEffect(() => {
     if (!open) { setFreshApp(null); return; }
-    if (!app?._live || !app?.id || !window.sb) return;
+    if (!app?.id || !window.sb) return;
     window.sb.from('job_applications').select('*').eq('id', app.id).single()
       .then(({ data }) => {
         if (!data) return;
