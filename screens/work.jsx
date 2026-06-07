@@ -1055,6 +1055,29 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
               {t.apply}
             </button>
           </div>
+          {/* Owner — close listing (already hired) */}
+          {user?.uid && user.uid === job.author_id && (
+            <div onClick={async () => {
+              const msg = lang==='pt'?`Encerrar a vaga "${job.role}"? Isso indica que você já preencheu a posição.`
+                :lang==='es'?`¿Cerrar la oferta "${job.role}"? Esto indica que ya cubriste el puesto.`
+                :`Close the "${job.role}" listing? This means you've already filled the position.`;
+              if (!window.confirm(msg)) return;
+              const { error } = await window.sb.from('jobs').delete().eq('id', job._id);
+              if (error) { showToast && showToast('❌ ' + error.message); return; }
+              showToast && showToast('✓ ' + (lang==='pt'?'Vaga encerrada!':lang==='es'?'¡Oferta cerrada!':'Listing closed!'));
+              onDeleteJob && onDeleteJob(job._id);
+            }} style={{
+              marginTop:8, padding:'7px 0', borderRadius:8, cursor:'pointer',
+              background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
+              fontSize:11, fontWeight:700, textAlign:'center',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+              {lang==='pt'?'Já contratei — Encerrar vaga':lang==='es'?'Ya contraté — Cerrar oferta':'Hired someone — Close listing'}
+            </div>
+          )}
           {/* Admin quick-delete */}
           {user?.role === 'admin' && (
             <div onClick={async () => {
@@ -1064,7 +1087,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
               showToast && showToast('🗑️ ' + (lang==='pt'?'Vaga excluída':'Job deleted'));
               onDeleteJob && onDeleteJob(job._id);
             }} style={{
-              marginTop:8, padding:'6px 0', borderRadius:8, cursor:'pointer',
+              marginTop:4, padding:'6px 0', borderRadius:8, cursor:'pointer',
               background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
               fontSize:11, fontWeight:700, textAlign:'center',
               display:'flex', alignItems:'center', justifyContent:'center', gap:5,
@@ -1393,6 +1416,29 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               📞 {tech.phone}
             </a>}
           </div>
+          {/* Owner — remove own profile */}
+          {user?.uid && user.uid === tech.author_id && (
+            <div onClick={async () => {
+              const msg = lang==='pt'?'Remover seu perfil de técnico? Você pode republicar quando quiser.'
+                :lang==='es'?'¿Eliminar tu perfil de técnico? Puedes volver a publicar cuando quieras.'
+                :'Remove your technician profile? You can re-post whenever you want.';
+              if (!window.confirm(msg)) return;
+              const { error } = await window.sb.from('techs').delete().eq('id', tech._id);
+              if (error) { showToast && showToast('❌ ' + error.message); return; }
+              showToast && showToast('✓ ' + (lang==='pt'?'Perfil removido':lang==='es'?'Perfil eliminado':'Profile removed'));
+              onDeleteTech && onDeleteTech(tech._id);
+            }} style={{
+              marginTop:8, padding:'7px 0', borderRadius:8, cursor:'pointer',
+              background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
+              fontSize:11, fontWeight:700, textAlign:'center',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+              {lang==='pt'?'Já fui contratado — Remover perfil':lang==='es'?'Ya fui contratado — Eliminar perfil':'Got hired — Remove profile'}
+            </div>
+          )}
           {/* Admin quick-delete */}
           {user?.role === 'admin' && (
             <div onClick={async () => {
@@ -1402,7 +1448,7 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               showToast && showToast('🗑️ ' + (lang==='pt'?'Técnico excluído':'Technician deleted'));
               onDeleteTech && onDeleteTech(tech._id);
             }} style={{
-              marginTop:8, padding:'6px 0', borderRadius:8, cursor:'pointer',
+              marginTop:4, padding:'6px 0', borderRadius:8, cursor:'pointer',
               background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
               fontSize:11, fontWeight:700, textAlign:'center',
               display:'flex', alignItems:'center', justifyContent:'center', gap:5,
@@ -1881,6 +1927,29 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
                   {vac.price && <span className="pg-chip pg-chip-aqua" style={{fontSize:11}}>${vac.price}{vac.priceMode==='pool'?'/pool':'/day'}</span>}
                   {vac.priceMode === 'neg' && <span className="pg-chip" style={{fontSize:11}}>{lang==='pt'?'Negociável':'Negotiable'}</span>}
                 </div>
+                {/* Owner — close vacation post */}
+                {user?.uid && user.uid === vac.author_id && (
+                  <div onClick={async () => {
+                    const msg = lang==='pt'?'Encerrar sua cobertura de férias? Isso indica que você encontrou alguém.'
+                      :lang==='es'?'¿Cerrar tu cobertura de vacaciones? Indica que ya encontraste a alguien.'
+                      :'Close your vacation coverage post? This means you found someone.';
+                    if (!window.confirm(msg)) return;
+                    const { error } = await window.sb.from('vacations').delete().eq('id', vac._id);
+                    if (error) { showToast && showToast('❌ ' + error.message); return; }
+                    showToast && showToast('✓ ' + (lang==='pt'?'Cobertura encerrada!':lang==='es'?'¡Cobertura cerrada!':'Coverage closed!'));
+                    onDeleteVac && onDeleteVac(vac._id);
+                  }} style={{
+                    marginTop:8, padding:'7px 0', borderRadius:8, cursor:'pointer',
+                    background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
+                    fontSize:11, fontWeight:700, textAlign:'center',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    {lang==='pt'?'Já encontrei alguém — Encerrar':lang==='es'?'Ya encontré a alguien — Cerrar':'Found someone — Close post'}
+                  </div>
+                )}
                 {/* Admin quick-delete */}
                 {user?.role === 'admin' && (
                   <div onClick={async () => {
@@ -1890,7 +1959,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
                     showToast && showToast('🗑️ ' + (lang==='pt'?'Férias excluídas':'Vacation deleted'));
                     onDeleteVac && onDeleteVac(vac._id);
                   }} style={{
-                    marginTop:8, padding:'6px 0', borderRadius:8, cursor:'pointer',
+                    marginTop:4, padding:'6px 0', borderRadius:8, cursor:'pointer',
                     background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
                     fontSize:11, fontWeight:700, textAlign:'center',
                     display:'flex', alignItems:'center', justifyContent:'center', gap:5,
