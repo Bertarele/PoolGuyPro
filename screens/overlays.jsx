@@ -5,6 +5,17 @@
 function makeConvoId(uidA, uidB) {
   return [uidA, uidB].sort().join('_');
 }
+// Relative time formatter — module-scope so all sheets can use it
+function relTimeGlobal(iso) {
+  if (!iso) return '';
+  const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (diff < 60)   return diff + 's atrás';
+  if (diff < 3600) return Math.floor(diff/60) + 'min atrás';
+  if (diff < 86400)return Math.floor(diff/3600) + 'h atrás';
+  if (diff < 86400*30) return Math.floor(diff/86400) + 'd atrás';
+  if (diff < 86400*365) return Math.floor(diff/(86400*30)) + 'mo atrás';
+  return Math.floor(diff/(86400*365)) + 'a atrás';
+}
 function fmtMsgTime(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -454,7 +465,7 @@ function LanguagePickerSheet({ open, onClose, lang, setLang }) {
 }
 
 // ── Applicants Sheet ──────────────────────────────────────────
-function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user }) {
+function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenProfile }) {
   const t = STRINGS[lang];
   const [applicants, setApplicants] = React.useState([]);
   const [loading,    setLoading]    = React.useState(false);
@@ -1230,9 +1241,28 @@ function InterviewSchedulerSheet({ open, onClose, applicant, lang='en', onConfir
 // ── Applicant Profile Preview Sheet ───────────────────────────
 function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
   const [reviewLang, setReviewLang] = React.useState(lang);
+  const [realRatings, setRealRatings] = React.useState(null); // null = loading
+
   React.useEffect(() => { if (open) setReviewLang(lang); }, [open, lang]);
 
+  // Load real ratings from Supabase
+  React.useEffect(() => {
+    setRealRatings(null);
+    if (!open || !applicant?.applicant_id || !window.sb) return;
+    window.sb.from('ratings')
+      .select('id,stars,comment,from_name,created_at')
+      .eq('to_id', applicant.applicant_id)
+      .eq('pending', false)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => setRealRatings(data || []))
+      .catch(() => setRealRatings([]));
+  }, [open, applicant?.applicant_id]); // eslint-disable-line
+
   if (!applicant) return null;
+
+  // Use profile snapshot (nested under applicant.profile)
+  const prof = applicant.profile || {};
 
   const badgeCfg = (jobs) => {
     if (jobs >= 100) return { label:'EXPERT',   bg:'oklch(0.93 0.06 80)',  color:'oklch(0.40 0.18 80)' };
@@ -1240,25 +1270,6 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
     return              { label:'ROOKIE',   bg:'var(--pg-blue-100)',   color:'var(--pg-blue-700)' };
   };
   const badge = badgeCfg(applicant.jobs);
-
-  const mockReviews = [
-    { from:'Carlos M.', rating:Math.min(5, Math.round(applicant.rating)),
-      when:{en:'2 weeks ago', pt:'2 semanas atrás', es:'hace 2 semanas'},
-      text:{en:'Excellent work, arrived on time and left everything spotless.',
-            pt:'Excelente trabalho, chegou no horário e deixou tudo impecável.',
-            es:'Excelente trabajo, llegó a tiempo y dejó todo impecable.'} },
-    { from:'Ana R.', rating:Math.max(4, Math.round(applicant.rating) - (applicant.rating < 4.8 ? 1 : 0)),
-      when:{en:'1 month ago', pt:'1 mês atrás', es:'hace 1 mes'},
-      text:{en:'Very communicative throughout the whole coverage.',
-            pt:'Muito comunicativo durante toda a cobertura.',
-            es:'Muy comunicativo durante toda la cobertura.'} },
-    ...(applicant.jobs >= 30 ? [{
-      from:'Pedro S.', rating:5,
-      when:{en:'2 months ago', pt:'2 meses atrás', es:'hace 2 meses'},
-      text:{en:'Already hired 3 times. Always reliable and professional.',
-            pt:'Já contratei 3 vezes. Sempre confiável e profissional.',
-            es:'Ya lo contraté 3 veces. Siempre confiable y profesional.'} }] : []),
-  ];
 
   const LANGS = ['en','pt','es'];
   const LANG_LABELS = {en:'EN', pt:'PT', es:'ES'};
@@ -1285,8 +1296,8 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
   );
   const BriefcaseIcon = (c='var(--pg-ink-500)') => Icon.briefcase(13, c);
 
-  const hasProfile = applicant.age || applicant.region || applicant.hasCar !== undefined;
-  const hasExp     = applicant.experience && applicant.experience.length > 0;
+  const hasProfile = prof.age || prof.region || prof.hasCar !== undefined;
+  const hasExp     = prof.experience && prof.experience.length > 0;
 
   // Chip helper for yes/no fields
   const YesNoChip = ({yes, yesLabel, noLabel, icon}) => (
@@ -1308,7 +1319,7 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
         {/* Header */}
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18}}>
           <div style={{display:'flex', alignItems:'center', gap:14}}>
-            <Avatar name={applicant.name} size={64}/>
+            <Avatar name={applicant.name} size={64} src={prof.photoUrl || undefined}/>
             <div>
               <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.02em'}}>{applicant.name}</div>
               <div style={{display:'flex', alignItems:'center', gap:6, marginTop:4, flexWrap:'wrap'}}>
@@ -1345,35 +1356,31 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
               {sectionLbl('PROFILE','PERFIL','PERFIL')}
             </div>
             <div style={{display:'flex', flexWrap:'wrap', gap:7}}>
-              {/* Age */}
-              {applicant.age && (
+              {prof.age && (
                 <span style={{display:'inline-flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600,
                   padding:'5px 11px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/>
                   </svg>
-                  {applicant.age} {sectionLbl('yrs','anos','años')}
+                  {prof.age} {sectionLbl('yrs','anos','años')}
                 </span>
               )}
-              {/* Region */}
-              {applicant.region && (
+              {prof.region && (
                 <span style={{display:'inline-flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600,
                   padding:'5px 11px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
-                  {Icon.pin(12,'var(--pg-ink-500)')} {applicant.region}
+                  {Icon.pin(12,'var(--pg-ink-500)')} {prof.region}
                 </span>
               )}
-              {/* Car */}
-              {applicant.hasCar !== undefined && (
+              {prof.hasCar !== undefined && (
                 <YesNoChip
-                  yes={applicant.hasCar}
+                  yes={prof.hasCar}
                   yesLabel={sectionLbl('Own vehicle','Veículo próprio','Vehículo propio')}
                   noLabel={sectionLbl('No vehicle','Sem veículo','Sin vehículo')}
                   icon={CarIcon}/>
               )}
-              {/* License */}
-              {applicant.hasLicense !== undefined && (
+              {prof.hasLicense !== undefined && (
                 <YesNoChip
-                  yes={applicant.hasLicense}
+                  yes={prof.hasLicense}
                   yesLabel={sectionLbl("Valid driver's license","Driver's license válida","Driver's license válida")}
                   noLabel={sectionLbl('No license',"Sem driver's license","Sin driver's license")}
                   icon={LicenseIcon}/>
@@ -1383,27 +1390,20 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
         )}
 
         {/* ── EQUIPMENT ── */}
-        {applicant.hasEquipment !== undefined && (
+        {prof.equipment && (
           <div style={{marginBottom:20}}>
             <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-400)', letterSpacing:'0.06em', marginBottom:10}}>
               {sectionLbl('EQUIPMENT','EQUIPAMENTOS','EQUIPOS')}
             </div>
-            {applicant.hasEquipment && applicant.equipment ? (
-              <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
-                {(tr(applicant.equipment, lang) || []).map((eq, i) => (
-                  <span key={i} style={{display:'inline-flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600,
-                    padding:'5px 11px', borderRadius:999,
-                    background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-200)', color:'var(--pg-blue-800)'}}>
-                    {ToolIcon('var(--pg-blue-600)')} {eq}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span style={{display:'inline-flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600,
-                padding:'5px 11px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-400)'}}>
-                {ToolIcon()} {sectionLbl('No equipment','Sem equipamentos','Sin equipos')}
-              </span>
-            )}
+            <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+              {(Array.isArray(prof.equipment) ? prof.equipment : (tr(prof.equipment, lang) || [])).map((eq, i) => (
+                <span key={i} style={{display:'inline-flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600,
+                  padding:'5px 11px', borderRadius:999,
+                  background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-200)', color:'var(--pg-blue-800)'}}>
+                  {ToolIcon('var(--pg-blue-600)')} {eq}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1414,7 +1414,7 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
               {sectionLbl('WORK EXPERIENCE','EXPERIÊNCIA','EXPERIENCIA')}
             </div>
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
-              {applicant.experience.map((exp, i) => (
+              {prof.experience.map((exp, i) => (
                 <div key={i} style={{
                   padding:'12px 14px', borderRadius:12,
                   background:'var(--pg-ink-50)', border:'0.5px solid var(--pg-ink-200)',
@@ -1459,40 +1459,42 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
 
         {/* ── REVIEWS ── */}
         <div>
-          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
-            <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-400)', letterSpacing:'0.06em'}}>
-              {sectionLbl('REVIEWS','AVALIAÇÕES','RESEÑAS')} ({mockReviews.length})
+          <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-400)', letterSpacing:'0.06em', marginBottom:10}}>
+            {sectionLbl('REVIEWS','AVALIAÇÕES','RESEÑAS')}
+            {realRatings !== null && ` (${realRatings.length})`}
+          </div>
+          {realRatings === null && (
+            <div style={{textAlign:'center', padding:'20px 0', color:'var(--pg-ink-400)', fontSize:13}}>
+              <Shimmer style={{height:60, borderRadius:12, marginBottom:8}}/>
+              <Shimmer style={{height:60, borderRadius:12}}/>
             </div>
-            <div style={{display:'flex', gap:2, background:'var(--pg-ink-100)', borderRadius:999, padding:'2px 3px'}}>
-              {LANGS.map(l => (
-                <button key={l} onClick={()=>setReviewLang(l)} style={{
-                  fontSize:10, fontWeight:700, letterSpacing:'0.04em', padding:'3px 8px', borderRadius:999,
-                  border:'none', cursor:'pointer', transition:'all .18s', fontFamily:'inherit',
-                  background: reviewLang===l ? 'var(--pg-blue-500)' : 'transparent',
-                  color:      reviewLang===l ? '#fff' : 'var(--pg-ink-500)',
-                }}>
-                  {LANG_LABELS[l]}
-                </button>
+          )}
+          {realRatings !== null && realRatings.length === 0 && (
+            <div style={{textAlign:'center', padding:'20px 0', color:'var(--pg-ink-400)', fontSize:13}}>
+              {sectionLbl('No reviews yet','Nenhuma avaliação ainda','Sin reseñas aún')}
+            </div>
+          )}
+          {realRatings !== null && realRatings.length > 0 && (
+            <div style={{display:'flex', flexDirection:'column', gap:10}}>
+              {realRatings.map((r) => (
+                <div key={r.id} className="pg-card" style={{padding:'12px 14px'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
+                    <div style={{display:'flex', alignItems:'center', gap:8}}>
+                      <Avatar name={r.from_name || '?'} size={28}/>
+                      <span style={{fontSize:13, fontWeight:600}}>{r.from_name || '?'}</span>
+                    </div>
+                    <div style={{display:'flex', alignItems:'center', gap:4}}>
+                      {r.stars && <Stars rating={r.stars} size={10}/>}
+                      <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>{relTimeGlobal(r.created_at)}</span>
+                    </div>
+                  </div>
+                  {r.comment && (
+                    <p style={{margin:0, fontSize:12.5, color:'var(--pg-ink-700)', lineHeight:1.5}}>"{r.comment}"</p>
+                  )}
+                </div>
               ))}
             </div>
-          </div>
-          <div style={{display:'flex', flexDirection:'column', gap:10}}>
-            {mockReviews.map((r,i) => (
-              <div key={i} className="pg-card" style={{padding:'12px 14px'}}>
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
-                  <div style={{display:'flex', alignItems:'center', gap:8}}>
-                    <Avatar name={r.from} size={28}/>
-                    <span style={{fontSize:13, fontWeight:600}}>{r.from}</span>
-                  </div>
-                  <div style={{display:'flex', alignItems:'center', gap:4}}>
-                    <Stars rating={r.rating} size={10}/>
-                    <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>{r.when[reviewLang]}</span>
-                  </div>
-                </div>
-                <p style={{margin:0, fontSize:12.5, color:'var(--pg-ink-700)', lineHeight:1.5}}>"{r.text[reviewLang]}"</p>
-              </div>
-            ))}
-          </div>
+          )}
         </div>
       </div>
     </Sheet>

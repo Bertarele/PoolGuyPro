@@ -834,6 +834,15 @@ function App() {
         lang={lang}
         user={user}
         onChat={(name)=>{ setApplicantsPost(null); setChatConvoTarget(name); setChatOpen(true); }}
+        onOpenProfile={(applicant) => setPublicProfileUser({
+          uid:     applicant.applicant_id || null,
+          name:    applicant.name,
+          rating:  applicant.rating || 4.9,
+          reviews: applicant.jobs   || 0,
+          jobs:    applicant.jobs   || 0,
+          loc:     applicant.profile?.region || '',
+          photo:   applicant.profile?.photoUrl || null,
+        })}
       />
       <VerificationSheet open={verifyOpen} onClose={()=>setVerifyOpen(false)} lang={lang}/>
       <WalletSheet open={walletOpen} onClose={()=>setWalletOpen(false)} lang={lang}/>
