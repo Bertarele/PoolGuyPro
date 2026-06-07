@@ -239,6 +239,11 @@ function App() {
   // authReady gates the data fetch — ensures profile is loaded before querying DB
   const [authReady, setAuthReady] = React.useState(false);
 
+  // Hide splash screen once auth is resolved (app is ready to show UI)
+  React.useEffect(() => {
+    if (authReady && window.__pgHideSplash) window.__pgHideSplash();
+  }, [authReady]);
+
   const handleAuthLogin = React.useCallback(async (sbUser) => {
     setIsLoggedIn(true);
     await loadProfile(sbUser);

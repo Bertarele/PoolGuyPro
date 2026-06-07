@@ -4,8 +4,11 @@
   <meta charset="utf-8"/>
   <title>PoolGuyPro — Florida Pool Network</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <!-- Preconnect to all external origins for faster loading -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://xiszfqghizqzlwyrfjol.supabase.co" crossorigin>
+  <link rel="dns-prefetch" href="https://unpkg.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="tokens.css?v=128">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
@@ -26,9 +29,38 @@
     }
     #stage::after { display: none; }
     #root { width: 100%; height: 100%; }
+
+    /* ── Splash screen — shown instantly before any JS loads ── */
+    #pgSplash {
+      position: fixed; inset: 0; z-index: 99999;
+      background: #0b1220;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+      transition: opacity 0.28s ease;
+    }
+    #pgSplash.fade { opacity: 0; pointer-events: none; }
+    @keyframes pgSpin { to { transform: rotate(360deg); } }
+    .pgSpinner {
+      width: 44px; height: 44px;
+      border: 3.5px solid rgba(255,255,255,0.12);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: pgSpin 0.7s linear infinite;
+    }
+    .pgSplashLogo {
+      font-family: -apple-system, system-ui, sans-serif;
+      font-size: 15px; font-weight: 700;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.04em;
+    }
   </style>
 </head>
 <body>
+  <!-- Splash: renders immediately (no JS needed) and is hidden once React mounts -->
+  <div id="pgSplash">
+    <div class="pgSpinner"></div>
+    <div class="pgSplashLogo">PoolGuyPro</div>
+  </div>
   <div id="stage"><div id="root"></div></div>
 
   <!-- Supabase SDK -->
@@ -307,14 +339,15 @@
   </script>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <!-- Production builds: ~3.5 MB smaller than development, much faster parse + execute -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
   <script type="text/babel" src="ios-frame.jsx?v=128"></script>
   <script type="text/babel" src="tweaks-panel.jsx?v=128"></script>
   <script type="text/babel" src="components.jsx?v=128"></script>
-  <script type="text/babel" src="brand.jsx?v=129"></script>
+  <script type="text/babel" src="brand.jsx?v=130"></script>
   <script type="text/babel" src="data.jsx?v=128"></script>
   <script type="text/babel" src="screens/login.jsx?v=128"></script>
   <script type="text/babel" src="screens/home.jsx?v=128"></script>
@@ -324,8 +357,16 @@
   <script type="text/babel" src="screens/work.jsx?v=128"></script>
   <script type="text/babel" src="screens/profile.jsx?v=132"></script>
   <script type="text/babel" src="screens/overlays.jsx?v=131"></script>
-  <script type="text/babel" src="app.jsx?v=138"></script>
+  <script type="text/babel" src="app.jsx?v=139"></script>
   <script>
+    // ── Splash removal — called by app.jsx once React has rendered ──
+    window.__pgHideSplash = function() {
+      var s = document.getElementById('pgSplash');
+      if (!s) return;
+      s.classList.add('fade');
+      setTimeout(function(){ s.style.display = 'none'; }, 320);
+    };
+
     // Live reload: watch all JSX files for changes
     const _watchFiles = [
       'ios-frame.jsx','tweaks-panel.jsx','components.jsx','brand.jsx','data.jsx',

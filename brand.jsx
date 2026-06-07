@@ -154,23 +154,31 @@ function NavyBar({ title, leftBack, onBack, right, children, wave=true }) {
 
 // ── No-photo placeholder — shown when a listing has no uploaded image ──
 function NoPhotoPlaceholder({ height = 108, small = false }) {
-  const iconSize  = small ? 24 : 36;
-  const logoSize  = small ? 20 : 28;
-  const fontSize  = small ? 9  : 11;
+  const iconSize = small ? 22 : 32;
   return (
     <div style={{
       height, display:'flex', flexDirection:'column',
-      alignItems:'center', justifyContent:'center', gap: small ? 5 : 8,
-      background:'var(--pg-ink-100)', userSelect:'none',
+      alignItems:'center', justifyContent:'center', gap: small ? 4 : 7,
+      background:'linear-gradient(135deg, var(--pg-blue-600,#2563eb) 0%, var(--pg-blue-800,#1e3a6e) 100%)',
+      userSelect:'none', position:'relative', overflow:'hidden',
     }}>
-      {/* Camera icon */}
+      {/* Subtle wave decoration */}
+      <svg viewBox="0 0 200 60" style={{position:'absolute',bottom:0,left:0,right:0,width:'100%',opacity:0.12}} preserveAspectRatio="none">
+        <path d="M0 30 Q50 0 100 30 Q150 60 200 30 L200 60 L0 60 Z" fill="#fff"/>
+      </svg>
+      {/* Pool / camera icon */}
       <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none"
-        stroke="var(--pg-ink-300)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        stroke="rgba(255,255,255,0.75)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="7" width="18" height="13" rx="2"/>
         <circle cx="12" cy="13.5" r="3"/>
         <path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/>
         <line x1="17" y1="11" x2="17.01" y2="11"/>
       </svg>
+      {!small && (
+        <div style={{fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', letterSpacing:'0.08em', textTransform:'uppercase', position:'relative'}}>
+          No photo
+        </div>
+      )}
     </div>
   );
 }
