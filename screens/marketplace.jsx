@@ -2422,7 +2422,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         {viewerOpen && allPhotos.length > 0 && (
           <PhotoViewer photos={allPhotos} startIdx={imgIdx} onClose={()=>setViewerOpen(false)}/>
         )}
-        <MarkSoldSheetSlot/>
+        {MarkSoldSheetSlot()}
         {RatingOverlay()}
         {DisputeFormSheet()}
         {AfterPhotoSheet()}
@@ -2855,11 +2855,14 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 
   const allPhotos = (item.photoUrls && item.photoUrls.length > 0) ? item.photoUrls : (item.photoUrl ? [item.photoUrl] : []);
   const isPending   = item.status === 'pending';
-  const statusColor = isPending ? '#D97706' : '#16A34A';
-  const statusBg    = isPending ? '#FEF3C7' : '#DCFCE7';
+  const isSoldItem  = item.status === 'sold';
+  const statusColor = isPending ? '#D97706' : isSoldItem ? '#6B7280' : '#16A34A';
+  const statusBg    = isPending ? '#FEF3C7' : isSoldItem ? '#F3F4F6' : '#DCFCE7';
   const statusLabel = isPending
     ? (lang==='pt'?'⏳ Em revisão':lang==='es'?'⏳ En revisión':'⏳ Under review')
-    : (lang==='pt'?'✓ Ativo':lang==='es'?'✓ Activo':'✓ Active');
+    : isSoldItem
+      ? (lang==='pt'?'✓ Vendido':lang==='es'?'✓ Vendido':'✓ Sold')
+      : (lang==='pt'?'✓ Ativo':lang==='es'?'✓ Activo':'✓ Active');
 
   const _sfxOf = p => p==='week'?(lang==='pt'?'/sem':'/wk'):p==='month'?(lang==='pt'?'/mês':'/mo'):(lang==='pt'?'/dia':'/day');
   const periodSfx = item.type === 'rent'
@@ -3451,9 +3454,11 @@ function MarketplaceScreen({ ctx }) {
     };
     const photoSrc = (item.photoUrls&&item.photoUrls[0]) || item.photoUrl || null;
     return (
-      <button key={item._id} onClick={()=>openListing(item)} className="pg-press"
+      <button key={item._id}
+        onClick={()=> isSoldItem ? (isMyPost(item) ? setMyPostDetail(item) : null) : openListing(item)}
+        className={isSoldItem ? '' : 'pg-press'}
         style={{
-          padding:0, overflow:'hidden', position:'relative', cursor: isSoldItem ? 'default' : 'pointer',
+          padding:0, overflow:'hidden', position:'relative', cursor: isSoldItem ? (isMyPost(item) ? 'pointer' : 'default') : 'pointer',
           border: (desktopMode && darkMode)
             ? `1.5px solid ${isSoldItem ? '#30363D' : '#21262D'}`
             : isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
@@ -4004,7 +4009,7 @@ function MarketplaceScreen({ ctx }) {
                 {/* Route cards in 2-column grid on desktop */}
                 <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(360px,1fr))', gap:16}}>
                   {list.map(r => (
-                    <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
+                    <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ const mSold=m.status==='sold'; if(mSold&&!isMyPost(m)){return;} isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
                       style={{
                         background:'var(--pg-white)', borderRadius:16, overflow:'hidden',
                         border:'1px solid var(--pg-ink-200)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
@@ -4795,7 +4800,7 @@ function MarketplaceScreen({ ctx }) {
             {/* Route cards */}
             {routeSub === 'routes' && list.map(r => (
               <div key={r.id||r._liveId} className="pg-card pg-card-tap"
-                onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
+                onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ const mSold=m.status==='sold'; if(mSold&&!isMyPost(m)){return;} isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
                 style={{padding:14, display:'flex', gap:12, position:'relative'}}>
                 <div style={{width:90, height:90, borderRadius:12, overflow:'hidden', flexShrink:0,
                   background:'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-800))',
