@@ -478,22 +478,34 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user }) {
   };
 
   // Normalize a DB row from job_applications → UI applicant shape
-  const normApp = (row) => ({
-    id:           row.id,
-    _dbId:        row.id,
-    applicant_id: row.applicant_id || null, // UUID needed to open live chat
-    name:         row.applicant_name || '?',
-    rating:       row.applicant_rating || 0,
-    jobs:         row.applicant_jobs  || 0,
-    status:       row.status || 'pending',
-    note:         row.note   || null,
-    when:         relTime(row.created_at),
-    rejectReason: row.reject_reason || null,
-    interview: row.interview_day ? {
-      day:  { en: row.interview_day, pt: row.interview_day, es: row.interview_day },
-      time: row.interview_time || '',
-    } : null,
-  });
+  const normApp = (row) => {
+    const snap = row.profile_snapshot || {};
+    return {
+      id:           row.id,
+      _dbId:        row.id,
+      applicant_id: row.applicant_id || null,
+      name:         row.applicant_name || '?',
+      rating:       row.applicant_rating || 0,
+      jobs:         row.applicant_jobs  || 0,
+      status:       row.status || 'pending',
+      note:         row.note   || null,
+      when:         relTime(row.created_at),
+      rejectReason: row.reject_reason || null,
+      interview: row.interview_day ? {
+        day:  { en: row.interview_day, pt: row.interview_day, es: row.interview_day },
+        time: row.interview_time || '',
+      } : null,
+      // Profile snapshot saved at apply time
+      profile: {
+        age:        snap.age        || null,
+        region:     snap.region     || '',
+        hasCar:     snap.hasCar     || false,
+        hasLicense: snap.hasLicense || false,
+        equipment:  snap.equipment  || null,
+        experience: snap.experience || [],
+      },
+    };
+  };
 
   // Load live applicants from Supabase
   const loadLiveApplicants = React.useCallback(async (jobId) => {
@@ -801,8 +813,69 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user }) {
                     marginTop:8, padding:'7px 10px', borderRadius:8,
                     background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-100)',
                     fontSize:12, color:'var(--pg-ink-700)', lineHeight:1.4,
+                    fontStyle:'italic',
                   }}>
-                    {tr(a.note, lang)}
+                    💬 {tr(a.note, lang)}
+                  </div>
+                )}
+
+                {/* Hiring-specific: candidate profile/resume snapshot */}
+                {post.type === 'hiring' && a.profile && (a.profile.age || a.profile.region || a.profile.hasCar || a.profile.hasLicense || (a.profile.equipment && (Array.isArray(tr(a.profile.equipment, lang)) ? tr(a.profile.equipment, lang).length > 0 : false)) || a.profile.experience?.length > 0) && (
+                  <div style={{marginTop:10, padding:'10px 12px', borderRadius:10, background:'var(--pg-ink-50)', border:'0.5px solid var(--pg-ink-150,#e8e8e8)'}}>
+                    <div style={{fontSize:9.5, fontWeight:800, letterSpacing:'0.08em', color:'var(--pg-ink-400)', marginBottom:7}}>
+                      {lang==='pt'?'PERFIL DO CANDIDATO':lang==='es'?'PERFIL DEL CANDIDATO':'CANDIDATE PROFILE'}
+                    </div>
+                    {/* Chips: age, region, car, license */}
+                    <div style={{display:'flex', flexWrap:'wrap', gap:5, marginBottom: a.profile.experience?.length > 0 ? 8 : 0}}>
+                      {a.profile.age && (
+                        <span style={{display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, padding:'3px 8px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+                          👤 {a.profile.age} {lang==='pt'?'anos':lang==='es'?'años':'yrs'}
+                        </span>
+                      )}
+                      {a.profile.region && (
+                        <span style={{display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, padding:'3px 8px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+                          {Icon.pin(10,'var(--pg-ink-500)')} {a.profile.region}
+                        </span>
+                      )}
+                      {a.profile.hasCar && (
+                        <span style={{display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, padding:'3px 8px', borderRadius:999, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-800)'}}>
+                          🚗 {lang==='pt'?'Veículo próprio':lang==='es'?'Vehículo propio':'Own vehicle'}
+                        </span>
+                      )}
+                      {a.profile.hasLicense && (
+                        <span style={{display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, padding:'3px 8px', borderRadius:999, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-800)'}}>
+                          🪪 {lang==='pt'?"Driver's license":lang==='es'?"Driver's license":"Driver's license"}
+                        </span>
+                      )}
+                      {/* Equipment */}
+                      {(() => {
+                        const eqList = a.profile.equipment ? tr(a.profile.equipment, lang) : null;
+                        if (!Array.isArray(eqList)) return null;
+                        return eqList.map((eq, i) => (
+                          <span key={i} style={{display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, padding:'3px 8px', borderRadius:999, background:'oklch(0.95 0.04 270)', color:'oklch(0.40 0.18 270)'}}>
+                            🔧 {eq}
+                          </span>
+                        ));
+                      })()}
+                    </div>
+                    {/* Experience entries */}
+                    {a.profile.experience && a.profile.experience.map((exp, i) => (
+                      <div key={i} style={{
+                        display:'flex', gap:8, alignItems:'flex-start',
+                        padding:'6px 0', borderTop: i > 0 ? '0.5px solid var(--pg-ink-150,#e8e8e8)' : '0.5px solid var(--pg-ink-150,#e8e8e8)',
+                        marginTop: i===0 ? 2 : 0,
+                      }}>
+                        <div style={{width:3, borderRadius:2, background:'var(--pg-blue-400)', alignSelf:'stretch', flexShrink:0, minHeight:28}}/>
+                        <div style={{flex:1, minWidth:0}}>
+                          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:6}}>
+                            <div style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-900)', lineHeight:1.2}}>{tr(exp.role, lang)}</div>
+                            {exp.duration && <div style={{fontSize:10.5, fontWeight:700, color:'var(--pg-blue-600)', flexShrink:0}}>{tr(exp.duration, lang)}</div>}
+                          </div>
+                          <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>{exp.company}</div>
+                          {exp.desc && <div style={{fontSize:11, color:'var(--pg-ink-600)', lineHeight:1.45, marginTop:3}}>{tr(exp.desc, lang)}</div>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -2492,16 +2565,39 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
       setInsertError(errMsg);
       return;
     }
+    // Block duplicate / rejected re-application
+    const jobId = job._id || job.id || null;
+    const { data: existing } = await window.sb.from('job_applications')
+      .select('id, status').eq('job_id', jobId).eq('applicant_id', uid);
+    if (existing && existing.length > 0) {
+      setSaving(false);
+      const st = existing[0].status;
+      const errMsg = st === 'rejected'
+        ? (lang==='pt' ? 'Você foi recusado para esta vaga e não pode se candidatar novamente.' : lang==='es' ? 'Fuiste rechazado para esta oferta y no puedes volver a postularte.' : 'You were rejected for this position and cannot reapply.')
+        : (lang==='pt' ? 'Você já enviou uma candidatura para esta vaga.' : lang==='es' ? 'Ya te postulaste a esta oferta.' : 'You already applied to this position.');
+      setInsertError(errMsg);
+      return;
+    }
+    // Snapshot of candidate profile — saved so employer can see full resume
+    const profileSnapshot = {
+      age:        user.age        || null,
+      region:     user.region     || '',
+      hasCar:     !!user.hasCar,
+      hasLicense: !!user.hasLicense,
+      equipment:  user.equipment  || null,
+      experience: user.experience || [],
+    };
     const { error } = await window.sb.from('job_applications').insert({
-      job_id:          job._id || job.id || null,
-      job_company:     jobCompany,
-      job_role:        jobRole,
-      applicant_id:    uid,
-      applicant_name:  user.name || '',
-      applicant_rating:user.rating || null,
-      applicant_jobs:  user.reviews || 0,
-      note:            note.trim() || null,
-      status:          'pending',
+      job_id:           jobId,
+      job_company:      jobCompany,
+      job_role:         jobRole,
+      applicant_id:     uid,
+      applicant_name:   user.name || '',
+      applicant_rating: user.rating || null,
+      applicant_jobs:   user.reviews || 0,
+      note:             note.trim() || null,
+      status:           'pending',
+      profile_snapshot: profileSnapshot,
     });
     setSaving(false);
     if (error) {
@@ -2766,11 +2862,32 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
 
 // ── Hiring Application Detail Sheet ──────────────────────────
 function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
-  if (!app) return null;
+  // Fetch fresh data from DB when opened for a live application (avoids stale rejection reason etc.)
+  const [freshApp, setFreshApp] = React.useState(null);
+  React.useEffect(() => {
+    if (!open) { setFreshApp(null); return; }
+    if (!app?._live || !app?.id || !window.sb) return;
+    window.sb.from('job_applications').select('*').eq('id', app.id).single()
+      .then(({ data }) => {
+        if (!data) return;
+        setFreshApp({
+          ...app,
+          status:       data.status || app.status,
+          rejectReason: data.reject_reason || null,
+          interview:    data.interview_day ? {
+            day:  { en: data.interview_day, pt: data.interview_day, es: data.interview_day },
+            time: data.interview_time || '',
+          } : null,
+        });
+      });
+  }, [open, app?.id]); // eslint-disable-line
 
-  const isPending  = app.status === 'pending';
-  const isAccepted = app.status === 'accepted';
-  const isRejected = app.status === 'rejected';
+  const display = freshApp || app;
+  if (!display) return null;
+
+  const isPending  = display.status === 'pending';
+  const isAccepted = display.status === 'accepted';
+  const isRejected = display.status === 'rejected';
 
   const appliedLbl  = lang==='pt' ? 'Candidatura enviada'              : lang==='es' ? 'Postulación enviada'             : 'Application sent';
   const waitingLbl  = lang==='pt' ? 'Aguardando resposta da empresa'    : lang==='es' ? 'Esperando respuesta de la empresa': 'Awaiting company response';
@@ -2784,11 +2901,11 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
   const lookMoreLbl = lang==='pt' ? 'Ver outras vagas'                   : lang==='es' ? 'Ver más empleos'                 : 'Browse more jobs';
   const messageLbl  = lang==='pt' ? 'Enviar mensagem'                    : lang==='es' ? 'Enviar mensaje'                  : 'Send message';
   const reasonLbl   = lang==='pt' ? 'Motivo informado pela empresa'      : lang==='es' ? 'Motivo informado por la empresa' : 'Reason provided by company';
-  const sentLbl     = lang==='pt' ? `Enviada há ${app.when}`             : lang==='es' ? `Enviada hace ${app.when}`        : `Sent ${app.when} ago`;
-  const appliedOnLbl= app.appliedDate ? (
-    lang==='pt' ? `Candidatura enviada em ${tr(app.appliedDate, lang)}`
-    : lang==='es' ? `Postulación enviada el ${tr(app.appliedDate, lang)}`
-    : `Applied on ${tr(app.appliedDate, lang)}`
+  const sentLbl     = lang==='pt' ? `Enviada há ${display.when}`             : lang==='es' ? `Enviada hace ${display.when}`        : `Sent ${display.when} ago`;
+  const appliedOnLbl= display.appliedDate ? (
+    lang==='pt' ? `Candidatura enviada em ${tr(display.appliedDate, lang)}`
+    : lang==='es' ? `Postulación enviada el ${tr(display.appliedDate, lang)}`
+    : `Applied on ${tr(display.appliedDate, lang)}`
   ) : sentLbl;
 
   const statusCfg = isPending ? {
@@ -2843,25 +2960,25 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
             fontWeight:800, fontSize:22, color:'var(--pg-blue-700)',
             fontFamily:'var(--pg-font-display)',
           }}>
-            {app.company[0]}
+            {(display.company || '?')[0]}
           </div>
           <div style={{flex:1, minWidth:0}}>
-            <div style={{fontSize:18, fontWeight:700, letterSpacing:'-0.015em', color:'var(--pg-ink-900)'}}>{app.company}</div>
-            <div style={{fontSize:14, color:'var(--pg-ink-600)', marginTop:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{tr(app.title, lang)}</div>
+            <div style={{fontSize:18, fontWeight:700, letterSpacing:'-0.015em', color:'var(--pg-ink-900)'}}>{display.company}</div>
+            <div style={{fontSize:14, color:'var(--pg-ink-600)', marginTop:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{tr(display.title, lang)}</div>
           </div>
         </div>
 
         {/* Meta chips */}
         <div style={{display:'flex', gap:7, flexWrap:'wrap', marginBottom:20}}>
           <span style={{display:'inline-flex', alignItems:'center', gap:4, fontSize:12, color:'var(--pg-ink-500)', padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)'}}>
-            {Icon.pin(11,'var(--pg-ink-400)')} {app.loc}
+            {Icon.pin(11,'var(--pg-ink-400)')} {display.loc}
           </span>
           <span style={{display:'inline-flex', alignItems:'center', gap:4, fontSize:12, fontWeight:700, color:'var(--pg-blue-700)', padding:'4px 10px', borderRadius:999, background:'var(--pg-blue-50)'}}>
-            {tr(app.pay, lang)}
+            {tr(display.pay, lang)}
           </span>
-          {app.jobType && (
+          {display.jobType && (
             <span style={{fontSize:12, color:'var(--pg-ink-500)', padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)'}}>
-              {tr(app.jobType, lang)}
+              {tr(display.jobType, lang)}
             </span>
           )}
         </div>
@@ -2892,19 +3009,25 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
         </div>
 
         {/* Rejected: reason */}
-        {isRejected && app.rejectReason && (
+        {isRejected && display.rejectReason && (
           <div style={{marginBottom:20, padding:'12px 14px', borderRadius:12, background:'oklch(0.97 0.02 20)', border:'0.5px solid oklch(0.88 0.08 20)'}}>
             <div style={{fontSize:10.5, fontWeight:700, letterSpacing:'0.07em', color:'oklch(0.55 0.15 20)', marginBottom:7}}>
               {reasonLbl.toUpperCase()}
             </div>
             <div style={{fontSize:13, color:'var(--pg-ink-600)', lineHeight:1.55, fontStyle:'italic'}}>
-              "{tr(app.rejectReason, lang)}"
+              "{tr(display.rejectReason, lang)}"
             </div>
+          </div>
+        )}
+        {/* Rejected but no reason yet (loading or employer didn't add one) */}
+        {isRejected && !display.rejectReason && (
+          <div style={{marginBottom:20, padding:'10px 14px', borderRadius:12, background:'oklch(0.97 0.02 20)', border:'0.5px solid oklch(0.88 0.08 20)', fontSize:12, color:'oklch(0.55 0.15 20)', fontStyle:'italic'}}>
+            {lang==='pt'?'Nenhum motivo informado pela empresa.':lang==='es'?'Sin motivo informado por la empresa.':'No reason provided by the company.'}
           </div>
         )}
 
         {/* Accepted: interview scheduled */}
-        {isAccepted && app.interview && (
+        {isAccepted && display.interview && (
           <div style={{
             marginBottom:14, padding:'12px 14px', borderRadius:12,
             background:'oklch(0.96 0.04 145)', border:'0.5px solid oklch(0.80 0.10 145)',
@@ -2918,14 +3041,14 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
                 {(lang==='pt'?'ENTREVISTA AGENDADA':lang==='es'?'ENTREVISTA PROGRAMADA':'INTERVIEW SCHEDULED').toUpperCase()}
               </div>
               <div style={{fontSize:15, fontWeight:700, color:'oklch(0.35 0.18 145)', letterSpacing:'-0.01em'}}>
-                📅 {tr(app.interview.day, lang)} · {app.interview.time}
+                📅 {tr(display.interview.day, lang)} · {display.interview.time}
               </div>
             </div>
           </div>
         )}
 
         {/* Accepted: start date */}
-        {isAccepted && app.startDate && (
+        {isAccepted && display.startDate && (
           <div style={{
             marginBottom:14, padding:'12px 14px', borderRadius:12,
             background:'var(--pg-aqua-50)', border:'0.5px solid var(--pg-aqua-200)',
@@ -2936,7 +3059,7 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
             </div>
             <div>
               <div style={{fontSize:10.5, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-400)'}}>{startLbl.toUpperCase()}</div>
-              <div style={{fontSize:16, fontWeight:700, color:'var(--pg-aqua-800)', letterSpacing:'-0.01em'}}>{tr(app.startDate, lang)}</div>
+              <div style={{fontSize:16, fontWeight:700, color:'var(--pg-aqua-800)', letterSpacing:'-0.01em'}}>{tr(display.startDate, lang)}</div>
             </div>
           </div>
         )}
