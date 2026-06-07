@@ -503,6 +503,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user }) {
         hasLicense: snap.hasLicense || false,
         equipment:  snap.equipment  || null,
         experience: snap.experience || [],
+        photoUrl:   snap.photoUrl   || null,
       },
     };
   };
@@ -677,7 +678,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user }) {
                     border:'none', background:'transparent', padding:0, cursor:'pointer',
                     flexShrink:0, borderRadius:'50%', position:'relative',
                   }}>
-                    <Avatar name={a.name} size={42}/>
+                    <Avatar name={a.name} size={42} src={a.profile?.photoUrl || undefined}/>
                     <span style={{
                       position:'absolute', bottom:-2, right:-2,
                       width:14, height:14, borderRadius:'50%',
@@ -2586,6 +2587,7 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
       hasLicense: !!user.hasLicense,
       equipment:  user.equipment  || null,
       experience: user.experience || [],
+      photoUrl:   user.photoUrl   || null,
     };
     const { error } = await window.sb.from('job_applications').insert({
       job_id:           jobId,

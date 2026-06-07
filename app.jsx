@@ -1367,7 +1367,7 @@ function App() {
           </div>
 
           {/* Tab bar */}
-          <TabBar tab={tab} setTab={switchTab} lang={lang} user={user}/>
+          <TabBar tab={tab} setTab={switchTab} lang={lang}/>
 
           {/* Floating action button */}
           {(tab === 'market' || tab === 'quick') && (
