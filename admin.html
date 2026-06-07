@@ -908,9 +908,22 @@ function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
           await window.sb.from('profiles').update({ banned: true, ban_reason: 'Banido automaticamente por acúmulo de advertências.' }).eq('id', dispute.reported_user_id);
         }
       }
-      // Refresh warnings list
-      window.sb.from('user_warnings').select('*').order('created_at',{ascending:false})
-        .then(({data}) => { if(data) setWarnings(data); });
+      // 6. Notificar o usuário reportado (aqui action/warnWeight/message estão em escopo)
+      if (action === 'warning') {
+        const wLabel = { leve:'Leve (+1pt)', medio:'Médio (+2pts)', grave:'Grave (+5pts)' };
+        window.sb.from('notifications').insert({
+          user_id: dispute.reported_user_id, type: 'warning',
+          title: `Você recebeu uma advertência — ${wLabel[warnWeight]||warnWeight}`,
+          body: message,
+        }).catch(()=>{});
+      } else if (action === 'ban') {
+        window.sb.from('notifications').insert({
+          user_id: dispute.reported_user_id, type: 'warning',
+          title: 'Sua conta foi banida',
+          body: message,
+        }).catch(()=>{});
+      }
+      // Sinaliza para o pai (setWarnings e outros estados ficam no pai)
       onResolved(dispute.id, { status:'resolved', resolution_message:message, resolution_action:action, resolved_at:now });
       showToast(action==='ban'?'🚫 Usuário banido e reclamação resolvida.':action==='warning'?`⚠️ Advertência (${warnWeight}) aplicada e reclamação resolvida.`:'✓ Reclamação resolvida com sucesso.');
       onClose();
@@ -1678,26 +1691,12 @@ function AdminApp({ adminUser, onLogout }) {
           showToast={showToast}
           onResolved={(id, updated) => {
             setDisputes(p => p.map(d => d.id===id ? {...d,...updated} : d));
+            // Refresh warnings list — setWarnings is in scope here (parent state)
             if (updated.resolution_action && updated.resolution_action !== 'none') {
-              // Refresh warnings list
               window.sb.from('user_warnings').select('*').order('created_at',{ascending:false})
                 .then(({data}) => { if(data) setWarnings(data); });
-              // Notificar o usuário reportado
-              if (action === 'warning') {
-                const wLabel = { leve:'Leve (+1pt)', medio:'Médio (+2pts)', grave:'Grave (+5pts)' };
-                window.sb.from('notifications').insert({
-                  user_id: dispute.reported_user_id, type: 'warning',
-                  title: `Você recebeu uma advertência — ${wLabel[warnWeight]||warnWeight}`,
-                  body: message,
-                }).catch(()=>{});
-              } else if (action === 'ban') {
-                window.sb.from('notifications').insert({
-                  user_id: dispute.reported_user_id, type: 'warning',
-                  title: 'Sua conta foi banida',
-                  body: message,
-                }).catch(()=>{});
-              }
             }
+            // Notification is now sent inside ResolveDisputeModal.handleConfirm
             if (updated.resolution_action === 'ban') {
               setUsers(p => p.filter(u => u.id !== resolveModal.reported_user_id));
             }
