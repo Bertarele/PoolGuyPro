@@ -9,6 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://xiszfqghizqzlwyrfjol.supabase.co" crossorigin>
   <link rel="dns-prefetch" href="https://unpkg.com">
+  <!-- Preload critical scripts so they download in parallel with HTML parse -->
+  <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
+  <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
+  <link rel="preload" href="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" as="script" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="tokens.css?v=128">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
@@ -338,11 +342,44 @@
   })();
   </script>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <!-- Production builds: ~3.5 MB smaller than development, much faster parse + execute -->
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Babel compile cache: saves compiled JS to localStorage so subsequent
+       reloads skip JSX compilation entirely (~3-6s faster on mobile).
+       Cache key = src URL with version string → auto-invalidates on update. -->
+  <script>
+  (function() {
+    if (!window.Babel) return;
+    var STORE = 'pg_bc3';
+    var _cache = {};
+    try { _cache = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch(e) {}
+    var _n = Object.keys(_cache).length;
+    if (_n) console.log('[PoolGuyPro] Babel cache: ' + _n + ' files cached — skipping recompile');
+    var _orig = Babel.transform.bind(Babel);
+    Babel.transform = function(code, opts) {
+      var key = (opts && opts.filename) || '';
+      if (key && _cache[key]) return { code: _cache[key] };
+      var r = _orig(code, opts);
+      if (key && r && r.code) {
+        _cache[key] = r.code;
+        // Prune: keep at most 30 entries (stale version keys never match again)
+        var ks = Object.keys(_cache);
+        if (ks.length > 30) ks.slice(0, ks.length - 30).forEach(function(k) { delete _cache[k]; });
+        try {
+          localStorage.setItem(STORE, JSON.stringify(_cache));
+        } catch(e) {
+          // Storage full — clear old cache, store just this entry
+          try { localStorage.removeItem(STORE); localStorage.setItem(STORE, JSON.stringify(_cache)); } catch(e2) {}
+        }
+      }
+      return r;
+    };
+  })();
+  </script>
 
   <script type="text/babel" src="ios-frame.jsx?v=128"></script>
   <script type="text/babel" src="tweaks-panel.jsx?v=128"></script>
@@ -367,26 +404,28 @@
       setTimeout(function(){ s.style.display = 'none'; }, 320);
     };
 
-    // Live reload: watch all JSX files for changes
-    const _watchFiles = [
-      'ios-frame.jsx','tweaks-panel.jsx','components.jsx','brand.jsx','data.jsx',
-      'screens/login.jsx',
-      'screens/home.jsx','screens/marketplace.jsx','screens/quickpools.jsx',
-      'screens/post.jsx','screens/work.jsx','screens/profile.jsx',
-      'screens/overlays.jsx','app.jsx',
-    ];
-    let _lastSig = '';
-    setInterval(async () => {
-      try {
-        const tags = await Promise.all(
-          _watchFiles.map(f => fetch(f + '?_lrp=' + Date.now(), {method:'HEAD', cache:'no-store'})
-            .then(r => r.headers.get('last-modified') || r.headers.get('etag') || ''))
-        );
-        const sig = tags.join('|');
-        if (_lastSig && sig !== _lastSig) location.reload();
-        _lastSig = sig;
-      } catch(e) {}
-    }, 1500);
+    // Live reload: only active on localhost (never runs in production/Vercel)
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      const _watchFiles = [
+        'ios-frame.jsx','tweaks-panel.jsx','components.jsx','brand.jsx','data.jsx',
+        'screens/login.jsx',
+        'screens/home.jsx','screens/marketplace.jsx','screens/quickpools.jsx',
+        'screens/post.jsx','screens/work.jsx','screens/profile.jsx',
+        'screens/overlays.jsx','app.jsx',
+      ];
+      let _lastSig = '';
+      setInterval(async () => {
+        try {
+          const tags = await Promise.all(
+            _watchFiles.map(f => fetch(f + '?_lrp=' + Date.now(), {method:'HEAD', cache:'no-store'})
+              .then(r => r.headers.get('last-modified') || r.headers.get('etag') || ''))
+          );
+          const sig = tags.join('|');
+          if (_lastSig && sig !== _lastSig) location.reload();
+          _lastSig = sig;
+        } catch(e) {}
+      }, 1500);
+    }
   </script>
 </body>
 </html>
