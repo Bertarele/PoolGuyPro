@@ -2820,12 +2820,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 }
 
 // ── My Post Detail / Edit Sheet ───────────────────────────────
-function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDeleted, openRating }) {
-  const [editing,      setEditing]      = React.useState(false);
-  const [saving,       setSaving]       = React.useState(false);
-  const [deleting,     setDeleting]     = React.useState(false);
-  const [activeRental, setActiveRental] = React.useState(null);  // rental_request blocking edit
-  const [rentLoaded,   setRentLoaded]   = React.useState(false);
+function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDeleted, openRating, currentUser }) {
+  const [editing,        setEditing]        = React.useState(false);
+  const [saving,         setSaving]         = React.useState(false);
+  const [deleting,       setDeleting]       = React.useState(false);
+  const [activeRental,   setActiveRental]   = React.useState(null);  // rental_request blocking edit
+  const [rentLoaded,     setRentLoaded]     = React.useState(false);
+  const [markSoldOpen,   setMarkSoldOpen]   = React.useState(false);
   const [form,    setForm]      = React.useState({
     name:        item.name        || '',
     description: item.description || '',
@@ -3061,8 +3062,8 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
               </button>
             </div>
 
-            {/* Mark as Sold — only for equipment (not routes), not admin, not yet sold */}
-            {item.type !== 'route' && !isAdmin && item.status !== 'sold' && (
+            {/* Mark as Sold — only for equipment (not routes), not yet sold */}
+            {item.type !== 'route' && item.status !== 'sold' && (
               <button onClick={()=>setMarkSoldOpen(true)} style={{
                 width:'100%', marginTop:10, padding:'13px', borderRadius:14,
                 border:'1.5px solid #86EFAC', background:'#F0FDF4',
@@ -4105,7 +4106,7 @@ function MarketplaceScreen({ ctx }) {
       {shareItem && <ShareSheet item={shareItem} lang={lang} onClose={()=>setShareItem(null)} showToast={showToast}/>}
       <Sheet open={!!myPostDetail} onClose={()=>setMyPostDetail(null)} height="auto">
         {myPostDetail && <MyPostDetailSheet item={myPostDetail} lang={lang} onClose={()=>setMyPostDetail(null)} showToast={showToast}
-          openRating={openRating}
+          currentUser={user} openRating={openRating}
           onUpdated={()=>{ setMyPostDetail(null); if(ctx.liveMarket)ctx.liveMarket.splice(0); }}
           onDeleted={(id)=>{ setMyPostDetail(null); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}/>}
       </Sheet>
@@ -4962,7 +4963,7 @@ function MarketplaceScreen({ ctx }) {
           item={myPostDetail} lang={lang}
           onClose={()=>setMyPostDetail(null)}
           showToast={showToast}
-          openRating={openRating}
+          currentUser={user} openRating={openRating}
           onUpdated={(updated)=>{
             setMyPostDetail(null);
             if(ctx.liveMarket) ctx.liveMarket.splice(0); // will re-fetch via realtime
