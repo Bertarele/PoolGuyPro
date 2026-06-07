@@ -556,7 +556,7 @@ function WorkScreen({ ctx }) {
 
             {/* Panel content */}
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
-              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={liveJobs} showToast={showToast} onDeleteJob={removeJob}/>}
+              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={liveJobs} showToast={showToast} onDeleteJob={removeJob} liveApplications={liveApplications}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={liveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
               {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={liveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
             </div>
@@ -1054,8 +1054,8 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
   return (
     <>
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
-      {/* ── Live jobs posted by real users ── */}
-      {liveJobs.map(job => (
+      {/* ── Live jobs posted by real users (hide own jobs if hidePosted) ── */}
+      {liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).map(job => (
         <article key={job._id} className="pg-card" style={{padding:'14px 16px'}}>
           {/* Header: author name with building icon + NEW badge */}
           <button onClick={()=>openPublicProfile && openPublicProfile({ name:job.author, rating:4.8, reviews:0, jobs:0, loc:job.loc })}
@@ -1156,8 +1156,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
                   </div>
                 );
               }
-              // Not applied yet — show normal button (hide if it's the user's own job)
-              if (user?.uid && user.uid === job.author_id) return null;
+              // Not applied yet and not own job — show Candidatar button
               return (
                 <button onClick={()=>onApply && onApply(job)} className="pg-btn pg-btn-primary" style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
                   {t.apply}
