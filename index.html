@@ -225,6 +225,7 @@
         select:function(c){sel=c||'*';return b;},
         eq:function(c,v){filters.push(c+'=eq.'+encodeURIComponent(v));return b;},
         neq:function(c,v){filters.push(c+'=neq.'+encodeURIComponent(v));return b;},
+        in:function(c,arr){if(arr&&arr.length)filters.push(c+'=in.('+arr.join(',')+')');return b;},
         or:function(q){filters.push('or=('+q+')');return b;},
         order:function(c,opts){orderCol=c;orderAsc=opts?opts.ascending!==false:true;return b;},
         limit:function(n){filters.push('limit='+n);return b;},

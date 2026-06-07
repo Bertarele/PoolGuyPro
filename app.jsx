@@ -400,8 +400,11 @@ function App() {
   const [liveVacations,    setLiveVacations]    = React.useState([]);
   const [liveMarket,       setLiveMarket]       = React.useState([]);
   const [liveApplications, setLiveApplications] = React.useState([]); // current user's job applications
-  // { [job_id]: { total, pending } } — applicant counts for jobs the current user owns
+  // { [job_id]: { total, pending, withInterview } } — applicant counts for jobs the current user owns
   const [jobApplicantCounts, setJobApplicantCounts] = React.useState({});
+  // Ref keeps the latest job IDs accessible in event callbacks without stale closure
+  const liveJobIdsRef = React.useRef([]);
+  React.useEffect(() => { liveJobIdsRef.current = liveJobs.map(j => j._id); }, [liveJobs]);
 
   React.useEffect(() => {
     if (!window.sb || !authReady) return;
@@ -448,16 +451,18 @@ function App() {
       // Load applicant counts for all jobs (used in "My Posts" badge display)
       if (j.data && j.data.length > 0) {
         const jobIds = j.data.map(r => r.id);
+        liveJobIdsRef.current = jobIds;
         const { data: appRows } = await window.sb
           .from('job_applications')
-          .select('job_id, status')
+          .select('job_id, status, interview_day')
           .in('job_id', jobIds);
         if (appRows) {
           const counts = {};
           appRows.forEach(row => {
-            if (!counts[row.job_id]) counts[row.job_id] = { total: 0, pending: 0 };
+            if (!counts[row.job_id]) counts[row.job_id] = { total: 0, pending: 0, withInterview: 0 };
             counts[row.job_id].total++;
             if (row.status === 'pending') counts[row.job_id].pending++;
+            if (row.interview_day) counts[row.job_id].withInterview++;
           });
           setJobApplicantCounts(counts);
         }
@@ -465,17 +470,39 @@ function App() {
     };
     doFetch().catch(e => console.warn('[Supabase] fetch:', e.message));
 
+    // Helper: refresh applicant counts for all known jobs
+    const doCountsRefresh = async () => {
+      const ids = liveJobIdsRef.current;
+      if (!window.sb || !ids || ids.length === 0) return;
+      const { data: appRows } = await window.sb
+        .from('job_applications').select('job_id, status, interview_day').in('job_id', ids);
+      if (!appRows) return;
+      const counts = {};
+      appRows.forEach(row => {
+        if (!counts[row.job_id]) counts[row.job_id] = { total: 0, pending: 0, withInterview: 0 };
+        counts[row.job_id].total++;
+        if (row.status === 'pending') counts[row.job_id].pending++;
+        if (row.interview_day) counts[row.job_id].withInterview++;
+      });
+      setJobApplicantCounts(counts);
+    };
+
     // Refresh marketplace when tab regains focus (catches deletes/updates from other devices/tabs)
     const doMarketRefresh = async () => {
       if (!window.sb) return;
       const { data } = await window.sb.from('marketplace').select('*').order('created_at', { ascending: false });
       if (data) setLiveMarket(data.map(normMkt));
     };
-    const onVisible = () => { if (document.visibilityState === 'visible') doMarketRefresh(); };
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      doMarketRefresh();
+      doCountsRefresh(); // also refresh applicant counts on tab focus
+    };
     document.addEventListener('visibilitychange', onVisible);
 
-    // Also poll every 60s so even without focus-switch the data stays fresh
-    const pollTimer = setInterval(doMarketRefresh, 60000);
+    // Poll marketplace every 60s + applicant counts every 30s
+    const pollTimer  = setInterval(doMarketRefresh, 60000);
+    const countTimer = setInterval(doCountsRefresh, 30000);
 
     // Real-time subscriptions
     const channel = window.sb.channel('app-realtime')
@@ -491,6 +518,38 @@ function App() {
         p => setLiveMarket(prev => prev.map(m => m._id === p.new.id ? normMkt(p.new) : m)))
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'marketplace' },
         p => setLiveMarket(prev => prev.filter(m => m._id !== p.old.id)))
+      // Update applicant counts in real-time when someone applies to (or updates) a job
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'job_applications' },
+        p => {
+          if (!p.new || !p.new.job_id) return;
+          setJobApplicantCounts(prev => {
+            const curr = prev[p.new.job_id] || { total: 0, pending: 0, withInterview: 0 };
+            return { ...prev, [p.new.job_id]: {
+              total:         curr.total + 1,
+              pending:       p.new.status === 'pending' ? curr.pending + 1 : curr.pending,
+              withInterview: p.new.interview_day ? curr.withInterview + 1 : curr.withInterview,
+            }};
+          });
+        })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'job_applications' },
+        p => {
+          if (!p.new || !p.new.job_id || !window.sb) return;
+          // Re-query counts for this job to get accurate state after status change
+          window.sb.from('job_applications')
+            .select('job_id, status, interview_day')
+            .eq('job_id', p.new.job_id)
+            .then(({ data }) => {
+              if (!data) return;
+              setJobApplicantCounts(prev => ({
+                ...prev,
+                [p.new.job_id]: {
+                  total:         data.length,
+                  pending:       data.filter(r => r.status === 'pending').length,
+                  withInterview: data.filter(r => r.interview_day).length,
+                }
+              }));
+            });
+        })
       .subscribe(status => {
         if (status === 'SUBSCRIBED') console.log('[Supabase] real-time ativo ✓');
       });
@@ -499,6 +558,7 @@ function App() {
       window.sb.removeChannel(channel);
       document.removeEventListener('visibilitychange', onVisible);
       clearInterval(pollTimer);
+      clearInterval(countTimer);
     };
   }, [authReady]); // runs once authReady flips true — guaranteed after token refresh + loadProfile
 
@@ -811,7 +871,7 @@ function App() {
         open={!!applyJob} onClose={()=>setApplyJob(null)}
         job={applyJob} user={user} lang={lang}
         onEditProfile={()=>setEditProfileOpen(true)}
-        onSubmit={()=>{ setApplyJob(null); showToast(lang==='pt'?'Candidatura enviada ✓':lang==='es'?'Postulación enviada ✓':'Application sent ✓'); }}/>
+        onSubmit={()=>{ setApplyJob(null); showToast(lang==='pt'?'Candidatura enviada ✓':lang==='es'?'Postulación enviada ✓':'Application sent ✓'); loadLiveApplications(user.uid); }}/>
       <EditProfileSheet
         open={editProfileOpen} onClose={()=>setEditProfileOpen(false)}
         user={user} setUser={ctx.setUser} lang={lang}/>

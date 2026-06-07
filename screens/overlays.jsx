@@ -2462,12 +2462,13 @@ function ReviewSheet({ open, onClose, app, lang='en', onSubmitDone }) {
 
 // ── Apply to Job Sheet ────────────────────────────────────────
 function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditProfile }) {
-  const [note,      setNote]      = React.useState('');
-  const [submitted, setSubmitted] = React.useState(false);
-  const [saving,    setSaving]    = React.useState(false);
+  const [note,        setNote]        = React.useState('');
+  const [submitted,   setSubmitted]   = React.useState(false);
+  const [saving,      setSaving]      = React.useState(false);
+  const [insertError, setInsertError] = React.useState(null);
 
   React.useEffect(() => {
-    if (open) { setNote(''); setSubmitted(false); setSaving(false); }
+    if (open) { setNote(''); setSubmitted(false); setSaving(false); setInsertError(null); }
   }, [open]);
 
   if (!job) return null;
@@ -2481,24 +2482,33 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
 
   const handleSubmit = async () => {
     setSaving(true);
+    setInsertError(null);
     const uid = user?.uid || user?.id || null;
-    if (window.sb && uid) {
-      const { error } = await window.sb.from('job_applications').insert({
-        job_id:          job._id || job.id || null,
-        job_company:     jobCompany,
-        job_role:        jobRole,
-        applicant_id:    uid,
-        applicant_name:  user.name || '',
-        applicant_rating:user.rating || null,
-        applicant_jobs:  user.reviews || 0,
-        note:            note.trim() || null,
-        status:          'pending',
-      });
-      if (error) console.error('[ApplyJob] insert error:', error.code, error.message);
-    } else {
+    if (!window.sb || !uid) {
       console.warn('[ApplyJob] skipped — no uid or sb:', { uid, hasSb: !!window.sb });
+      setSaving(false);
+      const errMsg = lang==='pt' ? 'Faça login para se candidatar.' : lang==='es' ? 'Inicia sesión para postularte.' : 'Please log in to apply.';
+      setInsertError(errMsg);
+      return;
     }
+    const { error } = await window.sb.from('job_applications').insert({
+      job_id:          job._id || job.id || null,
+      job_company:     jobCompany,
+      job_role:        jobRole,
+      applicant_id:    uid,
+      applicant_name:  user.name || '',
+      applicant_rating:user.rating || null,
+      applicant_jobs:  user.reviews || 0,
+      note:            note.trim() || null,
+      status:          'pending',
+    });
     setSaving(false);
+    if (error) {
+      console.error('[ApplyJob] insert error:', error.code, error.message);
+      const errMsg = lang==='pt' ? 'Erro ao enviar candidatura. Tente novamente.' : lang==='es' ? 'Error al enviar postulación. Inténtalo de nuevo.' : 'Failed to submit application. Please try again.';
+      setInsertError(errMsg);
+      return;
+    }
     setSubmitted(true);
     setTimeout(() => onSubmit && onSubmit(), 2000);
   };
@@ -2727,6 +2737,13 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
             }}
           />
         </div>
+
+        {/* Insert error */}
+        {insertError && (
+          <div style={{background:'oklch(0.97 0.03 25)',border:'0.5px solid oklch(0.80 0.12 25)',borderRadius:10,padding:'10px 14px',marginBottom:10,fontSize:13,color:'oklch(0.45 0.18 25)',lineHeight:1.4}}>
+            ⚠️ {insertError}
+          </div>
+        )}
 
         {/* Submit */}
         <button onClick={handleSubmit} disabled={saving} className="pg-btn pg-btn-primary"

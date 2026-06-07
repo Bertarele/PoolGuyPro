@@ -142,7 +142,10 @@ function WorkScreen({ ctx }) {
   const myLiveJobs = liveJobs
     .filter(j => j.author_id && user.uid && j.author_id === user.uid)
     .map(j => {
-      const counts = jobApplicantCounts[j._id] || { total: 0, pending: 0 };
+      const counts = jobApplicantCounts[j._id] || { total: 0, pending: 0, withInterview: 0 };
+      const nPending   = counts.pending       || 0;
+      const nInterview = counts.withInterview || 0;
+      const nOther     = Math.max(0, (counts.total || 0) - nPending - nInterview);
       return {
         id:    j._id,
         _id:   j._id,
@@ -153,9 +156,12 @@ function WorkScreen({ ctx }) {
         date:  { en:'Live', pt:'Publicado', es:'Publicado' },
         status:'open',
         pay:   j.pay ? { en: j.pay, pt: j.pay, es: j.pay } : null,
-        applicants: Array(counts.total).fill({ status: 'pending' }).map((_,i) =>
-          i < counts.pending ? { status:'pending' } : { status:'accepted' }
-        ),
+        // Build fake applicant array so pending/interview badges render correctly
+        applicants: [
+          ...Array(nPending).fill({ status:'pending' }),
+          ...Array(nInterview).fill({ status:'accepted', interview:{ day:{en:'Scheduled',pt:'Agendado',es:'Programado'}, time:'' } }),
+          ...Array(nOther).fill({ status:'accepted' }),
+        ],
       };
     });
 
