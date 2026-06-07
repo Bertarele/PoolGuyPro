@@ -1209,8 +1209,8 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
               {applicant.hasLicense !== undefined && (
                 <YesNoChip
                   yes={applicant.hasLicense}
-                  yesLabel={sectionLbl("Valid driver's license","Valid driver's license","Valid driver's license")}
-                  noLabel={sectionLbl('No license','No license','No license')}
+                  yesLabel={sectionLbl("Valid driver's license","Driver's license válida","Driver's license válida")}
+                  noLabel={sectionLbl('No license',"Sem driver's license","Sin driver's license")}
                   icon={LicenseIcon}/>
               )}
             </div>
@@ -2553,7 +2553,7 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
               green={safeUser.hasCar}/>
             <Chip
               icon={LicenseIcon(safeUser.hasLicense ? 'var(--pg-aqua-700)' : 'var(--pg-ink-400)')}
-              label={safeUser.hasLicense ? "Valid driver's license" : 'No license'}
+              label={safeUser.hasLicense ? (lang==='pt'?"Driver's license válida":lang==='es'?"Driver's license válida":"Valid driver's license") : (lang==='pt'?"Sem driver's license":lang==='es'?"Sin driver's license":'No license')}
               green={safeUser.hasLicense}/>
           </div>
 
@@ -3192,8 +3192,8 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
             sub={s('Car, truck or van','Carro, caminhonete ou van','Carro, camioneta o van')}
             on={hasCar} onChange={setHasCar}/>
           <ToggleRow
-            label="Valid driver's license"
-            sub="State-issued driving license"
+            label={lang==='pt'?"Driver's license válida":lang==='es'?"Driver's license válida":"Valid driver's license"}
+            sub={lang==='pt'?"Driver's license emitida pelo estado":lang==='es'?"Driver's license emitida por el estado":"State-issued driver's license"}
             on={hasLicense} onChange={setHasLicense}/>
         </div>
 

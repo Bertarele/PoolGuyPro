@@ -973,7 +973,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
       <rect x="3" y="6" width="18" height="13" rx="2"/><path d="M7 11h4M7 14h6M14 10h4v6h-4z"/>
     </svg>
   );
-  const cdlLbl = lang==='pt'?'Carteira de motorista obrigatória':lang==='es'?'Licencia de conducir requerida':'Driver license required';
+  const cdlLbl = lang==='pt'?"Driver's license obrigatória":lang==='es'?"Driver's license requerida":"Driver's license required";
   const eqProv = lang==='pt'?'Equipamento fornecido':lang==='es'?'Equipo provisto':'Equipment provided';
 
   const contractLabel = (c) => ({
@@ -1023,13 +1023,13 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
             {job.licenseReq === 'required' && (
               <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M7 11h4M7 14h6M15 10h2v4h-2z"/></svg>
-                Driver's license required
+                {lang==='pt'?"Driver's license obrigatória":lang==='es'?"Driver's license requerida":"Driver's license required"}
               </div>
             )}
             {job.licenseReq === 'notRequired' && (
               <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12h6"/></svg>
-                No driver's license needed
+                {lang==='pt'?"Driver's license não necessária":lang==='es'?"Driver's license no requerida":"No driver's license needed"}
               </div>
             )}
           </div>
@@ -2819,14 +2819,14 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
     {
       id:'required',
       icon: c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M7 11h4M7 14h6M15 10h2v4h-2z"/></svg>,
-      label:    "Driver's license required",
-      sublabel: 'Valid state-issued driver\'s license',
+      label:    lang==='pt'?"Driver's license obrigatória":lang==='es'?"Driver's license requerida":"Driver's license required",
+      sublabel: lang==='pt'?"Driver's license válida emitida pelo estado":lang==='es'?"Driver's license válida emitida por el estado":"Valid state-issued driver's license",
     },
     {
       id:'notRequired',
       icon: c => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12h6"/></svg>,
-      label:    "Driver's license not required",
-      sublabel: 'No license needed for this role',
+      label:    lang==='pt'?"Driver's license não necessária":lang==='es'?"Driver's license no requerida":"Driver's license not required",
+      sublabel: lang==='pt'?'Sem necessidade para este cargo':lang==='es'?'No se requiere para este puesto':'No license needed for this role',
     },
   ];
 
@@ -2928,7 +2928,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
       <div style={{padding:'20px 18px 8px', position:'sticky', bottom:0, background:'#fff', borderTop:'0.5px solid var(--pg-ink-100)'}}>
         {!isValid && (carReq === '' || licenseReq === '' || equipReq === '') && (
           <div style={{fontSize:11.5, color:'var(--pg-ink-400)', textAlign:'center', marginBottom:10}}>
-            {lang==='pt'?'Selecione os requisitos de veículo, driver\'s license e equipamento':lang==='es'?'Selecciona los requisitos de vehículo, licencia y equipo':'Select vehicle, license and equipment requirements to continue'}
+            {lang==='pt'?'Selecione os requisitos de veículo, driver\'s license e equipamento':lang==='es'?'Selecciona los requisitos de vehículo, driver\'s license y equipo':'Select vehicle, driver\'s license and equipment to continue'}
           </div>
         )}
         <button onClick={()=>onSubmit && onSubmit({ role, loc, contract, payMode, pay, carReq, licenseReq, equipReq, desc, photoUrl: null })}

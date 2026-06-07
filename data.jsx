@@ -364,9 +364,9 @@ const FEED = [
     meta:{en:'+1 reputation', pt:'+1 reputação', es:'+1 reputación'} },
   { id:4, user:'Aqua Solutions LLC', avatar:'A', time:'2h', kind:'hire',
     rating:4.7, reviews:120, jobs:120, loc:'Miami-Dade, FL',
-    body:{ en:'Hiring 2 full-time technicians for Miami-Dade. CDL preferred.',
-           pt:'Contratando 2 técnicos de tempo integral para Miami-Dade. Driver\'s license preferred.',
-           es:'Contratando 2 técnicos de tiempo completo para Miami-Dade. CDL preferida.' },
+    body:{ en:'Hiring 2 full-time technicians for Miami-Dade. Driver\'s license preferred.',
+           pt:'Contratando 2 técnicos de tempo integral para Miami-Dade. Driver\'s license preferencial.',
+           es:'Contratando 2 técnicos de tiempo completo para Miami-Dade. Driver\'s license preferida.' },
     chip:{en:'Hiring', pt:'Vagas', es:'Empleos'}, chipKind:'aqua',
     meta:{en:'$28–34/hr · benefits', pt:'R$140–170/h · benefícios', es:'$28–34/h · beneficios'} },
 ];
