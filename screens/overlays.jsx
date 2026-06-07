@@ -1588,13 +1588,57 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
     });
   };
 
-  // Parse multilingual text: stored as JSON {en,pt,es} or plain string (legacy)
+  // ── Notification text rendering ──────────────────────────────
+  // Titles for known types — always localized regardless of what's stored in DB
+  // This fixes legacy English-only notifications AND new multilingual ones
+  const NOTIF_TITLES = {
+    rental_request:   { en:'New rental request',         pt:'Novo pedido de aluguel',           es:'Nueva solicitud de alquiler' },
+    rental_approved:  { en:'Rental approved! 🎉',        pt:'Aluguel aprovado! 🎉',              es:'¡Alquiler aprobado! 🎉' },
+    rental_declined:  { en:'Rental request declined',    pt:'Pedido de aluguel recusado',        es:'Solicitud de alquiler rechazada' },
+    rental_cancelled: { en:'Rental cancelled by owner',  pt:'Aluguel cancelado pelo dono',       es:'Alquiler cancelado por el propietario' },
+    rental_completed: { en:'Rental completed ✓',         pt:'Aluguel finalizado ✓',              es:'Alquiler completado ✓' },
+    dispute_resolved: { en:'Dispute resolved',           pt:'Disputa resolvida',                 es:'Disputa resuelta' },
+  };
+  const renderTitle = (n) => {
+    const entry = NOTIF_TITLES[n.type];
+    if (entry) return entry[lang] || entry.en;
+    // warning and others — stored title may be plain or JSON
+    return renderText(n.title);
+  };
+
+  // Body: 1) try JSON (new format), 2) pattern-replace legacy English strings
   const renderText = (raw) => {
     if (!raw) return '';
     try {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') return parsed[lang] || parsed.en || parsed.pt || '';
     } catch(e) {}
+    return raw;
+  };
+  const renderBody = (n) => {
+    const raw = n.body;
+    if (!raw) return '';
+    // New format (JSON) — try first
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') return parsed[lang] || parsed.en || parsed.pt || '';
+    } catch(e) {}
+    // Legacy plain-text English — translate common patterns
+    if (lang === 'pt') {
+      return raw
+        .replace(/ wants to rent /, ' quer alugar ')
+        .replace('The owner approved your request for ', 'O dono aprovou seu pedido para ')
+        .replace('The owner did not accept your request.', 'O dono não aceitou seu pedido.')
+        .replace('The owner cancelled the active rental.', 'O dono cancelou o aluguel em andamento.')
+        .replace('Rental approved! 🎉', 'Aluguel aprovado! 🎉');
+    }
+    if (lang === 'es') {
+      return raw
+        .replace(/ wants to rent /, ' quiere alquilar ')
+        .replace('The owner approved your request for ', 'El propietario aprobó tu solicitud para ')
+        .replace('The owner did not accept your request.', 'El propietario no aceptó tu solicitud.')
+        .replace('The owner cancelled the active rental.', 'El propietario canceló el alquiler en curso.');
+    }
     return raw;
   };
 
@@ -1693,7 +1737,7 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
                   <div style={{flex:1, minWidth:0}}>
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8}}>
                       <div style={{fontSize:13, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3}}>
-                        {renderText(n.title)}
+                        {renderTitle(n)}
                       </div>
                       <div style={{display:'flex', alignItems:'center', gap:5, flexShrink:0}}>
                         <div style={{fontSize:11, color:'var(--pg-ink-400)', whiteSpace:'nowrap'}}>{fmtTime(n.created_at)}</div>
@@ -1702,7 +1746,7 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
                     </div>
                     {n.body && (
                       <div style={{fontSize:12.5, color:'var(--pg-ink-600)', marginTop:3, lineHeight:1.45}}>
-                        {renderText(n.body)}
+                        {renderBody(n)}
                       </div>
                     )}
                     {navigable && (
