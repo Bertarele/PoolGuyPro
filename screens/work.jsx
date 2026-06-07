@@ -2007,7 +2007,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
                               <div key={d} style={{
                                 display:'flex', flexDirection:'column', alignItems:'center',
                                 padding:'5px 9px', borderRadius:7,
-                                background:'#fff', border:'0.5px solid var(--pg-blue-200)',
+                                background:'var(--pg-white)', border:'0.5px solid var(--pg-blue-200)',
                                 minWidth:36, gap:2,
                               }}>
                                 {wd !== null && (
@@ -2718,7 +2718,7 @@ function HiringRequirementCard({ options, value, onChange }) {
           <button key={opt.id} onClick={()=>onChange(on ? '' : opt.id)} style={{
             display:'flex', alignItems:'center', gap:12, padding:'11px 14px',
             borderRadius:12, border: on ? '1.5px solid var(--pg-blue-400)' : '1.5px solid var(--pg-ink-200)',
-            background: on ? 'var(--pg-blue-50)' : '#fff',
+            background: on ? 'var(--pg-blue-50)' : 'var(--pg-white)',
             cursor:'pointer', fontFamily:'inherit', textAlign:'left', transition:'all .15s',
           }}>
             <div style={{
@@ -2925,7 +2925,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
 
       </div>
 
-      <div style={{padding:'20px 18px 8px', position:'sticky', bottom:0, background:'#fff', borderTop:'0.5px solid var(--pg-ink-100)'}}>
+      <div style={{padding:'20px 18px 8px', position:'sticky', bottom:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         {!isValid && (carReq === '' || licenseReq === '' || equipReq === '') && (
           <div style={{fontSize:11.5, color:'var(--pg-ink-400)', textAlign:'center', marginBottom:10}}>
             {lang==='pt'?'Selecione os requisitos de veículo, driver\'s license e equipamento':lang==='es'?'Selecciona los requisitos de vehículo, driver\'s license y equipo':'Select vehicle, driver\'s license and equipment to continue'}
@@ -3045,7 +3045,7 @@ function PostTechSheet({ onClose, lang='en', onSubmit }) {
         </div>
       </div>
 
-      <div style={{padding:'18px 18px 8px', position:'sticky', bottom:0, background:'#fff'}}>
+      <div style={{padding:'18px 18px 8px', position:'sticky', bottom:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         <button onClick={()=>onSubmit && onSubmit({ name, specialty, loc, phone, email, rateMode, rate, photoUrl: photos[0]||null })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>

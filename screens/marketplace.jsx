@@ -154,7 +154,7 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
 
   return (
     <>
-      <div style={{position:'relative', height, background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
+      <div style={{position:'relative', height, background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
         {photos.length > 0
           ? <img
               src={photos[idx]} alt=""
@@ -2439,7 +2439,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     <div style={{padding:'0 0 36px'}}>
 
       {/* ── Photo section — same style as ItemPhotoCarousel ── */}
-      <div style={{position:'relative', height:240, overflow:'hidden', background:'#d6dfe8', flexShrink:0}}>
+      <div style={{position:'relative', height:240, overflow:'hidden', background:'var(--pg-ink-200)', flexShrink:0}}>
         {allPhotos.length > 0
           ? <img
               src={allPhotos[imgIdx]} alt={item.name}
@@ -3477,7 +3477,7 @@ function MarketplaceScreen({ ctx }) {
           filter: isSoldItem ? 'grayscale(0.65)' : 'none',
         }}>
         {/* Photo */}
-        <div style={{position:'relative', paddingTop: desktopMode ? '62%' : '72%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
+        <div style={{position:'relative', paddingTop: desktopMode ? '62%' : '72%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
           <div style={{position:'absolute', inset:0}}>
             {photoSrc
               ? <img src={photoSrc} alt={item.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -3649,7 +3649,7 @@ function MarketplaceScreen({ ctx }) {
               </div>
               <button onClick={()=>{ setPostOpen(true); setPostMode(null); }} style={{
                 height:44, padding:'0 20px', borderRadius:13,
-                background:'#fff', border:'none', cursor:'pointer',
+                background:'var(--pg-white)', border:'none', cursor:'pointer',
                 fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700,
                 color:'var(--pg-blue-700)', display:'flex', alignItems:'center', gap:8,
                 boxShadow:'0 4px 16px rgba(0,0,0,0.15)', transition:'all .15s',
@@ -3943,7 +3943,7 @@ function MarketplaceScreen({ ctx }) {
                       display:'flex', flexDirection:'column',
                       transition:'box-shadow .18s',
                     }}>
-                    <div style={{position:'relative', paddingTop:'62%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
+                    <div style={{position:'relative', paddingTop:'62%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
                       <div style={{position:'absolute', inset:0}}><EquipImg category={e.category} height={'100%'}/></div>
                       <div style={{position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, transparent 40%)', pointerEvents:'none'}}/>
                       <span style={{position:'absolute', top:10, left:10, fontSize:9, fontWeight:700, padding:'3px 9px', borderRadius:6,
@@ -4351,7 +4351,7 @@ function MarketplaceScreen({ ctx }) {
                       filter: isSoldItem ? 'grayscale(0.6)' : 'none',
                     }}>
                     {/* Photo area — enforced 4:3 ratio */}
-                    <div style={{position:'relative', paddingTop:'72%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
+                    <div style={{position:'relative', paddingTop:'72%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
                       <div style={{position:'absolute', inset:0}}>
                         {item.photoUrl
                           ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
@@ -4564,7 +4564,7 @@ function MarketplaceScreen({ ctx }) {
                   transition:'box-shadow .15s, transform .12s',
                 }}>
                 {/* Photo — 4:3 ratio enforced */}
-                <div style={{position:'relative', paddingTop:'72%', background:'#e2e8f0', overflow:'hidden', borderRadius:'14px 14px 0 0', flexShrink:0}}>
+                <div style={{position:'relative', paddingTop:'72%', background:'var(--pg-ink-200)', overflow:'hidden', borderRadius:'14px 14px 0 0', flexShrink:0}}>
                   <div style={{position:'absolute', inset:0}}>
                     <EquipImg category={e.category} height={'100%'}/>
                   </div>
@@ -5332,7 +5332,7 @@ function ItemPhotoCarousel({ category, height=220 }) {
   const photos = [1, 11, 21].map(n => `https://loremflickr.com/800/500/${kw}?lock=${n}`);
 
   return (
-    <div style={{position:'relative', height, overflow:'hidden', background:'#d6dfe8', flexShrink:0}}>
+    <div style={{position:'relative', height, overflow:'hidden', background:'var(--pg-ink-200)', flexShrink:0}}>
       <img
         key={photos[idx]}
         src={photos[idx]}

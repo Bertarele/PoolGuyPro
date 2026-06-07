@@ -254,7 +254,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       {/* ── Form card ── */}
       <div style={{
         position:'relative', zIndex:2, flex:1,
-        background:'#fff', padding:'20px 24px 24px',
+        background:'var(--pg-white)', padding:'20px 24px 24px',
         display:'flex', flexDirection:'column', gap:12,
         overflowY:'auto',
       }}>
@@ -525,7 +525,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                 {regionOpen && (
                   <div style={{
                     position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:99,
-                    background:'#fff', border:'1.5px solid var(--pg-ink-200)',
+                    background:'var(--pg-white)', border:'1.5px solid var(--pg-ink-200)',
                     borderRadius:12, maxHeight:180, overflowY:'auto',
                     boxShadow:'0 8px 24px rgba(15,30,60,0.12)',
                   }}>

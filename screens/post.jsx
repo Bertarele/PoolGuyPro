@@ -201,7 +201,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
                     {form.pools.map((p, i) => (
                       <div key={p.id} style={{
                         display:'flex', alignItems:'center', gap:8, padding:'7px 9px',
-                        background:'#fff', borderRadius:9,
+                        background:'var(--pg-white)', borderRadius:9,
                       }}>
                         <div style={{
                           width:22, height:22, borderRadius:6, flexShrink:0,
@@ -247,7 +247,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
         </div>
       </div>
 
-      <div style={{padding:'18px 18px 8px', position:'sticky', bottom:0, background:'#fff'}}>
+      <div style={{padding:'18px 18px 8px', position:'sticky', bottom:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         {step < 3 ? (
           <button onClick={()=>setStep(step+1)} disabled={!canContinue()} className="pg-btn pg-btn-primary"
             style={{width:'100%', height:52, fontSize:16, opacity: canContinue() ? 1 : 0.45}}>
@@ -419,7 +419,7 @@ function SingleLocationField({ value, onChange, lang }) {
           {focused && matches.length > 0 && (
             <div style={{
               position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:20,
-              background:'#fff', borderRadius:12, padding:6,
+              background:'var(--pg-white)', borderRadius:12, padding:6,
               border:'0.5px solid var(--pg-ink-200)',
               boxShadow:'0 8px 24px rgba(15, 30, 60, 0.12)',
             }}>

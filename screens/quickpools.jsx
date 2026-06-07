@@ -645,7 +645,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
 
         {/* Condo extras (only if condo) */}
         {job.type === 'condo' && (
-          <div className="pg-card" style={{padding:'12px 14px', marginTop:14, background:'#fff'}}>
+          <div className="pg-card" style={{padding:'12px 14px', marginTop:14}}>
             <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, letterSpacing:'0.05em', marginBottom:8}}>{t.accessDetails}</div>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
               <DetailPill icon={Icon.key(14, 'var(--pg-blue-700)')} label={t.gateCode} value={locked ? '••••' : '8472*'}/>

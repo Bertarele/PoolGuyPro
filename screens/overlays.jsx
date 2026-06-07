@@ -813,7 +813,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat }) {
                       onChange={e=>setRejectReason(e.target.value)}
                       placeholder={lang==='pt'?'Ex: Pouca experiência…':lang==='es'?'Ej: Poca experiencia…':'E.g. Not enough experience…'}
                       style={{width:'100%', boxSizing:'border-box', padding:'9px 11px', borderRadius:9,
-                        border:'1px solid oklch(0.85 0.07 20)', background:'#fff', fontSize:13,
+                        border:'1px solid oklch(0.85 0.07 20)', background:'var(--pg-white)', fontSize:13,
                         fontFamily:'inherit', outline:'none', color:'var(--pg-ink-900)'}}
                     />
                     <div style={{display:'flex', gap:7, marginTop:8}}>
@@ -3024,12 +3024,12 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
 
   const inp = {
     width:'100%', boxSizing:'border-box', padding:'10px 12px', borderRadius:10,
-    border:'1px solid var(--pg-ink-200)', background:'#fff', fontSize:14,
+    border:'1px solid var(--pg-ink-200)', background:'var(--pg-white)', fontSize:14,
     fontFamily:'inherit', outline:'none', color:'var(--pg-ink-900)',
   };
 
   const SecLbl = ({children}) => (
-    <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-400)',
+    <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)',
       letterSpacing:'0.06em', marginBottom:10}}>{children}</div>
   );
 
@@ -3158,7 +3158,7 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
               {regionFocus && regionSuggestions.length > 0 && (
                 <div style={{
                   position:'absolute', top:'100%', left:0, right:0, zIndex:999,
-                  background:'#fff', border:'1px solid var(--pg-blue-300)',
+                  background:'var(--pg-white)', border:'1px solid var(--pg-blue-300)',
                   borderTop:'none', borderRadius:'0 0 10px 10px',
                   boxShadow:'0 6px 16px rgba(15,30,60,0.12)',
                   overflow:'hidden',

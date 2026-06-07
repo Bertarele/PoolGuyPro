@@ -331,7 +331,7 @@ button { font-family: inherit; }
   --pg-ink-900: #F0F6FC;
   --pg-ink-700: #C9D1D9;
   --pg-ink-500: #8B949E;
-  --pg-ink-400: #6E7681;
+  --pg-ink-400: #9CA3AF;
   --pg-ink-300: #30363D;
   --pg-ink-200: #21262D;
   --pg-ink-100: #1C2128;
@@ -361,8 +361,10 @@ button { font-family: inherit; }
 [data-pg-dark="1"] .pg-search { background: var(--pg-ink-100); }
 [data-pg-dark="1"] .pg-search input { color: var(--pg-ink-900); }
 /* Buttons and inputs inherit dark text color (browsers reset these) */
-[data-pg-dark="1"] button { color: inherit; }
-[data-pg-dark="1"] input  { color: var(--pg-ink-900); }
+[data-pg-dark="1"] button   { color: inherit; }
+[data-pg-dark="1"] input    { background: var(--pg-ink-100); color: var(--pg-ink-900); }
+[data-pg-dark="1"] textarea { background: var(--pg-ink-100); color: var(--pg-ink-900); border-color: var(--pg-ink-200); }
+[data-pg-dark="1"] select   { background: var(--pg-ink-100); color: var(--pg-ink-900); border-color: var(--pg-ink-200); }
 [data-pg-dark="1"] input::placeholder  { color: var(--pg-ink-400); }
 [data-pg-dark="1"] textarea::placeholder { color: var(--pg-ink-400); }
 [data-pg-dark="1"] .pg-tabbar {

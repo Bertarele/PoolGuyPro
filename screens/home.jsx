@@ -420,7 +420,7 @@ function HomeScreen({ ctx }) {
                   onTouchEnd={e=>e.currentTarget.style.transform=''}
                 >
                   {/* Image — 3:2 aspect ratio */}
-                  <div style={{position:'relative', paddingTop:'66%', background:'#e2e8f0', overflow:'hidden', flexShrink:0}}>
+                  <div style={{position:'relative', paddingTop:'66%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
                     <div style={{position:'absolute', inset:0}}>
                       <EquipImg category={f.category} height={'100%'}/>
                     </div>
@@ -540,7 +540,7 @@ function HomeScreen({ ctx }) {
                 onClick={()=> isPremium ? setSelectedJob(j) : openPaywall()}
                 className="pg-card pg-card-tap" style={{
                   padding:'12px 14px', border:'none', cursor:'pointer', textAlign:'left',
-                  display:'flex', alignItems:'center', gap:12, background:'#fff',
+                  display:'flex', alignItems:'center', gap:12, background:'var(--pg-white)',
                   position:'relative', opacity: isPremium ? 1 : 0.92,
                 }}>
                 <div style={{
