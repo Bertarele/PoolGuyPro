@@ -105,7 +105,7 @@ function WorkScreen({ ctx }) {
   // FAB — aqua floating action button
   const FabBtn = (
     <button onClick={handlePostBtn} className="pg-press" style={{
-      position:'absolute', bottom:86, right:18, zIndex:35,
+      position:'fixed', bottom:86, right:18, zIndex:35,
       width:56, height:56, borderRadius:'50%', padding:0,
       display:'inline-flex', alignItems:'center', justifyContent:'center',
       background:'linear-gradient(135deg, #0EBAC7 0%, #0D7280 100%)',
