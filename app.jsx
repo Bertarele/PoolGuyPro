@@ -679,7 +679,14 @@ function App() {
         onClose={()=>{ setChatOpen(false); setChatConvoTarget(null); recheckUnread(); }}
         lang={lang} initialConvo={initialConvo} currentUser={user}
         onUnreadChange={recheckUnread}/>
-      <NotificationsSheet open={notifOpen} onClose={()=>setNotifOpen(false)} lang={lang} user={user} onUnreadChange={(c)=>setHasUnreadNotif(c>0)}/>
+      <NotificationsSheet open={notifOpen} onClose={()=>setNotifOpen(false)} lang={lang} user={user}
+        onUnreadChange={(c)=>setHasUnreadNotif(c>0)}
+        onNavigate={(type, linkId)=>{
+          setNotifOpen(false);
+          if (type==='warning') { setTimeout(()=>switchTab('profile'), 280); }
+          else if (linkId) { setTimeout(()=>ctx.openListingById(linkId), 280); }
+          else { setTimeout(()=>switchTab('market'), 280); }
+        }}/>
       <PaywallSheet open={payOpen} onClose={()=>setPayOpen(false)} setUser={ctx.setUser} lang={lang}/>
       <PostMenuSheet open={postMenuOpen} onClose={()=>setPostMenuOpen(false)}
         onPickQuickPool={()=>setPostQPOpen(true)} lang={lang}/>
@@ -1147,8 +1154,8 @@ function App() {
           )}
         </div>
 
-        {/* Overlays */}
-        <OverlayBundle/>
+        {/* Overlays — called as function (not component) to avoid remount on re-render */}
+        {OverlayBundle()}
 
         {/* Tweaks panel */}
         <TweaksPanel>
@@ -1255,8 +1262,8 @@ function App() {
         </>
       )}
 
-      {/* Overlays */}
-      <OverlayBundle/>
+      {/* Overlays — called as function (not component) to avoid remount on re-render */}
+      {OverlayBundle()}
 
       {/* Tweaks */}
       <TweaksPanel>

@@ -600,9 +600,14 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   };
 
   // Helper: insert notification silently (fire-and-forget)
-  const _notify = (userId, type, title, body) => {
+  // title/body can be {en,pt,es} objects → stored as JSON for multilingual rendering
+  const _notify = (userId, type, title, body, linkId=null) => {
     if (!window.sb || !userId) return;
-    window.sb.from('notifications').insert({ user_id: userId, type, title, body }).catch(() => {});
+    const titleStr = typeof title === 'object' ? JSON.stringify(title) : title;
+    const bodyStr  = typeof body  === 'object' ? JSON.stringify(body)  : body;
+    const row = { user_id: userId, type, title: titleStr, body: bodyStr };
+    if (linkId) row.link_id = linkId;
+    window.sb.from('notifications').insert(row).catch(() => {});
   };
 
   const handleRequestRental = async () => {
@@ -625,10 +630,12 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     });
     setReqLoading(false);
     if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
-    // Notify owner
+    // Notify owner (multilingual — receiver sees in their own language)
+    const _renterName = currentUser.name || (currentUser.email||'').split('@')[0] || 'Someone';
     _notify(item.author_id, 'rental_request',
-      lang==='pt'?'Novo pedido de aluguel':lang==='es'?'Nueva solicitud de alquiler':'New rental request',
-      `${currentUser.name||(currentUser.email||'').split('@')[0]||'Someone'} ${lang==='pt'?'quer alugar':lang==='es'?'quiere alquilar':'wants to rent'} "${item.name||''}"`);
+      { en:'New rental request', pt:'Novo pedido de aluguel', es:'Nueva solicitud de alquiler' },
+      { en:`${_renterName} wants to rent "${item.name||''}"`, pt:`${_renterName} quer alugar "${item.name||''}"`, es:`${_renterName} quiere alquilar "${item.name||''}"` },
+      item._id);
     setReqStatus('pending');
     showToast && showToast(lang==='pt'?'✓ Pedido enviado! Converse com o dono pela inbox.':'✓ Request sent! Chat with the owner via inbox.');
     if (openChat && item.author_id) {
@@ -655,12 +662,14 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     if (req?.requester_id) {
       if (newStatus === 'approved') {
         _notify(req.requester_id, 'rental_approved',
-          lang==='pt'?'Aluguel aprovado! 🎉':lang==='es'?'¡Alquiler aprobado! 🎉':'Rental approved! 🎉',
-          `${lang==='pt'?'O dono aprovou seu pedido para':lang==='es'?'El propietario aprobó tu solicitud para':'The owner approved your request for'} "${item.name||''}"`);
+          { en:'Rental approved! 🎉', pt:'Aluguel aprovado! 🎉', es:'¡Alquiler aprobado! 🎉' },
+          { en:`The owner approved your request for "${item.name||''}"`, pt:`O dono aprovou seu pedido para "${item.name||''}"`, es:`El propietario aprobó tu solicitud para "${item.name||''}"` },
+          item._id);
       } else {
         _notify(req.requester_id, 'rental_declined',
-          lang==='pt'?'Pedido de aluguel recusado':lang==='es'?'Solicitud de alquiler rechazada':'Rental request declined',
-          `"${item.name||''}" — ${lang==='pt'?'O dono não aceitou seu pedido.':lang==='es'?'El propietario no aceptó tu solicitud.':'The owner did not accept your request.'}`);
+          { en:'Rental request declined', pt:'Pedido de aluguel recusado', es:'Solicitud de alquiler rechazada' },
+          { en:`"${item.name||''}" — The owner did not accept your request.`, pt:`"${item.name||''}" — O dono não aceitou seu pedido.`, es:`"${item.name||''}" — El propietario no aceptó tu solicitud.` },
+          item._id);
       }
     }
   };
@@ -697,8 +706,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     showToast && showToast(lang==='pt'?'Aluguel cancelado.':'Rental cancelled.');
     if (cancelledReq?.requester_id) {
       _notify(cancelledReq.requester_id, 'rental_cancelled',
-        lang==='pt'?'Aluguel cancelado pelo dono':lang==='es'?'Alquiler cancelado por el propietario':'Rental cancelled by owner',
-        `"${item.name||''}" — ${lang==='pt'?'O dono cancelou o aluguel em andamento.':lang==='es'?'El propietario canceló el alquiler en curso.':'The owner cancelled the active rental.'}`);
+        { en:'Rental cancelled by owner', pt:'Aluguel cancelado pelo dono', es:'Alquiler cancelado por el propietario' },
+        { en:`"${item.name||''}" — The owner cancelled the active rental.`, pt:`"${item.name||''}" — O dono cancelou o aluguel em andamento.`, es:`"${item.name||''}" — El propietario canceló el alquiler en curso.` },
+        item._id);
     }
   };
 

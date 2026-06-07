@@ -1538,7 +1538,7 @@ function PushNotifSheet({ open, onClose, lang='en', onEnabled }) {
 }
 
 // ── Notifications ─────────────────────────────────────────────
-function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange }) {
+function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, onNavigate }) {
   const [notifs,  setNotifs]  = React.useState(null); // null = loading
   const [marking, setMarking] = React.useState(false);
 
@@ -1587,6 +1587,19 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange }) 
       if (onUnreadChange) onUnreadChange(0);
     });
   };
+
+  // Parse multilingual text: stored as JSON {en,pt,es} or plain string (legacy)
+  const renderText = (raw) => {
+    if (!raw) return '';
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') return parsed[lang] || parsed.en || parsed.pt || '';
+    } catch(e) {}
+    return raw;
+  };
+
+  // Whether this notification type is navigable
+  const isNavigable = (n) => !!(onNavigate && (n.link_id || n.type));
 
   const iconFor = (type) => {
     if (type==='rental_request')   return Icon.key(17,'#fff');
@@ -1662,26 +1675,45 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange }) 
         {/* List */}
         {notifs !== null && notifs.length > 0 && (
           <div style={{display:'flex', flexDirection:'column', gap:2}}>
-            {notifs.map(n => (
-              <div key={n.id} style={{display:'flex', gap:12, padding:'12px 8px', borderRadius:10,
-                background:n.read?'transparent':'var(--pg-blue-50)', position:'relative'}}>
-                <div style={{width:40, height:40, borderRadius:'50%', flexShrink:0,
-                  background:colorFor(n.type),
-                  display:'flex', alignItems:'center', justifyContent:'center', color:'#fff'}}>
-                  {iconFor(n.type)}
-                </div>
-                <div style={{flex:1, minWidth:0}}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8}}>
-                    <div style={{fontSize:13, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3}}>{n.title}</div>
-                    <div style={{display:'flex', alignItems:'center', gap:5, flexShrink:0}}>
-                      <div style={{fontSize:11, color:'var(--pg-ink-400)', whiteSpace:'nowrap'}}>{fmtTime(n.created_at)}</div>
-                      {!n.read && <span style={{width:8, height:8, borderRadius:'50%', background:'var(--pg-blue-500)', flexShrink:0}}/>}
-                    </div>
+            {notifs.map(n => {
+              const navigable = isNavigable(n);
+              return (
+                <div key={n.id}
+                  onClick={navigable ? ()=>onNavigate(n.type, n.link_id) : undefined}
+                  style={{display:'flex', gap:12, padding:'12px 8px', borderRadius:10,
+                    background:n.read?'transparent':'var(--pg-blue-50)',
+                    cursor: navigable ? 'pointer' : 'default',
+                    transition:'background 0.12s',
+                    position:'relative'}}>
+                  <div style={{width:40, height:40, borderRadius:'50%', flexShrink:0,
+                    background:colorFor(n.type),
+                    display:'flex', alignItems:'center', justifyContent:'center', color:'#fff'}}>
+                    {iconFor(n.type)}
                   </div>
-                  {n.body && <div style={{fontSize:12.5, color:'var(--pg-ink-600)', marginTop:3, lineHeight:1.45}}>{n.body}</div>}
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8}}>
+                      <div style={{fontSize:13, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3}}>
+                        {renderText(n.title)}
+                      </div>
+                      <div style={{display:'flex', alignItems:'center', gap:5, flexShrink:0}}>
+                        <div style={{fontSize:11, color:'var(--pg-ink-400)', whiteSpace:'nowrap'}}>{fmtTime(n.created_at)}</div>
+                        {!n.read && <span style={{width:8, height:8, borderRadius:'50%', background:'var(--pg-blue-500)', flexShrink:0}}/>}
+                      </div>
+                    </div>
+                    {n.body && (
+                      <div style={{fontSize:12.5, color:'var(--pg-ink-600)', marginTop:3, lineHeight:1.45}}>
+                        {renderText(n.body)}
+                      </div>
+                    )}
+                    {navigable && (
+                      <div style={{fontSize:11, color:'var(--pg-blue-500)', fontWeight:600, marginTop:4}}>
+                        {lang==='pt'?'Toque para ver →':lang==='es'?'Toca para ver →':'Tap to view →'}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
