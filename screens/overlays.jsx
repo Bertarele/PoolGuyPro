@@ -2374,16 +2374,38 @@ function ReviewSheet({ open, onClose, app, lang='en', onSubmitDone }) {
 function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditProfile }) {
   const [note,      setNote]      = React.useState('');
   const [submitted, setSubmitted] = React.useState(false);
+  const [saving,    setSaving]    = React.useState(false);
 
   React.useEffect(() => {
-    if (open) { setNote(''); setSubmitted(false); }
+    if (open) { setNote(''); setSubmitted(false); setSaving(false); }
   }, [open]);
 
   if (!job) return null;
 
   const s = (en, pt, es) => lang==='pt' ? pt : lang==='es' ? es : en;
 
-  const handleSubmit = () => {
+  // Normalize: live jobs use job.author; static jobs use job.company
+  const jobCompany = job.company || job.author || job.role || '?';
+  const jobRole    = job.role   || job.company || '';
+  const jobType    = job.type   || job.contract || '';
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      if (window.sb && user && user.id) {
+        await window.sb.from('job_applications').insert({
+          job_id:          job._id || job.id || null,
+          job_company:     jobCompany,
+          job_role:        jobRole,
+          applicant_id:    user.id,
+          applicant_name:  user.name || '',
+          applicant_rating:user.rating || null,
+          note:            note.trim() || null,
+          status:          'pending',
+        });
+      }
+    } catch(e) { /* non-blocking — continue even if save fails */ }
+    setSaving(false);
     setSubmitted(true);
     setTimeout(() => onSubmit && onSubmit(), 2000);
   };
@@ -2418,8 +2440,9 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
     </span>
   );
 
-  const equipment = (tr(user.equipment, lang) || []);
-  const hasExp    = user.experience && user.experience.length > 0;
+  const safeUser  = user || {};
+  const equipment = (tr(safeUser.equipment, lang) || []);
+  const hasExp    = safeUser.experience && safeUser.experience.length > 0;
 
   // Success screen
   if (submitted) {
@@ -2437,9 +2460,9 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
             {s('Application sent!','Candidatura enviada!','¡Postulación enviada!')}
           </div>
           <div style={{fontSize:14, color:'var(--pg-ink-500)', lineHeight:1.55, maxWidth:260, margin:'0 auto'}}>
-            {s(`${job.company} will review your profile and get in touch.`,
-               `${job.company} vai analisar seu perfil e entrar em contato.`,
-               `${job.company} revisará tu perfil y se pondrá en contacto.`)}
+            {s(`${jobCompany} will review your profile and get in touch.`,
+               `${jobCompany} vai analisar seu perfil e entrar em contato.`,
+               `${jobCompany} revisará tu perfil y se pondrá en contacto.`)}
           </div>
         </div>
       </Sheet>
@@ -2472,15 +2495,15 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
             display:'flex', alignItems:'center', justifyContent:'center',
             fontWeight:800, fontSize:18, color:'#fff',
             fontFamily:'var(--pg-font-display)',
-          }}>{job.company[0]}</div>
+          }}>{(jobCompany[0]||'?').toUpperCase()}</div>
           <div style={{flex:1, minWidth:0}}>
-            <div style={{fontSize:15, fontWeight:700, color:'#fff', letterSpacing:'-0.01em', marginBottom:2}}>{job.company}</div>
-            <div style={{fontSize:12.5, color:'rgba(255,255,255,0.65)'}}>{tr(job.role, lang)} · {job.loc}</div>
+            <div style={{fontSize:15, fontWeight:700, color:'#fff', letterSpacing:'-0.01em', marginBottom:2}}>{jobCompany}</div>
+            <div style={{fontSize:12.5, color:'rgba(255,255,255,0.65)'}}>{tr(jobRole, lang)} · {job.loc}</div>
           </div>
           <div style={{textAlign:'right', flexShrink:0}}>
             <div style={{fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700,
               color:'oklch(0.88 0.16 90)', letterSpacing:'-0.01em'}}>{tr(job.pay, lang)}</div>
-            <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:1}}>{tr(job.type, lang)}</div>
+            <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:1}}>{tr(jobType, lang)}</div>
           </div>
         </div>
 
@@ -2502,36 +2525,36 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
             background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-100)',
             marginBottom:10,
           }}>
-            <Avatar name={user.name} size={38}/>
+            <Avatar name={safeUser.name} size={38}/>
             <div>
-              <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{user.name}</div>
+              <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{safeUser.name}</div>
               <div style={{display:'flex', alignItems:'center', gap:4, marginTop:2}}>
-                <Stars rating={user.rating} size={10}/>
-                <span style={{fontSize:11.5, color:'var(--pg-ink-500)', fontWeight:600}}>{user.rating} · {user.reviews} {s('reviews','avaliações','reseñas')}</span>
+                <Stars rating={safeUser.rating} size={10}/>
+                <span style={{fontSize:11.5, color:'var(--pg-ink-500)', fontWeight:600}}>{safeUser.rating} · {safeUser.reviews} {s('reviews','avaliações','reseñas')}</span>
               </div>
             </div>
           </div>
 
           {/* Basic info chips */}
           <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:10}}>
-            {user.age && (
+            {safeUser.age && (
               <Chip icon={
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/>
                 </svg>
-              } label={`${user.age} ${s('yrs','anos','años')}`}/>
+              } label={`${safeUser.age} ${s('yrs','anos','años')}`}/>
             )}
-            {user.region && (
-              <Chip icon={Icon.pin(12,'var(--pg-ink-500)')} label={user.region}/>
+            {safeUser.region && (
+              <Chip icon={Icon.pin(12,'var(--pg-ink-500)')} label={safeUser.region}/>
             )}
             <Chip
-              icon={CarIcon(user.hasCar ? 'var(--pg-aqua-700)' : 'var(--pg-ink-400)')}
-              label={user.hasCar ? s('Own vehicle','Veículo próprio','Vehículo propio') : s('No vehicle','Sem veículo','Sin vehículo')}
-              green={user.hasCar}/>
+              icon={CarIcon(safeUser.hasCar ? 'var(--pg-aqua-700)' : 'var(--pg-ink-400)')}
+              label={safeUser.hasCar ? s('Own vehicle','Veículo próprio','Vehículo propio') : s('No vehicle','Sem veículo','Sin vehículo')}
+              green={safeUser.hasCar}/>
             <Chip
-              icon={LicenseIcon(user.hasLicense ? 'var(--pg-aqua-700)' : 'var(--pg-ink-400)')}
-              label={user.hasLicense ? s("Valid driver's license",'CNH válida','Licencia válida') : s('No license','Sem CNH','Sin licencia')}
-              green={user.hasLicense}/>
+              icon={LicenseIcon(safeUser.hasLicense ? 'var(--pg-aqua-700)' : 'var(--pg-ink-400)')}
+              label={safeUser.hasLicense ? s("Valid driver's license",'CNH válida','Licencia válida') : s('No license','Sem CNH','Sin licencia')}
+              green={safeUser.hasLicense}/>
           </div>
 
           {/* Equipment */}
@@ -2562,7 +2585,7 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
                 {s('WORK EXPERIENCE','EXPERIÊNCIA','EXPERIENCIA')}
               </div>
               <div style={{display:'flex', flexDirection:'column', gap:7}}>
-                {user.experience.map((exp, i) => (
+                {safeUser.experience.map((exp, i) => (
                   <div key={i} style={{
                     padding:'10px 12px', borderRadius:10,
                     background:'var(--pg-ink-50)', border:'0.5px solid var(--pg-ink-200)',
@@ -2613,10 +2636,12 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
         </div>
 
         {/* Submit */}
-        <button onClick={handleSubmit} className="pg-btn pg-btn-primary"
-          style={{width:'100%', height:54, fontSize:16, borderRadius:14, gap:8}}>
-          {Icon.check(18,'#fff')}
-          {s('Send application','Enviar candidatura','Enviar postulación')}
+        <button onClick={handleSubmit} disabled={saving} className="pg-btn pg-btn-primary"
+          style={{width:'100%', height:54, fontSize:16, borderRadius:14, gap:8, opacity:saving?0.7:1}}>
+          {saving
+            ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="9" strokeOpacity=".3"/><path d="M12 3a9 9 0 0 1 9 9" style={{animation:'spin 0.8s linear infinite'}} /></svg>
+            : Icon.check(18,'#fff')}
+          {saving ? s('Sending…','Enviando…','Enviando…') : s('Send application','Enviar candidatura','Enviar postulación')}
         </button>
         <div style={{textAlign:'center', marginTop:10, fontSize:11.5, color:'var(--pg-ink-400)', lineHeight:1.5}}>
           {s('Your profile data will be shared with the employer.',
