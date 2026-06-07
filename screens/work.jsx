@@ -7,6 +7,7 @@ function WorkScreen({ ctx }) {
           openPublicProfile, showToast,
           removeJob, removeTech, removeVacation,
           liveJobs=[], liveTechs=[], liveVacations=[],
+          liveApplications=[],
           hasUnreadChat, openNotifications, hasUnreadNotif } = ctx;
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState('hiring');
@@ -117,10 +118,64 @@ function WorkScreen({ ctx }) {
   );
 
   // ── My Activity data (shared between desktop + mobile) ────────
-  const myAppsHiring   = MY_APPLICATIONS.filter(a => a.type === 'hiring');
-  const myAppsVac      = typeof VACATIONS_APPLIED !== 'undefined' ? VACATIONS_APPLIED : [];
-  const myPostsHiring  = MY_POSTS.filter(p => p.type === 'hiring');
-  const myPostsVac     = MY_POSTS.filter(p => p.type === 'vacation');
+  const user = ctx.user || {};
+
+  // Helper: relative time
+  const relTime = (iso) => {
+    if (!iso) return '';
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return lang==='pt'?'agora':lang==='es'?'ahora':'now';
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h`;
+    return `${Math.floor(h / 24)}d`;
+  };
+
+  // Static test data
+  const staticAppsHiring = MY_APPLICATIONS.filter(a => a.type === 'hiring');
+  const myAppsVac        = typeof VACATIONS_APPLIED !== 'undefined' ? VACATIONS_APPLIED : [];
+  const staticPostsHiring = MY_POSTS.filter(p => p.type === 'hiring');
+  const myPostsVac        = MY_POSTS.filter(p => p.type === 'vacation');
+
+  // Live jobs created by me → appear in My Posts
+  const myLiveJobs = liveJobs
+    .filter(j => j.author_id && user.uid && j.author_id === user.uid)
+    .map(j => ({
+      id:    j._id,
+      _id:   j._id,
+      _live: true,
+      type:  'hiring',
+      title: { en: j.role, pt: j.role, es: j.role },
+      loc:   j.loc || '',
+      date:  { en:'Live', pt:'Publicado', es:'Publicado' },
+      status:'open',
+      pay:   j.pay ? { en: j.pay, pt: j.pay, es: j.pay } : null,
+      applicants: [], // loaded fresh in ApplicantsSheet
+    }));
+
+  // Live applications (I applied to other people's jobs) → appear in My Applications
+  const myLiveApps = liveApplications.map(a => ({
+    id:           a.id,
+    _live:        true,
+    type:         'hiring',
+    company:      a.job_company || a.job_role || '?',
+    title:        { en: a.job_role || a.job_company || '', pt: a.job_role || a.job_company || '', es: a.job_role || a.job_company || '' },
+    pay:          { en:'', pt:'', es:'' },
+    loc:          '',
+    status:       a.status || 'pending',
+    when:         relTime(a.created_at),
+    interview:    a.interview_day ? {
+      day:  { en: a.interview_day, pt: a.interview_day, es: a.interview_day },
+      time: a.interview_time || '',
+    } : null,
+    rejectReason: a.reject_reason || null,
+    job_id:       a.job_id,
+  }));
+
+  // Merge: live first, then static (so real data is prominent)
+  const myAppsHiring  = [...myLiveApps, ...staticAppsHiring];
+  const myPostsHiring = [...myLiveJobs, ...staticPostsHiring];
 
   const currentMyApps  = sub === 'hiring' ? myAppsHiring : myAppsVac;
   const currentMyPosts = sub === 'hiring' ? myPostsHiring : myPostsVac;
@@ -551,7 +606,7 @@ function WorkScreen({ ctx }) {
               </div>
               <div>
                 <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1}}>
-                  {MY_APPLICATIONS.filter(a=>a.type==='hiring').length}
+                  {myAppsHiring.length}
                 </div>
                 <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1}}>{lang==='pt'?'candidaturas':lang==='es'?'solicitudes':'applied'}</div>
               </div>
@@ -632,13 +687,9 @@ function WorkScreen({ ctx }) {
 
       {/* ── My Activity — unified card for hiring + vacation ── */}
       {(sub === 'hiring' || sub === 'vac') && (() => {
-        // Data per sub-tab
-        const myApps  = sub === 'hiring'
-          ? MY_APPLICATIONS.filter(a => a.type === 'hiring')
-          : (typeof VACATIONS_APPLIED !== 'undefined' ? VACATIONS_APPLIED : []);
-        const myPosts = MY_POSTS.filter(p =>
-          sub === 'hiring' ? p.type === 'hiring' : p.type === 'vacation'
-        );
+        // Data per sub-tab — uses shared variables defined above
+        const myApps  = sub === 'hiring' ? myAppsHiring  : myAppsVac;
+        const myPosts = sub === 'hiring' ? myPostsHiring : myPostsVac;
 
         const totalApps  = myApps.length;
         const totalPosts = myPosts.length;

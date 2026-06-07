@@ -454,29 +454,98 @@ function LanguagePickerSheet({ open, onClose, lang, setLang }) {
 }
 
 // ── Applicants Sheet ──────────────────────────────────────────
-function ApplicantsSheet({ open, onClose, post, lang='en', onChat }) {
+function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user }) {
   const t = STRINGS[lang];
   const [applicants, setApplicants] = React.useState([]);
+  const [loading,    setLoading]    = React.useState(false);
   const [conflictInfo, setConflictInfo] = React.useState(null);
   const [profileApp, setProfileApp] = React.useState(null);
-  const [schedulingFor, setSchedulingFor] = React.useState(null); // applicant scheduling interview
-  const [rejectingFor,  setRejectingFor]  = React.useState(null); // applicant showing reason input
+  const [schedulingFor, setSchedulingFor] = React.useState(null);
+  const [rejectingFor,  setRejectingFor]  = React.useState(null);
   const [rejectReason,  setRejectReason]  = React.useState('');
-  // conflictInfo: { applicantId, conflicts: [{day, takenBy}] }
+
+  // Helper: relative time from ISO timestamp
+  const relTime = (iso) => {
+    if (!iso) return '';
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return lang==='pt'?'agora':lang==='es'?'ahora':'now';
+    if (m < 60) return lang==='pt'?`${m}min atrás`:lang==='es'?`hace ${m}min`:`${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return lang==='pt'?`${h}h atrás`:lang==='es'?`hace ${h}h`:`${h}h ago`;
+    const d = Math.floor(h / 24);
+    return lang==='pt'?`${d}d atrás`:lang==='es'?`hace ${d}d`:`${d}d ago`;
+  };
+
+  // Normalize a DB row from job_applications → UI applicant shape
+  const normApp = (row) => ({
+    id:       row.id,
+    _dbId:    row.id,
+    name:     row.applicant_name || '?',
+    rating:   row.applicant_rating || 0,
+    jobs:     row.applicant_jobs  || 0,
+    status:   row.status || 'pending',
+    note:     row.note   || null,
+    when:     relTime(row.created_at),
+    rejectReason: row.reject_reason || null,
+    interview: row.interview_day ? {
+      day:  { en: row.interview_day, pt: row.interview_day, es: row.interview_day },
+      time: row.interview_time || '',
+    } : null,
+  });
+
+  // Load live applicants from Supabase
+  const loadLiveApplicants = React.useCallback(async (jobId) => {
+    if (!window.sb || !jobId) return;
+    setLoading(true);
+    const { data, error } = await window.sb
+      .from('job_applications')
+      .select('*')
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: false });
+    setLoading(false);
+    if (error) { console.warn('[ApplicantsSheet] fetch error:', error.message); return; }
+    setApplicants((data || []).map(normApp));
+  }, [lang]);
 
   React.useEffect(() => {
-    if (post) { setApplicants(post.applicants.map(a=>({...a}))); setConflictInfo(null); setSchedulingFor(null); setRejectingFor(null); setRejectReason(''); }
+    if (!post) return;
+    setConflictInfo(null); setSchedulingFor(null); setRejectingFor(null); setRejectReason('');
+    if (post._live) {
+      loadLiveApplicants(post._id);
+    } else {
+      setApplicants((post.applicants || []).map(a => ({...a})));
+    }
   }, [post]);
 
-  const scheduleInterview = (applicantId, interview) => {
+  // DB update helper (only for live posts)
+  const dbUpdate = async (appDbId, patch) => {
+    if (!window.sb || !post?._live || !appDbId) return;
+    const { error } = await window.sb.from('job_applications').update(patch).eq('id', appDbId);
+    if (error) console.warn('[ApplicantsSheet] update error:', error.message);
+  };
+
+  const scheduleInterview = async (applicantId, interview) => {
+    const app = applicants.find(a => a.id === applicantId);
     setApplicants(prev => prev.map(a => a.id===applicantId ? {...a, interview, status:'accepted'} : a));
     setSchedulingFor(null);
+    if (post?._live && app?._dbId) {
+      await dbUpdate(app._dbId, {
+        status: 'accepted',
+        interview_day:  tr(interview.day, 'en'),
+        interview_time: interview.time || '',
+      });
+    }
   };
 
   if (!post) return null;
 
-  const updateStatus = (id, status) => {
-    setApplicants(prev => prev.map(a => a.id===id ? {...a, status} : a));
+  const updateStatus = async (id, status, extra={}) => {
+    setApplicants(prev => prev.map(a => a.id===id ? {...a, status, ...extra} : a));
+    const app = applicants.find(a => a.id === id);
+    if (post?._live && app?._dbId) {
+      await dbUpdate(app._dbId, { status, ...extra });
+    }
   };
 
   // Build day→owner map from post.bookedDays + currently accepted applicants
@@ -513,6 +582,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat }) {
   const typeIcon = (type) => {
     if (type==='quickpool') return Icon.bolt(14,'var(--pg-blue-700)');
     if (type==='vacation')  return Icon.cal(14,'var(--pg-blue-700)');
+    if (type==='hiring')    return Icon.briefcase(14,'var(--pg-blue-700)');
     return Icon.cart(14,'var(--pg-blue-700)');
   };
 
@@ -567,7 +637,24 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat }) {
 
         {/* List */}
         <div style={{flex:1, overflow:'auto', padding:'10px 16px 20px', display:'flex', flexDirection:'column', gap:10}}>
-          {applicants.map(a => {
+          {loading && (
+            <div style={{textAlign:'center', padding:'32px 0', color:'var(--pg-ink-400)', fontSize:13}}>
+              <div style={{width:24, height:24, borderRadius:'50%', border:'2.5px solid var(--pg-blue-200)', borderTopColor:'var(--pg-blue-500)', animation:'pg-spin 0.7s linear infinite', margin:'0 auto 12px'}}/>
+              {lang==='pt'?'Carregando candidatos…':lang==='es'?'Cargando candidatos…':'Loading applicants…'}
+            </div>
+          )}
+          {!loading && applicants.length === 0 && (
+            <div style={{textAlign:'center', padding:'40px 16px', color:'var(--pg-ink-400)'}}>
+              <div style={{fontSize:36, marginBottom:10}}>📭</div>
+              <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-600)', marginBottom:4}}>
+                {lang==='pt'?'Nenhum candidato ainda':lang==='es'?'Sin candidatos aún':'No applicants yet'}
+              </div>
+              <div style={{fontSize:12, color:'var(--pg-ink-400)'}}>
+                {lang==='pt'?'As candidaturas aparecerão aqui':lang==='es'?'Las postulaciones aparecerán aquí':'Applications will appear here'}
+              </div>
+            </div>
+          )}
+          {!loading && applicants.map(a => {
             const sc = statusConfig[a.status] || statusConfig.pending;
             return (
               <div key={a.id} className="pg-card" style={{padding:'13px 14px'}}>
@@ -823,9 +910,12 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat }) {
                       }}>
                         {lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}
                       </button>
-                      <button onClick={()=>{
+                      <button onClick={async ()=>{
                         const reason = rejectReason.trim() || null;
                         setApplicants(prev=>prev.map(a2=>a2.id===a.id?{...a2, status:'rejected', rejectReason:reason}:a2));
+                        if (post?._live && a._dbId && window.sb) {
+                          await window.sb.from('job_applications').update({ status:'rejected', reject_reason: reason }).eq('id', a._dbId);
+                        }
                         setRejectingFor(null); setRejectReason('');
                       }} style={{
                         flex:1, height:34, fontSize:12, borderRadius:999, border:'none', cursor:'pointer',
@@ -2392,14 +2482,16 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      if (window.sb && user && user.id) {
+      const uid = user?.uid || user?.id || null;
+      if (window.sb && uid) {
         await window.sb.from('job_applications').insert({
           job_id:          job._id || job.id || null,
           job_company:     jobCompany,
           job_role:        jobRole,
-          applicant_id:    user.id,
+          applicant_id:    uid,
           applicant_name:  user.name || '',
           applicant_rating:user.rating || null,
+          applicant_jobs:  user.reviews || 0,
           note:            note.trim() || null,
           status:          'pending',
         });
@@ -2788,6 +2880,27 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en' }) {
             </div>
             <div style={{fontSize:13, color:'var(--pg-ink-600)', lineHeight:1.55, fontStyle:'italic'}}>
               "{tr(app.rejectReason, lang)}"
+            </div>
+          </div>
+        )}
+
+        {/* Accepted: interview scheduled */}
+        {isAccepted && app.interview && (
+          <div style={{
+            marginBottom:14, padding:'12px 14px', borderRadius:12,
+            background:'oklch(0.96 0.04 145)', border:'0.5px solid oklch(0.80 0.10 145)',
+            display:'flex', alignItems:'center', gap:10,
+          }}>
+            <div style={{width:38, height:38, borderRadius:10, background:'oklch(0.88 0.10 145)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+              {CalIcon}
+            </div>
+            <div>
+              <div style={{fontSize:10.5, fontWeight:700, letterSpacing:'0.07em', color:'oklch(0.40 0.18 145)', marginBottom:2}}>
+                {(lang==='pt'?'ENTREVISTA AGENDADA':lang==='es'?'ENTREVISTA PROGRAMADA':'INTERVIEW SCHEDULED').toUpperCase()}
+              </div>
+              <div style={{fontSize:15, fontWeight:700, color:'oklch(0.35 0.18 145)', letterSpacing:'-0.01em'}}>
+                📅 {tr(app.interview.day, lang)} · {app.interview.time}
+              </div>
             </div>
           </div>
         )}

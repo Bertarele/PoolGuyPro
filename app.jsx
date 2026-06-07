@@ -395,10 +395,11 @@ function App() {
   const toggleDark = React.useCallback(() => setDarkModeState(v => !v), []);
 
   // ── Live Firestore data ────────────────────────────────────
-  const [liveJobs,      setLiveJobs]      = React.useState([]);
-  const [liveTechs,     setLiveTechs]     = React.useState([]);
-  const [liveVacations, setLiveVacations] = React.useState([]);
-  const [liveMarket,    setLiveMarket]    = React.useState([]);
+  const [liveJobs,         setLiveJobs]         = React.useState([]);
+  const [liveTechs,        setLiveTechs]        = React.useState([]);
+  const [liveVacations,    setLiveVacations]    = React.useState([]);
+  const [liveMarket,       setLiveMarket]       = React.useState([]);
+  const [liveApplications, setLiveApplications] = React.useState([]); // current user's job applications
 
   React.useEffect(() => {
     if (!window.sb || !authReady) return;
@@ -491,6 +492,34 @@ function App() {
     const ch = window.sb.channel('notif-badge-' + user.uid)
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'notifications', filter:`user_id=eq.${user.uid}` },
         () => setHasUnreadNotif(true))
+      .subscribe();
+    return () => window.sb.removeChannel(ch);
+  }, [authReady, user?.uid]);
+
+  // Live job applications — current user's applications + real-time status updates
+  const loadLiveApplications = React.useCallback(async (uid) => {
+    if (!window.sb || !uid) return;
+    const { data } = await window.sb
+      .from('job_applications')
+      .select('*')
+      .eq('applicant_id', uid)
+      .order('created_at', { ascending: false });
+    if (data) setLiveApplications(data);
+  }, []);
+
+  React.useEffect(() => {
+    if (!authReady || !user?.uid || !window.sb) return;
+    loadLiveApplications(user.uid);
+    // Real-time: refresh whenever a status update arrives for our applications
+    const ch = window.sb.channel('my-apps-' + user.uid)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'job_applications',
+        filter: `applicant_id=eq.${user.uid}`,
+      }, () => loadLiveApplications(user.uid))
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'job_applications',
+        filter: `applicant_id=eq.${user.uid}`,
+      }, () => loadLiveApplications(user.uid))
       .subscribe();
     return () => window.sb.removeChannel(ch);
   }, [authReady, user?.uid]);
@@ -618,6 +647,8 @@ function App() {
     },
     // Live Firestore data
     liveJobs, liveTechs, liveVacations, liveMarket,
+    liveApplications,
+    refreshLiveApplications: () => loadLiveApplications(user?.uid),
     dbWrite, showToast,
     // Admin: remove items from local state immediately (fallback if realtime is slow)
     removeMarketItem:  (id) => setLiveMarket(prev => prev.filter(m => m._id !== id)),
@@ -716,6 +747,7 @@ function App() {
         onClose={()=>setApplicantsPost(null)}
         post={applicantsPost}
         lang={lang}
+        user={user}
         onChat={(name)=>{ setApplicantsPost(null); setChatConvoTarget(name); setChatOpen(true); }}
       />
       <VerificationSheet open={verifyOpen} onClose={()=>setVerifyOpen(false)} lang={lang}/>
