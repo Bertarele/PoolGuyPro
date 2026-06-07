@@ -1,7 +1,7 @@
 // quickpools.jsx — Google-Maps-style map with clickable pins + premium gate
 
 function QuickPoolsScreen({ ctx }) {
-  const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat } = ctx;
+  const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif } = ctx;
   const t = STRINGS[lang];
   const [selected,    setSelected]    = React.useState(null);
   const [highlighted, setHighlighted] = React.useState(null);
@@ -246,6 +246,16 @@ function QuickPoolsScreen({ ctx }) {
 
             {/* Actions */}
             <div style={{display:'flex', gap:10, alignItems:'center'}}>
+              <button onClick={()=>openNotifications&&openNotifications()} style={{
+                width:44, height:44, borderRadius:13,
+                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
+                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                color:'#fff', position:'relative',
+              }}>
+                {Icon.bell(20,'#fff')}
+                {hasUnreadNotif && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
+                  borderRadius:'50%', background:'#FF3B30', border:'2px solid #011B5A'}}/>}
+              </button>
               <button onClick={()=>openChat&&openChat()} style={{
                 width:44, height:44, borderRadius:13,
                 background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
@@ -255,18 +265,6 @@ function QuickPoolsScreen({ ctx }) {
                 {Icon.msg(20,'#fff')}
                 {hasUnreadChat && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
                   borderRadius:'50%', background:'#FF3B30', border:'2px solid #011B5A'}}/>}
-              </button>
-              <button onClick={()=>openPost&&openPost()} style={{
-                height:44, padding:'0 20px', borderRadius:13,
-                background:'#fff', border:'none', cursor:'pointer',
-                fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700,
-                color:'var(--pg-blue-700)', display:'flex', alignItems:'center', gap:8,
-                boxShadow:'0 4px 16px rgba(0,0,0,0.15)', transition:'all .15s',
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post Job'}
               </button>
             </div>
           </div>
@@ -415,17 +413,13 @@ function QuickPoolsScreen({ ctx }) {
           </div>
         }
         right={
-          <div style={{display:'flex', gap:8, alignItems:'center'}}>
-            <button onClick={()=>openPost&&openPost()} style={{
-              height:32, padding:'0 12px', borderRadius:10, border:'none', cursor:'pointer',
-              background:'rgba(255,255,255,0.15)', color:'#fff', fontFamily:'inherit',
-              fontSize:12, fontWeight:700, display:'flex', alignItems:'center', gap:5,
-            }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              {lang==='pt'?'Publicar':'Post'}
-            </button>
+          <div style={{display:'flex', gap:6, alignItems:'center'}}>
+            <div style={{position:'relative', display:'inline-flex'}}>
+              <IconButton dark onClick={()=>openNotifications&&openNotifications()}>
+                {Icon.bell(20,'#fff')}
+              </IconButton>
+              {hasUnreadNotif && <span style={{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #011B5A',pointerEvents:'none'}}/>}
+            </div>
             <div style={{position:'relative', display:'inline-flex'}}>
               <IconButton dark onClick={()=>openChat&&openChat()}>
                 {Icon.msg(20,'#fff')}

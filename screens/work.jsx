@@ -7,7 +7,7 @@ function WorkScreen({ ctx }) {
           openPublicProfile, showToast,
           removeJob, removeTech, removeVacation,
           liveJobs=[], liveTechs=[], liveVacations=[],
-          hasUnreadChat } = ctx;
+          hasUnreadChat, openNotifications, hasUnreadNotif } = ctx;
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState('hiring');
   const [vacTab, setVacTab] = React.useState('applied');
@@ -516,11 +516,19 @@ function WorkScreen({ ctx }) {
         }
         leftBack onBack={()=>goTab('home')}
         right={
-          <div style={{position:'relative', display:'inline-flex'}}>
-            <IconButton dark onClick={() => openChat && openChat()}>
-              {Icon.msg(20, '#fff')}
-            </IconButton>
-            {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
+          <div style={{display:'flex', gap:6, alignItems:'center'}}>
+            <div style={{position:'relative', display:'inline-flex'}}>
+              <IconButton dark onClick={() => openNotifications && openNotifications()}>
+                {Icon.bell(20, '#fff')}
+              </IconButton>
+              {hasUnreadNotif && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
+            </div>
+            <div style={{position:'relative', display:'inline-flex'}}>
+              <IconButton dark onClick={() => openChat && openChat()}>
+                {Icon.msg(20, '#fff')}
+              </IconButton>
+              {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
+            </div>
           </div>
         }
       >

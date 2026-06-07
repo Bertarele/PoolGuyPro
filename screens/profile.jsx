@@ -4,7 +4,7 @@ function ProfileScreen({ ctx }) {
   const { lang, user, setUser, openPaywall, regions, openRegionEditor,
           openLanguagePicker, openApplicants, openVerification, openPushNotif, openFeedback,
           openEditProfile, onLogout, openHelp, openPrivacy,
-          darkMode, toggleDark, openChat, hasUnreadChat, requestVerification } = ctx;
+          darkMode, toggleDark, openChat, hasUnreadChat, openNotifications, hasUnreadNotif, requestVerification } = ctx;
   const t = STRINGS[lang];
 
   const typeIcon = (type) => {
@@ -37,6 +37,13 @@ function ProfileScreen({ ctx }) {
         </div>
       } right={
         <div style={{display:'flex', alignItems:'center', gap:6}}>
+          {/* Notifications */}
+          <div style={{position:'relative', display:'inline-flex'}}>
+            <IconButton dark onClick={() => openNotifications && openNotifications()}>
+              {Icon.bell(20, '#fff')}
+            </IconButton>
+            {hasUnreadNotif && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
+          </div>
           {/* Chat */}
           <div style={{position:'relative', display:'inline-flex'}}>
             <IconButton dark onClick={() => openChat && openChat()}>
