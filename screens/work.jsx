@@ -872,7 +872,7 @@ function WorkScreen({ ctx }) {
 
       {/* ── Content panels ── */}
       <div style={{padding:'14px 18px 0'}}>
-        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={liveJobs} showToast={showToast} onDeleteJob={removeJob}/>}
+        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={liveJobs} showToast={showToast} onDeleteJob={removeJob} liveApplications={liveApplications}/>}
         {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={liveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
                               onChat={openChat} onCreate={openVacSheet}
@@ -1027,7 +1027,7 @@ function MyApplicationsSection({ apps, lang, onChat, type='hiring' }) {
 }
 
 // ── Card with company-style header ────────────────────────────
-function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile, liveJobs=[], showToast, onDeleteJob }) {
+function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile, liveJobs=[], showToast, onDeleteJob, liveApplications=[] }) {
   const Company = (s=20, c='var(--pg-blue-500)') => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="4" y="3" width="16" height="18" rx="2"/>
@@ -1118,9 +1118,52 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
                 ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
                 : `$${job.pay}${job.payMode==='weekly'?(lang==='pt'?'/sem':'/wk'):'/pool'}`}
             </div>
-            <button onClick={()=>onApply && onApply(job)} className="pg-btn pg-btn-primary" style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
-              {t.apply}
-            </button>
+            {(() => {
+              const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
+              if (myApp?.status === 'rejected') {
+                return (
+                  <div style={{
+                    height:36, padding:'0 16px', borderRadius:999, display:'flex', alignItems:'center', gap:6,
+                    background:'rgba(239,68,68,0.10)', border:'1.5px solid rgba(239,68,68,0.35)',
+                    color:'#EF4444', fontSize:12.5, fontWeight:700, letterSpacing:'0.02em', userSelect:'none',
+                  }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                    {lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected'}
+                  </div>
+                );
+              }
+              if (myApp?.status === 'pending') {
+                return (
+                  <div style={{
+                    height:36, padding:'0 16px', borderRadius:999, display:'flex', alignItems:'center', gap:6,
+                    background:'rgba(245,158,11,0.10)', border:'1.5px solid rgba(245,158,11,0.35)',
+                    color:'#D97706', fontSize:12.5, fontWeight:700, letterSpacing:'0.02em', userSelect:'none',
+                  }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                    {lang==='pt'?'Enviado':lang==='es'?'Enviado':'Applied'}
+                  </div>
+                );
+              }
+              if (myApp?.status === 'accepted') {
+                return (
+                  <div style={{
+                    height:36, padding:'0 16px', borderRadius:999, display:'flex', alignItems:'center', gap:6,
+                    background:'rgba(16,185,129,0.10)', border:'1.5px solid rgba(16,185,129,0.35)',
+                    color:'#10B981', fontSize:12.5, fontWeight:700, letterSpacing:'0.02em', userSelect:'none',
+                  }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+                    {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
+                  </div>
+                );
+              }
+              // Not applied yet — show normal button (hide if it's the user's own job)
+              if (user?.uid && user.uid === job.author_id) return null;
+              return (
+                <button onClick={()=>onApply && onApply(job)} className="pg-btn pg-btn-primary" style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
+                  {t.apply}
+                </button>
+              );
+            })()}
           </div>
           {/* Owner — close listing (already hired) */}
           {user?.uid && user.uid === job.author_id && user?.role !== 'admin' && (
