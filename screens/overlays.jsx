@@ -1209,8 +1209,8 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
               {applicant.hasLicense !== undefined && (
                 <YesNoChip
                   yes={applicant.hasLicense}
-                  yesLabel={sectionLbl("Valid driver's license",'CNH válida','Licencia válida')}
-                  noLabel={sectionLbl('No license','Sem CNH','Sin licencia')}
+                  yesLabel={sectionLbl("Valid driver's license","Valid driver's license","Valid driver's license")}
+                  noLabel={sectionLbl('No license','No license','No license')}
                   icon={LicenseIcon}/>
               )}
             </div>
@@ -1342,7 +1342,7 @@ function VerificationSheet({ open, onClose, lang='en' }) {
     { id:'id',
       icon: Icon.user,
       title:  {en:'Government ID',       pt:'Documento Oficial',            es:'ID Oficial'},
-      sub:    {en:'Passport, driver\'s license or state ID', pt:'Passaporte, CNH ou RG', es:'Pasaporte, licencia o ID'},
+      sub:    {en:'Passport, driver\'s license or state ID', pt:'Passport, driver\'s license or state ID', es:'Passport, driver\'s license or state ID'},
       time:   '~2 min' },
     { id:'selfie',
       icon: Icon.user,
@@ -2553,7 +2553,7 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
               green={safeUser.hasCar}/>
             <Chip
               icon={LicenseIcon(safeUser.hasLicense ? 'var(--pg-aqua-700)' : 'var(--pg-ink-400)')}
-              label={safeUser.hasLicense ? s("Valid driver's license",'CNH válida','Licencia válida') : s('No license','Sem CNH','Sin licencia')}
+              label={safeUser.hasLicense ? "Valid driver's license" : 'No license'}
               green={safeUser.hasLicense}/>
           </div>
 
@@ -3192,8 +3192,8 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
             sub={s('Car, truck or van','Carro, caminhonete ou van','Carro, camioneta o van')}
             on={hasCar} onChange={setHasCar}/>
           <ToggleRow
-            label={s("Valid driver's license",'CNH válida','Licencia de conducir válida')}
-            sub={s('State-issued driving license','CNH emitida pelo estado','Licencia emitida por el estado')}
+            label="Valid driver's license"
+            sub="State-issued driving license"
             on={hasLicense} onChange={setHasLicense}/>
         </div>
 
