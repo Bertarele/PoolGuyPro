@@ -3201,40 +3201,40 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onCha
         )}
 
         {/* Accepted: contact */}
-        {isAccepted && app.contact && (
+        {isAccepted && display.contact && (
           <div style={{marginBottom:14, padding:'12px 14px', borderRadius:12, background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-100)'}}>
             <div style={{fontSize:10.5, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-400)', marginBottom:10}}>
               {contactLbl.toUpperCase()}
             </div>
             <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
-              <Avatar name={app.contact.name} size={32}/>
-              <span style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{app.contact.name}</span>
+              <Avatar name={display.contact.name} size={32}/>
+              <span style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{display.contact.name}</span>
             </div>
-            <a href={`tel:${app.contact.phone}`} style={{display:'flex', alignItems:'center', gap:8, textDecoration:'none', padding:'7px 0', borderTop:'0.5px solid var(--pg-blue-100)'}}>
+            <a href={`tel:${display.contact.phone}`} style={{display:'flex', alignItems:'center', gap:8, textDecoration:'none', padding:'7px 0', borderTop:'0.5px solid var(--pg-blue-100)'}}>
               <div style={{width:28, height:28, borderRadius:8, background:'var(--pg-blue-500)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
                 {PhoneIcon('#fff')}
               </div>
-              <span style={{fontSize:14, fontWeight:700, color:'var(--pg-blue-700)'}}>{app.contact.phone}</span>
+              <span style={{fontSize:14, fontWeight:700, color:'var(--pg-blue-700)'}}>{display.contact.phone}</span>
             </a>
-            {app.contact.email && (
-              <a href={`mailto:${app.contact.email}`} style={{display:'flex', alignItems:'center', gap:8, textDecoration:'none', padding:'7px 0', borderTop:'0.5px solid var(--pg-blue-100)'}}>
+            {display.contact.email && (
+              <a href={`mailto:${display.contact.email}`} style={{display:'flex', alignItems:'center', gap:8, textDecoration:'none', padding:'7px 0', borderTop:'0.5px solid var(--pg-blue-100)'}}>
                 <div style={{width:28, height:28, borderRadius:8, background:'var(--pg-aqua-100)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
                   {EmailIcon()}
                 </div>
-                <span style={{fontSize:13, fontWeight:600, color:'var(--pg-aqua-700)'}}>{app.contact.email}</span>
+                <span style={{fontSize:13, fontWeight:600, color:'var(--pg-aqua-700)'}}>{display.contact.email}</span>
               </a>
             )}
           </div>
         )}
 
         {/* Accepted: perks */}
-        {isAccepted && app.perks && (
+        {isAccepted && display.perks && (
           <div style={{marginBottom:22}}>
             <div style={{fontSize:10.5, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-400)', marginBottom:8}}>
               {perksLbl.toUpperCase()}
             </div>
             <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-              {(tr(app.perks, lang) || []).map((perk, i) => (
+              {(tr(display.perks, lang) || []).map((perk, i) => (
                 <span key={i} style={{fontSize:12, fontWeight:600, padding:'4px 11px', borderRadius:999, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-800)'}}>
                   ✓ {perk}
                 </span>
