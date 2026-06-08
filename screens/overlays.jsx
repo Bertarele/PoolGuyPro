@@ -2944,8 +2944,9 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
 // ── Hiring Application Detail Sheet ──────────────────────────
 function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onChat }) {
   // Fetch fresh data from DB when opened — avoids stale rejection reason / status
-  const [freshApp, setFreshApp] = React.useState(null);
+  const [freshApp,    setFreshApp]    = React.useState(null);
   const [withdrawing, setWithdrawing] = React.useState(false);
+  const [chatLoading, setChatLoading] = React.useState(false);
 
   const fetchFresh = React.useCallback(async () => {
     if (!window.sb) return;
@@ -3217,20 +3218,49 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onCha
         {/* CTA buttons */}
         {isAccepted && (
           <button
-            onClick={() => {
+            onClick={async () => {
               if (!onChat) return;
-              if (!display.author_id) {
-                // author_id not yet known (job expired before DB migration) — open inbox instead
+
+              let authorId   = display.author_id;
+              let authorName = display.company || '';
+
+              // Fast path — author_id already cached
+              if (authorId) {
                 onClose();
-                onChat(null);
+                onChat({ id: authorId, name: authorName });
                 return;
               }
+
+              // Slow path — look up employer from jobs table on demand
+              // (happens for applications created before job_author_id column was added)
+              if (display.job_id && window.sb) {
+                setChatLoading(true);
+                try {
+                  const { data } = await window.sb
+                    .from('jobs')
+                    .select('author_id, author')
+                    .eq('id', display.job_id);
+                  if (data && data[0]) {
+                    authorId   = data[0].author_id || null;
+                    authorName = data[0].author    || authorName;
+                  }
+                } catch(e) {
+                  console.warn('[HiringAppDetail] job lookup failed:', e);
+                } finally {
+                  setChatLoading(false);
+                }
+              }
+
               onClose();
-              onChat({ id: display.author_id, name: display.company || '' });
+              // If we found an employer id → open direct chat; otherwise open inbox as last resort
+              onChat(authorId ? { id: authorId, name: authorName } : null);
             }}
+            disabled={chatLoading}
             className="pg-btn pg-btn-aqua"
-            style={{width:'100%', height:52, fontSize:15, borderRadius:14}}>
-            {messageLbl}
+            style={{width:'100%', height:52, fontSize:15, borderRadius:14, opacity: chatLoading ? 0.7 : 1}}>
+            {chatLoading
+              ? (lang==='pt' ? 'Carregando…' : lang==='es' ? 'Cargando…' : 'Loading…')
+              : messageLbl}
           </button>
         )}
         {isPending && (
