@@ -3218,10 +3218,15 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onCha
         {isAccepted && (
           <button
             onClick={() => {
-              if (onChat) {
-                onChat({ id: display.author_id || null, name: display.company || '' });
+              if (!onChat) return;
+              if (!display.author_id) {
+                // author_id not yet known (job expired before DB migration) — open inbox instead
                 onClose();
+                onChat(null);
+                return;
               }
+              onClose();
+              onChat({ id: display.author_id, name: display.company || '' });
             }}
             className="pg-btn pg-btn-aqua"
             style={{width:'100%', height:52, fontSize:15, borderRadius:14}}>

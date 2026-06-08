@@ -593,10 +593,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
   const handleContact = () => {
     if (isStatic) { showToast && showToast(lang==='pt'?'💡 Item demonstrativo — sem vendedor real.':'💡 Demo item — no real seller to contact.'); return; }
+    // Open chat on top of the listing — listing stays open so user returns to it when chat closes
     if (openChat) openChat(item.author_id
       ? { id: item.author_id, name: item.author || 'Seller', listingContext: _listingCtx() }
       : (item.author || 'Seller'));
-    if (onClose) onClose();
   };
 
   // Helper: insert notification silently (fire-and-forget)
@@ -639,11 +639,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     setReqStatus('pending');
     showToast && showToast(lang==='pt'?'✓ Pedido enviado! Converse com o dono pela inbox.':'✓ Request sent! Chat with the owner via inbox.');
     if (openChat && item.author_id) {
-      // Close listing first, THEN open chat — prevents chat from flickering due to listing re-render
-      if (onClose) onClose();
-      setTimeout(() => {
-        openChat({ id: item.author_id, name: item.author || 'Owner', listingContext: _listingCtx() });
-      }, 280);
+      // Open chat on top — listing stays open behind it (Sheet zIndex 9999 > listing zIndex 200)
+      openChat({ id: item.author_id, name: item.author || 'Owner', listingContext: _listingCtx() });
     }
   };
 
@@ -5410,7 +5407,7 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
       setOfferOpen(false);
       setOfferSent(false);
       openChat && openChat('Sandra Reyes');
-      onClose && onClose();
+      // Listing stays open — chat opens on top
     }, 1400);
   };
 
