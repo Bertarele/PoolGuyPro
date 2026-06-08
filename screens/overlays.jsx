@@ -2670,6 +2670,8 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
       job_id:           jobId,
       job_company:      jobCompany,
       job_role:         jobRole,
+      job_loc:          job.loc || job.region || '',
+      job_author_id:    job.author_id || null,
       applicant_id:     uid,
       applicant_name:   user.name || '',
       applicant_rating: user.rating || null,
@@ -2940,7 +2942,7 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
 }
 
 // ── Hiring Application Detail Sheet ──────────────────────────
-function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw }) {
+function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onChat }) {
   // Fetch fresh data from DB when opened — avoids stale rejection reason / status
   const [freshApp, setFreshApp] = React.useState(null);
   const [withdrawing, setWithdrawing] = React.useState(false);
@@ -3214,7 +3216,15 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw }) {
 
         {/* CTA buttons */}
         {isAccepted && (
-          <button className="pg-btn pg-btn-aqua" style={{width:'100%', height:52, fontSize:15, borderRadius:14}}>
+          <button
+            onClick={() => {
+              if (onChat) {
+                onChat({ id: display.author_id || null, name: display.company || '' });
+                onClose();
+              }
+            }}
+            className="pg-btn pg-btn-aqua"
+            style={{width:'100%', height:52, fontSize:15, borderRadius:14}}>
             {messageLbl}
           </button>
         )}

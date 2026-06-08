@@ -903,6 +903,7 @@ function App() {
       <HiringAppDetailSheet
         open={!!hiringAppDetail} onClose={()=>setHiringAppDetail(null)}
         app={hiringAppDetail} lang={lang}
+        onChat={(target) => { setHiringAppDetail(null); setChatConvoTarget(target); setChatOpen(true); }}
         onWithdraw={(appId) => {
           setHiringAppDetail(null);
           loadLiveApplications(user?.uid);

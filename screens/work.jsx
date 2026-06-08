@@ -176,7 +176,7 @@ function WorkScreen({ ctx }) {
       company:      a.job_company || a.job_role || '?',
       title:        { en: a.job_role || a.job_company || '', pt: a.job_role || a.job_company || '', es: a.job_role || a.job_company || '' },
       pay:          { en:'', pt:'', es:'' },
-      loc:          '',
+      loc:          relatedJob?.loc || relatedJob?.region || a.job_loc || '',
       status:       a.status || 'pending',
       when:         relTime(a.created_at),
       interview:    a.interview_day ? {
@@ -185,7 +185,7 @@ function WorkScreen({ ctx }) {
       } : null,
       rejectReason: a.reject_reason || null,
       job_id:       a.job_id,
-      author_id:    relatedJob?.author_id || null, // employer UUID for live chat
+      author_id:    relatedJob?.author_id || a.job_author_id || null, // employer UUID for live chat
     };
   });
 
