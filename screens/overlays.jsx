@@ -3237,16 +3237,8 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onCha
               let authorId   = display.author_id;
               let authorName = display.company || '';
 
-              // Fast path — author_id already cached
-              if (authorId) {
-                onClose();
-                onChat({ id: authorId, name: authorName });
-                return;
-              }
-
-              // Slow path — look up employer from jobs table on demand
-              // (happens for applications created before job_author_id column was added)
-              if (display.job_id && window.sb) {
+              // Slow path — look up employer when author_id not yet cached
+              if (!authorId && display.job_id && window.sb) {
                 setChatLoading(true);
                 try {
                   const { data } = await window.sb
@@ -3264,9 +3256,14 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onCha
                 }
               }
 
+              // Close this sheet first, then wait for its 260ms close animation to finish
+              // before opening chat — avoids the backdrop overlap (black screen).
+              // HiringAppDetailSheet comes after ChatSheet in the DOM so its backdrop
+              // (z-index 1000) covers the opening ChatSheet if both render simultaneously.
               onClose();
-              // If we found an employer id → open direct chat; otherwise open inbox as last resort
-              onChat(authorId ? { id: authorId, name: authorName } : null);
+              setTimeout(() => {
+                onChat(authorId ? { id: authorId, name: authorName } : null);
+              }, 300);
             }}
             disabled={chatLoading}
             className="pg-btn pg-btn-aqua"
