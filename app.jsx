@@ -691,7 +691,7 @@ function App() {
     openPaywall:        () => setPayOpen(true),
     openPostMenu:       () => setPostMenuOpen(true),
     openPost:           () => setPostQPOpen(true),
-    openMarketPost:     () => setMarketPostOpen(true),
+    openMarketPost:     () => { switchTab('market'); setMarketPostOpen(true); },
     closeMarketPost:    () => setMarketPostOpen(false),
     marketPostOpen,
     openRegionEditor:   () => setRegionOpen(true),
