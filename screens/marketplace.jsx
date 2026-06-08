@@ -3229,6 +3229,7 @@ function MarketplaceScreen({ ctx }) {
   const [postOpen,   setPostOpen]   = React.useState(false);
   const [postMode,   setPostMode]   = React.useState(null); // 'sell'|'rent'|'route'
   const [priceRange, setPriceRange] = React.useState('all');  // equipment price filter
+  const [priceOpen,  setPriceOpen]  = React.useState(false);  // price dropdown open
   const [routeRegion,setRouteRegion]= React.useState('all');  // routes region filter
   const [routePrice, setRoutePrice] = React.useState('all');  // routes price filter
   const [routeSub,   setRouteSub]   = React.useState('routes'); // 'routes' | 'pools'
@@ -3343,12 +3344,17 @@ function MarketplaceScreen({ ctx }) {
   };
 
   const catLabels = {
-    All:{en:'All',pt:'Todos',es:'Todos'},
-    Pumps:{en:'Pumps',pt:'Bombas',es:'Bombas'},
-    Filters:{en:'Filters',pt:'Filtros',es:'Filtros'},
-    Vacuum:{en:'Vacuum',pt:'Aspiradores',es:'Aspiradores'},
-    Heaters:{en:'Heaters',pt:'Aquecedores',es:'Calentadores'},
-    Tools:{en:'Tools',pt:'Hastes',es:'Herramientas'},
+    All:       {en:'All',        pt:'Todos',        es:'Todos'},
+    Pumps:     {en:'Pumps',      pt:'Bombas',        es:'Bombas'},
+    Vacuum:    {en:'Vacuum',     pt:'Aspiradores',   es:'Aspiradores'},
+    Heaters:   {en:'Heaters',    pt:'Aquecedores',   es:'Calentadores'},
+    Pole:      {en:'Pole',       pt:'Pole',          es:'Pole'},
+    Car:       {en:'Car',        pt:'Carro',         es:'Carro'},
+    Jug:       {en:'Jug',        pt:'Jug',           es:'Jug'},
+    Net:       {en:'Net',        pt:'Net',           es:'Net'},
+    Chemicals: {en:'Chemicals',  pt:'Químicos',      es:'Químicos'},
+    Filters:   {en:'Filters',    pt:'Filtros',       es:'Filtros'},
+    Others:    {en:'Others',     pt:'Outros',        es:'Otros'},
   };
   const cats = Object.keys(catLabels);
 
@@ -4264,34 +4270,45 @@ function MarketplaceScreen({ ctx }) {
                 <input placeholder={t.search} value={q} onChange={e=>setQ(e.target.value)}/>
               </div>
 
-              {/* Category chips */}
+              {/* Category chips + Price chip */}
               <div className="pg-scroll-x" style={{display:'flex', gap:8, marginLeft:-12, marginRight:-12, padding:'2px 12px'}}>
                 {cats.map(c => {
                   const on = cat===c;
                   return (
-                    <button key={c} className={`pg-chip ${on?'pg-chip-on':''}`} onClick={()=>setCat(c)} style={{padding:'7px 12px'}}>
+                    <button key={c} className={`pg-chip ${on?'pg-chip-on':''}`} onClick={()=>setCat(c)} style={{padding:'7px 12px', whiteSpace:'nowrap'}}>
                       {tr(catLabels[c], lang)}
                     </button>
                   );
                 })}
+                {/* Price chip — at the end of the scroll row */}
+                <button
+                  className={`pg-chip ${priceRange!=='all'?'pg-chip-on':''}`}
+                  onClick={()=>setPriceOpen(o=>!o)}
+                  style={{padding:'7px 12px', whiteSpace:'nowrap', display:'inline-flex', alignItems:'center', gap:4, flexShrink:0}}>
+                  {priceRange==='all'
+                    ? (lang==='pt'?'Preço':lang==='es'?'Precio':'Price')
+                    : priceRange==='u100' ? '< $100'
+                    : priceRange==='100-500' ? '$100–$500'
+                    : '$500+'}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points={priceOpen ? '18 15 12 9 6 15' : '6 9 12 15 18 9'}/>
+                  </svg>
+                </button>
               </div>
 
-              {/* Price filter chips */}
-              <div>
-                <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-400)', marginBottom:6}}>
-                  {lang==='pt'?'PREÇO':lang==='es'?'PRECIO':'PRICE'}
-                </div>
-                <div style={{display:'flex', gap:7, flexWrap:'wrap'}}>
+              {/* Price dropdown — appears below chip row */}
+              {priceOpen && (
+                <div style={{display:'flex', gap:7, flexWrap:'wrap', padding:'4px 2px 2px'}}>
                   {[
-                    {id:'all',     label: lang==='pt'?'Qualquer':lang==='es'?'Cualquier':'Any price'},
+                    {id:'all',     label: lang==='pt'?'Qualquer preço':lang==='es'?'Cualquier precio':'Any price'},
                     {id:'u100',    label: '< $100'},
                     {id:'100-500', label: '$100 – $500'},
                     {id:'o500',    label: '$500+'},
                   ].map(opt => {
                     const on = priceRange === opt.id;
                     return (
-                      <button key={opt.id} onClick={()=>setPriceRange(opt.id)} style={{
-                        padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer',
+                      <button key={opt.id} onClick={()=>{ setPriceRange(opt.id); setPriceOpen(false); }} style={{
+                        padding:'6px 13px', borderRadius:8, border:'none', cursor:'pointer',
                         fontFamily:'inherit', fontSize:12, fontWeight:600, transition:'all .12s',
                         background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
                         color:      on ? '#fff' : 'var(--pg-ink-700)',
@@ -4300,7 +4317,7 @@ function MarketplaceScreen({ ctx }) {
                     );
                   })}
                 </div>
-              </div>
+              )}
             </>
           )}
         </div>
@@ -5717,10 +5734,19 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
   // At least one period must be enabled with a valid price
   const hasAnyRentPrice = isRent && periodOptions.some(p => rentEnabled[p.id] && rentPrices[p.id].trim().length > 0);
 
-  const cats = ['Pumps','Filters','Vacuum','Heaters','Tools'];
-  const catLabels = { Pumps:lang==='pt'?'Bombas':lang==='es'?'Bombas':'Pumps', Filters:lang==='pt'?'Filtros':lang==='es'?'Filtros':'Filters',
-    Vacuum:lang==='pt'?'Aspiradores':lang==='es'?'Aspiradores':'Vacuum', Heaters:lang==='pt'?'Aquecedores':lang==='es'?'Calentadores':'Heaters',
-    Tools:lang==='pt'?'Ferramentas':lang==='es'?'Herramientas':'Tools' };
+  const cats = ['Pumps','Vacuum','Heaters','Pole','Car','Jug','Net','Chemicals','Filters','Others'];
+  const catLabels = {
+    Pumps:     lang==='pt'?'Bombas':     lang==='es'?'Bombas':     'Pumps',
+    Vacuum:    lang==='pt'?'Aspiradores':lang==='es'?'Aspiradores':'Vacuum',
+    Heaters:   lang==='pt'?'Aquecedores':lang==='es'?'Calentadores':'Heaters',
+    Pole:      'Pole',
+    Car:       lang==='pt'?'Carro':      lang==='es'?'Carro':      'Car',
+    Jug:       'Jug',
+    Net:       'Net',
+    Chemicals: lang==='pt'?'Químicos':   lang==='es'?'Químicos':   'Chemicals',
+    Filters:   lang==='pt'?'Filtros':    lang==='es'?'Filtros':    'Filters',
+    Others:    lang==='pt'?'Outros':     lang==='es'?'Otros':      'Others',
+  };
 
   const conditions = [
     { id:'likeNew', label:t.likeNewLbl },
@@ -6144,13 +6170,20 @@ function FormLabel({ children }) {
 // ── Description/seller helpers ────────────────────────────────
 function descFor(e, lang) {
   const map = {
-    Pumps:   { en:'Variable-speed pool pump, lightly used.',          pt:'Bomba de velocidade variável, pouco uso.',      es:'Bomba de velocidad variable, poco uso.' },
-    Filters: { en:'High-rate sand filter, 24-inch tank.',             pt:'Filtro de areia, tanque de 24 polegadas.',      es:'Filtro de arena, tanque de 24 pulgadas.' },
-    Vacuum:  { en:'Automatic suction-side pool vacuum, barely used.', pt:'Aspirador automático para piscina, quase sem uso.', es:'Aspirador automático para piscina, casi sin uso.' },
-    Heaters: { en:'Reliable propane pool heater, runs perfectly.',    pt:'Aquecedor a gás confiável, funciona perfeitamente.', es:'Calentador a gas confiable, funciona perfectamente.' },
-    Tools:   { en:'Heavy-duty aluminum telescopic pole.',             pt:'Haste telescópica de alumínio reforçada.',      es:'Pértiga telescópica de aluminio reforzada.' },
+    Pumps:     { en:'Variable-speed pool pump, lightly used.',          pt:'Bomba de velocidade variável, pouco uso.',          es:'Bomba de velocidad variable, poco uso.' },
+    Filters:   { en:'High-rate sand filter, 24-inch tank.',             pt:'Filtro de areia, tanque de 24 polegadas.',          es:'Filtro de arena, tanque de 24 pulgadas.' },
+    Vacuum:    { en:'Automatic suction-side pool vacuum, barely used.', pt:'Aspirador automático para piscina, quase sem uso.', es:'Aspirador automático para piscina, casi sin uso.' },
+    Heaters:   { en:'Reliable propane pool heater, runs perfectly.',    pt:'Aquecedor a gás confiável, funciona perfeitamente.', es:'Calentador a gas confiable, funciona perfectamente.' },
+    Pole:      { en:'Heavy-duty aluminum telescopic pole.',             pt:'Haste telescópica de alumínio reforçada.',          es:'Pértiga telescópica de aluminio reforzada.' },
+    Tools:     { en:'Heavy-duty aluminum telescopic pole.',             pt:'Haste telescópica de alumínio reforçada.',          es:'Pértiga telescópica de aluminio reforzada.' },
+    Car:       { en:'Pool service vehicle, well maintained.',           pt:'Veículo de serviço de piscina, bem conservado.',    es:'Vehículo de servicio de piscina, bien mantenido.' },
+    Jug:       { en:'Chemical dosing jug, 1-gallon capacity.',         pt:'Galão para dosagem de químicos, 1 galão.',          es:'Galón para dosificación de químicos, 1 galón.' },
+    Net:       { en:'Leaf skimmer net, fits standard telescopic pole.', pt:'Peneira coletora de folhas, encaixa em hastes padrão.', es:'Red recoge-hojas, compatible con pértigas estándar.' },
+    Chemicals: { en:'Pool chemical treatment, balanced formula.',       pt:'Produto químico para piscina, fórmula balanceada.',  es:'Químico para piscina, fórmula balanceada.' },
+    Others:    { en:'Pool-related item in good condition.',             pt:'Item relacionado a piscina em bom estado.',         es:'Artículo relacionado con piscina en buen estado.' },
   };
-  return (map[e.category] || map.Tools)[lang] || (map[e.category] || map.Tools).en;
+  const fallback = map.Pole;
+  return (map[e.category] || fallback)[lang] || (map[e.category] || fallback).en;
 }
 function sellerFor(e) {
   const sellers = ['PoolPro Mike','AquaServ','FilterKing','RentAPool','BluClear','DesertPools'];

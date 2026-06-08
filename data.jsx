@@ -376,7 +376,7 @@ const FEATURED = [
     sub:{en:'Mon · Wed · Fri', pt:'Seg · Qua · Sex', es:'Lun · Mié · Vie'}, price:'$65', tag:'URGENT' },
   { id:2, category:'Heaters', title:{en:'Heater repair training', pt:'Treinamento de aquecedores', es:'Capacitación de calentadores'},
     sub:{en:'Saturday workshop', pt:'Workshop de sábado', es:'Taller del sábado'}, price:{en:'Free', pt:'Grátis', es:'Gratis'}, tag:'NEW' },
-  { id:3, category:'Tools', title:{en:'Salt cell — 40k gal', pt:'Célula de sal — 40k gal', es:'Celda de sal — 40k gal'},
+  { id:3, category:'Pole', title:{en:'Salt cell — 40k gal', pt:'Célula de sal — 40k gal', es:'Celda de sal — 40k gal'},
     sub:{en:'Brand new, sealed', pt:'Novo, lacrado', es:'Nuevo, sellado'}, price:'$420', tag:'NEW' },
 ];
 
@@ -385,7 +385,7 @@ const EQUIPMENT = [
   { id:2, name:'Hayward Super II Filter', category:'Filters',  mode:'sell', price:240, condition:{en:'Used', pt:'Usado', es:'Usado'},      loc:'Hollywood',     img:'FILTER' },
   { id:3, name:'Polaris 360 Vacuum',      category:'Vacuum',   mode:'rent', price:18,  condition:{en:'Excellent', pt:'Excelente', es:'Excelente'}, loc:'Plantation',    img:'VAC', unit:{en:'/day', pt:'/dia', es:'/día'} },
   { id:4, name:'Raypak 406A Heater',      category:'Heaters',  mode:'sell', price:2100,condition:{en:'Refurb', pt:'Recondicionado', es:'Reacondicionado'},    loc:'Pembroke',      img:'HEATER' },
-  { id:5, name:'Telescopic pole — 16ft',  category:'Tools',    mode:'rent', price:5,   condition:{en:'New', pt:'Novo', es:'Nuevo'},       loc:'Davie',         img:'POLE', unit:{en:'/day', pt:'/dia', es:'/día'} },
+  { id:5, name:'Telescopic pole — 16ft',  category:'Pole',    mode:'rent', price:5,   condition:{en:'New', pt:'Novo', es:'Nuevo'},       loc:'Davie',         img:'POLE', unit:{en:'/day', pt:'/dia', es:'/día'} },
   { id:6, name:'Pentair MasterTemp 400k', category:'Heaters',  mode:'sell', price:2890,condition:{en:'New', pt:'Novo', es:'Nuevo'},       loc:'Miami Beach',   img:'HEATER' },
   { id:7, name:'Jandy CV460 Cartridge',   category:'Filters',  mode:'rent', price:12,  condition:{en:'Used', pt:'Usado', es:'Usado'},      loc:'Sunrise',       img:'FILTER', unit:{en:'/week', pt:'/sem', es:'/sem'} },
   { id:8, name:'Robot Cleaner — Dolphin', category:'Vacuum',   mode:'sell', price:540, condition:{en:'Like new', pt:'Seminovo', es:'Como nuevo'},  loc:'Doral',         img:'ROBOT' },
