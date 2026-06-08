@@ -2943,29 +2943,36 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
 
 // ── Hiring Application Detail Sheet ──────────────────────────
 function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onChat }) {
-  // Fetch fresh data from DB when opened — avoids stale rejection reason / status
+  // freshApp: live data polled from DB while sheet is open
   const [freshApp,    setFreshApp]    = React.useState(null);
   const [withdrawing, setWithdrawing] = React.useState(false);
   const [chatLoading, setChatLoading] = React.useState(false);
 
+  // snapshotRef: keeps the last valid app data alive during the 300ms close animation
+  // so HiringAppDetailSheet never returns null mid-animation (which would abruptly
+  // unmount Sheet and cut its close animation short → visual glitch / black screen).
+  const snapshotRef = React.useRef(null);
+  if (app) snapshotRef.current = app;               // update whenever a real app arrives
+  if (freshApp) snapshotRef.current = freshApp;     // prefer fresh data
+
   const fetchFresh = React.useCallback(async () => {
     if (!window.sb) return;
-    // Fetch by id if available, fall back to job_id+applicant_id for robustness
+    // Use the ref so the closure always has the current app data
+    const curApp = snapshotRef.current;
+    if (!curApp?.id && !curApp?.job_id) return;
     let data = null;
-    if (app?.id) {
-      const res = await window.sb.from('job_applications').select('*').eq('id', app.id);
+    if (curApp.id) {
+      const res = await window.sb.from('job_applications').select('*').eq('id', curApp.id);
       data = Array.isArray(res.data) ? res.data[0] : null;
     }
-    if (!data && app?.job_id) {
-      // Fallback: match by job_id (job_id is stored in liveApplications)
-      const res = await window.sb.from('job_applications').select('*').eq('job_id', app.job_id);
+    if (!data && curApp.job_id) {
+      const res = await window.sb.from('job_applications').select('*').eq('job_id', curApp.job_id);
       data = Array.isArray(res.data) ? res.data[0] : null;
     }
     if (!data) return;
 
-    // Resolve author_id: prefer what's already on app (from liveJobs match),
-    // then fall back to the DB-stored job_author_id column, then query jobs table.
-    let resolvedAuthorId = app?.author_id || data.job_author_id || null;
+    // Resolve author_id: cached → job_author_id column → jobs table lookup
+    let resolvedAuthorId = curApp.author_id || data.job_author_id || null;
     if (!resolvedAuthorId && data.job_id && window.sb) {
       try {
         const jr = await window.sb.from('jobs').select('author_id').eq('id', data.job_id);
@@ -2974,37 +2981,45 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onCha
     }
 
     setFreshApp({
-      ...app,
-      status:       data.status || app.status,
+      ...curApp,
+      status:       data.status       || curApp.status,
       rejectReason: data.reject_reason || null,
       interview:    data.interview_day ? {
         day:  { en: data.interview_day, pt: data.interview_day, es: data.interview_day },
         time: data.interview_time || '',
       } : null,
-      author_id:    resolvedAuthorId,   // always up-to-date
-      job_id:       data.job_id || app?.job_id,
+      author_id: resolvedAuthorId,
+      job_id:    data.job_id || curApp.job_id,
     });
-  }, [app?.id, app?.job_id]); // eslint-disable-line
+  }, []); // eslint-disable-line — uses ref, no deps needed
 
   React.useEffect(() => {
-    if (!open) { setFreshApp(null); setWithdrawing(false); return; }
+    if (!open) {
+      // Delay clearing freshApp until AFTER the Sheet close animation (300ms)
+      // so HiringAppDetailSheet never returns null mid-animation.
+      const t = setTimeout(() => { setFreshApp(null); setWithdrawing(false); }, 320);
+      return () => clearTimeout(t);
+    }
     fetchFresh();
-    // Poll every 5s while sheet is open so status/reason updates appear promptly
     const t = setInterval(fetchFresh, 5000);
     return () => clearInterval(t);
   }, [open, app?.id]); // eslint-disable-line
 
   const handleWithdraw = async () => {
-    if (!app?.id || !window.sb) return;
+    const curApp = app || snapshotRef.current;
+    if (!curApp?.id || !window.sb) return;
     setWithdrawing(true);
-    await window.sb.from('job_applications').delete().eq('id', app.id);
+    await window.sb.from('job_applications').delete().eq('id', curApp.id);
     setWithdrawing(false);
-    onWithdraw && onWithdraw(app.id);
+    onWithdraw && onWithdraw(curApp.id);
     onClose();
   };
 
-  const display = freshApp || app;
-  if (!display) return null;
+  // Use snapshotRef so the Sheet always has data during the close animation.
+  // Never return null here — that would abruptly unmount Sheet and cut its
+  // close animation short, causing the black screen bug.
+  const display = freshApp || app || snapshotRef.current;
+  if (!display) return null; // only on first-ever render before any app arrives
 
   const isPending  = display.status === 'pending';
   const isAccepted = display.status === 'accepted';
