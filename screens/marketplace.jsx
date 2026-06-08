@@ -4272,7 +4272,7 @@ function MarketplaceScreen({ ctx }) {
 
               {/* Category chips + Price chip */}
               <div className="pg-scroll-x" style={{display:'flex', gap:8, marginLeft:-12, marginRight:-12, padding:'2px 12px'}}>
-                {cats.map(c => {
+                {cats.filter(c => c !== 'Others').map(c => {
                   const on = cat===c;
                   return (
                     <button key={c} className={`pg-chip ${on?'pg-chip-on':''}`} onClick={()=>setCat(c)} style={{padding:'7px 12px', whiteSpace:'nowrap'}}>
@@ -4280,7 +4280,7 @@ function MarketplaceScreen({ ctx }) {
                     </button>
                   );
                 })}
-                {/* Price chip — at the end of the scroll row */}
+                {/* Price chip — before Outros */}
                 <button
                   className={`pg-chip ${priceRange!=='all'?'pg-chip-on':''}`}
                   onClick={()=>setPriceOpen(o=>!o)}
@@ -4294,6 +4294,12 @@ function MarketplaceScreen({ ctx }) {
                     <polyline points={priceOpen ? '18 15 12 9 6 15' : '6 9 12 15 18 9'}/>
                   </svg>
                 </button>
+                {/* Outros — last chip */}
+                {(() => { const on = cat==='Others'; return (
+                  <button className={`pg-chip ${on?'pg-chip-on':''}`} onClick={()=>setCat('Others')} style={{padding:'7px 12px', whiteSpace:'nowrap'}}>
+                    {tr(catLabels['Others'], lang)}
+                  </button>
+                ); })()}
               </div>
 
               {/* Price dropdown — appears below chip row */}
