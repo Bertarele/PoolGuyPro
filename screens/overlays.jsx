@@ -1056,24 +1056,54 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
 
 // ── Interview Scheduler Sheet ─────────────────────────────────
 function InterviewSchedulerSheet({ open, onClose, applicant, lang='en', onConfirm }) {
-  // Fixed reference date for the prototype
-  const NOW_YEAR = 2026, NOW_MONTH = 4, NOW_DAY = 27; // May 27 2026
+  // Real current date — recomputed on every render so it's always fresh
+  const _now      = new Date();
+  const NOW_YEAR  = _now.getFullYear();
+  const NOW_MONTH = _now.getMonth();   // 0-based (5 = June)
+  const NOW_DAY   = _now.getDate();
+  const NOW_HOUR  = _now.getHours();   // 0-23
 
-  const slots = ['8:00 AM','9:00 AM','10:00 AM','11:00 AM',
-                  '1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM'];
+  const ALL_SLOTS = ['8:00 AM','9:00 AM','10:00 AM','11:00 AM',
+                     '1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM'];
 
-  const [selDate, setSelDate] = React.useState({year:2026, month:4, day:29});
-  const [calYear, setCalYear] = React.useState(2026);
-  const [calMonth, setCalMonth] = React.useState(4);
-  const [selTime, setSelTime]   = React.useState('10:00 AM');
+  // Parse a slot string like '2:00 PM' into a 24h hour number
+  const slotHour = (s) => {
+    const [time, ampm] = s.split(' ');
+    let h = parseInt(time.split(':')[0], 10);
+    if (ampm === 'PM' && h !== 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return h;
+  };
 
+  const firstAvailSlot = (nowH) =>
+    ALL_SLOTS.find(s => slotHour(s) > nowH) || '5:00 PM';
+
+  const [selDate, setSelDate] = React.useState(() => {
+    const t = new Date();
+    return {year:t.getFullYear(), month:t.getMonth(), day:t.getDate()};
+  });
+  const [calYear,  setCalYear]  = React.useState(() => new Date().getFullYear());
+  const [calMonth, setCalMonth] = React.useState(() => new Date().getMonth());
+  const [selTime,  setSelTime]  = React.useState(() => firstAvailSlot(new Date().getHours()));
+
+  // Reset to today whenever the sheet opens
   React.useEffect(() => {
     if (open) {
-      setSelDate({year:2026, month:4, day:29});
-      setCalYear(2026); setCalMonth(4);
-      setSelTime('10:00 AM');
+      const t = new Date();
+      setSelDate({year:t.getFullYear(), month:t.getMonth(), day:t.getDate()});
+      setCalYear(t.getFullYear()); setCalMonth(t.getMonth());
+      setSelTime(firstAvailSlot(t.getHours()));
     }
   }, [open]);
+
+  // When user picks a different day, auto-correct selTime if it's now past
+  React.useEffect(() => {
+    const isSelToday = selDate.year === NOW_YEAR && selDate.month === NOW_MONTH && selDate.day === NOW_DAY;
+    if (isSelToday && slotHour(selTime) <= NOW_HOUR) {
+      setSelTime(firstAvailSlot(NOW_HOUR));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selDate.year, selDate.month, selDate.day]);
 
   if (!applicant) return null;
 
@@ -1124,6 +1154,12 @@ function InterviewSchedulerSheet({ open, onClose, applicant, lang='en', onConfir
   };
 
   const isSelInView = selDate.year === calYear && selDate.month === calMonth;
+
+  // Filter time slots: hide past slots when selected day is today
+  const isSelToday   = selDate.year === NOW_YEAR && selDate.month === NOW_MONTH && selDate.day === NOW_DAY;
+  const visibleSlots = isSelToday ? ALL_SLOTS.filter(s => slotHour(s) > NOW_HOUR) : ALL_SLOTS;
+  // If selTime is no longer visible (became past), show first available instead
+  const displayTime  = visibleSlots.includes(selTime) ? selTime : (visibleSlots[0] || selTime);
 
   const titleLbl   = lang==='pt' ? 'Agendar Entrevista' : lang==='es' ? 'Agendar Entrevista' : 'Schedule Interview';
   const confirmLbl = lang==='pt' ? 'Confirmar entrevista' : lang==='es' ? 'Confirmar entrevista' : 'Confirm interview';
@@ -1213,20 +1249,28 @@ function InterviewSchedulerSheet({ open, onClose, applicant, lang='en', onConfir
         {/* ── Time slots ── */}
         <div style={{marginBottom:18}}>
           <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-400)', marginBottom:8}}>{timeLbl}</div>
-          <div style={{display:'flex', flexWrap:'wrap', gap:7}}>
-            {slots.map(slot => {
-              const on = selTime === slot;
-              return (
-                <button key={slot} onClick={()=>setSelTime(slot)} style={{
-                  padding:'7px 12px', borderRadius:9, border:'none', cursor:'pointer',
-                  fontFamily:'inherit', fontSize:12.5, fontWeight:600, transition:'all .12s',
-                  background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
-                  color: on ? '#fff' : 'var(--pg-ink-700)',
-                  boxShadow: on ? '0 2px 6px oklch(0.58 0.16 235 / 0.25)' : 'none',
-                }}>{slot}</button>
-              );
-            })}
-          </div>
+          {visibleSlots.length === 0 ? (
+            <div style={{fontSize:12.5, color:'var(--pg-ink-400)', fontStyle:'italic', padding:'6px 0', lineHeight:1.5}}>
+              {lang==='pt'?'Nenhum horário disponível para hoje. Selecione outro dia.':
+               lang==='es'?'No hay horarios disponibles hoy. Seleccione otro día.':
+                           'No time slots available for today. Please select another day.'}
+            </div>
+          ) : (
+            <div style={{display:'flex', flexWrap:'wrap', gap:7}}>
+              {visibleSlots.map(slot => {
+                const on = displayTime === slot;
+                return (
+                  <button key={slot} onClick={()=>setSelTime(slot)} style={{
+                    padding:'7px 12px', borderRadius:9, border:'none', cursor:'pointer',
+                    fontFamily:'inherit', fontSize:12.5, fontWeight:600, transition:'all .12s',
+                    background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+                    color: on ? '#fff' : 'var(--pg-ink-700)',
+                    boxShadow: on ? '0 2px 6px oklch(0.58 0.16 235 / 0.25)' : 'none',
+                  }}>{slot}</button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* ── Summary preview ── */}
@@ -1242,7 +1286,7 @@ function InterviewSchedulerSheet({ open, onClose, applicant, lang='en', onConfir
           </svg>
           <div>
             <div style={{fontSize:13, fontWeight:700, color:'oklch(0.36 0.18 145)', letterSpacing:'-0.01em'}}>
-              {tr(dayDisplay, lang)} · {selTime}
+              {tr(dayDisplay, lang)} · {displayTime}
             </div>
             <div style={{fontSize:11, color:'oklch(0.50 0.14 145)', marginTop:1}}>{noteLbl}</div>
           </div>
@@ -1250,7 +1294,7 @@ function InterviewSchedulerSheet({ open, onClose, applicant, lang='en', onConfir
 
         {/* ── Confirm button ── */}
         <button
-          onClick={()=>onConfirm({ day: dayDisplay, time: selTime })}
+          onClick={()=>onConfirm({ day: dayDisplay, time: displayTime })}
           className="pg-btn pg-btn-primary"
           style={{width:'100%', height:50, fontSize:15, borderRadius:14}}>
           {Icon.check(16,'#fff')} {confirmLbl}
