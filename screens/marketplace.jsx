@@ -3230,6 +3230,7 @@ function MarketplaceScreen({ ctx }) {
   const [postMode,   setPostMode]   = React.useState(null); // 'sell'|'rent'|'route'
   const [priceRange, setPriceRange] = React.useState('all');  // equipment price filter
   const [priceOpen,  setPriceOpen]  = React.useState(false);  // price dropdown open
+  const [regionOpen, setRegionOpen] = React.useState(false);  // region dropdown open
   const [routeRegion,setRouteRegion]= React.useState('all');  // routes region filter
   const [routePrice, setRoutePrice] = React.useState('all');  // routes price filter
   const [routeSub,   setRouteSub]   = React.useState('routes'); // 'routes' | 'pools'
@@ -4704,35 +4705,66 @@ function MarketplaceScreen({ ctx }) {
 
             {/* Filters card */}
             <div className="pg-card" style={{padding:'12px 14px', display:'flex', flexDirection:'column', gap:10}}>
-              {/* Region filter — shared */}
-              <div>
-                <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-400)', marginBottom:6}}>
-                  {lang==='pt'?'REGIÃO':lang==='es'?'REGIÓN':'REGION'}
-                </div>
-                <div style={{display:'flex', gap:7, flexWrap:'wrap'}}>
-                  {[
-                    {id:'all',       label: lang==='pt'?'Todas':lang==='es'?'Todas':'All'},
-                    {id:'weston',    label:'Weston'},
-                    {id:'coral',     label:'Coral Gables'},
-                    {id:'pinecrest', label:'Pinecrest'},
-                    {id:'pembroke',  label:'Pembroke'},
-                    {id:'hollywood', label:'Hollywood'},
-                    {id:'doral',     label:'Doral'},
-                    {id:'plantation',label:'Plantation'},
-                  ].filter(o => o.id === 'all' || list.some ? true : true).map(opt => {
-                    const on = routeRegion === opt.id;
-                    return (
-                      <button key={opt.id} onClick={()=>setRouteRegion(opt.id)} style={{
-                        padding:'5px 11px', borderRadius:8, border:'none', cursor:'pointer',
-                        fontFamily:'inherit', fontSize:12, fontWeight:600, transition:'all .12s',
-                        background: on ? 'var(--pg-aqua-500)' : 'var(--pg-ink-100)',
-                        color:      on ? 'var(--pg-blue-900)' : 'var(--pg-ink-700)',
-                        boxShadow:  on ? '0 2px 6px rgba(0,119,182,0.30)' : 'none',
-                      }}>{opt.label}</button>
-                    );
-                  })}
-                </div>
-              </div>
+              {/* Region filter — dropdown */}
+              {(() => {
+                const regionOpts = [
+                  {id:'all',        label: lang==='pt'?'Todas as regiões':lang==='es'?'Todas las regiones':'All regions'},
+                  {id:'weston',     label:'Weston'},
+                  {id:'coral',      label:'Coral Gables'},
+                  {id:'pinecrest',  label:'Pinecrest'},
+                  {id:'pembroke',   label:'Pembroke'},
+                  {id:'hollywood',  label:'Hollywood'},
+                  {id:'doral',      label:'Doral'},
+                  {id:'plantation', label:'Plantation'},
+                ];
+                const activeLabel = regionOpts.find(o => o.id === routeRegion)?.label
+                  || (lang==='pt'?'Todas as regiões':lang==='es'?'Todas las regiones':'All regions');
+                return (
+                  <div>
+                    {/* Trigger chip */}
+                    <button
+                      onClick={()=>setRegionOpen(o=>!o)}
+                      className={`pg-chip ${routeRegion!=='all'?'pg-chip-on':''}`}
+                      style={{width:'100%', justifyContent:'space-between', borderRadius:10, padding:'9px 12px'}}>
+                      <span style={{fontSize:13, fontWeight:600}}>{activeLabel}</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points={regionOpen ? '18 15 12 9 6 15' : '6 9 12 15 18 9'}/>
+                      </svg>
+                    </button>
+                    {/* Dropdown list */}
+                    {regionOpen && (
+                      <div style={{
+                        marginTop:4, borderRadius:10, overflow:'hidden',
+                        border:'0.5px solid var(--pg-ink-200)',
+                        boxShadow:'0 4px 14px rgba(0,0,0,0.10)',
+                        background:'var(--pg-white)',
+                      }}>
+                        {regionOpts.map((opt, i) => {
+                          const on = routeRegion === opt.id;
+                          return (
+                            <button key={opt.id} onClick={()=>{ setRouteRegion(opt.id); setRegionOpen(false); }} style={{
+                              width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+                              padding:'10px 14px', border:'none', cursor:'pointer', fontFamily:'inherit',
+                              background: on ? 'var(--pg-blue-50)' : 'transparent',
+                              borderTop: i > 0 ? '0.5px solid var(--pg-ink-100)' : 'none',
+                              textAlign:'left', transition:'background .1s',
+                            }}>
+                              <span style={{fontSize:13, fontWeight: on ? 700 : 500, color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)'}}>
+                                {opt.label}
+                              </span>
+                              {on && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round">
+                                  <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Price filter — routes */}
               {routeSub === 'routes' && (
