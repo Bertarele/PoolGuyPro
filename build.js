@@ -119,14 +119,17 @@ html = html.replace(
 );
 
 // 2. Remove Babel script tag (CDN)
+//    Use [^>]* instead of [^/]* so the integrity SHA (which contains '/') doesn't break the match
 html = html.replace(
-  /\s*<script src="[^"]*babel\.min\.js[^"]*"[^/]*\/?>\s*(?:<\/script>)?\s*/gi,
+  /\s*<script[^>]*src="[^"]*babel\.min\.js[^"]*"[^>]*><\/script>\s*/gi,
   '\n'
 );
 
 // 3. Remove the Babel compile-cache IIFE block
-//    Finds: <script>\n  (function() {\n    if (!window.Babel)
-const babelCacheRx = /\s*<script>\s*\(function\(\)\s*\{[^]*?if\s*\(!window\.Babel\)[^]*?\}\)\(\);\s*<\/script>/g;
+//    Anchored on the unique opening line: (function() {\n    if (!window.Babel)
+//    Uses a negative lookahead to never cross a </script> boundary — prevents
+//    accidentally eating the Supabase SDK or React CDN scripts that also use IIFEs.
+const babelCacheRx = /\s*<script>\s*\(function\(\)\s*\{\s*if\s*\(!window\.Babel\)(?:(?!<\/script>)[\s\S])*?<\/script>/g;
 html = html.replace(babelCacheRx, '');
 
 // 4. Convert type="text/babel" script tags → plain <script src="...js">
