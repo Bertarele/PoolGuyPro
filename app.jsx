@@ -263,15 +263,15 @@ function App() {
       try {
         const { data: { session } } = await window.sb.auth.getSession();
         if (session) {
-          // Refresh token before anything else
-          if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(() => {});
-          // Load profile — sets user.name, uid, role
-          await handleAuthLogin(session.user);
+          // Fire-and-forget: token refresh + profile load run in background
+          // so data fetch (jobs/market) starts immediately without waiting for them
+          window.sb.auth.refresh && window.sb.auth.refresh().catch(() => {});
+          handleAuthLogin(session.user); // non-blocking — sets user + isLoggedIn when done
         }
       } catch(e) {
         console.warn('[Auth] Session restore failed:', e.message);
       } finally {
-        setAuthReady(true); // always ungate, even if no session
+        setAuthReady(true); // ungate data fetch immediately — public tables need no auth
       }
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -322,8 +322,11 @@ function App() {
   }, [user?.uid]);
 
   React.useEffect(() => {
-    if (isLoggedIn && user?.uid) loadPendingRatings();
-  }, [isLoggedIn, user?.uid, loadPendingRatings]);
+    if (isLoggedIn && user?.uid) {
+      loadPendingRatings();
+      loadLiveApplications(user.uid); // load immediately on login, not just on 30s poll
+    }
+  }, [isLoggedIn, user?.uid, loadPendingRatings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Overlays
   const [chatOpen,         setChatOpen]        = React.useState(false);
@@ -435,7 +438,6 @@ function App() {
       soldAt: r.sold_at || null });
 
     // Data fetch — runs AFTER auth is ready (authReady gate above)
-    // Token was already refreshed in the boot sequence, so this should always work
     const doFetch = async () => {
       const [j, tc, v, m] = await Promise.all([
         window.sb.from('jobs').select('*').order('created_at', { ascending: false }),
@@ -448,24 +450,23 @@ function App() {
       if (v.data)  setLiveVacations(v.data.map(normVac));
       if (m.data)  setLiveMarket(m.data.map(normMkt));
       if (m.error) console.warn('[Supabase] marketplace fetch error:', m.error.message);
-      // Load applicant counts for all jobs (used in "My Posts" badge display)
+      // Load applicant counts in background — non-blocking, doesn't delay UI render
       if (j.data && j.data.length > 0) {
         const jobIds = j.data.map(r => r.id);
         liveJobIdsRef.current = jobIds;
-        const { data: appRows } = await window.sb
-          .from('job_applications')
-          .select('job_id, status, interview_day')
-          .in('job_id', jobIds);
-        if (appRows) {
-          const counts = {};
-          appRows.forEach(row => {
-            if (!counts[row.job_id]) counts[row.job_id] = { total: 0, pending: 0, withInterview: 0 };
-            counts[row.job_id].total++;
-            if (row.status === 'pending') counts[row.job_id].pending++;
-            if (row.interview_day) counts[row.job_id].withInterview++;
+        window.sb.from('job_applications').select('job_id, status, interview_day')
+          .in('job_id', jobIds)
+          .then(({ data: appRows }) => {
+            if (!appRows) return;
+            const counts = {};
+            appRows.forEach(row => {
+              if (!counts[row.job_id]) counts[row.job_id] = { total: 0, pending: 0, withInterview: 0 };
+              counts[row.job_id].total++;
+              if (row.status === 'pending') counts[row.job_id].pending++;
+              if (row.interview_day) counts[row.job_id].withInterview++;
+            });
+            setJobApplicantCounts(counts);
           });
-          setJobApplicantCounts(counts);
-        }
       }
     };
     doFetch().catch(e => console.warn('[Supabase] fetch:', e.message));
