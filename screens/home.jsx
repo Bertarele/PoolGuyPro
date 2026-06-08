@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], hasUnreadChat, hasUnreadNotif, openListingById } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost } = ctx;
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
 
@@ -137,7 +137,7 @@ function HomeScreen({ ctx }) {
                   {adsCountLbl}
                 </span>
               )}
-              <button onClick={()=>goTab('market')} style={{
+              <button onClick={()=>openMarketPost && openMarketPost()} style={{
                 border:'none', background:'var(--pg-blue-500)', color:'#fff',
                 width:30, height:30, borderRadius:'50%', cursor:'pointer',
                 display:'flex', alignItems:'center', justifyContent:'center',
@@ -153,7 +153,7 @@ function HomeScreen({ ctx }) {
 
           {/* No posts state */}
           {myPosts.length === 0 && (
-            <button onClick={()=>goTab('market')} style={{
+            <button onClick={()=>openMarketPost && openMarketPost()} style={{
               width:'100%', padding:'20px 16px', borderRadius:14, cursor:'pointer',
               border:'2px dashed var(--pg-ink-200)', background:'var(--pg-ink-50, #F7F9FB)',
               display:'flex', flexDirection:'column', alignItems:'center', gap:10,
