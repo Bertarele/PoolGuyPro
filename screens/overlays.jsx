@@ -2962,6 +2962,17 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onCha
       data = Array.isArray(res.data) ? res.data[0] : null;
     }
     if (!data) return;
+
+    // Resolve author_id: prefer what's already on app (from liveJobs match),
+    // then fall back to the DB-stored job_author_id column, then query jobs table.
+    let resolvedAuthorId = app?.author_id || data.job_author_id || null;
+    if (!resolvedAuthorId && data.job_id && window.sb) {
+      try {
+        const jr = await window.sb.from('jobs').select('author_id').eq('id', data.job_id);
+        if (jr.data && jr.data[0]) resolvedAuthorId = jr.data[0].author_id || null;
+      } catch(e) {}
+    }
+
     setFreshApp({
       ...app,
       status:       data.status || app.status,
@@ -2970,6 +2981,8 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onCha
         day:  { en: data.interview_day, pt: data.interview_day, es: data.interview_day },
         time: data.interview_time || '',
       } : null,
+      author_id:    resolvedAuthorId,   // always up-to-date
+      job_id:       data.job_id || app?.job_id,
     });
   }, [app?.id, app?.job_id]); // eslint-disable-line
 

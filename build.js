@@ -132,12 +132,15 @@ html = html.replace(
 const babelCacheRx = /\s*<script>\s*\(function\(\)\s*\{\s*if\s*\(!window\.Babel\)(?:(?!<\/script>)[\s\S])*?<\/script>/g;
 html = html.replace(babelCacheRx, '');
 
-// 4. Convert type="text/babel" script tags → plain <script src="...js">
+// 4. Convert type="text/babel" script tags → plain <script src="...js?v=BUILD_VER">
+//    Build version is a short timestamp hash so each deploy gets a unique URL,
+//    breaking browser immutable cache from previous deploys automatically.
 //    e.g. <script type="text/babel" src="screens/overlays.jsx?v=133">
-//      →  <script src="screens/overlays.js">
+//      →  <script src="screens/overlays.js?v=1x2y3z4"></script>
+const BUILD_VER = Date.now().toString(36); // e.g. "lx4k2j9" — unique per build
 html = html.replace(
   /<script\s+type="text\/babel"\s+src="([^"?]+)\.jsx(?:\?[^"]*)?"\s*><\/script>/g,
-  (_, file) => `<script src="${file}.js"></script>`
+  (_, file) => `<script src="${file}.js?v=${BUILD_VER}"></script>`
 );
 
 fs.writeFileSync(path.join(DIST, 'index.html'), html, 'utf8');
