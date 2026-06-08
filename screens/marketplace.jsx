@@ -3593,9 +3593,10 @@ function MarketplaceScreen({ ctx }) {
   // ── DESKTOP LAYOUT (≥ 900px) ─────────────────────────────────
   // ══════════════════════════════════════════════════════════════
   if (isDesktop) {
-    const liveEquipment = liveMarket.filter(m => m.type === mode && (
-      user.role==='admin' || m.status==='approved' || (m.status==='pending'&&isMyPost(m)) || isSoldVisible(m)
-    ));
+    const liveEquipment = liveMarket.filter(m => m.type === mode &&
+      (cat === 'All' || !m.cat || m.cat === cat) &&
+      (user.role==='admin' || m.status==='approved' || (m.status==='pending'&&isMyPost(m)) || isSoldVisible(m))
+    );
     return (
       <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
       <div style={{height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
@@ -4333,12 +4334,14 @@ function MarketplaceScreen({ ctx }) {
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(155px, 1fr))', gap:12, marginTop:14}}>
             {/* Live user-posted equipment items */}
             {liveMarket
-              .filter(m => m.type === mode && (
-                user.role === 'admin' ||   // admin vê tudo (pending de qualquer um)
-                m.status === 'approved' ||
-                (m.status === 'pending' && isMyPost(m)) ||
-                isSoldVisible(m)
-              ))
+              .filter(m => m.type === mode &&
+                (cat === 'All' || !m.cat || m.cat === cat) &&
+                (
+                  user.role === 'admin' ||   // admin vê tudo (pending de qualquer um)
+                  m.status === 'approved' ||
+                  (m.status === 'pending' && isMyPost(m)) ||
+                  isSoldVisible(m)
+                ))
               .map(item => {
                 const isPending = item.status === 'pending';
                 const isSoldItem = item.status === 'sold';

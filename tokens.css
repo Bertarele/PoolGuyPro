@@ -84,6 +84,7 @@ button { font-family: inherit; }
   height: 44px; padding: 0 18px; border-radius: 12px;
   font-weight: 600; font-size: 15px; letter-spacing: -0.01em;
   border: none; cursor: pointer; transition: transform .1s ease, opacity .15s ease;
+  touch-action: manipulation;
 }
 .pg-btn:active { transform: scale(0.97); }
 .pg-btn-primary {
@@ -102,6 +103,7 @@ button { font-family: inherit; }
   background: var(--pg-ink-100); color: var(--pg-ink-700);
   border: 0.5px solid var(--pg-ink-200);
   white-space: nowrap; cursor: pointer; transition: all .12s ease;
+  touch-action: manipulation;
 }
 .pg-chip-on   { background: var(--pg-blue-500); color: #fff; border-color: var(--pg-blue-500); }
 .pg-chip-aqua { background: var(--pg-aqua-100); color: var(--pg-aqua-700); border-color: transparent; }
@@ -250,7 +252,7 @@ button { font-family: inherit; }
 }
 
 /* Subtle scrollbar hide */
-.pg-scroll-x { overflow-x: auto; scrollbar-width: none; }
+.pg-scroll-x { overflow-x: auto; scrollbar-width: none; touch-action: pan-x; }
 .pg-scroll-x::-webkit-scrollbar { display: none; }
 
 /* Active scale on tap */
