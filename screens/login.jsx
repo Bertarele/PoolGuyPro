@@ -248,42 +248,47 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   // ── Shared input style for desktop ─────────────────────────────
   const deskInput = {height:50, fontSize:14, background:'#fff', border:'1.5px solid #e2e8f0', color:'#0A2840', borderRadius:12};
 
-  // ── DESKTOP layout ──────────────────────────────────────────────
+  // ── DESKTOP layout — card centralizado sobre foto ───────────────
   if (isDesktop) {
     return (
-      <div style={{width:'100%', height:'100%', display:'flex', overflow:'hidden'}}>
-        {/* Left — full photo + logo */}
-        <div style={{flex:'0 0 50%', position:'relative', overflow:'hidden'}}>
-          <div style={{position:'absolute', inset:0, backgroundImage:'url(login-bg.png)', backgroundSize:'cover', backgroundPosition:'center'}}/>
-          <div style={{position:'absolute', inset:0, background:'linear-gradient(160deg, rgba(0,0,0,0.05) 0%, rgba(0,20,60,0.55) 100%)'}}/>
-          <div style={{position:'relative', zIndex:2, height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, padding:'40px 48px'}}>
-            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:160, width:'auto', filter:'drop-shadow(0 6px 32px rgba(0,0,0,0.55)) brightness(1.1)'}}/>
-            <div style={{display:'flex', alignItems:'center', gap:12, marginTop:4}}>
-              <div style={{width:36, height:1.5, background:'rgba(255,255,255,0.55)', borderRadius:2}}/>
-              <span style={{fontSize:12, fontWeight:600, color:'#fff', letterSpacing:'0.08em', textTransform:'uppercase', textShadow:'0 1px 8px rgba(0,0,0,0.45)'}}>{t.tagline}</span>
-              <div style={{width:36, height:1.5, background:'rgba(255,255,255,0.55)', borderRadius:2}}/>
-            </div>
-            <p style={{fontSize:13, color:'rgba(255,255,255,0.80)', textAlign:'center', lineHeight:1.6, maxWidth:280, margin:'2px 0 0', textShadow:'0 1px 6px rgba(0,0,0,0.35)'}}>{t.loginSub}</p>
-          </div>
+      <div style={{width:'100%', height:'100%', position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden'}}>
+        {/* Background full screen */}
+        <div style={{position:'absolute', inset:0, backgroundImage:'url(login-bg.png)', backgroundSize:'cover', backgroundPosition:'center'}}/>
+        <div style={{position:'absolute', inset:0, background:'linear-gradient(160deg, rgba(0,10,40,0.30) 0%, rgba(0,20,60,0.55) 100%)'}}/>
+
+        {/* Language switcher */}
+        <div style={{position:'absolute', top:20, right:24, display:'flex', gap:6, zIndex:10}}>
+          {langs.map(l => (
+            <button key={l.id} onClick={()=>setLang(l.id)} style={{
+              padding:'5px 11px', borderRadius:8, border:'1.5px solid', cursor:'pointer',
+              fontFamily:'inherit', fontSize:11, fontWeight:700, letterSpacing:'0.05em',
+              background: lang===l.id ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.20)',
+              borderColor: lang===l.id ? '#fff' : 'rgba(255,255,255,0.40)',
+              color: lang===l.id ? '#1565E8' : '#fff',
+              backdropFilter:'blur(8px)', transition:'all .15s',
+            }}>{l.flag} {l.short}</button>
+          ))}
         </div>
 
-        {/* Right — white form panel */}
-        <div style={{flex:'0 0 50%', background:'#ffffff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 48px', overflowY:'auto', position:'relative'}}>
-          {/* Language switcher */}
-          <div style={{position:'absolute', top:20, right:24, display:'flex', gap:6}}>
-            {langs.map(l => (
-              <button key={l.id} onClick={()=>setLang(l.id)} style={{
-                padding:'4px 10px', borderRadius:8, border:'1.5px solid', cursor:'pointer',
-                fontFamily:'inherit', fontSize:10.5, fontWeight:700, letterSpacing:'0.05em',
-                background: lang===l.id ? '#EEF4FF' : 'transparent',
-                borderColor: lang===l.id ? '#1565E8' : '#e2e8f0',
-                color: lang===l.id ? '#1565E8' : '#94a3b8',
-                transition:'all .15s',
-              }}>{l.flag} {l.short}</button>
-            ))}
+        {/* Centered card */}
+        <div style={{
+          position:'relative', zIndex:2,
+          width:'100%', maxWidth:440,
+          background:'rgba(255,255,255,0.97)',
+          backdropFilter:'blur(20px)',
+          borderRadius:24,
+          padding:'36px 40px 32px',
+          boxShadow:'0 24px 64px rgba(0,0,0,0.28)',
+          margin:'0 20px',
+          overflowY:'auto', maxHeight:'calc(100% - 40px)',
+        }}>
+          {/* Logo + tagline no topo do card */}
+          <div style={{textAlign:'center', marginBottom:24}}>
+            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:72, width:'auto', filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.15))'}}/>
+            <div style={{fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:6}}>{t.tagline}</div>
           </div>
 
-          <div style={{width:'100%', maxWidth:360}}>
+          <div style={{width:'100%'}}>
 
             {/* ── LOGIN mode ── */}
             {mode === 'login' && (<>
@@ -454,7 +459,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             </>)}
 
           </div>
-        </div>
+        </div>{/* end card */}
         <style>{`@keyframes pgSpin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
