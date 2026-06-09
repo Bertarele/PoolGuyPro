@@ -661,7 +661,7 @@ function WorkScreen({ ctx }) {
                 cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
               {Icon.pin(11,'rgba(255,255,255,0.70)')}
               <span style={{fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.85)', whiteSpace:'nowrap'}}>
-                {workCountyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
+                {workCountyFilter.length === 3 ? (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL') : workCountyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
               </span>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -688,7 +688,7 @@ function WorkScreen({ ctx }) {
                 cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
               {Icon.pin(11,'rgba(255,255,255,0.70)')}
               <span style={{fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.85)', whiteSpace:'nowrap'}}>
-                {workCountyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
+                {workCountyFilter.length === 3 ? (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL') : workCountyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
               </span>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
