@@ -651,14 +651,26 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
               </div>
             </div>
 
+            {/* Bio */}
+            {profile?.bio && (
+              <div style={{padding:'10px 13px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',marginBottom:14}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>Bio</div>
+                <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6,whiteSpace:'pre-wrap'}}>{profile.bio}</div>
+              </div>
+            )}
+
             {/* Info grid */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:16}}>
               <InfoRow label="E-mail" value={profile?.email} highlight="#0EBAC7"/>
               <InfoRow label="Telefone" value={profile?.phone}/>
               <InfoRow label="Região" value={profile?.region}/>
               <InfoRow label="Função" value={profile?.role==='admin'?'🛡 Admin':'👤 Usuário'}/>
+              <InfoRow label="Especialidade" value={profile?.specialty}/>
+              <InfoRow label="Empresa" value={profile?.company}/>
+              <InfoRow label="Licença" value={profile?.license}/>
+              <InfoRow label="Anos de exp." value={profile?.years_exp ? profile.years_exp+' anos' : null}/>
               <InfoRow label="ID do usuário" value={userId?.slice(0,16)+'…'}/>
-              <InfoRow label="Status" value={profile?.banned_at ? '🚫 Banido' : '✅ Ativo'} highlight={profile?.banned_at?'#ef4444':'#22c55e'}/>
+              <InfoRow label="Status" value={banned ? '🚫 Banido' : '✅ Ativo'} highlight={banned?'#ef4444':'#22c55e'}/>
             </div>
 
             {/* Stats */}
@@ -1332,7 +1344,15 @@ function AdminApp({ adminUser, onLogout }) {
               <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',overflow:'hidden'}}>
                 <DataTable loading={loading} rows={users}
                   columns={[
-                    {key:'name',       label:'Nome'},
+                    {key:'name', label:'Nome', render:(v,row)=>(
+                      <button onClick={()=>setViewUserModal({userId:row.id, userName:row.name})}
+                        style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',
+                          fontSize:13,fontWeight:600,color:'#0EBAC7',padding:0,textAlign:'left',
+                          textDecoration:'underline',textDecorationColor:'rgba(14,186,199,0.35)',
+                          textUnderlineOffset:3,whiteSpace:'nowrap',maxWidth:150,overflow:'hidden',textOverflow:'ellipsis',display:'block'}}>
+                        {v||'—'}
+                      </button>
+                    )},
                     {key:'email',      label:'E-mail'},
                     {key:'phone',      label:'Telefone'},
                     {key:'verified',   label:'Verificado', render:(v,row)=>(
@@ -1349,6 +1369,7 @@ function AdminApp({ adminUser, onLogout }) {
                   onDelete={row=>deleteRow('profiles',row)}
                   onPromote={toggleAdmin}
                   onVerify={toggleVerified}
+                  onView={row=>setViewUserModal({userId:row.id, userName:row.name})}
                 />
               </div>
             </div>
