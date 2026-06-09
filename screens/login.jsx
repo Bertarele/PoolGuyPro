@@ -159,15 +159,17 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   return (
     <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
 
-      {/* ── Hero background — real photo ── */}
+      {/* ── Background — full screen photo ── */}
       <div style={{
         position:'absolute', inset:0,
         backgroundImage:'url(login-bg.png)',
         backgroundSize:'cover',
-        backgroundPosition:'center top',
+        backgroundPosition:'center center',
         backgroundRepeat:'no-repeat',
         zIndex:0,
       }}/>
+      {/* Dark overlay for readability */}
+      <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.72) 100%)', zIndex:1}}/>
 
       {/* ── Language switcher ── */}
       <div style={{position:'absolute', top:18, right:16, display:'flex', gap:5, zIndex:10}}>
@@ -175,8 +177,9 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           <button key={l.id} onClick={()=>setLang(l.id)} style={{
             padding:'4px 9px', borderRadius:8, border:'none', cursor:'pointer',
             fontFamily:'inherit', fontSize:10.5, fontWeight:700, letterSpacing:'0.05em',
-            background: lang===l.id ? 'rgba(0,80,130,0.15)' : 'rgba(255,255,255,0.45)',
-            color: lang===l.id ? '#004E8A' : 'rgba(0,60,100,0.55)',
+            background: lang===l.id ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.12)',
+            color: lang===l.id ? '#ffffff' : 'rgba(255,255,255,0.65)',
+            backdropFilter:'blur(8px)',
             transition:'all .15s',
           }}>{l.flag} {l.short}</button>
         ))}
@@ -197,45 +200,40 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             width: 'auto',
             display: 'block',
             marginBottom: 22,
-            filter: 'drop-shadow(0 4px 14px rgba(0,60,120,0.18))',
+            filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.40)) brightness(1.1)',
           }}
         />
 
         {/* Tagline with decorative lines */}
         <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:6}}>
-          <div style={{width:32, height:1.5, background:'rgba(0,80,130,0.30)', borderRadius:2}}/>
+          <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
           <span style={{
-            fontSize:12, fontWeight:600, color:'rgba(0,50,100,0.70)',
+            fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.90)',
             letterSpacing:'0.06em', textTransform:'uppercase',
+            textShadow:'0 1px 6px rgba(0,0,0,0.40)',
           }}>{t.tagline}</span>
-          <div style={{width:32, height:1.5, background:'rgba(0,80,130,0.30)', borderRadius:2}}/>
+          <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
         </div>
 
         {/* Subtitle */}
         <p style={{
-          margin:'8px 0 0', fontSize:13, color:'rgba(0,50,100,0.55)',
+          margin:'8px 0 0', fontSize:13, color:'rgba(255,255,255,0.75)',
           textAlign:'center', lineHeight:1.5, maxWidth:240, padding:'0 20px',
+          textShadow:'0 1px 4px rgba(0,0,0,0.35)',
         }}>{t.loginSub}</p>
       </div>
 
-      {/* ── Wave SVG — light aqua to white ── */}
-      <div style={{position:'relative', zIndex:2, marginTop:24, flexShrink:0, lineHeight:0}}>
-        <svg viewBox="0 0 402 56" width="100%" height="56" preserveAspectRatio="none">
-          <path d="M0 30 Q50 5 100 30 Q150 55 200 30 Q250 5 300 30 Q350 55 402 30 L402 56 L0 56 Z"
-            fill="rgba(255,255,255,0.40)"/>
-          <path d="M0 38 Q60 14 120 38 Q180 62 240 38 Q300 14 360 38 Q385 48 402 42 L402 56 L0 56 Z"
-            fill="rgba(255,255,255,0.60)"/>
-          <path d="M0 46 Q80 28 160 46 Q240 64 320 46 Q365 36 402 48 L402 56 L0 56 Z"
-            fill="white"/>
-        </svg>
-      </div>
-
-      {/* ── Form card ── */}
+      {/* ── Form card — glass over photo ── */}
       <div style={{
         position:'relative', zIndex:2, flex:1,
-        background:'var(--pg-white)', padding:'20px 24px 24px',
+        background:'rgba(255,255,255,0.10)',
+        backdropFilter:'blur(18px)',
+        WebkitBackdropFilter:'blur(18px)',
+        borderTop:'1px solid rgba(255,255,255,0.20)',
+        padding:'24px 24px 28px',
         display:'flex', flexDirection:'column', gap:12,
         overflowY:'auto',
+        marginTop:28,
       }}>
 
         {/* ══ LOGIN MODE ══ */}
@@ -243,23 +241,23 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
           {/* Email */}
           <div>
-            <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'var(--pg-ink-500)', marginBottom:6}}>EMAIL</div>
+            <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:6}}>EMAIL</div>
             <input className="pg-field" type="email" value={email}
               onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
-              placeholder="you@email.com" style={{height:48, fontSize:14}}/>
+              placeholder="you@email.com" style={{height:48, fontSize:14, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
           </div>
 
           {/* Password */}
           <div>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6}}>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'var(--pg-ink-500)'}}>{t.passLbl.toUpperCase()}</div>
-              <button style={{border:'none', background:'transparent', color:'var(--pg-blue-500)',
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)'}}>{t.passLbl.toUpperCase()}</div>
+              <button style={{border:'none', background:'transparent', color:'rgba(255,255,255,0.85)',
                 fontSize:12, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.forgotPw}</button>
             </div>
             <div style={{position:'relative'}}>
               <input className="pg-field" type={showPass?'text':'password'} value={pass}
                 onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
-                placeholder="••••••••" style={{height:48, fontSize:14, paddingRight:46}}/>
+                placeholder="••••••••" style={{height:48, fontSize:14, paddingRight:46, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
               <button onClick={()=>setShowPass(p=>!p)} style={{
                 position:'absolute', right:14, top:'50%', transform:'translateY(-50%)',
                 border:'none', background:'transparent', cursor:'pointer', padding:4,
@@ -286,18 +284,18 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           </button>
 
           <div style={{display:'flex', alignItems:'center', gap:10, margin:'2px 0'}}>
-            <div style={{flex:1, height:1, background:'var(--pg-ink-200)'}}/>
-            <span style={{fontSize:11, color:'var(--pg-ink-400)', fontWeight:500}}>{t.orLbl}</span>
-            <div style={{flex:1, height:1, background:'var(--pg-ink-200)'}}/>
+            <div style={{flex:1, height:1, background:'rgba(255,255,255,0.25)'}}/>
+            <span style={{fontSize:11, color:'rgba(255,255,255,0.65)', fontWeight:500}}>{t.orLbl}</span>
+            <div style={{flex:1, height:1, background:'rgba(255,255,255,0.25)'}}/>
           </div>
 
           <button onClick={() => {
             const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
             const redirect = window.location.origin || 'https://usapoolmarket.com';
             window.location.href = base + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(redirect);
-          }} style={{width:'100%', height:48, borderRadius:12, border:'1.5px solid var(--pg-ink-200)',
-            background:'var(--pg-white)', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:13.5,
-            color:'var(--pg-ink-900)', display:'flex', alignItems:'center', justifyContent:'center', gap:9}}>
+          }} style={{width:'100%', height:48, borderRadius:12, border:'1px solid rgba(255,255,255,0.30)',
+            background:'rgba(255,255,255,0.18)', backdropFilter:'blur(8px)', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:13.5,
+            color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', gap:9}}>
             <svg width="18" height="18" viewBox="0 0 48 48">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
               <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -307,13 +305,13 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             Continue with Google
           </button>
 
-          <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'var(--pg-ink-500)',
+          <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'rgba(255,255,255,0.65)',
             fontSize:13, cursor:'pointer', padding:'2px 0', fontFamily:'inherit',
-            textDecoration:'underline', textDecorationColor:'var(--pg-ink-300)'}}>{t.continueGuest}</button>
+            textDecoration:'underline', textDecorationColor:'rgba(255,255,255,0.35)'}}>{t.continueGuest}</button>
 
           <div style={{textAlign:'center', marginTop:'auto', paddingBottom:4}}>
-            <span style={{fontSize:12.5, color:'var(--pg-ink-500)'}}>{t.noAccount} </span>
-            <button onClick={goSignup} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)',
+            <span style={{fontSize:12.5, color:'rgba(255,255,255,0.70)'}}>{t.noAccount} </span>
+            <button onClick={goSignup} style={{border:'none', background:'transparent', color:'#fff',
               fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.signUp}</button>
           </div>
         </>)}
@@ -323,15 +321,15 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
           {/* Header */}
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:4}}>
-            <button onClick={step===1 ? goLogin : ()=>setStep(1)} style={{border:'none', background:'var(--pg-ink-100)', width:32, height:32,
-              borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
-              {Icon.chev(16,'var(--pg-ink-700)','left')}
+            <button onClick={step===1 ? goLogin : ()=>setStep(1)} style={{border:'none', background:'rgba(255,255,255,0.18)', width:32, height:32,
+              borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, backdropFilter:'blur(6px)'}}>
+              {Icon.chev(16,'#fff','left')}
             </button>
             <div>
-              <div style={{fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, color:'var(--pg-ink-900)'}}>
+              <div style={{fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, color:'#fff'}}>
                 {lang==='pt'?'Criar conta':lang==='es'?'Crear cuenta':'Create account'}
               </div>
-              <div style={{fontSize:11, color:'var(--pg-ink-400)'}}>
+              <div style={{fontSize:11, color:'rgba(255,255,255,0.65)'}}>
                 {lang==='pt'?`Passo ${step} de 2`:lang==='es'?`Paso ${step} de 2`:`Step ${step} of 2`}
               </div>
             </div>
@@ -347,26 +345,26 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           {/* ── Step 1: Name + Email + Password + Confirm Password ── */}
           {step === 1 && (<>
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'var(--pg-ink-500)', marginBottom:6}}>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:6}}>
                 {lang==='pt'?'NOME COMPLETO':lang==='es'?'NOMBRE COMPLETO':'FULL NAME'}
               </div>
               <input className="pg-field" type="text" value={name} onChange={e=>setName(e.target.value)}
                 placeholder={lang==='pt'?'Seu nome completo':lang==='es'?'Tu nombre completo':'Your full name'}
-                style={{height:48, fontSize:14}}/>
+                style={{height:48, fontSize:14, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
             </div>
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'var(--pg-ink-500)', marginBottom:6}}>EMAIL</div>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:6}}>EMAIL</div>
               <input className="pg-field" type="email" value={email} onChange={e=>setEmail(e.target.value)}
-                placeholder="you@email.com" style={{height:48, fontSize:14}}/>
+                placeholder="you@email.com" style={{height:48, fontSize:14, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
             </div>
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'var(--pg-ink-500)', marginBottom:6}}>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:6}}>
                 {t.passLbl.toUpperCase()}
               </div>
               <div style={{position:'relative'}}>
                 <input className="pg-field" type={showPass?'text':'password'} value={pass} onChange={e=>setPass(e.target.value)}
                   placeholder={lang==='pt'?'Mín. 8 caracteres':lang==='es'?'Mín. 8 caracteres':'Min. 8 characters'}
-                  style={{height:48, fontSize:14, paddingRight:46}}/>
+                  style={{height:48, fontSize:14, paddingRight:46, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
                 <button onClick={()=>setShowPass(p=>!p)} style={{position:'absolute', right:14, top:'50%', transform:'translateY(-50%)',
                   border:'none', background:'transparent', cursor:'pointer', padding:4, color:'var(--pg-ink-400)', display:'flex', alignItems:'center'}}>
                   {showPass
@@ -412,7 +410,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             {/* Confirm password */}
             <div>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6}}>
-                <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'var(--pg-ink-500)'}}>
+                <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)'}}>
                   {lang==='pt'?'CONFIRMAR SENHA':lang==='es'?'CONFIRMAR CONTRASEÑA':'CONFIRM PASSWORD'}
                 </div>
                 {passConfirm.length >= 1 && (
@@ -430,9 +428,10 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                   placeholder="••••••••"
                   style={{
                     height:48, fontSize:14, paddingRight:46,
-                    borderColor: passConfirm.length >= 4
-                      ? (passMatch ? 'var(--pg-green-500,#22c55e)' : 'var(--pg-red-400,#f87171)')
-                      : undefined,
+                    background:'rgba(255,255,255,0.15)', color:'#fff', backdropFilter:'blur(4px)',
+                    border: passConfirm.length >= 4
+                      ? `1px solid ${passMatch ? '#22c55e' : '#f87171'}`
+                      : '1px solid rgba(255,255,255,0.25)',
                   }}/>
                 <button onClick={()=>setShowPassC(p=>!p)} style={{position:'absolute', right:14, top:'50%', transform:'translateY(-50%)',
                   border:'none', background:'transparent', cursor:'pointer', padding:4, color:'var(--pg-ink-400)', display:'flex', alignItems:'center'}}>
@@ -456,7 +455,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
             {/* Searchable region picker */}
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'var(--pg-ink-500)', marginBottom:8}}>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:8}}>
                 {lang==='pt'?'REGIÃO / CIDADE':lang==='es'?'REGIÓN / CIUDAD':'REGION / CITY'}
               </div>
 
@@ -558,8 +557,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           </>)}
 
           <div style={{textAlign:'center', marginTop:'auto', paddingBottom:4}}>
-            <span style={{fontSize:12.5, color:'var(--pg-ink-500)'}}>{lang==='pt'?'Já tem conta? ':lang==='es'?'¿Ya tienes cuenta? ':'Already have an account? '}</span>
-            <button onClick={goLogin} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)',
+            <span style={{fontSize:12.5, color:'rgba(255,255,255,0.70)'}}>{lang==='pt'?'Já tem conta? ':lang==='es'?'¿Ya tienes cuenta? ':'Already have an account? '}</span>
+            <button onClick={goLogin} style={{border:'none', background:'transparent', color:'#fff',
               fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit'}}>
               {lang==='pt'?'Entrar':lang==='es'?'Iniciar sesión':'Sign in'}
             </button>
