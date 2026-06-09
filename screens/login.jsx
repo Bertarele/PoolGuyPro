@@ -168,8 +168,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         backgroundRepeat:'no-repeat',
         zIndex:0,
       }}/>
-      {/* Dark overlay for readability */}
-      <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.72) 100%)', zIndex:1}}/>
+      {/* Subtle overlay apenas na parte de baixo para legibilidade do form */}
+      <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, transparent 0%, transparent 40%, rgba(0,0,0,0.30) 100%)', zIndex:1}}/>
 
       {/* ── Language switcher ── */}
       <div style={{position:'absolute', top:18, right:16, display:'flex', gap:5, zIndex:10}}>
