@@ -199,13 +199,13 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             height: 220,
             width: 'auto',
             display: 'block',
-            marginBottom: 22,
+            marginBottom: 6,
             filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.40)) brightness(1.1)',
           }}
         />
 
         {/* Tagline with decorative lines */}
-        <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:6}}>
+        <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:2}}>
           <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
           <span style={{
             fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.90)',
@@ -217,7 +217,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
         {/* Subtitle */}
         <p style={{
-          margin:'8px 0 0', fontSize:13, color:'rgba(255,255,255,0.75)',
+          margin:'2px 0 0', fontSize:13, color:'rgba(255,255,255,0.75)',
           textAlign:'center', lineHeight:1.5, maxWidth:240, padding:'0 20px',
           textShadow:'0 1px 4px rgba(0,0,0,0.35)',
         }}>{t.loginSub}</p>
