@@ -241,10 +241,10 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
           {/* Email */}
           <div>
-            <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:6}}>EMAIL</div>
+            <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.95)', marginBottom:6}}>EMAIL</div>
             <input className="pg-field" type="email" value={email}
               onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
-              placeholder="you@email.com" style={{height:48, fontSize:14, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
+              placeholder="you@email.com" style={{height:48, fontSize:14, background:'rgba(255,255,255,0.82)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
           </div>
 
           {/* Password */}
@@ -257,7 +257,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             <div style={{position:'relative'}}>
               <input className="pg-field" type={showPass?'text':'password'} value={pass}
                 onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
-                placeholder="••••••••" style={{height:48, fontSize:14, paddingRight:46, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
+                placeholder="••••••••" style={{height:48, fontSize:14, paddingRight:46, background:'rgba(255,255,255,0.82)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
               <button onClick={()=>setShowPass(p=>!p)} style={{
                 position:'absolute', right:14, top:'50%', transform:'translateY(-50%)',
                 border:'none', background:'transparent', cursor:'pointer', padding:4,
@@ -345,26 +345,26 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           {/* ── Step 1: Name + Email + Password + Confirm Password ── */}
           {step === 1 && (<>
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:6}}>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.95)', marginBottom:6}}>
                 {lang==='pt'?'NOME COMPLETO':lang==='es'?'NOMBRE COMPLETO':'FULL NAME'}
               </div>
               <input className="pg-field" type="text" value={name} onChange={e=>setName(e.target.value)}
                 placeholder={lang==='pt'?'Seu nome completo':lang==='es'?'Tu nombre completo':'Your full name'}
-                style={{height:48, fontSize:14, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
+                style={{height:48, fontSize:14, background:'rgba(255,255,255,0.82)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
             </div>
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:6}}>EMAIL</div>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.95)', marginBottom:6}}>EMAIL</div>
               <input className="pg-field" type="email" value={email} onChange={e=>setEmail(e.target.value)}
-                placeholder="you@email.com" style={{height:48, fontSize:14, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
+                placeholder="you@email.com" style={{height:48, fontSize:14, background:'rgba(255,255,255,0.82)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
             </div>
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:6}}>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.95)', marginBottom:6}}>
                 {t.passLbl.toUpperCase()}
               </div>
               <div style={{position:'relative'}}>
                 <input className="pg-field" type={showPass?'text':'password'} value={pass} onChange={e=>setPass(e.target.value)}
                   placeholder={lang==='pt'?'Mín. 8 caracteres':lang==='es'?'Mín. 8 caracteres':'Min. 8 characters'}
-                  style={{height:48, fontSize:14, paddingRight:46, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', backdropFilter:'blur(4px)'}}/>
+                  style={{height:48, fontSize:14, paddingRight:46, background:'rgba(255,255,255,0.82)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
                 <button onClick={()=>setShowPass(p=>!p)} style={{position:'absolute', right:14, top:'50%', transform:'translateY(-50%)',
                   border:'none', background:'transparent', cursor:'pointer', padding:4, color:'var(--pg-ink-400)', display:'flex', alignItems:'center'}}>
                   {showPass
@@ -428,7 +428,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                   placeholder="••••••••"
                   style={{
                     height:48, fontSize:14, paddingRight:46,
-                    background:'rgba(255,255,255,0.15)', color:'#fff', backdropFilter:'blur(4px)',
+                    background:'rgba(255,255,255,0.82)', color:'#0A2840', backdropFilter:'blur(8px)',
                     border: passConfirm.length >= 4
                       ? `1px solid ${passMatch ? '#22c55e' : '#f87171'}`
                       : '1px solid rgba(255,255,255,0.25)',
