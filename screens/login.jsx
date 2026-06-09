@@ -159,20 +159,23 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   return (
     <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
 
-      {/* ── Hero background — brand navy ── */}
+      {/* ── Hero background — light pool water ── */}
       <div style={{
         position:'absolute', inset:0,
-        background:'linear-gradient(160deg, #040D18 0%, #071A2E 50%, #0A2840 100%)',
+        background:'linear-gradient(180deg, #7DD8EC 0%, #A8E8F4 28%, #CCF1FA 55%, #E8F9FD 80%, #F4FDFF 100%)',
         zIndex:0,
       }}/>
-      {/* Subtle aqua glow top-right */}
-      <div style={{position:'absolute', top:-40, right:-40, width:280, height:280, borderRadius:'50%',
-        background:'radial-gradient(circle, rgba(14,186,199,0.10) 0%, transparent 70%)', zIndex:1}}/>
-
-      {/* Decorative circles */}
-      <div style={{position:'absolute', top:-60, right:-60, width:200, height:200, borderRadius:'50%', background:'rgba(14,186,199,0.06)', zIndex:1}}/>
-      <div style={{position:'absolute', top:40, left:-80, width:220, height:220, borderRadius:'50%', background:'rgba(255,255,255,0.03)', zIndex:1}}/>
-      <div style={{position:'absolute', top:160, right:-30, width:120, height:120, borderRadius:'50%', background:'rgba(14,186,199,0.05)', zIndex:1}}/>
+      {/* Water ripple texture — light circles simulating pool surface */}
+      <div style={{position:'absolute', top:-80, left:-80, width:320, height:320, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%)', zIndex:1, pointerEvents:'none'}}/>
+      <div style={{position:'absolute', top:20, right:-60, width:240, height:240, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(255,255,255,0.28) 0%, transparent 70%)', zIndex:1, pointerEvents:'none'}}/>
+      <div style={{position:'absolute', top:120, left:20, width:160, height:160, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(255,255,255,0.20) 0%, transparent 65%)', zIndex:1, pointerEvents:'none'}}/>
+      <div style={{position:'absolute', top:60, right:40, width:100, height:100, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 60%)', zIndex:1, pointerEvents:'none'}}/>
+      <div style={{position:'absolute', top:180, left:-30, width:130, height:130, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 65%)', zIndex:1, pointerEvents:'none'}}/>
 
       {/* ── Language switcher ── */}
       <div style={{position:'absolute', top:18, right:16, display:'flex', gap:5, zIndex:10}}>
@@ -180,8 +183,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           <button key={l.id} onClick={()=>setLang(l.id)} style={{
             padding:'4px 9px', borderRadius:8, border:'none', cursor:'pointer',
             fontFamily:'inherit', fontSize:10.5, fontWeight:700, letterSpacing:'0.05em',
-            background: lang===l.id ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.07)',
-            color: lang===l.id ? '#fff' : 'rgba(255,255,255,0.45)',
+            background: lang===l.id ? 'rgba(0,80,130,0.15)' : 'rgba(255,255,255,0.45)',
+            color: lang===l.id ? '#004E8A' : 'rgba(0,60,100,0.55)',
             transition:'all .15s',
           }}>{l.flag} {l.short}</button>
         ))}
@@ -202,34 +205,34 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             width: 'auto',
             display: 'block',
             marginBottom: 22,
-            filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.60)) brightness(1.18)',
+            filter: 'drop-shadow(0 4px 14px rgba(0,60,120,0.18))',
           }}
         />
 
         {/* Tagline with decorative lines */}
         <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:6}}>
-          <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
+          <div style={{width:32, height:1.5, background:'rgba(0,80,130,0.30)', borderRadius:2}}/>
           <span style={{
-            fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.72)',
+            fontSize:12, fontWeight:600, color:'rgba(0,50,100,0.70)',
             letterSpacing:'0.06em', textTransform:'uppercase',
           }}>{t.tagline}</span>
-          <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
+          <div style={{width:32, height:1.5, background:'rgba(0,80,130,0.30)', borderRadius:2}}/>
         </div>
 
         {/* Subtitle */}
         <p style={{
-          margin:'8px 0 0', fontSize:13, color:'rgba(255,255,255,0.55)',
+          margin:'8px 0 0', fontSize:13, color:'rgba(0,50,100,0.55)',
           textAlign:'center', lineHeight:1.5, maxWidth:240, padding:'0 20px',
         }}>{t.loginSub}</p>
       </div>
 
-      {/* ── Wave SVG — aqua tones ── */}
+      {/* ── Wave SVG — light aqua to white ── */}
       <div style={{position:'relative', zIndex:2, marginTop:24, flexShrink:0, lineHeight:0}}>
         <svg viewBox="0 0 402 56" width="100%" height="56" preserveAspectRatio="none">
           <path d="M0 30 Q50 5 100 30 Q150 55 200 30 Q250 5 300 30 Q350 55 402 30 L402 56 L0 56 Z"
-            fill="rgba(14,186,199,0.12)"/>
+            fill="rgba(255,255,255,0.40)"/>
           <path d="M0 38 Q60 14 120 38 Q180 62 240 38 Q300 14 360 38 Q385 48 402 42 L402 56 L0 56 Z"
-            fill="rgba(14,186,199,0.08)"/>
+            fill="rgba(255,255,255,0.60)"/>
           <path d="M0 46 Q80 28 160 46 Q240 64 320 46 Q365 36 402 48 L402 56 L0 56 Z"
             fill="white"/>
         </svg>
