@@ -17,6 +17,12 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Claude settings (may contain secrets)
+.claude/settings.local.json
+
+# npm lock (not needed for this project)
+package-lock.json
+
 # Python cache (servidor local)
 __pycache__/
 *.pyc

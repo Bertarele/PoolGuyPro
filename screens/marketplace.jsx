@@ -3231,6 +3231,7 @@ function MarketplaceScreen({ ctx }) {
   const [priceRange, setPriceRange] = React.useState('all');  // equipment price filter
   const [priceOpen,  setPriceOpen]  = React.useState(false);  // price dropdown open
   const [regionOpen, setRegionOpen] = React.useState(false);  // region dropdown open
+  const [regionSearch, setRegionSearch] = React.useState('');  // region search query
   const [routeRegion,setRouteRegion]= React.useState('all');  // routes region filter
   const [routePrice, setRoutePrice] = React.useState('all');  // routes price filter
   const [routeSub,   setRouteSub]   = React.useState('routes'); // 'routes' | 'pools'
@@ -4707,23 +4708,129 @@ function MarketplaceScreen({ ctx }) {
             <div className="pg-card" style={{padding:'12px 14px', display:'flex', flexDirection:'column', gap:10}}>
               {/* Region filter — dropdown */}
               {(() => {
-                const regionOpts = [
-                  {id:'all',        label: lang==='pt'?'Todas as regiões':lang==='es'?'Todas las regiones':'All regions'},
-                  {id:'weston',     label:'Weston'},
-                  {id:'coral',      label:'Coral Gables'},
-                  {id:'pinecrest',  label:'Pinecrest'},
-                  {id:'pembroke',   label:'Pembroke'},
-                  {id:'hollywood',  label:'Hollywood'},
-                  {id:'doral',      label:'Doral'},
-                  {id:'plantation', label:'Plantation'},
+                const allRegionOpts = [
+                  {id:'all',             label: lang==='pt'?'Todas as regiões':lang==='es'?'Todas las regiones':'All regions'},
+                  // Miami-Dade
+                  {id:'miami',           label:'Miami'},
+                  {id:'miami_beach',     label:'Miami Beach'},
+                  {id:'north_miami',     label:'North Miami'},
+                  {id:'miami_gardens',   label:'Miami Gardens'},
+                  {id:'hialeah',         label:'Hialeah'},
+                  {id:'doral',           label:'Doral'},
+                  {id:'coral_gables',    label:'Coral Gables'},
+                  {id:'south_miami',     label:'South Miami'},
+                  {id:'pinecrest',       label:'Pinecrest'},
+                  {id:'palmetto_bay',    label:'Palmetto Bay'},
+                  {id:'cutler_bay',      label:'Cutler Bay'},
+                  {id:'homestead',       label:'Homestead'},
+                  {id:'kendall',         label:'Kendall'},
+                  {id:'aventura',        label:'Aventura'},
+                  {id:'sweetwater',      label:'Sweetwater'},
+                  {id:'opa_locka',       label:'Opa-locka'},
+                  {id:'medley',          label:'Medley'},
+                  {id:'virginia_gardens',label:'Virginia Gardens'},
+                  {id:'bay_harbor',      label:'Bay Harbor Islands'},
+                  {id:'bal_harbour',     label:'Bal Harbour'},
+                  {id:'surfside',        label:'Surfside'},
+                  {id:'florida_city',    label:'Florida City'},
+                  // Broward
+                  {id:'fort_lauderdale', label:'Fort Lauderdale'},
+                  {id:'hollywood',       label:'Hollywood'},
+                  {id:'pembroke_pines',  label:'Pembroke Pines'},
+                  {id:'miramar',         label:'Miramar'},
+                  {id:'coral_springs',   label:'Coral Springs'},
+                  {id:'pompano_beach',   label:'Pompano Beach'},
+                  {id:'davie',           label:'Davie'},
+                  {id:'weston',          label:'Weston'},
+                  {id:'deerfield_beach', label:'Deerfield Beach'},
+                  {id:'plantation',      label:'Plantation'},
+                  {id:'sunrise',         label:'Sunrise'},
+                  {id:'lauderhill',      label:'Lauderhill'},
+                  {id:'tamarac',         label:'Tamarac'},
+                  {id:'oakland_park',    label:'Oakland Park'},
+                  {id:'wilton_manors',   label:'Wilton Manors'},
+                  {id:'hallandale',      label:'Hallandale Beach'},
+                  {id:'coconut_creek',   label:'Coconut Creek'},
+                  {id:'margate',         label:'Margate'},
+                  {id:'lighthouse_pt',   label:'Lighthouse Point'},
+                  {id:'parkland',        label:'Parkland'},
+                  {id:'lauderdale_lakes',label:'Lauderdale Lakes'},
+                  {id:'north_lauderdale',label:'North Lauderdale'},
+                  {id:'dania_beach',     label:'Dania Beach'},
+                  {id:'cooper_city',     label:'Cooper City'},
+                  {id:'southwest_ranches',label:'Southwest Ranches'},
+                  // Palm Beach
+                  {id:'boynton_beach',   label:'Boynton Beach'},
+                  {id:'delray_beach',    label:'Delray Beach'},
+                  {id:'boca_raton',      label:'Boca Raton'},
+                  {id:'pbg',             label:'Palm Beach Gardens'},
+                  {id:'west_palm_beach', label:'West Palm Beach'},
+                  {id:'wellington',      label:'Wellington'},
+                  {id:'lake_worth',      label:'Lake Worth'},
+                  {id:'greenacres',      label:'Greenacres'},
+                  {id:'royal_palm_beach',label:'Royal Palm Beach'},
+                  {id:'jupiter',         label:'Jupiter'},
+                  {id:'palm_beach',      label:'Palm Beach'},
+                  {id:'riviera_beach',   label:'Riviera Beach'},
+                  {id:'loxahatchee',     label:'Loxahatchee'},
+                  {id:'lake_park',       label:'Lake Park'},
+                  {id:'north_palm_beach',label:'North Palm Beach'},
+                  {id:'palm_springs',    label:'Palm Springs'},
+                  // Treasure Coast
+                  {id:'stuart',          label:'Stuart'},
+                  {id:'port_st_lucie',   label:'Port St. Lucie'},
+                  {id:'vero_beach',      label:'Vero Beach'},
+                  {id:'fort_pierce',     label:'Fort Pierce'},
+                  {id:'sebastian',       label:'Sebastian'},
+                  {id:'okeechobee',      label:'Okeechobee'},
+                  {id:'indian_river',    label:'Indian River Shores'},
+                  // Other FL Cities
+                  {id:'orlando',         label:'Orlando'},
+                  {id:'kissimmee',       label:'Kissimmee'},
+                  {id:'sanford',         label:'Sanford'},
+                  {id:'tampa',           label:'Tampa'},
+                  {id:'st_pete',         label:'St. Petersburg'},
+                  {id:'clearwater',      label:'Clearwater'},
+                  {id:'brandon',         label:'Brandon'},
+                  {id:'jacksonville',    label:'Jacksonville'},
+                  {id:'sarasota',        label:'Sarasota'},
+                  {id:'bradenton',       label:'Bradenton'},
+                  {id:'naples',          label:'Naples'},
+                  {id:'marco_island',    label:'Marco Island'},
+                  {id:'cape_coral',      label:'Cape Coral'},
+                  {id:'fort_myers',      label:'Fort Myers'},
+                  {id:'bonita_springs',  label:'Bonita Springs'},
+                  {id:'estero',          label:'Estero'},
+                  {id:'lehigh_acres',    label:'Lehigh Acres'},
+                  {id:'gainesville',     label:'Gainesville'},
+                  {id:'ocala',           label:'Ocala'},
+                  {id:'tallahassee',     label:'Tallahassee'},
+                  {id:'pensacola',       label:'Pensacola'},
+                  {id:'daytona',         label:'Daytona Beach'},
+                  {id:'melbourne',       label:'Melbourne'},
+                  {id:'palm_bay',        label:'Palm Bay'},
+                  {id:'titusville',      label:'Titusville'},
+                  {id:'cocoa_beach',     label:'Cocoa Beach'},
+                  {id:'lakeland',        label:'Lakeland'},
+                  {id:'spring_hill',     label:'Spring Hill'},
+                  {id:'new_smyrna',      label:'New Smyrna Beach'},
+                  {id:'panama_city',     label:'Panama City'},
+                  {id:'destin',          label:'Destin'},
+                  {id:'key_west',        label:'Key West'},
+                  {id:'key_largo',       label:'Key Largo'},
+                  {id:'islamorada',      label:'Islamorada'},
                 ];
-                const activeLabel = regionOpts.find(o => o.id === routeRegion)?.label
+                const q = regionSearch.toLowerCase();
+                const regionOpts = allRegionOpts.filter(o =>
+                  o.id === 'all' || o.label.toLowerCase().includes(q)
+                );
+                const activeLabel = allRegionOpts.find(o => o.id === routeRegion)?.label
                   || (lang==='pt'?'Todas as regiões':lang==='es'?'Todas las regiones':'All regions');
                 return (
                   <div>
                     {/* Trigger chip */}
                     <button
-                      onClick={()=>setRegionOpen(o=>!o)}
+                      onClick={()=>{ setRegionOpen(o=>!o); setRegionSearch(''); }}
                       className={`pg-chip ${routeRegion!=='all'?'pg-chip-on':''}`}
                       style={{width:'100%', justifyContent:'space-between', borderRadius:10, padding:'9px 12px'}}>
                       <span style={{fontSize:13, fontWeight:600}}>{activeLabel}</span>
@@ -4736,30 +4843,57 @@ function MarketplaceScreen({ ctx }) {
                       <div style={{
                         marginTop:4, borderRadius:10, overflow:'hidden',
                         border:'0.5px solid var(--pg-ink-200)',
-                        boxShadow:'0 4px 14px rgba(0,0,0,0.10)',
+                        boxShadow:'0 4px 18px rgba(0,0,0,0.12)',
                         background:'var(--pg-white)',
                       }}>
-                        {regionOpts.map((opt, i) => {
-                          const on = routeRegion === opt.id;
-                          return (
-                            <button key={opt.id} onClick={()=>{ setRouteRegion(opt.id); setRegionOpen(false); }} style={{
-                              width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
-                              padding:'10px 14px', border:'none', cursor:'pointer', fontFamily:'inherit',
-                              background: on ? 'var(--pg-blue-50)' : 'transparent',
-                              borderTop: i > 0 ? '0.5px solid var(--pg-ink-100)' : 'none',
-                              textAlign:'left', transition:'background .1s',
-                            }}>
-                              <span style={{fontSize:13, fontWeight: on ? 700 : 500, color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)'}}>
-                                {opt.label}
-                              </span>
-                              {on && (
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round">
-                                  <polyline points="20 6 9 17 4 12"/>
-                                </svg>
-                              )}
-                            </button>
-                          );
-                        })}
+                        {/* Search bar */}
+                        <div style={{padding:'8px 10px', borderBottom:'0.5px solid var(--pg-ink-100)', background:'var(--pg-ink-50)'}}>
+                          <div style={{display:'flex', alignItems:'center', gap:7, background:'var(--pg-white)', borderRadius:8, padding:'6px 10px', border:'0.5px solid var(--pg-ink-200)'}}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input
+                              autoFocus
+                              value={regionSearch}
+                              onChange={e=>setRegionSearch(e.target.value)}
+                              placeholder={lang==='pt'?'Buscar cidade...':lang==='es'?'Buscar ciudad...':'Search city...'}
+                              onClick={e=>e.stopPropagation()}
+                              style={{border:'none', outline:'none', background:'transparent', fontSize:13, fontFamily:'inherit', color:'var(--pg-ink-900)', flex:1, minWidth:0}}
+                            />
+                            {regionSearch && (
+                              <button onClick={e=>{ e.stopPropagation(); setRegionSearch(''); }}
+                                style={{border:'none', background:'none', cursor:'pointer', padding:0, lineHeight:1, color:'var(--pg-ink-400)', fontSize:16}}>×</button>
+                            )}
+                          </div>
+                        </div>
+                        {/* City list */}
+                        <div style={{maxHeight:220, overflowY:'auto'}}>
+                          {regionOpts.length === 0 ? (
+                            <div style={{padding:'14px', fontSize:13, color:'var(--pg-ink-400)', textAlign:'center'}}>
+                              {lang==='pt'?'Nenhuma cidade encontrada':lang==='es'?'No se encontró ciudad':'No city found'}
+                            </div>
+                          ) : regionOpts.map((opt, i) => {
+                            const on = routeRegion === opt.id;
+                            return (
+                              <button key={opt.id} onClick={()=>{ setRouteRegion(opt.id); setRegionOpen(false); setRegionSearch(''); }} style={{
+                                width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+                                padding:'10px 14px', border:'none', cursor:'pointer', fontFamily:'inherit',
+                                background: on ? 'var(--pg-blue-50)' : 'transparent',
+                                borderTop: i > 0 ? '0.5px solid var(--pg-ink-100)' : 'none',
+                                textAlign:'left', transition:'background .1s',
+                              }}>
+                                <span style={{fontSize:13, fontWeight: on ? 700 : 500, color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)'}}>
+                                  {opt.label}
+                                </span>
+                                {on && (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
