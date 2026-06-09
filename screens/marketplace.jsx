@@ -4278,8 +4278,7 @@ function MarketplaceScreen({ ctx }) {
                 {cats.filter(c => c !== 'Others').map(c => {
                   const on = cat===c;
                   return (
-                    <button key={c} className={`pg-chip ${on?'pg-chip-on':''}`} onClick={()=>setCat(c)} style={{padding:'7px 12px', whiteSpace:'nowrap', gap: on?4:0, transition:'all .15s'}}>
-                      {on && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>}
+                    <button key={c} className={`pg-chip ${on?'pg-chip-on':''}`} onClick={()=>setCat(c)} style={{padding:'7px 12px', whiteSpace:'nowrap'}}>
                       {tr(catLabels[c], lang)}
                     </button>
                   );
@@ -4300,8 +4299,7 @@ function MarketplaceScreen({ ctx }) {
                 </button>
                 {/* Outros — last chip */}
                 {(() => { const on = cat==='Others'; return (
-                  <button className={`pg-chip ${on?'pg-chip-on':''}`} onClick={()=>setCat('Others')} style={{padding:'7px 12px', whiteSpace:'nowrap', gap: on?4:0, transition:'all .15s'}}>
-                    {on && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>}
+                  <button className={`pg-chip ${on?'pg-chip-on':''}`} onClick={()=>setCat('Others')} style={{padding:'7px 12px', whiteSpace:'nowrap'}}>
                     {tr(catLabels['Others'], lang)}
                   </button>
                 ); })()}
