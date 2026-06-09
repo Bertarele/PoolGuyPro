@@ -3737,14 +3737,15 @@ function MarketplaceScreen({ ctx }) {
                 </div>
               </div>
             ))}
-            <div style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
-              background:'rgba(0,119,182,0.25)', border:'1px solid rgba(0,119,182,0.35)',
-              borderRadius:999, padding:'6px 14px'}}>
+            <button onClick={()=>setCountyPickerOpen(true)} style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
+              background:'rgba(0,119,182,0.25)', border:'1px solid rgba(0,119,182,0.40)',
+              borderRadius:999, padding:'6px 14px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
               {Icon.pin(12,'rgba(255,255,255,0.70)')}
-              <span style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.75)'}}>
-                Broward · Dade · Palm Beach
+              <span style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.85)', whiteSpace:'nowrap'}}>
+                {countyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):countyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
               </span>
-            </div>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
           </div>
         </div>
 

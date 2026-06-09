@@ -310,17 +310,23 @@ function WorkScreen({ ctx }) {
             {sub === 'hiring' && <>
               <StatPill icon={Icon.briefcase(13,'rgba(255,255,255,0.80)')} count={HIRING.length + liveJobs.length} label={lang==='pt'?'vagas':lang==='es'?'empleos':'openings'}/>
               <StatPill icon={Icon.check(13,'rgba(255,255,255,0.80)')} count={myAppsHiring.length} label={lang==='pt'?'candidaturas':lang==='es'?'solicitudes':'applied'}/>
-              <div style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)'}}>
-                {Icon.pin(12,'rgba(255,255,255,0.55)')}
-                <span style={{fontSize:12,color:'rgba(255,255,255,0.55)',fontWeight:500}}>South Florida</span>
-              </div>
+              <button onClick={()=>setWorkCountyPickerOpen(true)} style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:'rgba(0,119,182,0.22)',border:'1px solid rgba(0,119,182,0.40)',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
+                {Icon.pin(12,'rgba(255,255,255,0.65)')}
+                <span style={{fontSize:12,color:'rgba(255,255,255,0.80)',fontWeight:600}}>
+                  {workCountyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):workCountyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
+                </span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.50)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
             </>}
             {sub === 'techs' && <>
               <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.80)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>} count={TECHS.length + liveTechs.length} label={lang==='pt'?'técnicos':lang==='es'?'técnicos':'techs'}/>
-              <div style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)'}}>
-                {Icon.pin(12,'rgba(255,255,255,0.55)')}
-                <span style={{fontSize:12,color:'rgba(255,255,255,0.55)',fontWeight:500}}>South Florida</span>
-              </div>
+              <button onClick={()=>setWorkCountyPickerOpen(true)} style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:'rgba(0,119,182,0.22)',border:'1px solid rgba(0,119,182,0.40)',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
+                {Icon.pin(12,'rgba(255,255,255,0.65)')}
+                <span style={{fontSize:12,color:'rgba(255,255,255,0.80)',fontWeight:600}}>
+                  {workCountyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):workCountyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
+                </span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.50)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
             </>}
             {sub === 'vac' && <>
               <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.80)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>} count={VACATION_LISTINGS.length + liveVacations.length} label={lang==='pt'?'coberturas':lang==='es'?'coberturas':'covers'}/>
@@ -581,7 +587,7 @@ function WorkScreen({ ctx }) {
 
             {/* Panel content */}
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
-              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} liveApplications={liveApplications} countyFilter={workCountyFilter} cityToCounty={workCityToCounty}/>}
+              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} liveApplications={liveApplications} countyFilter={workCountyFilter} cityToCounty={workCityToCounty}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech} countyFilter={workCountyFilter} cityToCounty={workCityToCounty}/>}
               {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
             </div>
@@ -973,7 +979,7 @@ function WorkScreen({ ctx }) {
 
       {/* ── Content panels ── */}
       <div style={{padding:'14px 18px 0'}}>
-        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={true} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} liveApplications={liveApplications} countyFilter={workCountyFilter} cityToCounty={workCityToCounty}/>}
+        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} liveApplications={liveApplications} countyFilter={workCountyFilter} cityToCounty={workCityToCounty}/>}
         {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech} countyFilter={workCountyFilter} cityToCounty={workCityToCounty}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
                               onChat={openChat} onCreate={openVacSheet}
@@ -1257,7 +1263,17 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
                   </div>
                 );
               }
-              // Not applied yet and not own job — show Candidatar button
+              // Own job — don't show apply button
+              if (user?.uid && user.uid === job.author_id) {
+                return (
+                  <span style={{fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:999,
+                    background:'rgba(0,119,182,0.12)',color:'var(--pg-blue-600)',
+                    border:'1px solid rgba(0,119,182,0.25)'}}>
+                    {lang==='pt'?'Sua vaga':lang==='es'?'Tu oferta':'Your listing'}
+                  </span>
+                );
+              }
+              // Not applied yet — show Candidatar button
               return (
                 <button onClick={()=>onApply && onApply(job)} className="pg-btn pg-btn-primary" style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
                   {t.apply}

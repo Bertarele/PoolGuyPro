@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost } = ctx;
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
 
@@ -25,7 +25,7 @@ function HomeScreen({ ctx }) {
   // My real posts from Supabase liveMarket — active only (exclude sold)
   // UID is the only reliable check — name fallbacks only for legacy posts without author_id
   // (prevents false-match when two users share the same display name)
-  const myPosts = liveMarket.filter(m =>
+  const myMarketPosts = liveMarket.filter(m =>
     m.status !== 'sold' &&
     (
       (user.uid && m.author_id && m.author_id === user.uid) ||
@@ -34,6 +34,23 @@ function HomeScreen({ ctx }) {
       (!m.author_id && user.email && m.author === user.email.split('@')[0])
     )
   );
+
+  // My own job postings (from liveJobs in the Work tab)
+  const myOwnJobs = liveJobs
+    .filter(j => j.author_id && user.uid && j.author_id === user.uid)
+    .map(j => ({
+      _id: j._id,
+      _isJob: true,
+      status: 'approved',
+      name: j.role || '—',
+      type: 'job',
+      loc: j.loc || '',
+      price: j.pay || null,
+      priceMode: j.payMode || 'fixed',
+      payMode: j.payMode,
+    }));
+
+  const myPosts = [...myMarketPosts, ...myOwnJobs];
 
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob,      setSelectedJob]      = React.useState(null);
@@ -51,6 +68,7 @@ function HomeScreen({ ctx }) {
     if (m.type === 'rent') return lang==='pt'?'Aluguel':lang==='es'?'Renta':'Rental';
     if (m.type === 'route') return lang==='pt'?'Rota':lang==='es'?'Ruta':'Route';
     if (m.type === 'pool') return lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool';
+    if (m.type === 'job') return lang==='pt'?'Vaga de Emprego':lang==='es'?'Oferta de Trabajo':'Job Opening';
     return m.type || '';
   };
 
@@ -189,15 +207,16 @@ function HomeScreen({ ctx }) {
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
               {myPosts.slice(0, 4).map(item => {
                 const isPending = item.status === 'pending';
-                const priceStr = item.priceMode === 'neg'
+                const isJob = item._isJob === true;
+                const priceStr = (item.priceMode === 'neg' || item.payMode === 'neg')
                   ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
                   : item.asking
                     ? `$${Number(item.asking).toLocaleString()}`
                     : item.price
-                      ? `$${item.price}`
+                      ? `$${item.price}${isJob?(item.payMode==='weekly'?'/sem':'/pool'):''}`
                       : '—';
                 return (
-                  <button key={item._id} onClick={()=>openListingById ? openListingById(item._id) : goTab('market')} className="pg-press" style={{
+                  <button key={item._id} onClick={()=>isJob ? goTab('work') : openListingById ? openListingById(item._id) : goTab('market')} className="pg-press" style={{
                     display:'flex', alignItems:'center', gap:12,
                     padding:'10px 12px', borderRadius:14,
                     border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
