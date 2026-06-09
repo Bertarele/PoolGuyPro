@@ -41,6 +41,7 @@ const JSX_FILES = [
 const STATIC_GLOBS = [
   'tokens.css',
   'logo.png',
+  'pgx-logo.png',
   'admin.html',
 ];
 

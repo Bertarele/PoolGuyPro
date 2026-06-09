@@ -52,53 +52,33 @@ function FloodMark({ size = 36 }) {
 
 // ── Brand wordmark ────────────────────────────────────────────
 function Wordmark({ size='md', onDark=false, subtitle }) {
-  const scale = size === 'lg' ? 1.25 : size === 'sm' ? 0.82 : 1;
-  const markSize = 36 * scale;
-  const wordSize = 22 * scale;
+  const h = size === 'lg' ? 42 : size === 'sm' ? 26 : 34;
+  const subtitleSize = size === 'lg' ? 11 : size === 'sm' ? 9 : 10;
 
   return (
-    <div style={{display:'flex', alignItems:'center', gap: 10*scale, minWidth:0}}>
-      {/* Mark — Flood Level icon */}
-      <div style={{
-        filter: onDark
-          ? 'drop-shadow(0 2px 8px rgba(14,186,199,0.35))'
-          : 'drop-shadow(0 3px 10px rgba(14,186,199,0.38))',
-      }}>
-        <FloodMark size={markSize}/>
-      </div>
-
-      {/* Wordmark */}
-      <div style={{display:'flex', flexDirection:'column', minWidth:0, lineHeight:1}}>
-        <div style={{display:'flex', alignItems:'baseline', gap:0}}>
-          <span style={{
-            fontFamily:'"Poppins", system-ui, sans-serif',
-            fontSize: wordSize, fontWeight:800, letterSpacing:'-0.025em',
-            color: onDark ? '#fff' : '#0D1B2A',
-          }}>Pool</span>
-          <span style={{
-            fontFamily:'"Poppins", system-ui, sans-serif',
-            fontSize: wordSize, fontWeight:800, letterSpacing:'-0.025em',
-            background: onDark
-              ? 'linear-gradient(135deg, #4BA8E8 0%, #B8E4FA 100%)'
-              : 'linear-gradient(135deg, #1A6EBD 0%, #4BA8E8 100%)',
-            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
-          }}>Guy</span>
-          <span style={{
-            fontFamily:'"Raleway", system-ui, sans-serif',
-            fontSize: wordSize * 1.12, fontWeight:800,
-            letterSpacing:'-0.02em', lineHeight:1,
-            background:'linear-gradient(135deg, #0EBAC7 0%, #6DD8F0 100%)',
-            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
-          }}>X</span>
-        </div>
-        {subtitle && (
-          <div style={{
-            fontSize: wordSize*0.40, fontWeight:500, marginTop:4,
-            color: onDark ? 'rgba(255,255,255,0.65)' : 'var(--pg-ink-500)',
-            letterSpacing:'0.005em', lineHeight:1.3, maxWidth: 230*scale,
-          }}>{subtitle}</div>
-        )}
-      </div>
+    <div style={{display:'flex', flexDirection:'column', alignItems:'flex-start', gap:3}}>
+      <img
+        src="pgx-logo.png"
+        alt="PoolGuyX"
+        style={{
+          height: h,
+          width: 'auto',
+          display: 'block',
+          filter: onDark
+            ? 'drop-shadow(0 0 8px rgba(255,255,255,0.55)) brightness(1.18)'
+            : 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))',
+        }}
+      />
+      {subtitle && (
+        <div style={{
+          fontSize: subtitleSize,
+          fontWeight: 500,
+          color: onDark ? 'rgba(255,255,255,0.65)' : 'var(--pg-ink-500)',
+          letterSpacing: '0.005em',
+          lineHeight: 1.3,
+          paddingLeft: 2,
+        }}>{subtitle}</div>
+      )}
     </div>
   );
 }

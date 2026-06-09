@@ -201,26 +201,18 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           <FloodIcon size={88}/>
         </div>
 
-        {/* PoolGuyX wordmark */}
-        <div style={{display:'flex', alignItems:'baseline', gap:0, marginBottom:6}}>
-          <span style={{
-            fontFamily:'"Poppins", system-ui, sans-serif',
-            fontSize:38, fontWeight:800, letterSpacing:'-0.025em',
-            color:'#fff',
-          }}>Pool</span>
-          <span style={{
-            fontFamily:'"Poppins", system-ui, sans-serif',
-            fontSize:38, fontWeight:800, letterSpacing:'-0.025em',
-            background:'linear-gradient(135deg, #4BA8E8 0%, #B8E4FA 100%)',
-            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
-          }}>Guy</span>
-          <span style={{
-            fontFamily:'"Raleway", system-ui, sans-serif',
-            fontSize:44, fontWeight:800, letterSpacing:'-0.02em', lineHeight:1,
-            background:'linear-gradient(135deg, #0EBAC7 0%, #6DD8F0 100%)',
-            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
-          }}>X</span>
-        </div>
+        {/* PoolGuyX logo */}
+        <img
+          src="pgx-logo.png"
+          alt="PoolGuyX"
+          style={{
+            height: 68,
+            width: 'auto',
+            display: 'block',
+            marginBottom: 6,
+            filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.60)) brightness(1.18)',
+          }}
+        />
 
         {/* Tagline with decorative lines */}
         <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:6}}>
