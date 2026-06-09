@@ -99,6 +99,7 @@ const STRINGS = {
     notif4Title:'New 5★ rating', notif4Body:'left you a review',
     justNow:'just now', yesterday:'yesterday',
     // Login
+    tagline:'Your Pool. Our Priority.',
     loginSub:'Connecting South Florida pool guys',
     passLbl:'Password', forgotPw:'Forgot password?', loginBtn:'Log in',
     noAccount:"Don't have an account?", signUp:'Sign up', continueGuest:'Continue as guest',
@@ -208,6 +209,7 @@ const STRINGS = {
     notif4Title:'Nova avaliação 5★', notif4Body:'deixou uma avaliação',
     justNow:'agora', yesterday:'ontem',
     // Login
+    tagline:'Sua Piscina. Nossa Prioridade.',
     loginSub:'Conectando piscineiros do sul da Flórida',
     passLbl:'Senha', forgotPw:'Esqueceu a senha?', loginBtn:'Entrar',
     noAccount:'Não tem conta?', signUp:'Criar conta', continueGuest:'Continuar como visitante',
@@ -317,6 +319,7 @@ const STRINGS = {
     notif4Title:'Nueva calificación 5★', notif4Body:'te dejó una reseña',
     justNow:'ahora', yesterday:'ayer',
     // Login
+    tagline:'Tu Piscina. Nuestra Prioridad.',
     loginSub:'Conectando pool guys del sur de Florida',
     passLbl:'Contraseña', forgotPw:'¿Olvidaste tu contraseña?', loginBtn:'Iniciar sesión',
     noAccount:'¿No tienes cuenta?', signUp:'Crear cuenta', continueGuest:'Continuar como invitado',

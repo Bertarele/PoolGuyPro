@@ -201,7 +201,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             height: 220,
             width: 'auto',
             display: 'block',
-            marginBottom: 6,
+            marginBottom: 22,
             filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.60)) brightness(1.18)',
           }}
         />
@@ -212,7 +212,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           <span style={{
             fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.72)',
             letterSpacing:'0.06em', textTransform:'uppercase',
-          }}>Your Pool. Our Priority.</span>
+          }}>{t.tagline}</span>
           <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
         </div>
 
