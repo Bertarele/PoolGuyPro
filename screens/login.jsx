@@ -241,7 +241,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
           {/* Email */}
           <div>
-            <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.95)', marginBottom:6}}>EMAIL</div>
+            <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'#ffffff', marginBottom:6}}>EMAIL</div>
             <input className="pg-field" type="email" value={email}
               onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
               placeholder="you@email.com" style={{height:48, fontSize:14, background:'rgba(255,255,255,0.82)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
@@ -251,7 +251,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           <div>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6}}>
               <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)'}}>{t.passLbl.toUpperCase()}</div>
-              <button style={{border:'none', background:'transparent', color:'rgba(255,255,255,0.85)',
+              <button style={{border:'none', background:'transparent', color:'#ffffff',
                 fontSize:12, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.forgotPw}</button>
             </div>
             <div style={{position:'relative'}}>
@@ -306,12 +306,12 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             Continue with Google
           </button>
 
-          <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'rgba(255,255,255,0.65)',
+          <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'#ffffff',
             fontSize:13, cursor:'pointer', padding:'2px 0', fontFamily:'inherit',
-            textDecoration:'underline', textDecorationColor:'rgba(255,255,255,0.35)'}}>{t.continueGuest}</button>
+            textDecoration:'underline', textDecorationColor:'rgba(255,255,255,0.60)'}}>{t.continueGuest}</button>
 
           <div style={{textAlign:'center', marginTop:'auto', paddingBottom:4}}>
-            <span style={{fontSize:12.5, color:'rgba(255,255,255,0.70)'}}>{t.noAccount} </span>
+            <span style={{fontSize:12.5, color:'#ffffff'}}>{t.noAccount} </span>
             <button onClick={goSignup} style={{border:'none', background:'transparent', color:'#fff',
               fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.signUp}</button>
           </div>
@@ -346,7 +346,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           {/* ── Step 1: Name + Email + Password + Confirm Password ── */}
           {step === 1 && (<>
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.95)', marginBottom:6}}>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'#ffffff', marginBottom:6}}>
                 {lang==='pt'?'NOME COMPLETO':lang==='es'?'NOMBRE COMPLETO':'FULL NAME'}
               </div>
               <input className="pg-field" type="text" value={name} onChange={e=>setName(e.target.value)}
@@ -354,12 +354,12 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                 style={{height:48, fontSize:14, background:'rgba(255,255,255,0.82)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
             </div>
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.95)', marginBottom:6}}>EMAIL</div>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'#ffffff', marginBottom:6}}>EMAIL</div>
               <input className="pg-field" type="email" value={email} onChange={e=>setEmail(e.target.value)}
                 placeholder="you@email.com" style={{height:48, fontSize:14, background:'rgba(255,255,255,0.82)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
             </div>
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.95)', marginBottom:6}}>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'#ffffff', marginBottom:6}}>
                 {t.passLbl.toUpperCase()}
               </div>
               <div style={{position:'relative'}}>
