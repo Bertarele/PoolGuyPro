@@ -178,7 +178,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             padding:'4px 9px', borderRadius:8, border:'none', cursor:'pointer',
             fontFamily:'inherit', fontSize:10.5, fontWeight:700, letterSpacing:'0.05em',
             background: lang===l.id ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.12)',
-            color: lang===l.id ? '#ffffff' : 'rgba(255,255,255,0.65)',
+            color: lang===l.id ? '#ffffff' : 'rgba(255,255,255,0.90)',
             backdropFilter:'blur(8px)',
             transition:'all .15s',
           }}>{l.flag} {l.short}</button>
@@ -199,13 +199,13 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             height: 220,
             width: 'auto',
             display: 'block',
-            marginBottom: 2,
+            marginBottom: 0,
             filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.40)) brightness(1.1)',
           }}
         />
 
         {/* Tagline with decorative lines */}
-        <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:2}}>
+        <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:0}}>
           <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
           <span style={{
             fontSize:12, fontWeight:600, color:'#ffffff',
@@ -250,7 +250,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           {/* Password */}
           <div>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6}}>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)'}}>{t.passLbl.toUpperCase()}</div>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'#ffffff'}}>{t.passLbl.toUpperCase()}</div>
               <button style={{border:'none', background:'transparent', color:'#ffffff',
                 fontSize:12, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.forgotPw}</button>
             </div>
@@ -286,7 +286,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
           <div style={{display:'flex', alignItems:'center', gap:10, margin:'2px 0'}}>
             <div style={{flex:1, height:1, background:'rgba(255,255,255,0.25)'}}/>
-            <span style={{fontSize:11, color:'rgba(255,255,255,0.65)', fontWeight:500}}>{t.orLbl}</span>
+            <span style={{fontSize:11, color:'#ffffff', fontWeight:500}}>{t.orLbl}</span>
             <div style={{flex:1, height:1, background:'rgba(255,255,255,0.25)'}}/>
           </div>
 
@@ -330,7 +330,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
               <div style={{fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, color:'#fff'}}>
                 {lang==='pt'?'Criar conta':lang==='es'?'Crear cuenta':'Create account'}
               </div>
-              <div style={{fontSize:11, color:'rgba(255,255,255,0.65)'}}>
+              <div style={{fontSize:11, color:'#ffffff'}}>
                 {lang==='pt'?`Passo ${step} de 2`:lang==='es'?`Paso ${step} de 2`:`Step ${step} of 2`}
               </div>
             </div>
@@ -411,7 +411,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             {/* Confirm password */}
             <div>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6}}>
-                <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)'}}>
+                <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'#ffffff'}}>
                   {lang==='pt'?'CONFIRMAR SENHA':lang==='es'?'CONFIRMAR CONTRASEÑA':'CONFIRM PASSWORD'}
                 </div>
                 {passConfirm.length >= 1 && (
@@ -456,7 +456,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
             {/* Searchable region picker */}
             <div>
-              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'rgba(255,255,255,0.80)', marginBottom:8}}>
+              <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.08em', color:'#ffffff', marginBottom:8}}>
                 {lang==='pt'?'REGIÃO / CIDADE':lang==='es'?'REGIÓN / CIUDAD':'REGION / CITY'}
               </div>
 
@@ -558,7 +558,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           </>)}
 
           <div style={{textAlign:'center', marginTop:'auto', paddingBottom:4}}>
-            <span style={{fontSize:12.5, color:'rgba(255,255,255,0.70)'}}>{lang==='pt'?'Já tem conta? ':lang==='es'?'¿Ya tienes cuenta? ':'Already have an account? '}</span>
+            <span style={{fontSize:12.5, color:'#ffffff'}}>{lang==='pt'?'Já tem conta? ':lang==='es'?'¿Ya tienes cuenta? ':'Already have an account? '}</span>
             <button onClick={goLogin} style={{border:'none', background:'transparent', color:'#fff',
               fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit'}}>
               {lang==='pt'?'Entrar':lang==='es'?'Iniciar sesión':'Sign in'}
