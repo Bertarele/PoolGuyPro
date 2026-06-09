@@ -188,7 +188,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       {/* ── Hero section ── */}
       <div style={{
         position:'relative', zIndex:2,
-        flex:'0 0 auto', paddingTop:60, paddingBottom:0,
+        flex:'0 0 auto', paddingTop:36, paddingBottom:0,
         display:'flex', flexDirection:'column', alignItems:'center', gap:0,
       }}>
         {/* PoolGuyX logo */}
@@ -199,7 +199,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             height: 220,
             width: 'auto',
             display: 'block',
-            marginBottom: 6,
+            marginBottom: 2,
             filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.40)) brightness(1.1)',
           }}
         />
@@ -208,7 +208,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:2}}>
           <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
           <span style={{
-            fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.90)',
+            fontSize:12, fontWeight:600, color:'#ffffff',
             letterSpacing:'0.06em', textTransform:'uppercase',
             textShadow:'0 1px 6px rgba(0,0,0,0.40)',
           }}>{t.tagline}</span>
@@ -217,7 +217,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
         {/* Subtitle */}
         <p style={{
-          margin:'2px 0 0', fontSize:13, color:'rgba(255,255,255,0.75)',
+          margin:'0', fontSize:13, color:'#ffffff',
           textAlign:'center', lineHeight:1.5, maxWidth:240, padding:'0 20px',
           textShadow:'0 1px 4px rgba(0,0,0,0.35)',
         }}>{t.loginSub}</p>
