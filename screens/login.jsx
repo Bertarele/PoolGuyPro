@@ -273,11 +273,12 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           {error ? <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div> : null}
 
           <button onClick={handleLogin} disabled={!canSubmit||loading} style={{
-            width:'72%', alignSelf:'center', height:56, borderRadius:999, border:'none', cursor:'pointer',
-            fontFamily:'inherit', fontSize:15, fontWeight:700, letterSpacing:'0.01em',
-            background: canSubmit ? 'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)' : 'var(--pg-ink-200)',
-            color: canSubmit ? '#fff' : 'var(--pg-ink-400)',
-            boxShadow: canSubmit ? '0 8px 24px rgba(21,101,232,0.40)' : 'none',
+            width:'70%', alignSelf:'center', height:62, borderRadius:999, border:'none', cursor: canSubmit ? 'pointer' : 'default',
+            fontFamily:'inherit', fontSize:16, fontWeight:700, letterSpacing:'0.02em',
+            background: 'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)',
+            color: '#fff',
+            opacity: canSubmit ? 1 : 0.45,
+            boxShadow: canSubmit ? '0 8px 28px rgba(21,101,232,0.45)' : 'none',
             transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
           }}>
             {loading ? <><span style={{width:16, height:16, borderRadius:'50%', border:'2.5px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', animation:'pgSpin .7s linear infinite', display:'inline-block'}}/>{t.loginBtn}</> : t.loginBtn}
