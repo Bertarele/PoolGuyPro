@@ -273,11 +273,11 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           {error ? <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div> : null}
 
           <button onClick={handleLogin} disabled={!canSubmit||loading} style={{
-            width:'100%', height:50, borderRadius:14, border:'none', cursor:'pointer',
-            fontFamily:'inherit', fontSize:15, fontWeight:700, letterSpacing:'-0.01em',
-            background: canSubmit ? 'linear-gradient(135deg, #0EBAC7 0%, #0D7280 100%)' : 'var(--pg-ink-200)',
+            width:'72%', alignSelf:'center', height:56, borderRadius:999, border:'none', cursor:'pointer',
+            fontFamily:'inherit', fontSize:15, fontWeight:700, letterSpacing:'0.01em',
+            background: canSubmit ? 'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)' : 'var(--pg-ink-200)',
             color: canSubmit ? '#fff' : 'var(--pg-ink-400)',
-            boxShadow: canSubmit ? '0 6px 20px rgba(14,186,199,0.38)' : 'none',
+            boxShadow: canSubmit ? '0 8px 24px rgba(21,101,232,0.40)' : 'none',
             transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
           }}>
             {loading ? <><span style={{width:16, height:16, borderRadius:'50%', border:'2.5px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', animation:'pgSpin .7s linear infinite', display:'inline-block'}}/>{t.loginBtn}</> : t.loginBtn}
@@ -442,11 +442,11 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
               </div>
             </div>
             <button onClick={()=>setStep(2)} disabled={!canStep1} style={{
-              width:'100%', height:50, borderRadius:14, border:'none', cursor: canStep1?'pointer':'not-allowed',
+              width:'72%', alignSelf:'center', height:56, borderRadius:999, border:'none', cursor: canStep1?'pointer':'not-allowed',
               fontFamily:'inherit', fontSize:15, fontWeight:700,
-              background: canStep1 ? 'linear-gradient(135deg, #0EBAC7 0%, #0D7280 100%)' : 'var(--pg-ink-200)',
+              background: canStep1 ? 'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)' : 'var(--pg-ink-200)',
               color: canStep1 ? '#fff' : 'var(--pg-ink-400)',
-              boxShadow: canStep1 ? '0 6px 20px rgba(14,186,199,0.38)' : 'none', transition:'all .2s',
+              boxShadow: canStep1 ? '0 8px 24px rgba(21,101,232,0.40)' : 'none', transition:'all .2s',
             }}>{lang==='pt'?'Continuar →':lang==='es'?'Continuar →':'Continue →'}</button>
           </>)}
 
@@ -544,11 +544,11 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             {error ? <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div> : null}
 
             <button onClick={handleSignup} disabled={!canStep2||loading} style={{
-              width:'100%', height:50, borderRadius:14, border:'none', cursor: canStep2?'pointer':'not-allowed',
+              width:'72%', alignSelf:'center', height:56, borderRadius:999, border:'none', cursor: canStep2?'pointer':'not-allowed',
               fontFamily:'inherit', fontSize:15, fontWeight:700,
-              background: canStep2 ? 'linear-gradient(135deg, #0EBAC7 0%, #0D7280 100%)' : 'var(--pg-ink-200)',
+              background: canStep2 ? 'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)' : 'var(--pg-ink-200)',
               color: canStep2 ? '#fff' : 'var(--pg-ink-400)',
-              boxShadow: canStep2 ? '0 6px 20px rgba(14,186,199,0.38)' : 'none',
+              boxShadow: canStep2 ? '0 8px 24px rgba(21,101,232,0.40)' : 'none',
               transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
             }}>
               {loading ? <><span style={{width:16, height:16, borderRadius:'50%', border:'2.5px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', animation:'pgSpin .7s linear infinite', display:'inline-block'}}/></> : null}
