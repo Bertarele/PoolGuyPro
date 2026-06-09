@@ -378,7 +378,8 @@ button { font-family: inherit; }
 [data-pg-dark="1"] .pg-sheet-backdrop { background: rgba(0,0,0,0.72); }
 [data-pg-dark="1"] .pg-seg  { background: var(--pg-ink-100); }
 [data-pg-dark="1"] .pg-seg-btn.on { background: var(--pg-ink-200); color: var(--pg-ink-900); }
-[data-pg-dark="1"] .pg-chip { background: var(--pg-ink-100); color: var(--pg-ink-700); border-color: var(--pg-ink-200); }
+[data-pg-dark="1"] .pg-chip     { background: var(--pg-ink-100); color: var(--pg-ink-700); border-color: var(--pg-ink-200); }
+[data-pg-dark="1"] .pg-chip-on  { background: #1E3A6E; color: #fff; border-color: #4499FF; font-weight: 600; box-shadow: inset 0 2px 5px rgba(0,0,0,0.45); }
 [data-pg-dark="1"] .pg-chip-aqua { background: var(--pg-aqua-100); color: var(--pg-aqua-700); }
 [data-pg-dark="1"] .pg-btn-outline { color: var(--pg-ink-900); border-color: var(--pg-ink-300); }
 [data-pg-dark="1"] .pg-btn-ghost   { background: var(--pg-blue-100); color: var(--pg-blue-400); }
