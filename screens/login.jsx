@@ -17,6 +17,13 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   const [regionSearch,  setRegionSearch] = React.useState('');
   const [regionOpen,    setRegionOpen]   = React.useState(false);
 
+  const [isDesktop, setIsDesktop] = React.useState(() => window.innerWidth >= 900);
+  React.useEffect(() => {
+    const fn = () => setIsDesktop(window.innerWidth >= 900);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+
   const FL = window.FL_COUNTIES || {};
 
   // Build flat list of searchable items: county names + cities
@@ -155,6 +162,303 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       </svg>
     );
   };
+
+  // ── Shared form content (used in both mobile and desktop) ──────
+  const FormContent = () => (<>
+    {mode === 'login' ? (<>
+      {/* Email */}
+      <div style={{position:'relative'}}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8aafc8" strokeWidth="2" strokeLinecap="round"
+          style={{position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1}}>
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        <input className="pg-field" type="email" value={email}
+          onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
+          placeholder={lang==='pt'?'Endereço de email':lang==='es'?'Correo electrónico':'Email address'}
+          style={{height:52, fontSize:14, paddingLeft:40, background:'rgba(255,255,255,0.92)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
+      </div>
+      {/* Password */}
+      <div style={{position:'relative'}}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8aafc8" strokeWidth="2" strokeLinecap="round"
+          style={{position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1}}>
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <input className="pg-field" type={showPass?'text':'password'} value={pass}
+          onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
+          placeholder={lang==='pt'?'Senha':lang==='es'?'Contraseña':'Password'}
+          style={{height:52, fontSize:14, paddingLeft:40, paddingRight:46, background:'rgba(255,255,255,0.92)', border:'1px solid rgba(255,255,255,0.60)', color:'#0A2840', backdropFilter:'blur(8px)'}}/>
+        <button onClick={()=>setShowPass(p=>!p)} style={{position:'absolute', right:14, top:'50%', transform:'translateY(-50%)',
+          border:'none', background:'transparent', cursor:'pointer', padding:4, color:'#8aafc8', display:'flex', alignItems:'center', zIndex:1}}>
+          {showPass
+            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
+        </button>
+      </div>
+      <div style={{textAlign:'right', marginTop:-4}}>
+        <button style={{border:'none', background:'transparent', color: isDesktop ? 'var(--pg-blue-500)' : '#ffffff',
+          fontSize:12, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.forgotPw}</button>
+      </div>
+      {error && <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div>}
+      <button onClick={handleLogin} disabled={!canSubmit||loading} style={{
+        width:'70%', alignSelf:'center', height:54, borderRadius:999, border:'none', cursor: canSubmit?'pointer':'default',
+        fontFamily:'inherit', fontSize:15, fontWeight:700,
+        background:'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)',
+        color:'#fff', opacity: canSubmit ? 1 : 0.45,
+        boxShadow: canSubmit ? '0 8px 28px rgba(21,101,232,0.35)' : 'none',
+        transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+      }}>
+        {loading ? <><span style={{width:16, height:16, borderRadius:'50%', border:'2.5px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', animation:'pgSpin .7s linear infinite', display:'inline-block'}}/>{t.loginBtn}</> : t.loginBtn}
+      </button>
+      <div style={{display:'flex', alignItems:'center', gap:10}}>
+        <div style={{flex:1, height:1, background: isDesktop ? 'var(--pg-ink-200)' : 'rgba(255,255,255,0.25)'}}/>
+        <span style={{fontSize:11, color: isDesktop ? 'var(--pg-ink-400)' : '#ffffff', fontWeight:500}}>{t.orLbl}</span>
+        <div style={{flex:1, height:1, background: isDesktop ? 'var(--pg-ink-200)' : 'rgba(255,255,255,0.25)'}}/>
+      </div>
+      <button onClick={() => {
+        const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+        const redirect = window.location.origin || 'https://usapoolmarket.com';
+        window.location.href = base + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(redirect);
+      }} style={{width:'100%', height:48, borderRadius:12,
+        border: isDesktop ? '1.5px solid var(--pg-ink-200)' : '1px solid rgba(255,255,255,0.30)',
+        background: isDesktop ? '#fff' : 'rgba(255,255,255,0.18)',
+        backdropFilter:'blur(8px)', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:13.5,
+        color: isDesktop ? 'var(--pg-ink-900)' : '#fff',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:9}}>
+        <svg width="18" height="18" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Continue with Google
+      </button>
+      <button onClick={()=>onLogin()} style={{border:'none', background:'transparent',
+        color: isDesktop ? 'var(--pg-ink-500)' : '#ffffff',
+        fontSize:13, cursor:'pointer', padding:'2px 0', fontFamily:'inherit',
+        textDecoration:'underline', textDecorationColor: isDesktop ? 'var(--pg-ink-300)' : 'rgba(255,255,255,0.60)'}}>{t.continueGuest}</button>
+      <div style={{textAlign:'center', marginTop:'auto', paddingTop:4}}>
+        <span style={{fontSize:12.5, color: isDesktop ? 'var(--pg-ink-500)' : '#ffffff'}}>{t.noAccount} </span>
+        <button onClick={()=>{setMode('signup');setStep(1);}} style={{border:'none', background:'transparent',
+          color: isDesktop ? 'var(--pg-blue-500)' : '#fff',
+          fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.signUp}</button>
+      </div>
+    </>) : null}
+  </>);
+
+  // ── Shared input style for desktop ─────────────────────────────
+  const deskInput = {height:50, fontSize:14, background:'#fff', border:'1.5px solid #e2e8f0', color:'#0A2840', borderRadius:12};
+
+  // ── DESKTOP layout ──────────────────────────────────────────────
+  if (isDesktop) {
+    return (
+      <div style={{width:'100%', height:'100%', display:'flex', overflow:'hidden', position:'relative'}}>
+        {/* Left — full photo + logo */}
+        <div style={{flex:'0 0 52%', position:'relative', overflow:'hidden'}}>
+          <div style={{position:'absolute', inset:0, backgroundImage:'url(login-bg.png)', backgroundSize:'cover', backgroundPosition:'center'}}/>
+          <div style={{position:'absolute', inset:0, background:'linear-gradient(160deg, rgba(0,0,0,0.08) 0%, rgba(0,20,60,0.50) 100%)'}}/>
+          <div style={{position:'relative', zIndex:2, height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, padding:'40px 60px'}}>
+            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:190, width:'auto', filter:'drop-shadow(0 6px 32px rgba(0,0,0,0.55)) brightness(1.1)'}}/>
+            <div style={{display:'flex', alignItems:'center', gap:14, marginTop:6}}>
+              <div style={{width:44, height:1.5, background:'rgba(255,255,255,0.55)', borderRadius:2}}/>
+              <span style={{fontSize:13, fontWeight:600, color:'#fff', letterSpacing:'0.08em', textTransform:'uppercase', textShadow:'0 1px 8px rgba(0,0,0,0.45)'}}>{t.tagline}</span>
+              <div style={{width:44, height:1.5, background:'rgba(255,255,255,0.55)', borderRadius:2}}/>
+            </div>
+            <p style={{fontSize:14, color:'rgba(255,255,255,0.80)', textAlign:'center', lineHeight:1.7, maxWidth:300, margin:'2px 0 0', textShadow:'0 1px 6px rgba(0,0,0,0.35)'}}>{t.loginSub}</p>
+          </div>
+        </div>
+
+        {/* Right — white form panel */}
+        <div style={{flex:'0 0 48%', background:'#ffffff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'48px 60px', overflowY:'auto', position:'relative'}}>
+          {/* Language switcher */}
+          <div style={{position:'absolute', top:20, right:24, display:'flex', gap:6}}>
+            {langs.map(l => (
+              <button key={l.id} onClick={()=>setLang(l.id)} style={{
+                padding:'4px 10px', borderRadius:8, border:'1.5px solid', cursor:'pointer',
+                fontFamily:'inherit', fontSize:10.5, fontWeight:700, letterSpacing:'0.05em',
+                background: lang===l.id ? '#EEF4FF' : 'transparent',
+                borderColor: lang===l.id ? '#1565E8' : '#e2e8f0',
+                color: lang===l.id ? '#1565E8' : '#94a3b8',
+                transition:'all .15s',
+              }}>{l.flag} {l.short}</button>
+            ))}
+          </div>
+
+          <div style={{width:'100%', maxWidth:400}}>
+
+            {/* ── LOGIN mode ── */}
+            {mode === 'login' && (<>
+              <div style={{marginBottom:32}}>
+                <h1 style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:800, color:'#0A2840', margin:'0 0 8px', letterSpacing:'-0.02em'}}>
+                  {lang==='pt'?'Bem-vindo de volta 👋':lang==='es'?'Bienvenido de nuevo 👋':'Welcome back 👋'}
+                </h1>
+                <p style={{fontSize:14, color:'#64748b', margin:0, lineHeight:1.6}}>
+                  {lang==='pt'?'Entre na sua conta para continuar':lang==='es'?'Inicia sesión para continuar':'Sign in to your account to continue'}
+                </p>
+              </div>
+              <div style={{display:'flex', flexDirection:'column', gap:16}}>
+                {/* Email */}
+                <div style={{position:'relative'}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round"
+                    style={{position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none'}}>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <input className="pg-field" type="email" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
+                    placeholder={lang==='pt'?'Endereço de email':lang==='es'?'Correo electrónico':'Email address'}
+                    style={{...deskInput, paddingLeft:40}}/>
+                </div>
+                {/* Password */}
+                <div style={{position:'relative'}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round"
+                    style={{position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none'}}>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  <input className="pg-field" type={showPass?'text':'password'} value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
+                    placeholder={lang==='pt'?'Senha':lang==='es'?'Contraseña':'Password'}
+                    style={{...deskInput, paddingLeft:40, paddingRight:46}}/>
+                  <button onClick={()=>setShowPass(p=>!p)} style={{position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', border:'none', background:'transparent', cursor:'pointer', padding:4, color:'#94a3b8', display:'flex', alignItems:'center'}}>
+                    {showPass ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
+                  </button>
+                </div>
+                <div style={{textAlign:'right', marginTop:-8}}>
+                  <button style={{border:'none', background:'transparent', color:'#1565E8', fontSize:12, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.forgotPw}</button>
+                </div>
+                {error && <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div>}
+                <button onClick={handleLogin} disabled={!canSubmit||loading} style={{
+                  width:'100%', height:52, borderRadius:12, border:'none', cursor: canSubmit?'pointer':'default',
+                  fontFamily:'inherit', fontSize:15, fontWeight:700,
+                  background:'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)',
+                  color:'#fff', opacity: canSubmit ? 1 : 0.45,
+                  boxShadow: canSubmit ? '0 6px 24px rgba(21,101,232,0.35)' : 'none',
+                  transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                }}>
+                  {loading ? <><span style={{width:16, height:16, borderRadius:'50%', border:'2.5px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', animation:'pgSpin .7s linear infinite', display:'inline-block'}}/>{t.loginBtn}</> : t.loginBtn}
+                </button>
+                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                  <div style={{flex:1, height:1, background:'#e2e8f0'}}/><span style={{fontSize:11, color:'#94a3b8', fontWeight:500}}>{t.orLbl}</span><div style={{flex:1, height:1, background:'#e2e8f0'}}/>
+                </div>
+                <button onClick={()=>{const b='https://xiszfqghizqzlwyrfjol.supabase.co';const r=window.location.origin||'https://usapoolmarket.com';window.location.href=b+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(r);}}
+                  style={{width:'100%', height:50, borderRadius:12, border:'1.5px solid #e2e8f0', background:'#fff', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:14, color:'#0A2840', display:'flex', alignItems:'center', justifyContent:'center', gap:10}}>
+                  <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                  Continue with Google
+                </button>
+                <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'#64748b', fontSize:13, cursor:'pointer', padding:'2px 0', fontFamily:'inherit', textDecoration:'underline', textDecorationColor:'#cbd5e1'}}>{t.continueGuest}</button>
+                <div style={{textAlign:'center', paddingTop:4}}>
+                  <span style={{fontSize:13, color:'#64748b'}}>{t.noAccount} </span>
+                  <button onClick={()=>{setMode('signup');setStep(1);}} style={{border:'none', background:'transparent', color:'#1565E8', fontSize:13, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.signUp}</button>
+                </div>
+              </div>
+            </>)}
+
+            {/* ── SIGNUP mode ── */}
+            {mode === 'signup' && (<>
+              <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:28}}>
+                <button onClick={step===1 ? ()=>setMode('login') : ()=>setStep(1)} style={{border:'1.5px solid #e2e8f0', background:'#fff', width:36, height:36, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                  {Icon.chev(16,'#64748b','left')}
+                </button>
+                <div style={{flex:1}}>
+                  <h1 style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:800, color:'#0A2840', margin:'0 0 4px', letterSpacing:'-0.02em'}}>
+                    {lang==='pt'?'Criar conta':lang==='es'?'Crear cuenta':'Create account'}
+                  </h1>
+                  <p style={{fontSize:13, color:'#64748b', margin:0}}>{lang==='pt'?`Passo ${step} de 2`:lang==='es'?`Paso ${step} de 2`:`Step ${step} of 2`}</p>
+                </div>
+                <div style={{display:'flex', gap:6}}>
+                  {[1,2].map(i=><div key={i} style={{width:i===step?24:8, height:8, borderRadius:999, transition:'width .2s', background:i<=step?'#1565E8':'#e2e8f0'}}/>)}
+                </div>
+              </div>
+              <div style={{display:'flex', flexDirection:'column', gap:14}}>
+                {step===1 && (<>
+                  <input className="pg-field" type="text" value={name} onChange={e=>setName(e.target.value)}
+                    placeholder={lang==='pt'?'Nome completo':lang==='es'?'Nombre completo':'Full name'} style={{...deskInput}}/>
+                  <input className="pg-field" type="email" value={email} onChange={e=>setEmail(e.target.value)}
+                    placeholder="Email" style={{...deskInput}}/>
+                  <div style={{position:'relative'}}>
+                    <input className="pg-field" type={showPass?'text':'password'} value={pass} onChange={e=>setPass(e.target.value)}
+                      placeholder={lang==='pt'?'Senha (mín. 8 caracteres)':lang==='es'?'Contraseña (mín. 8 caracteres)':'Password (min. 8 chars)'}
+                      style={{...deskInput, paddingRight:46}}/>
+                    <button onClick={()=>setShowPass(p=>!p)} style={{position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', border:'none', background:'transparent', cursor:'pointer', padding:4, color:'#94a3b8', display:'flex', alignItems:'center'}}>
+                      {showPass ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
+                    </button>
+                  </div>
+                  {pass.length > 0 && (
+                    <div style={{display:'flex', gap:4}}>
+                      {[1,2,3,4,5].map(i=><div key={i} style={{flex:1, height:4, borderRadius:999, background:i<=passStrength.score?passStrength.color:'#e2e8f0', transition:'background .2s'}}/>)}
+                    </div>
+                  )}
+                  <div style={{position:'relative'}}>
+                    <input className="pg-field" type={showPassC?'text':'password'} value={passConfirm} onChange={e=>setPassConfirm(e.target.value)}
+                      placeholder={lang==='pt'?'Confirmar senha':lang==='es'?'Confirmar contraseña':'Confirm password'}
+                      style={{...deskInput, paddingRight:46, border:passConfirm.length>=4?`1.5px solid ${passMatch?'#22c55e':'#f87171'}`:'1.5px solid #e2e8f0'}}/>
+                    <button onClick={()=>setShowPassC(p=>!p)} style={{position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', border:'none', background:'transparent', cursor:'pointer', padding:4, color:'#94a3b8', display:'flex', alignItems:'center'}}>
+                      {showPassC ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
+                    </button>
+                  </div>
+                  <button onClick={()=>setStep(2)} disabled={!canStep1} style={{
+                    width:'100%', height:52, borderRadius:12, border:'none', cursor:canStep1?'pointer':'default',
+                    fontFamily:'inherit', fontSize:15, fontWeight:700,
+                    background:'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)',
+                    color:'#fff', opacity:canStep1?1:0.45,
+                    boxShadow:canStep1?'0 6px 24px rgba(21,101,232,0.35)':'none', transition:'all .2s',
+                  }}>{lang==='pt'?'Continuar →':lang==='es'?'Continuar →':'Continue →'}</button>
+                </>)}
+                {step===2 && (<>
+                  <p style={{fontSize:13, color:'#64748b', margin:'0 0 4px'}}>{lang==='pt'?'Selecione sua região de trabalho:':lang==='es'?'Selecciona tu región:':'Select your work region:'}</p>
+                  <div style={{position:'relative'}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round"
+                      style={{position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', pointerEvents:'none'}}>
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input className="pg-field" type="text" value={regionSearch}
+                      onChange={e=>{setRegionSearch(e.target.value);setRegionOpen(true);}} onFocus={()=>setRegionOpen(true)}
+                      placeholder={lang==='pt'?'Buscar cidade ou condado…':lang==='es'?'Buscar ciudad o condado…':'Search city or county…'}
+                      style={{...deskInput, paddingLeft:34}}/>
+                  </div>
+                  {region && <div style={{display:'flex', alignItems:'center', gap:8, background:'#EEF4FF', border:'1.5px solid #93c5fd', borderRadius:999, padding:'6px 14px', alignSelf:'flex-start'}}>
+                    <span style={{fontSize:13, fontWeight:600, color:'#1565E8'}}>{region}</span>
+                    <button onClick={()=>{setRegion('');setRegionSearch('');setRegionOpen(true);}} style={{border:'none', background:'#bfdbfe', borderRadius:'50%', width:16, height:16, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', padding:0, color:'#1565E8'}}>
+                      <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+                    </button>
+                  </div>}
+                  {regionOpen && filteredItems.length > 0 && (
+                    <div style={{border:'1.5px solid #e2e8f0', borderRadius:12, maxHeight:160, overflowY:'auto', boxShadow:'0 8px 24px rgba(15,30,60,0.10)'}}>
+                      {filteredItems.map((item,idx)=>(
+                        <button key={idx} onMouseDown={e=>e.preventDefault()} onClick={()=>{setRegion(item.value);setRegionSearch('');setRegionOpen(false);}}
+                          style={{display:'flex', alignItems:'center', gap:8, width:'100%', padding:'9px 14px', border:'none', background:item.isCounty?'#f8fafc':'#fff', cursor:'pointer', fontFamily:'inherit', textAlign:'left', borderBottom:'0.5px solid #f1f5f9'}}>
+                          <span style={{fontSize:12, opacity:0.5}}>{item.isCounty?'🗺️':'📍'}</span>
+                          <span style={{fontSize:item.isCounty?11:13, fontWeight:item.isCounty?700:500, color:item.isCounty?'#94a3b8':'#0A2840', textTransform:item.isCounty?'uppercase':'none', letterSpacing:item.isCounty?'0.04em':0}}>{item.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {regionOpen && <div style={{position:'fixed', inset:0, zIndex:98}} onClick={()=>setRegionOpen(false)}/>}
+                  {error && <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div>}
+                  <button onClick={handleSignup} disabled={!canStep2||loading} style={{
+                    width:'100%', height:52, borderRadius:12, border:'none', cursor:canStep2?'pointer':'default',
+                    fontFamily:'inherit', fontSize:15, fontWeight:700,
+                    background:'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)',
+                    color:'#fff', opacity:canStep2?1:0.45,
+                    boxShadow:canStep2?'0 6px 24px rgba(21,101,232,0.35)':'none', transition:'all .2s',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  }}>
+                    {loading?<span style={{width:16,height:16,borderRadius:'50%',border:'2.5px solid rgba(255,255,255,0.3)',borderTopColor:'#fff',animation:'pgSpin .7s linear infinite',display:'inline-block'}}/>:null}
+                    {lang==='pt'?'Criar minha conta':lang==='es'?'Crear mi cuenta':'Create my account'}
+                  </button>
+                </>)}
+                <div style={{textAlign:'center', paddingTop:4}}>
+                  <span style={{fontSize:13, color:'#64748b'}}>{lang==='pt'?'Já tem conta? ':lang==='es'?'¿Ya tienes cuenta? ':'Already have an account? '}</span>
+                  <button onClick={()=>setMode('login')} style={{border:'none', background:'transparent', color:'#1565E8', fontSize:13, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{lang==='pt'?'Entrar':lang==='es'?'Iniciar sesión':'Sign in'}</button>
+                </div>
+              </div>
+            </>)}
+
+          </div>
+        </div>
+        <style>{`@keyframes pgSpin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
