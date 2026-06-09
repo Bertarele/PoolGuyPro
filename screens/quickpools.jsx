@@ -246,16 +246,6 @@ function QuickPoolsScreen({ ctx }) {
 
             {/* Actions */}
             <div style={{display:'flex', gap:10, alignItems:'center'}}>
-              <button onClick={()=>openNotifications&&openNotifications()} style={{
-                width:44, height:44, borderRadius:13,
-                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
-                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-                color:'#fff', position:'relative',
-              }}>
-                {Icon.bell(20,'#fff')}
-                {hasUnreadNotif && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
-                  borderRadius:'50%', background:'#FF3B30', border:'2px solid #011B5A'}}/>}
-              </button>
               <button onClick={()=>openChat&&openChat()} style={{
                 width:44, height:44, borderRadius:13,
                 background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
@@ -264,6 +254,16 @@ function QuickPoolsScreen({ ctx }) {
               }}>
                 {Icon.msg(20,'#fff')}
                 {hasUnreadChat && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
+                  borderRadius:'50%', background:'#FF3B30', border:'2px solid #011B5A'}}/>}
+              </button>
+              <button onClick={()=>openNotifications&&openNotifications()} style={{
+                width:44, height:44, borderRadius:13,
+                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
+                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                color:'#fff', position:'relative',
+              }}>
+                {Icon.bell(20,'#fff')}
+                {hasUnreadNotif && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
                   borderRadius:'50%', background:'#FF3B30', border:'2px solid #011B5A'}}/>}
               </button>
             </div>
@@ -415,16 +415,16 @@ function QuickPoolsScreen({ ctx }) {
         right={
           <div style={{display:'flex', gap:6, alignItems:'center'}}>
             <div style={{position:'relative', display:'inline-flex'}}>
-              <IconButton dark onClick={()=>openNotifications&&openNotifications()}>
-                {Icon.bell(20,'#fff')}
-              </IconButton>
-              {hasUnreadNotif && <span style={{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #011B5A',pointerEvents:'none'}}/>}
-            </div>
-            <div style={{position:'relative', display:'inline-flex'}}>
               <IconButton dark onClick={()=>openChat&&openChat()}>
                 {Icon.msg(20,'#fff')}
               </IconButton>
               {hasUnreadChat && <span style={{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #011B5A',pointerEvents:'none'}}/>}
+            </div>
+            <div style={{position:'relative', display:'inline-flex'}}>
+              <IconButton dark onClick={()=>openNotifications&&openNotifications()}>
+                {Icon.bell(20,'#fff')}
+              </IconButton>
+              {hasUnreadNotif && <span style={{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #011B5A',pointerEvents:'none'}}/>}
             </div>
           </div>
         }
