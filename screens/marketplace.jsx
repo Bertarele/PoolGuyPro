@@ -3233,6 +3233,8 @@ function MarketplaceScreen({ ctx }) {
   const [regionOpen, setRegionOpen] = React.useState(false);  // region dropdown open
   const [regionSearch, setRegionSearch] = React.useState('');  // region search query
   const [routeRegion,setRouteRegion]= React.useState('all');  // routes region filter
+  const [countyFilter,     setCountyFilter]     = React.useState(['Broward','Miami-Dade','Palm Beach']);
+  const [countyPickerOpen, setCountyPickerOpen] = React.useState(false);
   const [routePrice, setRoutePrice] = React.useState('all');  // routes price filter
   const [routeSub,   setRouteSub]   = React.useState('routes'); // 'routes' | 'pools'
   const [poolPrice,  setPoolPrice]  = React.useState('all');  // individual pools price filter
@@ -3363,8 +3365,28 @@ function MarketplaceScreen({ ctx }) {
   const isEquipment = view === 'buy' || view === 'rent';
   const mode = view === 'rent' ? 'rent' : 'sell';
 
+  // County filter — city → county lookup from FL_COUNTIES
+  const cityToCounty = React.useMemo(() => {
+    const map = {};
+    Object.entries(window.FL_COUNTIES || {}).forEach(([county, cities]) => {
+      cities.forEach(city => { map[city.toLowerCase()] = county; });
+    });
+    return map;
+  }, []);
+
+  const marketByCounty = React.useMemo(() => {
+    if (countyFilter.length === 0 || countyFilter.length === 3) return liveMarket;
+    return liveMarket.filter(m => {
+      const loc = (m.loc || m.area || '').trim().toLowerCase();
+      if (!loc) return true;
+      const county = cityToCounty[loc];
+      if (!county) return true; // unknown city → show
+      return countyFilter.includes(county);
+    });
+  }, [liveMarket, countyFilter, cityToCounty]);
+
   // Rotas reais do banco (type='route', aprovadas ou próprias pendentes)
-  const liveRoutes = liveMarket
+  const liveRoutes = marketByCounty
     .filter(m => m.type === 'route' && (m.status === 'approved' || (m.status === 'pending' && isMyPost(m))))
     .map(m => ({
       id: m._id, _live: true, _liveId: m._id,
@@ -3595,7 +3617,7 @@ function MarketplaceScreen({ ctx }) {
   // ── DESKTOP LAYOUT (≥ 900px) ─────────────────────────────────
   // ══════════════════════════════════════════════════════════════
   if (isDesktop) {
-    const liveEquipment = liveMarket.filter(m => m.type === mode &&
+    const liveEquipment = marketByCounty.filter(m => m.type === mode &&
       (cat === 'All' || !m.cat || m.cat === cat) &&
       (user.role==='admin' || m.status==='approved' || (m.status==='pending'&&isMyPost(m)) || isSoldVisible(m))
     );
@@ -4201,18 +4223,76 @@ function MarketplaceScreen({ ctx }) {
             </div>
           </div>
           <div style={{width:1, height:30, background:'rgba(255,255,255,0.15)'}}/>
-          <div style={{flex:1, display:'flex', alignItems:'center', gap:5}}>
-            <div style={{
-              width:30, height:30, borderRadius:9, background:'rgba(0,119,182,0.18)', border:'0.5px solid rgba(0,119,182,0.25)',
-              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-            }}>{Icon.pin(13,'var(--pg-aqua-400, #2B9FD8)')}</div>
-            <div>
-              <div style={{fontSize:11, fontWeight:700, lineHeight:1, letterSpacing:'-0.01em'}}>Broward · Dade</div>
-              <div style={{fontSize:9.5, opacity:0.50, lineHeight:1, marginTop:2, fontWeight:500}}>Palm Beach</div>
+          <button onClick={()=>setCountyPickerOpen(true)} style={{flex:1, display:'flex', alignItems:'center', gap:6, background:'rgba(0,119,182,0.18)', border:'0.5px solid rgba(0,119,182,0.35)', borderRadius:10, padding:'5px 10px', cursor:'pointer', fontFamily:'inherit', color:'inherit', minWidth:0}}>
+            {Icon.pin(12,'var(--pg-aqua-400, #2B9FD8)')}
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:11, fontWeight:700, lineHeight:1, letterSpacing:'-0.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                {countyFilter.length === 0
+                  ? (lang==='pt'?'Nenhuma região':'No region')
+                  : countyFilter.map(c => c==='Miami-Dade'?'Dade':c==='Palm Beach'?'Palm Beach':c).join(' · ')}
+              </div>
+              <div style={{fontSize:9, opacity:0.55, lineHeight:1, marginTop:2, fontWeight:500, display:'flex', alignItems:'center', gap:2}}>
+                {lang==='pt'?'toque para editar':'tap to edit'}
+                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
       </NavyBar>
+
+      {/* ── County picker sheet ── */}
+      {countyPickerOpen && (
+        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.50)', zIndex:6000, display:'flex', alignItems:'flex-end'}} onClick={()=>setCountyPickerOpen(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:'100%', background:'var(--pg-white)', borderRadius:'22px 22px 0 0', padding:'10px 18px 36px', boxShadow:'0 -4px 32px rgba(0,0,0,0.18)'}}>
+            <div style={{width:36, height:4, borderRadius:999, background:'var(--pg-ink-200)', margin:'0 auto 18px'}}/>
+            <div style={{fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:4}}>
+              {lang==='pt'?'Região de busca':lang==='es'?'Región de búsqueda':'Search region'}
+            </div>
+            <div style={{fontSize:13, color:'var(--pg-ink-500)', marginBottom:18, lineHeight:1.4}}>
+              {lang==='pt'?'Selecione os condados para filtrar os anúncios':lang==='es'?'Seleccione los condados para filtrar':'Select counties to filter listings'}
+            </div>
+            <div style={{display:'flex', flexDirection:'column', gap:10}}>
+              {[
+                {id:'Broward',    label:'Broward County',      sub: lang==='pt'?'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…':'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…'},
+                {id:'Miami-Dade', label:'Miami-Dade County',   sub: lang==='pt'?'Miami, Coral Gables, Doral, Hialeah…':'Miami, Coral Gables, Doral, Hialeah…'},
+                {id:'Palm Beach', label:'Palm Beach County',   sub: lang==='pt'?'Boca Raton, Boynton Beach, Wellington, Jupiter…':'Boca Raton, Boynton Beach, Wellington, Jupiter…'},
+              ].map(county => {
+                const on = countyFilter.includes(county.id);
+                return (
+                  <button key={county.id} onClick={()=>{
+                    setCountyFilter(prev => {
+                      if (on && prev.length === 1) return prev; // mínimo 1 condado
+                      return on ? prev.filter(c=>c!==county.id) : [...prev, county.id];
+                    });
+                  }} style={{
+                    display:'flex', alignItems:'center', gap:14,
+                    padding:'14px 16px', borderRadius:14,
+                    border: on ? '1.5px solid var(--pg-blue-500)' : '1.5px solid var(--pg-ink-200)',
+                    background: on ? 'var(--pg-blue-50)' : 'var(--pg-ink-50)',
+                    cursor:'pointer', fontFamily:'inherit', textAlign:'left', transition:'all .15s',
+                  }}>
+                    <div style={{
+                      width:22, height:22, borderRadius:7, flexShrink:0,
+                      border: on ? '2px solid var(--pg-blue-500)' : '2px solid var(--pg-ink-300)',
+                      background: on ? 'var(--pg-blue-500)' : 'transparent',
+                      display:'flex', alignItems:'center', justifyContent:'center', transition:'all .12s',
+                    }}>
+                      {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14, fontWeight:700, color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-900)'}}>{county.label}</div>
+                      <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:2, lineHeight:1.3}}>{county.sub}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={()=>setCountyPickerOpen(false)} className="pg-btn pg-btn-primary" style={{width:'100%', marginTop:20, height:48}}>
+              {lang==='pt'?'Confirmar':lang==='es'?'Confirmar':'Confirm'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Pending ratings banner ── */}
       {pendingRatings.length > 0 && (
@@ -4335,7 +4415,7 @@ function MarketplaceScreen({ ctx }) {
         {isEquipment && (
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(155px, 1fr))', gap:12, marginTop:14}}>
             {/* Live user-posted equipment items */}
-            {liveMarket
+            {marketByCounty
               .filter(m => m.type === mode &&
                 (cat === 'All' || !m.cat || m.cat === cat) &&
                 (
@@ -4551,7 +4631,7 @@ function MarketplaceScreen({ ctx }) {
               })}
 
             {/* Empty state */}
-            {liveMarket.filter(m=>m.type===mode && (m.status==='approved'||(m.status==='pending'&&isMyPost(m)))).length === 0
+            {marketByCounty.filter(m=>m.type===mode && (m.status==='approved'||(m.status==='pending'&&isMyPost(m)))).length === 0
              && (view === 'rent' || list.length === 0) && (
               <div style={{gridColumn:'1/-1', textAlign:'center', padding:'48px 20px'}}>
                 <div style={{fontSize:36, marginBottom:12}}>{view==='rent'?'🔑':'🔍'}</div>
