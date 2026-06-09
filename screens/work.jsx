@@ -655,7 +655,7 @@ function WorkScreen({ ctx }) {
             <div style={{width:1, height:28, background:'rgba(255,255,255,0.15)'}}/>
             {/* County badge — tappable */}
             <button onClick={()=>setWorkCountyPickerOpen(true)}
-              style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:5,
+              style={{display:'flex', alignItems:'center', gap:5,
                 background:'rgba(0,119,182,0.25)', border:'1px solid rgba(0,119,182,0.40)',
                 borderRadius:999, padding:'5px 11px',
                 cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
@@ -682,7 +682,7 @@ function WorkScreen({ ctx }) {
             <div style={{width:1, height:28, background:'rgba(255,255,255,0.15)'}}/>
             {/* County badge — shared filter */}
             <button onClick={()=>setWorkCountyPickerOpen(true)}
-              style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:5,
+              style={{display:'flex', alignItems:'center', gap:5,
                 background:'rgba(0,119,182,0.25)', border:'1px solid rgba(0,119,182,0.40)',
                 borderRadius:999, padding:'5px 11px',
                 cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
