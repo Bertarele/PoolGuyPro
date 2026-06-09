@@ -193,14 +193,6 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         flex:'0 0 auto', paddingTop:60, paddingBottom:0,
         display:'flex', flexDirection:'column', alignItems:'center', gap:0,
       }}>
-        {/* Logo icon — Flood Level */}
-        <div style={{
-          marginBottom:18,
-          filter:'drop-shadow(0 8px 28px rgba(14,186,199,0.45)) drop-shadow(0 2px 8px rgba(0,0,0,0.30))',
-        }}>
-          <FloodIcon size={88}/>
-        </div>
-
         {/* PoolGuyX logo */}
         <img
           src="pgx-logo.png"
