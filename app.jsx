@@ -1265,6 +1265,12 @@ function App() {
         {/* ── MAIN CONTENT ───────────────────────────────────── */}
         <div style={{flex:1, position:'relative', overflow:'hidden', background:'var(--pg-bg)'}}>
           {!isLoggedIn ? (
+            window.innerWidth >= 1024 ? (
+              /* Desktop: login full-screen sem card wrapper */
+              <div style={{position:'absolute', inset:0, overflow:'hidden'}}>
+                <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
+              </div>
+            ) : (
             <div style={{
               position:'absolute', inset:0, overflowY:'auto',
               display:'flex', alignItems:'center', justifyContent:'center',
@@ -1279,6 +1285,7 @@ function App() {
                 <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
               </div>
             </div>
+            )
           ) : (
             <div ref={screenRef} data-pg-screen style={{
               position:'absolute', inset:0, overflowY:'auto', overflowX:'hidden',

@@ -273,34 +273,34 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         {/* Centered card */}
         <div style={{
           position:'relative', zIndex:2,
-          width:'100%', maxWidth:440,
-          background:'rgba(255,255,255,0.97)',
-          backdropFilter:'blur(20px)',
-          borderRadius:24,
-          padding:'36px 40px 32px',
-          boxShadow:'0 24px 64px rgba(0,0,0,0.28)',
-          margin:'0 20px',
-          overflowY:'auto', maxHeight:'calc(100% - 40px)',
+          width:'100%', maxWidth:480,
+          background:'rgba(255,255,255,0.96)',
+          backdropFilter:'blur(24px)',
+          borderRadius:28,
+          padding:'40px 44px 36px',
+          boxShadow:'0 32px 80px rgba(0,0,0,0.32)',
+          margin:'0 24px',
+          overflowY:'auto', maxHeight:'calc(100% - 48px)',
         }}>
           {/* Logo + tagline no topo do card */}
-          <div style={{textAlign:'center', marginBottom:24}}>
-            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:72, width:'auto', filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.15))'}}/>
-            <div style={{fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.06em', textTransform:'uppercase', marginTop:6}}>{t.tagline}</div>
+          <div style={{textAlign:'center', marginBottom:28}}>
+            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:110, width:'auto', filter:'drop-shadow(0 3px 12px rgba(0,0,0,0.18))'}}/>
+            <div style={{fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.07em', textTransform:'uppercase', marginTop:8}}>{t.tagline}</div>
           </div>
 
           <div style={{width:'100%'}}>
 
             {/* ── LOGIN mode ── */}
             {mode === 'login' && (<>
-              <div style={{marginBottom:24}}>
-                <h1 style={{fontFamily:'var(--pg-font-display)', fontSize:24, fontWeight:800, color:'#0A2840', margin:'0 0 6px', letterSpacing:'-0.01em'}}>
+              <div style={{marginBottom:20}}>
+                <h1 style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, color:'#0A2840', margin:'0 0 4px', letterSpacing:'-0.01em'}}>
                   {lang==='pt'?'Bem-vindo de volta':lang==='es'?'Bienvenido de nuevo':'Welcome back'} 👋
                 </h1>
                 <p style={{fontSize:13, color:'#64748b', margin:0, lineHeight:1.5}}>
                   {lang==='pt'?'Entre na sua conta para continuar':lang==='es'?'Inicia sesión para continuar':'Sign in to your account to continue'}
                 </p>
               </div>
-              <div style={{display:'flex', flexDirection:'column', gap:12}}>
+              <div style={{display:'flex', flexDirection:'column', gap:11}}>
                 {/* Email */}
                 <div style={{position:'relative'}}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round"
