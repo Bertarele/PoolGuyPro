@@ -206,7 +206,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           src="pgx-logo.png"
           alt="PoolGuyX"
           style={{
-            height: 160,
+            height: 220,
             width: 'auto',
             display: 'block',
             marginBottom: 6,
