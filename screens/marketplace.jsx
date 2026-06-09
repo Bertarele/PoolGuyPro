@@ -4223,19 +4223,23 @@ function MarketplaceScreen({ ctx }) {
             </div>
           </div>
           <div style={{width:1, height:30, background:'rgba(255,255,255,0.15)'}}/>
-          <button onClick={()=>setCountyPickerOpen(true)} style={{flex:1, display:'flex', alignItems:'center', gap:6, background:'rgba(0,119,182,0.18)', border:'0.5px solid rgba(0,119,182,0.35)', borderRadius:10, padding:'5px 10px', cursor:'pointer', fontFamily:'inherit', color:'inherit', minWidth:0}}>
-            {Icon.pin(12,'var(--pg-aqua-400, #2B9FD8)')}
-            <div style={{flex:1, minWidth:0}}>
-              <div style={{fontSize:11, fontWeight:700, lineHeight:1, letterSpacing:'-0.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                {countyFilter.length === 0
-                  ? (lang==='pt'?'Nenhuma região':'No region')
-                  : countyFilter.map(c => c==='Miami-Dade'?'Dade':c==='Palm Beach'?'Palm Beach':c).join(' · ')}
-              </div>
-              <div style={{fontSize:9, opacity:0.55, lineHeight:1, marginTop:2, fontWeight:500, display:'flex', alignItems:'center', gap:2}}>
-                {lang==='pt'?'toque para editar':'tap to edit'}
-                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-            </div>
+          {/* County selector — same pill as original but tappable */}
+          <button onClick={()=>setCountyPickerOpen(true)}
+            style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
+              background:'rgba(0,119,182,0.25)', border:'1px solid rgba(0,119,182,0.40)',
+              borderRadius:999, padding:'6px 12px',
+              cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+            {Icon.pin(12,'rgba(255,255,255,0.70)')}
+            <span style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.85)', whiteSpace:'nowrap'}}>
+              {countyFilter.length === 0
+                ? (lang==='pt'?'Nenhuma região':'No region')
+                : countyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
+            </span>
+            {/* pencil edit icon */}
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
           </button>
         </div>
       </NavyBar>
