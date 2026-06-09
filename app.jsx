@@ -801,6 +801,7 @@ function App() {
         onNavigate={(type, linkId)=>{
           setNotifOpen(false);
           if (type==='warning') { setTimeout(()=>switchTab('profile'), 280); }
+          else if (type==='job_new_application' || type==='job_accepted' || type==='job_rejected') { setTimeout(()=>switchTab('work'), 280); }
           else if (linkId) { setTimeout(()=>ctx.openListingById(linkId), 280); }
           else { setTimeout(()=>switchTab('market'), 280); }
         }}/>

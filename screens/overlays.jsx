@@ -576,6 +576,22 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
         interview_day:  tr(interview.day, 'en'),
         interview_time: interview.time || '',
       });
+      // Notify applicant
+      if (app.applicant_id && window.sb) {
+        const jobRole = post.role || post.company || '';
+        window.sb.from('notifications').insert({
+          user_id: app.applicant_id,
+          type:    'job_accepted',
+          title:   JSON.stringify({ en:'Application accepted! 🎉', pt:'Candidatura aceita! 🎉', es:'¡Postulación aceptada! 🎉' }),
+          body:    JSON.stringify({
+            en: `Your application for "${jobRole}" was accepted.`,
+            pt: `Sua candidatura para "${jobRole}" foi aceita.`,
+            es: `Tu postulación para "${jobRole}" fue aceptada.`,
+          }),
+          link_id: post._id || null,
+          read:    false,
+        });
+      }
     }
   };
 
@@ -586,6 +602,23 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
     const app = applicants.find(a => a.id === id);
     if (post?._live && app?._dbId) {
       await dbUpdate(app._dbId, { status, ...extra });
+      // Notify applicant on accept or reject
+      if (app.applicant_id && window.sb && (status === 'accepted' || status === 'rejected')) {
+        const jobRole = post.role || post.company || '';
+        const isAcc   = status === 'accepted';
+        window.sb.from('notifications').insert({
+          user_id: app.applicant_id,
+          type:    isAcc ? 'job_accepted' : 'job_rejected',
+          title:   JSON.stringify(isAcc
+            ? { en:'Application accepted! 🎉', pt:'Candidatura aceita! 🎉', es:'¡Postulación aceptada! 🎉' }
+            : { en:'Application not selected', pt:'Candidatura não selecionada', es:'Postulación no seleccionada' }),
+          body:    JSON.stringify(isAcc
+            ? { en:`Your application for "${jobRole}" was accepted.`, pt:`Sua candidatura para "${jobRole}" foi aceita.`, es:`Tu postulación para "${jobRole}" fue aceptada.` }
+            : { en:`Your application for "${jobRole}" was not selected.`, pt:`Sua candidatura para "${jobRole}" não foi selecionada.`, es:`Tu postulación para "${jobRole}" no fue seleccionada.` }),
+          link_id: post._id || null,
+          read:    false,
+        });
+      }
     }
   };
 
@@ -1834,12 +1867,15 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
   // Titles for known types — always localized regardless of what's stored in DB
   // This fixes legacy English-only notifications AND new multilingual ones
   const NOTIF_TITLES = {
-    rental_request:   { en:'New rental request',         pt:'Novo pedido de aluguel',           es:'Nueva solicitud de alquiler' },
-    rental_approved:  { en:'Rental approved! 🎉',        pt:'Aluguel aprovado! 🎉',              es:'¡Alquiler aprobado! 🎉' },
-    rental_declined:  { en:'Rental request declined',    pt:'Pedido de aluguel recusado',        es:'Solicitud de alquiler rechazada' },
-    rental_cancelled: { en:'Rental cancelled by owner',  pt:'Aluguel cancelado pelo dono',       es:'Alquiler cancelado por el propietario' },
-    rental_completed: { en:'Rental completed ✓',         pt:'Aluguel finalizado ✓',              es:'Alquiler completado ✓' },
-    dispute_resolved: { en:'Dispute resolved',           pt:'Disputa resolvida',                 es:'Disputa resuelta' },
+    rental_request:       { en:'New rental request',         pt:'Novo pedido de aluguel',             es:'Nueva solicitud de alquiler' },
+    rental_approved:      { en:'Rental approved! 🎉',        pt:'Aluguel aprovado! 🎉',                es:'¡Alquiler aprobado! 🎉' },
+    rental_declined:      { en:'Rental request declined',    pt:'Pedido de aluguel recusado',          es:'Solicitud de alquiler rechazada' },
+    rental_cancelled:     { en:'Rental cancelled by owner',  pt:'Aluguel cancelado pelo dono',         es:'Alquiler cancelado por el propietario' },
+    rental_completed:     { en:'Rental completed ✓',         pt:'Aluguel finalizado ✓',                es:'Alquiler completado ✓' },
+    dispute_resolved:     { en:'Dispute resolved',           pt:'Disputa resolvida',                   es:'Disputa resuelta' },
+    job_new_application:  { en:'New job application',        pt:'Nova candidatura recebida',           es:'Nueva postulación recibida' },
+    job_accepted:         { en:'Application accepted! 🎉',   pt:'Candidatura aceita! 🎉',              es:'¡Postulación aceptada! 🎉' },
+    job_rejected:         { en:'Application not selected',   pt:'Candidatura não selecionada',         es:'Postulación no seleccionada' },
   };
   const renderTitle = (n) => {
     const entry = NOTIF_TITLES[n.type];
@@ -1888,22 +1924,28 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
   const isNavigable = (n) => !!(onNavigate && (n.link_id || n.type));
 
   const iconFor = (type) => {
-    if (type==='rental_request')   return Icon.key(17,'#fff');
-    if (type==='rental_approved')  return Icon.check(17,'#fff');
-    if (type==='rental_declined')  return Icon.x(17,'#fff');
-    if (type==='rental_cancelled') return Icon.x(17,'#fff');
-    if (type==='rental_completed') return Icon.check(17,'#fff');
-    if (type==='warning')          return <span style={{fontSize:18}}>⚠️</span>;
-    if (type==='dispute_resolved') return Icon.shield(16,'#fff');
+    if (type==='rental_request')      return Icon.key(17,'#fff');
+    if (type==='rental_approved')     return Icon.check(17,'#fff');
+    if (type==='rental_declined')     return Icon.x(17,'#fff');
+    if (type==='rental_cancelled')    return Icon.x(17,'#fff');
+    if (type==='rental_completed')    return Icon.check(17,'#fff');
+    if (type==='warning')             return <span style={{fontSize:18}}>⚠️</span>;
+    if (type==='dispute_resolved')    return Icon.shield(16,'#fff');
+    if (type==='job_new_application') return Icon.briefcase(17,'#fff');
+    if (type==='job_accepted')        return Icon.check(17,'#fff');
+    if (type==='job_rejected')        return Icon.x(17,'#fff');
     return Icon.bolt(17,'#fff');
   };
   const colorFor = (type) => {
-    if (type==='rental_request')   return '#0EBAC7';
-    if (type==='rental_approved')  return '#22C55E';
+    if (type==='rental_request')      return '#0EBAC7';
+    if (type==='rental_approved')     return '#22C55E';
     if (type==='rental_declined'||type==='rental_cancelled') return '#EF4444';
-    if (type==='rental_completed') return '#16A34A';
-    if (type==='warning')          return '#F59E0B';
-    if (type==='dispute_resolved') return '#6366F1';
+    if (type==='rental_completed')    return '#16A34A';
+    if (type==='warning')             return '#F59E0B';
+    if (type==='dispute_resolved')    return '#6366F1';
+    if (type==='job_new_application') return '#0077B6';
+    if (type==='job_accepted')        return '#22C55E';
+    if (type==='job_rejected')        return '#EF4444';
     return '#3B82F6';
   };
   const fmtTime = (d) => {
@@ -2686,6 +2728,22 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
       const errMsg = lang==='pt' ? 'Erro ao enviar candidatura. Tente novamente.' : lang==='es' ? 'Error al enviar postulación. Inténtalo de nuevo.' : 'Failed to submit application. Please try again.';
       setInsertError(errMsg);
       return;
+    }
+    // Notify the job owner
+    const ownerId = job.author_id || job.job_author_id || null;
+    if (ownerId && ownerId !== uid && window.sb) {
+      window.sb.from('notifications').insert({
+        user_id: ownerId,
+        type:    'job_new_application',
+        title:   JSON.stringify({ en:'New application received', pt:'Nova candidatura recebida', es:'Nueva postulación recibida' }),
+        body:    JSON.stringify({
+          en: `${user.name || 'Someone'} applied for "${jobRole || jobCompany}".`,
+          pt: `${user.name || 'Alguém'} se candidatou para "${jobRole || jobCompany}".`,
+          es: `${user.name || 'Alguien'} se postuló para "${jobRole || jobCompany}".`,
+        }),
+        link_id: jobId,
+        read:    false,
+      });
     }
     setSubmitted(true);
     setTimeout(() => onSubmit && onSubmit(), 2000);
