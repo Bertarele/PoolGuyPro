@@ -17,9 +17,9 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   const [regionSearch,  setRegionSearch] = React.useState('');
   const [regionOpen,    setRegionOpen]   = React.useState(false);
 
-  const [isDesktop, setIsDesktop] = React.useState(() => window.innerWidth >= 900);
+  const [isDesktop, setIsDesktop] = React.useState(() => window.innerWidth >= 1024);
   React.useEffect(() => {
-    const fn = () => setIsDesktop(window.innerWidth >= 900);
+    const fn = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener('resize', fn);
     return () => window.removeEventListener('resize', fn);
   }, []);
@@ -251,24 +251,24 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   // ── DESKTOP layout ──────────────────────────────────────────────
   if (isDesktop) {
     return (
-      <div style={{width:'100%', height:'100%', display:'flex', overflow:'hidden', position:'relative'}}>
+      <div style={{width:'100%', height:'100%', display:'flex', overflow:'hidden'}}>
         {/* Left — full photo + logo */}
-        <div style={{flex:'0 0 52%', position:'relative', overflow:'hidden'}}>
+        <div style={{flex:'0 0 50%', position:'relative', overflow:'hidden'}}>
           <div style={{position:'absolute', inset:0, backgroundImage:'url(login-bg.png)', backgroundSize:'cover', backgroundPosition:'center'}}/>
-          <div style={{position:'absolute', inset:0, background:'linear-gradient(160deg, rgba(0,0,0,0.08) 0%, rgba(0,20,60,0.50) 100%)'}}/>
-          <div style={{position:'relative', zIndex:2, height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, padding:'40px 60px'}}>
-            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:190, width:'auto', filter:'drop-shadow(0 6px 32px rgba(0,0,0,0.55)) brightness(1.1)'}}/>
-            <div style={{display:'flex', alignItems:'center', gap:14, marginTop:6}}>
-              <div style={{width:44, height:1.5, background:'rgba(255,255,255,0.55)', borderRadius:2}}/>
-              <span style={{fontSize:13, fontWeight:600, color:'#fff', letterSpacing:'0.08em', textTransform:'uppercase', textShadow:'0 1px 8px rgba(0,0,0,0.45)'}}>{t.tagline}</span>
-              <div style={{width:44, height:1.5, background:'rgba(255,255,255,0.55)', borderRadius:2}}/>
+          <div style={{position:'absolute', inset:0, background:'linear-gradient(160deg, rgba(0,0,0,0.05) 0%, rgba(0,20,60,0.55) 100%)'}}/>
+          <div style={{position:'relative', zIndex:2, height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, padding:'40px 48px'}}>
+            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:160, width:'auto', filter:'drop-shadow(0 6px 32px rgba(0,0,0,0.55)) brightness(1.1)'}}/>
+            <div style={{display:'flex', alignItems:'center', gap:12, marginTop:4}}>
+              <div style={{width:36, height:1.5, background:'rgba(255,255,255,0.55)', borderRadius:2}}/>
+              <span style={{fontSize:12, fontWeight:600, color:'#fff', letterSpacing:'0.08em', textTransform:'uppercase', textShadow:'0 1px 8px rgba(0,0,0,0.45)'}}>{t.tagline}</span>
+              <div style={{width:36, height:1.5, background:'rgba(255,255,255,0.55)', borderRadius:2}}/>
             </div>
-            <p style={{fontSize:14, color:'rgba(255,255,255,0.80)', textAlign:'center', lineHeight:1.7, maxWidth:300, margin:'2px 0 0', textShadow:'0 1px 6px rgba(0,0,0,0.35)'}}>{t.loginSub}</p>
+            <p style={{fontSize:13, color:'rgba(255,255,255,0.80)', textAlign:'center', lineHeight:1.6, maxWidth:280, margin:'2px 0 0', textShadow:'0 1px 6px rgba(0,0,0,0.35)'}}>{t.loginSub}</p>
           </div>
         </div>
 
         {/* Right — white form panel */}
-        <div style={{flex:'0 0 48%', background:'#ffffff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'48px 60px', overflowY:'auto', position:'relative'}}>
+        <div style={{flex:'0 0 50%', background:'#ffffff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 48px', overflowY:'auto', position:'relative'}}>
           {/* Language switcher */}
           <div style={{position:'absolute', top:20, right:24, display:'flex', gap:6}}>
             {langs.map(l => (
@@ -283,19 +283,19 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             ))}
           </div>
 
-          <div style={{width:'100%', maxWidth:400}}>
+          <div style={{width:'100%', maxWidth:360}}>
 
             {/* ── LOGIN mode ── */}
             {mode === 'login' && (<>
-              <div style={{marginBottom:32}}>
-                <h1 style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:800, color:'#0A2840', margin:'0 0 8px', letterSpacing:'-0.02em'}}>
-                  {lang==='pt'?'Bem-vindo de volta 👋':lang==='es'?'Bienvenido de nuevo 👋':'Welcome back 👋'}
+              <div style={{marginBottom:24}}>
+                <h1 style={{fontFamily:'var(--pg-font-display)', fontSize:24, fontWeight:800, color:'#0A2840', margin:'0 0 6px', letterSpacing:'-0.01em'}}>
+                  {lang==='pt'?'Bem-vindo de volta':lang==='es'?'Bienvenido de nuevo':'Welcome back'} 👋
                 </h1>
-                <p style={{fontSize:14, color:'#64748b', margin:0, lineHeight:1.6}}>
+                <p style={{fontSize:13, color:'#64748b', margin:0, lineHeight:1.5}}>
                   {lang==='pt'?'Entre na sua conta para continuar':lang==='es'?'Inicia sesión para continuar':'Sign in to your account to continue'}
                 </p>
               </div>
-              <div style={{display:'flex', flexDirection:'column', gap:16}}>
+              <div style={{display:'flex', flexDirection:'column', gap:12}}>
                 {/* Email */}
                 <div style={{position:'relative'}}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round"
@@ -352,12 +352,12 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
             {/* ── SIGNUP mode ── */}
             {mode === 'signup' && (<>
-              <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:28}}>
-                <button onClick={step===1 ? ()=>setMode('login') : ()=>setStep(1)} style={{border:'1.5px solid #e2e8f0', background:'#fff', width:36, height:36, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+              <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:20}}>
+                <button onClick={step===1 ? ()=>setMode('login') : ()=>setStep(1)} style={{border:'1.5px solid #e2e8f0', background:'#fff', width:34, height:34, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
                   {Icon.chev(16,'#64748b','left')}
                 </button>
                 <div style={{flex:1}}>
-                  <h1 style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:800, color:'#0A2840', margin:'0 0 4px', letterSpacing:'-0.02em'}}>
+                  <h1 style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, color:'#0A2840', margin:'0 0 2px', letterSpacing:'-0.01em'}}>
                     {lang==='pt'?'Criar conta':lang==='es'?'Crear cuenta':'Create account'}
                   </h1>
                   <p style={{fontSize:13, color:'#64748b', margin:0}}>{lang==='pt'?`Passo ${step} de 2`:lang==='es'?`Paso ${step} de 2`:`Step ${step} of 2`}</p>
