@@ -159,23 +159,15 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   return (
     <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
 
-      {/* ── Hero background — light pool water ── */}
+      {/* ── Hero background — real photo ── */}
       <div style={{
         position:'absolute', inset:0,
-        background:'linear-gradient(180deg, #7DD8EC 0%, #A8E8F4 28%, #CCF1FA 55%, #E8F9FD 80%, #F4FDFF 100%)',
+        backgroundImage:'url(login-bg.png)',
+        backgroundSize:'cover',
+        backgroundPosition:'center top',
+        backgroundRepeat:'no-repeat',
         zIndex:0,
       }}/>
-      {/* Water ripple texture — light circles simulating pool surface */}
-      <div style={{position:'absolute', top:-80, left:-80, width:320, height:320, borderRadius:'50%',
-        background:'radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%)', zIndex:1, pointerEvents:'none'}}/>
-      <div style={{position:'absolute', top:20, right:-60, width:240, height:240, borderRadius:'50%',
-        background:'radial-gradient(circle, rgba(255,255,255,0.28) 0%, transparent 70%)', zIndex:1, pointerEvents:'none'}}/>
-      <div style={{position:'absolute', top:120, left:20, width:160, height:160, borderRadius:'50%',
-        background:'radial-gradient(circle, rgba(255,255,255,0.20) 0%, transparent 65%)', zIndex:1, pointerEvents:'none'}}/>
-      <div style={{position:'absolute', top:60, right:40, width:100, height:100, borderRadius:'50%',
-        background:'radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 60%)', zIndex:1, pointerEvents:'none'}}/>
-      <div style={{position:'absolute', top:180, left:-30, width:130, height:130, borderRadius:'50%',
-        background:'radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 65%)', zIndex:1, pointerEvents:'none'}}/>
 
       {/* ── Language switcher ── */}
       <div style={{position:'absolute', top:18, right:16, display:'flex', gap:5, zIndex:10}}>
