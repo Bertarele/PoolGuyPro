@@ -593,6 +593,60 @@ function WorkScreen({ ctx }) {
             </div>
           </div>
         </div>
+
+      {/* ── County picker sheet (desktop) ── */}
+      {workCountyPickerOpen && (
+        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.50)', zIndex:6000, display:'flex', alignItems:'flex-end'}} onClick={()=>setWorkCountyPickerOpen(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:'100%', maxWidth:480, margin:'0 auto', background:'var(--pg-white)', borderRadius:'22px 22px 0 0', padding:'10px 18px 36px', boxShadow:'0 -4px 32px rgba(0,0,0,0.18)'}}>
+            <div style={{width:36, height:4, borderRadius:999, background:'var(--pg-ink-200)', margin:'0 auto 18px'}}/>
+            <div style={{fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:4}}>
+              {lang==='pt'?'Região de busca':lang==='es'?'Región de búsqueda':'Search region'}
+            </div>
+            <div style={{fontSize:13, color:'var(--pg-ink-500)', marginBottom:18, lineHeight:1.4}}>
+              {lang==='pt'?'Selecione os condados para filtrar as vagas':lang==='es'?'Seleccione los condados para filtrar':'Select counties to filter job listings'}
+            </div>
+            <div style={{display:'flex', flexDirection:'column', gap:10}}>
+              {[
+                {id:'Broward',    label:'Broward County',    sub:lang==='pt'?'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…':'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…'},
+                {id:'Miami-Dade', label:'Miami-Dade County', sub:lang==='pt'?'Miami, Coral Gables, Doral, Hialeah…':'Miami, Coral Gables, Doral, Hialeah…'},
+                {id:'Palm Beach', label:'Palm Beach County', sub:lang==='pt'?'Boca Raton, Boynton Beach, Wellington, Jupiter…':'Boca Raton, Boynton Beach, Wellington, Jupiter…'},
+              ].map(county => {
+                const on = workCountyFilter.includes(county.id);
+                return (
+                  <button key={county.id} onClick={()=>{
+                    setWorkCountyFilter(prev => {
+                      if (on && prev.length === 1) return prev;
+                      return on ? prev.filter(c=>c!==county.id) : [...prev, county.id];
+                    });
+                  }} style={{
+                    display:'flex', alignItems:'center', gap:14,
+                    padding:'14px 16px', borderRadius:14,
+                    border: on ? '1.5px solid var(--pg-blue-500)' : '1.5px solid var(--pg-ink-200)',
+                    background: on ? 'var(--pg-blue-50)' : 'var(--pg-ink-50)',
+                    cursor:'pointer', fontFamily:'inherit', textAlign:'left', transition:'all .15s',
+                  }}>
+                    <div style={{
+                      width:22, height:22, borderRadius:7, flexShrink:0,
+                      border: on ? '2px solid var(--pg-blue-500)' : '2px solid var(--pg-ink-300)',
+                      background: on ? 'var(--pg-blue-500)' : 'transparent',
+                      display:'flex', alignItems:'center', justifyContent:'center', transition:'all .12s',
+                    }}>
+                      {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14, fontWeight:700, color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-900)'}}>{county.label}</div>
+                      <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:2, lineHeight:1.3}}>{county.sub}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={()=>setWorkCountyPickerOpen(false)} className="pg-btn pg-btn-primary" style={{width:'100%', marginTop:20, height:48}}>
+              {lang==='pt'?'Confirmar':lang==='es'?'Confirmar':'Confirm'}
+            </button>
+          </div>
+        </div>
+      )}
       </div>
     );
   }
