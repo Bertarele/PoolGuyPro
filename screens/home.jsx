@@ -193,7 +193,7 @@ function HomeScreen({ ctx }) {
               </>
             }
           >
-            <div style={{marginTop:-20, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            <div style={{marginTop:6, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
                   {greetWord}, {firstName}! 👋
