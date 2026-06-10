@@ -217,77 +217,75 @@ function QuickPoolsScreen({ ctx }) {
             ? 'linear-gradient(135deg, #011B5A 0%, #0077B6 55%, #0096C7 100%)'
             : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 60%, #b8dff5 100%)';
           return (
-            <div style={{background:_bg, padding:'28px 40px 32px', position:'relative', overflow:'hidden'}}>
+            <div style={{background:_bg, padding:'28px 40px 28px', position:'relative', overflow:'hidden'}}>
               <div style={{position:'absolute', top:-80, right:-80, width:280, height:280,
                 borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.03)':'rgba(10,40,64,0.03)', pointerEvents:'none'}}/>
               <div style={{position:'absolute', bottom:-50, left:160, width:200, height:200,
                 borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.03)':'rgba(10,40,64,0.02)', pointerEvents:'none'}}/>
 
-              {/* Top row */}
-              <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24}}>
-                <div style={{display:'flex', alignItems:'center', gap:14}}>
-                  <div style={{width:52,height:52,borderRadius:16,flexShrink:0,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={_tx} strokeWidth="1.75" strokeLinecap="round">
+              {/* Single compact row */}
+              <div style={{display:'flex', alignItems:'center', gap:20}}>
+                {/* Brand */}
+                <div style={{display:'flex', alignItems:'center', gap:12, flexShrink:0}}>
+                  <div style={{width:42,height:42,borderRadius:13,flexShrink:0,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={_tx} strokeWidth="1.75" strokeLinecap="round">
                       <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
                       <path d="M2 17 Q6 13 10 17 Q14 21 18 17 Q20 15 22 17"/>
                       <circle cx="12" cy="5" r="2"/>
                     </svg>
                   </div>
                   <div>
-                    <div style={{fontSize:10.5,fontWeight:700,color:_sub,letterSpacing:'0.14em',textTransform:'uppercase',marginBottom:3}}>
-                      QUICK POOLS · {(county||'BROWARD').toUpperCase()} COUNTY
+                    <div style={{fontSize:9.5,fontWeight:700,color:_sub,letterSpacing:'0.13em',textTransform:'uppercase',marginBottom:2}}>
+                      QUICK POOLS · {(county||'BROWARD').toUpperCase()}
                     </div>
-                    <div style={{fontFamily:'var(--pg-font-display)',fontSize:28,fontWeight:800,color:_tx,letterSpacing:'-0.03em',lineHeight:1}}>
+                    <div style={{fontFamily:'var(--pg-font-display)',fontSize:20,fontWeight:800,color:_tx,letterSpacing:'-0.025em',lineHeight:1}}>
                       {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Quick Pools'}
                     </div>
-                    <div style={{fontSize:13,color:_sub2,marginTop:4}}>
-                      {lang==='pt'?'Trabalhos temporários de piscina perto de você':'Temporary pool jobs near you in South Florida'}
-                    </div>
                   </div>
                 </div>
-                <div style={{display:'flex',gap:10,alignItems:'center'}}>
-                  <button onClick={()=>openChat&&openChat()} style={{width:44,height:44,borderRadius:13,background:_ib,border:_ibr,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
-                    {Icon.msg(20,_tx)}
-                    {hasUnreadChat && <span style={{position:'absolute',top:8,right:8,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
-                  </button>
-                  <button onClick={()=>openNotifications&&openNotifications()} style={{width:44,height:44,borderRadius:13,background:_ib,border:_ibr,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
-                    {Icon.bell(20,_tx)}
-                    {hasUnreadNotif && <span style={{position:'absolute',top:8,right:8,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
-                  </button>
-                </div>
-              </div>
 
-              {/* Notif regions + stats */}
-              <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:16,alignItems:'stretch'}}>
-                <div style={{background:_cb,border:_cbr,borderRadius:14,padding:'14px 18px',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',gap:16}}>
-                  <div style={{width:40,height:40,borderRadius:11,flexShrink:0,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    {Icon.bell(18,_tx)}
+                {/* Divider */}
+                <div style={{width:1, height:32, background: darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)', flexShrink:0}}/>
+
+                {/* Stats inline */}
+                <div style={{display:'flex', alignItems:'center', gap:16, flex:1}}>
+                  <div style={{display:'flex', alignItems:'center', gap:6}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="1.75" strokeLinecap="round">
+                      <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3 8 3"/><path d="M12 3v4"/>
+                    </svg>
+                    <span style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:_tx,letterSpacing:'-0.02em'}}>{jobs.length}</span>
+                    <span style={{fontSize:11,color:_sub,fontWeight:500}}>{lang==='pt'?'vagas':'jobs'}</span>
                   </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:10,fontWeight:700,color:_sub,letterSpacing:'0.10em',textTransform:'uppercase',marginBottom:3}}>
-                      {lang==='pt'?'NOTIFICAÇÕES POR DIA':'DAILY NOTIFICATIONS'}
-                    </div>
-                    <div style={{fontSize:13,fontWeight:600,color:_tx,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                  <div style={{width:1,height:18,background:darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)'}}/>
+                  <div style={{display:'flex', alignItems:'center', gap:6}}>
+                    {Icon.cal(13,_sub2)}
+                    <span style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:'#34D399',letterSpacing:'-0.02em'}}>{activeDayCount}/7</span>
+                    <span style={{fontSize:11,color:_sub,fontWeight:500}}>{lang==='pt'?'dias ativos':'active days'}</span>
+                  </div>
+                  <div style={{width:1,height:18,background:darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)'}}/>
+                  <div style={{display:'flex', alignItems:'center', gap:6, flex:1, minWidth:0}}>
+                    {Icon.bell(13,_sub2)}
+                    <span style={{fontSize:12,color:_sub,fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {notifCities.length > 0
-                        ? notifCities.slice(0,4).join(' · ') + (notifCities.length>4?` +${notifCities.length-4}`:'')
-                        : (lang==='pt'?'Nenhuma cidade configurada':'No cities configured')}
-                    </div>
-                    <div style={{fontSize:11,color:_sub,marginTop:2}}>{activeDayCount}/7 {lang==='pt'?'dias ativos':'days active'}</div>
+                        ? notifCities.slice(0,3).join(' · ') + (notifCities.length>3?` +${notifCities.length-3}`:'')
+                        : (lang==='pt'?'Sem cidades':'No cities')}
+                    </span>
                   </div>
-                  <button onClick={openRegionEditor} style={{height:36,padding:'0 14px',borderRadius:10,flexShrink:0,border:_ibr,background:_ib,color:_tx,fontFamily:'inherit',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,transition:'all .15s'}}>
+                </div>
+
+                {/* Actions */}
+                <div style={{display:'flex', alignItems:'center', gap:8, flexShrink:0}}>
+                  <button onClick={openRegionEditor} style={{height:38,padding:'0 14px',borderRadius:11,border:_ibr,background:_ib,color:_tx,fontFamily:'inherit',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,transition:'all .15s'}}>
                     {Icon.cal(13,_tx)} {lang==='pt'?'Editar':'Edit'}
                   </button>
-                </div>
-                <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                  {[
-                    { value: jobs.length, label: lang==='pt'?'vagas abertas':'open jobs', color: darkMode?'#38BDF8':'#0077B6' },
-                    { value: `${activeDayCount}/7`, label: lang==='pt'?'dias ativos':'active days', color:'#34D399' },
-                  ].map((s,i) => (
-                    <div key={i} style={{background:_cb,border:_cbr,borderRadius:10,padding:'10px 16px',display:'flex',alignItems:'center',gap:10}}>
-                      <div style={{fontFamily:'var(--pg-font-display)',fontSize:20,fontWeight:800,color:s.color,lineHeight:1}}>{s.value}</div>
-                      <div style={{fontSize:11,color:_sub,lineHeight:1.3}}>{s.label}</div>
-                    </div>
-                  ))}
+                  <button onClick={()=>openChat&&openChat()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
+                    {Icon.msg(18,_tx)}
+                    {hasUnreadChat && <span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
+                  </button>
+                  <button onClick={()=>openNotifications&&openNotifications()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
+                    {Icon.bell(18,_tx)}
+                    {hasUnreadNotif && <span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
+                  </button>
                 </div>
               </div>
             </div>

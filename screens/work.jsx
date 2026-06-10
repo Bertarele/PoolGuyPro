@@ -271,51 +271,71 @@ function WorkScreen({ ctx }) {
                 <div style={{position:'absolute',top:-60,right:60,width:220,height:220,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(0,180,255,0.13) 0%,transparent 70%)':'radial-gradient(circle,rgba(0,119,182,0.06) 0%,transparent 70%)',pointerEvents:'none'}}/>
                 <div style={{position:'absolute',bottom:-40,left:200,width:160,height:160,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%)':'radial-gradient(circle,rgba(10,40,64,0.04) 0%,transparent 70%)',pointerEvents:'none'}}/>
 
-                {/* Top row */}
-                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18,position:'relative'}}>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:700,color:_sub,letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:6,display:'flex',alignItems:'center',gap:6}}>
-                      {Icon.briefcase(13,_sub)}
-                      {lang==='pt'?'WORK · SOUTH FLORIDA':'WORK · SOUTH FLORIDA'}
+                {/* Single compact row */}
+                <div style={{display:'flex',alignItems:'center',gap:20,marginBottom:16,position:'relative'}}>
+                  {/* Brand */}
+                  <div style={{display:'flex',alignItems:'center',gap:12,flexShrink:0}}>
+                    <div style={{width:42,height:42,borderRadius:13,flexShrink:0,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      {Icon.briefcase(20,_tx)}
                     </div>
-                    <h1 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:32,fontWeight:800,color:_tx,letterSpacing:'-0.03em',lineHeight:1.05}}>{heroTitle}</h1>
-                    <p style={{margin:'6px 0 0',fontSize:13.5,color:_sub2,fontWeight:400}}>{heroSub}</p>
+                    <div>
+                      <div style={{fontSize:9.5,fontWeight:700,color:_sub,letterSpacing:'0.13em',textTransform:'uppercase',marginBottom:2}}>
+                        WORK · SOUTH FLORIDA
+                      </div>
+                      <div style={{fontFamily:'var(--pg-font-display)',fontSize:20,fontWeight:800,color:_tx,letterSpacing:'-0.025em',lineHeight:1}}>{heroTitle}</div>
+                    </div>
                   </div>
-                  <div style={{display:'flex',alignItems:'center',gap:10,marginTop:4}}>
-                    <button onClick={()=>openChat&&openChat()} style={{width:40,height:40,borderRadius:12,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative'}}>
-                      {Icon.msg(19,_tx)}
+
+                  {/* Divider */}
+                  <div style={{width:1,height:32,background:darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)',flexShrink:0}}/>
+
+                  {/* Stats inline */}
+                  <div style={{display:'flex',alignItems:'center',gap:16,flex:1}}>
+                    {sub === 'hiring' && <>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}>
+                        {Icon.briefcase(13,_sub2)}
+                        <span style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:_tx,letterSpacing:'-0.02em'}}>{HIRING.length + liveJobs.length}</span>
+                        <span style={{fontSize:11,color:_sub,fontWeight:500}}>{lang==='pt'?'vagas':'openings'}</span>
+                      </div>
+                      <div style={{width:1,height:18,background:darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)'}}/>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}>
+                        {Icon.check(13,_sub2)}
+                        <span style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:_tx,letterSpacing:'-0.02em'}}>{myAppsHiring.length}</span>
+                        <span style={{fontSize:11,color:_sub,fontWeight:500}}>{lang==='pt'?'candidaturas':'applied'}</span>
+                      </div>
+                    </>}
+                    {sub === 'techs' && <>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>
+                        <span style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:_tx,letterSpacing:'-0.02em'}}>{TECHS.length + liveTechs.length}</span>
+                        <span style={{fontSize:11,color:_sub,fontWeight:500}}>{lang==='pt'?'técnicos':'techs'}</span>
+                      </div>
+                    </>}
+                    {sub === 'vac' && <>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>
+                        <span style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:_tx,letterSpacing:'-0.02em'}}>{VACATION_LISTINGS.length + liveVacations.length}</span>
+                        <span style={{fontSize:11,color:_sub,fontWeight:500}}>{lang==='pt'?'coberturas':'covers'}</span>
+                      </div>
+                    </>}
+                  </div>
+
+                  {/* County + actions */}
+                  <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+                    <button onClick={()=>setWorkCountyPickerOpen(true)} style={{display:'flex',alignItems:'center',gap:6,background:_locBg,border:_locBr,borderRadius:999,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
+                      {Icon.pin(12,_sub)}
+                      <span style={{fontSize:12,fontWeight:600,color:_locTx,whiteSpace:'nowrap'}}>{workCountyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):workCountyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button onClick={()=>openChat&&openChat()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative'}}>
+                      {Icon.msg(18,_tx)}
                       {hasUnreadChat&&<span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${darkMode?'#0077B6':'#c5e4f5'}`}}/>}
                     </button>
-                    <button onClick={handlePostBtn} style={{height:40,padding:'0 22px',borderRadius:12,background:_ib,border:_ibr,color:_tx,fontFamily:'inherit',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
-                      {postBtn.icon(16,_tx)}
+                    <button onClick={handlePostBtn} style={{height:38,padding:'0 16px',borderRadius:11,background:darkMode?'rgba(255,255,255,0.95)':'#0077B6',border:'none',color:darkMode?'#023E8A':'#fff',fontFamily:'inherit',fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:7,boxShadow:'0 3px 12px rgba(0,0,0,0.18)',transition:'all .15s'}}>
+                      {postBtn.icon(14,darkMode?'#023E8A':'#fff')}
                       {lang==='pt'?'+ Publicar':lang==='es'?'+ Publicar':'+ Post'} {postBtn.label}
                     </button>
                   </div>
-                </div>
-
-                {/* Stats strip */}
-                <div style={{display:'flex',alignItems:'center',gap:10,paddingBottom:20,position:'relative',flexWrap:'wrap'}}>
-                  {sub === 'hiring' && <>
-                    <StatPill icon={Icon.briefcase(13,_sub2)} count={HIRING.length + liveJobs.length} label={lang==='pt'?'vagas':lang==='es'?'empleos':'openings'}/>
-                    <StatPill icon={Icon.check(13,_sub2)} count={myAppsHiring.length} label={lang==='pt'?'candidaturas':lang==='es'?'solicitudes':'applied'}/>
-                    <button onClick={()=>setWorkCountyPickerOpen(true)} style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:_locBg,border:_locBr,cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
-                      {Icon.pin(12,_sub)}
-                      <span style={{fontSize:12,color:_locTx,fontWeight:600}}>{workCountyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):workCountyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}</span>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                  </>}
-                  {sub === 'techs' && <>
-                    <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>} count={TECHS.length + liveTechs.length} label={lang==='pt'?'técnicos':lang==='es'?'técnicos':'techs'}/>
-                    <button onClick={()=>setWorkCountyPickerOpen(true)} style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:_locBg,border:_locBr,cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
-                      {Icon.pin(12,_sub)}
-                      <span style={{fontSize:12,color:_locTx,fontWeight:600}}>{workCountyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):workCountyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}</span>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                  </>}
-                  {sub === 'vac' && <>
-                    <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>} count={VACATION_LISTINGS.length + liveVacations.length} label={lang==='pt'?'coberturas':lang==='es'?'coberturas':'covers'}/>
-                    <StatPill icon={Icon.cal(13,_sub2)} count={myAppsVac.length} label={lang==='pt'?'aplicadas':lang==='es'?'aplicadas':'applied'}/>
-                  </>}
                 </div>
 
                 {/* Sub-tab bar */}
