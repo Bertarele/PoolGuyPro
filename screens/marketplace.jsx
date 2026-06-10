@@ -3598,7 +3598,7 @@ function MarketplaceScreen({ ctx }) {
           {isPending && <div style={{marginTop:8, fontSize:10.5, color:'#92710A', background:'#FFF8E1',
             border:'0.5px solid #FFE082', borderRadius:6, padding:'4px 8px', textAlign:'center'}}>
             ⏳ {lang==='pt'?'Em revisão':'Under review'}</div>}
-          {canDel && <div onClick={handleQuickDelete} style={{marginTop:8, padding:'6px 0', borderRadius:8,
+          {canDel && <div style={{filter:'none', opacity:1}}><div onClick={handleQuickDelete} style={{marginTop:8, padding:'6px 0', borderRadius:8,
             background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444', fontSize:11, fontWeight:700,
             textAlign:'center', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -3606,7 +3606,7 @@ function MarketplaceScreen({ ctx }) {
               <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
             </svg>
             {lang==='pt'?'Excluir':'Delete'}
-          </div>}
+          </div></div>}
         </div>
       </button>
     );

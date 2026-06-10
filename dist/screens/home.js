@@ -743,69 +743,68 @@ function HomeScreen({
       border: 'none',
       cursor: 'pointer',
       padding: 0,
-      borderRadius: 20,
+      borderRadius: 18,
       overflow: 'hidden',
-      background: 'linear-gradient(135deg, #011B5A 0%, #023EBA 50%, #0077B6 100%)',
-      boxShadow: '0 8px 32px rgba(0,30,100,0.35), 0 2px 8px rgba(0,0,0,0.15)',
+      width: '100%',
+      background: 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 45%, #0077B6 100%)',
+      boxShadow: '0 6px 24px rgba(0,20,80,0.32), 0 1px 4px rgba(0,0,0,0.12)',
       position: 'relative'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
-      width: 140,
-      height: 140,
+      width: 180,
+      height: 180,
       borderRadius: '50%',
-      background: 'radial-gradient(circle, rgba(0,200,255,0.18) 0%, transparent 70%)',
-      top: -40,
-      right: -20,
+      background: 'radial-gradient(circle, rgba(14,186,199,0.20) 0%, transparent 65%)',
+      top: -60,
+      right: -30,
       pointerEvents: 'none'
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
-      width: 100,
-      height: 100,
+      width: 120,
+      height: 120,
       borderRadius: '50%',
-      background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
-      bottom: -20,
-      left: 60,
-      pointerEvents: 'none'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      inset: 0,
-      opacity: 0.04,
-      backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)',
-      backgroundSize: '32px 32px',
+      background: 'radial-gradient(circle, rgba(0,119,182,0.25) 0%, transparent 70%)',
+      bottom: -30,
+      left: 20,
       pointerEvents: 'none'
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
-      padding: '20px 20px 18px',
+      padding: '18px 18px 16px',
       display: 'flex',
-      gap: 16,
+      gap: 14,
       alignItems: 'flex-start'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 54,
-      height: 54,
-      borderRadius: 16,
+      width: 50,
+      height: 50,
+      borderRadius: 14,
       flexShrink: 0,
-      background: 'linear-gradient(135deg, rgba(255,215,0,0.20), rgba(255,180,0,0.10))',
-      border: '1px solid rgba(255,215,0,0.30)',
+      background: 'linear-gradient(135deg, rgba(14,186,199,0.30), rgba(0,119,182,0.20))',
+      border: '1px solid rgba(14,186,199,0.40)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.20)'
+      boxShadow: '0 3px 10px rgba(0,0,0,0.20)'
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 28
-    }
-  }, "\uD83D\uDC51")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "24",
+    height: "24",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "rgba(14,186,199,1)",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polygon", {
+    points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0
@@ -815,9 +814,9 @@ function HomeScreen({
       display: 'inline-flex',
       alignItems: 'center',
       gap: 5,
-      marginBottom: 8,
-      background: 'linear-gradient(135deg, rgba(255,215,0,0.22), rgba(255,180,0,0.12))',
-      border: '1px solid rgba(255,215,0,0.35)',
+      marginBottom: 7,
+      background: 'rgba(14,186,199,0.18)',
+      border: '1px solid rgba(14,186,199,0.40)',
       borderRadius: 999,
       padding: '3px 10px'
     }
@@ -826,65 +825,90 @@ function HomeScreen({
       width: 5,
       height: 5,
       borderRadius: '50%',
-      background: '#FFD700'
+      background: '#0EC8D8'
     }
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       fontWeight: 800,
-      color: '#FFD700',
+      color: '#0EC8D8',
       letterSpacing: '0.08em'
     }
   }, premiumLbls.tag.toUpperCase())), /*#__PURE__*/React.createElement("h3", {
     style: {
-      margin: '0 0 6px',
+      margin: '0 0 5px',
       fontFamily: 'var(--pg-font-display)',
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: 800,
       color: '#fff',
       letterSpacing: '-0.02em',
-      lineHeight: 1.1
+      lineHeight: 1.15
     }
   }, premiumLbls.be), /*#__PURE__*/React.createElement("p", {
     style: {
-      margin: '0 0 14px',
-      fontSize: 13,
-      color: 'rgba(255,255,255,0.78)',
-      lineHeight: 1.5
+      margin: '0 0 12px',
+      fontSize: 12.5,
+      color: 'rgba(255,255,255,0.72)',
+      lineHeight: 1.45
     }
   }, premiumLbls.desc), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
-      gap: 7,
+      gap: 6,
       flexWrap: 'wrap',
-      marginBottom: 16
+      marginBottom: 14
     }
-  }, (lang === 'pt' ? ['✓ Anúncios ilimitados', '✓ Prioridade', '✓ Jobs exclusivos'] : lang === 'es' ? ['✓ Anuncios ilimitados', '✓ Prioridad', '✓ Trabajos exclusivos'] : ['✓ Unlimited listings', '✓ Priority', '✓ Exclusive jobs']).map(feat => /*#__PURE__*/React.createElement("span", {
+  }, (lang === 'pt' ? ['Anúncios ilimitados', 'Prioridade', 'Jobs exclusivos'] : lang === 'es' ? ['Anuncios ilimitados', 'Prioridad', 'Trabajos exclusivos'] : ['Unlimited listings', 'Priority', 'Exclusive jobs']).map(feat => /*#__PURE__*/React.createElement("span", {
     key: feat,
-    style: {
-      fontSize: 11,
-      fontWeight: 600,
-      padding: '4px 10px',
-      borderRadius: 999,
-      background: 'rgba(255,255,255,0.10)',
-      border: '0.5px solid rgba(255,255,255,0.20)',
-      color: 'rgba(255,255,255,0.88)'
-    }
-  }, feat))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'inline-flex',
       alignItems: 'center',
-      gap: 8,
-      background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-      color: '#011B5A',
-      padding: '11px 22px',
-      borderRadius: 12,
-      fontSize: 14,
+      gap: 4,
+      fontSize: 10.5,
+      fontWeight: 600,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'rgba(255,255,255,0.08)',
+      border: '0.5px solid rgba(255,255,255,0.16)',
+      color: 'rgba(255,255,255,0.85)'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "9",
+    height: "9",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "rgba(14,186,199,0.90)",
+    strokeWidth: "3",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "20 6 9 17 4 12"
+  })), feat))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 7,
+      background: 'linear-gradient(135deg, #0EC8D8 0%, #0077B6 100%)',
+      color: '#fff',
+      padding: '10px 20px',
+      borderRadius: 11,
+      fontSize: 13,
       fontWeight: 800,
       letterSpacing: '-0.01em',
-      boxShadow: '0 4px 16px rgba(255,180,0,0.40)'
+      boxShadow: '0 4px 14px rgba(14,186,199,0.35)'
     }
-  }, premiumLbls.cta)))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+  }, premiumLbls.cta, /*#__PURE__*/React.createElement("svg", {
+    width: "13",
+    height: "13",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "9 18 15 12 9 6"
+  })))))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',

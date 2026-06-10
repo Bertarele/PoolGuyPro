@@ -195,7 +195,7 @@ function Wordmark({
   onDark = false,
   subtitle
 }) {
-  const h = size === 'lg' ? 160 : size === 'sm' ? 85 : size === 'nav' ? 158 : 120;
+  const h = size === 'lg' ? 160 : size === 'sm' ? 85 : size === 'nav' ? 178 : 120;
   const subtitleSize = size === 'lg' ? 11 : size === 'sm' ? 9 : size === 'nav' ? 9 : 10;
   return /*#__PURE__*/React.createElement("div", {
     style: {

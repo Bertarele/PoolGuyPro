@@ -6754,6 +6754,11 @@ function MarketplaceScreen({
         textAlign: 'center'
       }
     }, "\u23F3 ", lang === 'pt' ? 'Em revisão' : 'Under review'), canDel && /*#__PURE__*/React.createElement("div", {
+      style: {
+        filter: 'none',
+        opacity: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
       onClick: handleQuickDelete,
       style: {
         marginTop: 8,
@@ -6789,7 +6794,7 @@ function MarketplaceScreen({
       d: "M14 11v6"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-    })), lang === 'pt' ? 'Excluir' : 'Delete')));
+    })), lang === 'pt' ? 'Excluir' : 'Delete'))));
   };
 
   // ══════════════════════════════════════════════════════════════
