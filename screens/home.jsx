@@ -193,12 +193,12 @@ function HomeScreen({ ctx }) {
               </>
             }
           >
-            <div style={{marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            <div style={{marginTop:5, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
                   {greetWord}, {firstName}! 👋
                 </div>
-                <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
+                <div style={{display:'flex', alignItems:'center', gap:5, marginTop:2}}>
                   {Icon.pin(10,'var(--pg-aqua-400)')}
                   <span style={{fontSize:11, color:H.faint, fontWeight:500}}>Broward County, FL</span>
                 </div>
@@ -211,7 +211,7 @@ function HomeScreen({ ctx }) {
                 <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.03em'}}>ACTIVE</span>
               </div>
             </div>
-            <div style={{height:16}}/>
+            <div style={{height:8}}/>
           </NavyBar>
         );
       }())}
