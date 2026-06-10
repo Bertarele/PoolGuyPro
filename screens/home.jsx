@@ -2,6 +2,14 @@
 
 function HomeScreen({ ctx }) {
   const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false } = ctx;
+  // Reliable desktop detection — checked at render time
+  const [winW, setWinW] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 0);
+  React.useEffect(() => {
+    const fn = () => setWinW(window.innerWidth);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  const isDesktopView = isDesktop || winW >= 900;
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
 
@@ -86,10 +94,8 @@ function HomeScreen({ ctx }) {
         const H = headerTheme(darkMode);
         const ic = H.text;
         const firstName = myAuthor ? myAuthor.split(' ')[0] : (user.email ? user.email.split('@')[0] : '');
-        // Desktop detection: ctx prop OR direct window check as fallback
-        const onDesktop = isDesktop || (typeof window !== 'undefined' && window.innerWidth >= 900);
 
-        if (onDesktop) {
+        if (isDesktopView) {
           // ── Desktop compact strip ────────────────────────────
           return (
             <div style={{
