@@ -1048,7 +1048,7 @@ function App() {
                 src="wordmarkwhite.png"
                 alt="PoolGuyX"
                 style={{
-                  width:210, height:52, objectFit:'contain', objectPosition:'left center', display:'block',
+                  width:220, height:200, objectFit:'contain', objectPosition:'left center', display:'block',
                   filter:'drop-shadow(0 3px 14px rgba(14,186,199,0.30))',
                 }}
               />
