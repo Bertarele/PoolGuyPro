@@ -137,30 +137,32 @@ function HomeScreen({ ctx }) {
                   />
                 </div>
 
-                {/* RIGHT — stats + active */}
-                <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:10}}>
-                  {[
-                    { val: myPosts.length,    lbl: lang==='pt'?'anúncios':lang==='es'?'anuncios':'listings' },
-                    { val: liveMarket.length, lbl: lang==='pt'?'no mercado':lang==='es'?'en mercado':'in market' },
-                    { val: liveJobs.length,   lbl: lang==='pt'?'vagas':lang==='es'?'empleos':'jobs' },
-                  ].map((s,i) => (
-                    <div key={i} style={{
-                      padding:'6px 14px', borderRadius:10,
-                      background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,119,182,0.07)',
-                      border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,119,182,0.11)',
-                      display:'flex', flexDirection:'column', alignItems:'center', gap:1,
+                {/* RIGHT — lang / chat / notif */}
+                <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:8}}>
+                  <LangPill lang={lang} setLang={setLang} onDark={darkMode}/>
+
+                  {/* Chat */}
+                  <div style={{position:'relative'}}>
+                    <button onClick={() => ctx.openChat && ctx.openChat()} style={{
+                      width:38, height:38, borderRadius:11, border:'none', cursor:'pointer',
+                      background: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(10,40,64,0.07)',
+                      display:'flex', alignItems:'center', justifyContent:'center', transition:'background .15s',
                     }}>
-                      <span style={{fontSize:18, fontWeight:800, color:H.text, fontFamily:'var(--pg-font-display)', lineHeight:1}}>{s.val}</span>
-                      <span style={{fontSize:10, color:H.faint, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.04em'}}>{s.lbl}</span>
-                    </div>
-                  ))}
-                  <div style={{width:1, height:32, background: darkMode ? 'rgba(255,255,255,0.10)' : 'rgba(10,40,64,0.10)', margin:'0 2px'}}/>
-                  <div style={{
-                    background: H.activeBg, border: H.activeBdr,
-                    borderRadius:999, padding:'7px 14px', display:'flex', alignItems:'center', gap:5,
-                  }}>
-                    <div style={{width:7, height:7, borderRadius:'50%', background:'#34D399', boxShadow:'0 0 7px rgba(52,211,153,0.70)'}}/>
-                    <span style={{fontSize:11, fontWeight:700, color:H.activeTxt, letterSpacing:'0.04em'}}>ACTIVE</span>
+                      {Icon.msg(18, darkMode ? 'rgba(255,255,255,0.70)' : H.text)}
+                    </button>
+                    {hasUnreadChat && <div style={{position:'absolute', top:5, right:5, width:7, height:7, borderRadius:'50%', background:'#38BDF8', pointerEvents:'none'}}/>}
+                  </div>
+
+                  {/* Notifications */}
+                  <div style={{position:'relative'}}>
+                    <button onClick={openNotifications} style={{
+                      width:38, height:38, borderRadius:11, border:'none', cursor:'pointer',
+                      background: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(10,40,64,0.07)',
+                      display:'flex', alignItems:'center', justifyContent:'center', transition:'background .15s',
+                    }}>
+                      {Icon.bell(18, darkMode ? 'rgba(255,255,255,0.70)' : H.text)}
+                    </button>
+                    {hasUnreadNotif && <div style={{position:'absolute', top:5, right:5, width:7, height:7, borderRadius:'50%', background:'#FF3B30', pointerEvents:'none'}}/>}
                   </div>
                 </div>
               </div>
