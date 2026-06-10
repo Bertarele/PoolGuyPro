@@ -3644,7 +3644,7 @@ function MarketplaceScreen({ ctx }) {
               <div style={{position:'absolute', bottom:-40, left:200, width:160, height:160,
                 borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.03)':'rgba(10,40,64,0.02)', pointerEvents:'none'}}/>
               {/* Centered icon watermark */}
-              <img src="icone.png" alt="" style={{position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)', height:110, objectFit:'contain', opacity: darkMode?0.18:0.12, pointerEvents:'none', userSelect:'none', zIndex:0}}/>
+              <img src="icone.png" alt="" style={{position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)', height:110, objectFit:'contain', opacity:0.60, pointerEvents:'none', userSelect:'none', zIndex:0}}/>
 
               {/* Single row: icon+title · stats · county · actions */}
               <div style={{display:'flex', alignItems:'center', gap:20}}>
