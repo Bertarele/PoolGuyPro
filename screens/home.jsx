@@ -339,11 +339,11 @@ function HomeScreen({ ctx }) {
                   }}>
                     {/* Thumbnail */}
                     <div style={{
-                      width:'100%', height:88, borderRadius:9, overflow:'hidden', flexShrink:0, marginBottom:9,
+                      width:'100%', height:100, borderRadius:9, overflow:'hidden', flexShrink:0, marginBottom:9,
                       background:'linear-gradient(135deg, var(--pg-blue-100), var(--pg-ink-100))',
                     }}>
                       {item.photoUrl
-                        ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:88, objectFit:'cover'}}/>
+                        ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:100, objectFit:'cover'}}/>
                         : <EquipImg category={item.cat || (item.type==='route'?'Routes':'Tools')} height={88}/>
                       }
                     </div>

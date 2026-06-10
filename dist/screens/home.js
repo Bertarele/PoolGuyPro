@@ -645,7 +645,7 @@ function HomeScreen({
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: '100%',
-        height: 88,
+        height: 100,
         borderRadius: 9,
         overflow: 'hidden',
         flexShrink: 0,
@@ -657,7 +657,7 @@ function HomeScreen({
       alt: item.name,
       style: {
         width: '100%',
-        height: 88,
+        height: 100,
         objectFit: 'cover'
       }
     }) : /*#__PURE__*/React.createElement(EquipImg, {
