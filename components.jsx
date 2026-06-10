@@ -352,7 +352,7 @@ function TabBar({ tab, setTab, lang='en' }) {
     { id:'profile',label:t.profile,     icon:Icon.user },
   ];
   return (
-    <div className="pg-tabbar" style={{padding:'0px 6px 4px'}}>
+    <div className="pg-tabbar" style={{padding:'0px 6px 0px'}}>
       {tabs.map(tb => {
         const on = tb.id === tab;
         if (tb.center) {
