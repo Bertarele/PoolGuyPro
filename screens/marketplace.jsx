@@ -3717,8 +3717,8 @@ function MarketplaceScreen({ ctx }) {
                 </div>
               )}
 
-              {/* Stats strip */}
-              <div style={{display:'flex', alignItems:'center', gap:20}}>
+              {/* Stats + county row */}
+              <div style={{display:'flex', alignItems:'center', gap:20, marginBottom:20}}>
                 {[
                   { icon: Icon.cart(14,_sub2), value: totalItems, label: lang==='pt'?'itens à venda':'items for sale' },
                   { icon: Icon.pin(14,_sub2),  value: totalRoutes, label: lang==='pt'?'rotas disponíveis':'routes available' },
@@ -3753,68 +3753,65 @@ function MarketplaceScreen({ ctx }) {
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
               </div>
+
+              {/* ── Tab pills — centred inside the hero ── */}
+              <div style={{display:'flex', justifyContent:'center'}}>
+                <div style={{
+                  display:'inline-flex', alignItems:'center', gap:4,
+                  background: darkMode ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.45)',
+                  backdropFilter:'blur(12px)',
+                  border: darkMode ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(10,40,64,0.12)',
+                  borderRadius:18, padding:5,
+                }}>
+                  {[
+                    { id:'buy',    icon: Icon.cart,  label: lang==='pt'?'Comprar':lang==='es'?'Comprar':'Buy' },
+                    { id:'rent',   icon: Icon.key,   label: lang==='pt'?'Alugar':lang==='es'?'Alquilar':'Rent' },
+                    { id:'routes', icon: Icon.pin,   label: lang==='pt'?'Rotas':lang==='es'?'Rutas':'Routes' },
+                  ].map(tb => {
+                    const on = view === tb.id;
+                    const activeBg = darkMode ? 'rgba(255,255,255,0.16)' : '#fff';
+                    const activeTx = darkMode ? '#fff' : '#0A2840';
+                    const inactTx  = darkMode ? 'rgba(255,255,255,0.52)' : 'rgba(10,40,64,0.50)';
+                    return (
+                      <button key={tb.id}
+                        onClick={()=>{ setView(tb.id); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); setQ(''); }}
+                        style={{
+                          display:'flex', alignItems:'center', gap:8,
+                          padding:'10px 28px', borderRadius:13, border:'none', cursor:'pointer',
+                          fontFamily:'inherit', fontSize:15, fontWeight: on?700:500,
+                          background: on ? activeBg : 'transparent',
+                          color: on ? activeTx : inactTx,
+                          boxShadow: on ? (darkMode?'0 2px 12px rgba(0,0,0,0.35)':'0 2px 12px rgba(0,0,0,0.12)') : 'none',
+                          transition:'all .18s ease',
+                          letterSpacing:'-0.01em', whiteSpace:'nowrap',
+                        }}>
+                        {tb.icon(16, on ? (darkMode?'#38BDF8':'#0077B6') : inactTx)}
+                        {tb.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           );
         })()}
 
-        {/* ── TAB NAVIGATION ────────────────────────────────────── */}
-        {/* ── Tab bar ─────────────────────────────────────────── */}
-        <div style={{
-          background:'var(--pg-white)',
-          borderBottom:'1px solid var(--pg-ink-200)',
-          padding:'10px 32px',
-          display:'flex', alignItems:'center', gap:12,
-          position:'sticky', top:0, zIndex:20,
-          boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
-        }}>
-          {/* Pill container */}
-          <div style={{
-            display:'inline-flex', alignItems:'center', gap:3,
-            background:'var(--pg-ink-100)', borderRadius:14, padding:4,
-          }}>
-            {[
-              { id:'buy',    icon: Icon.cart,  label: lang==='pt'?'Comprar':'Buy' },
-              { id:'rent',   icon: Icon.key,   label: lang==='pt'?'Alugar':'Rent' },
-              { id:'routes', icon: Icon.pin,   label: lang==='pt'?'Rotas':'Routes' },
-            ].map(tab => {
-              const on = view === tab.id;
-              return (
-                <button key={tab.id}
-                  onClick={()=>{ setView(tab.id); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); setQ(''); }}
-                  style={{
-                    display:'flex', alignItems:'center', gap:7,
-                    padding:'9px 20px', borderRadius:10, border:'none', cursor:'pointer',
-                    fontFamily:'inherit', fontSize:14, fontWeight: on?700:500,
-                    background: on ? 'var(--pg-white)' : 'transparent',
-                    color: on ? 'var(--pg-blue-600)' : 'var(--pg-ink-400)',
-                    boxShadow: on ? '0 2px 10px rgba(0,0,0,0.10)' : 'none',
-                    transition:'all .18s ease',
-                    letterSpacing:'-0.01em',
-                  }}>
-                  {tab.icon(15, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)')}
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Pending ratings pill */}
-          {pendingRatings.length > 0 && (
+        {/* Pending ratings pill (floating, top-right) */}
+        {pendingRatings.length > 0 && (
+          <div style={{display:'flex', justifyContent:'flex-end', padding:'10px 32px 0'}}>
             <div onClick={()=>openRating&&openRating(pendingRatings[0])} style={{
-              marginLeft:'auto', display:'flex', alignItems:'center', gap:8, cursor:'pointer',
+              display:'inline-flex', alignItems:'center', gap:8, cursor:'pointer',
               background:'linear-gradient(135deg,#FFFBEB,#FEF3C7)',
               border:'1.5px solid #FDE68A', borderRadius:999, padding:'8px 16px',
             }}>
               <span style={{fontSize:16}}>⭐</span>
-              <div>
-                <div style={{fontSize:12, fontWeight:700, color:'#92400E', lineHeight:1}}>
-                  {pendingRatings.length} {lang==='pt'?'avaliação pendente':'pending rating'}{pendingRatings.length>1?'s':''}
-                </div>
+              <div style={{fontSize:12, fontWeight:700, color:'#92400E', lineHeight:1}}>
+                {pendingRatings.length} {lang==='pt'?'avaliação pendente':'pending rating'}{pendingRatings.length>1?'s':''}
               </div>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* ── CONTENT AREA ──────────────────────────────────────── */}
         <div style={{display:'flex', gap:0, maxWidth:'100%', minHeight:'calc(100vh - 280px)'}}>
