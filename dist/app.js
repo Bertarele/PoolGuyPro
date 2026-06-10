@@ -1156,7 +1156,7 @@ function App() {
   }, {
     id: 'quick',
     emoji: '🏊',
-    label: 'Express Pools'
+    label: lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'
   }, {
     id: 'work',
     emoji: '💼',
@@ -1530,19 +1530,19 @@ function App() {
     };
     const navItems = [{
       id: 'home',
-      label: lang === 'pt' ? 'Início' : 'Home'
+      label: lang === 'pt' ? 'Início' : lang === 'es' ? 'Inicio' : 'Home'
     }, {
       id: 'market',
-      label: lang === 'pt' ? 'Marketplace' : 'Marketplace'
+      label: lang === 'pt' ? 'Mercado' : lang === 'es' ? 'Mercado' : 'Marketplace'
     }, {
       id: 'quick',
-      label: 'Express Pools'
+      label: lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'
     }, {
       id: 'work',
-      label: lang === 'pt' ? 'Trabalho' : 'Work'
+      label: lang === 'pt' ? 'Trabalho' : lang === 'es' ? 'Trabajo' : 'Work'
     }, {
       id: 'profile',
-      label: lang === 'pt' ? 'Perfil' : 'Profile'
+      label: lang === 'pt' ? 'Perfil' : lang === 'es' ? 'Perfil' : 'Profile'
     }];
 
     // Post button removed from sidebar — each screen has its own inline post button
@@ -1567,7 +1567,7 @@ function App() {
         }))
       },
       market: {
-        label: 'Marketplace',
+        label: lang === 'pt' ? 'Mercado' : lang === 'es' ? 'Mercado' : 'Marketplace',
         icon: /*#__PURE__*/React.createElement("svg", {
           width: "16",
           height: "16",
@@ -1590,7 +1590,7 @@ function App() {
         }))
       },
       quick: {
-        label: 'Express Pools',
+        label: lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools',
         icon: /*#__PURE__*/React.createElement("svg", {
           width: "16",
           height: "16",

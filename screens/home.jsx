@@ -56,6 +56,19 @@ function HomeScreen({ ctx }) {
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob,      setSelectedJob]      = React.useState(null);
 
+  const catLabel = (cat) => {
+    const map = {
+      Routes:  {pt:'Rotas',    es:'Rutas',      en:'Routes'},
+      Heaters: {pt:'Aquecedor',es:'Calentador', en:'Heaters'},
+      Pole:    {pt:'Vara',     es:'Vara',        en:'Pole'},
+      Pumps:   {pt:'Bombas',   es:'Bombas',      en:'Pumps'},
+      Filters: {pt:'Filtros',  es:'Filtros',     en:'Filters'},
+      Vacuum:  {pt:'Aspirador',es:'Aspirador',   en:'Vacuum'},
+      Robot:   {pt:'Robô',     es:'Robot',       en:'Robot'},
+    };
+    return (map[cat] || {})[lang] || cat;
+  };
+
   const hour = new Date().getHours();
   const greetWord = hour < 12
     ? (lang==='pt'?'Bom dia':lang==='es'?'Buenos días':'Good morning')
@@ -527,7 +540,7 @@ function HomeScreen({ ctx }) {
                       fontSize:8.5, fontWeight:700, padding:'2px 7px', borderRadius:5,
                       background:'rgba(0,0,0,0.55)', color:'#fff',
                       letterSpacing:'0.07em', backdropFilter:'blur(3px)', textTransform:'uppercase',
-                    }}>{f.category}</span>
+                    }}>{catLabel(f.category)}</span>
                   </div>
 
                   {/* Content */}

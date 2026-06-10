@@ -66,6 +66,46 @@ function HomeScreen({
   const myPosts = [...myMarketPosts, ...myOwnJobs];
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob, setSelectedJob] = React.useState(null);
+  const catLabel = cat => {
+    const map = {
+      Routes: {
+        pt: 'Rotas',
+        es: 'Rutas',
+        en: 'Routes'
+      },
+      Heaters: {
+        pt: 'Aquecedor',
+        es: 'Calentador',
+        en: 'Heaters'
+      },
+      Pole: {
+        pt: 'Vara',
+        es: 'Vara',
+        en: 'Pole'
+      },
+      Pumps: {
+        pt: 'Bombas',
+        es: 'Bombas',
+        en: 'Pumps'
+      },
+      Filters: {
+        pt: 'Filtros',
+        es: 'Filtros',
+        en: 'Filters'
+      },
+      Vacuum: {
+        pt: 'Aspirador',
+        es: 'Aspirador',
+        en: 'Vacuum'
+      },
+      Robot: {
+        pt: 'Robô',
+        es: 'Robot',
+        en: 'Robot'
+      }
+    };
+    return (map[cat] || {})[lang] || cat;
+  };
   const hour = new Date().getHours();
   const greetWord = hour < 12 ? lang === 'pt' ? 'Bom dia' : lang === 'es' ? 'Buenos días' : 'Good morning' : hour < 18 ? lang === 'pt' ? 'Boa tarde' : lang === 'es' ? 'Buenas tardes' : 'Good afternoon' : lang === 'pt' ? 'Boa noite' : lang === 'es' ? 'Buenas noches' : 'Good evening';
 
@@ -990,7 +1030,7 @@ function HomeScreen({
         backdropFilter: 'blur(3px)',
         textTransform: 'uppercase'
       }
-    }, f.category)), /*#__PURE__*/React.createElement("div", {
+    }, catLabel(f.category))), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '10px 11px 12px',
         display: 'flex',
