@@ -354,8 +354,8 @@ function HomeScreen({
       badge: !!hasUnreadNotif
     }, Icon.bell(20, ic)))), /*#__PURE__*/React.createElement("div", {
       style: {
-        padding: '0px 18px 8px',
-        marginTop: -28,
+        padding: '0px 18px 12px',
+        marginTop: -55,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
