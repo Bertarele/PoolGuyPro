@@ -271,7 +271,9 @@ function WorkScreen({ ctx }) {
                 <div style={{position:'absolute',top:-60,right:60,width:220,height:220,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(0,180,255,0.13) 0%,transparent 70%)':'radial-gradient(circle,rgba(0,119,182,0.06) 0%,transparent 70%)',pointerEvents:'none'}}/>
                 <div style={{position:'absolute',bottom:-40,left:200,width:160,height:160,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%)':'radial-gradient(circle,rgba(10,40,64,0.04) 0%,transparent 70%)',pointerEvents:'none'}}/>
                 {/* Centered icon watermark */}
-                <img src="icone.png" alt="" style={{position:'absolute', left:'50%', top:'45%', transform:'translate(-50%,-50%)', height:110, objectFit:'contain', opacity:0.60, pointerEvents:'none', userSelect:'none', zIndex:0}}/>
+                <div style={{position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:0}}>
+                  <img src="icone.png" alt="" style={{position:'absolute', left:'50%', top:'45%', transform:'translate(-50%,-50%)', height:320, objectFit:'contain', opacity:0.60, userSelect:'none'}}/>
+                </div>
 
                 {/* Single compact row */}
                 <div style={{display:'flex',alignItems:'center',gap:20,marginBottom:16,position:'relative'}}>
