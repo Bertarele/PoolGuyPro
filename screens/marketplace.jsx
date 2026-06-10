@@ -3638,7 +3638,7 @@ function MarketplaceScreen({ ctx }) {
             ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)'
             : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)';
           return (
-            <div style={{background:_bg, padding:'28px 40px 30px', position:'relative', overflow:'hidden'}}>
+            <div style={{background:_bg, padding:'28px 40px 56px', position:'relative', overflow:'visible'}}>
               <div style={{position:'absolute', top:-60, right:-60, width:220, height:220,
                 borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.04)':'rgba(10,40,64,0.03)', pointerEvents:'none'}}/>
               <div style={{position:'absolute', bottom:-40, left:200, width:160, height:160,
@@ -3720,53 +3720,51 @@ function MarketplaceScreen({ ctx }) {
                   </button>
                 </div>
               </div>
-            </div>
-          );
-        })()}
 
-        {/* ── TABS FLUTUANTES — centralizados abaixo do header ─── */}
-        {(function(){
-          const _tabBg   = darkMode ? 'rgba(4,13,24,0.82)'  : 'rgba(255,255,255,0.92)';
-          const _tabBdr  = darkMode ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(10,40,64,0.10)';
-          const _activeBg= darkMode ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'linear-gradient(135deg,#0077B6,#005A8E)';
-          const _inactTx = darkMode ? 'rgba(255,255,255,0.50)' : 'rgba(10,40,64,0.48)';
-          return (
-            <div style={{display:'flex', justifyContent:'center', padding:'18px 0 4px', position:'relative', zIndex:10}}>
-              <div style={{
-                display:'inline-flex', alignItems:'center', gap:3,
-                background:_tabBg,
-                backdropFilter:'blur(20px)',
-                border:_tabBdr,
-                borderRadius:20, padding:5,
-                boxShadow: darkMode
-                  ? '0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.30)'
-                  : '0 8px 32px rgba(0,80,160,0.14), 0 2px 8px rgba(0,0,0,0.08)',
-              }}>
-                {[
-                  { id:'buy',    icon: Icon.cart,  label: lang==='pt'?'Comprar':lang==='es'?'Comprar':'Buy' },
-                  { id:'rent',   icon: Icon.key,   label: lang==='pt'?'Alugar':lang==='es'?'Alquilar':'Rent' },
-                  { id:'routes', icon: Icon.pin,   label: lang==='pt'?'Rotas':lang==='es'?'Rutas':'Routes' },
-                ].map(tb => {
-                  const on = view === tb.id;
-                  return (
-                    <button key={tb.id}
-                      onClick={()=>{ setView(tb.id); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); setQ(''); }}
-                      style={{
-                        display:'flex', alignItems:'center', gap:8,
-                        padding:'10px 30px', borderRadius:15, border:'none', cursor:'pointer',
-                        fontFamily:'inherit', fontSize:14.5, fontWeight: on?700:500,
-                        background: on ? _activeBg : 'transparent',
-                        color: on ? '#fff' : _inactTx,
-                        boxShadow: on ? '0 3px 14px rgba(0,119,182,0.40)' : 'none',
-                        transition:'all .20s ease',
-                        letterSpacing:'-0.01em', whiteSpace:'nowrap',
-                        }}>
-                        {tb.icon(16, on ? '#fff' : _inactTx)}
-                        {tb.label}
-                      </button>
-                    );
-                  })}
-              </div>
+              {/* ── Tabs absolutos na base do hero ── */}
+              {(()=>{
+                const _tabBg   = darkMode ? 'rgba(4,13,24,0.82)'  : 'rgba(255,255,255,0.92)';
+                const _tabBdr  = darkMode ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(10,40,64,0.10)';
+                const _activeBg= darkMode ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'linear-gradient(135deg,#0077B6,#005A8E)';
+                const _inactTx = darkMode ? 'rgba(255,255,255,0.50)' : 'rgba(10,40,64,0.48)';
+                return (
+                  <div style={{position:'absolute', bottom:-26, left:0, right:0, display:'flex', justifyContent:'center', zIndex:20}}>
+                    <div style={{
+                      display:'inline-flex', alignItems:'center', gap:3,
+                      background:_tabBg, backdropFilter:'blur(20px)',
+                      border:_tabBdr, borderRadius:20, padding:5,
+                      boxShadow: darkMode
+                        ? '0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.30)'
+                        : '0 8px 32px rgba(0,80,160,0.14), 0 2px 8px rgba(0,0,0,0.08)',
+                    }}>
+                      {[
+                        { id:'buy',    icon: Icon.cart, label: lang==='pt'?'Comprar':lang==='es'?'Comprar':'Buy' },
+                        { id:'rent',   icon: Icon.key,  label: lang==='pt'?'Alugar':lang==='es'?'Alquilar':'Rent' },
+                        { id:'routes', icon: Icon.pin,  label: lang==='pt'?'Rotas':lang==='es'?'Rutas':'Routes' },
+                      ].map(tb => {
+                        const on = view === tb.id;
+                        return (
+                          <button key={tb.id}
+                            onClick={()=>{ setView(tb.id); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); setQ(''); }}
+                            style={{
+                              display:'flex', alignItems:'center', gap:8,
+                              padding:'10px 30px', borderRadius:15, border:'none', cursor:'pointer',
+                              fontFamily:'inherit', fontSize:14.5, fontWeight: on?700:500,
+                              background: on ? _activeBg : 'transparent',
+                              color: on ? '#fff' : _inactTx,
+                              boxShadow: on ? '0 3px 14px rgba(0,119,182,0.40)' : 'none',
+                              transition:'all .20s ease',
+                              letterSpacing:'-0.01em', whiteSpace:'nowrap',
+                            }}>
+                            {tb.icon(16, on ? '#fff' : _inactTx)}
+                            {tb.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           );
         })()}
@@ -3789,14 +3787,14 @@ function MarketplaceScreen({ ctx }) {
         )}
 
         {/* ── CONTENT AREA ──────────────────────────────────────── */}
-        <div style={{display:'flex', gap:0, maxWidth:'100%', minHeight:'calc(100vh - 280px)'}}>
+        <div style={{display:'flex', gap:0, maxWidth:'100%', minHeight:'calc(100vh - 280px)', paddingTop:36}}>
 
           {/* ── LEFT SIDEBAR ─────────────────────────────────────── */}
           {isEquipment && (
             <div style={{
               width:220, flexShrink:0,
               background:'var(--pg-white)', borderRight:'1px solid var(--pg-ink-200)',
-              padding:'28px 20px', position:'sticky', top:0, height:'100vh',
+              padding:'16px 20px', position:'sticky', top:0, height:'100vh',
               overflowY:'auto',
             }}>
               {/* Categories */}
