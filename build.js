@@ -136,6 +136,13 @@ html = html.replace(babelCacheRx, '');
 //    e.g. <script type="text/babel" src="screens/overlays.jsx?v=133">
 //      →  <script src="screens/overlays.js?v=1x2y3z4"></script>
 const BUILD_VER = Date.now().toString(36); // e.g. "lx4k2j9" — unique per build
+
+// 4a. Also bust the CSS cache with the same version hash
+html = html.replace(
+  /(<link\s+rel="stylesheet"\s+href="tokens\.css)(?:\?[^"]*)?(")/g,
+  `$1?v=${BUILD_VER}$2`
+);
+
 html = html.replace(
   /<script\s+type="text\/babel"\s+src="([^"?]+)\.jsx(?:\?[^"]*)?"\s*><\/script>/g,
   (_, file) => `<script src="${file}.js?v=${BUILD_VER}"></script>`
