@@ -203,7 +203,7 @@ function HomeScreen({ ctx }) {
             </div>
 
             {/* Bottom row: greeting + active */}
-            <div style={{padding:'8px 18px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:1}}>
+            <div style={{padding:'2px 18px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:1}}>
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
                   {greetWord}, {firstName}! 👋
@@ -234,7 +234,7 @@ function HomeScreen({ ctx }) {
       }())}
 
       {/* ── Meus Anúncios card ── */}
-      <div style={{padding:'0 18px', marginTop: window.innerWidth > 768 ? 18 : 8}}>
+      <div style={{padding:'0 18px', marginTop: window.innerWidth > 768 ? 18 : -14, position:'relative', zIndex:2}}>
         <div className="pg-card" style={{padding:'16px 16px 18px', position:'relative'}}>
 
           {/* Header row */}

@@ -354,7 +354,7 @@ function HomeScreen({
       badge: !!hasUnreadNotif
     }, Icon.bell(20, ic)))), /*#__PURE__*/React.createElement("div", {
       style: {
-        padding: '8px 18px 18px',
+        padding: '2px 18px 14px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -430,7 +430,9 @@ function HomeScreen({
   }(), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 18px',
-      marginTop: window.innerWidth > 768 ? 18 : 8
+      marginTop: window.innerWidth > 768 ? 18 : -14,
+      position: 'relative',
+      zIndex: 2
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
