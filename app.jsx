@@ -1043,12 +1043,12 @@ function App() {
             }}/>
 
             {/* ── Brand logo ── */}
-            <div style={{padding:'12px 22px 10px', flexShrink:0}}>
+            <div style={{padding:'10px 16px 8px', flexShrink:0, display:'flex', alignItems:'center'}}>
               <img
                 src="wordmarkwhite.png"
                 alt="PoolGuyX"
                 style={{
-                  width:210, height:'auto', display:'block',
+                  width:210, height:52, objectFit:'contain', objectPosition:'left center', display:'block',
                   filter:'drop-shadow(0 3px 14px rgba(14,186,199,0.30))',
                 }}
               />
