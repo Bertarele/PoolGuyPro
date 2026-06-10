@@ -272,7 +272,7 @@ function WorkScreen({ ctx }) {
                 <div style={{position:'absolute',bottom:-40,left:200,width:160,height:160,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%)':'radial-gradient(circle,rgba(10,40,64,0.04) 0%,transparent 70%)',pointerEvents:'none'}}/>
                 {/* Centered icon watermark */}
                 <div style={{position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:0}}>
-                  <img src="icone.png" alt="" style={{position:'absolute', left:'50%', top:'70%', transform:'translate(-50%,-50%)', height:245, objectFit:'contain', opacity:0.60, userSelect:'none'}}/>
+                  <img src="icone.png" alt="" style={{position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)', height:245, objectFit:'contain', opacity:0.60, userSelect:'none'}}/>
                 </div>
 
                 {/* Single compact row */}
