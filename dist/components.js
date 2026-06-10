@@ -803,14 +803,21 @@ function TabBar({
     icon: Icon.user
   }];
   return /*#__PURE__*/React.createElement("div", {
-    className: "pg-tabbar"
+    className: "pg-tabbar",
+    style: {
+      padding: '2px 6px 10px'
+    }
   }, tabs.map(tb => {
     const on = tb.id === tab;
     if (tb.center) {
       return /*#__PURE__*/React.createElement("button", {
         key: tb.id,
         className: "pg-tab pg-tab-center",
-        onClick: () => setTab(tb.id)
+        onClick: () => setTab(tb.id),
+        style: {
+          padding: '4px 0',
+          gap: 3
+        }
       }, /*#__PURE__*/React.createElement("div", {
         className: `pg-tab-center-dot ${on ? 'on' : ''}`
       }, tb.icon(26, '#fff')), /*#__PURE__*/React.createElement("span", {
@@ -824,7 +831,11 @@ function TabBar({
     return /*#__PURE__*/React.createElement("button", {
       key: tb.id,
       className: `pg-tab ${on ? 'pg-tab-on' : ''}`,
-      onClick: () => setTab(tb.id)
+      onClick: () => setTab(tb.id),
+      style: {
+        padding: '4px 0',
+        gap: 3
+      }
     }, tb.icon(22, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-500)'), /*#__PURE__*/React.createElement("span", {
       className: "pg-tab-label"
     }, tb.label));
