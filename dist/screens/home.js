@@ -355,6 +355,7 @@ function HomeScreen({
     }, Icon.bell(20, ic)))), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '0px 18px 8px',
+        marginTop: -28,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
