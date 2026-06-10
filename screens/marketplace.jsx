@@ -3176,7 +3176,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 }
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating, loadPendingRatings, darkMode=false, openNotifications, hasUnreadNotif } = ctx;
+  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating, loadPendingRatings, darkMode=false, openNotifications, hasUnreadNotif, isDesktop=false } = ctx;
 
   // Normalize a raw Supabase marketplace row to app format
   const normMktItem = (r) => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
@@ -4241,8 +4241,8 @@ function MarketplaceScreen({ ctx }) {
                 </div>
               </div>
             }
-            leftBack onBack={()=>goTab('home')}
-            right={
+            leftBack={!isDesktop} onBack={()=>goTab('home')}
+            right={isDesktop ? null : (
               <div style={{display:'flex', gap:6, alignItems:'center'}}>
                 <div style={{position:'relative', display:'inline-flex'}}>
                   <IconButton dark={darkMode} onClick={() => openChat && openChat()}>
@@ -4257,7 +4257,7 @@ function MarketplaceScreen({ ctx }) {
                   {hasUnreadNotif && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:`1.5px solid ${darkMode?'#011B5A':'#d0e8f5'}`, pointerEvents:'none'}}/>}
                 </div>
               </div>
-            }
+            )}
           >
             {/* Stats strip below title */}
             <div style={{display:'flex', alignItems:'center', gap:12, marginTop:10, paddingTop:10, borderTop:`1px solid ${H.border}`}}>

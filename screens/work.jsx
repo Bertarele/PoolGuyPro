@@ -8,7 +8,7 @@ function WorkScreen({ ctx }) {
           removeJob, removeTech, removeVacation,
           liveJobs=[], liveTechs=[], liveVacations=[],
           liveApplications=[], jobApplicantCounts={},
-          hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false } = ctx;
+          hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, isDesktop=false } = ctx;
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState('hiring');
   const [vacTab, setVacTab] = React.useState('applied');
@@ -675,8 +675,8 @@ function WorkScreen({ ctx }) {
                 </div>
               </div>
             }
-            leftBack onBack={()=>goTab('home')}
-            right={
+            leftBack={!isDesktop} onBack={()=>goTab('home')}
+            right={isDesktop ? null : (
               <div style={{display:'flex', gap:6, alignItems:'center'}}>
                 <div style={{position:'relative', display:'inline-flex'}}>
                   <IconButton dark={darkMode} onClick={() => openChat && openChat()}>
@@ -691,7 +691,7 @@ function WorkScreen({ ctx }) {
                   {hasUnreadNotif && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:`1.5px solid ${darkMode?'#011B5A':'#d0e8f5'}`, pointerEvents:'none'}}/>}
                 </div>
               </div>
-            }
+            )}
           >
             {/* Contextual stats strip per sub-tab */}
             <div style={{display:'flex', alignItems:'center', gap:14, marginTop:10, paddingTop:10, borderTop:`1px solid ${H.border}`}}>

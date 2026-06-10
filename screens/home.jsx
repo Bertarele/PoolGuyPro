@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false } = ctx;
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
 
@@ -85,6 +85,88 @@ function HomeScreen({ ctx }) {
       {(() => {
         const H = headerTheme(darkMode);
         const ic = H.text;
+        const firstName = myAuthor ? myAuthor.split(' ')[0] : (user.email ? user.email.split('@')[0] : '');
+
+        if (isDesktop) {
+          // ── Desktop hero banner ──────────────────────────────
+          const heroBg = darkMode
+            ? 'linear-gradient(135deg, #061220 0%, #0A1D33 60%, #0D2444 100%)'
+            : 'linear-gradient(135deg, #e8f5ff 0%, #d6edf8 60%, #c8e7f5 100%)';
+          return (
+            <div style={{
+              background: heroBg,
+              padding:'32px 36px 28px',
+              borderBottom: darkMode ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(10,40,64,0.07)',
+              position:'relative', overflow:'hidden',
+            }}>
+              {/* Decorative aqua glow */}
+              <div style={{position:'absolute', top:-60, right:60, width:280, height:280, borderRadius:'50%',
+                background: darkMode
+                  ? 'radial-gradient(circle, rgba(14,186,199,0.08) 0%, transparent 65%)'
+                  : 'radial-gradient(circle, rgba(0,119,182,0.10) 0%, transparent 65%)',
+                pointerEvents:'none'}}/>
+              <div style={{position:'absolute', bottom:-40, left:-40, width:180, height:180, borderRadius:'50%',
+                background: darkMode ? 'rgba(14,186,199,0.04)' : 'rgba(0,119,182,0.05)',
+                pointerEvents:'none'}}/>
+
+              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:1}}>
+                {/* Left: greeting */}
+                <div>
+                  <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:6}}>
+                    <div style={{
+                      width:44, height:44, borderRadius:13,
+                      background: darkMode
+                        ? 'linear-gradient(135deg, rgba(14,165,233,0.25) 0%, rgba(6,182,212,0.15) 100%)'
+                        : 'linear-gradient(135deg, rgba(0,119,182,0.15) 0%, rgba(14,186,199,0.10) 100%)',
+                      border: darkMode ? '1px solid rgba(14,165,233,0.25)' : '1px solid rgba(0,119,182,0.18)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      fontSize:20, flexShrink:0,
+                    }}>🏊</div>
+                    <div>
+                      <div style={{fontSize:22, fontWeight:800, color:H.text, letterSpacing:'-0.025em', lineHeight:1.15}}>
+                        {greetWord}, {firstName}!
+                      </div>
+                      <div style={{fontSize:12.5, color:H.faint, fontWeight:500, marginTop:2}}>{subtitle}</div>
+                    </div>
+                  </div>
+                  <div style={{display:'flex', alignItems:'center', gap:5, marginTop:4, paddingLeft:2}}>
+                    {Icon.pin(11, darkMode ? 'var(--pg-aqua-400)' : '#0077B6')}
+                    <span style={{fontSize:11.5, color:H.faint, fontWeight:500}}>Broward County, FL</span>
+                  </div>
+                </div>
+
+                {/* Right: status + quick stats */}
+                <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:10}}>
+                  <div style={{
+                    background: H.activeBg, border: H.activeBdr,
+                    borderRadius:999, padding:'6px 14px', display:'flex', alignItems:'center', gap:6,
+                    boxShadow: darkMode ? '0 4px 14px rgba(0,0,0,0.30)' : '0 4px 14px rgba(0,119,182,0.10)',
+                  }}>
+                    <div style={{width:8, height:8, borderRadius:'50%', background:'#34D399', boxShadow:'0 0 7px rgba(52,211,153,0.70)'}}/>
+                    <span style={{fontSize:11, fontWeight:700, color: H.activeTxt, letterSpacing:'0.04em'}}>ACTIVE</span>
+                  </div>
+                  <div style={{display:'flex', gap:10}}>
+                    {[
+                      { val: myPosts.length, lbl: lang==='pt'?'Anúncios':lang==='es'?'Anuncios':'Listings' },
+                      { val: liveMarket.length, lbl: lang==='pt'?'No Mercado':'In Market' },
+                    ].map((s,i) => (
+                      <div key={i} style={{
+                        padding:'7px 14px', borderRadius:10, textAlign:'center',
+                        background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,119,182,0.07)',
+                        border: darkMode ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,119,182,0.10)',
+                      }}>
+                        <div style={{fontSize:18, fontWeight:800, color: H.text, fontFamily:'var(--pg-font-display)', lineHeight:1}}>{s.val}</div>
+                        <div style={{fontSize:9.5, color: H.faint, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em', marginTop:2}}>{s.lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // ── Mobile header (NavyBar) ──────────────────────────
         return (
           <NavyBar
             darkMode={darkMode}
@@ -111,7 +193,7 @@ function HomeScreen({ ctx }) {
             <div style={{marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
-                  {greetWord}, {myAuthor ? myAuthor.split(' ')[0] : (user.email ? user.email.split('@')[0] : '')}! 👋
+                  {greetWord}, {firstName}! 👋
                 </div>
                 <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
                   {Icon.pin(10,'var(--pg-aqua-400)')}

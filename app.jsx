@@ -725,6 +725,7 @@ function App() {
     openRating: (r) => setActiveRating(r),
     loadPendingRatings,
     darkMode, toggleDark,
+    isDesktop: !isMobile,
     onLogout: () => {
       if (window.sb) window.sb.auth.signOut();
       setIsLoggedIn(false);
@@ -1348,42 +1349,52 @@ function App() {
             <>
               {/* ── Desktop top bar ── */}
               <div style={{
-                flexShrink:0, height:58,
+                flexShrink:0, height:56,
                 background: darkMode
-                  ? 'linear-gradient(180deg, #0D1B2E 0%, #0A1524 100%)'
-                  : 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
+                  ? 'linear-gradient(90deg, #0D1B2E 0%, #091525 100%)'
+                  : 'linear-gradient(90deg, #ffffff 0%, #f5faff 100%)',
                 borderBottom: darkMode
-                  ? '1px solid rgba(255,255,255,0.06)'
+                  ? '1px solid rgba(255,255,255,0.055)'
                   : '1px solid rgba(10,40,64,0.08)',
                 display:'flex', alignItems:'center',
                 padding:'0 28px', gap:14,
                 boxShadow: darkMode
-                  ? '0 2px 16px rgba(0,0,0,0.35)'
-                  : '0 2px 16px rgba(0,40,80,0.07)',
+                  ? '0 2px 20px rgba(0,0,0,0.40)'
+                  : '0 2px 18px rgba(0,40,80,0.06)',
                 position:'relative', zIndex:5,
               }}>
+                {/* Thin aqua top accent line */}
+                <div style={{
+                  position:'absolute', top:0, left:0, right:0, height:2,
+                  background:'linear-gradient(90deg, transparent 0%, rgba(14,186,199,0.50) 40%, rgba(56,189,248,0.50) 70%, transparent 100%)',
+                  pointerEvents:'none',
+                }}/>
+
                 {/* Page breadcrumb */}
-                <div style={{display:'flex', alignItems:'center', gap:9, flex:1}}>
+                <div style={{display:'flex', alignItems:'center', gap:10, flex:1}}>
                   <div style={{
-                    width:32, height:32, borderRadius:9,
-                    background: darkMode ? 'rgba(14,165,233,0.14)' : 'rgba(0,119,182,0.09)',
-                    border: darkMode ? '1px solid rgba(14,165,233,0.20)' : '1px solid rgba(0,119,182,0.14)',
+                    width:34, height:34, borderRadius:10,
+                    background: darkMode
+                      ? 'linear-gradient(135deg, rgba(14,165,233,0.18) 0%, rgba(6,182,212,0.10) 100%)'
+                      : 'linear-gradient(135deg, rgba(0,119,182,0.12) 0%, rgba(14,186,199,0.07) 100%)',
+                    border: darkMode ? '1px solid rgba(14,165,233,0.22)' : '1px solid rgba(0,119,182,0.16)',
                     display:'flex', alignItems:'center', justifyContent:'center',
                     color: darkMode ? '#38BDF8' : '#0077B6',
                     flexShrink:0,
+                    boxShadow: darkMode ? '0 3px 10px rgba(14,165,233,0.20)' : '0 3px 10px rgba(0,119,182,0.10)',
                   }}>
                     {pageMeta.icon}
                   </div>
                   <div>
                     <div style={{
-                      fontSize:15, fontWeight:700, lineHeight:1.1,
-                      color: darkMode ? '#fff' : '#0A2840',
+                      fontSize:15, fontWeight:700, lineHeight:1.15,
+                      color: darkMode ? '#E0F2FE' : '#0A2840',
                       letterSpacing:'-0.02em',
                     }}>{pageMeta.label}</div>
                     <div style={{
-                      fontSize:10.5, fontWeight:500, lineHeight:1, marginTop:2,
-                      color: darkMode ? 'rgba(255,255,255,0.30)' : 'rgba(10,40,64,0.45)',
-                      letterSpacing:'0.01em',
+                      fontSize:10, fontWeight:500, lineHeight:1, marginTop:1.5,
+                      color: darkMode ? 'rgba(255,255,255,0.28)' : 'rgba(10,40,64,0.42)',
+                      letterSpacing:'0.02em',
                     }}>usapoolmarket.com · Broward County, FL</div>
                   </div>
                 </div>
