@@ -271,16 +271,19 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         </div>
 
         {/* Centered card */}
-        <div style={{
+        <div className="pg-login-card" style={{
           position:'relative', zIndex:2,
           width:'100%', maxWidth:480,
-          background:'rgba(242,244,247,0.97)',
-          backdropFilter:'blur(24px)',
+          background:'rgba(255,255,255,0.62)',
+          backdropFilter:'blur(28px)',
+          WebkitBackdropFilter:'blur(28px)',
           borderRadius:28,
           padding:'40px 44px 36px',
-          boxShadow:'0 32px 80px rgba(0,0,0,0.32)',
+          boxShadow:'0 24px 64px rgba(0,0,0,0.22)',
           margin:'0 24px',
           overflowY:'auto', maxHeight:'calc(100% - 48px)',
+          scrollbarWidth:'none',
+          msOverflowStyle:'none',
         }}>
           {/* Logo + tagline no topo do card */}
           <div style={{textAlign:'center', marginBottom:28}}>
@@ -460,7 +463,10 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
           </div>
         </div>{/* end card */}
-        <style>{`@keyframes pgSpin { to { transform: rotate(360deg); } }`}</style>
+        <style>{`
+          @keyframes pgSpin { to { transform: rotate(360deg); } }
+          .pg-login-card::-webkit-scrollbar { display: none; }
+        `}</style>
       </div>
     );
   }
