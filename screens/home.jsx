@@ -170,13 +170,22 @@ function HomeScreen({ ctx }) {
           );
         }
 
-        // ── Mobile: NavyBar ───────────────────────────────────────
+        // ── Mobile: custom header (full control over layout) ─────
+        const _bg = darkMode
+          ? 'linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)'
+          : 'linear-gradient(145deg, #f0f9ff 0%, #dff0fb 52%, #cce8f5 100%)';
         return (
-          <NavyBar
-            darkMode={darkMode}
-            title={<div style={{marginTop:6, height:118, overflow:'hidden'}}><Wordmark size="nav" onDark={darkMode}/></div>}
-            right={
-              <>
+          <div style={{background:_bg, position:'relative', overflow:'hidden'}}>
+            {/* Decorative circles */}
+            <div style={{position:'absolute', top:-60, right:-60, width:200, height:200, borderRadius:'50%', background:H.glow, pointerEvents:'none'}}/>
+            <div style={{position:'absolute', top:-55, right:-55, width:190, height:190, borderRadius:'50%', border:`1px solid ${H.ring1}`, pointerEvents:'none'}}/>
+
+            {/* Top row: logo + buttons */}
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 18px 0', position:'relative', zIndex:1}}>
+              <div style={{height:118, overflow:'hidden'}}>
+                <Wordmark size="nav" onDark={darkMode}/>
+              </div>
+              <div style={{display:'flex', alignItems:'center', gap:8}}>
                 <LangPill lang={lang} setLang={setLang} onDark={darkMode}/>
                 <div style={{position:'relative', display:'inline-flex'}}>
                   <IconButton dark={darkMode} onClick={() => ctx.openChat && ctx.openChat()}>
@@ -190,10 +199,11 @@ function HomeScreen({ ctx }) {
                   }}/>}
                 </div>
                 <IconButton dark={darkMode} onClick={openNotifications} badge={!!hasUnreadNotif}>{Icon.bell(20, ic)}</IconButton>
-              </>
-            }
-          >
-            <div style={{marginTop:6, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+              </div>
+            </div>
+
+            {/* Bottom row: greeting + active */}
+            <div style={{padding:'8px 18px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:1}}>
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
                   {greetWord}, {firstName}! 👋
@@ -211,8 +221,15 @@ function HomeScreen({ ctx }) {
                 <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.03em'}}>ACTIVE</span>
               </div>
             </div>
-            <div style={{height:0}}/>
-          </NavyBar>
+
+            {/* Wave accent */}
+            <div style={{position:'absolute', bottom:0, left:0, right:0, lineHeight:0, pointerEvents:'none', zIndex:0}}>
+              <svg viewBox="0 0 402 20" width="100%" height="20" preserveAspectRatio="none">
+                <path d="M0 14 Q80 5 160 14 Q240 23 320 14 Q368 8 402 16 L402 20 L0 20 Z" fill={H.wave1}/>
+                <path d="M0 17 Q120 11 240 17 Q320 21 402 18 L402 20 L0 20 Z" fill={H.wave2}/>
+              </svg>
+            </div>
+          </div>
         );
       }())}
 
