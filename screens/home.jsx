@@ -128,7 +128,7 @@ function HomeScreen({ ctx }) {
                   <img
                     src={darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png'}
                     alt="PoolGuyX"
-                    style={{height:88, objectFit:'contain', filter: darkMode ? 'drop-shadow(0 2px 12px rgba(14,186,199,0.30))' : 'drop-shadow(0 2px 10px rgba(0,90,160,0.18))'}}
+                    style={{height:130, objectFit:'contain', filter: darkMode ? 'drop-shadow(0 2px 12px rgba(14,186,199,0.30))' : 'drop-shadow(0 2px 10px rgba(0,90,160,0.18))'}}
                   />
                 </div>
 
