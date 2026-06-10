@@ -1050,6 +1050,7 @@ function App() {
                 style={{
                   width:220, height:200, objectFit:'contain', objectPosition:'left center', display:'block', marginTop:20,
                   filter:'drop-shadow(0 3px 14px rgba(14,186,199,0.30))',
+                  pointerEvents:'none',
                 }}
               />
             </div>
