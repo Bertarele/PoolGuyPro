@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm install && node build.js",
+  "buildCommand": "echo 'using pre-built dist'",
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
