@@ -130,7 +130,7 @@ function HomeScreen({ ctx }) {
                     alt="PoolGuyX"
                     style={{
                       height:190, objectFit:'contain',
-                      position:'absolute', top:'40%', transform:'translateY(-50%)',
+                      position:'absolute', top:'50%', transform:'translateY(-50%)',
                       filter: darkMode ? 'drop-shadow(0 2px 12px rgba(14,186,199,0.30))' : 'drop-shadow(0 2px 10px rgba(0,90,160,0.18))',
                       zIndex:2,
                     }}
