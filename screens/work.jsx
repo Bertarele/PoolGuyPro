@@ -267,7 +267,7 @@ function WorkScreen({ ctx }) {
           const tabBdr = (on) => on ? (darkMode?'2px solid rgba(255,255,255,0.70)':'2px solid #0077B6') : '2px solid transparent';
           return (
             <>
-              <div style={{background:_bg, padding:'28px 36px 0', position:'relative', overflow:'hidden'}}>
+              <div style={{background:_bg, padding:'28px 36px 56px', position:'relative', overflow:'visible'}}>
                 <div style={{position:'absolute',top:-60,right:60,width:220,height:220,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(0,180,255,0.13) 0%,transparent 70%)':'radial-gradient(circle,rgba(0,119,182,0.06) 0%,transparent 70%)',pointerEvents:'none'}}/>
                 <div style={{position:'absolute',bottom:-40,left:200,width:160,height:160,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%)':'radial-gradient(circle,rgba(10,40,64,0.04) 0%,transparent 70%)',pointerEvents:'none'}}/>
 
@@ -338,24 +338,38 @@ function WorkScreen({ ctx }) {
                   </div>
                 </div>
 
-                {/* Sub-tab bar */}
-                <div style={{display:'flex',gap:4,background:_tabBg,borderTop:_tabBr,margin:'0 -36px',padding:'6px 36px'}}>
-                  {tabs.map(s => {
-                    const on = sub === s.id;
-                    return (
-                      <button key={s.id} onClick={()=>setSub(s.id)} style={{
-                        padding:'8px 20px',borderRadius:9,border:'none',cursor:'pointer',
-                        background:tabOn(on), color:tabTx(on),
-                        fontWeight:on?700:500, fontSize:13.5, letterSpacing:'-0.01em',
-                        display:'inline-flex',alignItems:'center',gap:7,
-                        fontFamily:'inherit',transition:'all .15s ease',
-                        borderBottom:tabBdr(on),borderBottomLeftRadius:0,borderBottomRightRadius:0,
-                      }}>
-                        {subIcons[s.id](15, tabTx(on))}
-                        {s.label}
-                      </button>
-                    );
-                  })}
+                {/* Sub-tabs flutuantes — mesmo estilo do marketplace */}
+                <div style={{position:'absolute', bottom:-26, left:0, right:0, display:'flex', justifyContent:'center', zIndex:20}}>
+                  <div style={{
+                    display:'inline-flex', alignItems:'center', gap:3,
+                    background: darkMode ? 'rgba(4,13,24,0.82)' : 'rgba(255,255,255,0.92)',
+                    backdropFilter:'blur(20px)',
+                    border: darkMode ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(10,40,64,0.10)',
+                    borderRadius:20, padding:5,
+                    boxShadow: darkMode
+                      ? '0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.30)'
+                      : '0 8px 32px rgba(0,80,160,0.14), 0 2px 8px rgba(0,0,0,0.08)',
+                  }}>
+                    {tabs.map(s => {
+                      const on = sub === s.id;
+                      const _activeBg = darkMode ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'linear-gradient(135deg,#0077B6,#005A8E)';
+                      const _inactTx  = darkMode ? 'rgba(255,255,255,0.50)' : 'rgba(10,40,64,0.48)';
+                      return (
+                        <button key={s.id} onClick={()=>setSub(s.id)} style={{
+                          display:'inline-flex', alignItems:'center',
+                          padding:'10px 30px', borderRadius:15, border:'none', cursor:'pointer',
+                          fontFamily:'inherit', fontSize:14.5, fontWeight: on?700:500,
+                          background: on ? _activeBg : 'transparent',
+                          color: on ? '#fff' : _inactTx,
+                          boxShadow: on ? '0 3px 14px rgba(0,119,182,0.40)' : 'none',
+                          transition:'all .20s ease',
+                          letterSpacing:'-0.01em', whiteSpace:'nowrap',
+                        }}>
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </>
@@ -363,7 +377,7 @@ function WorkScreen({ ctx }) {
         }())}
 
         {/* ── Body: sidebar + content ── */}
-        <div style={{display:'flex',gap:0,alignItems:'flex-start',padding:'28px 36px',maxWidth:1400,margin:'0 auto'}}>
+        <div style={{display:'flex',gap:0,alignItems:'flex-start',padding:'36px 36px 28px',maxWidth:1400,margin:'0 auto'}}>
 
           {/* LEFT SIDEBAR */}
           <div style={{width:300,flexShrink:0,position:'sticky',top:28,maxHeight:'calc(100vh - 120px)',overflowY:'auto',marginRight:28}}>
