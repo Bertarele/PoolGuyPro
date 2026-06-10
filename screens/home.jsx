@@ -193,7 +193,7 @@ function HomeScreen({ ctx }) {
               </>
             }
           >
-            <div style={{marginTop:5, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            <div style={{marginTop:-2, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
                   {greetWord}, {firstName}! 👋
@@ -211,7 +211,7 @@ function HomeScreen({ ctx }) {
                 <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.03em'}}>ACTIVE</span>
               </div>
             </div>
-            <div style={{height:8}}/>
+            <div style={{height:2}}/>
           </NavyBar>
         );
       }())}
