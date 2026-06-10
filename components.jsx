@@ -229,16 +229,23 @@ function ReputationBadge({ jobs=0, lang='en', size='sm' }) {
 
 // ── Scroll lock (prevents background scroll while any sheet is open) ──
 let _sheetDepth = 0;
+let _savedOverflow = null;
 function _lockScreen() {
   _sheetDepth++;
   const el = document.querySelector('[data-pg-screen]');
-  if (el) el.style.overflow = 'hidden';
+  if (el) {
+    if (_sheetDepth === 1) _savedOverflow = el.style.overflow;
+    el.style.overflow = 'hidden';
+  }
 }
 function _unlockScreen() {
   _sheetDepth = Math.max(0, _sheetDepth - 1);
   if (_sheetDepth === 0) {
     const el = document.querySelector('[data-pg-screen]');
-    if (el) el.style.overflow = '';
+    if (el) {
+      el.style.overflow = _savedOverflow !== null ? _savedOverflow : 'auto';
+      _savedOverflow = null;
+    }
   }
 }
 
