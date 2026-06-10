@@ -108,7 +108,7 @@ function HomeScreen({ ctx }) {
                 pointerEvents:'none'}}/>
 
               {/* Main row */}
-              <div style={{display:'flex', alignItems:'center', padding:'20px 36px 20px', gap:0}}>
+              <div style={{display:'flex', alignItems:'center', padding:'12px 36px', gap:0}}>
 
                 {/* LEFT — greeting + location */}
                 <div style={{flex:1, minWidth:0}}>
@@ -128,7 +128,7 @@ function HomeScreen({ ctx }) {
                   <img
                     src={darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png'}
                     alt="PoolGuyX"
-                    style={{height:140, objectFit:'contain', filter: darkMode ? 'drop-shadow(0 2px 12px rgba(14,186,199,0.30))' : 'drop-shadow(0 2px 10px rgba(0,90,160,0.18))'}}
+                    style={{height:64, objectFit:'contain', filter: darkMode ? 'drop-shadow(0 2px 12px rgba(14,186,199,0.30))' : 'drop-shadow(0 2px 10px rgba(0,90,160,0.18))'}}
                   />
                 </div>
 
