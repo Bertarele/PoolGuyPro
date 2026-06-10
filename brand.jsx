@@ -52,20 +52,20 @@ function FloodMark({ size = 36 }) {
 
 // ── Brand wordmark ────────────────────────────────────────────
 function Wordmark({ size='md', onDark=false, subtitle }) {
-  const h = size === 'lg' ? 120 : size === 'sm' ? 65 : 90;
+  const h = size === 'lg' ? 160 : size === 'sm' ? 85 : 120;
   const subtitleSize = size === 'lg' ? 11 : size === 'sm' ? 9 : 10;
 
   return (
     <div style={{display:'flex', flexDirection:'column', alignItems:'flex-start', gap:3}}>
       <img
-        src="pgx-logo.png"
+        src={onDark ? 'wordmarkwhite.png' : 'pgx-logo.png'}
         alt="PoolGuyX"
         style={{
           height: h,
           width: 'auto',
           display: 'block',
           filter: onDark
-            ? 'drop-shadow(0 0 8px rgba(255,255,255,0.55)) brightness(1.18)'
+            ? 'drop-shadow(0 2px 12px rgba(0,0,0,0.35))'
             : 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))',
         }}
       />

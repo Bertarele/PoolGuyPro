@@ -285,7 +285,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         }}>
           {/* Logo + tagline no topo do card */}
           <div style={{textAlign:'center', marginBottom:28}}>
-            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:'auto', width:'96%', maxHeight:280, display:'block', margin:'0 auto -4px', filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.18))'}}/>
+            <img src="wordmarkwhite.png" alt="PoolGuyX" style={{height:'auto', width:'96%', maxHeight:340, display:'block', margin:'0 auto -4px', filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.30))'}}/>
             <div style={{fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.07em', textTransform:'uppercase'}}>{t.tagline}</div>
           </div>
 
@@ -506,14 +506,14 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       }}>
         {/* PoolGuyX logo */}
         <img
-          src="pgx-logo.png"
+          src="wordmarkwhite.png"
           alt="PoolGuyX"
           style={{
-            height: 220,
+            height: 280,
             width: 'auto',
             display: 'block',
             marginBottom: 0,
-            filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.40)) brightness(1.1)',
+            filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.40))',
           }}
         />
 
