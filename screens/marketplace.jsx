@@ -3489,7 +3489,6 @@ function MarketplaceScreen({ ctx }) {
           border: (desktopMode && darkMode)
             ? `1.5px solid ${isSoldItem ? '#30363D' : '#21262D'}`
             : isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
-          opacity: isPending ? 0.82 : isSoldItem ? 0.70 : 1,
           display:'flex', flexDirection:'column',
           borderRadius:16,
           background: (desktopMode && darkMode)
@@ -3500,8 +3499,8 @@ function MarketplaceScreen({ ctx }) {
             ? (darkMode ? '0 2px 16px rgba(0,0,0,0.45), 0 0 0 0 transparent' : '0 2px 12px rgba(0,0,0,0.08), 0 0 0 0 transparent')
             : '0 1px 3px rgba(0,0,0,0.08)',
           transition:'box-shadow .18s, transform .12s',
-          filter: isSoldItem ? 'grayscale(0.65)' : 'none',
         }}>
+        <div style={{opacity: isPending ? 0.82 : isSoldItem ? 0.70 : 1, filter: isSoldItem ? 'grayscale(0.65)' : 'none', display:'flex', flexDirection:'column', flex:1}}>
         {/* Photo */}
         <div style={{position:'relative', paddingTop: desktopMode ? '62%' : '72%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
           <div style={{position:'absolute', inset:0}}>
@@ -3598,7 +3597,9 @@ function MarketplaceScreen({ ctx }) {
           {isPending && <div style={{marginTop:8, fontSize:10.5, color:'#92710A', background:'#FFF8E1',
             border:'0.5px solid #FFE082', borderRadius:6, padding:'4px 8px', textAlign:'center'}}>
             ⏳ {lang==='pt'?'Em revisão':'Under review'}</div>}
-          {canDel && <div style={{filter:'none', opacity:1}}><div onClick={handleQuickDelete} style={{marginTop:8, padding:'6px 0', borderRadius:8,
+        </div>
+        </div>
+        {canDel && <div onClick={handleQuickDelete} style={{margin:'0 13px 14px', padding:'6px 0', borderRadius:8,
             background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444', fontSize:11, fontWeight:700,
             textAlign:'center', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -3606,8 +3607,7 @@ function MarketplaceScreen({ ctx }) {
               <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
             </svg>
             {lang==='pt'?'Excluir':'Delete'}
-          </div></div>}
-        </div>
+          </div>}
       </button>
     );
   };

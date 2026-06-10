@@ -1976,16 +1976,6 @@ function WorkScreen({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: 'var(--pg-ink-400)',
-      letterSpacing: '0.06em',
-      textTransform: 'uppercase',
-      marginBottom: 6,
-      paddingLeft: 2
-    }
-  }, lang === 'pt' ? 'ENCONTRAR TRABALHO' : lang === 'es' ? 'ENCONTRAR TRABAJO' : 'FIND WORK'), /*#__PURE__*/React.createElement("div", {
-    style: {
       display: 'flex',
       gap: 4,
       padding: 4,

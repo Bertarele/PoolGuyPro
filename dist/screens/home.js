@@ -603,10 +603,15 @@ function HomeScreen({
   }, lang === 'pt' ? 'Publicar agora →' : lang === 'es' ? 'Publicar ahora →' : 'Post now →')), myPosts.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
-      flexDirection: 'column',
-      gap: 10
+      overflowX: 'auto',
+      gap: 10,
+      paddingBottom: 2,
+      scrollSnapType: 'x mandatory',
+      WebkitOverflowScrolling: 'touch',
+      msOverflowStyle: 'none',
+      scrollbarWidth: 'none'
     }
-  }, myPosts.slice(0, 4).map(item => {
+  }, myPosts.map(item => {
     const isPending = item.status === 'pending';
     const isJob = item._isJob === true;
     const priceStr = item.priceMode === 'neg' || item.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : item.asking ? `$${Number(item.asking).toLocaleString()}` : item.price ? `$${item.price}${isJob ? item.payMode === 'weekly' ? '/sem' : '/pool' : ''}` : '—';
@@ -616,10 +621,14 @@ function HomeScreen({
       className: "pg-press",
       style: {
         display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '10px 12px',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: '10px 10px 10px',
         borderRadius: 14,
+        flexShrink: 0,
+        width: 'calc(33.33% - 7px)',
+        minWidth: 130,
+        scrollSnapAlign: 'start',
         border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
         background: isPending ? 'var(--pg-ink-50, #F7F9FB)' : 'var(--pg-blue-50)',
         cursor: 'pointer',
@@ -628,107 +637,62 @@ function HomeScreen({
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 58,
-        height: 58,
-        borderRadius: 12,
+        width: '100%',
+        height: 72,
+        borderRadius: 8,
         overflow: 'hidden',
         flexShrink: 0,
+        marginBottom: 8,
         background: 'linear-gradient(135deg, var(--pg-blue-100), var(--pg-ink-100))'
       }
     }, item.photoUrl ? /*#__PURE__*/React.createElement("img", {
       src: item.photoUrl,
       alt: item.name,
       style: {
-        width: 58,
-        height: 58,
-        objectFit: 'cover',
-        borderRadius: 12
+        width: '100%',
+        height: 72,
+        objectFit: 'cover'
       }
     }) : /*#__PURE__*/React.createElement(EquipImg, {
       category: item.cat || (item.type === 'route' ? 'Routes' : 'Tools'),
-      height: 58
-    })), /*#__PURE__*/React.createElement("div", {
+      height: 72
+    })), /*#__PURE__*/React.createElement("span", {
       style: {
-        flex: 1,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7,
-        marginBottom: 2
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 9.5,
+        fontSize: 9,
         fontWeight: 700,
-        padding: '2px 7px',
+        padding: '2px 6px',
         borderRadius: 5,
         letterSpacing: '0.04em',
+        marginBottom: 4,
+        display: 'inline-block',
         background: isPending ? '#FFF3CD' : 'var(--pg-blue-100)',
         color: isPending ? '#856404' : 'var(--pg-blue-700)'
       }
-    }, isPending ? lang === 'pt' ? '⏳ REVISÃO' : lang === 'es' ? '⏳ REVISIÓN' : '⏳ REVIEW' : '✓ ATIVO'), /*#__PURE__*/React.createElement("span", {
+    }, isPending ? lang === 'pt' ? 'REVISÃO' : lang === 'es' ? 'REVISIÓN' : 'REVIEW' : 'ATIVO'), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 10.5,
-        color: 'var(--pg-ink-400)',
-        fontWeight: 500
-      }
-    }, typeLabel(item))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13.5,
+        fontSize: 12,
         fontWeight: 700,
         letterSpacing: '-0.01em',
         lineHeight: 1.25,
         color: isPending ? 'var(--pg-ink-600)' : 'var(--pg-ink-900)',
         overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        maxWidth: 180
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        marginBottom: 4
       }
     }, item.name || item.routeName || '—'), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 11.5,
-        color: 'var(--pg-ink-400)',
-        marginTop: 2
-      }
-    }, item.loc || item.area || '')), /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: 'right',
-        flexShrink: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
         fontFamily: 'var(--pg-font-display)',
-        fontSize: 17,
+        fontSize: 15,
         fontWeight: 700,
         letterSpacing: '-0.02em',
         lineHeight: 1,
-        color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)'
+        color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
+        marginTop: 'auto'
       }
-    }, priceStr), item.type === 'rent' && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 9.5,
-        color: 'var(--pg-ink-400)',
-        marginTop: 2
-      }
-    }, "/dia"), Icon.chev(13, 'var(--pg-ink-300)')));
-  }), myPosts.length > 4 && /*#__PURE__*/React.createElement("button", {
-    onClick: () => goTab('market'),
-    style: {
-      width: '100%',
-      padding: '10px',
-      borderRadius: 10,
-      border: 'none',
-      background: 'var(--pg-ink-100)',
-      color: 'var(--pg-blue-600)',
-      fontWeight: 700,
-      fontSize: 13,
-      cursor: 'pointer',
-      fontFamily: 'inherit'
-    }
-  }, lang === 'pt' ? `Ver todos os ${myPosts.length} anúncios →` : lang === 'es' ? `Ver los ${myPosts.length} anuncios →` : `View all ${myPosts.length} listings →`)))), /*#__PURE__*/React.createElement("div", {
+    }, priceStr));
+  })))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '16px 18px 16px',
       display: 'flex',

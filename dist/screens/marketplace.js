@@ -6476,7 +6476,6 @@ function MarketplaceScreen({
         position: 'relative',
         cursor: isSoldItem ? isMyPost(item) ? 'pointer' : 'default' : 'pointer',
         border: desktopMode && darkMode ? `1.5px solid ${isSoldItem ? '#30363D' : '#21262D'}` : isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
-        opacity: isPending ? 0.82 : isSoldItem ? 0.70 : 1,
         display: 'flex',
         flexDirection: 'column',
         borderRadius: 16,
@@ -6484,8 +6483,15 @@ function MarketplaceScreen({
         textAlign: 'left',
         fontFamily: 'inherit',
         boxShadow: desktopMode ? darkMode ? '0 2px 16px rgba(0,0,0,0.45), 0 0 0 0 transparent' : '0 2px 12px rgba(0,0,0,0.08), 0 0 0 0 transparent' : '0 1px 3px rgba(0,0,0,0.08)',
-        transition: 'box-shadow .18s, transform .12s',
-        filter: isSoldItem ? 'grayscale(0.65)' : 'none'
+        transition: 'box-shadow .18s, transform .12s'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        opacity: isPending ? 0.82 : isSoldItem ? 0.70 : 1,
+        filter: isSoldItem ? 'grayscale(0.65)' : 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -6753,15 +6759,10 @@ function MarketplaceScreen({
         padding: '4px 8px',
         textAlign: 'center'
       }
-    }, "\u23F3 ", lang === 'pt' ? 'Em revisão' : 'Under review'), canDel && /*#__PURE__*/React.createElement("div", {
-      style: {
-        filter: 'none',
-        opacity: 1
-      }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, "\u23F3 ", lang === 'pt' ? 'Em revisão' : 'Under review'))), canDel && /*#__PURE__*/React.createElement("div", {
       onClick: handleQuickDelete,
       style: {
-        marginTop: 8,
+        margin: '0 13px 14px',
         padding: '6px 0',
         borderRadius: 8,
         background: '#FEF2F2',
@@ -6794,7 +6795,7 @@ function MarketplaceScreen({
       d: "M14 11v6"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-    })), lang === 'pt' ? 'Excluir' : 'Delete'))));
+    })), lang === 'pt' ? 'Excluir' : 'Delete'));
   };
 
   // ══════════════════════════════════════════════════════════════

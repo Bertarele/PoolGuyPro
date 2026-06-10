@@ -313,8 +313,8 @@ function HomeScreen({ ctx }) {
 
           {/* User posts list */}
           {myPosts.length > 0 && (
-            <div style={{display:'flex', flexDirection:'column', gap:10}}>
-              {myPosts.slice(0, 4).map(item => {
+            <div style={{display:'flex', overflowX:'auto', gap:10, paddingBottom:2, scrollSnapType:'x mandatory', WebkitOverflowScrolling:'touch', msOverflowStyle:'none', scrollbarWidth:'none'}}>
+              {myPosts.map(item => {
                 const isPending = item.status === 'pending';
                 const isJob = item._isJob === true;
                 const priceStr = (item.priceMode === 'neg' || item.payMode === 'neg')
@@ -326,66 +326,50 @@ function HomeScreen({ ctx }) {
                       : '—';
                 return (
                   <button key={item._id} onClick={()=>isJob ? goTab('work') : openListingById ? openListingById(item._id) : goTab('market')} className="pg-press" style={{
-                    display:'flex', alignItems:'center', gap:12,
-                    padding:'10px 12px', borderRadius:14,
+                    display:'flex', flexDirection:'column', alignItems:'flex-start',
+                    padding:'10px 10px 10px', borderRadius:14, flexShrink:0,
+                    width:'calc(33.33% - 7px)', minWidth:130,
+                    scrollSnapAlign:'start',
                     border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
                     background: isPending ? 'var(--pg-ink-50, #F7F9FB)' : 'var(--pg-blue-50)',
                     cursor:'pointer', fontFamily:'inherit', textAlign:'left',
                   }}>
-                    {/* Square thumbnail */}
+                    {/* Thumbnail */}
                     <div style={{
-                      width:58, height:58, borderRadius:12, overflow:'hidden', flexShrink:0,
+                      width:'100%', height:72, borderRadius:8, overflow:'hidden', flexShrink:0, marginBottom:8,
                       background:'linear-gradient(135deg, var(--pg-blue-100), var(--pg-ink-100))',
                     }}>
                       {item.photoUrl
-                        ? <img src={item.photoUrl} alt={item.name} style={{width:58, height:58, objectFit:'cover', borderRadius:12}}/>
-                        : <EquipImg category={item.cat || (item.type==='route'?'Routes':'Tools')} height={58}/>
+                        ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:72, objectFit:'cover'}}/>
+                        : <EquipImg category={item.cat || (item.type==='route'?'Routes':'Tools')} height={72}/>
                       }
                     </div>
-                    {/* Info */}
-                    <div style={{flex:1, minWidth:0}}>
-                      <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:2}}>
-                        <span style={{
-                          fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:5,
-                          letterSpacing:'0.04em',
-                          background: isPending ? '#FFF3CD' : 'var(--pg-blue-100)',
-                          color: isPending ? '#856404' : 'var(--pg-blue-700)',
-                        }}>
-                          {isPending ? (lang==='pt'?'⏳ REVISÃO':lang==='es'?'⏳ REVISIÓN':'⏳ REVIEW') : '✓ ATIVO'}
-                        </span>
-                        <span style={{fontSize:10.5, color:'var(--pg-ink-400)', fontWeight:500}}>{typeLabel(item)}</span>
-                      </div>
-                      <div style={{
-                        fontSize:13.5, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.25,
-                        color: isPending ? 'var(--pg-ink-600)' : 'var(--pg-ink-900)',
-                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:180,
-                      }}>{item.name || item.routeName || '—'}</div>
-                      <div style={{fontSize:11.5, color:'var(--pg-ink-400)', marginTop:2}}>{item.loc || item.area || ''}</div>
-                    </div>
+                    {/* Status badge */}
+                    <span style={{
+                      fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:5,
+                      letterSpacing:'0.04em', marginBottom:4, display:'inline-block',
+                      background: isPending ? '#FFF3CD' : 'var(--pg-blue-100)',
+                      color: isPending ? '#856404' : 'var(--pg-blue-700)',
+                    }}>
+                      {isPending ? (lang==='pt'?'REVISÃO':lang==='es'?'REVISIÓN':'REVIEW') : 'ATIVO'}
+                    </span>
+                    {/* Name */}
+                    <div style={{
+                      fontSize:12, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.25,
+                      color: isPending ? 'var(--pg-ink-600)' : 'var(--pg-ink-900)',
+                      overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical',
+                      marginBottom:4,
+                    }}>{item.name || item.routeName || '—'}</div>
                     {/* Price */}
-                    <div style={{textAlign:'right', flexShrink:0}}>
-                      <div style={{
-                        fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700,
-                        letterSpacing:'-0.02em', lineHeight:1,
-                        color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
-                      }}>{priceStr}</div>
-                      {item.type==='rent' && (
-                        <div style={{fontSize:9.5, color:'var(--pg-ink-400)', marginTop:2}}>/dia</div>
-                      )}
-                      {Icon.chev(13, 'var(--pg-ink-300)')}
-                    </div>
+                    <div style={{
+                      fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700,
+                      letterSpacing:'-0.02em', lineHeight:1,
+                      color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
+                      marginTop:'auto',
+                    }}>{priceStr}</div>
                   </button>
                 );
               })}
-              {myPosts.length > 4 && (
-                <button onClick={()=>goTab('market')} style={{
-                  width:'100%', padding:'10px', borderRadius:10, border:'none',
-                  background:'var(--pg-ink-100)', color:'var(--pg-blue-600)', fontWeight:700,
-                  fontSize:13, cursor:'pointer', fontFamily:'inherit',
-                }}>
-                  {lang==='pt'?`Ver todos os ${myPosts.length} anúncios →`:lang==='es'?`Ver los ${myPosts.length} anuncios →`:`View all ${myPosts.length} listings →`}
-                </button>
-              )}
             </div>
           )}
         </div>

@@ -852,9 +852,6 @@ function WorkScreen({ ctx }) {
 
       {/* ── Find Work tabs — TOP ── */}
       <div style={{padding:'10px 18px 0'}}>
-        <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-400)', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:6, paddingLeft:2}}>
-          {lang==='pt' ? 'ENCONTRAR TRABALHO' : lang==='es' ? 'ENCONTRAR TRABAJO' : 'FIND WORK'}
-        </div>
         <div style={{display:'flex', gap:4, padding:4, background:'var(--pg-ink-100)', borderRadius:14}}>
           {tabs.map(s => {
             const on = sub === s.id;
