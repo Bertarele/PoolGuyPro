@@ -306,9 +306,10 @@ function HomeScreen({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '6px 18px 0',
+        padding: '0px 18px 0',
         position: 'relative',
-        zIndex: 1
+        zIndex: 1,
+        marginTop: -8
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
