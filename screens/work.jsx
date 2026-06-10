@@ -267,7 +267,7 @@ function WorkScreen({ ctx }) {
           const tabBdr = (on) => on ? (darkMode?'2px solid rgba(255,255,255,0.70)':'2px solid #0077B6') : '2px solid transparent';
           return (
             <>
-              <div style={{background:_bg, padding:'28px 36px 56px', position:'relative', overflow:'visible'}}>
+              <div style={{background:_bg, padding:'18px 36px 52px', position:'relative', overflow:'visible'}}>
                 <div style={{position:'absolute',top:-60,right:60,width:220,height:220,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(0,180,255,0.13) 0%,transparent 70%)':'radial-gradient(circle,rgba(0,119,182,0.06) 0%,transparent 70%)',pointerEvents:'none'}}/>
                 <div style={{position:'absolute',bottom:-40,left:200,width:160,height:160,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%)':'radial-gradient(circle,rgba(10,40,64,0.04) 0%,transparent 70%)',pointerEvents:'none'}}/>
 
