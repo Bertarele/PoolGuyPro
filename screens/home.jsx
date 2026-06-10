@@ -174,7 +174,7 @@ function HomeScreen({ ctx }) {
         return (
           <NavyBar
             darkMode={darkMode}
-            title={<Wordmark size="lg" onDark={darkMode} subtitle={subtitle}/>}
+            title={<Wordmark size="nav" onDark={darkMode} subtitle={subtitle}/>}
             right={
               <>
                 <LangPill lang={lang} setLang={setLang} onDark={darkMode}/>

@@ -52,8 +52,8 @@ function FloodMark({ size = 36 }) {
 
 // ── Brand wordmark ────────────────────────────────────────────
 function Wordmark({ size='md', onDark=false, subtitle }) {
-  const h = size === 'lg' ? 160 : size === 'sm' ? 85 : 120;
-  const subtitleSize = size === 'lg' ? 11 : size === 'sm' ? 9 : 10;
+  const h = size === 'lg' ? 160 : size === 'sm' ? 85 : size === 'nav' ? 36 : 120;
+  const subtitleSize = size === 'lg' ? 11 : size === 'sm' ? 9 : size === 'nav' ? 9 : 10;
 
   return (
     <div style={{display:'flex', flexDirection:'column', alignItems:'flex-start', gap:3}}>
