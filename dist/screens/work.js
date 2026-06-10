@@ -1983,11 +1983,12 @@ function WorkScreen({
       paddingLeft: 2
     }
   }, lang === 'pt' ? 'ENCONTRAR TRABALHO' : lang === 'es' ? 'ENCONTRAR TRABAJO' : 'FIND WORK'), /*#__PURE__*/React.createElement("div", {
-    className: "pg-card",
     style: {
-      padding: 5,
       display: 'flex',
-      gap: 0
+      gap: 4,
+      padding: 4,
+      background: 'var(--pg-ink-100)',
+      borderRadius: 14
     }
   }, tabs.map(s => {
     const on = sub === s.id;
@@ -1996,24 +1997,27 @@ function WorkScreen({
       onClick: () => setSub(s.id),
       style: {
         flex: 1,
-        padding: '9px 4px',
-        border: 'none',
-        borderRadius: 9,
-        cursor: 'pointer',
-        background: on ? 'var(--pg-blue-500)' : 'transparent',
-        color: on ? '#fff' : 'var(--pg-ink-700)',
-        fontWeight: 600,
-        fontSize: 12,
-        letterSpacing: '-0.005em',
-        display: 'inline-flex',
+        display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 5,
+        gap: 3,
+        padding: '9px 4px',
+        borderRadius: 10,
+        border: 'none',
+        cursor: 'pointer',
         fontFamily: 'inherit',
-        transition: 'all .15s ease',
-        boxShadow: on ? '0 4px 10px oklch(0.58 0.16 235 / 0.30)' : 'none'
+        transition: 'all .18s ease',
+        background: on ? 'var(--pg-white)' : 'transparent',
+        color: on ? 'var(--pg-blue-600)' : 'var(--pg-ink-400)',
+        boxShadow: on ? '0 2px 10px rgba(0,0,0,0.10)' : 'none'
       }
-    }, subIcons[s.id](13, on ? '#fff' : 'var(--pg-ink-500)'), s.label);
+    }, subIcons[s.id](16, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11.5,
+        fontWeight: on ? 700 : 500,
+        letterSpacing: '-0.01em'
+      }
+    }, s.label));
   }))), (sub === 'hiring' || sub === 'vac') && (() => {
     // Data per sub-tab — uses shared variables defined above
     const myApps = sub === 'hiring' ? myAppsHiring : myAppsVac;

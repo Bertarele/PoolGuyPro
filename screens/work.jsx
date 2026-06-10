@@ -851,21 +851,20 @@ function WorkScreen({ ctx }) {
         <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-400)', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:6, paddingLeft:2}}>
           {lang==='pt' ? 'ENCONTRAR TRABALHO' : lang==='es' ? 'ENCONTRAR TRABAJO' : 'FIND WORK'}
         </div>
-        <div className="pg-card" style={{padding:5, display:'flex', gap:0}}>
+        <div style={{display:'flex', gap:4, padding:4, background:'var(--pg-ink-100)', borderRadius:14}}>
           {tabs.map(s => {
             const on = sub === s.id;
             return (
               <button key={s.id} onClick={()=>setSub(s.id)} style={{
-                flex:1, padding:'9px 4px', border:'none', borderRadius:9, cursor:'pointer',
-                background: on ? 'var(--pg-blue-500)' : 'transparent',
-                color: on ? '#fff' : 'var(--pg-ink-700)',
-                fontWeight:600, fontSize:12, letterSpacing:'-0.005em',
-                display:'inline-flex', alignItems:'center', justifyContent:'center', gap:5,
-                fontFamily:'inherit', transition:'all .15s ease',
-                boxShadow: on ? '0 4px 10px oklch(0.58 0.16 235 / 0.30)' : 'none',
+                flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+                padding:'9px 4px', borderRadius:10, border:'none', cursor:'pointer',
+                fontFamily:'inherit', transition:'all .18s ease',
+                background: on ? 'var(--pg-white)' : 'transparent',
+                color: on ? 'var(--pg-blue-600)' : 'var(--pg-ink-400)',
+                boxShadow: on ? '0 2px 10px rgba(0,0,0,0.10)' : 'none',
               }}>
-                {subIcons[s.id](13, on ? '#fff' : 'var(--pg-ink-500)')}
-                {s.label}
+                {subIcons[s.id](16, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)')}
+                <span style={{fontSize:11.5, fontWeight: on?700:500, letterSpacing:'-0.01em'}}>{s.label}</span>
               </button>
             );
           })}
