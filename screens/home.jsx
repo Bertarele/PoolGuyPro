@@ -86,80 +86,66 @@ function HomeScreen({ ctx }) {
         const H = headerTheme(darkMode);
         const ic = H.text;
         const firstName = myAuthor ? myAuthor.split(' ')[0] : (user.email ? user.email.split('@')[0] : '');
+        // Desktop detection: ctx prop OR direct window check as fallback
+        const onDesktop = isDesktop || (typeof window !== 'undefined' && window.innerWidth >= 900);
 
-        if (isDesktop) {
-          // ── Desktop hero banner ──────────────────────────────
-          const heroBg = darkMode
-            ? 'linear-gradient(135deg, #061220 0%, #0A1D33 60%, #0D2444 100%)'
-            : 'linear-gradient(135deg, #e8f5ff 0%, #d6edf8 60%, #c8e7f5 100%)';
+        if (onDesktop) {
+          // ── Desktop compact strip ────────────────────────────
           return (
             <div style={{
-              background: heroBg,
-              padding:'32px 36px 28px',
+              background: darkMode
+                ? 'linear-gradient(90deg, #071729 0%, #0A1D33 100%)'
+                : 'linear-gradient(90deg, #eaf5ff 0%, #d8edf8 100%)',
               borderBottom: darkMode ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(10,40,64,0.07)',
+              padding:'0 36px',
+              height:72, display:'flex', alignItems:'center',
               position:'relative', overflow:'hidden',
             }}>
-              {/* Decorative aqua glow */}
-              <div style={{position:'absolute', top:-60, right:60, width:280, height:280, borderRadius:'50%',
-                background: darkMode
-                  ? 'radial-gradient(circle, rgba(14,186,199,0.08) 0%, transparent 65%)'
-                  : 'radial-gradient(circle, rgba(0,119,182,0.10) 0%, transparent 65%)',
-                pointerEvents:'none'}}/>
-              <div style={{position:'absolute', bottom:-40, left:-40, width:180, height:180, borderRadius:'50%',
-                background: darkMode ? 'rgba(14,186,199,0.04)' : 'rgba(0,119,182,0.05)',
+              {/* Subtle aqua glow right */}
+              <div style={{position:'absolute', top:-40, right:80, width:200, height:200, borderRadius:'50%',
+                background: darkMode ? 'radial-gradient(circle, rgba(14,186,199,0.07) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(0,119,182,0.08) 0%, transparent 65%)',
                 pointerEvents:'none'}}/>
 
-              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:1}}>
-                {/* Left: greeting */}
+              {/* Left: greeting */}
+              <div style={{display:'flex', alignItems:'center', gap:14, flex:1}}>
                 <div>
-                  <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:6}}>
-                    <div style={{
-                      width:44, height:44, borderRadius:13,
-                      background: darkMode
-                        ? 'linear-gradient(135deg, rgba(14,165,233,0.25) 0%, rgba(6,182,212,0.15) 100%)'
-                        : 'linear-gradient(135deg, rgba(0,119,182,0.15) 0%, rgba(14,186,199,0.10) 100%)',
-                      border: darkMode ? '1px solid rgba(14,165,233,0.25)' : '1px solid rgba(0,119,182,0.18)',
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      fontSize:20, flexShrink:0,
-                    }}>🏊</div>
-                    <div>
-                      <div style={{fontSize:22, fontWeight:800, color:H.text, letterSpacing:'-0.025em', lineHeight:1.15}}>
-                        {greetWord}, {firstName}!
-                      </div>
-                      <div style={{fontSize:12.5, color:H.faint, fontWeight:500, marginTop:2}}>{subtitle}</div>
-                    </div>
+                  <div style={{fontSize:16, fontWeight:700, color:H.text, letterSpacing:'-0.02em', lineHeight:1.2}}>
+                    {greetWord}, {firstName}! 👋
                   </div>
-                  <div style={{display:'flex', alignItems:'center', gap:5, marginTop:4, paddingLeft:2}}>
-                    {Icon.pin(11, darkMode ? 'var(--pg-aqua-400)' : '#0077B6')}
-                    <span style={{fontSize:11.5, color:H.faint, fontWeight:500}}>Broward County, FL</span>
+                  <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
+                    {Icon.pin(10, darkMode ? 'var(--pg-aqua-400)' : '#0077B6')}
+                    <span style={{fontSize:11, color:H.faint, fontWeight:500}}>Broward County, FL</span>
+                    <span style={{color:H.faint, fontSize:11, margin:'0 2px'}}>·</span>
+                    <span style={{fontSize:11, color:H.faint, fontWeight:400}}>{subtitle}</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Right: status + quick stats */}
-                <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:10}}>
-                  <div style={{
-                    background: H.activeBg, border: H.activeBdr,
-                    borderRadius:999, padding:'6px 14px', display:'flex', alignItems:'center', gap:6,
-                    boxShadow: darkMode ? '0 4px 14px rgba(0,0,0,0.30)' : '0 4px 14px rgba(0,119,182,0.10)',
+              {/* Right: stats + active badge */}
+              <div style={{display:'flex', alignItems:'center', gap:10}}>
+                {[
+                  { val: myPosts.length, lbl: lang==='pt'?'anúncios':'listings' },
+                  { val: liveMarket.length, lbl: lang==='pt'?'no mercado':'in market' },
+                ].map((s,i) => (
+                  <div key={i} style={{
+                    padding:'5px 12px', borderRadius:9,
+                    background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,119,182,0.07)',
+                    border: darkMode ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,119,182,0.10)',
+                    display:'flex', alignItems:'baseline', gap:5,
                   }}>
-                    <div style={{width:8, height:8, borderRadius:'50%', background:'#34D399', boxShadow:'0 0 7px rgba(52,211,153,0.70)'}}/>
-                    <span style={{fontSize:11, fontWeight:700, color: H.activeTxt, letterSpacing:'0.04em'}}>ACTIVE</span>
+                    <span style={{fontSize:16, fontWeight:800, color:H.text, fontFamily:'var(--pg-font-display)', lineHeight:1}}>{s.val}</span>
+                    <span style={{fontSize:10, color:H.faint, fontWeight:500}}>{s.lbl}</span>
                   </div>
-                  <div style={{display:'flex', gap:10}}>
-                    {[
-                      { val: myPosts.length, lbl: lang==='pt'?'Anúncios':lang==='es'?'Anuncios':'Listings' },
-                      { val: liveMarket.length, lbl: lang==='pt'?'No Mercado':'In Market' },
-                    ].map((s,i) => (
-                      <div key={i} style={{
-                        padding:'7px 14px', borderRadius:10, textAlign:'center',
-                        background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,119,182,0.07)',
-                        border: darkMode ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,119,182,0.10)',
-                      }}>
-                        <div style={{fontSize:18, fontWeight:800, color: H.text, fontFamily:'var(--pg-font-display)', lineHeight:1}}>{s.val}</div>
-                        <div style={{fontSize:9.5, color: H.faint, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em', marginTop:2}}>{s.lbl}</div>
-                      </div>
-                    ))}
-                  </div>
+                ))}
+
+                <div style={{width:1, height:28, background: darkMode ? 'rgba(255,255,255,0.10)' : 'rgba(10,40,64,0.10)', margin:'0 2px'}}/>
+
+                <div style={{
+                  background: H.activeBg, border: H.activeBdr,
+                  borderRadius:999, padding:'5px 12px', display:'flex', alignItems:'center', gap:5,
+                }}>
+                  <div style={{width:7, height:7, borderRadius:'50%', background:'#34D399', boxShadow:'0 0 6px rgba(52,211,153,0.65)'}}/>
+                  <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.04em'}}>ACTIVE</span>
                 </div>
               </div>
             </div>
