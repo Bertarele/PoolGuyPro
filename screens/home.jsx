@@ -217,7 +217,7 @@ function HomeScreen({ ctx }) {
       }())}
 
       {/* ── Meus Anúncios card ── */}
-      <div style={{padding:'0 18px', marginTop: window.innerWidth > 768 ? 18 : -20}}>
+      <div style={{padding:'0 18px', marginTop: window.innerWidth > 768 ? 18 : 8}}>
         <div className="pg-card" style={{padding:'16px 16px 18px', position:'relative'}}>
 
           {/* Header row */}

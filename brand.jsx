@@ -147,7 +147,7 @@ function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode
     <div style={{
       background: bg,
       color: H.text,
-      padding: wave ? '2px 18px 32px' : '12px 18px 10px', position:'relative', overflow:'hidden',
+      padding: wave ? '2px 18px 14px' : '12px 18px 10px', position:'relative', overflow:'hidden',
     }}>
       {/* Aqua glow top-right */}
       <div style={{position:'absolute', top:-60, right:-60, width:200, height:200, borderRadius:'50%',
