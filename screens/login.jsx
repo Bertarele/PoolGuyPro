@@ -274,7 +274,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         <div style={{
           position:'relative', zIndex:2,
           width:'100%', maxWidth:480,
-          background:'rgba(255,255,255,0.96)',
+          background:'rgba(242,244,247,0.97)',
           backdropFilter:'blur(24px)',
           borderRadius:28,
           padding:'40px 44px 36px',
@@ -284,7 +284,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         }}>
           {/* Logo + tagline no topo do card */}
           <div style={{textAlign:'center', marginBottom:28}}>
-            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:300, width:'auto', filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.18))', marginBottom:-8}}/>
+            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:300, width:'auto', display:'block', margin:'0 auto -8px', filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.18))'}}/>
             <div style={{fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.07em', textTransform:'uppercase'}}>{t.tagline}</div>
           </div>
 
@@ -294,7 +294,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             {mode === 'login' && (<>
               <div style={{marginBottom:20}}>
                 <h1 style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, color:'#0A2840', margin:'0 0 4px', letterSpacing:'-0.01em'}}>
-                  {lang==='pt'?'Bem-vindo de volta':lang==='es'?'Bienvenido de nuevo':'Welcome back'} 👋
+                  {lang==='pt'?'Bem-vindo de volta':lang==='es'?'Bienvenido de nuevo':'Welcome back'}
                 </h1>
                 <p style={{fontSize:13, color:'#64748b', margin:0, lineHeight:1.5}}>
                   {lang==='pt'?'Entre na sua conta para continuar':lang==='es'?'Inicia sesión para continuar':'Sign in to your account to continue'}
