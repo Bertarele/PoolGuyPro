@@ -224,7 +224,7 @@ function QuickPoolsScreen({ ctx }) {
                 borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.03)':'rgba(10,40,64,0.02)', pointerEvents:'none'}}/>
               {/* Centered icon watermark */}
               <div style={{position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:0}}>
-                <img src="icone.png" alt="" style={{position:'absolute', left:'50%', top:'60%', transform:'translate(-50%,-50%)', height:235, objectFit:'contain', opacity:0.60, userSelect:'none'}}/>
+                <img src="icone.png" alt="" style={{position:'absolute', left:'50%', top:'63%', transform:'translate(-50%,-50%)', height:235, objectFit:'contain', opacity:0.60, userSelect:'none'}}/>
               </div>
 
               {/* Single compact row */}
