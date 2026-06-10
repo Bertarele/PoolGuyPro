@@ -52,7 +52,7 @@ function FloodMark({ size = 36 }) {
 
 // ── Brand wordmark ────────────────────────────────────────────
 function Wordmark({ size='md', onDark=false, subtitle }) {
-  const h = size === 'lg' ? 160 : size === 'sm' ? 85 : size === 'nav' ? 130 : 120;
+  const h = size === 'lg' ? 160 : size === 'sm' ? 85 : size === 'nav' ? 148 : 120;
   const subtitleSize = size === 'lg' ? 11 : size === 'sm' ? 9 : size === 'nav' ? 9 : 10;
 
   return (
