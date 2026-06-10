@@ -1,7 +1,7 @@
 // quickpools.jsx — Google-Maps-style map with clickable pins + premium gate
 
 function QuickPoolsScreen({ ctx }) {
-  const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif } = ctx;
+  const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false } = ctx;
   const t = STRINGS[lang];
   const [selected,    setSelected]    = React.useState(null);
   const [highlighted, setHighlighted] = React.useState(null);
@@ -205,128 +205,94 @@ function QuickPoolsScreen({ ctx }) {
       <div style={{height:'100%', overflowY:'auto', background:'var(--pg-ink-50)'}}>
 
         {/* ── HERO ─────────────────────────────────────────────── */}
-        <div style={{
-          background:'linear-gradient(135deg, #011B5A 0%, #0077B6 55%, #0096C7 100%)',
-          padding:'28px 40px 32px', position:'relative', overflow:'hidden',
-        }}>
-          {/* Decorative */}
-          <div style={{position:'absolute', top:-80, right:-80, width:280, height:280,
-            borderRadius:'50%', background:'rgba(255,255,255,0.03)', pointerEvents:'none'}}/>
-          <div style={{position:'absolute', bottom:-50, left:160, width:200, height:200,
-            borderRadius:'50%', background:'rgba(255,255,255,0.03)', pointerEvents:'none'}}/>
+        {(function(){
+          const _tx  = darkMode ? '#fff'                     : '#0A2840';
+          const _sub = darkMode ? 'rgba(255,255,255,0.50)'   : 'rgba(10,40,64,0.50)';
+          const _sub2= darkMode ? 'rgba(255,255,255,0.55)'   : 'rgba(10,40,64,0.55)';
+          const _ib  = darkMode ? 'rgba(255,255,255,0.12)'   : 'rgba(10,40,64,0.08)';
+          const _ibr = darkMode ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(10,40,64,0.12)';
+          const _cb  = darkMode ? 'rgba(255,255,255,0.08)'   : 'rgba(10,40,64,0.05)';
+          const _cbr = darkMode ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(10,40,64,0.10)';
+          const _bg  = darkMode
+            ? 'linear-gradient(135deg, #011B5A 0%, #0077B6 55%, #0096C7 100%)'
+            : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 60%, #b8dff5 100%)';
+          return (
+            <div style={{background:_bg, padding:'28px 40px 32px', position:'relative', overflow:'hidden'}}>
+              <div style={{position:'absolute', top:-80, right:-80, width:280, height:280,
+                borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.03)':'rgba(10,40,64,0.03)', pointerEvents:'none'}}/>
+              <div style={{position:'absolute', bottom:-50, left:160, width:200, height:200,
+                borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.03)':'rgba(10,40,64,0.02)', pointerEvents:'none'}}/>
 
-          {/* Top row */}
-          <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24}}>
-            <div style={{display:'flex', alignItems:'center', gap:14}}>
-              <div style={{
-                width:52, height:52, borderRadius:16, flexShrink:0,
-                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
-                display:'flex', alignItems:'center', justifyContent:'center',
-              }}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.75" strokeLinecap="round">
-                  <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
-                  <path d="M2 17 Q6 13 10 17 Q14 21 18 17 Q20 15 22 17"/>
-                  <circle cx="12" cy="5" r="2"/>
-                </svg>
+              {/* Top row */}
+              <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24}}>
+                <div style={{display:'flex', alignItems:'center', gap:14}}>
+                  <div style={{width:52,height:52,borderRadius:16,flexShrink:0,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={_tx} strokeWidth="1.75" strokeLinecap="round">
+                      <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
+                      <path d="M2 17 Q6 13 10 17 Q14 21 18 17 Q20 15 22 17"/>
+                      <circle cx="12" cy="5" r="2"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{fontSize:10.5,fontWeight:700,color:_sub,letterSpacing:'0.14em',textTransform:'uppercase',marginBottom:3}}>
+                      QUICK POOLS · {(county||'BROWARD').toUpperCase()} COUNTY
+                    </div>
+                    <div style={{fontFamily:'var(--pg-font-display)',fontSize:28,fontWeight:800,color:_tx,letterSpacing:'-0.03em',lineHeight:1}}>
+                      {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Quick Pools'}
+                    </div>
+                    <div style={{fontSize:13,color:_sub2,marginTop:4}}>
+                      {lang==='pt'?'Trabalhos temporários de piscina perto de você':'Temporary pool jobs near you in South Florida'}
+                    </div>
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                  <button onClick={()=>openChat&&openChat()} style={{width:44,height:44,borderRadius:13,background:_ib,border:_ibr,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
+                    {Icon.msg(20,_tx)}
+                    {hasUnreadChat && <span style={{position:'absolute',top:8,right:8,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
+                  </button>
+                  <button onClick={()=>openNotifications&&openNotifications()} style={{width:44,height:44,borderRadius:13,background:_ib,border:_ibr,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
+                    {Icon.bell(20,_tx)}
+                    {hasUnreadNotif && <span style={{position:'absolute',top:8,right:8,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
+                  </button>
+                </div>
               </div>
-              <div>
-                <div style={{fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.50)',
-                  letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:3}}>
-                  QUICK POOLS · {(county||'BROWARD').toUpperCase()} COUNTY
+
+              {/* Notif regions + stats */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:16,alignItems:'stretch'}}>
+                <div style={{background:_cb,border:_cbr,borderRadius:14,padding:'14px 18px',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',gap:16}}>
+                  <div style={{width:40,height:40,borderRadius:11,flexShrink:0,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    {Icon.bell(18,_tx)}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:10,fontWeight:700,color:_sub,letterSpacing:'0.10em',textTransform:'uppercase',marginBottom:3}}>
+                      {lang==='pt'?'NOTIFICAÇÕES POR DIA':'DAILY NOTIFICATIONS'}
+                    </div>
+                    <div style={{fontSize:13,fontWeight:600,color:_tx,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                      {notifCities.length > 0
+                        ? notifCities.slice(0,4).join(' · ') + (notifCities.length>4?` +${notifCities.length-4}`:'')
+                        : (lang==='pt'?'Nenhuma cidade configurada':'No cities configured')}
+                    </div>
+                    <div style={{fontSize:11,color:_sub,marginTop:2}}>{activeDayCount}/7 {lang==='pt'?'dias ativos':'days active'}</div>
+                  </div>
+                  <button onClick={openRegionEditor} style={{height:36,padding:'0 14px',borderRadius:10,flexShrink:0,border:_ibr,background:_ib,color:_tx,fontFamily:'inherit',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,transition:'all .15s'}}>
+                    {Icon.cal(13,_tx)} {lang==='pt'?'Editar':'Edit'}
+                  </button>
                 </div>
-                <div style={{fontFamily:'var(--pg-font-display)', fontSize:28, fontWeight:800,
-                  color:'#fff', letterSpacing:'-0.03em', lineHeight:1}}>
-                  {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Quick Pools'}
-                </div>
-                <div style={{fontSize:13, color:'rgba(255,255,255,0.55)', marginTop:4}}>
-                  {lang==='pt'?'Trabalhos temporários de piscina perto de você':'Temporary pool jobs near you in South Florida'}
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  {[
+                    { value: jobs.length, label: lang==='pt'?'vagas abertas':'open jobs', color: darkMode?'#38BDF8':'#0077B6' },
+                    { value: `${activeDayCount}/7`, label: lang==='pt'?'dias ativos':'active days', color:'#34D399' },
+                  ].map((s,i) => (
+                    <div key={i} style={{background:_cb,border:_cbr,borderRadius:10,padding:'10px 16px',display:'flex',alignItems:'center',gap:10}}>
+                      <div style={{fontFamily:'var(--pg-font-display)',fontSize:20,fontWeight:800,color:s.color,lineHeight:1}}>{s.value}</div>
+                      <div style={{fontSize:11,color:_sub,lineHeight:1.3}}>{s.label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-
-            {/* Actions */}
-            <div style={{display:'flex', gap:10, alignItems:'center'}}>
-              <button onClick={()=>openChat&&openChat()} style={{
-                width:44, height:44, borderRadius:13,
-                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
-                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-                color:'#fff', position:'relative',
-              }}>
-                {Icon.msg(20,'#fff')}
-                {hasUnreadChat && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
-                  borderRadius:'50%', background:'#FF3B30', border:'2px solid #011B5A'}}/>}
-              </button>
-              <button onClick={()=>openNotifications&&openNotifications()} style={{
-                width:44, height:44, borderRadius:13,
-                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
-                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-                color:'#fff', position:'relative',
-              }}>
-                {Icon.bell(20,'#fff')}
-                {hasUnreadNotif && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
-                  borderRadius:'50%', background:'#FF3B30', border:'2px solid #011B5A'}}/>}
-              </button>
-            </div>
-          </div>
-
-          {/* Notif regions + stats */}
-          <div style={{display:'grid', gridTemplateColumns:'1fr auto', gap:16, alignItems:'stretch'}}>
-            {/* Notification config card */}
-            <div style={{
-              background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)',
-              borderRadius:14, padding:'14px 18px', backdropFilter:'blur(8px)',
-              display:'flex', alignItems:'center', gap:16,
-            }}>
-              <div style={{
-                width:40, height:40, borderRadius:11, flexShrink:0,
-                background:'rgba(56,189,248,0.20)', border:'1px solid rgba(56,189,248,0.25)',
-                display:'flex', alignItems:'center', justifyContent:'center',
-              }}>
-                {Icon.bell(18,'rgba(255,255,255,0.85)')}
-              </div>
-              <div style={{flex:1, minWidth:0}}>
-                <div style={{fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)',
-                  letterSpacing:'0.10em', textTransform:'uppercase', marginBottom:3}}>
-                  {lang==='pt'?'NOTIFICAÇÕES POR DIA':'DAILY NOTIFICATIONS'}
-                </div>
-                <div style={{fontSize:13, fontWeight:600, color:'#fff',
-                  whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
-                  {notifCities.length > 0
-                    ? notifCities.slice(0,4).join(' · ') + (notifCities.length>4?` +${notifCities.length-4}`:'')
-                    : (lang==='pt'?'Nenhuma cidade configurada':'No cities configured')}
-                </div>
-                <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2}}>
-                  {activeDayCount}/7 {lang==='pt'?'dias ativos':'days active'}
-                </div>
-              </div>
-              <button onClick={openRegionEditor} style={{
-                height:36, padding:'0 14px', borderRadius:10, flexShrink:0,
-                border:'1px solid rgba(56,189,248,0.40)', background:'rgba(56,189,248,0.15)',
-                color:'#fff', fontFamily:'inherit', fontSize:12, fontWeight:700, cursor:'pointer',
-                display:'flex', alignItems:'center', gap:6, transition:'all .15s',
-              }}>
-                {Icon.cal(13,'#fff')} {lang==='pt'?'Editar':'Edit'}
-              </button>
-            </div>
-
-            {/* Stats pills */}
-            <div style={{display:'flex', flexDirection:'column', gap:8}}>
-              {[
-                { value: jobs.length, label: lang==='pt'?'vagas abertas':'open jobs', color:'#38BDF8' },
-                { value: `${activeDayCount}/7`, label: lang==='pt'?'dias ativos':'active days', color:'#34D399' },
-              ].map((s,i) => (
-                <div key={i} style={{
-                  background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)',
-                  borderRadius:10, padding:'10px 16px',
-                  display:'flex', alignItems:'center', gap:10,
-                }}>
-                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, color:s.color, lineHeight:1}}>{s.value}</div>
-                  <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', lineHeight:1.3}}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+          );
+        }())}
 
         {/* ── CONTENT: Map left + Jobs right ───────────────────── */}
         <div style={{display:'grid', gridTemplateColumns:'420px 1fr', gap:0, minHeight:'calc(100vh - 300px)'}}>

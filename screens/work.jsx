@@ -248,112 +248,99 @@ function WorkScreen({ ctx }) {
       <div style={{width:'100%',height:'100%',overflowY:'auto',background:'var(--pg-bg)'}}>
 
         {/* ── HERO ── */}
-        <div style={{
-          background:'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)',
-          padding:'28px 36px 0',
-          position:'relative',overflow:'hidden',
-        }}>
-          {/* decorative orbs */}
-          <div style={{position:'absolute',top:-60,right:60,width:220,height:220,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,180,255,0.13) 0%,transparent 70%)',pointerEvents:'none'}}/>
-          <div style={{position:'absolute',bottom:-40,left:200,width:160,height:160,borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%)',pointerEvents:'none'}}/>
-          {/* grid overlay */}
-          <div style={{position:'absolute',inset:0,opacity:0.03,backgroundImage:'linear-gradient(rgba(255,255,255,0.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.8) 1px,transparent 1px)',backgroundSize:'40px 40px',pointerEvents:'none'}}/>
+        {(function(){
+          const _tx   = darkMode ? '#fff'                    : '#0A2840';
+          const _sub  = darkMode ? 'rgba(255,255,255,0.45)'  : 'rgba(10,40,64,0.45)';
+          const _sub2 = darkMode ? 'rgba(255,255,255,0.60)'  : 'rgba(10,40,64,0.60)';
+          const _ib   = darkMode ? 'rgba(255,255,255,0.12)'  : 'rgba(10,40,64,0.08)';
+          const _ibr  = darkMode ? '1px solid rgba(255,255,255,0.20)' : '1px solid rgba(10,40,64,0.12)';
+          const _locBg= darkMode ? 'rgba(0,119,182,0.22)'    : 'rgba(0,119,182,0.12)';
+          const _locBr= darkMode ? '1px solid rgba(0,119,182,0.40)' : '1px solid rgba(0,119,182,0.25)';
+          const _locTx= darkMode ? 'rgba(255,255,255,0.80)'  : '#0A2840';
+          const _tabBg= darkMode ? 'rgba(0,0,0,0.22)'        : 'rgba(10,40,64,0.06)';
+          const _tabBr= darkMode ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(10,40,64,0.10)';
+          const _bg   = darkMode
+            ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)'
+            : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)';
+          const tabOn  = (on) => on ? (darkMode?'rgba(255,255,255,0.15)':'rgba(0,119,182,0.12)') : 'transparent';
+          const tabTx  = (on) => on ? _tx : (darkMode?'rgba(255,255,255,0.55)':'rgba(10,40,64,0.45)');
+          const tabBdr = (on) => on ? (darkMode?'2px solid rgba(255,255,255,0.70)':'2px solid #0077B6') : '2px solid transparent';
+          return (
+            <>
+              <div style={{background:_bg, padding:'28px 36px 0', position:'relative', overflow:'hidden'}}>
+                <div style={{position:'absolute',top:-60,right:60,width:220,height:220,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(0,180,255,0.13) 0%,transparent 70%)':'radial-gradient(circle,rgba(0,119,182,0.06) 0%,transparent 70%)',pointerEvents:'none'}}/>
+                <div style={{position:'absolute',bottom:-40,left:200,width:160,height:160,borderRadius:'50%',background:darkMode?'radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%)':'radial-gradient(circle,rgba(10,40,64,0.04) 0%,transparent 70%)',pointerEvents:'none'}}/>
 
-          {/* Top row: title + actions */}
-          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18,position:'relative'}}>
-            <div>
-              <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:6,display:'flex',alignItems:'center',gap:6}}>
-                {Icon.briefcase(13,'rgba(255,255,255,0.45)')}
-                {lang==='pt'?'WORK · SOUTH FLORIDA':lang==='es'?'WORK · SOUTH FLORIDA':'WORK · SOUTH FLORIDA'}
+                {/* Top row */}
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18,position:'relative'}}>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:700,color:_sub,letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:6,display:'flex',alignItems:'center',gap:6}}>
+                      {Icon.briefcase(13,_sub)}
+                      {lang==='pt'?'WORK · SOUTH FLORIDA':'WORK · SOUTH FLORIDA'}
+                    </div>
+                    <h1 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:32,fontWeight:800,color:_tx,letterSpacing:'-0.03em',lineHeight:1.05}}>{heroTitle}</h1>
+                    <p style={{margin:'6px 0 0',fontSize:13.5,color:_sub2,fontWeight:400}}>{heroSub}</p>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:10,marginTop:4}}>
+                    <button onClick={()=>openChat&&openChat()} style={{width:40,height:40,borderRadius:12,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative'}}>
+                      {Icon.msg(19,_tx)}
+                      {hasUnreadChat&&<span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${darkMode?'#0077B6':'#c5e4f5'}`}}/>}
+                    </button>
+                    <button onClick={handlePostBtn} style={{height:40,padding:'0 22px',borderRadius:12,background:_ib,border:_ibr,color:_tx,fontFamily:'inherit',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
+                      {postBtn.icon(16,_tx)}
+                      {lang==='pt'?'+ Publicar':lang==='es'?'+ Publicar':'+ Post'} {postBtn.label}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Stats strip */}
+                <div style={{display:'flex',alignItems:'center',gap:10,paddingBottom:20,position:'relative',flexWrap:'wrap'}}>
+                  {sub === 'hiring' && <>
+                    <StatPill icon={Icon.briefcase(13,_sub2)} count={HIRING.length + liveJobs.length} label={lang==='pt'?'vagas':lang==='es'?'empleos':'openings'}/>
+                    <StatPill icon={Icon.check(13,_sub2)} count={myAppsHiring.length} label={lang==='pt'?'candidaturas':lang==='es'?'solicitudes':'applied'}/>
+                    <button onClick={()=>setWorkCountyPickerOpen(true)} style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:_locBg,border:_locBr,cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
+                      {Icon.pin(12,_sub)}
+                      <span style={{fontSize:12,color:_locTx,fontWeight:600}}>{workCountyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):workCountyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                  </>}
+                  {sub === 'techs' && <>
+                    <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>} count={TECHS.length + liveTechs.length} label={lang==='pt'?'técnicos':lang==='es'?'técnicos':'techs'}/>
+                    <button onClick={()=>setWorkCountyPickerOpen(true)} style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:_locBg,border:_locBr,cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
+                      {Icon.pin(12,_sub)}
+                      <span style={{fontSize:12,color:_locTx,fontWeight:600}}>{workCountyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):workCountyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                  </>}
+                  {sub === 'vac' && <>
+                    <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>} count={VACATION_LISTINGS.length + liveVacations.length} label={lang==='pt'?'coberturas':lang==='es'?'coberturas':'covers'}/>
+                    <StatPill icon={Icon.cal(13,_sub2)} count={myAppsVac.length} label={lang==='pt'?'aplicadas':lang==='es'?'aplicadas':'applied'}/>
+                  </>}
+                </div>
+
+                {/* Sub-tab bar */}
+                <div style={{display:'flex',gap:4,background:_tabBg,borderTop:_tabBr,margin:'0 -36px',padding:'6px 36px'}}>
+                  {tabs.map(s => {
+                    const on = sub === s.id;
+                    return (
+                      <button key={s.id} onClick={()=>setSub(s.id)} style={{
+                        padding:'8px 20px',borderRadius:9,border:'none',cursor:'pointer',
+                        background:tabOn(on), color:tabTx(on),
+                        fontWeight:on?700:500, fontSize:13.5, letterSpacing:'-0.01em',
+                        display:'inline-flex',alignItems:'center',gap:7,
+                        fontFamily:'inherit',transition:'all .15s ease',
+                        borderBottom:tabBdr(on),borderBottomLeftRadius:0,borderBottomRightRadius:0,
+                      }}>
+                        {subIcons[s.id](15, tabTx(on))}
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <h1 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:32,fontWeight:800,color:'#fff',letterSpacing:'-0.03em',lineHeight:1.05}}>
-                {heroTitle}
-              </h1>
-              <p style={{margin:'6px 0 0',fontSize:13.5,color:'rgba(255,255,255,0.60)',fontWeight:400}}>
-                {heroSub}
-              </p>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginTop:4}}>
-              <button onClick={()=>openChat&&openChat()} style={{
-                width:40,height:40,borderRadius:12,
-                background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.20)',
-                display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',
-                position:'relative',
-              }}>
-                {Icon.msg(19,'#fff')}
-                {hasUnreadChat&&<span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #0077B6'}}/>}
-              </button>
-              <button onClick={handlePostBtn} style={{
-                height:40,padding:'0 22px',borderRadius:12,
-                background:'linear-gradient(135deg,rgba(255,255,255,0.20),rgba(255,255,255,0.10))',
-                border:'1px solid rgba(255,255,255,0.30)',
-                color:'#fff',fontFamily:'inherit',fontSize:14,fontWeight:700,
-                cursor:'pointer',display:'flex',alignItems:'center',gap:8,
-                boxShadow:'0 4px 14px rgba(0,0,0,0.20)',
-              }}>
-                {postBtn.icon(16,'#fff')}
-                {lang==='pt'?'+ Publicar':lang==='es'?'+ Publicar':'+ Post'} {postBtn.label}
-              </button>
-            </div>
-          </div>
-
-          {/* Stats strip */}
-          <div style={{display:'flex',alignItems:'center',gap:10,paddingBottom:20,position:'relative',flexWrap:'wrap'}}>
-            {sub === 'hiring' && <>
-              <StatPill icon={Icon.briefcase(13,'rgba(255,255,255,0.80)')} count={HIRING.length + liveJobs.length} label={lang==='pt'?'vagas':lang==='es'?'empleos':'openings'}/>
-              <StatPill icon={Icon.check(13,'rgba(255,255,255,0.80)')} count={myAppsHiring.length} label={lang==='pt'?'candidaturas':lang==='es'?'solicitudes':'applied'}/>
-              <button onClick={()=>setWorkCountyPickerOpen(true)} style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:'rgba(0,119,182,0.22)',border:'1px solid rgba(0,119,182,0.40)',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
-                {Icon.pin(12,'rgba(255,255,255,0.65)')}
-                <span style={{fontSize:12,color:'rgba(255,255,255,0.80)',fontWeight:600}}>
-                  {workCountyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):workCountyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
-                </span>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.50)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-            </>}
-            {sub === 'techs' && <>
-              <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.80)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>} count={TECHS.length + liveTechs.length} label={lang==='pt'?'técnicos':lang==='es'?'técnicos':'techs'}/>
-              <button onClick={()=>setWorkCountyPickerOpen(true)} style={{display:'flex',alignItems:'center',gap:5,padding:'7px 14px',borderRadius:999,background:'rgba(0,119,182,0.22)',border:'1px solid rgba(0,119,182,0.40)',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
-                {Icon.pin(12,'rgba(255,255,255,0.65)')}
-                <span style={{fontSize:12,color:'rgba(255,255,255,0.80)',fontWeight:600}}>
-                  {workCountyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):workCountyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
-                </span>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.50)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-            </>}
-            {sub === 'vac' && <>
-              <StatPill icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.80)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>} count={VACATION_LISTINGS.length + liveVacations.length} label={lang==='pt'?'coberturas':lang==='es'?'coberturas':'covers'}/>
-              <StatPill icon={Icon.cal(13,'rgba(255,255,255,0.80)')} count={myAppsVac.length} label={lang==='pt'?'aplicadas':lang==='es'?'aplicadas':'applied'}/>
-            </>}
-          </div>
-
-          {/* Sub-tab bar (inside hero bottom, darker band) */}
-          <div style={{
-            display:'flex',gap:4,
-            background:'rgba(0,0,0,0.22)',
-            borderTop:'1px solid rgba(255,255,255,0.10)',
-            margin:'0 -36px',
-            padding:'6px 36px',
-          }}>
-            {tabs.map(s => {
-              const on = sub === s.id;
-              return (
-                <button key={s.id} onClick={()=>setSub(s.id)} style={{
-                  padding:'8px 20px',borderRadius:9,border:'none',cursor:'pointer',
-                  background: on ? 'rgba(255,255,255,0.15)' : 'transparent',
-                  color: on ? '#fff' : 'rgba(255,255,255,0.55)',
-                  fontWeight: on ? 700 : 500,fontSize:13.5,letterSpacing:'-0.01em',
-                  display:'inline-flex',alignItems:'center',gap:7,
-                  fontFamily:'inherit',transition:'all .15s ease',
-                  borderBottom: on ? '2px solid rgba(255,255,255,0.70)' : '2px solid transparent',
-                  borderBottomLeftRadius:0,borderBottomRightRadius:0,
-                }}>
-                  {subIcons[s.id](15, on ? '#fff' : 'rgba(255,255,255,0.50)')}
-                  {s.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+            </>
+          );
+        }())}
 
         {/* ── Body: sidebar + content ── */}
         <div style={{display:'flex',gap:0,alignItems:'flex-start',padding:'28px 36px',maxWidth:1400,margin:'0 auto'}}>
