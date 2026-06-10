@@ -254,7 +254,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       <div style={{width:'100%', height:'100%', position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden'}}>
         {/* Background full screen */}
         <div style={{position:'absolute', inset:0, backgroundImage:'url(wallpaper.jpg)', backgroundSize:'cover', backgroundPosition:'center'}}/>
-        <div style={{position:'absolute', inset:0, background:'linear-gradient(160deg, rgba(0,10,40,0.30) 0%, rgba(0,20,60,0.55) 100%)'}}/>
+        <div style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.08)'}}/>
 
         {/* Language switcher */}
         <div style={{position:'absolute', top:20, right:24, display:'flex', gap:6, zIndex:10}}>
@@ -274,9 +274,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         <div className="pg-login-card" style={{
           position:'relative', zIndex:2,
           width:'100%', maxWidth:480,
-          background:'rgba(255,255,255,0.12)',
-          backdropFilter:'blur(28px)',
-          WebkitBackdropFilter:'blur(28px)',
+          background:'rgba(255,255,255,0.10)',
           borderRadius:28,
           padding:'40px 44px 36px',
           boxShadow:'0 24px 64px rgba(0,0,0,0.22)',
