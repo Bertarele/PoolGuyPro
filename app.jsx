@@ -1043,7 +1043,7 @@ function App() {
             }}/>
 
             {/* ── Brand logo ── */}
-            <div style={{padding:'18px 22px 14px', flexShrink:0}}>
+            <div style={{padding:'12px 22px 10px', flexShrink:0}}>
               <img
                 src="wordmarkwhite.png"
                 alt="PoolGuyX"
