@@ -155,10 +155,31 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  // If launched via a listing deep link, start on market tab
+  // If launched via a listing deep link, start on market tab; otherwise restore from URL hash
   const [tab, setTab] = React.useState(() => {
-    try { return new URLSearchParams(window.location.search).get('listing') ? 'market' : 'home'; } catch(e) { return 'home'; }
+    try {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      const VALID = ['home','market','quick','work','profile'];
+      if (VALID.includes(hash)) return hash;
+      return new URLSearchParams(window.location.search).get('listing') ? 'market' : 'home';
+    } catch(e) { return 'home'; }
   });
+
+  // Keep URL hash in sync with active tab (covers all setTab/switchTab calls)
+  React.useEffect(() => {
+    try { window.history.replaceState(null, '', '#' + tab); } catch(e) {}
+  }, [tab]);
+
+  // Sync tab when user navigates with browser back/forward buttons
+  React.useEffect(() => {
+    const onHash = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      const VALID = ['home','market','quick','work','profile'];
+      if (VALID.includes(hash)) setTab(hash);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
   const screenRef = React.useRef(null);
 
   const switchTab = React.useCallback((newTab) => {
