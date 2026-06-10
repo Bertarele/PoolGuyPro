@@ -805,7 +805,7 @@ function TabBar({
   return /*#__PURE__*/React.createElement("div", {
     className: "pg-tabbar",
     style: {
-      padding: '2px 6px 10px'
+      padding: '0px 6px 8px'
     }
   }, tabs.map(tb => {
     const on = tb.id === tab;
