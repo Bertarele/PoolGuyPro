@@ -1,0 +1,400 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>PoolGuyPro — Florida Pool Network</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <!-- Preconnect to all external origins for faster loading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://xiszfqghizqzlwyrfjol.supabase.co" crossorigin>
+  <link rel="dns-prefetch" href="https://unpkg.com">
+  <!-- Preload critical scripts so they download in parallel with HTML parse -->
+  <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
+  <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="tokens.css?v=136">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    body {
+      font-family: "Poppins", -apple-system, system-ui, sans-serif;
+      background: var(--pg-bg);
+    }
+    #stage {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--pg-bg);
+      position: relative;
+    }
+    #stage::after { display: none; }
+    #root { width: 100%; height: 100%; }
+
+    /* ── Splash screen — shown instantly before any JS loads ── */
+    #pgSplash {
+      position: fixed; inset: 0; z-index: 99999;
+      background: #0b1220;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+      transition: opacity 0.28s ease;
+    }
+    #pgSplash.fade { opacity: 0; pointer-events: none; }
+    @keyframes pgSpin { to { transform: rotate(360deg); } }
+    .pgSpinner {
+      width: 44px; height: 44px;
+      border: 3.5px solid rgba(255,255,255,0.12);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: pgSpin 0.7s linear infinite;
+    }
+    .pgSplashLogo {
+      font-family: -apple-system, system-ui, sans-serif;
+      font-size: 15px; font-weight: 700;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+  <!-- Splash: renders immediately (no JS needed) and is hidden once React mounts -->
+  <div id="pgSplash">
+    <div class="pgSpinner"></div>
+    <div class="pgSplashLogo">PoolGuyPro</div>
+  </div>
+  <div id="stage"><div id="root"></div></div>
+
+  <!-- Supabase SDK -->
+  <script>
+  (function(){
+    var BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+    var KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
+    var _tok = null;
+    var _refreshing = null; // pending refresh promise — avoids race conditions
+
+    // Load saved session (now includes refresh_token as 'r')
+    try { var _s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(_s&&_s.t) _tok=_s.t; } catch(e){}
+
+    // Check for OAuth callback (Google / provider redirect) — runs before anything else
+    try {
+      var _hash = window.location.hash;
+      if (_hash && _hash.indexOf('access_token=') !== -1) {
+        var _hp = new URLSearchParams(_hash.slice(1));
+        var _oat = _hp.get('access_token');
+        var _ort = _hp.get('refresh_token');
+        if (_oat) {
+          _tok = _oat;
+          window._pendingOAuth = { access_token: _oat, refresh_token: _ort };
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      }
+    } catch(e) {}
+
+    // Persist session with both tokens
+    function _saveSession(d) {
+      _tok = d.access_token;
+      try {
+        localStorage.setItem('pg_s', JSON.stringify({
+          t: d.access_token,
+          r: d.refresh_token || null,
+          u: { id: d.user.id, email: d.user.email }
+        }));
+      } catch(e) {}
+    }
+
+    // Silently refresh the access token using the stored refresh_token
+    async function _doRefresh() {
+      try {
+        var stored = JSON.parse(localStorage.getItem('pg_s') || 'null');
+        if (!stored || !stored.r) return false;
+        var resp = await fetch(BASE + '/auth/v1/token?grant_type=refresh_token', {
+          method: 'POST',
+          headers: { 'apikey': KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: stored.r })
+        });
+        if (!resp.ok) {
+          // 400/401/403 = refresh token inválido/expirado/revogado → força logout
+          // Outros erros (500, rede, etc.) = não desloga, apenas falha silenciosamente
+          if (resp.status === 400 || resp.status === 401 || resp.status === 403) {
+            _tok = null;
+            try { localStorage.removeItem('pg_s'); } catch(e) {}
+            if (window.__pgForceLogout) window.__pgForceLogout();
+            console.warn('[PoolGuyPro] Token revoked — session cleared');
+          }
+          return false;
+        }
+        var d = await resp.json();
+        if (!d.access_token) return false;
+        _tok = d.access_token;
+        try {
+          localStorage.setItem('pg_s', JSON.stringify({
+            t: d.access_token,
+            r: d.refresh_token || stored.r,
+            u: stored.u
+          }));
+        } catch(e) {}
+        console.log('[PoolGuyPro] Token refreshed ✓');
+        return true;
+      } catch(e) {
+        console.warn('[PoolGuyPro] Token refresh failed:', e.message);
+        return false;
+      }
+    }
+
+    // Deduplicated refresh — if already refreshing, wait for same promise
+    function _refreshOnce() {
+      if (_refreshing) return _refreshing;
+      _refreshing = _doRefresh().finally(function(){ _refreshing = null; });
+      return _refreshing;
+    }
+
+    // Check if an error body indicates JWT expiry
+    function _isExpired(msg) {
+      return msg && (msg.includes('JWT expired') || msg.includes('invalid JWT') || msg.includes('token is expired'));
+    }
+
+    // Always read fresh token from closure (updated by refresh)
+    function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
+
+    function makeBuilder(table){
+      var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null, upsertConflict='';
+      var run=async function(retried){
+        var url=BASE+'/rest/v1/'+table, h=hdrs();
+        if(op==='upsert'){
+          var pref='resolution=merge-duplicates'+(upsertConflict?',on_conflict='+upsertConflict:'');
+          var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal,'+pref}),body:JSON.stringify(body)});
+          if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Upsert failed '+r.status}};}
+          return{data:null,error:null};
+        }
+        if(op==='insert'){
+          var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+          if(!r.ok){
+            var e={}; try{e=await r.json();}catch(x){}
+            if(!retried && (r.status===401 || _isExpired(e.message||e.msg||''))) {
+              var ok = await _refreshOnce();
+              if(ok) return run(true);
+            }
+            return{data:null,error:{message:e.message||'Insert failed '+r.status}};
+          }
+          return{data:null,error:null};
+        }
+        if(op==='update'){
+          var qs=filters.join('&');
+          var r=await fetch(url+(qs?'?'+qs:''),{method:'PATCH',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+          if(!r.ok){
+            var e={}; try{e=await r.json();}catch(x){}
+            if(!retried && (r.status===401 || _isExpired(e.message||e.msg||''))) {
+              var ok = await _refreshOnce();
+              if(ok) return run(true);
+            }
+            return{data:null,error:{message:e.message||'Update failed '+r.status}};
+          }
+          return{data:null,error:null};
+        }
+        if(op==='delete'){
+          var qs=filters.join('&');
+          var r=await fetch(url+(qs?'?'+qs:''),{method:'DELETE',headers:h});
+          if(!r.ok){
+            var e={}; try{e=await r.json();}catch(x){}
+            if(!retried && (r.status===401 || _isExpired(e.message||e.msg||''))) {
+              var ok = await _refreshOnce();
+              if(ok) return run(true);
+            }
+            return{data:null,error:{message:e.message||'Delete failed '+r.status}};
+          }
+          return{data:null,error:null};
+        }
+        var p=['select='+encodeURIComponent(sel)];
+        filters.forEach(function(f){p.push(f);});
+        if(orderCol) p.push('order='+orderCol+(orderAsc?'':'.desc'));
+        if(isSingle) h['Accept']='application/vnd.pgrst.object+json';
+        var r=await fetch(url+'?'+p.join('&'),{headers:h});
+        if(r.status===406||r.status===404) return{data:null,error:null};
+        if(r.status===401 && !retried){
+          var ok = await _refreshOnce();
+          if(ok) return run(true);
+        }
+        var d=await r.json();
+        if(!r.ok) return{data:null,error:{message:d.message||d.hint||'Query failed '+r.status}};
+        return{data:d,error:null};
+      };
+      var b={
+        select:function(c){sel=c||'*';return b;},
+        eq:function(c,v){filters.push(c+'=eq.'+encodeURIComponent(v));return b;},
+        neq:function(c,v){filters.push(c+'=neq.'+encodeURIComponent(v));return b;},
+        in:function(c,arr){if(arr&&arr.length)filters.push(c+'=in.('+arr.join(',')+')');return b;},
+        or:function(q){filters.push('or=('+q+')');return b;},
+        order:function(c,opts){orderCol=c;orderAsc=opts?opts.ascending!==false:true;return b;},
+        limit:function(n){filters.push('limit='+n);return b;},
+        single:function(){isSingle=true;return b;},
+        insert:function(row){op='insert';body=row;return b;},
+        upsert:function(row,opts){op='upsert';body=row;upsertConflict=(opts&&opts.onConflict)||'';return b;},
+        update:function(upd){op='update';body=upd;return b;},
+        delete:function(){op='delete';return b;},
+        then:function(res,rej){return run().then(res,rej);},
+        catch:function(rej){return run().catch(rej);}
+      };
+      return b;
+    }
+
+    window.sb = {
+      rpc:async function(fn,params){
+        var h={'apikey':KEY,'Content-Type':'application/json'};
+        if(_tok) h['Authorization']='Bearer '+_tok;
+        var r=await fetch(BASE+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(params||{})});
+        var d; try{d=await r.json();}catch(e){d=null;}
+        if(!r.ok) return{data:null,error:{message:(d&&d.message)||('RPC failed '+r.status)}};
+        return{data:d,error:null};
+      },
+      auth:{
+        signInWithPassword:async function(creds){
+          var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
+          var d=await r.json();
+          if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Invalid credentials'}};
+          _saveSession(d);
+          // Start background auto-refresh (every 50 min, token valid 1h)
+          _startAutoRefresh();
+          return{data:{user:d.user,session:d},error:null};
+        },
+        signUp:async function(creds){
+          var r=await fetch(BASE+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
+          var d=await r.json();
+          if(!r.ok) return{data:null,error:{message:d.msg||d.error_description||d.message||'Signup failed'}};
+          if(d.access_token){ _saveSession(d); _startAutoRefresh(); }
+          return{data:{user:d.user||d},error:null};
+        },
+        getSession:async function(){
+          // Handle OAuth callback (Google sign-in redirect)
+          if (window._pendingOAuth) {
+            var pending = window._pendingOAuth;
+            window._pendingOAuth = null;
+            try {
+              var ru = await fetch(BASE+'/auth/v1/user', { headers:{'apikey':KEY,'Authorization':'Bearer '+pending.access_token} });
+              if (ru.ok) {
+                var ou = await ru.json();
+                _saveSession({ access_token: pending.access_token, refresh_token: pending.refresh_token, user: ou });
+                _startAutoRefresh();
+                return { data: { session: { user:{ id:ou.id, email:ou.email }, access_token: pending.access_token } } };
+              }
+            } catch(e) {}
+          }
+          try{var s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(s&&s.u) return{data:{session:{user:s.u,access_token:s.t}}};}catch(e){}
+          return{data:{session:null}};
+        },
+        // Proactively refresh the token — call this on page load before data fetches
+        refresh: async function(){
+          return _refreshOnce();
+        },
+        signOut:async function(){
+          try{if(_tok) await fetch(BASE+'/auth/v1/logout',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+_tok}});}catch(e){}
+          _tok=null; _stopAutoRefresh(); try{localStorage.removeItem('pg_s');}catch(e){}
+        }
+      },
+      from:function(table){return makeBuilder(table);},
+      channel:function(){ return{on:function(){return this;},subscribe:function(cb){setTimeout(function(){if(cb)cb('SUBSCRIBED');},100);return this;}};},
+      removeChannel:function(){}
+    };
+
+    // Auto-refresh: renew the token every 18 minutes (JWT expires in 20 min)
+    var _refreshTimer = null;
+    function _startAutoRefresh() {
+      _stopAutoRefresh();
+      _refreshTimer = setInterval(function(){ _refreshOnce(); }, 18 * 60 * 1000);
+    }
+    function _stopAutoRefresh() {
+      if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+    }
+    // If already logged in from a previous session, start auto-refresh immediately
+    if (_tok) _startAutoRefresh();
+
+    // Storage API
+    window.sb.storage = {
+      from: function(bucket){
+        return {
+          upload: async function(path, file, opts, _retried){
+            var ct = (opts&&opts.contentType) || (file&&file.type) || 'application/octet-stream';
+            var r = await fetch(BASE+'/storage/v1/object/'+bucket+'/'+path, {
+              method:'POST',
+              headers:{'apikey':KEY,'Authorization':'Bearer '+(_tok||KEY),'Content-Type':ct,'x-upsert':'true'},
+              body: file,
+            });
+            if(!r.ok){
+              var e={}; try{e=await r.json();}catch(x){}
+              // Auto-retry once after token refresh if JWT expired
+              if(!_retried && _isExpired(e.message||e.error||'')){
+                var ok = await _refreshOnce();
+                if(ok) return window.sb.storage.from(bucket).upload(path, file, opts, true);
+              }
+              return{data:null,error:{message:e.message||'Upload failed '+r.status}};
+            }
+            return{data:{path:path},error:null};
+          },
+          getPublicUrl: function(path){
+            return{data:{publicUrl:BASE+'/storage/v1/object/public/'+bucket+'/'+path}};
+          }
+        };
+      }
+    };
+    window.supabase = {createClient:function(){return window.sb;}};
+    console.log('[PoolGuyPro] Supabase (native fetch + auto-refresh) ✓');
+  })();
+  </script>
+
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Production builds: ~3.5 MB smaller than development, much faster parse + execute -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<!-- Babel compile cache: saves compiled JS to localStorage so subsequent
+       reloads skip JSX compilation entirely (~3-6s faster on mobile).
+       Cache key = src URL with version string → auto-invalidates on update. -->
+
+  <script src="ios-frame.js?v=mq7mfrb6"></script>
+  <script src="tweaks-panel.js?v=mq7mfrb6"></script>
+  <script src="components.js?v=mq7mfrb6"></script>
+  <script src="brand.js?v=mq7mfrb6"></script>
+  <script src="data.js?v=mq7mfrb6"></script>
+  <script src="screens/login.js?v=mq7mfrb6"></script>
+  <script src="screens/home.js?v=mq7mfrb6"></script>
+  <script src="screens/marketplace.js?v=mq7mfrb6"></script>
+  <script src="screens/quickpools.js?v=mq7mfrb6"></script>
+  <script src="screens/post.js?v=mq7mfrb6"></script>
+  <script src="screens/work.js?v=mq7mfrb6"></script>
+  <script src="screens/profile.js?v=mq7mfrb6"></script>
+  <script src="screens/overlays.js?v=mq7mfrb6"></script>
+  <script src="app.js?v=mq7mfrb6"></script>
+  <script>
+    // ── Splash removal — called by app.jsx once React has rendered ──
+    window.__pgHideSplash = function() {
+      var s = document.getElementById('pgSplash');
+      if (!s) return;
+      s.classList.add('fade');
+      setTimeout(function(){ s.style.display = 'none'; }, 320);
+    };
+
+    // Live reload: only active on localhost (never runs in production/Vercel)
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      const _watchFiles = [
+        'ios-frame.jsx','tweaks-panel.jsx','components.jsx','brand.jsx','data.jsx',
+        'screens/login.jsx',
+        'screens/home.jsx','screens/marketplace.jsx','screens/quickpools.jsx',
+        'screens/post.jsx','screens/work.jsx','screens/profile.jsx',
+        'screens/overlays.jsx','app.jsx',
+      ];
+      let _lastSig = '';
+      setInterval(async () => {
+        try {
+          const tags = await Promise.all(
+            _watchFiles.map(f => fetch(f + '?_lrp=' + Date.now(), {method:'HEAD', cache:'no-store'})
+              .then(r => r.headers.get('last-modified') || r.headers.get('etag') || ''))
+          );
+          const sig = tags.join('|');
+          if (_lastSig && sig !== _lastSig) location.reload();
+          _lastSig = sig;
+        } catch(e) {}
+      }, 1500);
+    }
+  </script>
+</body>
+</html>

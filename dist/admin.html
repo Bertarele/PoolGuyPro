@@ -1,0 +1,1845 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <title>PoolGuyX — Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+    input, select, textarea { font-family: inherit; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #1a1f2e; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
+    .admin-table thead tr { border-bottom: 1px solid #1e293b; }
+    .admin-table th { padding: 10px 12px; text-align: left; color: #64748b; font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+    .admin-table tbody tr { border-bottom: 1px solid #1e293b18; transition: background .1s; }
+    .admin-table tbody tr:hover { background: #1e293b50; }
+    .admin-table td { padding: 10px 12px; color: #cbd5e1; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+    .act-btn { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-family: inherit; border: 1px solid; }
+    .act-btn-view   { border-color: #0EBAC740; background: #0EBAC715; color: #0EBAC7; }
+    .act-btn-ok     { border-color: #22c55e40; background: #22c55e15; color: #22c55e; }
+    .act-btn-warn   { border-color: #f59e0b40; background: #f59e0b15; color: #f59e0b; }
+    .act-btn-purple { border-color: #6366f140; background: #6366f110; color: #818cf8; }
+    .act-btn-red    { border-color: #ef444430; background: #ef444410; color: #ef4444; }
+    /* Mobile nav overlay */
+    .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40; }
+    .nav-overlay.open { display: block; }
+    /* Sidebar */
+    .admin-sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: 220px; background: #13161f; border-right: 1px solid #1e293b; display: flex; flex-direction: column; z-index: 50; transition: transform .25s ease; }
+    @media (max-width: 767px) {
+      .admin-sidebar { transform: translateX(-100%); }
+      .admin-sidebar.open { transform: translateX(0); box-shadow: 4px 0 32px rgba(0,0,0,0.6); }
+      .admin-sidebar.open .sidebar-close { display: flex !important; }
+      .admin-main { margin-left: 0 !important; }
+      .admin-main > div:last-child { padding: 14px 14px 32px !important; }
+      .admin-top-bar { display: flex !important; }
+      .stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+    /* Top bar (mobile only) */
+    .admin-top-bar {
+      display: none; position: sticky; top: 0; z-index: 30;
+      background: #13161f; border-bottom: 1px solid #1e293b;
+      padding: 0 16px; height: 52px;
+      align-items: center; justify-content: space-between;
+    }
+    .hamburger { background: none; border: none; color: #94a3b8; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 8px; }
+    .hamburger:hover { background: #1e293b; }
+    /* Card grid for mobile marketplace review */
+    .mkt-cards { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 540px) { .mkt-cards { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 900px) { .mkt-cards { grid-template-columns: repeat(3, 1fr); } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+(function(){
+  var BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+  var KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
+  var _tok = null;
+  window._adminGetTok = function(){ return _tok; };
+  try { var s=JSON.parse(localStorage.getItem('pg_admin_s')||'null'); if(s&&s.t) _tok=s.t; } catch(e){}
+
+  function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
+
+  function makeBuilder(table){
+    var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null;
+    var run=async function(){
+      var url=BASE+'/rest/v1/'+table, h=hdrs();
+      if(op==='insert'){
+        var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+        if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Erro ao inserir '+r.status}};}
+        return{data:null,error:null};
+      }
+      if(op==='update'){
+        var qs=filters.join('&');
+        var r=await fetch(url+(qs?'?'+qs:''),{method:'PATCH',headers:Object.assign({},h,{'Prefer':'return=representation'}),body:JSON.stringify(body)});
+        if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Erro ao atualizar '+r.status}};}
+        var d=[]; try{d=await r.json();}catch(x){}
+        if(!Array.isArray(d)||d.length===0) return{data:null,error:{message:'Nenhuma linha atualizada — verifique as políticas RLS do Supabase.'}};
+        return{data:d,error:null};
+      }
+      if(op==='delete'){
+        var qs=filters.join('&');
+        var r=await fetch(url+(qs?'?'+qs:''),{method:'DELETE',headers:h});
+        if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Erro ao excluir '+r.status}};}
+        return{data:null,error:null};
+      }
+      var p=['select='+encodeURIComponent(sel)];
+      filters.forEach(function(f){p.push(f);});
+      if(orderCol) p.push('order='+orderCol+(orderAsc?'':'.desc'));
+      if(isSingle) h['Accept']='application/vnd.pgrst.object+json';
+      var r=await fetch(url+'?'+p.join('&'),{headers:h});
+      if(r.status===406||r.status===404) return{data:null,error:null};
+      var d=await r.json();
+      if(!r.ok) return{data:null,error:{message:d.message||d.hint||'Erro na consulta '+r.status}};
+      return{data:d,error:null};
+    };
+    var b={
+      select:function(c){sel=c||'*';return b;},
+      eq:function(c,v){filters.push(c+'=eq.'+encodeURIComponent(v));return b;},
+      neq:function(c,v){filters.push(c+'=neq.'+encodeURIComponent(v));return b;},
+      order:function(c,opts){orderCol=c;orderAsc=opts?opts.ascending!==false:true;return b;},
+      single:function(){isSingle=true;return b;},
+      insert:function(row){op='insert';body=row;return b;},
+      update:function(upd){op='update';body=upd;return b;},
+      delete:function(){op='delete';return b;},
+      then:function(res,rej){return run().then(res,rej);},
+      catch:function(rej){return run().catch(rej);}
+    };
+    return b;
+  }
+
+  window.sb = {
+    auth:{
+      signInWithPassword:async function(creds){
+        var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
+        var d=await r.json();
+        if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Credenciais inválidas'}};
+        _tok=d.access_token;
+        window._adminGetTok = function(){ return _tok; };
+        try{localStorage.setItem('pg_admin_s',JSON.stringify({t:d.access_token,u:{id:d.user.id,email:d.user.email}}));}catch(e){}
+        return{data:{user:d.user,session:d},error:null};
+      },
+      getSession:async function(){
+        try{var s=JSON.parse(localStorage.getItem('pg_admin_s')||'null'); if(s&&s.u) return{data:{session:{user:s.u,access_token:s.t}}};}catch(e){}
+        return{data:{session:null}};
+      },
+      signOut:async function(){
+        try{if(_tok) await fetch(BASE+'/auth/v1/logout',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+_tok}});}catch(e){}
+        _tok=null; try{localStorage.removeItem('pg_admin_s');}catch(e){}
+      }
+    },
+    from:function(table){return makeBuilder(table);},
+  };
+})();
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+
+// ── Ícones ────────────────────────────────────────────────────
+const IC = {
+  users:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  jobs:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+  market: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
+  logout: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  trash:  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>,
+  edit:   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  shield: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  dash:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+  techs:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>,
+  vac:    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  menu:   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+  close:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  refresh:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
+  flag:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
+};
+
+// ── Card de estatística ───────────────────────────────────────
+function StatCard({ label, value, color, icon }) {
+  return (
+    <div style={{background:'#1a1f2e', borderRadius:14, padding:'16px 18px', border:'1px solid #1e293b', display:'flex', alignItems:'center', gap:14}}>
+      <div style={{width:44, height:44, borderRadius:11, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', color, flexShrink:0}}>{icon}</div>
+      <div>
+        <div style={{fontSize:26, fontWeight:700, lineHeight:1, color:'#f1f5f9'}}>{value ?? '—'}</div>
+        <div style={{fontSize:12, color:'#64748b', marginTop:3, fontWeight:500}}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Tabela de dados ───────────────────────────────────────────
+function DataTable({ columns, rows, onDelete, onPromote, onApprove, onReject, onEdit, onView, onVerify, loading }) {
+  if (loading) return <div style={{padding:32, textAlign:'center', color:'#64748b'}}>Carregando…</div>;
+  if (!rows.length) return <div style={{padding:32, textAlign:'center', color:'#64748b'}}>Nenhum registro encontrado.</div>;
+  return (
+    <div className="admin-table-wrap">
+      <table className="admin-table">
+        <thead>
+          <tr>
+            {columns.map(c => <th key={c.key}>{c.label}</th>)}
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={row.id || i}>
+              {columns.map(c => (
+                <td key={c.key} style={{color: c.key==='role' ? (row[c.key]==='admin'?'#0EBAC7':'#94a3b8') : undefined}}>
+                  {c.render ? c.render(row[c.key], row) : (row[c.key] ?? '—')}
+                </td>
+              ))}
+              <td>
+                <div style={{display:'flex', gap:5, flexWrap:'wrap'}}>
+                  {onView && <button className="act-btn act-btn-view" onClick={()=>onView(row)}>👁 Ver</button>}
+                  {onApprove && row.status !== 'approved' && <button className="act-btn act-btn-ok" onClick={()=>onApprove(row)}>✓ Aprovar</button>}
+                  {onReject  && row.status !== 'approved' && <button className="act-btn act-btn-warn" onClick={()=>onReject(row)}>✗ Rejeitar</button>}
+                  {onVerify  && <button className="act-btn" onClick={()=>onVerify(row)} style={{borderColor:row.verified?'rgba(239,68,68,0.4)':'rgba(22,197,94,0.4)',background:row.verified?'rgba(239,68,68,0.08)':'rgba(22,197,94,0.08)',color:row.verified?'#ef4444':'#22c55e'}}>{row.verified?'✗ Reverter':'✓ Verificar'}</button>}
+                  {onPromote && <button className="act-btn act-btn-purple" onClick={()=>onPromote(row)}>{IC.shield} {row.role==='admin'?'Remover admin':'Admin'}</button>}
+                  {onEdit    && <button className="act-btn act-btn-purple" onClick={()=>onEdit(row)}>{IC.edit} Editar</button>}
+                  {onDelete  && <button className="act-btn act-btn-red" onClick={()=>onDelete(row)}>{IC.trash} Excluir</button>}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Tela de login ─────────────────────────────────────────────
+function AdminLogin({ onLogin }) {
+  const [email,   setEmail]   = React.useState('');
+  const [pass,    setPass]    = React.useState('');
+  const [error,   setError]   = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email || !pass || loading) return;
+    setLoading(true); setError('');
+    try {
+      const { data, error: err } = await window.sb.auth.signInWithPassword({ email: email.trim(), password: pass });
+      if (err) throw err;
+      const { data: profile } = await window.sb.from('profiles').select('role').eq('id', data.user.id).single();
+      if (!profile || profile.role !== 'admin') {
+        await window.sb.auth.signOut();
+        throw new Error('Acesso negado — somente admins.');
+      }
+      onLogin(data.user, profile);
+    } catch(e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#0f1117', padding:'24px 16px'}}>
+      <div style={{width:'100%', maxWidth:380, background:'#1a1f2e', borderRadius:20, padding:'28px 24px', border:'1px solid #1e293b', boxShadow:'0 32px 80px rgba(0,0,0,0.5)'}}>
+        <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:28}}>
+          <div style={{width:44, height:44, borderRadius:12, background:'linear-gradient(135deg,#0EBAC7,#0D7280)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:18, flexShrink:0}}>PX</div>
+          <div>
+            <div style={{fontWeight:700, fontSize:17, color:'#f1f5f9'}}>Painel Admin</div>
+            <div style={{fontSize:12, color:'#64748b'}}>PoolGuyX — Acesso restrito</div>
+          </div>
+        </div>
+        <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
+          <div>
+            <label style={{display:'block', fontSize:11, fontWeight:600, color:'#64748b', marginBottom:6, letterSpacing:'.06em', textTransform:'uppercase'}}>E-mail</label>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@email.com"
+              style={{width:'100%', padding:'12px 14px', borderRadius:10, border:'1px solid #334155', background:'#0f1117', color:'#f1f5f9', fontSize:14, outline:'none'}}/>
+          </div>
+          <div>
+            <label style={{display:'block', fontSize:11, fontWeight:600, color:'#64748b', marginBottom:6, letterSpacing:'.06em', textTransform:'uppercase'}}>Senha</label>
+            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••"
+              style={{width:'100%', padding:'12px 14px', borderRadius:10, border:'1px solid #334155', background:'#0f1117', color:'#f1f5f9', fontSize:14, outline:'none'}}/>
+          </div>
+          {error && <div style={{fontSize:12.5, color:'#ef4444', background:'#ef44441a', border:'1px solid #ef444430', borderRadius:8, padding:'9px 12px'}}>{error}</div>}
+          <button type="submit" disabled={loading} style={{height:48, borderRadius:12, border:'none', fontWeight:700, fontSize:15, background:'linear-gradient(135deg,#0EBAC7,#0D7280)', color:'#fff', boxShadow:'0 6px 20px rgba(14,186,199,0.3)', opacity:loading?0.7:1}}>
+            {loading ? 'Entrando…' : 'Entrar'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Modal de detalhes completos (fotos + todas as info) ───────
+function ViewMarketModal({ row, onClose, onApprove, onReject }) {
+  const photos = (row.photo_urls && row.photo_urls.length > 0)
+    ? row.photo_urls : (row.photo_url ? [row.photo_url] : []);
+  const [imgIdx, setImgIdx] = React.useState(0);
+  const prev = () => setImgIdx(i => (i-1+photos.length)%photos.length);
+  const next = () => setImgIdx(i => (i+1)%photos.length);
+  const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+  const Field = ({label, value, full}) => value ? (
+    <div style={{padding:'10px 13px', background:'#0f1117', borderRadius:10, border:'1px solid #1e293b', gridColumn:full?'1/-1':undefined}}>
+      <div style={{fontSize:10, fontWeight:700, color:'#475569', letterSpacing:'.07em', textTransform:'uppercase', marginBottom:4}}>{label}</div>
+      <div style={{fontSize:13, fontWeight:500, color:'#cbd5e1', lineHeight:1.5}}>{value}</div>
+    </div>
+  ) : null;
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#1a1f2e',borderRadius:20,width:'100%',maxWidth:640,border:'1px solid #334155',boxShadow:'0 32px 80px rgba(0,0,0,0.7)',overflow:'hidden'}}>
+
+        {/* Foto */}
+        <div style={{position:'relative', height:260, background:'#0f1117'}}>
+          {photos.length > 0 ? (
+            <img src={photos[imgIdx]} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+          ) : (
+            <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,color:'#334155'}}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <div style={{fontSize:13,color:'#475569'}}>Nenhuma foto enviada</div>
+            </div>
+          )}
+          {photos.length > 1 && (
+            <>
+              <button onClick={prev} style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',width:34,height:34,borderRadius:'50%',border:'none',background:'rgba(0,0,0,0.6)',color:'#fff',fontSize:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>‹</button>
+              <button onClick={next} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',width:34,height:34,borderRadius:'50%',border:'none',background:'rgba(0,0,0,0.6)',color:'#fff',fontSize:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>›</button>
+              <div style={{position:'absolute',bottom:10,left:'50%',transform:'translateX(-50%)',display:'flex',gap:5}}>
+                {photos.map((_,i)=><div key={i} onClick={()=>setImgIdx(i)} style={{width:i===imgIdx?18:6,height:6,borderRadius:3,cursor:'pointer',background:i===imgIdx?'#fff':'rgba(255,255,255,0.4)',transition:'width .2s'}}/>)}
+              </div>
+              <div style={{position:'absolute',bottom:12,right:14,fontSize:11,fontWeight:700,color:'#fff',background:'rgba(0,0,0,0.55)',padding:'2px 8px',borderRadius:999}}>
+                {imgIdx+1} / {photos.length}
+              </div>
+            </>
+          )}
+          <button onClick={onClose} style={{position:'absolute',top:10,right:10,width:32,height:32,borderRadius:'50%',border:'none',background:'rgba(0,0,0,0.65)',color:'#fff',fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>{IC.close}</button>
+          <span style={{position:'absolute',top:10,left:10,fontSize:11,fontWeight:700,padding:'4px 11px',borderRadius:8,
+            background:row.status==='approved'?'rgba(34,197,94,0.9)':'rgba(245,158,11,0.9)',color:'#fff',letterSpacing:'.05em'}}>
+            {row.status==='approved'?'✓ APROVADO':'⏳ AGUARDANDO'}
+          </span>
+          {row.type && (
+            <span style={{position:'absolute',top:10,left:row.status==='approved'?130:160,fontSize:11,fontWeight:700,padding:'4px 11px',borderRadius:8,background:'rgba(14,186,199,0.85)',color:'#fff',letterSpacing:'.05em',textTransform:'uppercase'}}>
+              {row.type==='sell'?'VENDA':row.type==='rent'?'ALUGUEL':'ROTA'}
+            </span>
+          )}
+        </div>
+
+        {/* Conteúdo */}
+        <div style={{padding:'18px 20px 20px'}}>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12,marginBottom:14}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:18,fontWeight:800,color:'#f1f5f9',lineHeight:1.2,letterSpacing:'-0.02em'}}>{row.name||row.route_name||'—'}</div>
+              {row.loc && <div style={{fontSize:12,color:'#64748b',marginTop:3}}>📍 {row.loc}</div>}
+            </div>
+            <div style={{textAlign:'right',flexShrink:0}}>
+              {row.price_mode==='neg'
+                ? <span style={{fontSize:13,fontWeight:700,padding:'4px 11px',borderRadius:999,background:'#1e293b',color:'#94a3b8',border:'1px solid #334155'}}>🤝 Negociável</span>
+                : row.price ? <div style={{fontSize:26,fontWeight:800,color:'#0EBAC7',lineHeight:1}}>${Number(row.price).toLocaleString()}</div> : null}
+            </div>
+          </div>
+
+          {/* Badges */}
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:14}}>
+            {[row.cat, row.condition, row.rent_period].filter(Boolean).map((b,i)=>(
+              <span key={i} style={{fontSize:11,fontWeight:600,padding:'3px 10px',borderRadius:999,background:'#1e293b',color:'#94a3b8',border:'1px solid #334155'}}>{b}</span>
+            ))}
+          </div>
+
+          {/* Descrição */}
+          {row.description && (
+            <div style={{marginBottom:14,padding:'12px 14px',background:'#0f1117',borderRadius:12,border:'1px solid #1e293b'}}>
+              <div style={{fontSize:10,fontWeight:700,color:'#475569',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:6}}>DESCRIÇÃO</div>
+              <div style={{fontSize:13.5,color:'#94a3b8',lineHeight:1.65,whiteSpace:'pre-wrap'}}>{row.description}</div>
+            </div>
+          )}
+
+          {/* Grid de detalhes */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:16}}>
+            <Field label="Autor" value={row.author}/>
+            <Field label="Publicado em" value={fmtDate(row.created_at)}/>
+            <Field label="Categoria" value={row.cat}/>
+            <Field label="Condição" value={row.condition}/>
+            <Field label="Fotos enviadas" value={photos.length>0 ? photos.length+' foto'+(photos.length!==1?'s':'') : 'Nenhuma'}/>
+            <Field label="ID do post" value={row.id ? row.id.slice(0,12)+'…' : '—'}/>
+          </div>
+
+          {/* Thumbnails das fotos */}
+          {photos.length > 0 && (
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:10,fontWeight:700,color:'#475569',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:8}}>FOTOS ({photos.length})</div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                {photos.map((url,i)=>(
+                  <a key={i} href={url} target="_blank" rel="noreferrer">
+                    <img src={url} alt={'Foto '+(i+1)} style={{width:68,height:68,objectFit:'cover',borderRadius:8,border:'2px solid '+(i===imgIdx?'#0EBAC7':'#334155'),cursor:'pointer',transition:'border-color .2s'}}
+                      onError={e=>{e.target.style.display='none';}}
+                      onClick={e=>{e.preventDefault();setImgIdx(i);}}/>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Botões de ação */}
+          <div style={{display:'flex',gap:9}}>
+            {row.status!=='approved' && onApprove && (
+              <button onClick={()=>{onApprove(row);onClose();}} style={{flex:2,height:46,borderRadius:12,border:'none',cursor:'pointer',fontFamily:'inherit',background:'linear-gradient(135deg,#22c55e,#16a34a)',color:'#fff',fontWeight:700,fontSize:14}}>
+                ✓ Aprovar e Publicar
+              </button>
+            )}
+            {row.status!=='approved' && onReject && (
+              <button onClick={()=>{onReject(row);onClose();}} style={{flex:1,height:46,borderRadius:12,border:'1px solid #f59e0b50',background:'#f59e0b18',color:'#f59e0b',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                ✗ Rejeitar
+              </button>
+            )}
+            {row.status==='approved' && (
+              <div style={{flex:1,height:46,display:'flex',alignItems:'center',justifyContent:'center',borderRadius:12,background:'#22c55e18',border:'1px solid #22c55e30',color:'#22c55e',fontWeight:600,fontSize:13}}>
+                ✓ Já publicado
+              </div>
+            )}
+            <button onClick={onClose} style={{flex:1,height:46,borderRadius:12,border:'1px solid #334155',background:'transparent',color:'#64748b',fontWeight:600,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Modal de edição ───────────────────────────────────────────
+function EditMarketModal({ row, onClose, onSave }) {
+  const [form, setForm] = React.useState({
+    name:       row.name       || '',
+    type:       row.type       || 'sell',
+    cat:        row.cat        || '',
+    condition:  row.condition  || '',
+    price:      row.price      || '',
+    price_mode: row.price_mode || 'fixed',
+    loc:        row.loc        || '',
+    status:     row.status     || 'pending',
+    description:row.description|| '',
+    route_name: row.route_name || '',
+    area:       row.area       || '',
+    asking:     row.asking     || '',
+    clients:    row.clients    || '',
+    revenue:    row.revenue    || '',
+  });
+  const [saving, setSaving] = React.useState(false);
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+  const inp = { style:{width:'100%',padding:'9px 12px',borderRadius:8,border:'1px solid #334155',background:'#0f1117',color:'#f1f5f9',fontSize:13,outline:'none',fontFamily:'inherit'} };
+  const lbl = (t) => <label style={{display:'block',fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>{t}</label>;
+
+  const handleSave = async () => {
+    setSaving(true);
+    const { error } = await window.sb.from('marketplace').update(form).eq('id', row.id);
+    setSaving(false);
+    if (error) { alert('Erro: ' + error.message); return; }
+    onSave({...row, ...form});
+  };
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#1a1f2e',borderRadius:20,padding:'24px 20px',width:'100%',maxWidth:560,border:'1px solid #334155',boxShadow:'0 24px 64px rgba(0,0,0,0.6)'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+          <div style={{fontWeight:700,fontSize:16,color:'#f1f5f9'}}>✏️ Editar Anúncio</div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',fontSize:20,cursor:'pointer',lineHeight:1,padding:4}}>{IC.close}</button>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          <div style={{gridColumn:'1/-1'}}>{lbl('Título / Nome')}<input {...inp} value={form.name} onChange={e=>set('name',e.target.value)}/></div>
+          <div>{lbl('Tipo')}<select {...inp} value={form.type} onChange={e=>set('type',e.target.value)}><option value="sell">Venda</option><option value="rent">Aluguel</option><option value="route">Rota</option></select></div>
+          <div>{lbl('Status')}<select {...inp} value={form.status} onChange={e=>set('status',e.target.value)}><option value="pending">Pendente</option><option value="approved">Aprovado</option></select></div>
+          <div>{lbl('Categoria')}<input {...inp} value={form.cat} onChange={e=>set('cat',e.target.value)} placeholder="Pumps, Vacuum…"/></div>
+          <div>{lbl('Condição')}<input {...inp} value={form.condition} onChange={e=>set('condition',e.target.value)} placeholder="Novo, Usado…"/></div>
+          <div>{lbl('Preço (R$)')}<input {...inp} type="number" value={form.price} onChange={e=>set('price',e.target.value)}/></div>
+          <div>{lbl('Modo de preço')}<select {...inp} value={form.price_mode} onChange={e=>set('price_mode',e.target.value)}><option value="fixed">Fixo</option><option value="neg">Negociável</option></select></div>
+          <div style={{gridColumn:'1/-1'}}>{lbl('Localização')}<input {...inp} value={form.loc} onChange={e=>set('loc',e.target.value)}/></div>
+          <div style={{gridColumn:'1/-1'}}>{lbl('Descrição')}<textarea {...inp} value={form.description} onChange={e=>set('description',e.target.value)} rows={3} style={{...inp.style,resize:'vertical',minHeight:72,lineHeight:1.5}}/></div>
+          {form.type==='route' && <>
+            <div style={{gridColumn:'1/-1'}}>{lbl('Nome da rota')}<input {...inp} value={form.route_name} onChange={e=>set('route_name',e.target.value)}/></div>
+            <div>{lbl('Clientes')}<input {...inp} type="number" value={form.clients} onChange={e=>set('clients',e.target.value)}/></div>
+            <div>{lbl('Receita/mês')}<input {...inp} type="number" value={form.revenue} onChange={e=>set('revenue',e.target.value)}/></div>
+            <div>{lbl('Pedindo ($)')}<input {...inp} type="number" value={form.asking} onChange={e=>set('asking',e.target.value)}/></div>
+            <div>{lbl('Região')}<input {...inp} value={form.area} onChange={e=>set('area',e.target.value)}/></div>
+          </>}
+        </div>
+        <div style={{display:'flex',gap:10,marginTop:20}}>
+          <button onClick={onClose} style={{flex:1,height:44,borderRadius:12,border:'1px solid #334155',background:'transparent',color:'#94a3b8',fontWeight:600,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving} style={{flex:2,height:44,borderRadius:12,border:'none',background:'linear-gradient(135deg,#0EBAC7,#0D7280)',color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer',fontFamily:'inherit',opacity:saving?0.7:1}}>
+            {saving ? 'Salvando…' : 'Salvar Alterações'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Modal de perfil completo do usuário ───────────────────────
+function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
+  const [profile,      setProfile]      = React.useState(null);
+  const [stats,        setStats]        = React.useState({});
+  const [photos,       setPhotos]       = React.useState({ before:[], after:[] });
+  const [loading,      setLoading]      = React.useState(true);
+  // Warnings
+  const [warnings,     setWarnings]     = React.useState([]);
+  const [showWarnForm, setShowWarnForm] = React.useState(false);
+  const [warnSeverity, setWarnSeverity] = React.useState('leve');
+  const [warnReason,   setWarnReason]   = React.useState('');
+  const [warnSaving,   setWarnSaving]   = React.useState(false);
+  // Ban
+  const [banned,       setBanned]       = React.useState(false);
+  const [banSaving,    setBanSaving]    = React.useState(false);
+  // Dispute history
+  const [disputes,     setDisputes]     = React.useState([]);
+
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
+
+  React.useEffect(() => {
+    if (!userId) return;
+    const load = async () => {
+      setLoading(true);
+      const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+      const [profRes, authRes, disputesAsReporter, disputesAsReported, ratingsRes, rentalsRes, photosRes, warningsRes] = await Promise.all([
+        window.sb.from('profiles').select('*').eq('id', userId).single(),
+        fetch(BASE + '/auth/v1/admin/users/' + userId, { headers:{ apikey:SRK, Authorization:'Bearer '+SRK } }).then(r=>r.json()).catch(()=>({})),
+        window.sb.from('dispute_reports').select('id,listing_name,severity,status,created_at').eq('reporter_id', userId).order('created_at',{ascending:false}),
+        window.sb.from('dispute_reports').select('id,listing_name,severity,status,resolution_action,created_at').eq('reported_user_id', userId).order('created_at',{ascending:false}),
+        window.sb.from('rental_ratings').select('stars').eq('ratee_id', userId),
+        window.sb.from('rental_requests').select('id,status').eq('requester_id', userId),
+        disputeRequestId
+          ? window.sb.from('rental_photos').select('type,photo_url').eq('request_id', disputeRequestId)
+          : Promise.resolve({ data: [] }),
+        window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at', {ascending:false}),
+      ]);
+      const prof = profRes.data || {};
+      setProfile({ ...prof, email: authRes.email || prof.email || '' });
+      setBanned(prof.banned || false);
+      setWarnings(warningsRes.data || []);
+      const allDisputes = [
+        ...(disputesAsReported.data||[]).map(d=>({...d,role:'reported'})),
+        ...(disputesAsReporter.data||[]).map(d=>({...d,role:'reporter'})),
+      ].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      setDisputes(allDisputes);
+      const stars = ratingsRes.data?.map(r=>r.stars)||[];
+      const avgStars = stars.length ? (stars.reduce((a,b)=>a+b,0)/stars.length).toFixed(1) : null;
+      setStats({
+        reportedBy:      (disputesAsReporter.data||[]).length,
+        reportedAgainst: (disputesAsReported.data||[]).length,
+        rentals:         (rentalsRes.data||[]).length,
+        avgRating:       avgStars,
+        ratingCount:     stars.length,
+      });
+      if (photosRes.data) {
+        setPhotos({
+          before: photosRes.data.filter(p=>p.type==='before').map(p=>p.photo_url),
+          after:  photosRes.data.filter(p=>p.type==='after').map(p=>p.photo_url),
+        });
+      }
+      setLoading(false);
+    };
+    load();
+  }, [userId]);
+
+  const warnPtMap = { leve:1, medio:2, grave:5 };
+
+  const addWarning = async () => {
+    if (!warnReason.trim()) return;
+    setWarnSaving(true);
+    await window.sb.from('user_warnings').insert({
+      user_id: userId, dispute_id: disputeRequestId||null, reason: warnReason, severity: warnSeverity,
+    });
+    const { data: fresh } = await window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at',{ascending:false});
+    const allWarn = fresh || [];
+    setWarnings(allWarn);
+    // Notificar usuário
+    const ptLabel = { leve:'Leve (+1pt)', medio:'Médio (+2pts)', grave:'Grave (+5pts)' };
+    window.sb.from('notifications').insert({
+      user_id: userId, type: 'warning',
+      title: `Você recebeu uma advertência — ${ptLabel[warnSeverity]||warnSeverity}`,
+      body: warnReason,
+    }).catch(()=>{});
+    // Auto-ban se atingir 5 pontos
+    const total = allWarn.reduce((s,w)=>s+(warnPtMap[w.severity]||1),0);
+    if (total >= 5 && !banned) {
+      await window.sb.from('profiles').update({ banned: true, ban_reason: 'Banido automaticamente por acúmulo de advertências.' }).eq('id', userId);
+      setBanned(true);
+    }
+    setShowWarnForm(false); setWarnReason('');
+    setWarnSaving(false);
+  };
+
+  const toggleBan = async () => {
+    const newBan = !banned;
+    if (newBan && !confirm(`Banir ${profile?.name||userName}?\nIsso vai bloquear o acesso à conta.`)) return;
+    setBanSaving(true);
+    await window.sb.from('profiles').update({ banned: newBan, ban_reason: newBan ? 'Banido pelo admin' : null }).eq('id', userId);
+    if (newBan) {
+      await window.sb.from('user_warnings').insert({ user_id: userId, reason: 'Conta banida pelo admin', severity: 'banned' });
+      const { data } = await window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at',{ascending:false});
+      setWarnings(data||[]);
+    }
+    setBanned(newBan);
+    setBanSaving(false);
+  };
+
+  const totalWarnPts = warnings.reduce((s,w)=>s+(warnPtMap[w.severity]||1),0);
+
+  const InfoRow = ({label, value, highlight}) => value ? (
+    <div style={{padding:'9px 12px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b'}}>
+      <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>{label}</div>
+      <div style={{fontSize:13,fontWeight:500,color:highlight||'#cbd5e1'}}>{value}</div>
+    </div>
+  ) : null;
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:3000,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#1a1f2e',borderRadius:20,width:'100%',maxWidth:560,border:'1px solid #334155',boxShadow:'0 32px 80px rgba(0,0,0,0.7)',overflow:'hidden'}}>
+
+        {/* Header bar */}
+        <div style={{background:'#13161f',padding:'14px 18px',borderBottom:'1px solid #1e293b',display:'flex',alignItems:'center',gap:12}}>
+          <div style={{fontSize:14,fontWeight:700,color:'#f1f5f9',flex:1}}>👤 Perfil do usuário</div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',fontSize:18,lineHeight:1}}>×</button>
+        </div>
+
+        {loading ? (
+          <div style={{padding:48,textAlign:'center',color:'#64748b'}}>Carregando...</div>
+        ) : (
+          <div style={{padding:'20px',maxHeight:'80vh',overflowY:'auto'}}>
+
+            {/* Avatar + name */}
+            <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:20}}>
+              {profile?.photo_url
+                ? <img src={profile.photo_url} alt="" style={{width:72,height:72,borderRadius:'50%',objectFit:'cover',border:'2px solid #334155'}}/>
+                : <div style={{width:72,height:72,borderRadius:'50%',background:'#0EBAC720',border:'2px solid #0EBAC740',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:700,color:'#0EBAC7'}}>
+                    {(profile?.name||userName||'?')[0].toUpperCase()}
+                  </div>
+              }
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:20,fontWeight:800,color:'#f1f5f9'}}>{profile?.name || userName || '—'}</div>
+                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Membro desde {fmtDate(profile?.created_at)}</div>
+                {stats.avgRating && (
+                  <div style={{fontSize:13,marginTop:4}}>
+                    {'★'.repeat(Math.round(stats.avgRating))}{'☆'.repeat(5-Math.round(stats.avgRating))}
+                    <span style={{color:'#94a3b8',marginLeft:6}}>{stats.avgRating} ({stats.ratingCount} avaliação{stats.ratingCount!==1?'ões':''})</span>
+                  </div>
+                )}
+                <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:6}}>
+                  {warnings.length > 0 && (
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
+                      background:totalWarnPts>=5?'#ef444430':'#ef444420',
+                      color:'#ef4444',border:`1px solid ${totalWarnPts>=5?'#ef444460':'#ef444440'}`}}>
+                      ⚠️ {totalWarnPts}/5 pontos{totalWarnPts>=5?' · BANIDO':''}
+                    </span>
+                  )}
+                  {banned && (
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
+                      background:'#ef444430',color:'#ef4444',border:'1px solid #ef444460'}}>
+                      🚫 BANIDO
+                    </span>
+                  )}
+                  {profile?.verified && (
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
+                      background:'#22c55e20',color:'#22c55e',border:'1px solid #22c55e40'}}>
+                      ✓ Verificado
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Bio */}
+            {profile?.bio && (
+              <div style={{padding:'10px 13px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',marginBottom:14}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>Bio</div>
+                <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6,whiteSpace:'pre-wrap'}}>{profile.bio}</div>
+              </div>
+            )}
+
+            {/* Info grid */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:16}}>
+              <InfoRow label="E-mail" value={profile?.email} highlight="#0EBAC7"/>
+              <InfoRow label="Telefone" value={profile?.phone}/>
+              <InfoRow label="Região" value={profile?.region}/>
+              <InfoRow label="Função" value={profile?.role==='admin'?'🛡 Admin':'👤 Usuário'}/>
+              <InfoRow label="Especialidade" value={profile?.specialty}/>
+              <InfoRow label="Empresa" value={profile?.company}/>
+              <InfoRow label="Licença" value={profile?.license}/>
+              <InfoRow label="Anos de exp." value={profile?.years_exp ? profile.years_exp+' anos' : null}/>
+              <InfoRow label="ID do usuário" value={userId?.slice(0,16)+'…'}/>
+              <InfoRow label="Status" value={banned ? '🚫 Banido' : '✅ Ativo'} highlight={banned?'#ef4444':'#22c55e'}/>
+            </div>
+
+            {/* Stats */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:7,marginBottom:16}}>
+              {[
+                { label:'Aluguéis', value: stats.rentals||0, color:'#0EBAC7' },
+                { label:'Reports feitos', value: stats.reportedBy||0, color:'#F59E0B' },
+                { label:'Reports recebidos', value: stats.reportedAgainst||0, color:'#EF4444' },
+              ].map(s=>(
+                <div key={s.label} style={{background:'#0f1117',borderRadius:10,padding:'12px',textAlign:'center',border:'1px solid #1e293b'}}>
+                  <div style={{fontSize:24,fontWeight:800,color:s.color}}>{s.value}</div>
+                  <div style={{fontSize:10,color:'#64748b',marginTop:3,fontWeight:600}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Before/after photos from THIS dispute */}
+            {(photos.before.length > 0 || photos.after.length > 0) && (
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>
+                  📷 Fotos do aluguel desta reclamação
+                </div>
+                {photos.before.length > 0 && (
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontSize:11,color:'#0EBAC7',fontWeight:600,marginBottom:6}}>Estado ANTES:</div>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      {photos.before.map((url,i)=>(
+                        <a key={i} href={url} target="_blank" rel="noreferrer">
+                          <img src={url} alt="" style={{width:80,height:80,objectFit:'cover',borderRadius:10,border:'2px solid #0EBAC750',cursor:'pointer'}}/>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {photos.after.length > 0 && (
+                  <div>
+                    <div style={{fontSize:11,color:'#22c55e',fontWeight:600,marginBottom:6}}>Estado DEPOIS:</div>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      {photos.after.map((url,i)=>(
+                        <a key={i} href={url} target="_blank" rel="noreferrer">
+                          <img src={url} alt="" style={{width:80,height:80,objectFit:'cover',borderRadius:10,border:'2px solid #22c55e50',cursor:'pointer'}}/>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Warning history */}
+            {warnings.length > 0 && (
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8,
+                  display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span>⚠️ Advertências ({warnings.length})</span>
+                  <span style={{fontSize:12,fontWeight:800,color:totalWarnPts>=5?'#ef4444':totalWarnPts>=3?'#f97316':'#f59e0b'}}>
+                    {totalWarnPts}/5 pontos
+                  </span>
+                </div>
+                {/* Barra de progresso */}
+                <div style={{height:6,borderRadius:99,background:'#0f1117',marginBottom:10,overflow:'hidden',border:'1px solid #1e293b'}}>
+                  <div style={{height:'100%',borderRadius:99,transition:'width .4s',
+                    background:totalWarnPts>=5?'#ef4444':totalWarnPts>=3?'#f97316':'#f59e0b',
+                    width:`${Math.min(100,(totalWarnPts/5)*100)}%`}}/>
+                </div>
+                {warnings.map((w,i)=>{
+                  const isBan  = w.severity==='banned'||w.severity==='ban';
+                  const isSusp = w.severity==='suspension';
+                  const isGrave= w.severity==='grave';
+                  const isMedio= w.severity==='medio';
+                  const sevColor = isBan?'#ef4444':isSusp?'#ef4444':isGrave?'#ef4444':isMedio?'#f97316':'#f59e0b';
+                  const sevLabel = isBan?'🚫 Banimento':isSusp?'🔒 Suspensão':isGrave?'⚠️ Grave +5pt':isMedio?'⚠️ Médio +2pt':'⚠️ Leve +1pt';
+                  return (
+                    <div key={w.id||i} style={{padding:'8px 10px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b',marginBottom:6}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                        <span style={{fontSize:10,fontWeight:700,padding:'1px 8px',borderRadius:999,
+                          background:sevColor+'20',color:sevColor,border:'1px solid '+sevColor+'40'}}>
+                          {sevLabel}
+                        </span>
+                        <span style={{fontSize:10,color:'#475569'}}>{fmtDate(w.created_at)}</span>
+                      </div>
+                      <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.5}}>{w.reason}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Dispute history */}
+            {disputes.length > 0 && (
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>
+                  📋 Histórico de reclamações ({disputes.length})
+                </div>
+                {disputes.map((d,i)=>{
+                  const isReported = d.role === 'reported';
+                  const sevColor = d.severity==='critical'?'#ef4444':d.severity==='serious'?'#f59e0b':'#EAB308';
+                  return (
+                    <div key={d.id||i} style={{display:'flex',gap:10,alignItems:'center',padding:'7px 10px',
+                      background:'#0f1117',borderRadius:8,border:'1px solid #1e293b',marginBottom:5}}>
+                      <span style={{fontSize:10,fontWeight:700,padding:'1px 7px',borderRadius:999,
+                        background:isReported?'#ef444415':'#0EBAC715',color:isReported?'#f87171':'#0EBAC7',
+                        border:`1px solid ${isReported?'#ef444440':'#0EBAC740'}`,flexShrink:0}}>
+                        {isReported?'🎯 Reportado':'📢 Reportou'}
+                      </span>
+                      <div style={{flex:1,minWidth:0,fontSize:12,color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                        {d.listing_name||'Item'} — <span style={{color:sevColor}}>{d.severity}</span>
+                        {d.status==='resolved'&&<span style={{color:'#22c55e',marginLeft:4}}>✓</span>}
+                      </div>
+                      <span style={{fontSize:10,color:'#475569',flexShrink:0}}>{fmtDate(d.created_at)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Admin actions */}
+            <div style={{marginBottom:14,display:'flex',flexDirection:'column',gap:8}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:2}}>
+                🛡 Ações administrativas
+              </div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <button onClick={()=>setShowWarnForm(!showWarnForm)} style={{
+                  height:36,padding:'0 14px',borderRadius:9,border:'1px solid #f59e0b50',
+                  background:'#f59e0b10',color:'#f59e0b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  ➕ Adicionar advertência
+                </button>
+                <button onClick={toggleBan} disabled={banSaving} style={{
+                  height:36,padding:'0 14px',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
+                  border:`1px solid ${banned?'#22c55e50':'#ef444450'}`,
+                  background:banned?'#22c55e10':'#ef444410',color:banned?'#22c55e':'#ef4444',opacity:banSaving?0.7:1}}>
+                  {banSaving?'…':banned?'✅ Desbanir':'🚫 Banir conta'}
+                </button>
+              </div>
+              {showWarnForm && (
+                <div style={{background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',padding:'12px'}}>
+                  <div style={{display:'flex',gap:8,marginBottom:8}}>
+                    <select value={warnSeverity} onChange={e=>setWarnSeverity(e.target.value)} style={{
+                      flex:1,padding:'7px 10px',borderRadius:8,border:'1px solid #334155',background:'#1a1f2e',
+                      color:'#f1f5f9',fontFamily:'inherit',fontSize:12,outline:'none'}}>
+                      <option value="leve">⚠️ Leve (+1 ponto)</option>
+                      <option value="medio">🟠 Médio (+2 pontos)</option>
+                      <option value="grave">🔴 Grave (+5 pontos = ban automático)</option>
+                    </select>
+                  </div>
+                  <textarea value={warnReason} onChange={e=>setWarnReason(e.target.value)}
+                    placeholder="Motivo do aviso..."
+                    rows={2}
+                    style={{width:'100%',background:'#1a1f2e',border:'1px solid #334155',borderRadius:8,
+                      color:'#f1f5f9',fontFamily:'inherit',fontSize:12,padding:'8px 10px',
+                      resize:'none',boxSizing:'border-box',outline:'none',lineHeight:1.5,marginBottom:8}}/>
+                  <div style={{display:'flex',gap:7}}>
+                    <button onClick={()=>setShowWarnForm(false)} style={{flex:1,height:34,borderRadius:8,border:'1px solid #334155',background:'transparent',color:'#64748b',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                    <button onClick={addWarning} disabled={warnSaving||!warnReason.trim()} style={{flex:2,height:34,borderRadius:8,border:'none',
+                      background:warnSeverity==='grave'?'#ef4444':warnSeverity==='medio'?'#f97316':'#f59e0b',
+                      color:'#fff',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',opacity:warnReason.trim()&&!warnSaving?1:0.5}}>
+                      {warnSaving?'Salvando…':'💾 Confirmar advertência'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Contact actions */}
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              {profile?.email && (
+                <a href={`mailto:${profile.email}?subject=PoolGuyX - Ocorrência de aluguel`}
+                  style={{flex:1,height:44,borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+                    background:'#0EBAC715',border:'1px solid #0EBAC740',color:'#0EBAC7',fontWeight:700,fontSize:13,textDecoration:'none'}}>
+                  ✉ Enviar e-mail
+                </a>
+              )}
+              {profile?.phone && (
+                <a href={`tel:${profile.phone}`}
+                  style={{flex:1,height:44,borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+                    background:'#22c55e15',border:'1px solid #22c55e40',color:'#22c55e',fontWeight:700,fontSize:13,textDecoration:'none'}}>
+                  📞 Ligar
+                </a>
+              )}
+              <button onClick={onClose}
+                style={{flex:1,height:44,borderRadius:12,border:'1px solid #334155',background:'transparent',color:'#64748b',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Modal resolução de disputa ────────────────────────────────
+function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
+  const [message,    setMessage]    = React.useState('');
+  const [action,     setAction]     = React.useState('none');
+  const [warnWeight, setWarnWeight] = React.useState('leve');
+  const [saving,     setSaving]     = React.useState(false);
+  const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
+  const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+
+  const actions = [
+    { value:'none',    label:'Nenhuma ação',    desc:'Apenas registrar a resolução sem penalidade',    color:'#64748b' },
+    { value:'warning', label:'⚠️ Advertência', desc:'Adicionar pontos de advertência ao renter (acúmulo de 5 pts = ban automático)', color:'#f59e0b' },
+    { value:'ban',     label:'🚫 Banimento',    desc:'Banir a conta permanentemente — IRREVERSÍVEL',   color:'#ef4444' },
+  ];
+
+  const warnWeights = [
+    { value:'leve',  label:'Leve',  pts:1, color:'#f59e0b' },
+    { value:'medio', label:'Médio', pts:2, color:'#f97316' },
+    { value:'grave', label:'Grave', pts:5, color:'#ef4444', note:'ban automático' },
+  ];
+
+  const handleConfirm = async () => {
+    if (!message.trim()) { alert('Adicione uma mensagem de resolução pública.'); return; }
+    if (action === 'ban' && !confirm(`Banir e excluir a conta de "${dispute.reported_name}"?\n\nEssa ação é IRREVERSÍVEL.`)) return;
+    setSaving(true);
+    try {
+      const now = new Date().toISOString();
+      // 1. Resolve dispute
+      await window.sb.from('dispute_reports').update({
+        status: 'resolved', resolution_message: message, resolution_action: action, resolved_at: now,
+      }).eq('id', dispute.id);
+      // 2. Update rental request status
+      if (dispute.rental_request_id) {
+        await window.sb.from('rental_requests').update({ status: 'resolved' }).eq('id', dispute.rental_request_id);
+      }
+      // 3. Create warning record
+      if (action === 'warning' || action === 'ban') {
+        const sev = action === 'ban' ? 'banned' : warnWeight;
+        await window.sb.from('user_warnings').insert({
+          user_id: dispute.reported_user_id, dispute_id: dispute.id, reason: message, severity: sev,
+        });
+      }
+      // 4. Ban: delete auth user
+      if (action === 'ban') {
+        const r = await fetch(BASE + '/auth/v1/admin/users/' + dispute.reported_user_id, {
+          method: 'DELETE', headers: { apikey: SRK, Authorization: 'Bearer ' + SRK },
+        });
+        if (!r.ok) { let e={}; try{e=await r.json();}catch(x){} throw new Error(e.message||'Erro ao banir'); }
+      }
+      // 5. Auto-ban se acumular >= 5 pontos
+      if (action === 'warning') {
+        const ptMap = { leve:1, medio:2, grave:5 };
+        const { data: allWarn } = await window.sb.from('user_warnings').select('severity').eq('user_id', dispute.reported_user_id);
+        const total = (allWarn||[]).reduce((s,w)=>s+(ptMap[w.severity]||1),0);
+        if (total >= 5) {
+          await window.sb.from('profiles').update({ banned: true, ban_reason: 'Banido automaticamente por acúmulo de advertências.' }).eq('id', dispute.reported_user_id);
+        }
+      }
+      // 6. Notificar o usuário reportado (aqui action/warnWeight/message estão em escopo)
+      if (action === 'warning') {
+        const wLabel = { leve:'Leve (+1pt)', medio:'Médio (+2pts)', grave:'Grave (+5pts)' };
+        window.sb.from('notifications').insert({
+          user_id: dispute.reported_user_id, type: 'warning',
+          title: `Você recebeu uma advertência — ${wLabel[warnWeight]||warnWeight}`,
+          body: message,
+        }).catch(()=>{});
+      } else if (action === 'ban') {
+        window.sb.from('notifications').insert({
+          user_id: dispute.reported_user_id, type: 'warning',
+          title: 'Sua conta foi banida',
+          body: message,
+        }).catch(()=>{});
+      }
+      // Sinaliza para o pai (setWarnings e outros estados ficam no pai)
+      onResolved(dispute.id, { status:'resolved', resolution_message:message, resolution_action:action, resolved_at:now });
+      showToast(action==='ban'?'🚫 Usuário banido e reclamação resolvida.':action==='warning'?`⚠️ Advertência (${warnWeight}) aplicada e reclamação resolvida.`:'✓ Reclamação resolvida com sucesso.');
+      onClose();
+    } catch(e) { alert('Erro: '+e.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.88)',zIndex:3500,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px',overflowY:'auto'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#1a1f2e',borderRadius:20,width:'100%',maxWidth:500,border:'1px solid #334155',boxShadow:'0 32px 80px rgba(0,0,0,0.7)'}}>
+        {/* Header */}
+        <div style={{background:'#13161f',padding:'14px 18px',borderBottom:'1px solid #1e293b',borderRadius:'20px 20px 0 0',display:'flex',alignItems:'center',gap:10}}>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:15,color:'#f1f5f9'}}>✅ Resolver Reclamação</div>
+            <div style={{fontSize:12,color:'#64748b',marginTop:2}}>📋 {dispute.listing_name||'Item de aluguel'} · Renter: {dispute.reported_name||'—'}</div>
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',fontSize:20,lineHeight:1}}>×</button>
+        </div>
+
+        <div style={{padding:'18px 20px 20px',display:'flex',flexDirection:'column',gap:16}}>
+          {/* Action selection */}
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>AÇÃO PARA O RENTER</div>
+            <div style={{display:'flex',flexDirection:'column',gap:7}}>
+              {actions.map(a=>(
+                <label key={a.value} onClick={()=>setAction(a.value)} style={{
+                  display:'flex',alignItems:'flex-start',gap:10,padding:'10px 12px',borderRadius:10,cursor:'pointer',
+                  background:action===a.value?a.color+'15':'#0f1117',
+                  border:`1px solid ${action===a.value?a.color+'60':'#1e293b'}`,transition:'all .15s',
+                }}>
+                  <div style={{width:16,height:16,borderRadius:'50%',border:`2px solid ${action===a.value?a.color:'#334155'}`,
+                    background:action===a.value?a.color:'transparent',flexShrink:0,marginTop:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    {action===a.value&&<div style={{width:6,height:6,borderRadius:'50%',background:'#fff'}}/>}
+                  </div>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:action===a.value?a.color:'#cbd5e1'}}>{a.label}</div>
+                    <div style={{fontSize:11,color:'#64748b',marginTop:1}}>{a.desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+            {/* Seletor de peso — só aparece quando "Advertência" está selecionado */}
+            {action === 'warning' && (
+              <div style={{marginTop:10,padding:'12px',borderRadius:10,background:'#0f1117',border:'1px solid #f59e0b30'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#f59e0b',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>
+                  PESO DA ADVERTÊNCIA
+                </div>
+                <div style={{display:'flex',gap:7}}>
+                  {warnWeights.map(w=>(
+                    <button key={w.value} onClick={()=>setWarnWeight(w.value)} style={{
+                      flex:1,padding:'8px 6px',borderRadius:8,cursor:'pointer',fontFamily:'inherit',
+                      border:`1px solid ${warnWeight===w.value?w.color+'80':'#334155'}`,
+                      background:warnWeight===w.value?w.color+'18':'transparent',
+                      transition:'all .15s',
+                    }}>
+                      <div style={{fontSize:13,fontWeight:800,color:warnWeight===w.value?w.color:'#94a3b8'}}>+{w.pts}pt</div>
+                      <div style={{fontSize:10,fontWeight:700,color:warnWeight===w.value?w.color:'#64748b',marginTop:2}}>{w.label}</div>
+                      {w.note && <div style={{fontSize:9,color:'#ef4444',marginTop:2}}>{w.note}</div>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Resolution message */}
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>
+              MENSAGEM PÚBLICA <span style={{color:'#ef4444'}}>*</span>
+            </div>
+            <textarea
+              value={message}
+              onChange={e=>setMessage(e.target.value)}
+              placeholder="Descreva a resolução — essa mensagem será exibida para ambas as partes no app..."
+              rows={3}
+              style={{width:'100%',background:'#0f1117',border:'1px solid #334155',borderRadius:10,
+                color:'#f1f5f9',fontFamily:'inherit',fontSize:13,padding:'10px 12px',
+                resize:'vertical',boxSizing:'border-box',outline:'none',lineHeight:1.6}}
+            />
+            <div style={{fontSize:11,color:'#475569',marginTop:4}}>
+              💬 Ambas as partes verão essa mensagem no aplicativo
+            </div>
+          </div>
+
+          {/* Confirm buttons */}
+          <div style={{display:'flex',gap:10,marginTop:4}}>
+            <button onClick={onClose} style={{flex:1,height:46,borderRadius:12,border:'1px solid #334155',background:'transparent',color:'#94a3b8',fontWeight:600,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>
+              Cancelar
+            </button>
+            <button onClick={handleConfirm} disabled={saving||!message.trim()} style={{
+              flex:2,height:46,borderRadius:12,border:'none',cursor:message.trim()&&!saving?'pointer':'not-allowed',fontFamily:'inherit',
+              fontWeight:700,fontSize:14,color:'#fff',opacity:message.trim()&&!saving?1:0.55,
+              background:action==='ban'?'linear-gradient(135deg,#ef4444,#dc2626)':action==='warning'&&warnWeight==='grave'?'linear-gradient(135deg,#ef4444,#dc2626)':action==='warning'&&warnWeight==='medio'?'linear-gradient(135deg,#f97316,#ea580c)':action==='warning'?'linear-gradient(135deg,#f59e0b,#d97706)':'linear-gradient(135deg,#22c55e,#16a34a)',
+            }}>
+              {saving?'Processando…':action==='ban'?'🚫 Banir e Resolver':action==='warning'?`⚠️ Advertência ${warnWeight} e Resolver`:'✓ Confirmar Resolução'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── App Admin ─────────────────────────────────────────────────
+function AdminApp({ adminUser, onLogout }) {
+  const [section,    setSection]    = React.useState('dashboard');
+  const [navOpen,    setNavOpen]    = React.useState(false);
+  const [stats,      setStats]      = React.useState({});
+  const [users,      setUsers]      = React.useState([]);
+  const [jobs,       setJobs]       = React.useState([]);
+  const [techs,      setTechs]      = React.useState([]);
+  const [market,     setMarket]     = React.useState([]);
+  const [vacs,       setVacs]       = React.useState([]);
+  const [disputes,   setDisputes]   = React.useState([]);
+  const [warnings,   setWarnings]   = React.useState([]); // all user_warnings
+  const [loading,    setLoading]    = React.useState(false);
+  const [viewUserModal, setViewUserModal] = React.useState(null); // {userId,userName,disputeRequestId}
+  const [resolveModal,  setResolveModal]  = React.useState(null); // dispute object
+  const [editingNote,   setEditingNote]   = React.useState({}); // {disputeId: noteText}
+  const [toast,      setToast]      = React.useState(null);
+  const [marketTab,  setMarketTab]  = React.useState('pending');
+  const [disputeTab, setDisputeTab] = React.useState('pending');
+  const [editRow,    setEditRow]    = React.useState(null);
+  const [viewRow,    setViewRow]    = React.useState(null);
+  const [rlsOpen,    setRlsOpen]    = React.useState(false);
+
+  const showToast = (msg, ok=true) => { setToast({msg,ok}); setTimeout(()=>setToast(null), 2800); };
+
+  const fetchAll = async () => {
+    setLoading(true);
+    const [u,j,tc,m,v,d,w] = await Promise.all([
+      window.sb.from('profiles').select('*').order('created_at',{ascending:false}),
+      window.sb.from('jobs').select('*').order('created_at',{ascending:false}),
+      window.sb.from('techs').select('*').order('created_at',{ascending:false}),
+      window.sb.from('marketplace').select('*').order('created_at',{ascending:false}),
+      window.sb.from('vacations').select('*').order('created_at',{ascending:false}),
+      window.sb.from('dispute_reports').select('*').order('created_at',{ascending:false}),
+      window.sb.from('user_warnings').select('*').order('created_at',{ascending:false}),
+    ]);
+    if(u.data) setUsers(u.data);
+    if(j.data) setJobs(j.data);
+    if(tc.data) setTechs(tc.data);
+    if(m.data) setMarket(m.data);
+    if(v.data) setVacs(v.data);
+    if(d.data) setDisputes(d.data);
+    if(w.data) setWarnings(w.data);
+    setStats({ users:u.data?.length??0, jobs:j.data?.length??0, techs:tc.data?.length??0, market:m.data?.length??0, vacs:v.data?.length??0, disputes:d.data?.filter(x=>x.status==='pending')?.length??0 });
+    setLoading(false);
+  };
+  React.useEffect(()=>{ fetchAll(); },[]);
+
+  const deleteRow = async (table, row) => {
+    const isUser = table === 'profiles';
+    const msg = isUser
+      ? `Excluir a conta de "${row.name||row.email}"?\n\nIsso vai APAGAR a conta completamente — a pessoa perde o acesso imediatamente e não pode mais fazer login. Não pode ser desfeito.`
+      : 'Excluir este registro? Não pode ser desfeito.';
+    if(!confirm(msg)) return;
+
+    let error = null;
+
+    if (isUser) {
+      // Admin Auth API — deleta user + invalida todas as sessões imediatamente
+      const BASE_AUTH = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+      const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
+      const r = await fetch(BASE_AUTH + '/auth/v1/admin/users/' + row.id, {
+        method: 'DELETE',
+        headers: { 'apikey': SRK, 'Authorization': 'Bearer ' + SRK },
+      });
+      if (!r.ok) {
+        let e = {}; try { e = await r.json(); } catch(x) {}
+        error = { message: e.message || e.msg || 'Erro ao excluir conta (status ' + r.status + ')' };
+      }
+    } else {
+      const res = await window.sb.from(table).delete().eq('id', row.id);
+      error = res.error;
+    }
+
+    if(error){
+      if(error.message&&(error.message.includes('RLS')||error.message.includes('policy')||error.message.includes('permission'))){
+        setRlsOpen(true);
+      } else { showToast('❌ '+error.message,false); }
+      return;
+    }
+    if(table==='marketplace') setMarket(p=>p.filter(r=>r.id!==row.id));
+    else if(table==='jobs')   setJobs(p=>p.filter(r=>r.id!==row.id));
+    else if(table==='techs')  setTechs(p=>p.filter(r=>r.id!==row.id));
+    else if(table==='profiles') setUsers(p=>p.filter(r=>r.id!==row.id));
+    else if(table==='vacations') setVacs(p=>p.filter(r=>r.id!==row.id));
+    showToast(isUser ? '🗑️ Conta excluída — acesso revogado.' : '🗑️ Excluído.');
+  };
+
+  const approveMarket = async (row) => {
+    const {data,error} = await window.sb.from('marketplace').update({status:'approved'}).eq('id',row.id);
+    if(error){ error.message.includes('RLS')?setRlsOpen(true):showToast('❌ '+error.message,false); return; }
+    setMarket(p=>p.map(m=>m.id===row.id?{...m,status:'approved'}:m));
+    showToast('✓ Anúncio aprovado e publicado!');
+  };
+
+  const rejectMarket = async (row) => {
+    if(!confirm(`Rejeitar e excluir "${row.name||row.type}"? Não pode ser desfeito.`)) return;
+    const {error} = await window.sb.from('marketplace').delete().eq('id',row.id);
+    if(error){ showToast('Erro: '+error.message,false); return; }
+    setMarket(p=>p.filter(m=>m.id!==row.id));
+    showToast('Anúncio rejeitado e removido.');
+  };
+
+  const toggleAdmin = async (row) => {
+    const newRole = row.role==='admin'?'user':'admin';
+    if(!confirm(`${newRole==='admin'?'Promover':'Rebaixar'} ${row.name||row.email}?`)) return;
+    const {error} = await window.sb.from('profiles').update({role:newRole}).eq('id',row.id);
+    if(error){ showToast('Erro: '+error.message,false); return; }
+    showToast(newRole==='admin'?'Promovido a admin.':'Admin removido.');
+    fetchAll();
+  };
+
+  const toggleVerified = async (row) => {
+    const newVal = !row.verified;
+    const {error} = await window.sb.from('profiles')
+      .update({ verified: newVal, verification_requested: false })
+      .eq('id', row.id);
+    if(error){ showToast('❌ '+error.message, false); return; }
+    setUsers(p => p.map(u => u.id===row.id ? {...u, verified:newVal, verification_requested:false} : u));
+    showToast(newVal ? '✓ Usuário verificado — badge verde ativado.' : 'Verificação removida.');
+  };
+
+  const pendingCount  = market.filter(m=>!m.status||m.status==='pending').length;
+  const disputeCount  = disputes.filter(d=>d.status==='pending').length;
+  const verifyCount   = users.filter(u=>u.verification_requested && !u.verified).length;
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
+  const fmtDateTime = (d) => d ? new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+
+  const resolveDispute = (row) => { setResolveModal(row); };
+
+  const saveAdminNote = async (disputeId) => {
+    const note = editingNote[disputeId] ?? '';
+    const { error } = await window.sb.from('dispute_reports').update({ admin_note: note }).eq('id', disputeId);
+    if (error) { showToast('❌ '+error.message, false); return; }
+    setDisputes(p => p.map(d => d.id===disputeId ? {...d, admin_note: note} : d));
+    showToast('✓ Nota salva.');
+  };
+
+  const navItems = [
+    { id:'dashboard', label:'Painel',       icon:IC.dash,   badge:0 },
+    { id:'users',     label:'Usuários',     icon:IC.users,  badge:verifyCount },
+    { id:'jobs',      label:'Vagas',        icon:IC.jobs,   badge:0 },
+    { id:'techs',     label:'Técnicos',     icon:IC.techs,  badge:0 },
+    { id:'market',    label:'Marketplace',  icon:IC.market, badge:pendingCount },
+    { id:'vacations', label:'Férias',       icon:IC.vac,    badge:0 },
+    { id:'disputes',  label:'Reclamações',  icon:IC.flag,   badge:disputeCount },
+  ];
+
+  const sectionLabel = navItems.find(n=>n.id===section)?.label || '';
+
+  const goSection = (id) => { setSection(id); setNavOpen(false); };
+
+  // ── Colunas das tabelas ──
+  const statusBadge = (v) => (
+    <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:999,
+      background:v==='approved'?'#22c55e20':'#f59e0b20',
+      color:v==='approved'?'#22c55e':'#f59e0b'}}>
+      {v==='approved'?'✓ Aprovado':'⏳ Pendente'}
+    </span>
+  );
+  const mktCols = [
+    {key:'status',      label:'Status',    render: statusBadge},
+    {key:'type',        label:'Tipo',      render: v => v==='sell'?'Venda':v==='rent'?'Aluguel':v==='route'?'Rota':v},
+    {key:'name',        label:'Nome / Rota'},
+    {key:'cat',         label:'Categoria'},
+    {key:'price',       label:'Preço',     render:(v,r)=>r.price_mode==='neg'?'🤝 Neg.':(v?'$'+v:'—')},
+    {key:'description', label:'Descrição', render:v=>v?<span style={{color:'#94a3b8',fontSize:11.5}}>{v.slice(0,50)}{v.length>50?'…':''}</span>:<span style={{color:'#334155',fontSize:11}}>—</span>},
+    {key:'photo_urls',  label:'Fotos',     render:(v,r)=>{const p=(v&&v.length>0)?v:(r.photo_url?[r.photo_url]:[]);return p.length>0?<span style={{fontSize:11,fontWeight:700,color:'#0EBAC7'}}>📷 {p.length}</span>:<span style={{fontSize:11,color:'#334155'}}>Sem foto</span>;}},
+    {key:'author',      label:'Autor'},
+    {key:'created_at',  label:'Publicado', render:fmtDate},
+  ];
+
+  return (
+    <div style={{display:'flex', minHeight:'100vh'}}>
+
+      {/* ── Sidebar ── */}
+      <div className={`nav-overlay${navOpen?' open':''}`} onClick={()=>setNavOpen(false)}/>
+      <div className={`admin-sidebar${navOpen?' open':''}`}>
+        <div style={{padding:'18px 16px 14px', borderBottom:'1px solid #1e293b', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontWeight:800, fontSize:15, color:'#f1f5f9'}}>PoolGuyX</div>
+            <div style={{fontSize:11, color:'#0EBAC7', fontWeight:600, marginTop:1}}>Painel Admin</div>
+          </div>
+          <button onClick={()=>setNavOpen(false)} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',display:'none',padding:4}} className="sidebar-close">{IC.close}</button>
+        </div>
+        <nav style={{flex:1, padding:'10px 8px', display:'flex', flexDirection:'column', gap:2, overflowY:'auto'}}>
+          {navItems.map(n => (
+            <button key={n.id} onClick={()=>goSection(n.id)} style={{
+              display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, border:'none',
+              background: section===n.id?'#0EBAC715':'transparent',
+              color: section===n.id?'#0EBAC7':'#64748b',
+              fontWeight: section===n.id?600:500, fontSize:13.5, textAlign:'left', width:'100%',
+              transition:'all .15s',
+            }}>
+              {n.icon}
+              <span style={{flex:1}}>{n.label}</span>
+              {n.badge>0 && <span style={{background:'#f59e0b',color:'#000',fontSize:10,fontWeight:800,padding:'1px 6px',borderRadius:999,minWidth:18,textAlign:'center'}}>{n.badge}</span>}
+            </button>
+          ))}
+        </nav>
+        <div style={{padding:'10px 8px 16px', borderTop:'1px solid #1e293b'}}>
+          <button onClick={fetchAll} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',borderRadius:10,border:'none',background:'transparent',color:'#64748b',fontSize:13,fontWeight:500,width:'100%',textAlign:'left',transition:'all .15s',cursor:'pointer'}}
+            onMouseEnter={e=>e.currentTarget.style.color='#94a3b8'} onMouseLeave={e=>e.currentTarget.style.color='#64748b'}>
+            {IC.refresh} Atualizar dados
+          </button>
+          <div style={{fontSize:11,color:'#475569',padding:'4px 12px',marginBottom:4,fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{adminUser.email}</div>
+          <button onClick={onLogout} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',borderRadius:10,border:'none',background:'transparent',color:'#64748b',fontSize:13,fontWeight:500,width:'100%',textAlign:'left',transition:'all .15s',cursor:'pointer'}}
+            onMouseEnter={e=>{e.currentTarget.style.color='#ef4444';e.currentTarget.style.background='rgba(239,68,68,0.08)';}}
+            onMouseLeave={e=>{e.currentTarget.style.color='#64748b';e.currentTarget.style.background='transparent';}}>
+            {IC.logout} Sair
+          </button>
+        </div>
+      </div>
+
+      {/* ── Área principal ── */}
+      <div className="admin-main" style={{marginLeft:220, flex:1, minWidth:0}}>
+
+        {/* Top bar — mobile */}
+        <div className="admin-top-bar">
+          <button className="hamburger" onClick={()=>setNavOpen(true)}>{IC.menu}</button>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{width:28,height:28,borderRadius:8,background:'linear-gradient(135deg,#0EBAC7,#0D7280)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:12}}>PX</div>
+            <span style={{fontWeight:700,fontSize:14,color:'#f1f5f9'}}>{sectionLabel}</span>
+          </div>
+          <button onClick={fetchAll} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',padding:6}}>{IC.refresh}</button>
+        </div>
+
+        {/* Conteúdo das seções */}
+        <div style={{padding:'28px 28px'}}>
+
+          {/* ── Painel ── */}
+          {section==='dashboard' && (
+            <div>
+              <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>Painel</h1>
+              <p style={{fontSize:13,color:'#64748b',marginBottom:18}}>Visão geral de toda atividade no PoolGuyX.</p>
+
+              {pendingCount>0 && (
+                <div onClick={()=>goSection('market')} style={{background:'#f59e0b18',border:'1px solid #f59e0b40',borderRadius:14,padding:'13px 16px',marginBottom:20,cursor:'pointer',display:'flex',alignItems:'center',gap:12,transition:'background .15s'}}>
+                  <div style={{width:38,height:38,borderRadius:10,background:'#f59e0b20',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>⏳</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:700,fontSize:13.5,color:'#f59e0b'}}>{pendingCount} anúncio{pendingCount>1?'s':''} aguardando aprovação</div>
+                    <div style={{fontSize:12,color:'#94a3b8',marginTop:1}}>Toque para revisar e aprovar ou rejeitar</div>
+                  </div>
+                  <div style={{fontSize:18,color:'#f59e0b',opacity:0.7}}>→</div>
+                </div>
+              )}
+
+              <div className="stat-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:12,marginBottom:24}}>
+                <StatCard label="Total de Usuários"  value={stats.users}  color="#0EBAC7" icon={IC.users}/>
+                <StatCard label="Vagas"              value={stats.jobs}   color="#6366f1" icon={IC.jobs}/>
+                <StatCard label="Técnicos"           value={stats.techs}  color="#10b981" icon={IC.techs}/>
+                <StatCard label="Marketplace"        value={stats.market} color="#f59e0b" icon={IC.market}/>
+                <StatCard label="Rotas de Férias"    value={stats.vacs}   color="#ec4899" icon={IC.vac}/>
+              </div>
+
+              <div style={{background:'#1a1f2e',borderRadius:14,padding:'18px 20px',border:'1px solid #1e293b'}}>
+                <div style={{fontWeight:600,fontSize:14,color:'#f1f5f9',marginBottom:3}}>Usuários Recentes</div>
+                <div style={{fontSize:12,color:'#64748b',marginBottom:14}}>Últimos 5 cadastros</div>
+                {users.slice(0,5).map(u=>(
+                  <div key={u.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 0',borderBottom:'1px solid #1e293b20'}}>
+                    <div style={{minWidth:0,flex:1}}>
+                      <div style={{fontWeight:600,fontSize:13,color:'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.name||'—'}</div>
+                      <div style={{fontSize:11,color:'#64748b'}}>{u.region||'Sem região'} · {fmtDate(u.created_at)}</div>
+                    </div>
+                    <span style={{fontSize:11,fontWeight:700,padding:'2px 9px',borderRadius:999,background:u.role==='admin'?'#0EBAC720':'#1e293b',color:u.role==='admin'?'#0EBAC7':'#475569',flexShrink:0,marginLeft:8}}>{u.role}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Usuários ── */}
+          {section==='users' && (
+            <div>
+              <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>
+                Usuários <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({users.length})</span>
+                {verifyCount > 0 && <span style={{fontSize:12,fontWeight:700,padding:'2px 10px',borderRadius:999,background:'rgba(245,158,11,0.2)',color:'#F59E0B',border:'1px solid rgba(245,158,11,0.4)',marginLeft:10}}>{verifyCount} verificação{verifyCount!==1?'ões':''} pendente{verifyCount!==1?'s':''}</span>}
+              </h1>
+              <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Todas as contas cadastradas. Clique em ✓ Verificar para ativar o badge verde de identidade verificada.</p>
+
+              {/* Pending verification requests highlighted */}
+              {verifyCount > 0 && (
+                <div style={{marginBottom:16,display:'flex',flexDirection:'column',gap:8}}>
+                  <div style={{fontSize:11,fontWeight:700,color:'#F59E0B',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>⏳ Aguardando aprovação de verificação</div>
+                  {users.filter(u=>u.verification_requested&&!u.verified).map(u=>(
+                    <div key={u.id} style={{background:'#1a1f2e',borderRadius:12,border:'1px solid rgba(245,158,11,0.4)',padding:'12px 16px',display:'flex',alignItems:'center',gap:12}}>
+                      {u.photo_url
+                        ? <img src={u.photo_url} alt="" style={{width:40,height:40,borderRadius:'50%',objectFit:'cover',flexShrink:0}}/>
+                        : <div style={{width:40,height:40,borderRadius:'50%',background:'#0EBAC720',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:700,color:'#0EBAC7',flexShrink:0}}>{(u.name||u.email||'?')[0].toUpperCase()}</div>
+                      }
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{u.name||'—'}</div>
+                        <div style={{fontSize:11,color:'#64748b'}}>{u.email} {u.phone?'· '+u.phone:''}</div>
+                      </div>
+                      <button className="act-btn act-btn-ok" onClick={()=>toggleVerified(u)} style={{flexShrink:0}}>
+                        ✓ Verificar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',overflow:'hidden'}}>
+                <DataTable loading={loading} rows={users}
+                  columns={[
+                    {key:'name', label:'Nome', render:(v,row)=>(
+                      <button onClick={()=>setViewUserModal({userId:row.id, userName:row.name})}
+                        style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',
+                          fontSize:13,fontWeight:600,color:'#0EBAC7',padding:0,textAlign:'left',
+                          textDecoration:'underline',textDecorationColor:'rgba(14,186,199,0.35)',
+                          textUnderlineOffset:3,whiteSpace:'nowrap',maxWidth:150,overflow:'hidden',textOverflow:'ellipsis',display:'block'}}>
+                        {v||'—'}
+                      </button>
+                    )},
+                    {key:'email',      label:'E-mail'},
+                    {key:'phone',      label:'Telefone'},
+                    {key:'verified',   label:'Verificado', render:(v,row)=>(
+                      <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:999,
+                        background:v?'rgba(22,163,74,0.15)':'transparent',
+                        color:v?'#22c55e':row.verification_requested?'#F59E0B':'#475569',
+                        border:`1px solid ${v?'rgba(22,163,74,0.4)':row.verification_requested?'rgba(245,158,11,0.4)':'#1e293b'}`}}>
+                        {v?'✓ Verificado':row.verification_requested?'⏳ Pendente':'—'}
+                      </span>
+                    )},
+                    {key:'role',       label:'Papel'},
+                    {key:'created_at', label:'Cadastrado', render:fmtDate},
+                  ]}
+                  onDelete={row=>deleteRow('profiles',row)}
+                  onPromote={toggleAdmin}
+                  onVerify={toggleVerified}
+                  onView={row=>setViewUserModal({userId:row.id, userName:row.name})}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Vagas ── */}
+          {section==='jobs' && (
+            <div>
+              <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>Vagas <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({jobs.length})</span></h1>
+              <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Todas as vagas publicadas.</p>
+              <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',overflow:'hidden'}}>
+                <DataTable loading={loading} rows={jobs}
+                  columns={[
+                    {key:'role',       label:'Função'},
+                    {key:'loc',        label:'Localização'},
+                    {key:'contract',   label:'Contrato'},
+                    {key:'pay',        label:'Pagamento'},
+                    {key:'author',     label:'Autor'},
+                    {key:'created_at', label:'Publicado', render:fmtDate},
+                  ]}
+                  onDelete={row=>deleteRow('jobs',row)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Técnicos ── */}
+          {section==='techs' && (
+            <div>
+              <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>Técnicos <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({techs.length})</span></h1>
+              <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Todos os perfis de técnicos.</p>
+              <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',overflow:'hidden'}}>
+                <DataTable loading={loading} rows={techs}
+                  columns={[
+                    {key:'name',       label:'Nome'},
+                    {key:'specialty',  label:'Especialidade'},
+                    {key:'loc',        label:'Localização'},
+                    {key:'phone',      label:'Telefone'},
+                    {key:'rate',       label:'Valor/hr'},
+                    {key:'author',     label:'Autor'},
+                    {key:'created_at', label:'Publicado', render:fmtDate},
+                  ]}
+                  onDelete={row=>deleteRow('techs',row)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Marketplace ── */}
+          {section==='market' && (()=>{
+            const pendingRows  = market.filter(m=>!m.status||m.status==='pending');
+            const approvedRows = market.filter(m=>m.status==='approved');
+            const displayRows  = marketTab==='pending'?pendingRows:marketTab==='approved'?approvedRows:market;
+            return (
+              <div>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4,flexWrap:'wrap'}}>
+                  <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9'}}>Marketplace</h1>
+                  {pendingRows.length>0 && <span style={{background:'#f59e0b',color:'#000',fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:999}}>{pendingRows.length} pendente{pendingRows.length>1?'s':''}</span>}
+                </div>
+                <p style={{fontSize:13,color:'#64748b',marginBottom:16}}>Revise e aprove os anúncios antes de irem ao ar.</p>
+
+                {/* Tabs */}
+                <div style={{display:'flex',gap:7,marginBottom:18,flexWrap:'wrap'}}>
+                  {[
+                    {id:'pending',  label:`⏳ Pendentes (${pendingRows.length})`},
+                    {id:'approved', label:`✓ Aprovados (${approvedRows.length})`},
+                    {id:'all',      label:`Todos (${market.length})`},
+                  ].map(tab=>(
+                    <button key={tab.id} onClick={()=>setMarketTab(tab.id)} style={{
+                      padding:'7px 14px',borderRadius:10,border:'none',cursor:'pointer',fontFamily:'inherit',
+                      fontSize:12.5,fontWeight:600,transition:'all .15s',
+                      background:marketTab===tab.id?(tab.id==='pending'?'#f59e0b':tab.id==='approved'?'#22c55e':'#0EBAC7'):'#1a1f2e',
+                      color:marketTab===tab.id?'#000':'#64748b',
+                      border:marketTab===tab.id?'none':'1px solid #1e293b',
+                    }}>{tab.label}</button>
+                  ))}
+                </div>
+
+                {/* Estado vazio */}
+                {marketTab==='pending' && pendingRows.length===0 && (
+                  <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',padding:'40px 20px',textAlign:'center'}}>
+                    <div style={{fontSize:32,marginBottom:10}}>✅</div>
+                    <div style={{fontWeight:700,fontSize:15,color:'#f1f5f9',marginBottom:4}}>Tudo em dia!</div>
+                    <div style={{fontSize:13,color:'#64748b'}}>Nenhum anúncio aguardando aprovação.</div>
+                  </div>
+                )}
+
+                {/* Tabela */}
+                {displayRows.length>0 && (
+                  <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',overflow:'hidden'}}>
+                    <DataTable loading={loading} rows={displayRows} columns={mktCols}
+                      onView={row=>setViewRow(row)}
+                      onApprove={approveMarket}
+                      onReject={rejectMarket}
+                      onEdit={row=>setEditRow(row)}
+                      onDelete={row=>deleteRow('marketplace',row)}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* ── Férias ── */}
+          {section==='vacations' && (
+            <div>
+              <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>Rotas de Férias <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({vacs.length})</span></h1>
+              <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Todas as rotas de férias publicadas.</p>
+              <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',overflow:'hidden'}}>
+                <DataTable loading={loading} rows={vacs}
+                  columns={[
+                    {key:'month_idx', label:'Mês', render:(v,r)=>{const m=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return (m[v]||v)+' '+(r.year||'');}},
+                    {key:'price',      label:'Preço'},
+                    {key:'price_mode', label:'Modo'},
+                    {key:'author',     label:'Autor'},
+                    {key:'created_at', label:'Publicado', render:fmtDate},
+                  ]}
+                  onDelete={row=>deleteRow('vacations',row)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Reclamações ── */}
+          {section==='disputes' && (()=>{
+            const sevColor = { minor:'#EAB308', serious:'#F59E0B', critical:'#EF4444' };
+            const sevLabel = { minor:'🟡 Leve', serious:'🟠 Sério', critical:'🔴 Crítico' };
+            const stColor  = { pending:'#F59E0B', resolved:'#22c55e' };
+            const guideText = {
+              minor:    '💡 Resolução sugerida: Entre em contato com as partes por e-mail/telefone e ouça os dois lados. Geralmente resolvido com conversa.',
+              serious:  '⚠️ Resolução sugerida: Solicite fotos de evidência às partes. Se confirmado dano, aplique aviso ao renter. Reincidência = banimento.',
+              critical: '🚨 Resolução sugerida: Item não devolvido é crime (apropriação indébita). Colete prints do chat, fotos antes/depois e ID. Considere banimento imediato e oriente o proprietário a registrar B.O.',
+            };
+            const pendingDisputes  = disputes.filter(d => d.status === 'pending');
+            const resolvedDisputes = disputes.filter(d => d.status !== 'pending');
+            const visibleDisputes  = disputeTab === 'pending' ? pendingDisputes : resolvedDisputes;
+            return (
+              <div>
+                <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>
+                  Reclamações
+                </h1>
+                <p style={{fontSize:13,color:'#64748b',marginBottom:16}}>Reports de problemas em aluguéis. Clique nos nomes para ver perfil completo.</p>
+
+                {/* Tabs */}
+                <div style={{display:'flex',gap:6,marginBottom:20}}>
+                  {[
+                    { id:'pending',  label:'Pendentes',  count: pendingDisputes.length,  color:'#F59E0B' },
+                    { id:'resolved', label:'Resolvidos', count: resolvedDisputes.length, color:'#22c55e' },
+                  ].map(tab => (
+                    <button key={tab.id} onClick={()=>setDisputeTab(tab.id)} style={{
+                      padding:'7px 16px', borderRadius:10, border:'none', cursor:'pointer',
+                      fontFamily:'inherit', fontSize:13, fontWeight:700, transition:'all .15s',
+                      background: disputeTab===tab.id ? tab.color+'22' : '#1a1f2e',
+                      color: disputeTab===tab.id ? tab.color : '#64748b',
+                      outline: disputeTab===tab.id ? `1.5px solid ${tab.color}55` : '1.5px solid #1e293b',
+                      display:'flex', alignItems:'center', gap:7,
+                    }}>
+                      {tab.label}
+                      <span style={{
+                        fontSize:11, fontWeight:800, padding:'1px 7px', borderRadius:999,
+                        background: disputeTab===tab.id ? tab.color+'33' : '#0f1117',
+                        color: disputeTab===tab.id ? tab.color : '#475569',
+                      }}>{tab.count}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {visibleDisputes.length === 0 && !loading && (
+                  <div style={{padding:48,textAlign:'center',color:'#475569',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:32,marginBottom:8}}>{disputeTab==='pending'?'✅':'📂'}</div>
+                    <div style={{fontWeight:600}}>
+                      {disputeTab==='pending' ? 'Nenhuma reclamação pendente.' : 'Nenhuma reclamação resolvida ainda.'}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                  {visibleDisputes.map(d => {
+                    const isPending = d.status === 'pending';
+                    const noteVal = editingNote[d.id] ?? (d.admin_note || '');
+                    const reportedWarnPts = warnings.filter(w=>w.user_id===d.reported_user_id).reduce((s,w)=>s+({leve:1,medio:2,grave:5,warning:1,suspension:3,banned:5}[w.severity]||1),0);
+                    return (
+                      <div key={d.id} style={{
+                        background:'#1a1f2e',borderRadius:16,
+                        border:`1px solid ${isPending ? sevColor[d.severity]+'50' : '#1e293b'}`,
+                        overflow:'hidden',
+                      }}>
+                        {/* Severity strip */}
+                        <div style={{height:3,background:isPending?sevColor[d.severity]:'#1e293b'}}/>
+                        <div style={{padding:'16px 18px'}}>
+
+                          {/* Header row */}
+                          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:10}}>
+                            <span style={{fontSize:12,fontWeight:800,padding:'3px 10px',borderRadius:999,
+                              background:sevColor[d.severity]+'20',color:sevColor[d.severity],border:'1px solid '+sevColor[d.severity]+'40'}}>
+                              {sevLabel[d.severity]||d.severity}
+                            </span>
+                            <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,
+                              background:(stColor[d.status]||'#64748b')+'20',color:stColor[d.status]||'#64748b',
+                              border:'1px solid '+(stColor[d.status]||'#334155')+'40'}}>
+                              {d.status==='pending'?'⏳ Pendente':'✓ Resolvido'}
+                            </span>
+                            <span style={{fontSize:11,color:'#475569',marginLeft:'auto'}}>{fmtDateTime(d.created_at)}</span>
+                          </div>
+
+                          {/* Listing */}
+                          <div style={{fontSize:14,fontWeight:700,color:'#f1f5f9',marginBottom:10}}>
+                            📋 {d.listing_name||'Item de aluguel'}
+                          </div>
+
+                          {/* Parties — CLICKABLE names */}
+                          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+                            <button onClick={()=>setViewUserModal({userId:d.reporter_id,userName:d.reporter_name,disputeRequestId:d.rental_request_id})}
+                              style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit',transition:'border-color .15s'}}
+                              onMouseEnter={e=>e.currentTarget.style.borderColor='#0EBAC7'} onMouseLeave={e=>e.currentTarget.style.borderColor='#1e293b'}>
+                              <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>👤 Proprietário (reportou)</div>
+                              <div style={{fontSize:13,fontWeight:700,color:'#0EBAC7'}}>{d.reporter_name||'—'}</div>
+                              <div style={{fontSize:10,color:'#475569',marginTop:2}}>Clique para ver perfil</div>
+                            </button>
+                            <button onClick={()=>setViewUserModal({userId:d.reported_user_id,userName:d.reported_name,disputeRequestId:d.rental_request_id})}
+                              style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit',transition:'border-color .15s'}}
+                              onMouseEnter={e=>e.currentTarget.style.borderColor='#ef4444'} onMouseLeave={e=>e.currentTarget.style.borderColor='#1e293b'}>
+                              <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>⚠ Renter (reportado)</div>
+                              <div style={{fontSize:13,fontWeight:700,color:'#f87171'}}>{d.reported_name||'—'}</div>
+                              {reportedWarnPts > 0 && (
+                                <div style={{fontSize:10,fontWeight:700,color:reportedWarnPts>=5?'#ef4444':'#f97316',marginTop:3,padding:'1px 7px',borderRadius:999,
+                                  background:reportedWarnPts>=5?'#ef444415':'#f9741615',border:`1px solid ${reportedWarnPts>=5?'#ef444430':'#f9741630'}`,display:'inline-block'}}>
+                                  ⚠️ {reportedWarnPts}/5 pts{reportedWarnPts>=5?' · BANIDO':''}
+                                </div>
+                              )}
+                              <div style={{fontSize:10,color:'#475569',marginTop:2}}>Clique para ver perfil</div>
+                            </button>
+                          </div>
+
+                          {/* Description */}
+                          <div style={{background:'#0f1117',borderRadius:10,padding:'10px 12px',marginBottom:12,border:'1px solid #1e293b'}}>
+                            <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>DESCRIÇÃO DO PROBLEMA</div>
+                            <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.65,whiteSpace:'pre-wrap'}}>{d.description}</div>
+                          </div>
+
+                          {/* Evidence photos */}
+                          {d.evidence_urls && d.evidence_urls.length > 0 && (
+                            <div style={{marginBottom:12}}>
+                              <div style={{fontSize:10,fontWeight:700,color:'#3B82F6',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>
+                                📎 PROVAS ENVIADAS ({d.evidence_urls.length} foto{d.evidence_urls.length!==1?'s':''})
+                              </div>
+                              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                                {d.evidence_urls.map((url,i)=>(
+                                  <a key={i} href={url} target="_blank" rel="noreferrer">
+                                    <img src={url} alt={`Prova ${i+1}`} style={{
+                                      width:90,height:90,objectFit:'cover',borderRadius:10,
+                                      border:'2px solid #3B82F650',cursor:'pointer',
+                                      transition:'border-color .15s',
+                                    }}
+                                    onMouseEnter={e=>e.currentTarget.style.borderColor='#3B82F6'}
+                                    onMouseLeave={e=>e.currentTarget.style.borderColor='#3B82F650'}/>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Resolution guide */}
+                          {isPending && (
+                            <div style={{background:`rgba(${d.severity==='critical'?'239,68,68':d.severity==='serious'?'245,158,11':'234,179,8'},0.06)`,
+                              borderRadius:10,padding:'10px 12px',marginBottom:12,
+                              border:`1px solid rgba(${d.severity==='critical'?'239,68,68':d.severity==='serious'?'245,158,11':'234,179,8'},0.2)`,
+                              fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+                              {guideText[d.severity]||guideText.serious}
+                            </div>
+                          )}
+
+                          {/* Admin note */}
+                          <div style={{marginBottom:12}}>
+                            <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:6}}>📝 Nota interna (admin)</div>
+                            <textarea
+                              value={noteVal}
+                              onChange={e=>setEditingNote(prev=>({...prev,[d.id]:e.target.value}))}
+                              placeholder="Anote aqui o que foi decidido, histórico de contato, etc..."
+                              rows={2}
+                              style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:9,
+                                color:'#cbd5e1',fontFamily:'inherit',fontSize:12.5,padding:'9px 11px',
+                                resize:'vertical',boxSizing:'border-box',outline:'none',lineHeight:1.5}}
+                            />
+                            {noteVal !== (d.admin_note||'') && (
+                              <button onClick={()=>saveAdminNote(d.id)}
+                                style={{marginTop:5,padding:'5px 14px',borderRadius:8,border:'none',cursor:'pointer',
+                                  background:'#6366f1',color:'#fff',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+                                💾 Salvar nota
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'flex-start'}}>
+                            {isPending && (
+                              <button className="act-btn act-btn-ok" onClick={()=>resolveDispute(d)} style={{padding:'7px 16px',fontSize:12}}>
+                                ✅ Resolver...
+                              </button>
+                            )}
+                            {!isPending && (
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:11,color:'#22c55e',fontWeight:600,marginBottom:4}}>
+                                  ✓ Resolvido{d.resolved_at ? ' em '+fmtDateTime(d.resolved_at) : ''}
+                                  {d.resolution_action && d.resolution_action!=='none' && (
+                                    <span style={{marginLeft:8,fontSize:10,fontWeight:700,padding:'1px 8px',borderRadius:999,
+                                      background:d.resolution_action==='ban'?'#ef444420':d.resolution_action==='suspension'?'#f9741620':'#f59e0b20',
+                                      color:d.resolution_action==='ban'?'#ef4444':d.resolution_action==='suspension'?'#f97316':'#f59e0b',
+                                      border:`1px solid ${d.resolution_action==='ban'?'#ef444440':d.resolution_action==='suspension'?'#f9741640':'#f59e0b40'}`}}>
+                                      {d.resolution_action==='ban'?'🚫 Conta banida':d.resolution_action==='suspension'?'🔒 Suspensão':'⚠️ Aviso'}
+                                    </span>
+                                  )}
+                                </div>
+                                {d.resolution_message && (
+                                  <div style={{fontSize:12,color:'#94a3b8',padding:'8px 10px',background:'#0f1117',
+                                    borderRadius:8,border:'1px solid #1e293b',lineHeight:1.5,fontStyle:'italic'}}>
+                                    📢 "{d.resolution_message}"
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+        </div>{/* fim padding */}
+      </div>{/* fim admin-main */}
+
+      {/* ── Modal resolução de disputa ── */}
+      {resolveModal && (
+        <ResolveDisputeModal
+          dispute={resolveModal}
+          onClose={()=>setResolveModal(null)}
+          showToast={showToast}
+          onResolved={(id, updated) => {
+            setDisputes(p => p.map(d => d.id===id ? {...d,...updated} : d));
+            // Refresh warnings list — setWarnings is in scope here (parent state)
+            if (updated.resolution_action && updated.resolution_action !== 'none') {
+              window.sb.from('user_warnings').select('*').order('created_at',{ascending:false})
+                .then(({data}) => { if(data) setWarnings(data); });
+            }
+            // Notification is now sent inside ResolveDisputeModal.handleConfirm
+            if (updated.resolution_action === 'ban') {
+              setUsers(p => p.filter(u => u.id !== resolveModal.reported_user_id));
+            }
+          }}
+        />
+      )}
+
+      {/* ── Modal perfil usuário (reclamações) ── */}
+      {viewUserModal && (
+        <UserDetailModal
+          userId={viewUserModal.userId}
+          userName={viewUserModal.userName}
+          disputeRequestId={viewUserModal.disputeRequestId}
+          onClose={()=>setViewUserModal(null)}
+        />
+      )}
+
+      {/* ── Modal View ── */}
+      {viewRow && <ViewMarketModal row={viewRow} onClose={()=>setViewRow(null)} onApprove={approveMarket} onReject={rejectMarket}/>}
+
+      {/* ── Modal Edit ── */}
+      {editRow && <EditMarketModal row={editRow} onClose={()=>setEditRow(null)} onSave={(updated)=>{setMarket(p=>p.map(m=>m.id===updated.id?updated:m));setEditRow(null);showToast('✓ Anúncio atualizado!');}}/>}
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div style={{position:'fixed',bottom:24,right:20,left:20,maxWidth:360,margin:'0 auto',padding:'12px 18px',borderRadius:12,background:toast.ok?'#0EBAC7':'#ef4444',color:'#fff',fontWeight:600,fontSize:13.5,boxShadow:'0 8px 24px rgba(0,0,0,0.4)',zIndex:999,textAlign:'center'}}>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* ── Modal RLS ── */}
+      {rlsOpen && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setRlsOpen(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'#1a1f2e',borderRadius:20,padding:'24px 20px',maxWidth:540,width:'100%',border:'1px solid #334155',boxShadow:'0 24px 64px rgba(0,0,0,0.6)',maxHeight:'90vh',overflowY:'auto'}}>
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
+              <div style={{fontSize:24}}>🔒</div>
+              <div>
+                <div style={{fontWeight:700,fontSize:15,color:'#f1f5f9'}}>RLS do Supabase está bloqueando</div>
+                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Execute este SQL no Supabase → SQL Editor:</div>
+              </div>
+            </div>
+            <pre style={{background:'#0f1117',borderRadius:10,padding:'12px 14px',fontSize:11.5,color:'#7dd3fc',overflowX:'auto',lineHeight:1.7,border:'1px solid #1e293b',margin:'0 0 16px'}}>{`-- Dispute reports & Rental requests (admin resolve)
+DROP POLICY IF EXISTS "Admins can update dispute_reports" ON dispute_reports;
+DROP POLICY IF EXISTS "Admins can update rental_requests" ON rental_requests;
+CREATE POLICY "Admins can update dispute_reports" ON dispute_reports FOR UPDATE
+USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can update rental_requests" ON rental_requests FOR UPDATE
+USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+-- User warnings (admin manage)
+DROP POLICY IF EXISTS "Admins manage warnings" ON user_warnings;
+CREATE POLICY "Admins manage warnings" ON user_warnings FOR ALL
+USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+-- Marketplace
+DROP POLICY IF EXISTS "Admins can update marketplace" ON marketplace;
+DROP POLICY IF EXISTS "Admins can delete marketplace" ON marketplace;
+DROP POLICY IF EXISTS "Authors can delete own marketplace" ON marketplace;
+DROP POLICY IF EXISTS "Authors can update own marketplace" ON marketplace;
+CREATE POLICY "Admins can update marketplace" ON marketplace FOR UPDATE
+USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+CREATE POLICY "Admins can delete marketplace" ON marketplace FOR DELETE
+USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+CREATE POLICY "Authors can delete own marketplace" ON marketplace FOR DELETE
+USING (auth.uid() = author_id);
+CREATE POLICY "Authors can update own marketplace" ON marketplace FOR UPDATE
+USING (auth.uid() = author_id) WITH CHECK (auth.uid() = author_id);
+-- Jobs / Techs / Vacations
+DROP POLICY IF EXISTS "Admins can delete jobs" ON jobs;
+DROP POLICY IF EXISTS "Admins can delete techs" ON techs;
+DROP POLICY IF EXISTS "Admins can delete vacations" ON vacations;
+CREATE POLICY "Admins can delete jobs" ON jobs FOR DELETE
+USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+CREATE POLICY "Admins can delete techs" ON techs FOR DELETE
+USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+CREATE POLICY "Admins can delete vacations" ON vacations FOR DELETE
+USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
+-- Profiles (usuarios)
+DROP POLICY IF EXISTS "Admins can delete profiles" ON profiles;
+DROP POLICY IF EXISTS "Admins can update any profile" ON profiles;
+CREATE POLICY "Admins can delete profiles" ON profiles FOR DELETE
+USING (EXISTS (SELECT 1 FROM profiles p2 WHERE p2.id = auth.uid() AND p2.role = 'admin'));
+CREATE POLICY "Admins can update any profile" ON profiles FOR UPDATE
+USING (EXISTS (SELECT 1 FROM profiles p2 WHERE p2.id = auth.uid() AND p2.role = 'admin'))
+WITH CHECK (EXISTS (SELECT 1 FROM profiles p2 WHERE p2.id = auth.uid() AND p2.role = 'admin'));`}</pre>
+            <button onClick={()=>setRlsOpen(false)} style={{width:'100%',padding:'12px',borderRadius:12,border:'none',background:'#0EBAC7',color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer'}}>
+              Entendido — vou executar o SQL
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Root ──────────────────────────────────────────────────────
+function Root() {
+  const [adminUser, setAdminUser] = React.useState(null);
+  const [checking,  setChecking]  = React.useState(true);
+
+  React.useEffect(() => {
+    if(!window.sb){ setChecking(false); return; }
+    window.sb.auth.getSession().then(async({data:{session}})=>{
+      if(session){
+        const {data:profile} = await window.sb.from('profiles').select('role').eq('id',session.user.id).single();
+        if(profile?.role==='admin') setAdminUser(session.user);
+      }
+      setChecking(false);
+    });
+  },[]);
+
+  const handleLogout = async () => { await window.sb.auth.signOut(); setAdminUser(null); };
+
+  if(checking) return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0f1117'}}>
+      <div style={{color:'#64748b',fontSize:14}}>Carregando…</div>
+    </div>
+  );
+
+  if(!adminUser) return <AdminLogin onLogin={(u)=>setAdminUser(u)}/>;
+  return <AdminApp adminUser={adminUser} onLogout={handleLogout}/>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
+</script>
+</body>
+</html>
