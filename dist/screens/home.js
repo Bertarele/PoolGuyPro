@@ -314,7 +314,8 @@ function HomeScreen({
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         height: 118,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        marginTop: -10
       }
     }, /*#__PURE__*/React.createElement(Wordmark, {
       size: "nav",

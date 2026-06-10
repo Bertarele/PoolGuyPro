@@ -182,7 +182,7 @@ function HomeScreen({ ctx }) {
 
             {/* Top row: logo + buttons */}
             <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0px 18px 0', position:'relative', zIndex:1, marginTop:-18}}>
-              <div style={{height:118, overflow:'hidden'}}>
+              <div style={{height:118, overflow:'hidden', marginTop:-10}}>
                 <Wordmark size="nav" onDark={darkMode}/>
               </div>
               <div style={{display:'flex', alignItems:'center', gap:8}}>
