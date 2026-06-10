@@ -3624,7 +3624,7 @@ function MarketplaceScreen({ ctx }) {
       <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
       <div style={{height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
 
-        {/* ── HERO HEADER ───────────────────────────────────────── */}
+        {/* ── HERO HEADER — compacto ────────────────────────────── */}
         {(function(){
           const _tx  = darkMode ? '#fff'                      : '#0A2840';
           const _sub = darkMode ? 'rgba(255,255,255,0.50)'    : 'rgba(10,40,64,0.50)';
@@ -3638,159 +3638,134 @@ function MarketplaceScreen({ ctx }) {
             ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)'
             : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)';
           return (
-            <div style={{background:_bg, padding:'28px 40px 32px', position:'relative', overflow:'hidden'}}>
+            <div style={{background:_bg, padding:'18px 40px 22px', position:'relative', overflow:'hidden'}}>
               <div style={{position:'absolute', top:-60, right:-60, width:220, height:220,
                 borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.04)':'rgba(10,40,64,0.03)', pointerEvents:'none'}}/>
               <div style={{position:'absolute', bottom:-40, left:200, width:160, height:160,
                 borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.03)':'rgba(10,40,64,0.02)', pointerEvents:'none'}}/>
 
-              {/* Top row: branding + actions */}
-              <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24}}>
-                <div style={{display:'flex', alignItems:'center', gap:14}}>
-                  <div style={{width:52, height:52, borderRadius:16, flexShrink:0,
+              {/* Single row: icon+title · stats · county · actions */}
+              <div style={{display:'flex', alignItems:'center', gap:20}}>
+                {/* Brand */}
+                <div style={{display:'flex', alignItems:'center', gap:12, flexShrink:0}}>
+                  <div style={{width:42, height:42, borderRadius:13, flexShrink:0,
                     background:_ib, border:_ibr,
                     display:'flex', alignItems:'center', justifyContent:'center'}}>
-                    {Icon.cart(24,_tx)}
+                    {Icon.cart(20,_tx)}
                   </div>
                   <div>
-                    <div style={{fontSize:10.5, fontWeight:700, color:_sub,
-                      letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:3}}>
+                    <div style={{fontSize:9.5, fontWeight:700, color:_sub,
+                      letterSpacing:'0.13em', textTransform:'uppercase', marginBottom:2}}>
                       {lang==='pt'?'MARKETPLACE · SUL DA FLÓRIDA':'MARKETPLACE · SOUTH FLORIDA'}
                     </div>
-                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:28, fontWeight:800,
-                      color:_tx, letterSpacing:'-0.03em', lineHeight:1}}>
+                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800,
+                      color:_tx, letterSpacing:'-0.025em', lineHeight:1}}>
                       {lang==='pt'?'Sul da Flórida':'South Florida'}
-                    </div>
-                    <div style={{fontSize:13, color:_sub2, marginTop:4}}>
-                      {lang==='pt'?'Compra, aluguel e rotas de piscinas':'Buy, rent and pool routes in Broward · Dade · Palm Beach'}
                     </div>
                   </div>
                 </div>
 
-                {/* Right actions */}
-                <div style={{display:'flex', gap:10, alignItems:'center'}}>
+                {/* Divider */}
+                <div style={{width:1, height:32, background: darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)', flexShrink:0}}/>
+
+                {/* Stats inline */}
+                <div style={{display:'flex', alignItems:'center', gap:16, flex:1}}>
+                  {[
+                    { icon: Icon.cart(13,_sub2), value: totalItems,  label: lang==='pt'?'itens':'items' },
+                    { icon: Icon.pin(13,_sub2),  value: totalRoutes, label: lang==='pt'?'rotas':'routes' },
+                  ].map((s,i) => (
+                    <div key={i} style={{display:'flex', alignItems:'center', gap:6}}>
+                      {i > 0 && <div style={{width:1, height:18, background: darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)', marginRight:10}}/>}
+                      {s.icon}
+                      <span style={{fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:800, color:_tx, letterSpacing:'-0.02em'}}>{s.value}</span>
+                      <span style={{fontSize:11, color:_sub, fontWeight:500}}>{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* County + actions */}
+                <div style={{display:'flex', alignItems:'center', gap:8, flexShrink:0}}>
+                  <button onClick={()=>setCountyPickerOpen(true)} style={{display:'flex', alignItems:'center', gap:6,
+                    background:_locBg, border:_locBr,
+                    borderRadius:999, padding:'6px 12px',
+                    cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+                    {Icon.pin(12,_sub)}
+                    <span style={{fontSize:12, fontWeight:600, color:_locTx, whiteSpace:'nowrap'}}>
+                      {countyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):countyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
+                    </span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
                   <div style={{position:'relative'}}>
                     <button onClick={()=>openChat&&openChat()} style={{
-                      width:44, height:44, borderRadius:13,
+                      width:38, height:38, borderRadius:11,
                       background:_ib, border:_ibr,
                       cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s',
                     }}>
-                      {Icon.msg(20,_tx)}
+                      {Icon.msg(18,_tx)}
                     </button>
-                    {hasUnreadChat && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
+                    {hasUnreadChat && <span style={{position:'absolute', top:7, right:7, width:7, height:7,
                       borderRadius:'50%', background:'#FF3B30', border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
                   </div>
                   <button onClick={()=>{ setPostOpen(true); setPostMode(null); }} style={{
-                    height:44, padding:'0 20px', borderRadius:13,
-                    background: darkMode ? 'var(--pg-white)' : '#0077B6',
+                    height:38, padding:'0 16px', borderRadius:11,
+                    background: darkMode ? 'rgba(255,255,255,0.95)' : '#0077B6',
                     border:'none', cursor:'pointer',
-                    fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700,
-                    color: darkMode ? 'var(--pg-blue-700)' : '#fff',
-                    display:'flex', alignItems:'center', gap:8,
-                    boxShadow:'0 4px 16px rgba(0,0,0,0.15)', transition:'all .15s',
+                    fontFamily:'var(--pg-font-display)', fontSize:13, fontWeight:700,
+                    color: darkMode ? '#023E8A' : '#fff',
+                    display:'flex', alignItems:'center', gap:7,
+                    boxShadow:'0 3px 12px rgba(0,0,0,0.18)', transition:'all .15s',
                   }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
                   </button>
                 </div>
               </div>
+            </div>
+          );
+        })()}
 
-              {/* Search bar */}
-              {isEquipment && (
-                <div style={{position:'relative', marginBottom:20}}>
-                  <div style={{position:'absolute', left:18, top:'50%', transform:'translateY(-50%)',
-                    color:_sub, pointerEvents:'none'}}>
-                    {Icon.search(18)}
-                  </div>
-                  <input
-                    value={q} onChange={e=>setQ(e.target.value)}
-                    placeholder={lang==='pt'?'Buscar equipamentos...':lang==='es'?'Buscar equipos...':'Search equipment...'}
-                    style={{
-                      width:'100%', height:50, paddingLeft:50, paddingRight:20,
-                      borderRadius:14, border: darkMode ? '1px solid rgba(255,255,255,0.20)' : '1px solid rgba(10,40,64,0.18)',
-                      background: darkMode ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.70)',
-                      backdropFilter:'blur(10px)',
-                      color:_tx, fontSize:15, fontFamily:'inherit', outline:'none',
-                      boxSizing:'border-box',
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Stats + county row */}
-              <div style={{display:'flex', alignItems:'center', gap:20, marginBottom:20}}>
+        {/* ── TABS FLUTUANTES — centralizados abaixo do header ─── */}
+        {(function(){
+          const _tabBg   = darkMode ? 'rgba(4,13,24,0.82)'  : 'rgba(255,255,255,0.92)';
+          const _tabBdr  = darkMode ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(10,40,64,0.10)';
+          const _activeBg= darkMode ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'linear-gradient(135deg,#0077B6,#005A8E)';
+          const _inactTx = darkMode ? 'rgba(255,255,255,0.50)' : 'rgba(10,40,64,0.48)';
+          return (
+            <div style={{display:'flex', justifyContent:'center', padding:'18px 0 4px', position:'relative', zIndex:10}}>
+              <div style={{
+                display:'inline-flex', alignItems:'center', gap:3,
+                background:_tabBg,
+                backdropFilter:'blur(20px)',
+                border:_tabBdr,
+                borderRadius:20, padding:5,
+                boxShadow: darkMode
+                  ? '0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.30)'
+                  : '0 8px 32px rgba(0,80,160,0.14), 0 2px 8px rgba(0,0,0,0.08)',
+              }}>
                 {[
-                  { icon: Icon.cart(14,_sub2), value: totalItems, label: lang==='pt'?'itens à venda':'items for sale' },
-                  { icon: Icon.pin(14,_sub2),  value: totalRoutes, label: lang==='pt'?'rotas disponíveis':'routes available' },
-                  { icon: (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="2" strokeLinecap="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                  ), value: '500+', label: lang==='pt'?'pool guys':'pool guys' },
-                ].map((s,i) => (
-                  <div key={i} style={{display:'flex', alignItems:'center', gap:7}}>
-                    {i > 0 && <div style={{width:1, height:20, background: darkMode?'rgba(255,255,255,0.15)':'rgba(10,40,64,0.12)', marginRight:12}}/>}
-                    <div style={{
-                      width:30, height:30, borderRadius:9,
-                      background:_ib, border:_ibr,
-                      display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-                    }}>{s.icon}</div>
-                    <div>
-                      <div style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:800,
-                        color:_tx, lineHeight:1, letterSpacing:'-0.02em'}}>{s.value}</div>
-                      <div style={{fontSize:10, color:_sub, lineHeight:1, marginTop:2, fontWeight:500}}>{s.label}</div>
-                    </div>
-                  </div>
-                ))}
-                <button onClick={()=>setCountyPickerOpen(true)} style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
-                  background:_locBg, border:_locBr,
-                  borderRadius:999, padding:'6px 14px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                  {Icon.pin(12,_sub)}
-                  <span style={{fontSize:12, fontWeight:600, color:_locTx, whiteSpace:'nowrap'}}>
-                    {countyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):countyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
-                  </span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                </button>
-              </div>
-
-              {/* ── Tab pills — centred inside the hero ── */}
-              <div style={{display:'flex', justifyContent:'center'}}>
-                <div style={{
-                  display:'inline-flex', alignItems:'center', gap:4,
-                  background: darkMode ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.45)',
-                  backdropFilter:'blur(12px)',
-                  border: darkMode ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(10,40,64,0.12)',
-                  borderRadius:18, padding:5,
-                }}>
-                  {[
-                    { id:'buy',    icon: Icon.cart,  label: lang==='pt'?'Comprar':lang==='es'?'Comprar':'Buy' },
-                    { id:'rent',   icon: Icon.key,   label: lang==='pt'?'Alugar':lang==='es'?'Alquilar':'Rent' },
-                    { id:'routes', icon: Icon.pin,   label: lang==='pt'?'Rotas':lang==='es'?'Rutas':'Routes' },
-                  ].map(tb => {
-                    const on = view === tb.id;
-                    const activeBg = darkMode ? 'rgba(255,255,255,0.16)' : '#fff';
-                    const activeTx = darkMode ? '#fff' : '#0A2840';
-                    const inactTx  = darkMode ? 'rgba(255,255,255,0.52)' : 'rgba(10,40,64,0.50)';
-                    return (
-                      <button key={tb.id}
-                        onClick={()=>{ setView(tb.id); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); setQ(''); }}
-                        style={{
-                          display:'flex', alignItems:'center', gap:8,
-                          padding:'10px 28px', borderRadius:13, border:'none', cursor:'pointer',
-                          fontFamily:'inherit', fontSize:15, fontWeight: on?700:500,
-                          background: on ? activeBg : 'transparent',
-                          color: on ? activeTx : inactTx,
-                          boxShadow: on ? (darkMode?'0 2px 12px rgba(0,0,0,0.35)':'0 2px 12px rgba(0,0,0,0.12)') : 'none',
-                          transition:'all .18s ease',
-                          letterSpacing:'-0.01em', whiteSpace:'nowrap',
+                  { id:'buy',    icon: Icon.cart,  label: lang==='pt'?'Comprar':lang==='es'?'Comprar':'Buy' },
+                  { id:'rent',   icon: Icon.key,   label: lang==='pt'?'Alugar':lang==='es'?'Alquilar':'Rent' },
+                  { id:'routes', icon: Icon.pin,   label: lang==='pt'?'Rotas':lang==='es'?'Rutas':'Routes' },
+                ].map(tb => {
+                  const on = view === tb.id;
+                  return (
+                    <button key={tb.id}
+                      onClick={()=>{ setView(tb.id); setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setRouteSub('routes'); setPoolPrice('all'); setQ(''); }}
+                      style={{
+                        display:'flex', alignItems:'center', gap:8,
+                        padding:'10px 30px', borderRadius:15, border:'none', cursor:'pointer',
+                        fontFamily:'inherit', fontSize:14.5, fontWeight: on?700:500,
+                        background: on ? _activeBg : 'transparent',
+                        color: on ? '#fff' : _inactTx,
+                        boxShadow: on ? '0 3px 14px rgba(0,119,182,0.40)' : 'none',
+                        transition:'all .20s ease',
+                        letterSpacing:'-0.01em', whiteSpace:'nowrap',
                         }}>
-                        {tb.icon(16, on ? (darkMode?'#38BDF8':'#0077B6') : inactTx)}
+                        {tb.icon(16, on ? '#fff' : _inactTx)}
                         {tb.label}
                       </button>
                     );
                   })}
-                </div>
               </div>
             </div>
           );
