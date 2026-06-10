@@ -8,7 +8,7 @@ function WorkScreen({ ctx }) {
           removeJob, removeTech, removeVacation,
           liveJobs=[], liveTechs=[], liveVacations=[],
           liveApplications=[], jobApplicantCounts={},
-          hasUnreadChat, openNotifications, hasUnreadNotif } = ctx;
+          hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false } = ctx;
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState('hiring');
   const [vacTab, setVacTab] = React.useState('applied');
@@ -655,132 +655,131 @@ function WorkScreen({ ctx }) {
   return (
     <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
     <div className="pg-screen" style={{paddingBottom:110, height:'100%', overflowY:'auto'}}>
-      <NavyBar
-        title={
-          <div>
-            <div style={{fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.50)', letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
-              {t.work}
-            </div>
-            <div style={{fontFamily:'var(--pg-font-display)', fontSize:21, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1}}>
-              {sub==='hiring'
-                ? (lang==='pt'?'Vagas de Emprego':lang==='es'?'Ofertas de Trabajo':'Job Openings')
-                : sub==='techs'
-                  ? (lang==='pt'?'Técnicos Disponíveis':lang==='es'?'Técnicos Disponibles':'Available Techs')
-                  : (lang==='pt'?'Cobertura de Férias':lang==='es'?'Cobertura de Vacaciones':'Vacation Cover')}
-            </div>
-          </div>
-        }
-        leftBack onBack={()=>goTab('home')}
-        right={
-          <div style={{display:'flex', gap:6, alignItems:'center'}}>
-            <div style={{position:'relative', display:'inline-flex'}}>
-              <IconButton dark onClick={() => openChat && openChat()}>
-                {Icon.msg(20, '#fff')}
-              </IconButton>
-              {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
-            </div>
-            <div style={{position:'relative', display:'inline-flex'}}>
-              <IconButton dark onClick={() => openNotifications && openNotifications()}>
-                {Icon.bell(20, '#fff')}
-              </IconButton>
-              {hasUnreadNotif && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
-            </div>
-          </div>
-        }
-      >
-        {/* Contextual stats strip per sub-tab */}
-        <div style={{display:'flex', alignItems:'center', gap:14, marginTop:10, paddingTop:10, borderTop:'1px solid rgba(255,255,255,0.12)'}}>
-          {sub === 'hiring' && <>
-            <div style={{display:'flex', alignItems:'center', gap:6}}>
-              <div style={{width:26, height:26, borderRadius:7, background:'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                {Icon.briefcase(13,'rgba(255,255,255,0.88)')}
-              </div>
+      {(() => {
+        const H = headerTheme(darkMode);
+        const ic = H.text;
+        return (
+          <NavyBar
+            darkMode={darkMode}
+            title={
               <div>
-                <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1}}>{HIRING.length}</div>
-                <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1}}>{lang==='pt'?'vagas':lang==='es'?'empleos':'openings'}</div>
-              </div>
-            </div>
-            <div style={{width:1, height:28, background:'rgba(255,255,255,0.15)'}}/>
-            <div style={{display:'flex', alignItems:'center', gap:6}}>
-              <div style={{width:26, height:26, borderRadius:7, background:'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                {Icon.check(13,'rgba(255,255,255,0.88)')}
-              </div>
-              <div>
-                <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1}}>
-                  {myAppsHiring.length}
+                <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
+                  {t.work}
                 </div>
-                <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1}}>{lang==='pt'?'candidaturas':lang==='es'?'solicitudes':'applied'}</div>
-              </div>
-            </div>
-            <div style={{width:1, height:28, background:'rgba(255,255,255,0.15)'}}/>
-            {/* County badge — tappable */}
-            <button onClick={()=>setWorkCountyPickerOpen(true)}
-              style={{display:'flex', alignItems:'center', gap:5,
-                background:'rgba(0,119,182,0.25)', border:'1px solid rgba(0,119,182,0.40)',
-                borderRadius:999, padding:'5px 11px',
-                cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-              {Icon.pin(11,'rgba(255,255,255,0.70)')}
-              <span style={{fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.85)', whiteSpace:'nowrap'}}>
-                {workCountyFilter.length === 3 ? (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL') : workCountyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
-              </span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
-          </>}
-          {sub === 'techs' && <>
-            <div style={{display:'flex', alignItems:'center', gap:6}}>
-              <div style={{width:26, height:26, borderRadius:7, background:'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>
-              </div>
-              <div>
-                <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1}}>{TECHS.length}</div>
-                <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1}}>{lang==='pt'?'técnicos':lang==='es'?'técnicos':'techs'}</div>
-              </div>
-            </div>
-            <div style={{width:1, height:28, background:'rgba(255,255,255,0.15)'}}/>
-            {/* County badge — shared filter */}
-            <button onClick={()=>setWorkCountyPickerOpen(true)}
-              style={{display:'flex', alignItems:'center', gap:5,
-                background:'rgba(0,119,182,0.25)', border:'1px solid rgba(0,119,182,0.40)',
-                borderRadius:999, padding:'5px 11px',
-                cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-              {Icon.pin(11,'rgba(255,255,255,0.70)')}
-              <span style={{fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.85)', whiteSpace:'nowrap'}}>
-                {workCountyFilter.length === 3 ? (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL') : workCountyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
-              </span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
-          </>}
-          {sub === 'vac' && <>
-            <div style={{display:'flex', alignItems:'center', gap:6}}>
-              <div style={{width:26, height:26, borderRadius:7, background:'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>
-              </div>
-              <div>
-                <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1}}>{VACATION_LISTINGS.length}</div>
-                <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1}}>{lang==='pt'?'coberturas':lang==='es'?'coberturas':'covers'}</div>
-              </div>
-            </div>
-            <div style={{width:1, height:28, background:'rgba(255,255,255,0.15)'}}/>
-            <div style={{display:'flex', alignItems:'center', gap:6}}>
-              <div style={{width:26, height:26, borderRadius:7, background:'rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                {Icon.cal(13,'rgba(255,255,255,0.88)')}
-              </div>
-              <div>
-                <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1}}>
-                  {VACATIONS_APPLIED ? VACATIONS_APPLIED.length : 0}
+                <div style={{fontFamily:'var(--pg-font-display)', fontSize:21, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
+                  {sub==='hiring'
+                    ? (lang==='pt'?'Vagas de Emprego':lang==='es'?'Ofertas de Trabajo':'Job Openings')
+                    : sub==='techs'
+                      ? (lang==='pt'?'Técnicos Disponíveis':lang==='es'?'Técnicos Disponibles':'Available Techs')
+                      : (lang==='pt'?'Cobertura de Férias':lang==='es'?'Cobertura de Vacaciones':'Vacation Cover')}
                 </div>
-                <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1}}>{lang==='pt'?'aplicadas':lang==='es'?'aplicadas':'applied'}</div>
               </div>
+            }
+            leftBack onBack={()=>goTab('home')}
+            right={
+              <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                <div style={{position:'relative', display:'inline-flex'}}>
+                  <IconButton dark={darkMode} onClick={() => openChat && openChat()}>
+                    {Icon.msg(20, ic)}
+                  </IconButton>
+                  {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:`1.5px solid ${darkMode?'#011B5A':'#d0e8f5'}`, pointerEvents:'none'}}/>}
+                </div>
+                <div style={{position:'relative', display:'inline-flex'}}>
+                  <IconButton dark={darkMode} onClick={() => openNotifications && openNotifications()}>
+                    {Icon.bell(20, ic)}
+                  </IconButton>
+                  {hasUnreadNotif && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:`1.5px solid ${darkMode?'#011B5A':'#d0e8f5'}`, pointerEvents:'none'}}/>}
+                </div>
+              </div>
+            }
+          >
+            {/* Contextual stats strip per sub-tab */}
+            <div style={{display:'flex', alignItems:'center', gap:14, marginTop:10, paddingTop:10, borderTop:`1px solid ${H.border}`}}>
+              {sub === 'hiring' && <>
+                <div style={{display:'flex', alignItems:'center', gap:6}}>
+                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    {Icon.briefcase(13,H.iconC)}
+                  </div>
+                  <div>
+                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{HIRING.length}</div>
+                    <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'vagas':lang==='es'?'empleos':'openings'}</div>
+                  </div>
+                </div>
+                <div style={{width:1, height:28, background:H.divider}}/>
+                <div style={{display:'flex', alignItems:'center', gap:6}}>
+                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    {Icon.check(13,H.iconC)}
+                  </div>
+                  <div>
+                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{myAppsHiring.length}</div>
+                    <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'candidaturas':lang==='es'?'solicitudes':'applied'}</div>
+                  </div>
+                </div>
+                <div style={{width:1, height:28, background:H.divider}}/>
+                <button onClick={()=>setWorkCountyPickerOpen(true)}
+                  style={{display:'flex', alignItems:'center', gap:5, background:H.cntyBg, border:H.cntyBdr,
+                    borderRadius:999, padding:'5px 11px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+                  {Icon.pin(11,H.cntyIc)}
+                  <span style={{fontSize:11, fontWeight:600, color:H.cntyTxt, whiteSpace:'nowrap'}}>
+                    {workCountyFilter.length === 3 ? (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL') : workCountyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
+                  </span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={H.editIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </>}
+              {sub === 'techs' && <>
+                <div style={{display:'flex', alignItems:'center', gap:6}}>
+                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>
+                  </div>
+                  <div>
+                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{TECHS.length}</div>
+                    <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'técnicos':lang==='es'?'técnicos':'techs'}</div>
+                  </div>
+                </div>
+                <div style={{width:1, height:28, background:H.divider}}/>
+                <button onClick={()=>setWorkCountyPickerOpen(true)}
+                  style={{display:'flex', alignItems:'center', gap:5, background:H.cntyBg, border:H.cntyBdr,
+                    borderRadius:999, padding:'5px 11px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+                  {Icon.pin(11,H.cntyIc)}
+                  <span style={{fontSize:11, fontWeight:600, color:H.cntyTxt, whiteSpace:'nowrap'}}>
+                    {workCountyFilter.length === 3 ? (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL') : workCountyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
+                  </span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={H.editIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </>}
+              {sub === 'vac' && <>
+                <div style={{display:'flex', alignItems:'center', gap:6}}>
+                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>
+                  </div>
+                  <div>
+                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{VACATION_LISTINGS.length}</div>
+                    <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'coberturas':lang==='es'?'coberturas':'covers'}</div>
+                  </div>
+                </div>
+                <div style={{width:1, height:28, background:H.divider}}/>
+                <div style={{display:'flex', alignItems:'center', gap:6}}>
+                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    {Icon.cal(13,H.iconC)}
+                  </div>
+                  <div>
+                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>
+                      {VACATIONS_APPLIED ? VACATIONS_APPLIED.length : 0}
+                    </div>
+                    <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'aplicadas':lang==='es'?'aplicadas':'applied'}</div>
+                  </div>
+                </div>
+              </>}
             </div>
-          </>}
-        </div>
-      </NavyBar>
+          </NavyBar>
+        );
+      })()}
 
       {/* ── County picker sheet ── */}
       {workCountyPickerOpen && (

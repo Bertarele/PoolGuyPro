@@ -4218,86 +4218,92 @@ function MarketplaceScreen({ ctx }) {
     <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
     <div className="pg-screen" style={{paddingBottom:110, height:'100%', overflowY:'auto'}}>
       {/* ── Enhanced NavyBar ── */}
-      <NavyBar
-        title={
-          <div style={{display:'flex', alignItems:'center', gap:10}}>
-            <div style={{
-              width:40, height:40, borderRadius:12, flexShrink:0,
-              background:'rgba(255,255,255,0.13)', border:'0.5px solid rgba(255,255,255,0.18)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-            }}>
-              {Icon.cart(20,'#fff')}
-            </div>
-            <div>
-              <div style={{fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.50)', letterSpacing:'0.10em', marginBottom:2, textTransform:'uppercase'}}>{t.marketplace}</div>
-              <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1}}>
-                {locationLbl}
+      {(() => {
+        const H = headerTheme(darkMode);
+        const ic = H.text;
+        return (
+          <NavyBar
+            darkMode={darkMode}
+            title={
+              <div style={{display:'flex', alignItems:'center', gap:10}}>
+                <div style={{
+                  width:40, height:40, borderRadius:12, flexShrink:0,
+                  background:H.iconBg, border:`0.5px solid ${H.border}`,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  {Icon.cart(20,ic)}
+                </div>
+                <div>
+                  <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:2, textTransform:'uppercase'}}>{t.marketplace}</div>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
+                    {locationLbl}
+                  </div>
+                </div>
               </div>
+            }
+            leftBack onBack={()=>goTab('home')}
+            right={
+              <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                <div style={{position:'relative', display:'inline-flex'}}>
+                  <IconButton dark={darkMode} onClick={() => openChat && openChat()}>
+                    {Icon.msg(20, ic)}
+                  </IconButton>
+                  {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:`1.5px solid ${darkMode?'#011B5A':'#d0e8f5'}`, pointerEvents:'none'}}/>}
+                </div>
+                <div style={{position:'relative', display:'inline-flex'}}>
+                  <IconButton dark={darkMode} onClick={() => openNotifications && openNotifications()}>
+                    {Icon.bell(20, ic)}
+                  </IconButton>
+                  {hasUnreadNotif && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:`1.5px solid ${darkMode?'#011B5A':'#d0e8f5'}`, pointerEvents:'none'}}/>}
+                </div>
+              </div>
+            }
+          >
+            {/* Stats strip below title */}
+            <div style={{display:'flex', alignItems:'center', gap:12, marginTop:10, paddingTop:10, borderTop:`1px solid ${H.border}`}}>
+              <div style={{display:'flex', alignItems:'center', gap:7}}>
+                <div style={{
+                  width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>{Icon.cart(14,H.iconC)}</div>
+                <div>
+                  <div style={{fontSize:17, fontWeight:800, fontFamily:'var(--pg-font-display)', lineHeight:1, letterSpacing:'-0.02em', color:H.text}}>{totalItems}</div>
+                  <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1.5, fontWeight:500, color:H.text}}>{lang==='pt'?'itens':lang==='es'?'artículos':'items'}</div>
+                </div>
+              </div>
+              <div style={{width:1, height:30, background:H.divider}}/>
+              <div style={{display:'flex', alignItems:'center', gap:7}}>
+                <div style={{
+                  width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>{Icon.pin(14,H.iconC)}</div>
+                <div>
+                  <div style={{fontSize:17, fontWeight:800, fontFamily:'var(--pg-font-display)', lineHeight:1, letterSpacing:'-0.02em', color:H.text}}>{totalRoutes}</div>
+                  <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1.5, fontWeight:500, color:H.text}}>{lang==='pt'?'rotas':lang==='es'?'rutas':'routes'}</div>
+                </div>
+              </div>
+              <div style={{width:1, height:30, background:H.divider}}/>
+              {/* County selector */}
+              <button onClick={()=>setCountyPickerOpen(true)}
+                style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
+                  background:H.cntyBg, border:H.cntyBdr,
+                  borderRadius:999, padding:'6px 12px',
+                  cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+                {Icon.pin(12,H.cntyIc)}
+                <span style={{fontSize:12, fontWeight:600, color:H.cntyTxt, whiteSpace:'nowrap'}}>
+                  {countyFilter.length === 0
+                    ? (lang==='pt'?'Nenhuma região':'No region')
+                    : countyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
+                </span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={H.editIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
             </div>
-          </div>
-        }
-        leftBack onBack={()=>goTab('home')}
-        right={
-          <div style={{display:'flex', gap:6, alignItems:'center'}}>
-            <div style={{position:'relative', display:'inline-flex'}}>
-              <IconButton dark onClick={() => openChat && openChat()}>
-                {Icon.msg(20, '#fff')}
-              </IconButton>
-              {hasUnreadChat && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
-            </div>
-            <div style={{position:'relative', display:'inline-flex'}}>
-              <IconButton dark onClick={() => openNotifications && openNotifications()}>
-                {Icon.bell(20, '#fff')}
-              </IconButton>
-              {hasUnreadNotif && <span style={{position:'absolute', top:5, right:5, width:8, height:8, borderRadius:'50%', background:'#FF3B30', border:'1.5px solid #011B5A', pointerEvents:'none'}}/>}
-            </div>
-          </div>
-        }
-      >
-        {/* Stats strip below title */}
-        <div style={{display:'flex', alignItems:'center', gap:12, marginTop:10, paddingTop:10, borderTop:'1px solid rgba(255,255,255,0.12)'}}>
-          <div style={{display:'flex', alignItems:'center', gap:7}}>
-            <div style={{
-              width:30, height:30, borderRadius:9, background:'rgba(255,255,255,0.13)', border:'0.5px solid rgba(255,255,255,0.16)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-            }}>{Icon.cart(14,'rgba(255,255,255,0.90)')}</div>
-            <div>
-              <div style={{fontSize:17, fontWeight:800, fontFamily:'var(--pg-font-display)', lineHeight:1, letterSpacing:'-0.02em'}}>{totalItems}</div>
-              <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1.5, fontWeight:500}}>{lang==='pt'?'itens':lang==='es'?'artículos':'items'}</div>
-            </div>
-          </div>
-          <div style={{width:1, height:30, background:'rgba(255,255,255,0.15)'}}/>
-          <div style={{display:'flex', alignItems:'center', gap:7}}>
-            <div style={{
-              width:30, height:30, borderRadius:9, background:'rgba(255,255,255,0.13)', border:'0.5px solid rgba(255,255,255,0.16)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-            }}>{Icon.pin(14,'rgba(255,255,255,0.90)')}</div>
-            <div>
-              <div style={{fontSize:17, fontWeight:800, fontFamily:'var(--pg-font-display)', lineHeight:1, letterSpacing:'-0.02em'}}>{totalRoutes}</div>
-              <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1.5, fontWeight:500}}>{lang==='pt'?'rotas':lang==='es'?'rutas':'routes'}</div>
-            </div>
-          </div>
-          <div style={{width:1, height:30, background:'rgba(255,255,255,0.15)'}}/>
-          {/* County selector — same pill as original but tappable */}
-          <button onClick={()=>setCountyPickerOpen(true)}
-            style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
-              background:'rgba(0,119,182,0.25)', border:'1px solid rgba(0,119,182,0.40)',
-              borderRadius:999, padding:'6px 12px',
-              cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-            {Icon.pin(12,'rgba(255,255,255,0.70)')}
-            <span style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.85)', whiteSpace:'nowrap'}}>
-              {countyFilter.length === 0
-                ? (lang==='pt'?'Nenhuma região':'No region')
-                : countyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
-            </span>
-            {/* pencil edit icon */}
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </button>
-        </div>
-      </NavyBar>
+          </NavyBar>
+        );
+      })()}
 
       {/* ── County picker sheet ── */}
       {countyPickerOpen && (

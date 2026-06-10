@@ -83,34 +83,93 @@ function Wordmark({ size='md', onDark=false, subtitle }) {
   );
 }
 
-// ── Dark navy app bar (used on Marketplace, Work, etc.) ──────
-function NavyBar({ title, leftBack, onBack, right, children, wave=true }) {
+// ── Header theme helper (shared by all screen headers) ────────
+function headerTheme(dark) {
+  return dark ? {
+    text:    '#ffffff',
+    sub:     'rgba(255,255,255,0.50)',
+    mid:     'rgba(255,255,255,0.80)',
+    faint:   'rgba(255,255,255,0.55)',
+    iconBg:  'rgba(255,255,255,0.12)',
+    iconC:   'rgba(255,255,255,0.88)',
+    border:  'rgba(255,255,255,0.12)',
+    divider: 'rgba(255,255,255,0.15)',
+    cntyBg:  'rgba(0,119,182,0.25)',
+    cntyBdr: '1px solid rgba(0,119,182,0.40)',
+    cntyTxt: 'rgba(255,255,255,0.85)',
+    cntyIc:  'rgba(255,255,255,0.70)',
+    editIc:  'rgba(255,255,255,0.55)',
+    wave1:   'rgba(255,255,255,0.12)',
+    wave2:   'rgba(255,255,255,0.06)',
+    glow:    'radial-gradient(circle, rgba(14,186,199,0.10) 0%, transparent 70%)',
+    ring1:   'rgba(14,186,199,0.08)',
+    ring2:   'rgba(14,186,199,0.05)',
+    blob:    'rgba(14,186,199,0.05)',
+    backBtn: 'rgba(255,255,255,0.13)',
+    activeBg:'rgba(255,255,255,0.15)',
+    activeBdr:'1px solid rgba(255,255,255,0.25)',
+    activeTxt:'rgba(255,255,255,0.90)',
+  } : {
+    text:    '#0A2840',
+    sub:     'rgba(10,40,64,0.50)',
+    mid:     'rgba(10,40,64,0.82)',
+    faint:   'rgba(10,40,64,0.58)',
+    iconBg:  'rgba(10,40,64,0.09)',
+    iconC:   'rgba(10,40,64,0.72)',
+    border:  'rgba(10,40,64,0.10)',
+    divider: 'rgba(10,40,64,0.12)',
+    cntyBg:  'rgba(0,119,182,0.11)',
+    cntyBdr: '1px solid rgba(0,119,182,0.28)',
+    cntyTxt: '#0A2840',
+    cntyIc:  'rgba(0,119,182,0.65)',
+    editIc:  'rgba(10,40,64,0.38)',
+    wave1:   'rgba(10,40,64,0.06)',
+    wave2:   'rgba(10,40,64,0.03)',
+    glow:    'radial-gradient(circle, rgba(0,119,182,0.10) 0%, transparent 70%)',
+    ring1:   'rgba(0,119,182,0.09)',
+    ring2:   'rgba(0,119,182,0.05)',
+    blob:    'rgba(0,119,182,0.05)',
+    backBtn: 'rgba(10,40,64,0.10)',
+    activeBg:'rgba(0,119,182,0.10)',
+    activeBdr:'1px solid rgba(0,119,182,0.22)',
+    activeTxt:'#0A2840',
+  };
+}
+
+// ── App bar (light/dark responsive) ───────────────────────────
+function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode=true }) {
+  const H = headerTheme(darkMode);
+  const bg = darkMode
+    ? 'linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)'
+    : 'linear-gradient(145deg, #f0f9ff 0%, #dff0fb 52%, #cce8f5 100%)';
+
   return (
     <div style={{
-      background:`linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)`,
-      color:'#fff', padding:'14px 18px 22px', position:'relative', overflow:'hidden',
+      background: bg,
+      color: H.text,
+      padding:'14px 18px 22px', position:'relative', overflow:'hidden',
     }}>
       {/* Aqua glow top-right */}
       <div style={{position:'absolute', top:-60, right:-60, width:200, height:200, borderRadius:'50%',
-        background:'radial-gradient(circle, rgba(14,186,199,0.10) 0%, transparent 70%)', pointerEvents:'none'}}/>
+        background:H.glow, pointerEvents:'none'}}/>
       {/* Decorative circles — subtle brand texture */}
-      <div style={{position:'absolute', top:-55, right:-55, width:190, height:190, borderRadius:'50%', border:'1px solid rgba(14,186,199,0.08)', pointerEvents:'none'}}/>
-      <div style={{position:'absolute', top:12, right:22, width:108, height:108, borderRadius:'50%', border:'1px solid rgba(14,186,199,0.05)', pointerEvents:'none'}}/>
-      <div style={{position:'absolute', bottom:-35, left:-35, width:130, height:130, borderRadius:'50%', background:'rgba(14,186,199,0.05)', pointerEvents:'none'}}/>
+      <div style={{position:'absolute', top:-55, right:-55, width:190, height:190, borderRadius:'50%', border:`1px solid ${H.ring1}`, pointerEvents:'none'}}/>
+      <div style={{position:'absolute', top:12, right:22, width:108, height:108, borderRadius:'50%', border:`1px solid ${H.ring2}`, pointerEvents:'none'}}/>
+      <div style={{position:'absolute', bottom:-35, left:-35, width:130, height:130, borderRadius:'50%', background:H.blob, pointerEvents:'none'}}/>
 
       {/* Title row */}
       <div style={{position:'relative', zIndex:1, display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, minHeight:44}}>
         <div style={{display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0}}>
           {leftBack && (
             <button onClick={onBack} style={{
-              border:'none', background:'rgba(255,255,255,0.13)', width:36, height:36,
-              borderRadius:'50%', cursor:'pointer', color:'#fff',
+              border:'none', background:H.backBtn, width:36, height:36,
+              borderRadius:'50%', cursor:'pointer', color:H.text,
               display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
               backdropFilter:'blur(8px)',
-            }}>{Icon.chev(18, '#fff', 'left')}</button>
+            }}>{Icon.chev(18, H.text, 'left')}</button>
           )}
           {typeof title === 'string'
-            ? <h1 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em'}}>{title}</h1>
+            ? <h1 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em', color:H.text}}>{title}</h1>
             : title}
         </div>
         <div style={{display:'flex', alignItems:'center', gap:8, position:'relative', zIndex:2}}>{right}</div>
@@ -119,12 +178,12 @@ function NavyBar({ title, leftBack, onBack, right, children, wave=true }) {
       {/* Children content */}
       {children && <div style={{position:'relative', zIndex:1}}>{children}</div>}
 
-      {/* White wave accent at the bottom */}
+      {/* Wave accent at the bottom */}
       {wave && (
         <div style={{position:'absolute', bottom:0, left:0, right:0, lineHeight:0, pointerEvents:'none', zIndex:0}}>
           <svg viewBox="0 0 402 20" width="100%" height="20" preserveAspectRatio="none">
-            <path d="M0 14 Q80 5 160 14 Q240 23 320 14 Q368 8 402 16 L402 20 L0 20 Z" fill="rgba(255,255,255,0.12)"/>
-            <path d="M0 17 Q120 11 240 17 Q320 21 402 18 L402 20 L0 20 Z" fill="rgba(255,255,255,0.06)"/>
+            <path d="M0 14 Q80 5 160 14 Q240 23 320 14 Q368 8 402 16 L402 20 L0 20 Z" fill={H.wave1}/>
+            <path d="M0 17 Q120 11 240 17 Q320 21 402 18 L402 20 L0 20 Z" fill={H.wave2}/>
           </svg>
         </div>
       )}

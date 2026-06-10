@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false } = ctx;
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
 
@@ -81,48 +81,55 @@ function HomeScreen({ ctx }) {
     <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
     <div className="pg-screen" style={{paddingBottom:110, height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
 
-      {/* Navy header */}
-      <NavyBar
-        title={<Wordmark size="lg" onDark subtitle={subtitle}/>}
-        right={
-          <>
-            <LangPill lang={lang} setLang={setLang} onDark/>
-            <div style={{position:'relative', display:'inline-flex'}}>
-              <IconButton dark onClick={() => ctx.openChat && ctx.openChat()}>
-                {Icon.msg(20, '#fff')}
-              </IconButton>
-              {hasUnreadChat && <span style={{
-                position:'absolute', top:5, right:5,
-                width:8, height:8, borderRadius:'50%',
-                background:'#FF3B30', border:'1.5px solid #011B5A',
-                pointerEvents:'none',
-              }}/>}
+      {/* Header */}
+      {(() => {
+        const H = headerTheme(darkMode);
+        const ic = H.text;
+        return (
+          <NavyBar
+            darkMode={darkMode}
+            title={<Wordmark size="lg" onDark={darkMode} subtitle={subtitle}/>}
+            right={
+              <>
+                <LangPill lang={lang} setLang={setLang} onDark={darkMode}/>
+                <div style={{position:'relative', display:'inline-flex'}}>
+                  <IconButton dark={darkMode} onClick={() => ctx.openChat && ctx.openChat()}>
+                    {Icon.msg(20, ic)}
+                  </IconButton>
+                  {hasUnreadChat && <span style={{
+                    position:'absolute', top:5, right:5,
+                    width:8, height:8, borderRadius:'50%',
+                    background:'#FF3B30', border:`1.5px solid ${darkMode?'#011B5A':'#d0e8f5'}`,
+                    pointerEvents:'none',
+                  }}/>}
+                </div>
+                <IconButton dark={darkMode} onClick={openNotifications} badge={!!hasUnreadNotif}>{Icon.bell(20, ic)}</IconButton>
+              </>
+            }
+          >
+            {/* Greeting + location */}
+            <div style={{marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+              <div>
+                <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
+                  {greetWord}, {myAuthor ? myAuthor.split(' ')[0] : (user.email ? user.email.split('@')[0] : '')}! 👋
+                </div>
+                <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
+                  {Icon.pin(10,'var(--pg-aqua-400)')}
+                  <span style={{fontSize:11, color:H.faint, fontWeight:500}}>Broward County, FL</span>
+                </div>
+              </div>
+              <div style={{
+                background:H.activeBg, border:H.activeBdr,
+                borderRadius:999, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
+              }}>
+                <div style={{width:7, height:7, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/>
+                <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.03em'}}>ACTIVE</span>
+              </div>
             </div>
-            <IconButton dark onClick={openNotifications} badge={!!hasUnreadNotif}>{Icon.bell(20, '#fff')}</IconButton>
-          </>
-        }
-      >
-        {/* Greeting + location */}
-        <div style={{marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-          <div>
-            <div style={{fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.80)', letterSpacing:'-0.01em'}}>
-              {greetWord}, {myAuthor ? myAuthor.split(' ')[0] : (user.email ? user.email.split('@')[0] : '')}! 👋
-            </div>
-            <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
-              {Icon.pin(10,'var(--pg-aqua-400)')}
-              <span style={{fontSize:11, color:'rgba(255,255,255,0.55)', fontWeight:500}}>Broward County, FL</span>
-            </div>
-          </div>
-          <div style={{
-            background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)',
-            borderRadius:999, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
-          }}>
-            <div style={{width:7, height:7, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/>
-            <span style={{fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.90)', letterSpacing:'0.03em'}}>ACTIVE</span>
-          </div>
-        </div>
-        <div style={{height:16}}/>
-      </NavyBar>
+            <div style={{height:16}}/>
+          </NavyBar>
+        );
+      })()}
 
       {/* ── Meus Anúncios card ── */}
       <div style={{padding:'0 18px', marginTop:-20}}>
