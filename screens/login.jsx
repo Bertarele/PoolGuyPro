@@ -274,7 +274,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         <div className="pg-login-card" style={{
           position:'relative', zIndex:2,
           width:'100%', maxWidth:480,
-          background:'rgba(255,255,255,0.62)',
+          background:'rgba(255,255,255,0.28)',
           backdropFilter:'blur(28px)',
           WebkitBackdropFilter:'blur(28px)',
           borderRadius:28,
