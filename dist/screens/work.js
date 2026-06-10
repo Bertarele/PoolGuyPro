@@ -2795,6 +2795,13 @@ function HiringPanel({
   })[c] || c;
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const [selectedJob, setSelectedJob] = React.useState(null);
+  React.useEffect(() => {
+    if (window.__pgOpenJobId && liveJobs.length > 0) {
+      const job = liveJobs.find(j => j._id === window.__pgOpenJobId);
+      window.__pgOpenJobId = null;
+      if (job) setSelectedJob(job);
+    }
+  }, [liveJobs]);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sheet, {
     open: !!selectedJob,
     onClose: () => setSelectedJob(null),

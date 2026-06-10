@@ -1271,6 +1271,14 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const [selectedJob, setSelectedJob] = React.useState(null);
 
+  React.useEffect(() => {
+    if (window.__pgOpenJobId && liveJobs.length > 0) {
+      const job = liveJobs.find(j => j._id === window.__pgOpenJobId);
+      window.__pgOpenJobId = null;
+      if (job) setSelectedJob(job);
+    }
+  }, [liveJobs]);
+
   return (
     <>
     {/* ── Job detail sheet ── */}

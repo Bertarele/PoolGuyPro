@@ -325,10 +325,13 @@ function HomeScreen({ ctx }) {
                       ? `$${item.price}${isJob?(item.payMode==='weekly'?'/sem':'/pool'):''}`
                       : '—';
                 return (
-                  <button key={item._id} onClick={()=>isJob ? goTab('work') : openListingById ? openListingById(item._id) : goTab('market')} className="pg-press" style={{
+                  <button key={item._id} onClick={()=>{
+                    if (isJob) { window.__pgOpenJobId = item._id; goTab('work'); }
+                    else { openListingById ? openListingById(item._id) : goTab('market'); }
+                  }} className="pg-press" style={{
                     display:'flex', flexDirection:'column', alignItems:'flex-start',
-                    padding:'10px 10px 10px', borderRadius:14, flexShrink:0,
-                    width:'calc(33.33% - 7px)', minWidth:130,
+                    padding:'11px 11px 11px', borderRadius:14, flexShrink:0,
+                    width:'calc(33.33% - 7px)', minWidth:150,
                     scrollSnapAlign:'start',
                     border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
                     background: isPending ? 'var(--pg-ink-50, #F7F9FB)' : 'var(--pg-blue-50)',
@@ -336,33 +339,35 @@ function HomeScreen({ ctx }) {
                   }}>
                     {/* Thumbnail */}
                     <div style={{
-                      width:'100%', height:72, borderRadius:8, overflow:'hidden', flexShrink:0, marginBottom:8,
+                      width:'100%', height:88, borderRadius:9, overflow:'hidden', flexShrink:0, marginBottom:9,
                       background:'linear-gradient(135deg, var(--pg-blue-100), var(--pg-ink-100))',
                     }}>
                       {item.photoUrl
-                        ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:72, objectFit:'cover'}}/>
-                        : <EquipImg category={item.cat || (item.type==='route'?'Routes':'Tools')} height={72}/>
+                        ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:88, objectFit:'cover'}}/>
+                        : <EquipImg category={item.cat || (item.type==='route'?'Routes':'Tools')} height={88}/>
                       }
                     </div>
-                    {/* Status badge */}
-                    <span style={{
-                      fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:5,
-                      letterSpacing:'0.04em', marginBottom:4, display:'inline-block',
-                      background: isPending ? '#FFF3CD' : 'var(--pg-blue-100)',
-                      color: isPending ? '#856404' : 'var(--pg-blue-700)',
-                    }}>
-                      {isPending ? (lang==='pt'?'REVISÃO':lang==='es'?'REVISIÓN':'REVIEW') : 'ATIVO'}
-                    </span>
+                    {/* Status + type badge */}
+                    <div style={{display:'flex', alignItems:'center', gap:5, marginBottom:5, flexWrap:'wrap'}}>
+                      <span style={{
+                        fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:5,
+                        letterSpacing:'0.04em',
+                        background: isPending ? '#FFF3CD' : isJob ? 'rgba(14,186,199,0.15)' : 'var(--pg-blue-100)',
+                        color: isPending ? '#856404' : isJob ? '#0A7A88' : 'var(--pg-blue-700)',
+                      }}>
+                        {isPending ? (lang==='pt'?'REVISÃO':lang==='es'?'REVISIÓN':'REVIEW') : isJob ? (lang==='pt'?'VAGA':lang==='es'?'OFERTA':'JOB') : 'ATIVO'}
+                      </span>
+                    </div>
                     {/* Name */}
                     <div style={{
-                      fontSize:12, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.25,
+                      fontSize:12.5, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.25,
                       color: isPending ? 'var(--pg-ink-600)' : 'var(--pg-ink-900)',
                       overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical',
-                      marginBottom:4,
+                      marginBottom:5,
                     }}>{item.name || item.routeName || '—'}</div>
                     {/* Price */}
                     <div style={{
-                      fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700,
+                      fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700,
                       letterSpacing:'-0.02em', lineHeight:1,
                       color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
                       marginTop:'auto',

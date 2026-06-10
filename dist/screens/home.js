@@ -617,17 +617,24 @@ function HomeScreen({
     const priceStr = item.priceMode === 'neg' || item.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : item.asking ? `$${Number(item.asking).toLocaleString()}` : item.price ? `$${item.price}${isJob ? item.payMode === 'weekly' ? '/sem' : '/pool' : ''}` : '—';
     return /*#__PURE__*/React.createElement("button", {
       key: item._id,
-      onClick: () => isJob ? goTab('work') : openListingById ? openListingById(item._id) : goTab('market'),
+      onClick: () => {
+        if (isJob) {
+          window.__pgOpenJobId = item._id;
+          goTab('work');
+        } else {
+          openListingById ? openListingById(item._id) : goTab('market');
+        }
+      },
       className: "pg-press",
       style: {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
-        padding: '10px 10px 10px',
+        padding: '11px 11px 11px',
         borderRadius: 14,
         flexShrink: 0,
         width: 'calc(33.33% - 7px)',
-        minWidth: 130,
+        minWidth: 150,
         scrollSnapAlign: 'start',
         border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
         background: isPending ? 'var(--pg-ink-50, #F7F9FB)' : 'var(--pg-blue-50)',
@@ -638,11 +645,11 @@ function HomeScreen({
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: '100%',
-        height: 72,
-        borderRadius: 8,
+        height: 88,
+        borderRadius: 9,
         overflow: 'hidden',
         flexShrink: 0,
-        marginBottom: 8,
+        marginBottom: 9,
         background: 'linear-gradient(135deg, var(--pg-blue-100), var(--pg-ink-100))'
       }
     }, item.photoUrl ? /*#__PURE__*/React.createElement("img", {
@@ -650,27 +657,33 @@ function HomeScreen({
       alt: item.name,
       style: {
         width: '100%',
-        height: 72,
+        height: 88,
         objectFit: 'cover'
       }
     }) : /*#__PURE__*/React.createElement(EquipImg, {
       category: item.cat || (item.type === 'route' ? 'Routes' : 'Tools'),
-      height: 72
-    })), /*#__PURE__*/React.createElement("span", {
+      height: 88
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 9,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        marginBottom: 5,
+        flexWrap: 'wrap'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 9.5,
         fontWeight: 700,
-        padding: '2px 6px',
+        padding: '2px 7px',
         borderRadius: 5,
         letterSpacing: '0.04em',
-        marginBottom: 4,
-        display: 'inline-block',
-        background: isPending ? '#FFF3CD' : 'var(--pg-blue-100)',
-        color: isPending ? '#856404' : 'var(--pg-blue-700)'
+        background: isPending ? '#FFF3CD' : isJob ? 'rgba(14,186,199,0.15)' : 'var(--pg-blue-100)',
+        color: isPending ? '#856404' : isJob ? '#0A7A88' : 'var(--pg-blue-700)'
       }
-    }, isPending ? lang === 'pt' ? 'REVISÃO' : lang === 'es' ? 'REVISIÓN' : 'REVIEW' : 'ATIVO'), /*#__PURE__*/React.createElement("div", {
+    }, isPending ? lang === 'pt' ? 'REVISÃO' : lang === 'es' ? 'REVISIÓN' : 'REVIEW' : isJob ? lang === 'pt' ? 'VAGA' : lang === 'es' ? 'OFERTA' : 'JOB' : 'ATIVO')), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 12,
+        fontSize: 12.5,
         fontWeight: 700,
         letterSpacing: '-0.01em',
         lineHeight: 1.25,
@@ -679,12 +692,12 @@ function HomeScreen({
         display: '-webkit-box',
         WebkitLineClamp: 2,
         WebkitBoxOrient: 'vertical',
-        marginBottom: 4
+        marginBottom: 5
       }
     }, item.name || item.routeName || '—'), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'var(--pg-font-display)',
-        fontSize: 15,
+        fontSize: 17,
         fontWeight: 700,
         letterSpacing: '-0.02em',
         lineHeight: 1,
