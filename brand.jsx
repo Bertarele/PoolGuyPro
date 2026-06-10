@@ -137,11 +137,11 @@ function headerTheme(dark) {
 }
 
 // ── App bar (light/dark responsive) ───────────────────────────
-function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode=true }) {
+function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode=true, bgOverride=null }) {
   const H = headerTheme(darkMode);
-  const bg = darkMode
+  const bg = bgOverride || (darkMode
     ? 'linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)'
-    : 'linear-gradient(145deg, #f0f9ff 0%, #dff0fb 52%, #cce8f5 100%)';
+    : 'linear-gradient(145deg, #f0f9ff 0%, #dff0fb 52%, #cce8f5 100%)');
 
   return (
     <div style={{

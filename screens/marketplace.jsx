@@ -4223,6 +4223,10 @@ function MarketplaceScreen({ ctx }) {
         return (
           <NavyBar
             darkMode={darkMode}
+            wave={false}
+            bgOverride={darkMode
+              ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)'
+              : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)'}
             title={
               <div style={{display:'flex', alignItems:'center', gap:10}}>
                 <div style={{
@@ -4259,7 +4263,7 @@ function MarketplaceScreen({ ctx }) {
             )}
           >
             {/* Stats strip below title */}
-            <div style={{display:'flex', alignItems:'center', gap:12, marginTop:10, paddingTop:10, borderTop:`1px solid ${H.border}`}}>
+            <div style={{display:'flex', alignItems:'center', gap:12, marginTop:6, paddingTop:6, borderTop:`1px solid ${H.border}`}}>
               <div style={{display:'flex', alignItems:'center', gap:7}}>
                 <div style={{
                   width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`,
