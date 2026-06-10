@@ -454,7 +454,7 @@ function QuickPoolsScreen({
           letterSpacing: '-0.025em',
           lineHeight: 1
         }
-      }, lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Quick Pools'))), /*#__PURE__*/React.createElement("div", {
+      }, lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'))), /*#__PURE__*/React.createElement("div", {
         style: {
           width: 1,
           height: 32,

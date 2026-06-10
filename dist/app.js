@@ -1156,7 +1156,7 @@ function App() {
   }, {
     id: 'quick',
     emoji: '🏊',
-    label: 'Quick Pools'
+    label: 'Express Pools'
   }, {
     id: 'work',
     emoji: '💼',
@@ -1536,7 +1536,7 @@ function App() {
       label: lang === 'pt' ? 'Marketplace' : 'Marketplace'
     }, {
       id: 'quick',
-      label: 'Quick Pools'
+      label: 'Express Pools'
     }, {
       id: 'work',
       label: lang === 'pt' ? 'Trabalho' : 'Work'
@@ -1590,7 +1590,7 @@ function App() {
         }))
       },
       quick: {
-        label: 'Quick Pools',
+        label: 'Express Pools',
         icon: /*#__PURE__*/React.createElement("svg", {
           width: "16",
           height: "16",
@@ -2570,7 +2570,7 @@ function App() {
       lineHeight: 1.4,
       marginTop: -4
     }
-  }, "Free = Quick Pools locked. Premium/PRO unlock apply + contact."), /*#__PURE__*/React.createElement(TweakSection, {
+  }, "Free = Express Pools locked. Premium/PRO unlock apply + contact."), /*#__PURE__*/React.createElement(TweakSection, {
     label: "Language"
   }), /*#__PURE__*/React.createElement(TweakRadio, {
     value: lang,
@@ -2584,7 +2584,7 @@ function App() {
     onClick: () => {
       setTab('quick');
     }
-  }, "Open Quick Pools"), /*#__PURE__*/React.createElement(TweakButton, {
+  }, "Open Express Pools"), /*#__PURE__*/React.createElement(TweakButton, {
     onClick: () => setPostMenuOpen(true)
   }, "Open post menu"), /*#__PURE__*/React.createElement(TweakButton, {
     onClick: () => setPostQPOpen(true)

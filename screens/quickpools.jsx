@@ -243,7 +243,7 @@ function QuickPoolsScreen({ ctx }) {
                       QUICK POOLS · {(county||'BROWARD').toUpperCase()}
                     </div>
                     <div style={{fontFamily:'var(--pg-font-display)',fontSize:20,fontWeight:800,color:_tx,letterSpacing:'-0.025em',lineHeight:1}}>
-                      {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Quick Pools'}
+                      {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
                     </div>
                   </div>
                 </div>

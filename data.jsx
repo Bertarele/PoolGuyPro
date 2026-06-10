@@ -3,7 +3,7 @@
 const STRINGS = {
   en: {
     // Tabs
-    home:'Home', marketplace:'Marketplace', quickPools:'Quick Pools', work:'Work', profile:'Profile',
+    home:'Home', marketplace:'Marketplace', quickPools:'Express Pools', work:'Work', profile:'Profile',
     // Common
     seeAll:'See all', apply:'Apply', applied:'Applied', contact:'Contact', message:'Message', viewDetails:'View details',
     search:'Search…', edit:'Edit', cancel:'Cancel', confirm:'Confirm', back:'Back', continueBtn:'Continue', save:'Save',
@@ -12,7 +12,7 @@ const STRINGS = {
     today:'Today', tomorrow:'Tomorrow', thisWeek:'This week', flexible:'Flexible', custom:'Set custom',
     // Home
     homeSubtitle:'South Florida · Active', featured:'Featured opportunities', activity:'Activity feed',
-    upgrade:'Upgrade to Premium', upgradeDesc:'Unlock Quick Pools, full marketplace and unlimited applications.',
+    upgrade:'Upgrade to Premium', upgradeDesc:'Unlock Express Pools, full marketplace and unlimited applications.',
     goPro:'Go PRO', getJobsFirst:'Get the jobs\nbefore everyone else.',
     qaPostQuick:'Post Quick', qaSellGear:'Sell gear', qaVacation:'Vacation', qaFindWork:'Find work',
     activityAgo:'ago',
@@ -22,13 +22,13 @@ const STRINGS = {
     routesSaleOnly:'Pool routes are sale-only. PoolGuyPro escrows the first month\'s revenue until handoff is complete.',
     asking:'Asking', makeOffer:'Make offer', requestRental:'Request rental',
     itemsSell:'items · Sell', itemsRent:'items · Rent', routesFor:'routes for sale',
-    // Quick Pools
+    // Express Pools
     postQuick:'Post a Quick Pool', yourRegions:'YOUR REGIONS', mapView:'Map view',
     nearestFirst:'Nearest first', under50:'< $50',
     house:'House', condo:'Condo', offer:'OFFER', whenLabel:'WHEN', pools:'POOLS',
     accessDetails:'ACCESS DETAILS', gateCode:'Gate code', doorman:'Doorman', dogLbl:'Dog', saltwater:'Saltwater', yes:'Yes', no:'No',
     description:'DESCRIPTION', completedJobs:'completed jobs', unlock:'Unlock', unlockApply:'Unlock to apply',
-    premiumUnlocks:'Premium unlocks Quick Pools',
+    premiumUnlocks:'Premium unlocks Express Pools',
     premiumUnlocksDesc:'Apply, contact the poster and see full access details. Cancel anytime.',
     fastTrack:'fast track', unlockPrice:'Unlock — $9.99/mo',
     // Post form
@@ -71,7 +71,7 @@ const STRINGS = {
     verification:'Verification', alwaysLbl:'Always',
     helpSupport:'Help & support', privacy:'Privacy', logout:'Log out',
     subscription:'SUBSCRIPTION', poolguyPro:'PoolGuy PRO', premium:'Premium', free:'Free tier',
-    renews:'Renews', upgradeQp:'Upgrade to unlock Quick Pools', comparePlans:'Compare plans',
+    renews:'Renews', upgradeQp:'Upgrade to unlock Express Pools', comparePlans:'Compare plans',
     tapTier:'Tap a tier to preview gating behavior across the app',
     on:'On', english:'English', portuguese:'Português', spanish:'Español',
     // Overlays
@@ -85,7 +85,7 @@ const STRINGS = {
     pmVacCover:'Vacation cover', pmVacCoverSub:'Delegate your route',
     pmHireTech:'Hire a tech', pmHireTechSub:'Post a job opening',
     payTitle:'Get the jobs before\neveryone else.',
-    paySub:'Premium unlocks Quick Pools, full marketplace access and removes daily caps.',
+    paySub:'Premium unlocks Express Pools, full marketplace access and removes daily caps.',
     payBest:'BEST VALUE', payTrial:'7-day free trial', paySave:'Or $179/year — save 25%',
     payF1:'View Quick Pool details', payF2:'Apply to jobs', payF3:'Unlimited applications',
     payF4:'Priority notifications', payF5:'Featured marketplace posts', payF6:'PRO badge on your profile',

@@ -805,7 +805,7 @@ function App() {
   const desktopNavItems = [
     { id:'home',    emoji:'🏠', label: lang==='pt'?'Início':lang==='es'?'Inicio':'Home' },
     { id:'market',  emoji:'🏪', label: lang==='pt'?'Mercado':lang==='es'?'Mercado':'Marketplace' },
-    { id:'quick',   emoji:'🏊', label: 'Quick Pools' },
+    { id:'quick',   emoji:'🏊', label: 'Express Pools' },
     { id:'work',    emoji:'💼', label: lang==='pt'?'Trabalho':lang==='es'?'Trabajo':'Work' },
     { id:'profile', emoji:'👤', label: lang==='pt'?'Perfil':lang==='es'?'Perfil':'Profile' },
   ];
@@ -1024,7 +1024,7 @@ function App() {
     const navItems = [
       { id:'home',    label: lang==='pt'?'Início':'Home' },
       { id:'market',  label: lang==='pt'?'Marketplace':'Marketplace' },
-      { id:'quick',   label: 'Quick Pools' },
+      { id:'quick',   label: 'Express Pools' },
       { id:'work',    label: lang==='pt'?'Trabalho':'Work' },
       { id:'profile', label: lang==='pt'?'Perfil':'Profile' },
     ];
@@ -1035,7 +1035,7 @@ function App() {
     const pagesMeta = {
       home:    { label: lang==='pt'?'Início':lang==='es'?'Inicio':'Home',             icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
       market:  { label: 'Marketplace',                                                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> },
-      quick:   { label: 'Quick Pools',                                                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/><path d="M2 17 Q6 13 10 17 Q14 21 18 17 Q20 15 22 17"/><circle cx="12" cy="5" r="2"/></svg> },
+      quick:   { label: 'Express Pools',                                                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/><path d="M2 17 Q6 13 10 17 Q14 21 18 17 Q20 15 22 17"/><circle cx="12" cy="5" r="2"/></svg> },
       work:    { label: lang==='pt'?'Trabalho':lang==='es'?'Trabajo':'Work',           icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> },
       profile: { label: lang==='pt'?'Perfil':lang==='es'?'Perfil':'Profile',           icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
     };
@@ -1496,7 +1496,7 @@ function App() {
         <TweakRadio value={t.tier} options={['free','premium','pro']}
           onChange={v=>{ setTweak('tier', v); }}/>
         <div style={{fontSize:10, color:'rgba(41,38,27,.55)', lineHeight:1.4, marginTop:-4}}>
-          Free = Quick Pools locked. Premium/PRO unlock apply + contact.
+          Free = Express Pools locked. Premium/PRO unlock apply + contact.
         </div>
 
         <TweakSection label="Language"/>
@@ -1505,7 +1505,7 @@ function App() {
 
         <TweakSection label="Quick jumps"/>
         <TweakButton onClick={()=>setIsLoggedIn(false)}>Show login screen</TweakButton>
-        <TweakButton onClick={()=>{ setTab('quick'); }}>Open Quick Pools</TweakButton>
+        <TweakButton onClick={()=>{ setTab('quick'); }}>Open Express Pools</TweakButton>
         <TweakButton onClick={()=>setPostMenuOpen(true)}>Open post menu</TweakButton>
         <TweakButton onClick={()=>setPostQPOpen(true)}>Open Post Quick Pool form</TweakButton>
         <TweakButton onClick={()=>setChatOpen(true)}>Open chat</TweakButton>

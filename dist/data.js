@@ -5,7 +5,7 @@ const STRINGS = {
     // Tabs
     home: 'Home',
     marketplace: 'Marketplace',
-    quickPools: 'Quick Pools',
+    quickPools: 'Express Pools',
     work: 'Work',
     profile: 'Profile',
     // Common
@@ -41,7 +41,7 @@ const STRINGS = {
     featured: 'Featured opportunities',
     activity: 'Activity feed',
     upgrade: 'Upgrade to Premium',
-    upgradeDesc: 'Unlock Quick Pools, full marketplace and unlimited applications.',
+    upgradeDesc: 'Unlock Express Pools, full marketplace and unlimited applications.',
     goPro: 'Go PRO',
     getJobsFirst: 'Get the jobs\nbefore everyone else.',
     qaPostQuick: 'Post Quick',
@@ -64,7 +64,7 @@ const STRINGS = {
     itemsSell: 'items · Sell',
     itemsRent: 'items · Rent',
     routesFor: 'routes for sale',
-    // Quick Pools
+    // Express Pools
     postQuick: 'Post a Quick Pool',
     yourRegions: 'YOUR REGIONS',
     mapView: 'Map view',
@@ -86,7 +86,7 @@ const STRINGS = {
     completedJobs: 'completed jobs',
     unlock: 'Unlock',
     unlockApply: 'Unlock to apply',
-    premiumUnlocks: 'Premium unlocks Quick Pools',
+    premiumUnlocks: 'Premium unlocks Express Pools',
     premiumUnlocksDesc: 'Apply, contact the poster and see full access details. Cancel anytime.',
     fastTrack: 'fast track',
     unlockPrice: 'Unlock — $9.99/mo',
@@ -183,7 +183,7 @@ const STRINGS = {
     premium: 'Premium',
     free: 'Free tier',
     renews: 'Renews',
-    upgradeQp: 'Upgrade to unlock Quick Pools',
+    upgradeQp: 'Upgrade to unlock Express Pools',
     comparePlans: 'Compare plans',
     tapTier: 'Tap a tier to preview gating behavior across the app',
     on: 'On',
@@ -210,7 +210,7 @@ const STRINGS = {
     pmHireTech: 'Hire a tech',
     pmHireTechSub: 'Post a job opening',
     payTitle: 'Get the jobs before\neveryone else.',
-    paySub: 'Premium unlocks Quick Pools, full marketplace access and removes daily caps.',
+    paySub: 'Premium unlocks Express Pools, full marketplace access and removes daily caps.',
     payBest: 'BEST VALUE',
     payTrial: '7-day free trial',
     paySave: 'Or $179/year — save 25%',
