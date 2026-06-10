@@ -815,7 +815,7 @@ function TabBar({
         className: "pg-tab pg-tab-center",
         onClick: () => setTab(tb.id),
         style: {
-          padding: '4px 0',
+          padding: '0px 0',
           gap: 3
         }
       }, /*#__PURE__*/React.createElement("div", {
@@ -833,7 +833,7 @@ function TabBar({
       className: `pg-tab ${on ? 'pg-tab-on' : ''}`,
       onClick: () => setTab(tb.id),
       style: {
-        padding: '4px 0',
+        padding: '0px 0',
         gap: 3
       }
     }, tb.icon(22, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-500)'), /*#__PURE__*/React.createElement("span", {
