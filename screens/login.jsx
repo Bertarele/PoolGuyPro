@@ -284,8 +284,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         }}>
           {/* Logo + tagline no topo do card */}
           <div style={{textAlign:'center', marginBottom:28}}>
-            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:260, width:'auto', filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.18))', marginBottom:4}}/>
-            <div style={{fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.07em', textTransform:'uppercase', marginTop:0}}>{t.tagline}</div>
+            <img src="pgx-logo.png" alt="PoolGuyX" style={{height:300, width:'auto', filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.18))', marginBottom:-8}}/>
+            <div style={{fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.07em', textTransform:'uppercase'}}>{t.tagline}</div>
           </div>
 
           <div style={{width:'100%'}}>
