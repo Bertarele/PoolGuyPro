@@ -3625,128 +3625,137 @@ function MarketplaceScreen({ ctx }) {
       <div style={{height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
 
         {/* ── HERO HEADER ───────────────────────────────────────── */}
-        <div style={{
-          background:'linear-gradient(135deg, #011B5A 0%, #0077B6 60%, #023E8A 100%)',
-          padding:'28px 40px 32px', position:'relative', overflow:'hidden',
-        }}>
-          {/* Decorative circles */}
-          <div style={{position:'absolute', top:-60, right:-60, width:220, height:220,
-            borderRadius:'50%', background:'rgba(255,255,255,0.04)', pointerEvents:'none'}}/>
-          <div style={{position:'absolute', bottom:-40, left:200, width:160, height:160,
-            borderRadius:'50%', background:'rgba(255,255,255,0.03)', pointerEvents:'none'}}/>
+        {(function(){
+          const _tx  = darkMode ? '#fff'                      : '#0A2840';
+          const _sub = darkMode ? 'rgba(255,255,255,0.50)'    : 'rgba(10,40,64,0.50)';
+          const _sub2= darkMode ? 'rgba(255,255,255,0.55)'    : 'rgba(10,40,64,0.55)';
+          const _ib  = darkMode ? 'rgba(255,255,255,0.12)'    : 'rgba(10,40,64,0.08)';
+          const _ibr = darkMode ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(10,40,64,0.12)';
+          const _locBg= darkMode ? 'rgba(0,119,182,0.22)'     : 'rgba(0,119,182,0.12)';
+          const _locBr= darkMode ? '1px solid rgba(0,119,182,0.40)' : '1px solid rgba(0,119,182,0.25)';
+          const _locTx= darkMode ? 'rgba(255,255,255,0.80)'   : '#0A2840';
+          const _bg  = darkMode
+            ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)'
+            : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)';
+          return (
+            <div style={{background:_bg, padding:'28px 40px 32px', position:'relative', overflow:'hidden'}}>
+              <div style={{position:'absolute', top:-60, right:-60, width:220, height:220,
+                borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.04)':'rgba(10,40,64,0.03)', pointerEvents:'none'}}/>
+              <div style={{position:'absolute', bottom:-40, left:200, width:160, height:160,
+                borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.03)':'rgba(10,40,64,0.02)', pointerEvents:'none'}}/>
 
-          {/* Top row: branding + actions */}
-          <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24}}>
-            <div style={{display:'flex', alignItems:'center', gap:14}}>
-              <div style={{
-                width:52, height:52, borderRadius:16,
-                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
-                display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-              }}>
-                {Icon.cart(24,'#fff')}
-              </div>
-              <div>
-                <div style={{fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.50)',
-                  letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:3}}>
-                  {lang==='pt'?'MARKETPLACE · SUL DA FLÓRIDA':'MARKETPLACE · SOUTH FLORIDA'}
+              {/* Top row: branding + actions */}
+              <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24}}>
+                <div style={{display:'flex', alignItems:'center', gap:14}}>
+                  <div style={{width:52, height:52, borderRadius:16, flexShrink:0,
+                    background:_ib, border:_ibr,
+                    display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    {Icon.cart(24,_tx)}
+                  </div>
+                  <div>
+                    <div style={{fontSize:10.5, fontWeight:700, color:_sub,
+                      letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:3}}>
+                      {lang==='pt'?'MARKETPLACE · SUL DA FLÓRIDA':'MARKETPLACE · SOUTH FLORIDA'}
+                    </div>
+                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:28, fontWeight:800,
+                      color:_tx, letterSpacing:'-0.03em', lineHeight:1}}>
+                      {lang==='pt'?'Sul da Flórida':'South Florida'}
+                    </div>
+                    <div style={{fontSize:13, color:_sub2, marginTop:4}}>
+                      {lang==='pt'?'Compra, aluguel e rotas de piscinas':'Buy, rent and pool routes in Broward · Dade · Palm Beach'}
+                    </div>
+                  </div>
                 </div>
-                <div style={{fontFamily:'var(--pg-font-display)', fontSize:28, fontWeight:800,
-                  color:'#fff', letterSpacing:'-0.03em', lineHeight:1}}>
-                  {lang==='pt'?'Sul da Flórida':'South Florida'}
-                </div>
-                <div style={{fontSize:13, color:'rgba(255,255,255,0.55)', marginTop:4}}>
-                  {lang==='pt'?'Compra, aluguel e rotas de piscinas':'Buy, rent and pool routes in Broward · Dade · Palm Beach'}
-                </div>
-              </div>
-            </div>
 
-            {/* Right actions */}
-            <div style={{display:'flex', gap:10, alignItems:'center'}}>
-              <div style={{position:'relative'}}>
-                <button onClick={()=>openChat&&openChat()} style={{
-                  width:44, height:44, borderRadius:13,
-                  background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)',
-                  cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-                  color:'#fff', transition:'all .15s',
-                }}>
-                  {Icon.msg(20,'#fff')}
+                {/* Right actions */}
+                <div style={{display:'flex', gap:10, alignItems:'center'}}>
+                  <div style={{position:'relative'}}>
+                    <button onClick={()=>openChat&&openChat()} style={{
+                      width:44, height:44, borderRadius:13,
+                      background:_ib, border:_ibr,
+                      cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s',
+                    }}>
+                      {Icon.msg(20,_tx)}
+                    </button>
+                    {hasUnreadChat && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
+                      borderRadius:'50%', background:'#FF3B30', border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
+                  </div>
+                  <button onClick={()=>{ setPostOpen(true); setPostMode(null); }} style={{
+                    height:44, padding:'0 20px', borderRadius:13,
+                    background: darkMode ? 'var(--pg-white)' : '#0077B6',
+                    border:'none', cursor:'pointer',
+                    fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700,
+                    color: darkMode ? 'var(--pg-blue-700)' : '#fff',
+                    display:'flex', alignItems:'center', gap:8,
+                    boxShadow:'0 4px 16px rgba(0,0,0,0.15)', transition:'all .15s',
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Search bar */}
+              {isEquipment && (
+                <div style={{position:'relative', marginBottom:20}}>
+                  <div style={{position:'absolute', left:18, top:'50%', transform:'translateY(-50%)',
+                    color:_sub, pointerEvents:'none'}}>
+                    {Icon.search(18)}
+                  </div>
+                  <input
+                    value={q} onChange={e=>setQ(e.target.value)}
+                    placeholder={lang==='pt'?'Buscar equipamentos...':lang==='es'?'Buscar equipos...':'Search equipment...'}
+                    style={{
+                      width:'100%', height:50, paddingLeft:50, paddingRight:20,
+                      borderRadius:14, border: darkMode ? '1px solid rgba(255,255,255,0.20)' : '1px solid rgba(10,40,64,0.18)',
+                      background: darkMode ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.70)',
+                      backdropFilter:'blur(10px)',
+                      color:_tx, fontSize:15, fontFamily:'inherit', outline:'none',
+                      boxSizing:'border-box',
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Stats strip */}
+              <div style={{display:'flex', alignItems:'center', gap:20}}>
+                {[
+                  { icon: Icon.cart(14,_sub2), value: totalItems, label: lang==='pt'?'itens à venda':'items for sale' },
+                  { icon: Icon.pin(14,_sub2),  value: totalRoutes, label: lang==='pt'?'rotas disponíveis':'routes available' },
+                  { icon: (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="2" strokeLinecap="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  ), value: '500+', label: lang==='pt'?'pool guys':'pool guys' },
+                ].map((s,i) => (
+                  <div key={i} style={{display:'flex', alignItems:'center', gap:7}}>
+                    {i > 0 && <div style={{width:1, height:20, background: darkMode?'rgba(255,255,255,0.15)':'rgba(10,40,64,0.12)', marginRight:12}}/>}
+                    <div style={{
+                      width:30, height:30, borderRadius:9,
+                      background:_ib, border:_ibr,
+                      display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+                    }}>{s.icon}</div>
+                    <div>
+                      <div style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:800,
+                        color:_tx, lineHeight:1, letterSpacing:'-0.02em'}}>{s.value}</div>
+                      <div style={{fontSize:10, color:_sub, lineHeight:1, marginTop:2, fontWeight:500}}>{s.label}</div>
+                    </div>
+                  </div>
+                ))}
+                <button onClick={()=>setCountyPickerOpen(true)} style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
+                  background:_locBg, border:_locBr,
+                  borderRadius:999, padding:'6px 14px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+                  {Icon.pin(12,_sub)}
+                  <span style={{fontSize:12, fontWeight:600, color:_locTx, whiteSpace:'nowrap'}}>
+                    {countyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):countyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
+                  </span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                {hasUnreadChat && <span style={{position:'absolute', top:8, right:8, width:8, height:8,
-                  borderRadius:'50%', background:'#FF3B30', border:'2px solid #011B5A'}}/>}
               </div>
-              <button onClick={()=>{ setPostOpen(true); setPostMode(null); }} style={{
-                height:44, padding:'0 20px', borderRadius:13,
-                background:'var(--pg-white)', border:'none', cursor:'pointer',
-                fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700,
-                color:'var(--pg-blue-700)', display:'flex', alignItems:'center', gap:8,
-                boxShadow:'0 4px 16px rgba(0,0,0,0.15)', transition:'all .15s',
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
-              </button>
             </div>
-          </div>
-
-          {/* Search bar */}
-          {isEquipment && (
-            <div style={{position:'relative', marginBottom:20}}>
-              <div style={{
-                position:'absolute', left:18, top:'50%', transform:'translateY(-50%)',
-                color:'rgba(255,255,255,0.45)', pointerEvents:'none',
-              }}>
-                {Icon.search(18)}
-              </div>
-              <input
-                value={q} onChange={e=>setQ(e.target.value)}
-                placeholder={lang==='pt'?'Buscar equipamentos...':lang==='es'?'Buscar equipos...':'Search equipment...'}
-                style={{
-                  width:'100%', height:50, paddingLeft:50, paddingRight:20,
-                  borderRadius:14, border:'1px solid rgba(255,255,255,0.20)',
-                  background:'rgba(255,255,255,0.10)', backdropFilter:'blur(10px)',
-                  color:'#fff', fontSize:15, fontFamily:'inherit', outline:'none',
-                  boxSizing:'border-box',
-                }}
-              />
-            </div>
-          )}
-
-          {/* Stats strip */}
-          <div style={{display:'flex', alignItems:'center', gap:20}}>
-            {[
-              { icon: Icon.cart(14,'rgba(255,255,255,0.80)'), value: totalItems, label: lang==='pt'?'itens à venda':'items for sale' },
-              { icon: Icon.pin(14,'rgba(255,255,255,0.80)'),  value: totalRoutes, label: lang==='pt'?'rotas disponíveis':'routes available' },
-              { icon: (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.80)" strokeWidth="2" strokeLinecap="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              ), value: '500+', label: lang==='pt'?'pool guys':'pool guys' },
-            ].map((s,i) => (
-              <div key={i} style={{display:'flex', alignItems:'center', gap:7}}>
-                {i > 0 && <div style={{width:1, height:20, background:'rgba(255,255,255,0.15)', marginRight:12}}/>}
-                <div style={{
-                  width:30, height:30, borderRadius:9,
-                  background:'rgba(255,255,255,0.10)', border:'1px solid rgba(255,255,255,0.14)',
-                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-                }}>{s.icon}</div>
-                <div>
-                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:800,
-                    color:'#fff', lineHeight:1, letterSpacing:'-0.02em'}}>{s.value}</div>
-                  <div style={{fontSize:10, color:'rgba(255,255,255,0.45)', lineHeight:1, marginTop:2, fontWeight:500}}>{s.label}</div>
-                </div>
-              </div>
-            ))}
-            <button onClick={()=>setCountyPickerOpen(true)} style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
-              background:'rgba(0,119,182,0.25)', border:'1px solid rgba(0,119,182,0.40)',
-              borderRadius:999, padding:'6px 14px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-              {Icon.pin(12,'rgba(255,255,255,0.70)')}
-              <span style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.85)', whiteSpace:'nowrap'}}>
-                {countyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):countyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
-              </span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* ── TAB NAVIGATION ────────────────────────────────────── */}
         {/* ── Tab bar ─────────────────────────────────────────── */}
