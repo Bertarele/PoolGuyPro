@@ -805,7 +805,7 @@ function TabBar({
   return /*#__PURE__*/React.createElement("div", {
     className: "pg-tabbar",
     style: {
-      padding: '0px 6px 0px'
+      padding: '2px 6px 10px'
     }
   }, tabs.map(tb => {
     const on = tb.id === tab;
@@ -815,7 +815,7 @@ function TabBar({
         className: "pg-tab pg-tab-center",
         onClick: () => setTab(tb.id),
         style: {
-          padding: '0px 0',
+          padding: '4px 0',
           gap: 3
         }
       }, /*#__PURE__*/React.createElement("div", {
@@ -833,7 +833,7 @@ function TabBar({
       className: `pg-tab ${on ? 'pg-tab-on' : ''}`,
       onClick: () => setTab(tb.id),
       style: {
-        padding: '0px 0',
+        padding: '4px 0',
         gap: 3
       }
     }, tb.icon(22, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-500)'), /*#__PURE__*/React.createElement("span", {
