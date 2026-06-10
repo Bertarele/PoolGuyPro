@@ -3638,7 +3638,7 @@ function MarketplaceScreen({ ctx }) {
             ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)'
             : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)';
           return (
-            <div style={{background:_bg, padding:'18px 40px 22px', position:'relative', overflow:'hidden'}}>
+            <div style={{background:_bg, padding:'28px 40px 30px', position:'relative', overflow:'hidden'}}>
               <div style={{position:'absolute', top:-60, right:-60, width:220, height:220,
                 borderRadius:'50%', background: darkMode?'rgba(255,255,255,0.04)':'rgba(10,40,64,0.03)', pointerEvents:'none'}}/>
               <div style={{position:'absolute', bottom:-40, left:200, width:160, height:160,
