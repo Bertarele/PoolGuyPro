@@ -331,7 +331,7 @@ function HomeScreen({ ctx }) {
                   }} className="pg-press" style={{
                     display:'flex', flexDirection:'column', alignItems:'flex-start',
                     padding:'11px 11px 11px', borderRadius:14, flexShrink:0,
-                    width:'calc(33.33% - 7px)', minWidth:150,
+                    width:150,
                     scrollSnapAlign:'start',
                     border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
                     background: isPending ? 'var(--pg-ink-50, #F7F9FB)' : 'var(--pg-blue-50)',
