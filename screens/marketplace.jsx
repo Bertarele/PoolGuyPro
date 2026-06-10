@@ -3240,7 +3240,6 @@ function MarketplaceScreen({ ctx }) {
   const [poolPrice,  setPoolPrice]  = React.useState('all');  // individual pools price filter
   const [savedIds,   setSavedIds]   = React.useState(new Set());
   const [shareItem,  setShareItem]  = React.useState(null);
-  const [isDesktop,  setIsDesktop]  = React.useState(() => window.innerWidth >= 900);
 
   // ── Listing open / close with URL state ──────────────────────
   const openListing = React.useCallback((item) => {

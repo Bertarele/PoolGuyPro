@@ -70,14 +70,6 @@ function WorkScreen({ ctx }) {
 
   const activeJobs = MY_APPLICATIONS.filter(a => ['accepted','in_progress'].includes(a.status));
 
-  // ── Desktop state ──────────────────────────────────────────────
-  const [isDesktop, setIsDesktop] = React.useState(() => window.innerWidth >= 900);
-  React.useEffect(() => {
-    const fn = () => setIsDesktop(window.innerWidth >= 900);
-    window.addEventListener('resize', fn);
-    return () => window.removeEventListener('resize', fn);
-  }, []);
-
   const tabs = [
     { id:'hiring', label:t.hiring },
     { id:'techs',  label:lang==='pt'?'Técnicos':lang==='es'?'Técnicos':'Techs' },

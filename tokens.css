@@ -148,6 +148,16 @@ button { font-family: inherit; }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 
+/* ── Responsive visibility helpers (CSS-guaranteed, no JS needed) ── */
+@media (min-width: 769px) {
+  .pg-mobile-only     { display: none !important; }
+  .pg-screen-body     { padding-bottom: 0 !important; }
+  .pg-home-ads-wrap   { margin-top: 18px !important; }
+}
+@media (max-width: 768px) {
+  .pg-desktop-only { display: none !important; }
+}
+
 .pg-sheet-backdrop {
   position: absolute; inset: 0;
   background: rgba(4, 13, 24, 0.55);

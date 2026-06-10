@@ -672,6 +672,14 @@ function App() {
     setTimeout(()=>setToast(null), 2400);
   };
 
+  // ── Responsive: detect desktop vs mobile (must be BEFORE ctx) ──
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
+  React.useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
   const ctx = {
     user,
     setUser: (u) => {
@@ -771,14 +779,6 @@ function App() {
       listingContext: isObj ? (chatConvoTarget.listingContext || null) : null,
     };
   }, [chatConvoTarget]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Responsive: detect desktop vs mobile ─────────────────────
-  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
-  React.useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
 
   // ── Desktop sidebar nav items ─────────────────────────────────
   const desktopNavItems = [
