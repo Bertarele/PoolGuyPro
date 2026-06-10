@@ -3867,28 +3867,6 @@ function MarketplaceScreen({ ctx }) {
                 </div>
               </div>
 
-              {/* Divider */}
-              <div style={{height:1, background:'var(--pg-ink-100)', margin:'24px -20px 24px'}}/>
-
-              {/* Sell prompt */}
-              <div style={{
-                background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-                borderRadius:14, padding:'16px', textAlign:'center',
-              }}>
-                <div style={{fontSize:13, fontWeight:700, color:'#fff', marginBottom:6, lineHeight:1.3}}>
-                  {lang==='pt'?'Tem algo para vender?':'Have something to sell?'}
-                </div>
-                <div style={{fontSize:11, color:'rgba(255,255,255,0.70)', marginBottom:12}}>
-                  {lang==='pt'?'Publique grátis agora':'Post for free in seconds'}
-                </div>
-                <button onClick={()=>{ setPostOpen(true); setPostMode(null); }} style={{
-                  width:'100%', padding:'9px', borderRadius:10,
-                  background:'rgba(255,255,255,0.18)', border:'1px solid rgba(255,255,255,0.25)',
-                  color:'#fff', fontFamily:'inherit', fontSize:12, fontWeight:700, cursor:'pointer',
-                }}>
-                  + {lang==='pt'?'Publicar anúncio':'Post listing'}
-                </button>
-              </div>
             </div>
           )}
 
