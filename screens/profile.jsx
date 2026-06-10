@@ -826,83 +826,83 @@ function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=
     return (
       <div style={{display:'flex', justifyContent:'center', width:'100%'}}>
         <div style={{
-          maxWidth:380, width:'100%',
+          maxWidth:460, width:'100%',
           borderRadius:22, overflow:'hidden', position:'relative',
-          background:'linear-gradient(135deg, #0f0c00 0%, #2a1f00 20%, #4d3800 40%, #6b5000 50%, #4d3800 60%, #2a1f00 80%, #0f0c00 100%)',
-          boxShadow:'0 10px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.25)',
-          border:'1px solid rgba(212,175,55,0.20)',
+          background:'linear-gradient(135deg, #040d1f 0%, #07193d 20%, #0e3070 40%, #1558b0 50%, #0e3070 65%, #07193d 82%, #040d1f 100%)',
+          boxShadow:'0 10px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(14,186,199,0.18)',
+          border:'1px solid rgba(14,186,199,0.20)',
         }}>
-          {/* Silver shimmer bar at top */}
+          {/* Aqua shimmer bar at top */}
           <div style={{
             height:2,
-            background:'linear-gradient(90deg, transparent 0%, rgba(220,220,220,0.15) 20%, rgba(255,255,255,0.70) 50%, rgba(220,220,220,0.15) 80%, transparent 100%)',
+            background:'linear-gradient(90deg, transparent 0%, rgba(14,186,199,0.18) 20%, rgba(160,240,255,0.75) 50%, rgba(14,186,199,0.18) 80%, transparent 100%)',
           }}/>
           {/* Radial glow */}
           <div style={{
-            position:'absolute', width:260, height:260, borderRadius:'50%',
-            background:'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 65%)',
+            position:'absolute', width:280, height:280, borderRadius:'50%',
+            background:'radial-gradient(circle, rgba(14,186,199,0.13) 0%, transparent 60%)',
             top:-80, left:'50%', transform:'translateX(-50%)', pointerEvents:'none',
           }}/>
-          <div style={{position:'relative', padding:'22px 24px 22px', textAlign:'center'}}>
+          <div style={{position:'relative', padding:'24px 28px 24px', textAlign:'center'}}>
             {/* Crown icon */}
             <div style={{
-              width:54, height:54, borderRadius:16, margin:'0 auto 14px',
-              background:'linear-gradient(135deg, rgba(212,175,55,0.20), rgba(255,255,255,0.08))',
-              border:'1px solid rgba(212,175,55,0.35)',
+              width:58, height:58, borderRadius:18, margin:'0 auto 16px',
+              background:'linear-gradient(135deg, rgba(14,186,199,0.22), rgba(0,119,182,0.14))',
+              border:'1px solid rgba(14,186,199,0.38)',
               display:'flex', alignItems:'center', justifyContent:'center',
-              boxShadow:'0 4px 14px rgba(0,0,0,0.35)',
+              boxShadow:'0 4px 16px rgba(0,0,0,0.40)',
             }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="url(#goldGrad)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#aquaGradP)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <defs>
-                  <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#E8D5A3"/>
-                    <stop offset="50%" stopColor="#FFD700"/>
-                    <stop offset="100%" stopColor="#B8860B"/>
+                  <linearGradient id="aquaGradP" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#A8EEFF"/>
+                    <stop offset="50%" stopColor="#0EC8D8"/>
+                    <stop offset="100%" stopColor="#0077B6"/>
                   </linearGradient>
                 </defs>
                 <path d="M2 20h20M5 20l2-8 5 4 5-4 2 8"/>
-                <circle cx="12" cy="8" r="2" fill="#FFD700" stroke="none"/>
-                <circle cx="4" cy="12" r="1.5" fill="#FFD700" stroke="none"/>
-                <circle cx="20" cy="12" r="1.5" fill="#FFD700" stroke="none"/>
+                <circle cx="12" cy="8" r="2" fill="#0EC8D8" stroke="none"/>
+                <circle cx="4" cy="12" r="1.5" fill="#0EC8D8" stroke="none"/>
+                <circle cx="20" cy="12" r="1.5" fill="#0EC8D8" stroke="none"/>
               </svg>
             </div>
             {/* Title */}
             <div style={{
-              fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800,
-              letterSpacing:'-0.01em', lineHeight:1.1, marginBottom:6,
-              background:'linear-gradient(135deg, #D4AF37 0%, #F5E17A 40%, #FFFAE0 55%, #F5E17A 70%, #C9A227 100%)',
+              fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800,
+              letterSpacing:'-0.01em', lineHeight:1.1, marginBottom:7,
+              background:'linear-gradient(135deg, #A8EEFF 0%, #5DDCF0 35%, #FFFFFF 52%, #5DDCF0 68%, #7EC8E3 100%)',
               WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
             }}>
               {lang==='pt' ? 'Seja Premium' : lang==='es' ? 'Hazte Premium' : 'Go Premium'}
             </div>
             {/* Subtitle */}
-            <div style={{fontSize:12.5, color:'rgba(255,255,255,0.55)', marginBottom:18, lineHeight:1.45}}>
+            <div style={{fontSize:13, color:'rgba(255,255,255,0.55)', marginBottom:20, lineHeight:1.5}}>
               {t.upgradeQp}
             </div>
             {/* CTA */}
             <button onClick={openPaywall} style={{
-              width:'100%', height:44, borderRadius:12, border:'1px solid rgba(212,175,55,0.50)',
-              cursor:'pointer', fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700,
+              width:'100%', height:46, borderRadius:13, border:'1px solid rgba(14,186,199,0.45)',
+              cursor:'pointer', fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700,
               letterSpacing:'0.01em',
-              background:'linear-gradient(135deg, #3d2e00, #7a5c00, #bfa030, #7a5c00, #3d2e00)',
-              color:'#FFE87C',
-              boxShadow:'0 4px 16px rgba(0,0,0,0.40)',
+              background:'linear-gradient(135deg, #004d8a, #006ab4, #009ec4, #006ab4, #004d8a)',
+              color:'#B8F0FF',
+              boxShadow:'0 4px 18px rgba(0,0,0,0.42)',
               transition:'filter .15s',
             }}
-              onMouseEnter={e=>e.currentTarget.style.filter='brightness(1.15)'}
+              onMouseEnter={e=>e.currentTarget.style.filter='brightness(1.18)'}
               onMouseLeave={e=>e.currentTarget.style.filter='none'}
             >
               {t.comparePlans} ✦
             </button>
             {/* Tier switcher (for demo) */}
-            <div style={{display:'flex', gap:5, marginTop:12, justifyContent:'center'}}>
+            <div style={{display:'flex', gap:5, marginTop:14, justifyContent:'center'}}>
               {tiers.map(tier => (
                 <button key={tier.id} onClick={()=>setUser(u=>({...u,tier:tier.id}))} style={{
-                  padding:'5px 12px', borderRadius:8, cursor:'pointer', fontFamily:'inherit',
+                  padding:'5px 14px', borderRadius:8, cursor:'pointer', fontFamily:'inherit',
                   fontSize:11, fontWeight:600, transition:'all .12s',
-                  background: user.tier===tier.id ? 'rgba(212,175,55,0.18)' : 'rgba(255,255,255,0.05)',
-                  border: '1px solid '+(user.tier===tier.id ? 'rgba(212,175,55,0.45)' : 'rgba(255,255,255,0.08)'),
-                  color: user.tier===tier.id ? '#F5E17A' : 'rgba(255,255,255,0.35)',
+                  background: user.tier===tier.id ? 'rgba(14,186,199,0.18)' : 'rgba(255,255,255,0.05)',
+                  border: '1px solid '+(user.tier===tier.id ? 'rgba(14,186,199,0.45)' : 'rgba(255,255,255,0.08)'),
+                  color: user.tier===tier.id ? '#A8EEFF' : 'rgba(255,255,255,0.35)',
                 }}>{tier.name}</button>
               ))}
             </div>

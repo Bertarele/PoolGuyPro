@@ -716,115 +716,119 @@ function HomeScreen({
     className: "pg-press",
     style: {
       textAlign: 'left',
-      border: 'none',
+      border: '1px solid rgba(14,186,199,0.22)',
       cursor: 'pointer',
       padding: 0,
-      borderRadius: 18,
+      borderRadius: 22,
       overflow: 'hidden',
       width: '100%',
-      background: 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 45%, #0077B6 100%)',
-      boxShadow: '0 6px 24px rgba(0,20,80,0.32), 0 1px 4px rgba(0,0,0,0.12)',
+      background: 'linear-gradient(135deg, #040d1f 0%, #07193d 20%, #0e3070 40%, #1558b0 50%, #0e3070 65%, #07193d 82%, #040d1f 100%)',
+      boxShadow: '0 10px 36px rgba(0,0,0,0.50), 0 0 0 1px rgba(14,186,199,0.12)',
       position: 'relative'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      position: 'absolute',
-      width: 180,
-      height: 180,
-      borderRadius: '50%',
-      background: 'radial-gradient(circle, rgba(14,186,199,0.20) 0%, transparent 65%)',
-      top: -60,
-      right: -30,
-      pointerEvents: 'none'
+      height: 2,
+      background: 'linear-gradient(90deg, transparent 0%, rgba(14,186,199,0.18) 20%, rgba(160,240,255,0.75) 50%, rgba(14,186,199,0.18) 80%, transparent 100%)'
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
-      width: 120,
-      height: 120,
+      width: 280,
+      height: 280,
       borderRadius: '50%',
-      background: 'radial-gradient(circle, rgba(0,119,182,0.25) 0%, transparent 70%)',
-      bottom: -30,
-      left: 20,
+      background: 'radial-gradient(circle, rgba(14,186,199,0.14) 0%, transparent 60%)',
+      top: -90,
+      right: -60,
       pointerEvents: 'none'
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
-      padding: '18px 18px 16px',
+      padding: '20px 20px 20px',
       display: 'flex',
-      gap: 14,
+      gap: 16,
       alignItems: 'flex-start'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 50,
-      height: 50,
-      borderRadius: 14,
+      width: 54,
+      height: 54,
+      borderRadius: 16,
       flexShrink: 0,
-      background: 'linear-gradient(135deg, rgba(14,186,199,0.30), rgba(0,119,182,0.20))',
-      border: '1px solid rgba(14,186,199,0.40)',
+      background: 'linear-gradient(135deg, rgba(14,186,199,0.22), rgba(0,119,182,0.14))',
+      border: '1px solid rgba(14,186,199,0.38)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0 3px 10px rgba(0,0,0,0.20)'
+      boxShadow: '0 4px 16px rgba(0,0,0,0.35)'
     }
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "24",
-    height: "24",
+    width: "26",
+    height: "26",
     viewBox: "0 0 24 24",
     fill: "none",
-    stroke: "rgba(14,186,199,1)",
-    strokeWidth: "2",
+    stroke: "url(#aquaGrad)",
+    strokeWidth: "1.8",
     strokeLinecap: "round",
     strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("polygon", {
-    points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "aquaGrad",
+    x1: "0",
+    y1: "0",
+    x2: "1",
+    y2: "1"
+  }, /*#__PURE__*/React.createElement("stop", {
+    offset: "0%",
+    stopColor: "#A8EEFF"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "50%",
+    stopColor: "#0EC8D8"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "100%",
+    stopColor: "#0077B6"
+  }))), /*#__PURE__*/React.createElement("path", {
+    d: "M2 20h20M5 20l2-8 5 4 5-4 2 8"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "8",
+    r: "2",
+    fill: "#0EC8D8",
+    stroke: "none"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "4",
+    cy: "12",
+    r: "1.5",
+    fill: "#0EC8D8",
+    stroke: "none"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "20",
+    cy: "12",
+    r: "1.5",
+    fill: "#0EC8D8",
+    stroke: "none"
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h3", {
     style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 5,
-      marginBottom: 7,
-      background: 'rgba(14,186,199,0.18)',
-      border: '1px solid rgba(14,186,199,0.40)',
-      borderRadius: 999,
-      padding: '3px 10px'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 5,
-      height: 5,
-      borderRadius: '50%',
-      background: '#0EC8D8'
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      fontWeight: 800,
-      color: '#0EC8D8',
-      letterSpacing: '0.08em'
-    }
-  }, premiumLbls.tag.toUpperCase())), /*#__PURE__*/React.createElement("h3", {
-    style: {
-      margin: '0 0 5px',
+      margin: '0 0 6px',
       fontFamily: 'var(--pg-font-display)',
-      fontSize: 20,
+      fontSize: 21,
       fontWeight: 800,
-      color: '#fff',
       letterSpacing: '-0.02em',
-      lineHeight: 1.15
+      lineHeight: 1.1,
+      background: 'linear-gradient(135deg, #A8EEFF 0%, #5DDCF0 35%, #FFFFFF 52%, #5DDCF0 68%, #7EC8E3 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
     }
   }, premiumLbls.be), /*#__PURE__*/React.createElement("p", {
     style: {
-      margin: '0 0 12px',
+      margin: '0 0 13px',
       fontSize: 12.5,
-      color: 'rgba(255,255,255,0.72)',
+      color: 'rgba(255,255,255,0.58)',
       lineHeight: 1.45
     }
   }, premiumLbls.desc), /*#__PURE__*/React.createElement("div", {
@@ -832,7 +836,7 @@ function HomeScreen({
       display: 'flex',
       gap: 6,
       flexWrap: 'wrap',
-      marginBottom: 14
+      marginBottom: 16
     }
   }, (lang === 'pt' ? ['Anúncios ilimitados', 'Prioridade', 'Jobs exclusivos'] : lang === 'es' ? ['Anuncios ilimitados', 'Prioridad', 'Trabajos exclusivos'] : ['Unlimited listings', 'Priority', 'Exclusive jobs']).map(feat => /*#__PURE__*/React.createElement("span", {
     key: feat,
@@ -844,16 +848,16 @@ function HomeScreen({
       fontWeight: 600,
       padding: '3px 9px',
       borderRadius: 999,
-      background: 'rgba(255,255,255,0.08)',
-      border: '0.5px solid rgba(255,255,255,0.16)',
-      color: 'rgba(255,255,255,0.85)'
+      background: 'rgba(14,186,199,0.10)',
+      border: '0.5px solid rgba(14,186,199,0.28)',
+      color: 'rgba(255,255,255,0.82)'
     }
   }, /*#__PURE__*/React.createElement("svg", {
     width: "9",
     height: "9",
     viewBox: "0 0 24 24",
     fill: "none",
-    stroke: "rgba(14,186,199,0.90)",
+    stroke: "#0EC8D8",
     strokeWidth: "3",
     strokeLinecap: "round",
     strokeLinejoin: "round"
@@ -864,14 +868,15 @@ function HomeScreen({
       display: 'inline-flex',
       alignItems: 'center',
       gap: 7,
-      background: 'linear-gradient(135deg, #0EC8D8 0%, #0077B6 100%)',
-      color: '#fff',
-      padding: '10px 20px',
-      borderRadius: 11,
+      background: 'linear-gradient(135deg, #004d8a, #006ab4, #009ec4, #006ab4, #004d8a)',
+      border: '1px solid rgba(14,186,199,0.45)',
+      color: '#B8F0FF',
+      padding: '10px 22px',
+      borderRadius: 12,
       fontSize: 13,
       fontWeight: 800,
       letterSpacing: '-0.01em',
-      boxShadow: '0 4px 14px rgba(14,186,199,0.35)'
+      boxShadow: '0 4px 16px rgba(0,0,0,0.38)'
     }
   }, premiumLbls.cta, /*#__PURE__*/React.createElement("svg", {
     width: "13",
