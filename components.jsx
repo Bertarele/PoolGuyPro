@@ -326,9 +326,9 @@ function IconButton({ children, onClick, badge, dark=false }) {
   return (
     <button onClick={onClick} className="pg-press" style={{
       width:38, height:38, borderRadius:12,
-      background: dark ? 'rgba(255,255,255,0.14)' : 'var(--pg-white)',
-      border: dark ? 'none' : '0.5px solid var(--pg-ink-200)',
-      color: dark ? '#fff' : 'var(--pg-ink-700)',
+      background: dark ? 'rgba(255,255,255,0.14)' : 'rgba(10,40,64,0.09)',
+      border: dark ? 'none' : '0.5px solid rgba(10,40,64,0.18)',
+      color: dark ? '#fff' : '#0A2840',
       display:'flex', alignItems:'center', justifyContent:'center',
       cursor:'pointer', position:'relative',
     }}>
@@ -386,12 +386,12 @@ function LangPill({ lang, setLang, onDark=false }) {
     <button className="pg-press" onClick={()=>setLang(next[lang])} style={{
       display:'inline-flex', alignItems:'center', gap:6,
       height:32, padding:'0 10px 0 8px', borderRadius:10,
-      background: onDark ? 'rgba(255,255,255,0.14)' : 'var(--pg-white)',
-      border: onDark ? '0.5px solid rgba(255,255,255,0.18)' : '0.5px solid var(--pg-ink-200)',
-      color: onDark ? '#fff' : 'var(--pg-ink-700)',
+      background: onDark ? 'rgba(255,255,255,0.14)' : 'rgba(10,40,64,0.09)',
+      border: onDark ? '0.5px solid rgba(255,255,255,0.18)' : '0.5px solid rgba(10,40,64,0.18)',
+      color: onDark ? '#fff' : '#0A2840',
       fontSize:12, fontWeight:600, cursor:'pointer',
     }}>
-      {Icon.globe(14, onDark ? 'rgba(255,255,255,0.85)' : 'var(--pg-ink-500)')}
+      {Icon.globe(14, onDark ? 'rgba(255,255,255,0.85)' : 'rgba(10,40,64,0.60)')}
       <span style={{letterSpacing:'0.04em'}}>{flags[lang]}</span>
     </button>
   );

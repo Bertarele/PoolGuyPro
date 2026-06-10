@@ -13,6 +13,8 @@ function WorkScreen({ ctx }) {
   const [sub, setSub] = React.useState('hiring');
   const [vacTab, setVacTab] = React.useState('applied');
   const [myActivityTab, setMyActivityTab] = React.useState('applications'); // 'applications' | 'myposts'
+  const [activityLimit, setActivityLimit] = React.useState(4);
+  const [deletedAppIds, setDeletedAppIds] = React.useState(new Set());
   const [workCountyFilter,     setWorkCountyFilter]     = React.useState(['Broward','Miami-Dade','Palm Beach']);
   const [workCountyPickerOpen, setWorkCountyPickerOpen] = React.useState(false);
 
@@ -210,8 +212,17 @@ function WorkScreen({ ctx }) {
   const myAppsHiring  = [...myLiveApps, ...staticAppsHiring];
   const myPostsHiring = [...myLiveJobs, ...staticPostsHiring];
 
-  const currentMyApps  = sub === 'hiring' ? myAppsHiring : myAppsVac;
+  const currentMyApps  = (sub === 'hiring' ? myAppsHiring : myAppsVac).filter(a => !deletedAppIds.has(a.id));
   const currentMyPosts = sub === 'hiring' ? myPostsHiring : myPostsVac;
+
+  const deleteApp = React.useCallback(async (app) => {
+    if (app._live && window.sb) {
+      await window.sb.from('job_applications').delete().eq('id', app.id);
+    }
+    setDeletedAppIds(p => new Set([...p, app.id]));
+  }, []);
+
+  const visibleApps = currentMyApps.slice(0, activityLimit);
 
   // ── Desktop layout ─────────────────────────────────────────────
   if (isDesktop) {
@@ -431,7 +442,8 @@ function WorkScreen({ ctx }) {
                 {myActivityTab === 'applications' && (
                   currentMyApps.length === 0
                     ? <div style={{textAlign:'center',padding:'12px 0 4px',color:'var(--pg-ink-400)',fontSize:12.5}}>{emptyApps}</div>
-                    : currentMyApps.map((app, i) => {
+                    : <>
+                      {visibleApps.map((app, i) => {
                         if (sub === 'hiring') {
                           const isPending  = app.status === 'pending';
                           const isAccepted = app.status === 'accepted' || app.status === 'in_progress';
@@ -442,20 +454,25 @@ function WorkScreen({ ctx }) {
                               ? {label:lang==='pt'?'Aceito ✓':lang==='es'?'Aceptado ✓':'Accepted ✓',color:'var(--pg-blue-600)',bg:'var(--pg-blue-50)'}
                               : {label:lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected',color:'oklch(0.45 0.18 20)',bg:'oklch(0.95 0.04 20)'};
                           return (
-                            <div key={app.id} onClick={()=>openHiringAppDetail&&openHiringAppDetail(app)}
-                              style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)',cursor:'pointer'}}>
-                              <div style={{
-                                width:8,height:8,borderRadius:'50%',flexShrink:0,
-                                background: isAccepted ? 'var(--pg-blue-500)' : isPending ? 'oklch(0.75 0.14 68)' : 'oklch(0.60 0.18 20)',
-                              }}/>
-                              <div style={{flex:1,minWidth:0}}>
+                            <div key={app.id} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)'}}>
+                              <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
+                                background: isAccepted ? 'var(--pg-blue-500)' : isPending ? 'oklch(0.75 0.14 68)' : 'oklch(0.60 0.18 20)'}}/>
+                              <div onClick={()=>openHiringAppDetail&&openHiringAppDetail(app)} style={{flex:1,minWidth:0,cursor:'pointer'}}>
                                 <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{app.company}</div>
                                 <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginTop:2}}>
                                   <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:statusCfg.bg,color:statusCfg.color}}>{statusCfg.label}</span>
                                   <span style={{fontSize:11,color:'var(--pg-ink-400)'}}>· {tr(app.pay,lang)}</span>
                                 </div>
                               </div>
-                              {Icon.chev(13,'var(--pg-ink-300)')}
+                              {isRejected ? (
+                                <button onClick={()=>deleteApp(app)} style={{
+                                  flexShrink:0,width:26,height:26,borderRadius:7,border:'1px solid #FCA5A5',
+                                  background:'#FEF2F2',color:'#EF4444',cursor:'pointer',
+                                  display:'flex',alignItems:'center',justifyContent:'center',
+                                }}>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </button>
+                              ) : Icon.chev(13,'var(--pg-ink-300)')}
                             </div>
                           );
                         }
@@ -481,7 +498,17 @@ function WorkScreen({ ctx }) {
                             {Icon.chev(13,'var(--pg-ink-300)')}
                           </div>
                         );
-                      })
+                      })}
+                      {currentMyApps.length > activityLimit && (
+                        <button onClick={()=>setActivityLimit(p=>p+4)} style={{
+                          width:'100%',marginTop:6,padding:'6px 0',borderRadius:8,border:'none',
+                          background:'var(--pg-ink-100)',color:'var(--pg-blue-600)',fontWeight:700,
+                          fontSize:11.5,cursor:'pointer',fontFamily:'inherit',
+                        }}>
+                          {lang==='pt'?`Ver mais (${currentMyApps.length-activityLimit})`:lang==='es'?`Ver más (${currentMyApps.length-activityLimit})`:`See more (${currentMyApps.length-activityLimit})`}
+                        </button>
+                      )}
+                    </>
                 )}
 
                 {/* My Posts list */}
@@ -930,33 +957,44 @@ function WorkScreen({ ctx }) {
 
               {/* ── Applications tab ── */}
               {myActivityTab === 'applications' && (
-                myApps.length === 0
+                currentMyApps.length === 0
                   ? <div style={{textAlign:'center', padding:'10px 0 4px', color:'var(--pg-ink-400)', fontSize:12.5}}>{emptyApps}</div>
-                  : myApps.map((app, i) => {
+                  : <>
+                    {visibleApps.map((app, i) => {
                       // Hiring app
                       if (sub === 'hiring') {
                         const isPending  = app.status === 'pending';
                         const isAccepted = app.status === 'accepted';
                         const isProgress = app.status === 'in_progress';
+                        const isRejected = app.status === 'rejected';
                         const statusCfg = isPending
                           ? { label: lang==='pt'?'Aguardando':lang==='es'?'Pendiente':'Pending',   color:'oklch(0.48 0.14 68)', bg:'oklch(0.96 0.05 68)' }
                           : isAccepted || isProgress
                             ? { label: lang==='pt'?'Aceito ✓':lang==='es'?'Aceptado ✓':'Accepted ✓', color:'var(--pg-blue-600)', bg:'var(--pg-blue-50)' }
                             : { label: lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected',     color:'oklch(0.45 0.18 20)', bg:'oklch(0.95 0.04 20)' };
                         return (
-                          <div key={app.id} onClick={()=>openHiringAppDetail && openHiringAppDetail(app)}
-                            style={{display:'flex', alignItems:'center', gap:10, padding:'8px 0',
-                              borderTop:'1px solid var(--pg-ink-100)', cursor:'pointer'}}>
-                            <div style={{flex:1, minWidth:0}}>
-                              <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:3,
-                                whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{app.company}</div>
-                              <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
-                                <span style={{fontSize:10.5, fontWeight:700, padding:'2px 6px', borderRadius:6,
-                                  background:statusCfg.bg, color:statusCfg.color}}>{statusCfg.label}</span>
-                                <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>· {tr(app.pay, lang)}</span>
+                          <div key={app.id} style={{display:'flex', alignItems:'center', gap:8, padding:'8px 0', borderTop:'1px solid var(--pg-ink-100)'}}>
+                            <div onClick={()=>openHiringAppDetail && openHiringAppDetail(app)} style={{flex:1, minWidth:0, cursor:'pointer', display:'flex', alignItems:'center', gap:8}}>
+                              <div style={{flex:1, minWidth:0}}>
+                                <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:3,
+                                  whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{app.company}</div>
+                                <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
+                                  <span style={{fontSize:10.5, fontWeight:700, padding:'2px 6px', borderRadius:6,
+                                    background:statusCfg.bg, color:statusCfg.color}}>{statusCfg.label}</span>
+                                  <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>· {tr(app.pay, lang)}</span>
+                                </div>
                               </div>
+                              {!isRejected && Icon.chev(14,'var(--pg-ink-300)')}
                             </div>
-                            {Icon.chev(14,'var(--pg-ink-300)')}
+                            {isRejected && (
+                              <button onClick={()=>deleteApp(app)} style={{
+                                flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid #FCA5A5',
+                                background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
+                                display:'flex', alignItems:'center', justifyContent:'center',
+                              }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                              </button>
+                            )}
                           </div>
                         );
                       }
@@ -995,7 +1033,17 @@ function WorkScreen({ ctx }) {
                           </div>
                         </div>
                       );
-                    })
+                    })}
+                    {currentMyApps.length > activityLimit && (
+                      <button onClick={()=>setActivityLimit(p=>p+4)} style={{
+                        width:'100%', marginTop:6, padding:'7px 0', borderRadius:8, border:'none',
+                        background:'var(--pg-ink-100)', color:'var(--pg-blue-600)', fontWeight:700,
+                        fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                      }}>
+                        {lang==='pt'?`Ver mais (${currentMyApps.length - activityLimit})`:lang==='es'?`Ver más (${currentMyApps.length - activityLimit})`:`See more (${currentMyApps.length - activityLimit})`}
+                      </button>
+                    )}
+                  </>
               )}
 
               {/* ── My Posts tab ── */}
@@ -1221,15 +1269,101 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
   }[c] || c);
 
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
+  const [selectedJob, setSelectedJob] = React.useState(null);
 
   return (
     <>
+    {/* ── Job detail sheet ── */}
+    <Sheet open={!!selectedJob} onClose={()=>setSelectedJob(null)} height="92%">
+      {selectedJob && (() => {
+        const job = selectedJob;
+        const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
+        return (
+          <div style={{padding:'0 0 32px'}}>
+            <div style={{padding:'8px 18px 16px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+              <button onClick={()=>setSelectedJob(null)} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:15, fontWeight:600, cursor:'pointer', padding:0}}>
+                {lang==='pt'?'Fechar':lang==='es'?'Cerrar':'Close'}
+              </button>
+              <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, letterSpacing:'-0.01em'}}>
+                {lang==='pt'?'Detalhes da Vaga':lang==='es'?'Detalle del Empleo':'Job Details'}
+              </h2>
+              <div style={{width:60}}/>
+            </div>
+            <div style={{padding:'0 18px', display:'flex', flexDirection:'column', gap:14}}>
+              {/* Company */}
+              <div style={{display:'flex', alignItems:'center', gap:12}}>
+                <div style={{width:44, height:44, borderRadius:12, background:'var(--pg-blue-100)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-700)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h2M13 8h2M9 12h2M13 12h2M9 16h2M13 16h2"/></svg>
+                </div>
+                <div>
+                  <div style={{fontSize:18, fontWeight:700, fontFamily:'var(--pg-font-display)', letterSpacing:'-0.015em'}}>{job.author}</div>
+                  {job.role && <div style={{fontSize:13, color:'var(--pg-ink-600)', marginTop:2}}>{job.role}</div>}
+                </div>
+              </div>
+              {/* Description */}
+              {job.desc && <p style={{margin:0, fontSize:13.5, color:'var(--pg-ink-700)', lineHeight:1.6, background:'var(--pg-ink-50)', borderRadius:10, padding:'12px 14px'}}>{job.desc}</p>}
+              {/* Info */}
+              <div style={{display:'flex', flexDirection:'column', gap:8, fontSize:13, color:'var(--pg-ink-600)'}}>
+                {job.loc && <div style={{display:'flex', alignItems:'center', gap:8}}>{Icon.pin(15,'var(--pg-blue-500)')} {job.loc}</div>}
+                {job.contract && <div style={{display:'flex', alignItems:'center', gap:8}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  {({fullTime:lang==='pt'?'Full-time':lang==='es'?'Tiempo completo':'Full-time', partTime:lang==='pt'?'Part-time':lang==='es'?'Medio tiempo':'Part-time', contract:lang==='pt'?'Contrato':lang==='es'?'Contrato':'Contract'})[job.contract] || job.contract}
+                </div>}
+                {job.equipReq && <div style={{display:'flex', alignItems:'center', gap:8}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 7a4 4 0 1 0-5 5l-6 6 3 3 6-6a4 4 0 0 0 5-5l-3 3-3-3z"/></svg>
+                  {job.equipReq === 'companyEquip' ? (lang==='pt'?'Equipamento fornecido':lang==='es'?'Equipo provisto':'Equipment provided') : (lang==='pt'?'Equip. próprio necessário':lang==='es'?'Equipo propio requerido':'Own equipment required')}
+                </div>}
+                {job.carReq && <div style={{display:'flex', alignItems:'center', gap:8}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg>
+                  {job.carReq === 'companyCar' ? (lang==='pt'?'Carro da empresa':lang==='es'?'Auto de empresa':'Company car provided') : (lang==='pt'?'Carro próprio necessário':lang==='es'?'Auto propio requerido':'Own car required')}
+                </div>}
+                {job.licenseReq === 'required' && <div style={{display:'flex', alignItems:'center', gap:8}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M7 11h4M7 14h6M15 10h2v4h-2z"/></svg>
+                  {lang==='pt'?"Driver's license obrigatória":lang==='es'?"Driver's license requerida":"Driver's license required"}
+                </div>}
+              </div>
+              {/* Salary */}
+              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderRadius:12, background:'var(--pg-blue-50)', border:'1px solid var(--pg-blue-100)'}}>
+                <span style={{fontSize:13, color:'var(--pg-blue-700)', fontWeight:600}}>{lang==='pt'?'Remuneração':lang==='es'?'Pago':'Pay'}</span>
+                <span style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
+                  {job.payMode === 'neg' ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable') : `$${job.pay}${job.payMode==='weekly'?(lang==='pt'?'/sem':'/wk'):'/pool'}`}
+                </span>
+              </div>
+            </div>
+            {/* Apply button */}
+            <div style={{padding:'20px 18px 0', position:'sticky', bottom:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)', marginTop:16}}>
+              {myApp?.status === 'rejected' ? (
+                <div style={{padding:'14px', borderRadius:12, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)', textAlign:'center', fontSize:13, fontWeight:700, color:'#EF4444'}}>
+                  {lang==='pt'?'Candidatura recusada':lang==='es'?'Solicitud rechazada':'Application rejected'}
+                </div>
+              ) : myApp?.status === 'pending' ? (
+                <div style={{padding:'14px', borderRadius:12, background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.25)', textAlign:'center', fontSize:13, fontWeight:700, color:'#D97706'}}>
+                  {lang==='pt'?'Candidatura enviada — aguardando resposta':lang==='es'?'Solicitud enviada — esperando respuesta':'Application sent — awaiting response'}
+                </div>
+              ) : myApp?.status === 'accepted' ? (
+                <div style={{padding:'14px', borderRadius:12, background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.25)', textAlign:'center', fontSize:13, fontWeight:700, color:'#10B981'}}>
+                  {lang==='pt'?'Candidatura aceita!':lang==='es'?'¡Solicitud aceptada!':'Application accepted!'}
+                </div>
+              ) : user?.uid && user.uid === job.author_id ? (
+                <div style={{padding:'14px', borderRadius:12, background:'var(--pg-blue-50)', border:'1px solid var(--pg-blue-100)', textAlign:'center', fontSize:13, fontWeight:700, color:'var(--pg-blue-600)'}}>
+                  {lang==='pt'?'Sua vaga':lang==='es'?'Tu oferta':'Your listing'}
+                </div>
+              ) : (
+                <button onClick={()=>{ setSelectedJob(null); onApply && onApply(job); }} className="pg-btn pg-btn-primary" style={{width:'100%', height:52, fontSize:16, borderRadius:14}}>
+                  {t.apply}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+    </Sheet>
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
       {/* ── Live jobs posted by real users (hide own jobs if hidePosted) ── */}
       {liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).map(job => (
-        <article key={job._id} className="pg-card" style={{padding:'14px 16px'}}>
+        <article key={job._id} className="pg-card pg-press" onClick={()=>setSelectedJob(job)} style={{padding:'14px 16px', cursor:'pointer'}}>
           {/* Header: author name with building icon + NEW badge */}
-          <button onClick={()=>openPublicProfile && openPublicProfile({ name:job.author, rating:4.8, reviews:0, jobs:0, loc:job.loc })}
+          <button onClick={(e)=>{ e.stopPropagation(); openPublicProfile && openPublicProfile({ name:job.author, rating:4.8, reviews:0, jobs:0, loc:job.loc }); }}
             style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', width:'100%'}} className="pg-press">
             <div style={{
               width:28, height:28, borderRadius:7, background:'var(--pg-blue-100)',
@@ -3120,6 +3254,7 @@ function HiringRequirementCard({ options, value, onChange }) {
 
 function PostHiringSheet({ onClose, lang='en', onSubmit }) {
   const t = STRINGS[lang];
+  const [company,  setCompany]  = React.useState('');
   const [role,     setRole]     = React.useState('');
   const [loc,      setLoc]      = React.useState('');
   const [contract, setContract] = React.useState('fullTime');
@@ -3131,6 +3266,8 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
   const [desc,       setDesc]       = React.useState('');
 
   const headLbl     = lang==='pt'?'Publicar vaga':lang==='es'?'Publicar empleo':'Post a job';
+  const companyLbl  = lang==='pt'?'Nome da empresa':lang==='es'?'Nombre de la empresa':'Company name';
+  const companyPh   = lang==='pt'?'ex: South Florida Pools Inc.':lang==='es'?'ej: South Florida Pools Inc.':'e.g. South Florida Pools Inc.';
   const roleLbl     = lang==='pt'?'Título do cargo':lang==='es'?'Título del puesto':'Job title';
   const rolePh      = lang==='pt'?'ex: Técnico de Piscina':lang==='es'?'ej: Técnico de Piscina':'e.g. Pool Service Technician';
   const locLbl      = lang==='pt'?'Localização':lang==='es'?'Ubicación':'Location';
@@ -3197,7 +3334,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
     },
   ];
 
-  const isValid = role.trim().length > 0 && loc.trim().length > 0 && carReq !== '' && equipReq !== '' && licenseReq !== '';
+  const isValid = company.trim().length > 0 && role.trim().length > 0 && loc.trim().length > 0 && carReq !== '' && equipReq !== '' && licenseReq !== '';
 
   return (
     <div style={{padding:'8px 0 24px'}}>
@@ -3213,6 +3350,10 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
       </div>
 
       <div style={{padding:'0 18px', display:'flex', flexDirection:'column', gap:20}}>
+
+        <HiringFormSection label={companyLbl}>
+          <input className="pg-field" value={company} onChange={e=>setCompany(e.target.value)} placeholder={companyPh}/>
+        </HiringFormSection>
 
         <HiringFormSection label={roleLbl}>
           <input className="pg-field" value={role} onChange={e=>setRole(e.target.value)} placeholder={rolePh}/>
@@ -3298,7 +3439,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
             {lang==='pt'?'Selecione os requisitos de veículo, driver\'s license e equipamento':lang==='es'?'Selecciona los requisitos de vehículo, driver\'s license y equipo':'Select vehicle, driver\'s license and equipment to continue'}
           </div>
         )}
-        <button onClick={()=>onSubmit && onSubmit({ role, loc, contract, payMode, pay, carReq, licenseReq, equipReq, desc, photoUrl: null })}
+        <button onClick={()=>onSubmit && onSubmit({ company, role, loc, contract, payMode, pay, carReq, licenseReq, equipReq, desc, photoUrl: null })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.briefcase(17, '#fff')} {submitLbl}

@@ -915,7 +915,7 @@ function App() {
       license_req: data.licenseReq,
       equip_req: data.equipReq,
       description: data.desc,
-      author: authorName,
+      author: data.company && data.company.trim() ? data.company.trim() : authorName,
       author_id: user.uid || null
     } : col === 'techs' ? {
       name: data.name,

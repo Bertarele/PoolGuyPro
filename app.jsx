@@ -640,7 +640,7 @@ function App() {
       role: data.role, loc: data.loc, contract: data.contract,
       pay_mode: data.payMode, pay: data.pay, car_req: data.carReq,
       license_req: data.licenseReq, equip_req: data.equipReq, description: data.desc,
-      author: authorName, author_id: user.uid || null,
+      author: (data.company && data.company.trim()) ? data.company.trim() : authorName, author_id: user.uid || null,
     } : col === 'techs' ? {
       name: data.name, specialty: data.specialty, loc: data.loc,
       phone: data.phone, email: data.email,
