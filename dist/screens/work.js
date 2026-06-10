@@ -1472,6 +1472,8 @@ function WorkScreen({
     const ic = H.text;
     return /*#__PURE__*/React.createElement(NavyBar, {
       darkMode: darkMode,
+      wave: false,
+      bgOverride: darkMode ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)' : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)',
       title: /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 10,

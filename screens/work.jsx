@@ -672,6 +672,10 @@ function WorkScreen({ ctx }) {
         return (
           <NavyBar
             darkMode={darkMode}
+            wave={false}
+            bgOverride={darkMode
+              ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)'
+              : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)'}
             title={
               <div>
                 <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
