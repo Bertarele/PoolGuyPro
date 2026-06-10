@@ -643,9 +643,8 @@ function HomeScreen({
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: '100%',
-        aspectRatio: '1 / 1',
-        height: 'auto',
+        width: 72,
+        height: 72,
         borderRadius: 9,
         overflow: 'hidden',
         flexShrink: 0,

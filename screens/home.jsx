@@ -339,7 +339,7 @@ function HomeScreen({ ctx }) {
                   }}>
                     {/* Thumbnail */}
                     <div style={{
-                      width:'100%', aspectRatio:'1 / 1', height:'auto', borderRadius:9, overflow:'hidden', flexShrink:0, marginBottom:9,
+                      width:72, height:72, borderRadius:9, overflow:'hidden', flexShrink:0, marginBottom:9,
                       background:'linear-gradient(135deg, var(--pg-blue-100), var(--pg-ink-100))',
                     }}>
                       {item.photoUrl
