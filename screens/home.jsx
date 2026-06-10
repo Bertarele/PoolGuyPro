@@ -82,119 +82,135 @@ function HomeScreen({ ctx }) {
     <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
     <div className="pg-screen pg-screen-body" style={{paddingBottom:110, height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
 
-      {/* Header */}
-      {/* ── Desktop compact header (hidden on mobile via CSS) ── */}
-      {(function(){
-        const H = headerTheme(darkMode);
-        const firstName = myAuthor ? myAuthor.split(' ')[0] : (user.email ? user.email.split('@')[0] : '');
-        return (
-          <div className="pg-desktop-only" style={{
-            background: darkMode
-              ? 'linear-gradient(90deg, #071729 0%, #0A1D33 100%)'
-              : 'linear-gradient(90deg, #eaf5ff 0%, #d8edf8 100%)',
-            borderBottom: darkMode ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(10,40,64,0.07)',
-            padding:'0 36px',
-            height:72, display:'flex', alignItems:'center',
-            position:'relative', overflow:'hidden',
-          }}>
-            <div style={{position:'absolute', top:-40, right:80, width:200, height:200, borderRadius:'50%',
-              background: darkMode ? 'radial-gradient(circle, rgba(14,186,199,0.07) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(0,119,182,0.08) 0%, transparent 65%)',
-              pointerEvents:'none'}}/>
-            <div style={{display:'flex', alignItems:'center', gap:14, flex:1}}>
-              <div>
-                <div style={{fontSize:16, fontWeight:700, color:H.text, letterSpacing:'-0.02em', lineHeight:1.2}}>
-                  {greetWord}, {firstName}! 👋
-                </div>
-                <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
-                  {Icon.pin(10, darkMode ? 'var(--pg-aqua-400)' : '#0077B6')}
-                  <span style={{fontSize:11, color:H.faint, fontWeight:500}}>Broward County, FL</span>
-                  <span style={{color:H.faint, fontSize:11, margin:'0 2px'}}>·</span>
-                  <span style={{fontSize:11, color:H.faint, fontWeight:400}}>{subtitle}</span>
-                </div>
-              </div>
-            </div>
-            <div style={{display:'flex', alignItems:'center', gap:10}}>
-              {[
-                { val: myPosts.length, lbl: lang==='pt'?'anúncios':'listings' },
-                { val: liveMarket.length, lbl: lang==='pt'?'no mercado':'in market' },
-              ].map((s,i) => (
-                <div key={i} style={{
-                  padding:'5px 12px', borderRadius:9,
-                  background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,119,182,0.07)',
-                  border: darkMode ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,119,182,0.10)',
-                  display:'flex', alignItems:'baseline', gap:5,
-                }}>
-                  <span style={{fontSize:16, fontWeight:800, color:H.text, fontFamily:'var(--pg-font-display)', lineHeight:1}}>{s.val}</span>
-                  <span style={{fontSize:10, color:H.faint, fontWeight:500}}>{s.lbl}</span>
-                </div>
-              ))}
-              <div style={{width:1, height:28, background: darkMode ? 'rgba(255,255,255,0.10)' : 'rgba(10,40,64,0.10)', margin:'0 2px'}}/>
-              <div style={{
-                background: H.activeBg, border: H.activeBdr,
-                borderRadius:999, padding:'5px 12px', display:'flex', alignItems:'center', gap:5,
-              }}>
-                <div style={{width:7, height:7, borderRadius:'50%', background:'#34D399', boxShadow:'0 0 6px rgba(52,211,153,0.65)'}}/>
-                <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.04em'}}>ACTIVE</span>
-              </div>
-            </div>
-          </div>
-        );
-      }())}
-
-      {/* ── Mobile header — NavyBar (hidden on desktop via CSS) ── */}
+      {/* Header — desktop vs mobile, checked directly at render time */}
       {(function(){
         const H = headerTheme(darkMode);
         const ic = H.text;
         const firstName = myAuthor ? myAuthor.split(' ')[0] : (user.email ? user.email.split('@')[0] : '');
-        return (
-          <div className="pg-mobile-only">
-            <NavyBar
-              darkMode={darkMode}
-              title={<Wordmark size="lg" onDark={darkMode} subtitle={subtitle}/>}
-              right={
-                <>
-                  <LangPill lang={lang} setLang={setLang} onDark={darkMode}/>
-                  <div style={{position:'relative', display:'inline-flex'}}>
-                    <IconButton dark={darkMode} onClick={() => ctx.openChat && ctx.openChat()}>
-                      {Icon.msg(20, ic)}
-                    </IconButton>
-                    {hasUnreadChat && <span style={{
-                      position:'absolute', top:5, right:5,
-                      width:8, height:8, borderRadius:'50%',
-                      background:'#FF3B30', border:`1.5px solid ${darkMode?'#011B5A':'#d0e8f5'}`,
-                      pointerEvents:'none',
-                    }}/>}
-                  </div>
-                  <IconButton dark={darkMode} onClick={openNotifications} badge={!!hasUnreadNotif}>{Icon.bell(20, ic)}</IconButton>
-                </>
-              }
-            >
-              <div style={{marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-                <div>
-                  <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
+        const onDesktop = window.innerWidth > 768;
+
+        if (onDesktop) {
+          // ── Desktop: full banner with logo centred ───────────────
+          return (
+            <div style={{
+              background: darkMode
+                ? 'linear-gradient(135deg, #071729 0%, #0A2240 55%, #071D38 100%)'
+                : 'linear-gradient(135deg, #e8f5ff 0%, #d4ecfa 55%, #c5e4f5 100%)',
+              borderBottom: darkMode ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(10,40,64,0.09)',
+              position:'relative', overflow:'hidden',
+            }}>
+              {/* Decorative glow blobs */}
+              <div style={{position:'absolute', top:-60, left:'30%', width:300, height:300, borderRadius:'50%',
+                background: darkMode ? 'radial-gradient(circle, rgba(14,186,199,0.06) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(0,119,182,0.07) 0%, transparent 65%)',
+                pointerEvents:'none'}}/>
+              <div style={{position:'absolute', bottom:-80, right:'10%', width:260, height:260, borderRadius:'50%',
+                background: darkMode ? 'radial-gradient(circle, rgba(0,122,255,0.05) 0%, transparent 65%)' : 'radial-gradient(circle, rgba(14,186,199,0.06) 0%, transparent 65%)',
+                pointerEvents:'none'}}/>
+
+              {/* Main row */}
+              <div style={{display:'flex', alignItems:'center', padding:'18px 36px 14px', gap:0}}>
+
+                {/* LEFT — greeting + location */}
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:17, fontWeight:700, color:H.text, letterSpacing:'-0.02em', lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
                     {greetWord}, {firstName}! 👋
                   </div>
-                  <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
-                    {Icon.pin(10,'var(--pg-aqua-400)')}
-                    <span style={{fontSize:11, color:H.faint, fontWeight:500}}>Broward County, FL</span>
+                  <div style={{display:'flex', alignItems:'center', gap:5, marginTop:4}}>
+                    {Icon.pin(10, darkMode ? 'var(--pg-aqua-400)' : '#0077B6')}
+                    <span style={{fontSize:11.5, color:H.faint, fontWeight:500}}>Broward County, FL</span>
+                    <span style={{color:H.faint, fontSize:11, margin:'0 3px'}}>·</span>
+                    <span style={{fontSize:11, color:H.faint, fontWeight:400}}>{subtitle}</span>
                   </div>
                 </div>
-                <div style={{
-                  background:H.activeBg, border:H.activeBdr,
-                  borderRadius:999, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
-                }}>
-                  <div style={{width:7, height:7, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/>
-                  <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.03em'}}>ACTIVE</span>
+
+                {/* CENTRE — logo */}
+                <div style={{flex:'0 0 auto', display:'flex', justifyContent:'center', padding:'0 40px'}}>
+                  <img
+                    src={darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png'}
+                    alt="PoolGuyX"
+                    style={{height:46, objectFit:'contain', filter: darkMode ? 'drop-shadow(0 2px 8px rgba(14,186,199,0.25))' : 'drop-shadow(0 2px 6px rgba(0,90,160,0.15))'}}
+                  />
+                </div>
+
+                {/* RIGHT — stats + active */}
+                <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:10}}>
+                  {[
+                    { val: myPosts.length,    lbl: lang==='pt'?'anúncios':lang==='es'?'anuncios':'listings' },
+                    { val: liveMarket.length, lbl: lang==='pt'?'no mercado':lang==='es'?'en mercado':'in market' },
+                    { val: liveJobs.length,   lbl: lang==='pt'?'vagas':lang==='es'?'empleos':'jobs' },
+                  ].map((s,i) => (
+                    <div key={i} style={{
+                      padding:'6px 14px', borderRadius:10,
+                      background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,119,182,0.07)',
+                      border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,119,182,0.11)',
+                      display:'flex', flexDirection:'column', alignItems:'center', gap:1,
+                    }}>
+                      <span style={{fontSize:18, fontWeight:800, color:H.text, fontFamily:'var(--pg-font-display)', lineHeight:1}}>{s.val}</span>
+                      <span style={{fontSize:10, color:H.faint, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.04em'}}>{s.lbl}</span>
+                    </div>
+                  ))}
+                  <div style={{width:1, height:32, background: darkMode ? 'rgba(255,255,255,0.10)' : 'rgba(10,40,64,0.10)', margin:'0 2px'}}/>
+                  <div style={{
+                    background: H.activeBg, border: H.activeBdr,
+                    borderRadius:999, padding:'7px 14px', display:'flex', alignItems:'center', gap:5,
+                  }}>
+                    <div style={{width:7, height:7, borderRadius:'50%', background:'#34D399', boxShadow:'0 0 7px rgba(52,211,153,0.70)'}}/>
+                    <span style={{fontSize:11, fontWeight:700, color:H.activeTxt, letterSpacing:'0.04em'}}>ACTIVE</span>
+                  </div>
                 </div>
               </div>
-              <div style={{height:16}}/>
-            </NavyBar>
-          </div>
+            </div>
+          );
+        }
+
+        // ── Mobile: NavyBar ───────────────────────────────────────
+        return (
+          <NavyBar
+            darkMode={darkMode}
+            title={<Wordmark size="lg" onDark={darkMode} subtitle={subtitle}/>}
+            right={
+              <>
+                <LangPill lang={lang} setLang={setLang} onDark={darkMode}/>
+                <div style={{position:'relative', display:'inline-flex'}}>
+                  <IconButton dark={darkMode} onClick={() => ctx.openChat && ctx.openChat()}>
+                    {Icon.msg(20, ic)}
+                  </IconButton>
+                  {hasUnreadChat && <span style={{
+                    position:'absolute', top:5, right:5,
+                    width:8, height:8, borderRadius:'50%',
+                    background:'#FF3B30', border:`1.5px solid ${darkMode?'#011B5A':'#d0e8f5'}`,
+                    pointerEvents:'none',
+                  }}/>}
+                </div>
+                <IconButton dark={darkMode} onClick={openNotifications} badge={!!hasUnreadNotif}>{Icon.bell(20, ic)}</IconButton>
+              </>
+            }
+          >
+            <div style={{marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+              <div>
+                <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
+                  {greetWord}, {firstName}! 👋
+                </div>
+                <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
+                  {Icon.pin(10,'var(--pg-aqua-400)')}
+                  <span style={{fontSize:11, color:H.faint, fontWeight:500}}>Broward County, FL</span>
+                </div>
+              </div>
+              <div style={{
+                background:H.activeBg, border:H.activeBdr,
+                borderRadius:999, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
+              }}>
+                <div style={{width:7, height:7, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/>
+                <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.03em'}}>ACTIVE</span>
+              </div>
+            </div>
+            <div style={{height:16}}/>
+          </NavyBar>
         );
       }())}
 
       {/* ── Meus Anúncios card ── */}
-      <div className="pg-home-ads-wrap" style={{padding:'0 18px', marginTop:-20}}>
+      <div style={{padding:'0 18px', marginTop: window.innerWidth > 768 ? 18 : -20}}>
         <div className="pg-card" style={{padding:'16px 16px 18px', position:'relative'}}>
 
           {/* Header row */}
