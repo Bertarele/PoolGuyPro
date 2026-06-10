@@ -594,8 +594,9 @@ function ReputationBadge({
       letterSpacing: '0.05em',
       padding: isLg ? '4px 10px' : '2px 7px',
       borderRadius: 6,
-      background: bg,
-      color
+      background: 'transparent',
+      color,
+      border: `1px solid ${color}`
     }
   }, isLg && /*#__PURE__*/React.createElement("span", {
     style: {

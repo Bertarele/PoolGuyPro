@@ -168,7 +168,7 @@ function ProfileScreen({ ctx }) {
         </div>
 
         {/* Subscription */}
-        <SubscriptionCard user={user} setUser={setUser} openPaywall={openPaywall} t={t}/>
+        <SubscriptionCard user={user} setUser={setUser} openPaywall={openPaywall} t={t} lang={lang} isDesktop={isDesktop}/>
 
         {/* Personal Info */}
         <PersonalInfoCard user={user} setUser={setUser} lang={lang}/>
@@ -814,12 +814,105 @@ function PersonalInfoCard({ user, setUser, lang }) {
   );
 }
 
-function SubscriptionCard({ user, setUser, openPaywall, t }) {
+function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=false }) {
   const tiers = [
     { id:'free',    name:t.free },
     { id:'premium', name:t.premium },
     { id:'pro',     name:'PRO' },
   ];
+
+  // Desktop free-tier: compact premium upsell with gold/silver gradient
+  if (isDesktop && user.tier === 'free') {
+    return (
+      <div style={{display:'flex', justifyContent:'center', width:'100%'}}>
+        <div style={{
+          maxWidth:380, width:'100%',
+          borderRadius:22, overflow:'hidden', position:'relative',
+          background:'linear-gradient(135deg, #0f0c00 0%, #2a1f00 20%, #4d3800 40%, #6b5000 50%, #4d3800 60%, #2a1f00 80%, #0f0c00 100%)',
+          boxShadow:'0 10px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.25)',
+          border:'1px solid rgba(212,175,55,0.20)',
+        }}>
+          {/* Silver shimmer bar at top */}
+          <div style={{
+            height:2,
+            background:'linear-gradient(90deg, transparent 0%, rgba(220,220,220,0.15) 20%, rgba(255,255,255,0.70) 50%, rgba(220,220,220,0.15) 80%, transparent 100%)',
+          }}/>
+          {/* Radial glow */}
+          <div style={{
+            position:'absolute', width:260, height:260, borderRadius:'50%',
+            background:'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 65%)',
+            top:-80, left:'50%', transform:'translateX(-50%)', pointerEvents:'none',
+          }}/>
+          <div style={{position:'relative', padding:'22px 24px 22px', textAlign:'center'}}>
+            {/* Crown icon */}
+            <div style={{
+              width:54, height:54, borderRadius:16, margin:'0 auto 14px',
+              background:'linear-gradient(135deg, rgba(212,175,55,0.20), rgba(255,255,255,0.08))',
+              border:'1px solid rgba(212,175,55,0.35)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              boxShadow:'0 4px 14px rgba(0,0,0,0.35)',
+            }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="url(#goldGrad)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <defs>
+                  <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#E8D5A3"/>
+                    <stop offset="50%" stopColor="#FFD700"/>
+                    <stop offset="100%" stopColor="#B8860B"/>
+                  </linearGradient>
+                </defs>
+                <path d="M2 20h20M5 20l2-8 5 4 5-4 2 8"/>
+                <circle cx="12" cy="8" r="2" fill="#FFD700" stroke="none"/>
+                <circle cx="4" cy="12" r="1.5" fill="#FFD700" stroke="none"/>
+                <circle cx="20" cy="12" r="1.5" fill="#FFD700" stroke="none"/>
+              </svg>
+            </div>
+            {/* Title */}
+            <div style={{
+              fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800,
+              letterSpacing:'-0.01em', lineHeight:1.1, marginBottom:6,
+              background:'linear-gradient(135deg, #D4AF37 0%, #F5E17A 40%, #FFFAE0 55%, #F5E17A 70%, #C9A227 100%)',
+              WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+            }}>
+              {lang==='pt' ? 'Seja Premium' : lang==='es' ? 'Hazte Premium' : 'Go Premium'}
+            </div>
+            {/* Subtitle */}
+            <div style={{fontSize:12.5, color:'rgba(255,255,255,0.55)', marginBottom:18, lineHeight:1.45}}>
+              {t.upgradeQp}
+            </div>
+            {/* CTA */}
+            <button onClick={openPaywall} style={{
+              width:'100%', height:44, borderRadius:12, border:'1px solid rgba(212,175,55,0.50)',
+              cursor:'pointer', fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700,
+              letterSpacing:'0.01em',
+              background:'linear-gradient(135deg, #3d2e00, #7a5c00, #bfa030, #7a5c00, #3d2e00)',
+              color:'#FFE87C',
+              boxShadow:'0 4px 16px rgba(0,0,0,0.40)',
+              transition:'filter .15s',
+            }}
+              onMouseEnter={e=>e.currentTarget.style.filter='brightness(1.15)'}
+              onMouseLeave={e=>e.currentTarget.style.filter='none'}
+            >
+              {t.comparePlans} ✦
+            </button>
+            {/* Tier switcher (for demo) */}
+            <div style={{display:'flex', gap:5, marginTop:12, justifyContent:'center'}}>
+              {tiers.map(tier => (
+                <button key={tier.id} onClick={()=>setUser(u=>({...u,tier:tier.id}))} style={{
+                  padding:'5px 12px', borderRadius:8, cursor:'pointer', fontFamily:'inherit',
+                  fontSize:11, fontWeight:600, transition:'all .12s',
+                  background: user.tier===tier.id ? 'rgba(212,175,55,0.18)' : 'rgba(255,255,255,0.05)',
+                  border: '1px solid '+(user.tier===tier.id ? 'rgba(212,175,55,0.45)' : 'rgba(255,255,255,0.08)'),
+                  color: user.tier===tier.id ? '#F5E17A' : 'rgba(255,255,255,0.35)',
+                }}>{tier.name}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile / paid tiers: original card
   return (
     <div className="pg-card" style={{padding:14, background:'linear-gradient(135deg,var(--pg-navy-900),var(--pg-blue-600))', color:'#fff', border:'none', position:'relative', overflow:'hidden'}}>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
