@@ -137,7 +137,7 @@ function headerTheme(dark) {
 }
 
 // ── App bar (light/dark responsive) ───────────────────────────
-function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode=true, bgOverride=null }) {
+function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode=true, bgOverride=null, centerDecor=null }) {
   const H = headerTheme(darkMode);
   const bg = bgOverride || (darkMode
     ? 'linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)'
@@ -156,6 +156,9 @@ function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode
       <div style={{position:'absolute', top:-55, right:-55, width:190, height:190, borderRadius:'50%', border:`1px solid ${H.ring1}`, pointerEvents:'none'}}/>
       <div style={{position:'absolute', top:12, right:22, width:108, height:108, borderRadius:'50%', border:`1px solid ${H.ring2}`, pointerEvents:'none'}}/>
       <div style={{position:'absolute', bottom:-35, left:-35, width:130, height:130, borderRadius:'50%', background:H.blob, pointerEvents:'none'}}/>
+
+      {/* Center decoration */}
+      {centerDecor && <div style={{position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none', zIndex:0}}>{centerDecor}</div>}
 
       {/* Title row */}
       <div style={{position:'relative', zIndex:1, display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, minHeight:44}}>

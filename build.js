@@ -101,12 +101,9 @@ if (fs.existsSync(memDir)) {
   });
 }
 
-// Copy any PNG/JPG/SVG/ICO images in root
+// Copy any PNG/JPG/SVG/ICO images in root (always overwrite to pick up new/updated images)
 fs.readdirSync(ROOT).filter(f => /\.(png|jpg|jpeg|svg|ico|webp)$/i.test(f)).forEach(f => {
-  const dist = path.join(DIST, f);
-  if (!fs.existsSync(dist)) {
-    fs.copyFileSync(path.join(ROOT, f), dist);
-  }
+  fs.copyFileSync(path.join(ROOT, f), path.join(DIST, f));
 });
 
 // ── Generate dist/index.html ───────────────────────────────────
