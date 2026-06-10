@@ -3796,7 +3796,7 @@ function MarketplaceScreen({ ctx }) {
             <div style={{
               width:220, flexShrink:0,
               background:'var(--pg-white)', borderRight:'1px solid var(--pg-ink-200)',
-              padding:'28px 20px', position:'sticky', top:72, height:'calc(100vh - 72px)',
+              padding:'28px 20px', position:'sticky', top:0, height:'100vh',
               overflowY:'auto',
             }}>
               {/* Categories */}
