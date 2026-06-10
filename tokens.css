@@ -227,7 +227,7 @@ button { font-family: inherit; }
 .pg-tabbar {
   position: absolute; left: 0; right: 0; bottom: 0;
   display: flex; align-items: flex-end; justify-content: space-around;
-  padding: 8px 6px 28px;
+  padding: 4px 6px 16px;
   background: rgba(255,255,255,0.96);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
@@ -235,8 +235,8 @@ button { font-family: inherit; }
   z-index: 30;
 }
 .pg-tab {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 6px 0; border: none; background: transparent;
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 3px 0; border: none; background: transparent;
   color: var(--pg-ink-400); cursor: pointer; transition: color .15s ease;
 }
 .pg-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
@@ -246,7 +246,7 @@ button { font-family: inherit; }
 /* Elevated center tab — Quick Pools */
 .pg-tab-center { position: relative; }
 .pg-tab-center-dot {
-  width: 56px; height: 56px; border-radius: 50%;
+  width: 46px; height: 46px; border-radius: 50%;
   background: linear-gradient(150deg, var(--pg-aqua-500) 0%, var(--pg-aqua-700) 100%);
   display: flex; align-items: center; justify-content: center;
   box-shadow:
