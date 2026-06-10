@@ -108,7 +108,7 @@ function HomeScreen({ ctx }) {
                 pointerEvents:'none'}}/>
 
               {/* Main row */}
-              <div style={{display:'flex', alignItems:'center', padding:'14px 36px', gap:0}}>
+              <div style={{display:'flex', alignItems:'center', padding:'22px 36px', gap:0}}>
 
                 {/* LEFT — greeting + location */}
                 <div style={{flex:1, minWidth:0}}>
