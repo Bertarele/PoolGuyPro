@@ -2518,7 +2518,7 @@ function App() {
     style: {
       position: 'absolute',
       inset: 0,
-      paddingBottom: 72,
+      paddingBottom: 56,
       overflow: 'auto'
     }
   }, tab === 'home' && /*#__PURE__*/React.createElement(HomeScreen, {

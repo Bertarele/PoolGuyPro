@@ -1457,7 +1457,7 @@ function App() {
       {isLoggedIn && !user.banned && (
         <>
           {/* Screen content */}
-          <div ref={screenRef} data-pg-screen style={{position:'absolute', inset:0, paddingBottom:72, overflow:'auto'}}>
+          <div ref={screenRef} data-pg-screen style={{position:'absolute', inset:0, paddingBottom:56, overflow:'auto'}}>
             {tab === 'home'    && <HomeScreen ctx={ctx}/>}
             {tab === 'market'  && <MarketplaceScreen ctx={ctx}/>}
             {tab === 'quick'   && <QuickPoolsScreen ctx={ctx}/>}
