@@ -1043,7 +1043,7 @@ function App() {
             }}/>
 
             {/* ── Brand logo ── */}
-            <div style={{padding:'30px 22px 18px', flexShrink:0}}>
+            <div style={{padding:'18px 22px 14px', flexShrink:0}}>
               <img
                 src="wordmarkwhite.png"
                 alt="PoolGuyX"
@@ -1052,10 +1052,6 @@ function App() {
                   filter:'drop-shadow(0 3px 14px rgba(14,186,199,0.30))',
                 }}
               />
-              <div style={{
-                marginTop:7, fontSize:9, fontWeight:700,
-                color:'rgba(255,255,255,0.22)', letterSpacing:'0.14em', textTransform:'uppercase',
-              }}>Florida Pool Network</div>
             </div>
 
             {/* Separator */}
