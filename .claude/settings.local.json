@@ -35,7 +35,13 @@
       "Bash(powershell -Command \"Select-String -Path 'screens\\\\home.jsx' -Pattern 'header|Header|NavyBar|nav-bar|appbar|topbar|pg-header' | Select-Object -First 20\")",
       "Bash(python -m http.server 8765 --bind 127.0.0.1)",
       "Bash(powershell -command \"\\(Get-Content index.html -Encoding utf8\\) -replace 'v=64', 'v=65' | Set-Content index.html -Encoding utf8\")",
-      "Bash(powershell -command \"\\(Get-Content PoolGuyPro.html -Encoding utf8\\) -replace 'v=63', 'v=65' | Set-Content PoolGuyPro.html -Encoding utf8\")"
+      "Bash(powershell -command \"\\(Get-Content PoolGuyPro.html -Encoding utf8\\) -replace 'v=63', 'v=65' | Set-Content PoolGuyPro.html -Encoding utf8\")",
+      "Bash(git commit --allow-empty -m ' *)",
+      "Bash(git push *)",
+      "Bash(node build.js)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)"
     ]
   }
 }

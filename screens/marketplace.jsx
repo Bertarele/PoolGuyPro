@@ -4487,14 +4487,13 @@ function MarketplaceScreen({ ctx }) {
                       padding:0, overflow:'hidden', position:'relative',
                       cursor: isSoldItem ? (isMyPost(item) ? 'pointer' : 'default') : 'pointer',
                       border: isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
-                      opacity: isPending ? 0.82 : isSoldItem ? 0.65 : 1,
                       display:'flex', flexDirection:'column',
                       borderRadius:14,
                       background: isSoldItem ? 'var(--pg-ink-50)' : 'var(--pg-white)',
                       textAlign:'left', fontFamily:'inherit',
                       boxShadow:'0 1px 3px rgba(0,0,0,0.08)',
-                      filter: isSoldItem ? 'grayscale(0.6)' : 'none',
                     }}>
+                    <div style={{opacity: isPending ? 0.82 : isSoldItem ? 0.65 : 1, filter: isSoldItem ? 'grayscale(0.6)' : 'none', display:'flex', flexDirection:'column', flex:1}}>
                     {/* Photo area — enforced 4:3 ratio */}
                     <div style={{position:'relative', paddingTop:'72%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
                       <div style={{position:'absolute', inset:0}}>
@@ -4646,26 +4645,27 @@ function MarketplaceScreen({ ctx }) {
                           ⏳ {lang==='pt'?'Em revisão':lang==='es'?'En revisión':'Under review'}
                         </div>
                       )}
-                      {/* Quick-delete button — admin ou dono do post */}
-                      {canAdminDelete && (
-                        <div onClick={handleQuickDelete}
-                          style={{
-                            marginTop:8, padding:'6px 0', borderRadius:8,
-                            background:'#FEF2F2', border:'1px solid #FCA5A5',
-                            color:'#EF4444', fontSize:11, fontWeight:700,
-                            textAlign:'center', cursor:'pointer',
-                            display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-                          }}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                            <path d="M10 11v6"/><path d="M14 11v6"/>
-                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                          </svg>
-                          {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
-                        </div>
-                      )}
                     </div>
+                  </div>
+                    {/* Quick-delete button — outside opacity wrapper so it's never faded */}
+                    {canAdminDelete && (
+                      <div onClick={handleQuickDelete}
+                        style={{
+                          margin:'0 13px 14px', padding:'6px 0', borderRadius:8,
+                          background:'#FEF2F2', border:'1px solid #FCA5A5',
+                          color:'#EF4444', fontSize:11, fontWeight:700,
+                          textAlign:'center', cursor:'pointer',
+                          display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+                        }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                          <path d="M10 11v6"/><path d="M14 11v6"/>
+                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                        {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+                      </div>
+                    )}
                   </button>
                 );
               })}

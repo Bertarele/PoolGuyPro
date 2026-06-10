@@ -1596,69 +1596,6 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
         </article>
       ))}
     </div>
-    {/* My Posted Jobs — bottom section (hidden when tab switcher is active) */}
-    {!hidePosted && (() => {
-      const myPosts = MY_POSTS.filter(p => p.type === 'hiring');
-      if (myPosts.length === 0) return null;
-      const sectionLbl = lang==='pt' ? 'MINHAS VAGAS PUBLICADAS' : lang==='es' ? 'MIS VACANTES PUBLICADAS' : 'MY POSTED JOBS';
-      return (
-        <div style={{borderTop:'0.5px solid var(--pg-ink-200)', marginTop:20, paddingTop:16, marginBottom:16}}>
-          <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:12}}>
-            <div style={{width:3, height:16, borderRadius:2, background:'var(--pg-blue-500)', flexShrink:0}}/>
-            <span style={{fontSize:11.5, fontWeight:700, letterSpacing:'0.06em', color:'var(--pg-ink-700)'}}>
-              {sectionLbl}
-            </span>
-            <span style={{
-              fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999,
-              background:'var(--pg-blue-100)', color:'var(--pg-blue-700)',
-            }}>{myPosts.length}</span>
-          </div>
-          <div style={{display:'flex', flexDirection:'column', gap:12}}>
-            {myPosts.map(post => {
-              const pending       = post.applicants.filter(a=>a.status==='pending').length;
-              const withInterview = post.applicants.filter(a=>a.interview).length;
-              return (
-                <article key={post.id} className="pg-card"
-                  style={{padding:'12px 14px', cursor:'pointer'}}
-                  onClick={()=>onViewApplicants && onViewApplicants(post)}>
-                  <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10}}>
-                    <div style={{flex:1, minWidth:0}}>
-                      <div style={{fontSize:14, fontWeight:700, marginBottom:4,
-                        whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
-                        {tr(post.title, lang)}
-                      </div>
-                      <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
-                        <span style={{fontSize:10.5, fontWeight:700, padding:'2px 7px', borderRadius:999,
-                          background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)'}}>
-                          {lang==='pt'?'ABERTA':lang==='es'?'ABIERTA':'OPEN'}
-                        </span>
-                        {pending > 0 && (
-                          <span style={{fontSize:11, color:'oklch(0.48 0.14 68)', fontWeight:700}}>
-                            {pending} {lang==='pt'?'pendente(s)':lang==='es'?'pendiente(s)':'pending'}
-                          </span>
-                        )}
-                        {withInterview > 0 && (
-                          <span style={{fontSize:11, color:'oklch(0.40 0.18 145)', fontWeight:600}}>
-                            📅 {withInterview} {lang==='pt'?'entrevista':lang==='es'?'entrevista':'interview'}{withInterview>1?'s':''}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{display:'flex', alignItems:'center', gap:5, flexShrink:0}}>
-                      <span style={{fontSize:12, color:'var(--pg-blue-500)', fontWeight:600}}>
-                        {post.applicants.length} {lang==='pt'?'cands.':lang==='es'?'cands.':'apps'}
-                      </span>
-                      {Icon.chev(14,'var(--pg-ink-300)')}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      );
-    })()}
-
     </>
   );
 }

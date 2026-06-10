@@ -8699,15 +8699,21 @@ function MarketplaceScreen({
         position: 'relative',
         cursor: isSoldItem ? isMyPost(item) ? 'pointer' : 'default' : 'pointer',
         border: isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
-        opacity: isPending ? 0.82 : isSoldItem ? 0.65 : 1,
         display: 'flex',
         flexDirection: 'column',
         borderRadius: 14,
         background: isSoldItem ? 'var(--pg-ink-50)' : 'var(--pg-white)',
         textAlign: 'left',
         fontFamily: 'inherit',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-        filter: isSoldItem ? 'grayscale(0.6)' : 'none'
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        opacity: isPending ? 0.82 : isSoldItem ? 0.65 : 1,
+        filter: isSoldItem ? 'grayscale(0.6)' : 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -9024,10 +9030,10 @@ function MarketplaceScreen({
         padding: '4px 8px',
         textAlign: 'center'
       }
-    }, "\u23F3 ", lang === 'pt' ? 'Em revisão' : lang === 'es' ? 'En revisión' : 'Under review'), canAdminDelete && /*#__PURE__*/React.createElement("div", {
+    }, "\u23F3 ", lang === 'pt' ? 'Em revisão' : lang === 'es' ? 'En revisión' : 'Under review'))), canAdminDelete && /*#__PURE__*/React.createElement("div", {
       onClick: handleQuickDelete,
       style: {
-        marginTop: 8,
+        margin: '0 13px 14px',
         padding: '6px 0',
         borderRadius: 8,
         background: '#FEF2F2',
@@ -9060,7 +9066,7 @@ function MarketplaceScreen({
       d: "M14 11v6"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-    })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete')));
+    })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete'));
   }), marketByCounty.filter(m => m.type === mode && (m.status === 'approved' || m.status === 'pending' && isMyPost(m))).length === 0 && (view === 'rent' || list.length === 0) && /*#__PURE__*/React.createElement("div", {
     style: {
       gridColumn: '1/-1',
