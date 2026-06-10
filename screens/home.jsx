@@ -181,7 +181,7 @@ function HomeScreen({ ctx }) {
             <div style={{position:'absolute', top:-55, right:-55, width:190, height:190, borderRadius:'50%', border:`1px solid ${H.ring1}`, pointerEvents:'none'}}/>
 
             {/* Top row: logo + buttons */}
-            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0px 18px 0', position:'relative', zIndex:1, marginTop:-8}}>
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0px 18px 0', position:'relative', zIndex:1, marginTop:-18}}>
               <div style={{height:118, overflow:'hidden'}}>
                 <Wordmark size="nav" onDark={darkMode}/>
               </div>

@@ -309,7 +309,7 @@ function HomeScreen({
         padding: '0px 18px 0',
         position: 'relative',
         zIndex: 1,
-        marginTop: -8
+        marginTop: -18
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
