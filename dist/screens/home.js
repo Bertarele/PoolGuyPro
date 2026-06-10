@@ -354,7 +354,7 @@ function HomeScreen({
       badge: !!hasUnreadNotif
     }, Icon.bell(20, ic)))), /*#__PURE__*/React.createElement("div", {
       style: {
-        padding: '2px 18px 14px',
+        padding: '0px 18px 8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -430,7 +430,7 @@ function HomeScreen({
   }(), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 18px',
-      marginTop: window.innerWidth > 768 ? 18 : -14,
+      marginTop: window.innerWidth > 768 ? 18 : -18,
       position: 'relative',
       zIndex: 2
     }
