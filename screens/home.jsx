@@ -175,7 +175,7 @@ function HomeScreen({ ctx }) {
           ? 'linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)'
           : 'linear-gradient(145deg, #f0f9ff 0%, #dff0fb 52%, #cce8f5 100%)';
         return (
-          <div style={{background:_bg, position:'relative', overflow:'hidden'}}>
+          <div style={{background:_bg, position:'relative', overflow:'hidden', paddingBottom:16}}>
             {/* Decorative circles */}
             <div style={{position:'absolute', top:-60, right:-60, width:200, height:200, borderRadius:'50%', background:H.glow, pointerEvents:'none'}}/>
             <div style={{position:'absolute', top:-55, right:-55, width:190, height:190, borderRadius:'50%', border:`1px solid ${H.ring1}`, pointerEvents:'none'}}/>

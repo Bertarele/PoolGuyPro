@@ -277,7 +277,8 @@ function HomeScreen({
       style: {
         background: _bg,
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        paddingBottom: 16
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
