@@ -3706,6 +3706,17 @@ function MarketplaceScreen({ ctx }) {
                     {hasUnreadChat && <span style={{position:'absolute', top:7, right:7, width:7, height:7,
                       borderRadius:'50%', background:'#FF3B30', border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
                   </div>
+                  <div style={{position:'relative'}}>
+                    <button onClick={()=>openNotifications&&openNotifications()} style={{
+                      width:38, height:38, borderRadius:11,
+                      background:_ib, border:_ibr,
+                      cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s',
+                    }}>
+                      {Icon.bell(18,_tx)}
+                    </button>
+                    {hasUnreadNotif && <span style={{position:'absolute', top:7, right:7, width:7, height:7,
+                      borderRadius:'50%', background:'#FF3B30', border:`2px solid ${darkMode?'#011B5A':'#c5e4f5'}`}}/>}
+                  </div>
                   <button onClick={()=>{ setPostOpen(true); setPostMode(null); }} style={{
                     height:38, padding:'0 16px', borderRadius:11,
                     background: darkMode ? 'rgba(255,255,255,0.95)' : '#0077B6',

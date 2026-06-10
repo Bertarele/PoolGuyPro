@@ -331,6 +331,10 @@ function WorkScreen({ ctx }) {
                       {Icon.msg(18,_tx)}
                       {hasUnreadChat&&<span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${darkMode?'#0077B6':'#c5e4f5'}`}}/>}
                     </button>
+                    <button onClick={()=>openNotifications&&openNotifications()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative'}}>
+                      {Icon.bell(18,_tx)}
+                      {hasUnreadNotif&&<span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${darkMode?'#0077B6':'#c5e4f5'}`}}/>}
+                    </button>
                     <button onClick={handlePostBtn} style={{height:38,padding:'0 16px',borderRadius:11,background:darkMode?'rgba(255,255,255,0.95)':'#0077B6',border:'none',color:darkMode?'#023E8A':'#fff',fontFamily:'inherit',fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:7,boxShadow:'0 3px 12px rgba(0,0,0,0.18)',transition:'all .15s'}}>
                       {postBtn.icon(14,darkMode?'#023E8A':'#fff')}
                       {lang==='pt'?'+ Publicar':lang==='es'?'+ Publicar':'+ Post'} {postBtn.label}
@@ -586,16 +590,6 @@ function WorkScreen({ ctx }) {
                       : `${VACATION_LISTINGS.length + liveVacations.length} ${lang==='pt'?'coberturas disponíveis':lang==='es'?'coberturas disponibles':'covers available'}`}
                 </div>
               </div>
-              <button onClick={handlePostBtn} style={{
-                height:38,padding:'0 18px',borderRadius:10,
-                background:'var(--pg-blue-500)',color:'#fff',
-                border:'none',cursor:'pointer',fontFamily:'inherit',
-                fontSize:13,fontWeight:700,display:'flex',alignItems:'center',gap:7,
-                boxShadow:'0 3px 10px rgba(0,119,182,0.30)',
-              }}>
-                {Icon.plus(15,'#fff')}
-                {postBtn.label}
-              </button>
             </div>
 
             {/* Panel content */}
