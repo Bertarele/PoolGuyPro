@@ -97,7 +97,7 @@ function HomeScreen({ ctx }) {
                 ? 'linear-gradient(135deg, #071729 0%, #0A2240 55%, #071D38 100%)'
                 : 'linear-gradient(135deg, #e8f5ff 0%, #d4ecfa 55%, #c5e4f5 100%)',
               borderBottom: darkMode ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(10,40,64,0.09)',
-              position:'relative', overflow:'hidden',
+              position:'relative', overflow:'visible',
             }}>
               {/* Decorative glow blobs */}
               <div style={{position:'absolute', top:-60, left:'30%', width:300, height:300, borderRadius:'50%',
@@ -123,12 +123,17 @@ function HomeScreen({ ctx }) {
                   </div>
                 </div>
 
-                {/* CENTRE — logo */}
-                <div style={{flex:'0 0 auto', display:'flex', justifyContent:'center', padding:'0 40px'}}>
+                {/* CENTRE — logo (absolute so it doesn't push header height) */}
+                <div style={{flex:'0 0 200px', position:'relative', display:'flex', justifyContent:'center'}}>
                   <img
                     src={darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png'}
                     alt="PoolGuyX"
-                    style={{height:130, objectFit:'contain', filter: darkMode ? 'drop-shadow(0 2px 12px rgba(14,186,199,0.30))' : 'drop-shadow(0 2px 10px rgba(0,90,160,0.18))'}}
+                    style={{
+                      height:120, objectFit:'contain',
+                      position:'absolute', top:'50%', transform:'translateY(-50%)',
+                      filter: darkMode ? 'drop-shadow(0 2px 12px rgba(14,186,199,0.30))' : 'drop-shadow(0 2px 10px rgba(0,90,160,0.18))',
+                      zIndex:2,
+                    }}
                   />
                 </div>
 
