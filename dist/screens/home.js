@@ -316,7 +316,7 @@ function HomeScreen({
       style: {
         height: 118,
         overflow: 'hidden',
-        transform: 'translateY(-18px) translateX(-6px)'
+        transform: 'translateY(-23px) translateX(-14px)'
       }
     }, /*#__PURE__*/React.createElement(Wordmark, {
       size: "nav",
