@@ -28,7 +28,7 @@ function ProfileScreen({ ctx }) {
         const ic = H.text;
         return (
           <NavyBar darkMode={darkMode}
-            centerDecor={<img src="icone.png" alt="" style={{height:245, objectFit:'contain', opacity:0.60, userSelect:'none'}}/>}
+            centerDecor={<img src="icone.png" alt="" style={{height:280, objectFit:'contain', opacity:0.60, userSelect:'none', transform:'translateY(-10px)'}}/>}
             title={
             <div>
               <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', textTransform:'uppercase', marginBottom:3}}>{t.myProfile}</div>
