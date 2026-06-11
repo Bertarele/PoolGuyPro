@@ -228,6 +228,7 @@ button { font-family: inherit; }
   position: absolute; left: 0; right: 0; bottom: 0;
   display: flex; align-items: flex-start; justify-content: space-around;
   padding: 0px 6px 8px;
+  min-height: 74px;
   background: rgba(255,255,255,0.96);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
@@ -240,6 +241,8 @@ button { font-family: inherit; }
   color: var(--pg-ink-400); cursor: pointer; transition: color .15s ease;
 }
 .pg-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
+.pg-tab:not(.pg-tab-center) .pg-tab-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.pg-tab-center .pg-tab-label { min-height: 24px; display: block; text-align: center; }
 .pg-tab-on { color: var(--pg-blue-500); }
 .pg-tab-on .pg-tab-label { color: var(--pg-blue-500); }
 
