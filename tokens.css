@@ -271,7 +271,7 @@ button { font-family: inherit; }
 
 /* Home screen logo — scales on small phones, full size on Pro Max */
 .pg-home-logo { width: 100%; height: auto; display: block; }
-@media (min-width: 430px) { .pg-home-logo { width: auto; height: 178px; } }
+@media (min-width: 430px) { .pg-home-logo { width: auto; height: 210px; } }
 
 /* Active scale on tap */
 .pg-press { transition: transform .1s ease; }
