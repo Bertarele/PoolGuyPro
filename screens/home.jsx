@@ -195,8 +195,16 @@ function HomeScreen({ ctx }) {
 
             {/* Top row: logo + buttons */}
             <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0px 18px 0', position:'relative', zIndex:1, marginTop:-18}}>
-              <div style={{height:118, overflow:'hidden', transform:'translateY(-23px) translateX(-14px)', maxWidth:'calc(100vw - 160px)', flexShrink:1}}>
-                <Wordmark size="nav" onDark={darkMode}/>
+              <div style={{height:118, overflow:'hidden', transform:'translateY(-23px) translateX(-14px)', width:'calc(100vw - 160px)', flexShrink:1, minWidth:0}}>
+                <img
+                  src={darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png'}
+                  alt="PoolGuyX"
+                  style={{
+                    width:'100%', height:'auto',
+                    display:'block',
+                    filter: darkMode ? 'drop-shadow(0 2px 12px rgba(0,0,0,0.35))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))',
+                  }}
+                />
               </div>
               <div style={{display:'flex', alignItems:'center', gap:8}}>
                 <LangPill lang={lang} setLang={setLang} onDark={darkMode}/>

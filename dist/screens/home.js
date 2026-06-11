@@ -357,12 +357,19 @@ function HomeScreen({
         height: 118,
         overflow: 'hidden',
         transform: 'translateY(-23px) translateX(-14px)',
-        maxWidth: 'calc(100vw - 160px)',
-        flexShrink: 1
+        width: 'calc(100vw - 160px)',
+        flexShrink: 1,
+        minWidth: 0
       }
-    }, /*#__PURE__*/React.createElement(Wordmark, {
-      size: "nav",
-      onDark: darkMode
+    }, /*#__PURE__*/React.createElement("img", {
+      src: darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png',
+      alt: "PoolGuyX",
+      style: {
+        width: '100%',
+        height: 'auto',
+        display: 'block',
+        filter: darkMode ? 'drop-shadow(0 2px 12px rgba(0,0,0,0.35))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))'
+      }
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
