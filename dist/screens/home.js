@@ -356,7 +356,9 @@ function HomeScreen({
       style: {
         height: 118,
         overflow: 'hidden',
-        transform: 'translateY(-23px) translateX(-14px)'
+        transform: 'translateY(-23px) translateX(-14px)',
+        maxWidth: 'calc(100vw - 160px)',
+        flexShrink: 1
       }
     }, /*#__PURE__*/React.createElement(Wordmark, {
       size: "nav",
