@@ -364,10 +364,8 @@ function HomeScreen({
     }, /*#__PURE__*/React.createElement("img", {
       src: darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png',
       alt: "PoolGuyX",
+      className: "pg-home-logo",
       style: {
-        width: '100%',
-        height: 'auto',
-        display: 'block',
         filter: darkMode ? 'drop-shadow(0 2px 12px rgba(0,0,0,0.35))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))'
       }
     })), /*#__PURE__*/React.createElement("div", {

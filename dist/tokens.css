@@ -269,6 +269,10 @@ button { font-family: inherit; }
 .pg-scroll-x { overflow-x: auto; scrollbar-width: none; touch-action: pan-x; }
 .pg-scroll-x::-webkit-scrollbar { display: none; }
 
+/* Home screen logo — scales on small phones, full size on Pro Max */
+.pg-home-logo { width: 100%; height: auto; display: block; }
+@media (min-width: 430px) { .pg-home-logo { width: auto; height: 178px; } }
+
 /* Active scale on tap */
 .pg-press { transition: transform .1s ease; }
 .pg-press:active { transform: scale(0.97); }

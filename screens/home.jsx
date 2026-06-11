@@ -199,11 +199,8 @@ function HomeScreen({ ctx }) {
                 <img
                   src={darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png'}
                   alt="PoolGuyX"
-                  style={{
-                    width:'100%', height:'auto',
-                    display:'block',
-                    filter: darkMode ? 'drop-shadow(0 2px 12px rgba(0,0,0,0.35))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))',
-                  }}
+                  className="pg-home-logo"
+                  style={{filter: darkMode ? 'drop-shadow(0 2px 12px rgba(0,0,0,0.35))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))'}}
                 />
               </div>
               <div style={{display:'flex', alignItems:'center', gap:8}}>
