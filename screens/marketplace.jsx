@@ -4019,7 +4019,7 @@ function MarketplaceScreen({ ctx }) {
                       onMouseEnter={e=>e.currentTarget.style.boxShadow='0 4px 20px rgba(0,119,182,0.18)'}
                       onMouseLeave={e=>e.currentTarget.style.boxShadow='0 2px 12px rgba(0,0,0,0.06)'}>
                       <div style={{display:'flex', alignItems:'stretch'}}>
-                        <div style={{width:100, flexShrink:0, background:'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-800))',
+                        <div style={{width:100, flexShrink:0, background:'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-900))',
                           display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4, padding:'16px 8px'}}>
                           {(r.photoUrls&&r.photoUrls[0])||r.photoUrl
                             ? <img src={(r.photoUrls&&r.photoUrls[0])||r.photoUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -5027,7 +5027,7 @@ function MarketplaceScreen({ ctx }) {
                 onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ const mSold=m.status==='sold'; if(mSold&&!isMyPost(m)){return;} isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
                 style={{padding:14, display:'flex', gap:12, position:'relative'}}>
                 <div style={{width:90, height:90, borderRadius:12, overflow:'hidden', flexShrink:0,
-                  background:'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-800))',
+                  background:'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-900))',
                   display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3}}>
                   {(r.photoUrls && r.photoUrls[0]) || r.photoUrl
                     ? <img src={(r.photoUrls&&r.photoUrls[0])||r.photoUrl} alt={r.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>

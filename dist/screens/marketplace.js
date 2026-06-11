@@ -7691,7 +7691,7 @@ function MarketplaceScreen({
       style: {
         width: 100,
         flexShrink: 0,
-        background: 'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-800))',
+        background: 'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-900))',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -9759,7 +9759,7 @@ function MarketplaceScreen({
       borderRadius: 12,
       overflow: 'hidden',
       flexShrink: 0,
-      background: 'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-800))',
+      background: 'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-900))',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
