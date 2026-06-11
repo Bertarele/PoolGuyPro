@@ -370,7 +370,7 @@ function TabBar({ tab, setTab, lang='en' }) {
                 {tb.icon(26, '#fff')}
               </div>
               <span className="pg-tab-label" style={{color: on ? 'var(--pg-aqua-700)' : 'var(--pg-ink-700)', fontWeight:700}}>
-                {tb.label}
+                {tb.label.split(' ')[0]}<br/>{tb.label.split(' ').slice(1).join(' ')}
               </span>
             </button>
           );
