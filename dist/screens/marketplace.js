@@ -7691,7 +7691,7 @@ function MarketplaceScreen({
       style: {
         width: 100,
         flexShrink: 0,
-        background: 'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-900))',
+        background: 'linear-gradient(135deg,var(--pg-blue-100) 0%,var(--pg-blue-50) 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -7707,23 +7707,24 @@ function MarketplaceScreen({
         height: '100%',
         objectFit: 'cover'
       }
-    }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    }) : /*#__PURE__*/React.createElement(React.Fragment, null, Icon.pin(22, 'var(--pg-blue-600)'), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'var(--pg-font-display)',
         fontSize: 24,
         fontWeight: 800,
-        color: '#fff',
+        color: 'var(--pg-blue-600)',
         lineHeight: 1
       }
     }, r.clients || r.pools || '?'), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 9,
         fontWeight: 700,
-        color: 'rgba(255,255,255,0.60)',
+        color: 'var(--pg-blue-700)',
         letterSpacing: '0.06em',
-        textTransform: 'uppercase'
+        textTransform: 'uppercase',
+        opacity: 0.75
       }
-    }, routeSub === 'pools' ? 'pools' : 'POOLS'))), /*#__PURE__*/React.createElement("div", {
+    }, "POOLS"))), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         padding: '16px 18px'
@@ -7952,6 +7953,28 @@ function MarketplaceScreen({
         if (data && dbWrite) {
           const ok = await dbWrite('marketplace', data);
           if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Rota enviada para revisão' : '✓ Route sent for review');
+        }
+      }
+    })), /*#__PURE__*/React.createElement(Sheet, {
+      open: postOpen && postMode === 'pool',
+      onClose: () => {
+        setPostMode(null);
+        setPostOpen(false);
+      },
+      height: "90%"
+    }, /*#__PURE__*/React.createElement(PostPoolSheet, {
+      lang: lang,
+      t: t,
+      onClose: () => {
+        setPostMode(null);
+        setPostOpen(false);
+      },
+      onSubmit: async data => {
+        setPostMode(null);
+        setPostOpen(false);
+        if (data && dbWrite) {
+          const ok = await dbWrite('marketplace', data);
+          if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Piscina enviada para revisão' : '✓ Pool sent for review');
         }
       }
     })), countyPickerOpen && /*#__PURE__*/React.createElement("div", {
@@ -9759,7 +9782,7 @@ function MarketplaceScreen({
       borderRadius: 12,
       overflow: 'hidden',
       flexShrink: 0,
-      background: 'linear-gradient(135deg,var(--pg-blue-600),var(--pg-blue-900))',
+      background: 'linear-gradient(135deg,var(--pg-blue-100) 0%,var(--pg-blue-50) 100%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -9774,21 +9797,22 @@ function MarketplaceScreen({
       height: '100%',
       objectFit: 'cover'
     }
-  }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, Icon.pin(20, 'var(--pg-blue-600)'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'var(--pg-font-display)',
-      fontSize: 26,
+      fontSize: 24,
       fontWeight: 800,
-      color: '#fff',
+      color: 'var(--pg-blue-600)',
       lineHeight: 1
     }
   }, r.clients || r.pools || '?'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 9,
       fontWeight: 700,
-      color: 'rgba(255,255,255,0.60)',
+      color: 'var(--pg-blue-700)',
       letterSpacing: '0.06em',
-      textTransform: 'uppercase'
+      textTransform: 'uppercase',
+      opacity: 0.75
     }
   }, "POOLS"))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10190,6 +10214,28 @@ function MarketplaceScreen({
       if (data && dbWrite) {
         const ok = await dbWrite('marketplace', data);
         if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Rota enviada para revisão' : lang === 'es' ? '✓ Ruta enviada a revisión' : '✓ Route sent for review');
+      }
+    }
+  })), /*#__PURE__*/React.createElement(Sheet, {
+    open: postOpen && postMode === 'pool',
+    onClose: () => {
+      setPostMode(null);
+      setPostOpen(false);
+    },
+    height: "90%"
+  }, /*#__PURE__*/React.createElement(PostPoolSheet, {
+    lang: lang,
+    t: t,
+    onClose: () => {
+      setPostMode(null);
+      setPostOpen(false);
+    },
+    onSubmit: async data => {
+      setPostMode(null);
+      setPostOpen(false);
+      if (data && dbWrite) {
+        const ok = await dbWrite('marketplace', data);
+        if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Piscina enviada para revisão' : lang === 'es' ? '✓ Piscina enviada a revisión' : '✓ Pool sent for review');
       }
     }
   })));
@@ -11980,6 +12026,257 @@ function PostEquipmentSheet({
 }
 
 // ── Post route form ───────────────────────────────────────────
+function PostPoolSheet({
+  lang,
+  t,
+  onClose,
+  onSubmit
+}) {
+  const [desc, setDesc] = React.useState('');
+  const [area, setArea] = React.useState('');
+  const [sizeFt, setSizeFt] = React.useState(''); // e.g. "10x20"
+  const [gallons, setGallons] = React.useState('');
+  const [system, setSystem] = React.useState(''); // 'chlorine'|'salt'
+  const [freq, setFreq] = React.useState(''); // times/week
+  const [price, setPrice] = React.useState(''); // monthly price
+  const [warranty, setWarranty] = React.useState(''); // 'yes'|'no'
+  const [wMonths, setWMonths] = React.useState(''); // warranty months
+
+  const isValid = desc.trim().length > 5 && area.trim().length > 0 && system !== '' && freq !== '' && price.trim().length > 0 && warranty !== '';
+  const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
+  const ToggleGroup = ({
+    value,
+    onChange,
+    options
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      flexWrap: 'wrap'
+    }
+  }, options.map(o => {
+    const on = value === o.id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: o.id,
+      onClick: () => onChange(o.id),
+      style: {
+        padding: '8px 16px',
+        borderRadius: 10,
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 13,
+        fontWeight: 600,
+        transition: 'all .12s',
+        background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+        color: on ? '#fff' : 'var(--pg-ink-700)',
+        boxShadow: on ? '0 2px 8px rgba(0,119,182,0.25)' : 'none'
+      }
+    }, o.label);
+  }));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '8px 18px 14px',
+      borderBottom: '0.5px solid var(--pg-ink-200)',
+      flexShrink: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-blue-500)',
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, t.cancel), /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontFamily: 'var(--pg-font-display)',
+      fontSize: 17,
+      fontWeight: 700,
+      letterSpacing: '-0.01em'
+    }
+  }, lbl('Vender piscina avulsa', 'Vender piscina suelta', 'Sell single pool')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 60
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflow: 'auto',
+      padding: '16px 18px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Descrição', 'Descripción', 'Description')), /*#__PURE__*/React.createElement("textarea", {
+    className: "pg-field",
+    value: desc,
+    onChange: e => setDesc(e.target.value),
+    placeholder: lbl('Descreva a piscina, condição geral, histórico de manutenção…', 'Describa la piscina, condición general, historial de mantenimiento…', 'Describe the pool, general condition, maintenance history…'),
+    style: {
+      height: 90,
+      resize: 'none',
+      paddingTop: 12,
+      lineHeight: 1.5
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, t.location), /*#__PURE__*/React.createElement(CityAutocomplete, {
+    value: area,
+    onChange: v => setArea(v),
+    lang: lang
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Tamanho (ex: 10x20 ft)', 'Tamaño (ej: 10x20 ft)', 'Size (e.g. 10x20 ft)')), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: sizeFt,
+    onChange: e => setSizeFt(e.target.value),
+    placeholder: "10x20 ft"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Capacidade (galões)', 'Capacidad (galones)', 'Capacity (gallons)')), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: gallons,
+    onChange: e => setGallons(e.target.value),
+    placeholder: "15,000",
+    type: "number"
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Sistema', 'Sistema', 'System')), /*#__PURE__*/React.createElement(ToggleGroup, {
+    value: system,
+    onChange: setSystem,
+    options: [{
+      id: 'chlorine',
+      label: lbl('Cloro', 'Cloro', 'Chlorine')
+    }, {
+      id: 'salt',
+      label: lbl('Sal', 'Sal', 'Salt')
+    }]
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Visitas por semana', 'Visitas por semana', 'Visits per week')), /*#__PURE__*/React.createElement(ToggleGroup, {
+    value: freq,
+    onChange: setFreq,
+    options: [{
+      id: '1',
+      label: '1x'
+    }, {
+      id: '2',
+      label: '2x'
+    }, {
+      id: '3',
+      label: '3x'
+    }, {
+      id: '7',
+      label: lbl('Diário', 'Diario', 'Daily')
+    }]
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Valor negociado por mês', 'Valor negociado por mes', 'Monthly agreed price')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: 16,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: 22,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }, "$"), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: price,
+    onChange: e => setPrice(e.target.value),
+    placeholder: "150",
+    type: "number",
+    style: {
+      height: 56,
+      paddingLeft: 36,
+      fontSize: 22,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      right: 16,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: 12,
+      color: 'var(--pg-ink-500)'
+    }
+  }, lbl('/mês', '/mes', '/mo')))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Garantia', 'Garantía', 'Warranty')), /*#__PURE__*/React.createElement(ToggleGroup, {
+    value: warranty,
+    onChange: v => {
+      setWarranty(v);
+      if (v === 'no') setWMonths('');
+    },
+    options: [{
+      id: 'yes',
+      label: lbl('Sim', 'Sí', 'Yes')
+    }, {
+      id: 'no',
+      label: lbl('Não', 'No', 'No')
+    }]
+  }), warranty === 'yes' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12
+    }
+  }, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Meses de garantia', 'Meses de garantía', 'Warranty months')), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: wMonths,
+    onChange: e => setWMonths(e.target.value),
+    placeholder: lbl('Ex: 3 meses', 'Ej: 3 meses', 'e.g. 3 months'),
+    type: "number"
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 18px 20px',
+      borderTop: '0.5px solid var(--pg-ink-200)',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => onSubmit && onSubmit({
+      type: 'pool',
+      desc,
+      area,
+      sizeFt,
+      gallons,
+      system,
+      freq,
+      price: parseFloat(price) || 0,
+      est: parseFloat(price) || 0,
+      warranty,
+      warrantyMonths: warranty === 'yes' ? wMonths : null
+    }),
+    disabled: !isValid,
+    className: "pg-btn pg-btn-primary",
+    style: {
+      width: '100%',
+      height: 52,
+      fontSize: 16,
+      opacity: isValid ? 1 : 0.45
+    }
+  }, lbl('Publicar piscina', 'Publicar piscina', 'Post pool'))));
+}
 function PostRouteSheet({
   lang,
   t,
