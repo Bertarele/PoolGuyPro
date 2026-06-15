@@ -44,7 +44,13 @@
       "Bash(git commit *)",
       "Bash(node -e ' *)",
       "Bash(grep -v \"//\\\\|route\\\\|equip\\\\|rental\\\\|thumb\\\\|avatar\")",
-      "Bash(grep -v \"//\\\\|rental\\\\|rental_req\\\\|request\\\\|reqStatus\\\\|hasActive\\\\|isAppr\\\\b\\\\|isComp\\\\b\\\\|isDisp\\\\b\\\\|isPend\\\\b\\\\|blockedStat\")"
+      "Bash(grep -v \"//\\\\|rental\\\\|rental_req\\\\|request\\\\|reqStatus\\\\|hasActive\\\\|isAppr\\\\b\\\\|isComp\\\\b\\\\|isDisp\\\\b\\\\|isPend\\\\b\\\\|blockedStat\")",
+      "Bash(npx supabase *)",
+      "Bash(curl -s 'https://xiszfqghizqzlwyrfjol.supabase.co/rest/v1/marketplace?select=*&limit=0' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng' -H 'Prefer: count=exact' -I)",
+      "Bash(curl -s https://xiszfqghizqzlwyrfjol.supabase.co/rest/v1/marketplace?limit=1 -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng')",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\);const o=JSON.parse\\(d\\);if\\(o[0]\\)console.log\\(Object.keys\\(o[0]\\).join\\('\\\\n'\\)\\);\")",
+      "Bash(grep -v \"//\\\\|5[0-9][0-9][0-9]\\\\|6[0-9][0-9][0-9]\\\\|2[89][0-9][0-9]\")",
+      "Bash(grep -v \"//\\\\|6[0-9][0-9][0-9]\\\\|3[0-9][0-9][0-9]:\")"
     ]
   }
 }

@@ -9947,7 +9947,49 @@ function MarketplaceScreen({
       padding: '0 14px',
       fontSize: 13
     }
-  }, t.contact))))), routeSub === 'pools' && list.map(p => /*#__PURE__*/React.createElement("div", {
+  }, t.contact))), r._live && (user.role === 'admin' || isMyPost(liveMarket.find(x => x._id === r._liveId) || {})) && /*#__PURE__*/React.createElement("div", {
+    onClick: async e => {
+      e.stopPropagation();
+      if (!window.confirm(lang === 'pt' ? `Excluir "${r.name}"?` : `Delete "${r.name}"?`)) return;
+      const {
+        error
+      } = await window.sb.from('marketplace').delete().eq('id', r._liveId);
+      if (error) {
+        showToast && showToast('❌ ' + error.message);
+        return;
+      }
+      showToast && showToast(lang === 'pt' ? '🗑️ Rota excluída' : '🗑️ Route deleted');
+      if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(r._liveId);
+    },
+    style: {
+      margin: '0 12px 12px',
+      padding: '6px 0',
+      borderRadius: 8,
+      background: '#FEF2F2',
+      border: '1px solid #FCA5A5',
+      color: '#EF4444',
+      fontSize: 11,
+      fontWeight: 700,
+      textAlign: 'center',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "11",
+    height: "11",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.5",
+    strokeLinecap: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "3 6 5 6 21 6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+  })), lang === 'pt' ? 'Excluir rota' : lang === 'es' ? 'Eliminar ruta' : 'Delete route'))), routeSub === 'pools' && list.map(p => /*#__PURE__*/React.createElement("div", {
     key: p.id || p._liveId,
     className: "pg-card pg-card-tap",
     onClick: () => {
@@ -10119,7 +10161,7 @@ function MarketplaceScreen({
       padding: '0 14px',
       fontSize: 13
     }
-  }, t.contact)))), /*#__PURE__*/React.createElement("div", {
+  }, t.contact)))), p.desc ? /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: '0.5px solid var(--pg-ink-100)',
       padding: '9px 14px',
@@ -10131,7 +10173,49 @@ function MarketplaceScreen({
       WebkitBoxOrient: 'vertical',
       overflow: 'hidden'
     }
-  }, tr(p.desc, lang))))))), viewListing && /*#__PURE__*/React.createElement("div", {
+  }, tr(p.desc, lang)) : null, p._live && (user.role === 'admin' || isMyPost(liveMarket.find(x => x._id === p._liveId) || {})) && /*#__PURE__*/React.createElement("div", {
+    onClick: async e => {
+      e.stopPropagation();
+      if (!window.confirm(lang === 'pt' ? `Excluir "${p.name}"?` : `Delete "${p.name}"?`)) return;
+      const {
+        error
+      } = await window.sb.from('marketplace').delete().eq('id', p._liveId);
+      if (error) {
+        showToast && showToast('❌ ' + error.message);
+        return;
+      }
+      showToast && showToast(lang === 'pt' ? '🗑️ Piscina excluída' : '🗑️ Pool deleted');
+      if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(p._liveId);
+    },
+    style: {
+      margin: '0 12px 12px',
+      padding: '6px 0',
+      borderRadius: 8,
+      background: '#FEF2F2',
+      border: '1px solid #FCA5A5',
+      color: '#EF4444',
+      fontSize: 11,
+      fontWeight: 700,
+      textAlign: 'center',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "11",
+    height: "11",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.5",
+    strokeLinecap: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "3 6 5 6 21 6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+  })), lang === 'pt' ? 'Excluir piscina' : lang === 'es' ? 'Eliminar piscina' : 'Delete pool')))))), viewListing && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
       inset: 0,
