@@ -714,6 +714,7 @@ function ViewListingSheet({
   openPublicProfile,
   isAdmin,
   canDelete,
+  onEdit,
   currentUser,
   showToast,
   onDeleted,
@@ -1601,7 +1602,39 @@ function ViewListingSheet({
       gap: 8,
       transition: 'all .15s'
     }
-  }, Icon.msg(18, '#fff'), lang === 'pt' ? 'Enviar mensagem' : lang === 'es' ? 'Enviar mensaje' : 'Send Message'), /*#__PURE__*/React.createElement("div", {
+  }, Icon.msg(18, '#fff'), lang === 'pt' ? 'Enviar mensagem' : lang === 'es' ? 'Enviar mensaje' : 'Send Message'), isOwner && onEdit && /*#__PURE__*/React.createElement("button", {
+    onClick: onEdit,
+    style: {
+      flex: 1,
+      height: 50,
+      borderRadius: 14,
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 15,
+      fontWeight: 700,
+      color: '#fff',
+      background: 'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+      boxShadow: '0 4px 16px rgba(0,119,182,0.30)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      transition: 'all .15s'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "2.5",
+    strokeLinecap: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+  })), lang === 'pt' ? 'Editar anúncio' : lang === 'es' ? 'Editar anuncio' : 'Edit listing'), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 10
@@ -6027,7 +6060,7 @@ function MyPostDetailSheet({
   }, lang === 'pt' ? 'Negociável' : 'Negotiable')))), /*#__PURE__*/React.createElement("div", null, lbl(lang === 'pt' ? 'Localização' : 'Location'), /*#__PURE__*/React.createElement("input", _extends({}, inp, {
     value: form.loc,
     onChange: e => set('loc', e.target.value)
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), item.type !== 'pool' && item.type !== 'route' && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
@@ -6041,7 +6074,29 @@ function MyPostDetailSheet({
     value: form.condition,
     onChange: e => set('condition', e.target.value),
     placeholder: "New, Used\u2026"
-  }))))), /*#__PURE__*/React.createElement("div", {
+  })))), (item.type === 'pool' || item.type === 'route') && /*#__PURE__*/React.createElement("div", null, lbl(lang === 'pt' ? 'Tipo de imóvel' : lang === 'es' ? 'Tipo de propiedad' : 'Property type'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8
+    }
+  }, [['house', lang === 'pt' ? '🏠 Casa' : '🏠 House'], ['condo', '🏢 Condo']].map(([val, label]) => /*#__PURE__*/React.createElement("button", {
+    key: val,
+    onClick: () => set('cat', val),
+    style: {
+      flex: 1,
+      padding: '11px',
+      borderRadius: 10,
+      border: '1.5px solid',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 13,
+      fontWeight: 600,
+      borderColor: form.cat === val ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)',
+      background: form.cat === val ? 'var(--pg-blue-50)' : 'transparent',
+      color: form.cat === val ? 'var(--pg-blue-700)' : 'var(--pg-ink-600)',
+      transition: 'all .15s'
+    }
+  }, label))))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 10,
@@ -7690,11 +7745,10 @@ function MarketplaceScreen({
         if (r._live) {
           const m = liveMarket.find(x => x._id === r._liveId);
           if (m) {
-            const mSold = m.status === 'sold';
-            if (mSold && !isMyPost(m)) {
+            if (m.status === 'sold' && !isMyPost(m)) {
               return;
             }
-            isMyPost(m) ? setMyPostDetail(m) : openListing(m);
+            openListing(m);
           }
         } else {
           setSelected({
@@ -7821,7 +7875,7 @@ function MarketplaceScreen({
         letterSpacing: '-0.02em',
         lineHeight: 1
       }
-    }, "$", (r.est || r.asking || 0).toLocaleString())), /*#__PURE__*/React.createElement("button", {
+    }, "$", (r.est || r.asking || 0).toLocaleString())), !isMyPost(liveMarket.find(x => x._id === r._liveId) || {}) && /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         if (r._live && r._authorId) {
@@ -7869,6 +7923,7 @@ function MarketplaceScreen({
       onClose: closeListing,
       isAdmin: user.role === 'admin',
       canDelete: user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id),
+      onEdit: isMyPost(viewListing) ? () => setMyPostDetail(viewListing) : undefined,
       currentUser: user,
       showToast: showToast,
       isSaved: savedIds.has(viewListing._id),
@@ -9783,11 +9838,10 @@ function MarketplaceScreen({
       if (r._live) {
         const m = liveMarket.find(x => x._id === r._liveId);
         if (m) {
-          const mSold = m.status === 'sold';
-          if (mSold && !isMyPost(m)) {
+          if (m.status === 'sold' && !isMyPost(m)) {
             return;
           }
-          isMyPost(m) ? setMyPostDetail(m) : openListing(m);
+          openListing(m);
         }
       } else {
         setSelected({
@@ -9922,7 +9976,7 @@ function MarketplaceScreen({
       color: 'var(--pg-blue-500)',
       letterSpacing: '-0.02em'
     }
-  }, "$", (r.est || 0).toLocaleString())), /*#__PURE__*/React.createElement("button", {
+  }, "$", (r.est || 0).toLocaleString())), !isMyPost(liveMarket.find(x => x._id === r._liveId) || {}) && /*#__PURE__*/React.createElement("button", {
     onClick: e => {
       e.stopPropagation();
       if (r._live && r._authorId) {
@@ -9938,7 +9992,7 @@ function MarketplaceScreen({
           }
         });
       } else {
-        openChat();
+        openChat && openChat();
       }
     },
     className: "pg-btn pg-btn-primary",
@@ -9996,7 +10050,7 @@ function MarketplaceScreen({
       if (p._live) {
         const m = liveMarket.find(x => x._id === p._liveId);
         if (m) {
-          isMyPost(m) ? setMyPostDetail(m) : openListing(m);
+          openListing(m);
           return;
         }
       }
@@ -10153,8 +10207,22 @@ function MarketplaceScreen({
       color: 'var(--pg-blue-500)',
       letterSpacing: '-0.02em'
     }
-  }, "$", p.est.toLocaleString())), /*#__PURE__*/React.createElement("button", {
-    onClick: () => openChat(),
+  }, "$", p.est.toLocaleString())), !isMyPost(liveMarket.find(x => x._id === p._liveId) || {}) && /*#__PURE__*/React.createElement("button", {
+    onClick: e => {
+      e.stopPropagation();
+      const m = liveMarket.find(x => x._id === p._liveId);
+      if (m && m.author_id) openChat({
+        id: m.author_id,
+        name: m.author || 'Seller',
+        listingContext: {
+          name: p.name,
+          photoUrl: p.photoUrls && p.photoUrls[0] || p.photoUrl || null,
+          price: p.est,
+          priceMode: 'fixed',
+          type: 'pool'
+        }
+      });else openChat && openChat();
+    },
     className: "pg-btn pg-btn-primary",
     style: {
       height: 34,
@@ -10232,6 +10300,7 @@ function MarketplaceScreen({
     onClose: closeListing,
     isAdmin: user.role === 'admin',
     canDelete: user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id),
+    onEdit: isMyPost(viewListing) ? () => setMyPostDetail(viewListing) : undefined,
     currentUser: user,
     showToast: showToast,
     isSaved: savedIds.has(viewListing._id),
