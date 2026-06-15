@@ -1472,7 +1472,7 @@ function ViewListingSheet({
       letterSpacing: '-0.03em',
       lineHeight: 1
     }
-  }, "$", item.price, periodSfx && /*#__PURE__*/React.createElement("span", {
+  }, item.type === 'pool' ? `$${Number(item.asking || 0).toLocaleString()}` : `$${item.price}`, item.type !== 'pool' && periodSfx && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: large ? 16 : 13,
       fontWeight: 500,
@@ -4412,7 +4412,87 @@ function ViewListingSheet({
         lineHeight: 1.7,
         color: 'var(--pg-ink-700)'
       }
-    }, item.description)), item.loc && /*#__PURE__*/React.createElement("div", {
+    }, item.description)), (item.type === 'pool' || item.type === 'route') && (() => {
+      const rows = [];
+      if (item.loc) rows.push({
+        label: lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City',
+        value: item.loc
+      });
+      if (item.address) rows.push({
+        label: lang === 'pt' ? 'Endereço' : lang === 'es' ? 'Dirección' : 'Address',
+        value: item.address,
+        full: true
+      });
+      if (item.sizeFt) rows.push({
+        label: lang === 'pt' ? 'Tamanho' : lang === 'es' ? 'Tamaño' : 'Size',
+        value: item.sizeFt
+      });
+      if (item.gallons) rows.push({
+        label: lang === 'pt' ? 'Capacidade' : lang === 'es' ? 'Capacidad' : 'Capacity',
+        value: `${Number(item.gallons).toLocaleString()} gal`
+      });
+      if (item.system) rows.push({
+        label: lang === 'pt' ? 'Sistema' : lang === 'es' ? 'Sistema' : 'System',
+        value: item.system === 'salt' ? lang === 'pt' ? 'Sal' : 'Salt' : lang === 'pt' ? 'Cloro' : 'Chlorine'
+      });
+      if (item.freq) rows.push({
+        label: lang === 'pt' ? 'Visitas/semana' : lang === 'es' ? 'Visitas/semana' : 'Visits/week',
+        value: `${item.freq}x`
+      });
+      if (item.price) rows.push({
+        label: lang === 'pt' ? 'Valor/mês' : lang === 'es' ? 'Valor/mes' : 'Monthly rate',
+        value: `$${Number(item.price).toLocaleString()}/mo`
+      });
+      if (item.warranty) rows.push({
+        label: lang === 'pt' ? 'Garantia' : lang === 'es' ? 'Garantía' : 'Warranty',
+        value: item.warranty === 'yes' ? item.warrantyMonths ? `${item.warrantyMonths} ${lang === 'pt' ? 'meses' : 'months'}` : lang === 'pt' ? 'Sim' : 'Yes' : lang === 'pt' ? 'Não' : 'No'
+      });
+      if (rows.length === 0) return null;
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          background: 'var(--pg-white)',
+          borderRadius: 16,
+          padding: '24px',
+          border: '1px solid var(--pg-ink-200)',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          fontWeight: 800,
+          color: 'var(--pg-ink-400)',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          marginBottom: 16
+        }
+      }, item.type === 'pool' ? lang === 'pt' ? 'DETALHES DA PISCINA' : 'POOL DETAILS' : lang === 'pt' ? 'DETALHES DA ROTA' : 'ROUTE DETAILS'), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '14px 20px'
+        }
+      }, rows.map((r, i) => /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: r.full ? {
+          gridColumn: '1/-1'
+        } : {}
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 700,
+          color: 'var(--pg-ink-400)',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          marginBottom: 3
+        }
+      }, r.label), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 14,
+          fontWeight: 600,
+          color: 'var(--pg-ink-800)'
+        }
+      }, r.value)))));
+    })(), item.loc && /*#__PURE__*/React.createElement("div", {
       style: {
         background: 'var(--pg-white)',
         borderRadius: 16,
@@ -4964,7 +5044,87 @@ function ViewListingSheet({
       lineHeight: 1.55,
       color: 'var(--pg-ink-700)'
     }
-  }, item.description) : null, canDelete && !isStatic && /*#__PURE__*/React.createElement("div", {
+  }, item.description) : null, (item.type === 'pool' || item.type === 'route') && (() => {
+    const rows = [];
+    if (item.loc) rows.push({
+      label: lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City',
+      value: item.loc
+    });
+    if (item.address) rows.push({
+      label: lang === 'pt' ? 'Endereço' : lang === 'es' ? 'Dirección' : 'Address',
+      value: item.address,
+      full: true
+    });
+    if (item.sizeFt) rows.push({
+      label: lang === 'pt' ? 'Tamanho' : lang === 'es' ? 'Tamaño' : 'Size',
+      value: item.sizeFt
+    });
+    if (item.gallons) rows.push({
+      label: lang === 'pt' ? 'Capacidade' : lang === 'es' ? 'Capacidad' : 'Capacity',
+      value: `${Number(item.gallons).toLocaleString()} gal`
+    });
+    if (item.system) rows.push({
+      label: lang === 'pt' ? 'Sistema' : lang === 'es' ? 'Sistema' : 'System',
+      value: item.system === 'salt' ? lang === 'pt' ? 'Sal' : 'Salt' : lang === 'pt' ? 'Cloro' : 'Chlorine'
+    });
+    if (item.freq) rows.push({
+      label: lang === 'pt' ? 'Visitas/semana' : lang === 'es' ? 'Visitas/semana' : 'Visits/week',
+      value: `${item.freq}x`
+    });
+    if (item.price) rows.push({
+      label: lang === 'pt' ? 'Valor/mês' : lang === 'es' ? 'Valor/mes' : 'Monthly rate',
+      value: `$${Number(item.price).toLocaleString()}/mo`
+    });
+    if (item.warranty) rows.push({
+      label: lang === 'pt' ? 'Garantia' : lang === 'es' ? 'Garantía' : 'Warranty',
+      value: item.warranty === 'yes' ? item.warrantyMonths ? `${item.warrantyMonths} ${lang === 'pt' ? 'meses' : 'months'}` : lang === 'pt' ? 'Sim' : 'Yes' : lang === 'pt' ? 'Não' : 'No'
+    });
+    if (rows.length === 0) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 14,
+        background: 'var(--pg-ink-50)',
+        borderRadius: 14,
+        padding: '14px 16px',
+        border: '1px solid var(--pg-ink-200)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 800,
+        color: 'var(--pg-ink-400)',
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        marginBottom: 10
+      }
+    }, item.type === 'pool' ? lang === 'pt' ? 'DETALHES DA PISCINA' : 'POOL DETAILS' : lang === 'pt' ? 'DETALHES DA ROTA' : 'ROUTE DETAILS'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '8px 12px'
+      }
+    }, rows.map((r, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: r.full ? {
+        gridColumn: '1/-1'
+      } : {}
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        color: 'var(--pg-ink-400)',
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+        marginBottom: 2
+      }
+    }, r.label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--pg-ink-800)'
+      }
+    }, r.value)))));
+  })(), canDelete && !isStatic && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14,
       padding: '9px 13px',
@@ -5457,7 +5617,8 @@ function MyPostDetailSheet({
     priceMode: item.priceMode || 'fixed',
     loc: item.loc || '',
     condition: item.condition || '',
-    cat: item.cat || ''
+    cat: item.cat || '',
+    asking: item.asking || ''
   });
   const set = (k, v) => setForm(f => ({
     ...f,
@@ -5498,7 +5659,8 @@ function MyPostDetailSheet({
       price_mode: form.priceMode,
       loc: form.loc,
       condition: form.condition,
-      cat: form.cat
+      cat: form.cat,
+      asking: form.asking ? parseFloat(form.asking) || null : null
     };
     const {
       error
@@ -6040,7 +6202,23 @@ function MyPostDetailSheet({
       minHeight: 80,
       lineHeight: 1.5
     }
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), item.type === 'pool' || item.type === 'route' ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", null, lbl(lang === 'pt' ? 'Preço de venda ($)' : lang === 'es' ? 'Precio de venta ($)' : 'Sale price ($)'), /*#__PURE__*/React.createElement("input", _extends({}, inp, {
+    type: "number",
+    value: form.asking,
+    onChange: e => set('asking', e.target.value),
+    placeholder: "3500"
+  }))), /*#__PURE__*/React.createElement("div", null, lbl(lang === 'pt' ? 'Valor/mês ($)' : lang === 'es' ? 'Valor/mes ($)' : 'Monthly rate ($)'), /*#__PURE__*/React.createElement("input", _extends({}, inp, {
+    type: "number",
+    value: form.price,
+    onChange: e => set('price', e.target.value),
+    placeholder: "120"
+  })))) : /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
@@ -6170,7 +6348,19 @@ function MarketplaceScreen({
     price: r.price,
     priceMode: r.price_mode,
     loc: r.loc,
+    asking: r.asking || null,
+    area: r.area || null,
     description: r.description || '',
+    address: r.address || null,
+    system: r.pool_system || null,
+    sizeFt: r.size_ft || null,
+    gallons: r.gallons || null,
+    freq: r.freq_week || null,
+    warranty: r.warranty || null,
+    warrantyMonths: r.warranty_months || null,
+    routeName: r.route_name || null,
+    clients: r.clients || null,
+    revenue: r.revenue || null,
     author: r.author,
     author_id: r.author_id || null,
     photoUrl: r.photo_url || null,
@@ -12532,11 +12722,12 @@ function PostPoolSheet({
   const [gallons, setGallons] = React.useState('');
   const [system, setSystem] = React.useState('');
   const [freq, setFreq] = React.useState('');
-  const [price, setPrice] = React.useState('');
+  const [askingPrice, setAskingPrice] = React.useState(''); // Preço de venda (visible on card)
+  const [price, setPrice] = React.useState(''); // Valor negociado/mês (detail only)
   const [warranty, setWarranty] = React.useState('');
   const [wMonths, setWMonths] = React.useState('');
   const [photos, setPhotos] = React.useState([]);
-  const isValid = title.trim().length > 3 && area.trim().length > 0 && system !== '' && freq !== '' && price.trim().length > 0 && warranty !== '';
+  const isValid = title.trim().length > 3 && area.trim().length > 0 && system !== '' && freq !== '' && askingPrice.trim().length > 0 && warranty !== '';
   const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
   const ToggleGroup = ({
     value,
@@ -12707,7 +12898,50 @@ function PostPoolSheet({
       id: '7',
       label: lbl('Diário', 'Diario', 'Daily')
     }]
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Valor negociado por mês', 'Valor negociado por mes', 'Monthly agreed price')), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Preço da piscina *', 'Precio de la piscina *', 'Pool asking price *')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: 'var(--pg-ink-400)',
+      marginBottom: 6,
+      lineHeight: 1.4
+    }
+  }, lbl('Valor de venda — aparece no card do marketplace.', 'Precio de venta — aparece en el card del marketplace.', 'Sale price — shown on the marketplace card.')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: 16,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: 22,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }, "$"), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: askingPrice,
+    onChange: e => setAskingPrice(e.target.value),
+    placeholder: "3500",
+    type: "number",
+    style: {
+      height: 56,
+      paddingLeft: 36,
+      fontSize: 22,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Valor negociado por mês (opcional)', 'Valor negociado por mes (opcional)', 'Monthly agreed price (optional)')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: 'var(--pg-ink-400)',
+      marginBottom: 6,
+      lineHeight: 1.4
+    }
+  }, lbl('Valor que o cliente paga por mês — visível apenas dentro da publicação.', 'Valor que el cliente paga por mes — visible solo dentro del anuncio.', 'What the client pays monthly — only visible inside the listing detail.')), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative'
     }
@@ -12726,7 +12960,7 @@ function PostPoolSheet({
     className: "pg-field",
     value: price,
     onChange: e => setPrice(e.target.value),
-    placeholder: "150",
+    placeholder: "120",
     type: "number",
     style: {
       height: 56,
@@ -12786,8 +13020,9 @@ function PostPoolSheet({
       gallons,
       system,
       freq,
-      price: parseFloat(price) || 0,
-      est: parseFloat(price) || 0,
+      asking: parseFloat(askingPrice) || 0,
+      est: parseFloat(askingPrice) || 0,
+      price: price ? parseFloat(price) || null : null,
       warranty,
       warrantyMonths: warranty === 'yes' ? wMonths : null,
       photoUrl: photos[0] || null,
