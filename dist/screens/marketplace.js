@@ -6406,7 +6406,36 @@ function MarketplaceScreen({
   }));
   // Combina rotas reais (primeiro) + rotas demo estáticas
   const allRoutes = [...liveRoutes, ...POOL_ROUTES];
-  const list = isEquipment ? EQUIPMENT.filter(e => e.mode === mode && (cat === 'All' || e.category === cat) && (q === '' || e.name.toLowerCase().includes(q.toLowerCase())) && (priceRange === 'all' || priceRange === 'u100' && e.price < 100 || priceRange === '100-500' && e.price >= 100 && e.price <= 500 || priceRange === 'o500' && e.price > 500)) : view === 'routes' && routeSub === 'pools' ? SINGLE_POOLS.filter(p => (routeRegion === 'all' || p.area.toLowerCase().includes(routeRegion.toLowerCase())) && (poolPrice === 'all' || poolPrice === 'u1500' && p.est < 1500 || poolPrice === '1500-3k' && p.est >= 1500 && p.est <= 3000 || poolPrice === 'o3k' && p.est > 3000)) : allRoutes.filter(r => (routeRegion === 'all' || (r.area || '').toLowerCase().includes(routeRegion.toLowerCase())) && (routePrice === 'all' || routePrice === 'u5k' && r.est < 5000 || routePrice === '5k-8k' && r.est >= 5000 && r.est <= 8000 || routePrice === 'o8k' && r.est > 8000));
+
+  // Piscinas avulsas reais do banco (type='pool', aprovadas ou próprias pendentes)
+  const livePools = marketByCounty.filter(m => m.type === 'pool' && (m.status === 'approved' || m.status === 'pending' && isMyPost(m))).map(m => ({
+    id: m._id,
+    _live: true,
+    _liveId: m._id,
+    _type: 'pool',
+    _author: m.author,
+    _authorId: m.author_id,
+    pools: 1,
+    area: m.area || m.loc || '',
+    name: m.description || m.name || '',
+    desc: m.description || '',
+    revenue: m.price ? `$${Number(m.price).toLocaleString()}/mo` : '',
+    est: Number(m.asking || m.price) || 0,
+    photoUrl: m.photoUrl || null,
+    photoUrls: m.photoUrls || [],
+    status: m.status,
+    // pool-specific detail fields (if columns exist in DB)
+    system: m.system || null,
+    sizeFt: m.sizeFt || null,
+    gallons: m.gallons || null,
+    freq: m.freq || null,
+    warranty: m.warranty || null,
+    warrantyMonths: m.warrantyMonths || null,
+    address: m.address || null
+  }));
+  // Combina piscinas reais (primeiro) + piscinas demo estáticas
+  const allPools = [...livePools, ...SINGLE_POOLS];
+  const list = isEquipment ? EQUIPMENT.filter(e => e.mode === mode && (cat === 'All' || e.category === cat) && (q === '' || e.name.toLowerCase().includes(q.toLowerCase())) && (priceRange === 'all' || priceRange === 'u100' && e.price < 100 || priceRange === '100-500' && e.price >= 100 && e.price <= 500 || priceRange === 'o500' && e.price > 500)) : view === 'routes' && routeSub === 'pools' ? allPools.filter(p => (routeRegion === 'all' || (p.area || '').toLowerCase().includes(routeRegion.toLowerCase())) && (poolPrice === 'all' || poolPrice === 'u1500' && p.est < 1500 || poolPrice === '1500-3k' && p.est >= 1500 && p.est <= 3000 || poolPrice === 'o3k' && p.est > 3000)) : allRoutes.filter(r => (routeRegion === 'all' || (r.area || '').toLowerCase().includes(routeRegion.toLowerCase())) && (routePrice === 'all' || routePrice === 'u5k' && r.est < 5000 || routePrice === '5k-8k' && r.est >= 5000 && r.est <= 8000 || routePrice === 'o8k' && r.est > 8000));
   const tabIcons = {
     buy: (s, c) => Icon.cart(s, c),
     rent: (s, c) => Icon.key(s, c),
@@ -9344,7 +9373,7 @@ function MarketplaceScreen({
     })),
     label: lang === 'pt' ? 'Piscinas' : lang === 'es' ? 'Piscinas' : 'Pools',
     sub: lang === 'pt' ? '1–4 piscinas avulsas' : lang === 'es' ? '1–4 piscinas sueltas' : '1–4 individual pools',
-    count: SINGLE_POOLS.length
+    count: allPools.length
   }].map(tab => {
     const on = routeSub === tab.id;
     return /*#__PURE__*/React.createElement("button", {
@@ -9918,7 +9947,7 @@ function MarketplaceScreen({
       fontSize: 13
     }
   }, t.contact))))), routeSub === 'pools' && list.map(p => /*#__PURE__*/React.createElement("div", {
-    key: p.id,
+    key: p.id || p._liveId,
     className: "pg-card pg-card-tap",
     onClick: () => {
       setSelected({
@@ -9931,7 +9960,8 @@ function MarketplaceScreen({
     },
     style: {
       padding: 0,
-      overflow: 'hidden'
+      overflow: 'hidden',
+      opacity: p.status === 'pending' ? 0.75 : 1
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {

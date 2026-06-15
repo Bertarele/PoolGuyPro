@@ -3402,6 +3402,30 @@ function MarketplaceScreen({ ctx }) {
   // Combina rotas reais (primeiro) + rotas demo estáticas
   const allRoutes = [...liveRoutes, ...POOL_ROUTES];
 
+  // Piscinas avulsas reais do banco (type='pool', aprovadas ou próprias pendentes)
+  const livePools = marketByCounty
+    .filter(m => m.type === 'pool' && (m.status === 'approved' || (m.status === 'pending' && isMyPost(m))))
+    .map(m => ({
+      id: m._id, _live: true, _liveId: m._id, _type: 'pool',
+      _author: m.author, _authorId: m.author_id,
+      pools: 1,
+      area: m.area || m.loc || '',
+      name: m.description || m.name || '',
+      desc: m.description || '',
+      revenue: m.price ? `$${Number(m.price).toLocaleString()}/mo` : '',
+      est: Number(m.asking || m.price) || 0,
+      photoUrl: m.photoUrl || null,
+      photoUrls: m.photoUrls || [],
+      status: m.status,
+      // pool-specific detail fields (if columns exist in DB)
+      system: m.system || null, sizeFt: m.sizeFt || null,
+      gallons: m.gallons || null, freq: m.freq || null,
+      warranty: m.warranty || null, warrantyMonths: m.warrantyMonths || null,
+      address: m.address || null,
+    }));
+  // Combina piscinas reais (primeiro) + piscinas demo estáticas
+  const allPools = [...livePools, ...SINGLE_POOLS];
+
   const list = isEquipment
     ? EQUIPMENT.filter(e =>
         e.mode === mode &&
@@ -3413,8 +3437,8 @@ function MarketplaceScreen({ ctx }) {
          (priceRange === 'o500'    && e.price > 500))
       )
     : view === 'routes' && routeSub === 'pools'
-      ? SINGLE_POOLS.filter(p =>
-          (routeRegion === 'all' || p.area.toLowerCase().includes(routeRegion.toLowerCase())) &&
+      ? allPools.filter(p =>
+          (routeRegion === 'all' || (p.area||'').toLowerCase().includes(routeRegion.toLowerCase())) &&
           (poolPrice === 'all' ||
            (poolPrice === 'u1500' && p.est < 1500) ||
            (poolPrice === '1500-3k' && p.est >= 1500 && p.est <= 3000) ||
@@ -4796,7 +4820,7 @@ function MarketplaceScreen({ ctx }) {
                   ),
                   label: lang==='pt'?'Piscinas':lang==='es'?'Piscinas':'Pools',
                   sub:   lang==='pt'?'1–4 piscinas avulsas':lang==='es'?'1–4 piscinas sueltas':'1–4 individual pools',
-                  count: SINGLE_POOLS.length },
+                  count: allPools.length },
               ].map(tab => {
                 const on = routeSub === tab.id;
                 return (
@@ -5068,7 +5092,7 @@ function MarketplaceScreen({ ctx }) {
 
             {/* Single Pool cards */}
             {routeSub === 'pools' && list.map(p => (
-              <div key={p.id} className="pg-card pg-card-tap" onClick={()=>{ setSelected({...p, _type:'pool'}); window.history.pushState({pgPool:p.id},'','?listing=pool-'+p.id); }} style={{padding:0, overflow:'hidden'}}>
+              <div key={p.id||p._liveId} className="pg-card pg-card-tap" onClick={()=>{ setSelected({...p, _type:'pool'}); window.history.pushState({pgPool:p.id},'','?listing=pool-'+p.id); }} style={{padding:0, overflow:'hidden', opacity: p.status==='pending' ? 0.75 : 1}}>
                 <div style={{display:'flex', gap:12, padding:'13px 14px'}}>
                   {/* Pool icon / mini image */}
                   <div style={{
