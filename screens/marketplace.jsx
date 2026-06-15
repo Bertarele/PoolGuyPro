@@ -2580,7 +2580,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           ) : (
             <>
               <span style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
-                ${item.price}{periodSfx && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}
+                {item.type === 'pool'
+                  ? `$${Number(item.asking||0).toLocaleString()}`
+                  : <>${item.price}{periodSfx && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}</>
+                }
               </span>
               {item.condition && (
                 <span className="pg-chip" style={{marginLeft:6, padding:'2px 9px', fontSize:11, background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', borderColor:'transparent'}}>

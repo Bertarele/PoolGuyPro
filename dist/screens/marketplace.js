@@ -4961,14 +4961,14 @@ function ViewListingSheet({
       letterSpacing: '-0.02em',
       lineHeight: 1
     }
-  }, "$", item.price, periodSfx && /*#__PURE__*/React.createElement("span", {
+  }, item.type === 'pool' ? `$${Number(item.asking || 0).toLocaleString()}` : /*#__PURE__*/React.createElement(React.Fragment, null, "$", item.price, periodSfx && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 500,
       color: 'var(--pg-ink-400)',
       marginLeft: 2
     }
-  }, periodSfx)), item.condition && /*#__PURE__*/React.createElement("span", {
+  }, periodSfx))), item.condition && /*#__PURE__*/React.createElement("span", {
     className: "pg-chip",
     style: {
       marginLeft: 6,
