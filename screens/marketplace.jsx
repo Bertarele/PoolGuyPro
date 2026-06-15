@@ -4010,7 +4010,7 @@ function MarketplaceScreen({ ctx }) {
                 {/* Route cards in 2-column grid on desktop */}
                 <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(360px,1fr))', gap:16}}>
                   {list.map(r => (
-                    <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ const mSold=m.status==='sold'; if(mSold&&!isMyPost(m)){return;} isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
+                    <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ const mSold=m.status==='sold'; if(mSold&&!isMyPost(m)){return;} isMyPost(m)?setMyPostDetail(m):openListing(m); } } else { setSelected({...r, _type:'route'}); window.history.pushState({pgRoute:r.id},'','?listing=route-'+r.id); } }}
                       style={{
                         background:'var(--pg-white)', borderRadius:16, overflow:'hidden',
                         border:'1px solid var(--pg-ink-200)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
@@ -4109,7 +4109,7 @@ function MarketplaceScreen({ ctx }) {
           onUpdated={()=>{ setMyPostDetail(null); if(ctx.liveMarket)ctx.liveMarket.splice(0); }}
           onDeleted={(id)=>{ setMyPostDetail(null); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}/>}
       </Sheet>
-      <Sheet open={!!selected} onClose={()=>setSelected(null)} height="78%">
+      <Sheet open={!!selected} onClose={()=>{ setSelected(null); if(window.location.search.includes('listing=route-')||window.location.search.includes('listing=pool-')) window.history.back(); }} height="78%">
         {selected&&<ListingDetail selected={selected} lang={lang} t={t} catLabels={catLabels} openChat={openChat} onClose={()=>setSelected(null)} openPublicProfile={openPublicProfile}/>}
       </Sheet>
       <Sheet open={postOpen&&!postMode} onClose={()=>setPostOpen(false)} height="auto">
@@ -5005,17 +5005,6 @@ function MarketplaceScreen({ ctx }) {
               )}
             </div>
 
-            {/* Escrow notice */}
-            <div className="pg-card" style={{
-              padding:'11px 14px', display:'flex', alignItems:'center', gap:10,
-              background:'var(--pg-aqua-100)', border:'0.5px solid var(--pg-aqua-400)',
-            }}>
-              {Icon.shield(16,'var(--pg-aqua-700)')}
-              <div style={{fontSize:12, color:'var(--pg-aqua-700)', fontWeight:500, lineHeight:1.4}}>
-                {t.routesSaleOnly}
-              </div>
-            </div>
-
             {list.length === 0 && (
               <div style={{textAlign:'center', padding:'28px 16px', color:'var(--pg-ink-400)', fontSize:13, lineHeight:1.5}}>
                 {routeSub==='pools'
@@ -5027,7 +5016,7 @@ function MarketplaceScreen({ ctx }) {
             {/* Route cards */}
             {routeSub === 'routes' && list.map(r => (
               <div key={r.id||r._liveId} className="pg-card pg-card-tap"
-                onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ const mSold=m.status==='sold'; if(mSold&&!isMyPost(m)){return;} isMyPost(m)?setMyPostDetail(m):openListing(m); } } else setSelected({...r, _type:'route'}); }}
+                onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ const mSold=m.status==='sold'; if(mSold&&!isMyPost(m)){return;} isMyPost(m)?setMyPostDetail(m):openListing(m); } } else { setSelected({...r, _type:'route'}); window.history.pushState({pgRoute:r.id},'','?listing=route-'+r.id); } }}
                 style={{padding:14, display:'flex', gap:12, position:'relative'}}>
                 <div style={{width:90, height:90, borderRadius:12, overflow:'hidden', flexShrink:0,
                   background:'linear-gradient(135deg,var(--pg-blue-100) 0%,var(--pg-blue-50) 100%)',
@@ -5075,7 +5064,7 @@ function MarketplaceScreen({ ctx }) {
 
             {/* Single Pool cards */}
             {routeSub === 'pools' && list.map(p => (
-              <div key={p.id} className="pg-card pg-card-tap" onClick={()=>setSelected({...p, _type:'pool'})} style={{padding:0, overflow:'hidden'}}>
+              <div key={p.id} className="pg-card pg-card-tap" onClick={()=>{ setSelected({...p, _type:'pool'}); window.history.pushState({pgPool:p.id},'','?listing=pool-'+p.id); }} style={{padding:0, overflow:'hidden'}}>
                 <div style={{display:'flex', gap:12, padding:'13px 14px'}}>
                   {/* Pool icon / mini image */}
                   <div style={{
@@ -5203,7 +5192,7 @@ function MarketplaceScreen({ ctx }) {
       </Sheet>
 
       {/* Item detail sheet — outside pg-screen so backdrop covers correctly */}
-      <Sheet open={!!selected} onClose={()=>setSelected(null)} height="78%">
+      <Sheet open={!!selected} onClose={()=>{ setSelected(null); if(window.location.search.includes('listing=route-')||window.location.search.includes('listing=pool-')) window.history.back(); }} height="78%">
         {selected && <ListingDetail selected={selected} lang={lang} t={t} catLabels={catLabels} openChat={openChat} onClose={()=>setSelected(null)} openPublicProfile={openPublicProfile}/>}
       </Sheet>
 
@@ -5808,11 +5797,6 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
             ${selected.est.toLocaleString()}
           </span>
         </div>
-        <div style={{display:'flex', alignItems:'flex-start', gap:10, padding:'10px 12px', borderRadius:10,
-          background:'var(--pg-aqua-100)', border:'0.5px solid var(--pg-aqua-400)', marginTop:12}}>
-          {Icon.shield(14,'var(--pg-aqua-700)')}
-          <div style={{fontSize:12, color:'var(--pg-aqua-700)', fontWeight:500, lineHeight:1.4}}>{t.routesSaleOnly}</div>
-        </div>
         {sellerRow}
         {OfferPanel}
         <div style={{display:'flex', gap:10, marginTop:12}}>
@@ -5865,9 +5849,62 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
           </span>
           <span className="pg-chip" style={{fontSize:11, background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', borderColor:'var(--pg-blue-100)'}}>{tr(selected.revenue, lang)}</span>
         </div>
-        <div style={{marginTop:12, fontSize:13, lineHeight:1.55, color:'var(--pg-ink-600)'}}>
-          {tr(selected.desc, lang)}
-        </div>
+        {(selected.desc||selected.description) && (
+          <div style={{marginTop:12, fontSize:13, lineHeight:1.55, color:'var(--pg-ink-600)'}}>
+            {tr(selected.desc||selected.description, lang)}
+          </div>
+        )}
+
+        {/* Detail chips */}
+        {(selected.system||selected.sizeFt||selected.gallons||selected.freq||selected.warranty) && (
+          <div style={{marginTop:14, display:'flex', flexDirection:'column', gap:8}}>
+            {(selected.sizeFt||selected.gallons) && (
+              <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                {selected.sizeFt && (
+                  <div style={{display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:10, background:'var(--pg-ink-50,var(--pg-blue-50))', border:'0.5px solid var(--pg-ink-200)'}}>
+                    <span style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.04em'}}>{lang==='pt'?'TAMANHO':lang==='es'?'TAMAÑO':'SIZE'}</span>
+                    <span style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>{selected.sizeFt}</span>
+                  </div>
+                )}
+                {selected.gallons && (
+                  <div style={{display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:10, background:'var(--pg-ink-50,var(--pg-blue-50))', border:'0.5px solid var(--pg-ink-200)'}}>
+                    <span style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.04em'}}>{lang==='pt'?'GALÕES':'GALLONS'}</span>
+                    <span style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>{Number(selected.gallons).toLocaleString()} gal</span>
+                  </div>
+                )}
+              </div>
+            )}
+            <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+              {selected.system && (
+                <div style={{display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:10, background:'var(--pg-aqua-100)', border:'0.5px solid var(--pg-aqua-400)'}}>
+                  <span style={{fontSize:11, fontWeight:700, color:'var(--pg-aqua-700)', letterSpacing:'0.04em'}}>{lang==='pt'?'SISTEMA':lang==='es'?'SISTEMA':'SYSTEM'}</span>
+                  <span style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>
+                    {selected.system==='salt'?(lang==='pt'?'Sal':lang==='es'?'Sal':'Salt'):(lang==='pt'?'Cloro':lang==='es'?'Cloro':'Chlorine')}
+                  </span>
+                </div>
+              )}
+              {selected.freq && (
+                <div style={{display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:10, background:'var(--pg-aqua-100)', border:'0.5px solid var(--pg-aqua-400)'}}>
+                  <span style={{fontSize:11, fontWeight:700, color:'var(--pg-aqua-700)', letterSpacing:'0.04em'}}>{lang==='pt'?'VISITAS':lang==='es'?'VISITAS':'VISITS'}</span>
+                  <span style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>
+                    {selected.freq==='7'?(lang==='pt'?'Diário':lang==='es'?'Diario':'Daily'):`${selected.freq}x/${lang==='pt'||lang==='es'?'sem':'wk'}`}
+                  </span>
+                </div>
+              )}
+              {selected.warranty && (
+                <div style={{display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:10, background: selected.warranty==='yes'?'#F0FDF4':'var(--pg-ink-100)', border:`0.5px solid ${selected.warranty==='yes'?'#86EFAC':'var(--pg-ink-200)'}`}}>
+                  <span style={{fontSize:11, fontWeight:700, color: selected.warranty==='yes'?'#15803D':'var(--pg-ink-500)', letterSpacing:'0.04em'}}>{lang==='pt'?'GARANTIA':lang==='es'?'GARANTÍA':'WARRANTY'}</span>
+                  <span style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>
+                    {selected.warranty==='yes'
+                      ? (selected.warrantyMonths ? `${selected.warrantyMonths} ${lang==='pt'?'meses':lang==='es'?'meses':'mo'}` : (lang==='pt'?'Sim':lang==='es'?'Sí':'Yes'))
+                      : (lang==='pt'?'Não':lang==='es'?'No':'No')}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {sellerRow}
         {OfferPanel}
         <div style={{display:'flex', gap:10, marginTop:12}}>

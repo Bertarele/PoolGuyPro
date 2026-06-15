@@ -7666,10 +7666,15 @@ function MarketplaceScreen({
             }
             isMyPost(m) ? setMyPostDetail(m) : openListing(m);
           }
-        } else setSelected({
-          ...r,
-          _type: 'route'
-        });
+        } else {
+          setSelected({
+            ...r,
+            _type: 'route'
+          });
+          window.history.pushState({
+            pgRoute: r.id
+          }, '', '?listing=route-' + r.id);
+        }
       },
       style: {
         background: 'var(--pg-white)',
@@ -7890,7 +7895,10 @@ function MarketplaceScreen({
       }
     })), /*#__PURE__*/React.createElement(Sheet, {
       open: !!selected,
-      onClose: () => setSelected(null),
+      onClose: () => {
+        setSelected(null);
+        if (window.location.search.includes('listing=route-') || window.location.search.includes('listing=pool-')) window.history.back();
+      },
       height: "78%"
     }, selected && /*#__PURE__*/React.createElement(ListingDetail, {
       selected: selected,
@@ -9726,24 +9734,7 @@ function MarketplaceScreen({
       padding: '4px 9px',
       fontFamily: 'inherit'
     }
-  }, lang === 'pt' ? 'Limpar' : lang === 'es' ? 'Limpiar' : 'Clear'))), /*#__PURE__*/React.createElement("div", {
-    className: "pg-card",
-    style: {
-      padding: '11px 14px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      background: 'var(--pg-aqua-100)',
-      border: '0.5px solid var(--pg-aqua-400)'
-    }
-  }, Icon.shield(16, 'var(--pg-aqua-700)'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--pg-aqua-700)',
-      fontWeight: 500,
-      lineHeight: 1.4
-    }
-  }, t.routesSaleOnly)), list.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Limpar' : lang === 'es' ? 'Limpiar' : 'Clear'))), list.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       padding: '28px 16px',
@@ -9764,10 +9755,15 @@ function MarketplaceScreen({
           }
           isMyPost(m) ? setMyPostDetail(m) : openListing(m);
         }
-      } else setSelected({
-        ...r,
-        _type: 'route'
-      });
+      } else {
+        setSelected({
+          ...r,
+          _type: 'route'
+        });
+        window.history.pushState({
+          pgRoute: r.id
+        }, '', '?listing=route-' + r.id);
+      }
     },
     style: {
       padding: 14,
@@ -9920,10 +9916,15 @@ function MarketplaceScreen({
   }, t.contact))))), routeSub === 'pools' && list.map(p => /*#__PURE__*/React.createElement("div", {
     key: p.id,
     className: "pg-card pg-card-tap",
-    onClick: () => setSelected({
-      ...p,
-      _type: 'pool'
-    }),
+    onClick: () => {
+      setSelected({
+        ...p,
+        _type: 'pool'
+      });
+      window.history.pushState({
+        pgPool: p.id
+      }, '', '?listing=pool-' + p.id);
+    },
     style: {
       padding: 0,
       overflow: 'hidden'
@@ -10149,7 +10150,10 @@ function MarketplaceScreen({
     }
   })), /*#__PURE__*/React.createElement(Sheet, {
     open: !!selected,
-    onClose: () => setSelected(null),
+    onClose: () => {
+      setSelected(null);
+      if (window.location.search.includes('listing=route-') || window.location.search.includes('listing=pool-')) window.history.back();
+    },
     height: "78%"
   }, selected && /*#__PURE__*/React.createElement(ListingDetail, {
     selected: selected,
@@ -11275,25 +11279,7 @@ function ListingDetail({
       color: 'var(--pg-blue-500)',
       letterSpacing: '-0.02em'
     }
-  }, "$", selected.est.toLocaleString())), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: 10,
-      padding: '10px 12px',
-      borderRadius: 10,
-      background: 'var(--pg-aqua-100)',
-      border: '0.5px solid var(--pg-aqua-400)',
-      marginTop: 12
-    }
-  }, Icon.shield(14, 'var(--pg-aqua-700)'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--pg-aqua-700)',
-      fontWeight: 500,
-      lineHeight: 1.4
-    }
-  }, t.routesSaleOnly)), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
+  }, "$", selected.est.toLocaleString())), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 10,
@@ -11445,14 +11431,148 @@ function ListingDetail({
       color: 'var(--pg-blue-700)',
       borderColor: 'var(--pg-blue-100)'
     }
-  }, tr(selected.revenue, lang))), /*#__PURE__*/React.createElement("div", {
+  }, tr(selected.revenue, lang))), (selected.desc || selected.description) && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
       fontSize: 13,
       lineHeight: 1.55,
       color: 'var(--pg-ink-600)'
     }
-  }, tr(selected.desc, lang)), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
+  }, tr(selected.desc || selected.description, lang)), (selected.system || selected.sizeFt || selected.gallons || selected.freq || selected.warranty) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
+    }
+  }, (selected.sizeFt || selected.gallons) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      flexWrap: 'wrap'
+    }
+  }, selected.sizeFt && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '7px 12px',
+      borderRadius: 10,
+      background: 'var(--pg-ink-50,var(--pg-blue-50))',
+      border: '0.5px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)',
+      letterSpacing: '0.04em'
+    }
+  }, lang === 'pt' ? 'TAMANHO' : lang === 'es' ? 'TAMAÑO' : 'SIZE'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: 'var(--pg-ink-900)'
+    }
+  }, selected.sizeFt)), selected.gallons && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '7px 12px',
+      borderRadius: 10,
+      background: 'var(--pg-ink-50,var(--pg-blue-50))',
+      border: '0.5px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)',
+      letterSpacing: '0.04em'
+    }
+  }, lang === 'pt' ? 'GALÕES' : 'GALLONS'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: 'var(--pg-ink-900)'
+    }
+  }, Number(selected.gallons).toLocaleString(), " gal"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      flexWrap: 'wrap'
+    }
+  }, selected.system && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '7px 12px',
+      borderRadius: 10,
+      background: 'var(--pg-aqua-100)',
+      border: '0.5px solid var(--pg-aqua-400)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: 'var(--pg-aqua-700)',
+      letterSpacing: '0.04em'
+    }
+  }, lang === 'pt' ? 'SISTEMA' : lang === 'es' ? 'SISTEMA' : 'SYSTEM'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: 'var(--pg-ink-900)'
+    }
+  }, selected.system === 'salt' ? lang === 'pt' ? 'Sal' : lang === 'es' ? 'Sal' : 'Salt' : lang === 'pt' ? 'Cloro' : lang === 'es' ? 'Cloro' : 'Chlorine')), selected.freq && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '7px 12px',
+      borderRadius: 10,
+      background: 'var(--pg-aqua-100)',
+      border: '0.5px solid var(--pg-aqua-400)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: 'var(--pg-aqua-700)',
+      letterSpacing: '0.04em'
+    }
+  }, lang === 'pt' ? 'VISITAS' : lang === 'es' ? 'VISITAS' : 'VISITS'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: 'var(--pg-ink-900)'
+    }
+  }, selected.freq === '7' ? lang === 'pt' ? 'Diário' : lang === 'es' ? 'Diario' : 'Daily' : `${selected.freq}x/${lang === 'pt' || lang === 'es' ? 'sem' : 'wk'}`)), selected.warranty && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '7px 12px',
+      borderRadius: 10,
+      background: selected.warranty === 'yes' ? '#F0FDF4' : 'var(--pg-ink-100)',
+      border: `0.5px solid ${selected.warranty === 'yes' ? '#86EFAC' : 'var(--pg-ink-200)'}`
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: selected.warranty === 'yes' ? '#15803D' : 'var(--pg-ink-500)',
+      letterSpacing: '0.04em'
+    }
+  }, lang === 'pt' ? 'GARANTIA' : lang === 'es' ? 'GARANTÍA' : 'WARRANTY'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: 'var(--pg-ink-900)'
+    }
+  }, selected.warranty === 'yes' ? selected.warrantyMonths ? `${selected.warrantyMonths} ${lang === 'pt' ? 'meses' : lang === 'es' ? 'meses' : 'mo'}` : lang === 'pt' ? 'Sim' : lang === 'es' ? 'Sí' : 'Yes' : lang === 'pt' ? 'Não' : lang === 'es' ? 'No' : 'No')))), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 10,
