@@ -7893,20 +7893,24 @@ function MarketplaceScreen({
         setMyPostDetail(null);
         if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
       }
-    })), /*#__PURE__*/React.createElement(Sheet, {
-      open: !!selected,
-      onClose: () => {
-        setSelected(null);
-        if (window.location.search.includes('listing=route-') || window.location.search.includes('listing=pool-')) window.history.back();
-      },
-      height: "78%"
-    }, selected && /*#__PURE__*/React.createElement(ListingDetail, {
+    })), selected && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'fixed',
+        inset: 0,
+        zIndex: 200,
+        background: 'var(--pg-bg)',
+        animation: 'pg-fade-in 0.18s ease'
+      }
+    }, /*#__PURE__*/React.createElement(ListingDetail, {
       selected: selected,
       lang: lang,
       t: t,
       catLabels: catLabels,
       openChat: openChat,
-      onClose: () => setSelected(null),
+      onClose: () => {
+        setSelected(null);
+        if (window.location.search.includes('listing=route-') || window.location.search.includes('listing=pool-')) window.history.back();
+      },
       openPublicProfile: openPublicProfile
     })), /*#__PURE__*/React.createElement(Sheet, {
       open: postOpen && !postMode,
@@ -10148,20 +10152,24 @@ function MarketplaceScreen({
       setMyPostDetail(null);
       if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
     }
-  })), /*#__PURE__*/React.createElement(Sheet, {
-    open: !!selected,
-    onClose: () => {
-      setSelected(null);
-      if (window.location.search.includes('listing=route-') || window.location.search.includes('listing=pool-')) window.history.back();
-    },
-    height: "78%"
-  }, selected && /*#__PURE__*/React.createElement(ListingDetail, {
+  })), selected && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 200,
+      background: 'var(--pg-bg)',
+      animation: 'pg-fade-in 0.18s ease'
+    }
+  }, /*#__PURE__*/React.createElement(ListingDetail, {
     selected: selected,
     lang: lang,
     t: t,
     catLabels: catLabels,
     openChat: openChat,
-    onClose: () => setSelected(null),
+    onClose: () => {
+      setSelected(null);
+      if (window.location.search.includes('listing=route-') || window.location.search.includes('listing=pool-')) window.history.back();
+    },
     openPublicProfile: openPublicProfile
   })), /*#__PURE__*/React.createElement(Sheet, {
     open: postOpen && !postMode,
@@ -11145,21 +11153,34 @@ function ListingDetail({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
-      height: 190,
+      height: selected.photoUrls && selected.photoUrls.length > 0 || selected.photoUrl ? 220 : 190,
       flexShrink: 0,
       background: 'linear-gradient(135deg, #011B5A 0%, #023EBA 55%, #0077B6 100%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 10
+      gap: 10,
+      overflow: 'hidden'
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, (selected.photoUrls && selected.photoUrls[0] || selected.photoUrl) && /*#__PURE__*/React.createElement("img", {
+    src: selected.photoUrls && selected.photoUrls[0] || selected.photoUrl,
+    alt: "",
+    style: {
+      position: 'absolute',
+      inset: 0,
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      opacity: 0.35
+    }
+  }), /*#__PURE__*/React.createElement("button", {
     onClick: onClose,
     style: {
       position: 'absolute',
       top: 12,
       right: 12,
+      zIndex: 2,
       border: 'none',
       background: 'rgba(255,255,255,0.15)',
       width: 30,
@@ -11174,7 +11195,9 @@ function ListingDetail({
     style: {
       display: 'flex',
       gap: 28,
-      alignItems: 'center'
+      alignItems: 'center',
+      position: 'relative',
+      zIndex: 1
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11227,6 +11250,13 @@ function ListingDetail({
   }, lang === 'pt' ? 'RECEITA/MÊS' : lang === 'es' ? 'INGRESO/MES' : 'REVENUE/MO'))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
       alignItems: 'center',
       gap: 5,
       background: 'rgba(255,255,255,0.12)',
@@ -11240,7 +11270,13 @@ function ListingDetail({
       fontWeight: 600,
       color: 'rgba(255,255,255,0.80)'
     }
-  }, selected.area))), /*#__PURE__*/React.createElement("div", {
+  }, selected.area)), selected.address && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'rgba(255,255,255,0.65)',
+      fontWeight: 500
+    }
+  }, selected.address))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       overflowY: 'auto',
@@ -11306,7 +11342,39 @@ function ListingDetail({
       flexDirection: 'column',
       height: '100%'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, selected.photoUrls && selected.photoUrls.length > 0 || selected.photoUrl ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      height: 220,
+      flexShrink: 0,
+      background: '#000'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: selected.photoUrls && selected.photoUrls[0] || selected.photoUrl,
+    alt: "",
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      opacity: 0.92
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      position: 'absolute',
+      top: 12,
+      right: 12,
+      border: 'none',
+      background: 'rgba(0,0,0,0.45)',
+      width: 32,
+      height: 32,
+      borderRadius: '50%',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, Icon.x(14, '#fff'))) : /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
       height: 180,
@@ -11391,7 +11459,12 @@ function ListingDetail({
       fontSize: 12,
       color: 'var(--pg-ink-400)'
     }
-  }, selected.area)), /*#__PURE__*/React.createElement("h2", {
+  }, selected.area), selected.address && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: 'var(--pg-ink-400)'
+    }
+  }, " \xB7 ", selected.address)), /*#__PURE__*/React.createElement("h2", {
     style: {
       margin: 0,
       fontFamily: 'var(--pg-font-display)',
@@ -11400,7 +11473,7 @@ function ListingDetail({
       letterSpacing: '-0.02em',
       lineHeight: 1.2
     }
-  }, tr(selected.name, lang)), /*#__PURE__*/React.createElement("div", {
+  }, tr(selected.name || selected.desc, lang)), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'baseline',
@@ -12154,14 +12227,15 @@ function PostPoolSheet({
 }) {
   const [desc, setDesc] = React.useState('');
   const [area, setArea] = React.useState('');
-  const [sizeFt, setSizeFt] = React.useState(''); // e.g. "10x20"
+  const [address, setAddress] = React.useState(''); // optional exact address
+  const [sizeFt, setSizeFt] = React.useState('');
   const [gallons, setGallons] = React.useState('');
-  const [system, setSystem] = React.useState(''); // 'chlorine'|'salt'
-  const [freq, setFreq] = React.useState(''); // times/week
-  const [price, setPrice] = React.useState(''); // monthly price
-  const [warranty, setWarranty] = React.useState(''); // 'yes'|'no'
-  const [wMonths, setWMonths] = React.useState(''); // warranty months
-
+  const [system, setSystem] = React.useState('');
+  const [freq, setFreq] = React.useState('');
+  const [price, setPrice] = React.useState('');
+  const [warranty, setWarranty] = React.useState('');
+  const [wMonths, setWMonths] = React.useState('');
+  const [photos, setPhotos] = React.useState([]);
   const isValid = desc.trim().length > 5 && area.trim().length > 0 && system !== '' && freq !== '' && price.trim().length > 0 && warranty !== '';
   const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
   const ToggleGroup = ({
@@ -12241,7 +12315,14 @@ function PostPoolSheet({
       flexDirection: 'column',
       gap: 18
     }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Descrição', 'Descripción', 'Description')), /*#__PURE__*/React.createElement("textarea", {
+  }, /*#__PURE__*/React.createElement(PhotoPicker, {
+    photos: photos,
+    onAdd: url => setPhotos(p => [...p, url]),
+    onRemove: url => setPhotos(p => p.filter(u => u !== url)),
+    max: 5,
+    lang: lang,
+    title: lbl('Fotos da piscina (opcional)', 'Fotos de la piscina (opcional)', 'Pool photos (optional)')
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Descrição', 'Descripción', 'Description')), /*#__PURE__*/React.createElement("textarea", {
     className: "pg-field",
     value: desc,
     onChange: e => setDesc(e.target.value),
@@ -12256,6 +12337,11 @@ function PostPoolSheet({
     value: area,
     onChange: v => setArea(v),
     lang: lang
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Endereço exato (opcional)', 'Dirección exacta (opcional)', 'Exact address (optional)')), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: address,
+    onChange: e => setAddress(e.target.value),
+    placeholder: lbl('Ex: 1234 NW 5th St, Fort Lauderdale', 'Ej: 1234 NW 5th St, Fort Lauderdale', 'e.g. 1234 NW 5th St, Fort Lauderdale')
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -12378,6 +12464,7 @@ function PostPoolSheet({
       type: 'pool',
       desc,
       area,
+      address: address || null,
       sizeFt,
       gallons,
       system,
@@ -12385,7 +12472,9 @@ function PostPoolSheet({
       price: parseFloat(price) || 0,
       est: parseFloat(price) || 0,
       warranty,
-      warrantyMonths: warranty === 'yes' ? wMonths : null
+      warrantyMonths: warranty === 'yes' ? wMonths : null,
+      photoUrl: photos[0] || null,
+      photoUrls: photos
     }),
     disabled: !isValid,
     className: "pg-btn pg-btn-primary",
@@ -12408,8 +12497,12 @@ function PostRouteSheet({
   const [revenue, setRevenue] = React.useState('');
   const [asking, setAsking] = React.useState('');
   const [area, setArea] = React.useState('');
+  const [address, setAddress] = React.useState(''); // optional exact address
+  const [photos, setPhotos] = React.useState([]); // optional photos
+
   const isValid = routeName.trim().length > 2 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
+  const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -12457,24 +12550,14 @@ function PostRouteSheet({
       flexDirection: 'column',
       gap: 18
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: 10,
-      padding: '12px 14px',
-      borderRadius: 12,
-      background: 'var(--pg-aqua-100)',
-      border: '0.5px solid var(--pg-aqua-400)'
-    }
-  }, Icon.shield(16, 'var(--pg-aqua-700)'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--pg-aqua-700)',
-      fontWeight: 500,
-      lineHeight: 1.4
-    }
-  }, t.routesSaleOnly)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, t.routeNameLbl), /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(PhotoPicker, {
+    photos: photos,
+    onAdd: url => setPhotos(p => [...p, url]),
+    onRemove: url => setPhotos(p => p.filter(u => u !== url)),
+    max: 5,
+    lang: lang,
+    title: lbl('Fotos da rota (opcional)', 'Fotos de la ruta (opcional)', 'Route photos (optional)')
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, t.routeNameLbl), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
     value: routeName,
     onChange: e => setRouteName(e.target.value),
@@ -12555,6 +12638,11 @@ function PostRouteSheet({
     value: area,
     onChange: v => setArea(v),
     lang: lang
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Endereço exato (opcional)', 'Dirección exacta (opcional)', 'Exact address (optional)')), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: address,
+    onChange: e => setAddress(e.target.value),
+    placeholder: lbl('Ex: 1234 NW 5th St, Fort Lauderdale', 'Ej: 1234 NW 5th St, Fort Lauderdale', 'e.g. 1234 NW 5th St, Fort Lauderdale')
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 18px 20px',
@@ -12569,8 +12657,9 @@ function PostRouteSheet({
       revenue,
       asking,
       area,
-      photoUrl: null,
-      photos: []
+      address: address || null,
+      photoUrl: photos[0] || null,
+      photoUrls: photos
     }),
     disabled: !isValid,
     className: "pg-btn pg-btn-primary",

@@ -4109,9 +4109,13 @@ function MarketplaceScreen({ ctx }) {
           onUpdated={()=>{ setMyPostDetail(null); if(ctx.liveMarket)ctx.liveMarket.splice(0); }}
           onDeleted={(id)=>{ setMyPostDetail(null); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}/>}
       </Sheet>
-      <Sheet open={!!selected} onClose={()=>{ setSelected(null); if(window.location.search.includes('listing=route-')||window.location.search.includes('listing=pool-')) window.history.back(); }} height="78%">
-        {selected&&<ListingDetail selected={selected} lang={lang} t={t} catLabels={catLabels} openChat={openChat} onClose={()=>setSelected(null)} openPublicProfile={openPublicProfile}/>}
-      </Sheet>
+      {selected && (
+        <div style={{position:'fixed', inset:0, zIndex:200, background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
+          <ListingDetail selected={selected} lang={lang} t={t} catLabels={catLabels} openChat={openChat}
+            onClose={()=>{ setSelected(null); if(window.location.search.includes('listing=route-')||window.location.search.includes('listing=pool-')) window.history.back(); }}
+            openPublicProfile={openPublicProfile}/>
+        </div>
+      )}
       <Sheet open={postOpen&&!postMode} onClose={()=>setPostOpen(false)} height="auto">
         <MarketplaceListingPicker lang={lang} t={t} currentView={view} onPick={(m)=>setPostMode(m)} onClose={()=>setPostOpen(false)}/>
       </Sheet>
@@ -5191,10 +5195,14 @@ function MarketplaceScreen({ ctx }) {
         />}
       </Sheet>
 
-      {/* Item detail sheet — outside pg-screen so backdrop covers correctly */}
-      <Sheet open={!!selected} onClose={()=>{ setSelected(null); if(window.location.search.includes('listing=route-')||window.location.search.includes('listing=pool-')) window.history.back(); }} height="78%">
-        {selected && <ListingDetail selected={selected} lang={lang} t={t} catLabels={catLabels} openChat={openChat} onClose={()=>setSelected(null)} openPublicProfile={openPublicProfile}/>}
-      </Sheet>
+      {/* Item detail — full screen overlay, same as equipment */}
+      {selected && (
+        <div style={{position:'fixed', inset:0, zIndex:200, background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
+          <ListingDetail selected={selected} lang={lang} t={t} catLabels={catLabels} openChat={openChat}
+            onClose={()=>{ setSelected(null); if(window.location.search.includes('listing=route-')||window.location.search.includes('listing=pool-')) window.history.back(); }}
+            openPublicProfile={openPublicProfile}/>
+        </div>
+      )}
 
       {/* New listing picker */}
       <Sheet open={postOpen && !postMode} onClose={()=>setPostOpen(false)} height="auto">
@@ -5757,15 +5765,19 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
   // ── ROUTE ──────────────────────────────────────────────────────
   if (selected._type === 'route') return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
-      <div style={{position:'relative', height:190, flexShrink:0,
+      <div style={{position:'relative', height: (selected.photoUrls&&selected.photoUrls.length>0)||selected.photoUrl ? 220 : 190, flexShrink:0,
         background:'linear-gradient(135deg, #011B5A 0%, #023EBA 55%, #0077B6 100%)',
-        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10}}>
-        <button onClick={onClose} style={{position:'absolute', top:12, right:12,
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10, overflow:'hidden'}}>
+        {((selected.photoUrls&&selected.photoUrls[0])||selected.photoUrl) && (
+          <img src={(selected.photoUrls&&selected.photoUrls[0])||selected.photoUrl} alt=""
+            style={{position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', opacity:0.35}}/>
+        )}
+        <button onClick={onClose} style={{position:'absolute', top:12, right:12, zIndex:2,
           border:'none', background:'rgba(255,255,255,0.15)', width:30, height:30,
           borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
           {Icon.x(14,'#fff')}
         </button>
-        <div style={{display:'flex', gap:28, alignItems:'center'}}>
+        <div style={{display:'flex', gap:28, alignItems:'center', position:'relative', zIndex:1}}>
           <div style={{textAlign:'center', color:'#fff'}}>
             <div style={{fontFamily:'var(--pg-font-display)', fontSize:44, fontWeight:800, lineHeight:1, letterSpacing:'-0.02em'}}>{selected.clients}</div>
             <div style={{fontSize:11, opacity:0.60, fontWeight:600, marginTop:4, letterSpacing:'0.04em'}}>
@@ -5780,11 +5792,16 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
             </div>
           </div>
         </div>
-        <div style={{display:'flex', alignItems:'center', gap:5,
-          background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.22)',
-          borderRadius:999, padding:'4px 12px'}}>
-          {Icon.pin(11,'rgba(255,255,255,0.80)')}
-          <span style={{fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.80)'}}>{selected.area}</span>
+        <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
+          <div style={{display:'flex', alignItems:'center', gap:5,
+            background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.22)',
+            borderRadius:999, padding:'4px 12px'}}>
+            {Icon.pin(11,'rgba(255,255,255,0.80)')}
+            <span style={{fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.80)'}}>{selected.area}</span>
+          </div>
+          {selected.address && (
+            <div style={{fontSize:11, color:'rgba(255,255,255,0.65)', fontWeight:500}}>{selected.address}</div>
+          )}
         </div>
       </div>
       <div style={{flex:1, overflowY:'auto', padding:'16px 18px 24px', display:'flex', flexDirection:'column'}}>
@@ -5812,35 +5829,50 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
   // ── SINGLE POOL ────────────────────────────────────────────────
   if (selected._type === 'pool') return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
-      <div style={{position:'relative', height:180, flexShrink:0,
-        background:'linear-gradient(135deg, #011B5A 0%, #023EBA 55%, #0077B6 100%)',
-        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4}}>
-        <button onClick={onClose} style={{position:'absolute', top:12, right:12,
-          border:'none', background:'rgba(255,255,255,0.15)', width:30, height:30,
-          borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
-          {Icon.x(14,'#fff')}
-        </button>
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.90)" strokeWidth="1.8" strokeLinecap="round">
-          <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
-          <path d="M2 18 Q6 14 10 18 Q14 22 18 18 Q20 16 22 18"/>
-          <circle cx="12" cy="5" r="2.5"/>
-        </svg>
-        <div style={{fontFamily:'var(--pg-font-display)', fontSize:54, fontWeight:800, color:'#fff', lineHeight:1, letterSpacing:'-0.02em'}}>
-          {selected.pools}
-        </div>
-        <div style={{fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.65)', letterSpacing:'0.06em'}}>
-          {selected.pools===1 ? (lang==='pt'?'PISCINA':lang==='es'?'PISCINA':'POOL') : (lang==='pt'?'PISCINAS':lang==='es'?'PISCINAS':'POOLS')}
-        </div>
-      </div>
+      {(selected.photoUrls&&selected.photoUrls.length>0) || selected.photoUrl
+        ? (
+          <div style={{position:'relative', height:220, flexShrink:0, background:'#000'}}>
+            <img src={(selected.photoUrls&&selected.photoUrls[0])||selected.photoUrl} alt=""
+              style={{width:'100%', height:'100%', objectFit:'cover', opacity:0.92}}/>
+            <button onClick={onClose} style={{position:'absolute', top:12, right:12,
+              border:'none', background:'rgba(0,0,0,0.45)', width:32, height:32,
+              borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
+              {Icon.x(14,'#fff')}
+            </button>
+          </div>
+        ) : (
+          <div style={{position:'relative', height:180, flexShrink:0,
+            background:'linear-gradient(135deg, #011B5A 0%, #023EBA 55%, #0077B6 100%)',
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4}}>
+            <button onClick={onClose} style={{position:'absolute', top:12, right:12,
+              border:'none', background:'rgba(255,255,255,0.15)', width:30, height:30,
+              borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
+              {Icon.x(14,'#fff')}
+            </button>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.90)" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
+              <path d="M2 18 Q6 14 10 18 Q14 22 18 18 Q20 16 22 18"/>
+              <circle cx="12" cy="5" r="2.5"/>
+            </svg>
+            <div style={{fontFamily:'var(--pg-font-display)', fontSize:54, fontWeight:800, color:'#fff', lineHeight:1, letterSpacing:'-0.02em'}}>
+              {selected.pools}
+            </div>
+            <div style={{fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.65)', letterSpacing:'0.06em'}}>
+              {selected.pools===1 ? (lang==='pt'?'PISCINA':lang==='es'?'PISCINA':'POOL') : (lang==='pt'?'PISCINAS':lang==='es'?'PISCINAS':'POOLS')}
+            </div>
+          </div>
+        )
+      }
       <div style={{flex:1, overflowY:'auto', padding:'16px 18px 24px'}}>
         <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:6}}>
           <span className="pg-badge" style={{background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', fontSize:9}}>
             {selected.type==='condo' ? 'CONDO' : (lang==='pt'?'RESIDENCIAL':lang==='es'?'RESIDENCIAL':'HOUSE')}
           </span>
           <span style={{fontSize:12, color:'var(--pg-ink-400)'}}>{selected.area}</span>
+          {selected.address && <span style={{fontSize:12, color:'var(--pg-ink-400)'}}> · {selected.address}</span>}
         </div>
         <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.02em', lineHeight:1.2}}>
-          {tr(selected.name, lang)}
+          {tr(selected.name||selected.desc, lang)}
         </h2>
         <div style={{display:'flex', alignItems:'baseline', gap:8, marginTop:10, flexWrap:'wrap'}}>
           <span style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em'}}>{t.asking.toUpperCase()}</span>
@@ -6241,13 +6273,15 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
 function PostPoolSheet({ lang, t, onClose, onSubmit }) {
   const [desc,       setDesc]       = React.useState('');
   const [area,       setArea]       = React.useState('');
-  const [sizeFt,     setSizeFt]     = React.useState('');   // e.g. "10x20"
+  const [address,    setAddress]    = React.useState('');   // optional exact address
+  const [sizeFt,     setSizeFt]     = React.useState('');
   const [gallons,    setGallons]    = React.useState('');
-  const [system,     setSystem]     = React.useState('');   // 'chlorine'|'salt'
-  const [freq,       setFreq]       = React.useState('');   // times/week
-  const [price,      setPrice]      = React.useState('');   // monthly price
-  const [warranty,   setWarranty]   = React.useState('');   // 'yes'|'no'
-  const [wMonths,    setWMonths]    = React.useState('');   // warranty months
+  const [system,     setSystem]     = React.useState('');
+  const [freq,       setFreq]       = React.useState('');
+  const [price,      setPrice]      = React.useState('');
+  const [warranty,   setWarranty]   = React.useState('');
+  const [wMonths,    setWMonths]    = React.useState('');
+  const [photos,     setPhotos]     = React.useState([]);
 
   const isValid = desc.trim().length > 5 && area.trim().length > 0
     && system !== '' && freq !== '' && price.trim().length > 0 && warranty !== '';
@@ -6284,6 +6318,15 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
 
       <div style={{flex:1, overflow:'auto', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
 
+        {/* Photos — optional */}
+        <PhotoPicker
+          photos={photos}
+          onAdd={url=>setPhotos(p=>[...p, url])}
+          onRemove={url=>setPhotos(p=>p.filter(u=>u!==url))}
+          max={5} lang={lang}
+          title={lbl('Fotos da piscina (opcional)','Fotos de la piscina (opcional)','Pool photos (optional)')}
+        />
+
         {/* Description */}
         <div>
           <FormLabel>{lbl('Descrição','Descripción','Description')}</FormLabel>
@@ -6296,6 +6339,13 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
         <div>
           <FormLabel>{t.location}</FormLabel>
           <CityAutocomplete value={area} onChange={v=>setArea(v)} lang={lang}/>
+        </div>
+
+        {/* Exact address — optional */}
+        <div>
+          <FormLabel>{lbl('Endereço exato (opcional)','Dirección exacta (opcional)','Exact address (optional)')}</FormLabel>
+          <input className="pg-field" value={address} onChange={e=>setAddress(e.target.value)}
+            placeholder={lbl('Ex: 1234 NW 5th St, Fort Lauderdale','Ej: 1234 NW 5th St, Fort Lauderdale','e.g. 1234 NW 5th St, Fort Lauderdale')}/>
         </div>
 
         {/* Pool size */}
@@ -6361,9 +6411,10 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
 
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
         <button onClick={()=>onSubmit && onSubmit({
-            type:'pool', desc, area, sizeFt, gallons, system, freq,
+            type:'pool', desc, area, address: address||null, sizeFt, gallons, system, freq,
             price: parseFloat(price)||0, est: parseFloat(price)||0,
             warranty, warrantyMonths: warranty==='yes' ? wMonths : null,
+            photoUrl: photos[0]||null, photoUrls: photos,
           })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
@@ -6380,9 +6431,12 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
   const [revenue,   setRevenue]   = React.useState('');
   const [asking,    setAsking]    = React.useState('');
   const [area,      setArea]      = React.useState('');
+  const [address,   setAddress]   = React.useState('');   // optional exact address
+  const [photos,    setPhotos]    = React.useState([]);   // optional photos
 
   const isValid = routeName.trim().length > 2 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
+  const lbl = (pt, es, en) => lang==='pt'?pt:lang==='es'?es:en;
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
@@ -6394,14 +6448,14 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
 
       <div style={{flex:1, overflow:'auto', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
 
-        {/* Escrow notice */}
-        <div style={{
-          display:'flex', alignItems:'flex-start', gap:10, padding:'12px 14px', borderRadius:12,
-          background:'var(--pg-aqua-100)', border:'0.5px solid var(--pg-aqua-400)',
-        }}>
-          {Icon.shield(16,'var(--pg-aqua-700)')}
-          <div style={{fontSize:12, color:'var(--pg-aqua-700)', fontWeight:500, lineHeight:1.4}}>{t.routesSaleOnly}</div>
-        </div>
+        {/* Photos — optional */}
+        <PhotoPicker
+          photos={photos}
+          onAdd={url=>setPhotos(p=>[...p, url])}
+          onRemove={url=>setPhotos(p=>p.filter(u=>u!==url))}
+          max={5} lang={lang}
+          title={lbl('Fotos da rota (opcional)','Fotos de la ruta (opcional)','Route photos (optional)')}
+        />
 
         <div>
           <FormLabel>{t.routeNameLbl}</FormLabel>
@@ -6432,10 +6486,15 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
           <FormLabel>{t.location}</FormLabel>
           <CityAutocomplete value={area} onChange={v=>setArea(v)} lang={lang}/>
         </div>
+        <div>
+          <FormLabel>{lbl('Endereço exato (opcional)','Dirección exacta (opcional)','Exact address (optional)')}</FormLabel>
+          <input className="pg-field" value={address} onChange={e=>setAddress(e.target.value)}
+            placeholder={lbl('Ex: 1234 NW 5th St, Fort Lauderdale','Ej: 1234 NW 5th St, Fort Lauderdale','e.g. 1234 NW 5th St, Fort Lauderdale')}/>
+        </div>
       </div>
 
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
-        <button onClick={()=>onSubmit && onSubmit({ type:'route', routeName, clients, revenue, asking, area, photoUrl: null, photos: [] })}
+        <button onClick={()=>onSubmit && onSubmit({ type:'route', routeName, clients, revenue, asking, area, address: address||null, photoUrl: photos[0]||null, photoUrls: photos })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.pin(17,'#fff')} {t.postListingBtn}
