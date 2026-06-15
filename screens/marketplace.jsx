@@ -595,7 +595,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     if (isStatic) { showToast && showToast(lang==='pt'?'💡 Item demonstrativo — sem vendedor real.':'💡 Demo item — no real seller to contact.'); return; }
     // Open chat on top of the listing — listing stays open so user returns to it when chat closes
     if (openChat) openChat(item.author_id
-      ? { id: item.author_id, name: item.author || 'Seller', listingContext: _listingCtx() }
+      ? { id: item.author_id, name: item.author || 'Seller', listingId: item._id || null, listingContext: _listingCtx() }
       : (item.author || 'Seller'));
   };
 
@@ -640,7 +640,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     showToast && showToast(lang==='pt'?'✓ Pedido enviado! Converse com o dono pela inbox.':'✓ Request sent! Chat with the owner via inbox.');
     if (openChat && item.author_id) {
       // Open chat on top — listing stays open behind it (Sheet zIndex 9999 > listing zIndex 200)
-      openChat({ id: item.author_id, name: item.author || 'Owner', listingContext: _listingCtx() });
+      openChat({ id: item.author_id, name: item.author || 'Owner', listingId: item._id || null, listingContext: _listingCtx() });
     }
   };
 
@@ -4195,7 +4195,7 @@ function MarketplaceScreen({ ctx }) {
                             {!isMyPost(liveMarket.find(x=>x._id===r._liveId)||{}) && (
                               <button onClick={(e)=>{ e.stopPropagation();
                                 if(r._live&&r._authorId){
-                                  openChat({id:r._authorId,name:r._author||'Seller',listingContext:{name:tr(r.name,lang),photoUrl:(r.photoUrls&&r.photoUrls[0])||r.photoUrl||null,price:r.est,priceMode:'fixed',type:'route'}});
+                                  openChat({id:r._authorId,name:r._author||'Seller',listingId:r._liveId||null,listingContext:{name:tr(r.name,lang),photoUrl:(r.photoUrls&&r.photoUrls[0])||r.photoUrl||null,price:r.est,priceMode:'fixed',type:'route'}});
                                 } else { openChat&&openChat(); }
                               }} style={{
                                 padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer',
@@ -5200,7 +5200,7 @@ function MarketplaceScreen({ ctx }) {
                     {!isMyPost(liveMarket.find(x=>x._id===r._liveId)||{}) && (
                       <button onClick={(e)=>{ e.stopPropagation();
                         if(r._live&&r._authorId){
-                          openChat({id:r._authorId,name:r._author||'Seller',listingContext:{name:tr(r.name,lang),photoUrl:(r.photoUrls&&r.photoUrls[0])||r.photoUrl||null,price:r.est,priceMode:'fixed',type:'route'}});
+                          openChat({id:r._authorId,name:r._author||'Seller',listingId:r._liveId||null,listingContext:{name:tr(r.name,lang),photoUrl:(r.photoUrls&&r.photoUrls[0])||r.photoUrl||null,price:r.est,priceMode:'fixed',type:'route'}});
                         } else { openChat&&openChat(); }
                       }} className="pg-btn pg-btn-primary" style={{height:34, padding:'0 14px', fontSize:13}}>
                         {t.contact}
@@ -5290,7 +5290,7 @@ function MarketplaceScreen({ ctx }) {
                       {!isMyPost(liveMarket.find(x=>x._id===p._liveId)||{}) && (
                         <button onClick={(e)=>{ e.stopPropagation();
                           const m = liveMarket.find(x=>x._id===p._liveId);
-                          if(m&&m.author_id) openChat({id:m.author_id, name:m.author||'Seller', listingContext:{name:p.name, photoUrl:(p.photoUrls&&p.photoUrls[0])||p.photoUrl||null, price:p.est, priceMode:'fixed', type:'pool'}});
+                          if(m&&m.author_id) openChat({id:m.author_id, name:m.author||'Seller', listingId:p._liveId||null, listingContext:{name:p.name, photoUrl:(p.photoUrls&&p.photoUrls[0])||p.photoUrl||null, price:p.est, priceMode:'fixed', type:'pool'}});
                           else openChat&&openChat();
                         }} className="pg-btn pg-btn-primary" style={{height:34, padding:'0 14px', fontSize:13}}>
                           {t.contact}

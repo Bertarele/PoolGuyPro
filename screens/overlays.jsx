@@ -2,8 +2,9 @@
 //               language picker, applicants sheet
 
 // ── Chat helpers ──────────────────────────────────────────────
-function makeConvoId(uidA, uidB) {
-  return [uidA, uidB].sort().join('_');
+function makeConvoId(uidA, uidB, listingId) {
+  const base = [uidA, uidB].sort().join('_');
+  return listingId ? base + '_lst_' + listingId : base;
 }
 // Relative time formatter — module-scope so all sheets can use it
 function relTimeGlobal(iso) {
@@ -70,12 +71,15 @@ function ChatInbox({ lang, t, onSelect, onClose, currentUser }) {
     const mapped = data.map(c => {
       const amP1 = c.participant_1 === uid;
       return {
-        convoId:    c.id,
-        receiverId: amP1 ? c.participant_2 : c.participant_1,
-        name:       amP1 ? (c.name_2 || '?') : (c.name_1 || '?'),
-        lastMsg:    c.last_message || '',
-        lastTime:   c.last_message_at,
-        unread:     amP1 ? (c.unread_1 || 0) : (c.unread_2 || 0),
+        convoId:      c.id,
+        receiverId:   amP1 ? c.participant_2 : c.participant_1,
+        name:         amP1 ? (c.name_2 || '?') : (c.name_1 || '?'),
+        lastMsg:      c.last_message || '',
+        lastTime:     c.last_message_at,
+        unread:       amP1 ? (c.unread_1 || 0) : (c.unread_2 || 0),
+        listingId:    c.listing_id || null,
+        listingName:  c.listing_name || null,
+        listingPhoto: c.listing_photo_url || null,
       };
     });
     setConvos(mapped);
@@ -122,14 +126,23 @@ function ChatInbox({ lang, t, onSelect, onClose, currentUser }) {
             <div style={{fontSize:13, color:'var(--pg-ink-400)', lineHeight:1.5}}>{noChatsSubLbl}</div>
           </div>
         ) : convos.map(c => (
-          <button key={c.convoId} onClick={()=>onSelect(c)} style={{
+          <button key={c.convoId} onClick={()=>onSelect({
+            convoId: c.convoId, receiverId: c.receiverId, name: c.name,
+            listingId: c.listingId || null,
+            listingContext: c.listingName ? { name: c.listingName, photoUrl: c.listingPhoto || null } : null,
+          })} style={{
             display:'flex', alignItems:'center', gap:12, padding:'13px 16px',
             border:'none', background: c.unread > 0 ? 'var(--pg-blue-50)' : 'transparent',
             cursor:'pointer', width:'100%', textAlign:'left',
             borderBottom:'0.5px solid var(--pg-ink-100)', fontFamily:'inherit',
           }}>
+            {/* Avatar or listing photo */}
             <div style={{position:'relative', flexShrink:0}}>
-              <Avatar name={c.name} size={44}/>
+              {c.listingPhoto ? (
+                <img src={c.listingPhoto} alt="" style={{width:44, height:44, borderRadius:10, objectFit:'cover', border:'1px solid var(--pg-ink-200)'}}/>
+              ) : (
+                <Avatar name={c.name} size={44}/>
+              )}
               {c.unread > 0 && (
                 <span style={{position:'absolute', top:-2, right:-2, minWidth:16, height:16, borderRadius:999,
                   background:'#EF4444', color:'#fff', fontSize:9, fontWeight:700,
@@ -144,6 +157,14 @@ function ChatInbox({ lang, t, onSelect, onClose, currentUser }) {
                 <div style={{fontSize:14, fontWeight: c.unread > 0 ? 700 : 600, color:'var(--pg-ink-900)', letterSpacing:'-0.01em'}}>{c.name}</div>
                 <div style={{fontSize:11, color: c.unread > 0 ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)', flexShrink:0, fontWeight: c.unread > 0 ? 600 : 400}}>{fmtMsgTime(c.lastTime)}</div>
               </div>
+              {c.listingName && (
+                <div style={{fontSize:11, color:'var(--pg-blue-600)', fontWeight:600, marginTop:1,
+                  overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                  display:'flex', alignItems:'center', gap:4}}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                  {c.listingName}
+                </div>
+              )}
               <div style={{fontSize:12.5, color: c.unread > 0 ? 'var(--pg-ink-700)' : 'var(--pg-ink-500)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight: c.unread > 0 ? 600 : 400}}>
                 {c.lastMsg}
               </div>
@@ -158,7 +179,7 @@ function ChatInbox({ lang, t, onSelect, onClose, currentUser }) {
 
 function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnreadChange }) {
   const isLive  = !!(currentUser?.uid && convo.receiverId);
-  const convoId = isLive ? makeConvoId(currentUser.uid, convo.receiverId) : null;
+  const convoId = isLive ? makeConvoId(currentUser.uid, convo.receiverId, convo.listingId || null) : null;
 
   const [messages,      setMessages]      = React.useState([]);
   const [draft,         setDraft]         = React.useState('');
@@ -232,6 +253,14 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
         p_my_name:    myName,
         p_other_name: convo.name,
       });
+      // Store listing context in the conversation row so seller also sees it
+      if (convo.listingId || convo.listingContext?.name) {
+        window.sb.from('conversations').update({
+          listing_id:        convo.listingId || null,
+          listing_name:      convo.listingContext?.name || null,
+          listing_photo_url: convo.listingContext?.photoUrl || null,
+        }).eq('id', convoId).then(() => {});
+      }
       await loadMessages();
     } else {
       setMessages(m => [...m, { id: Date.now(), from:'me', text, time: fmtMsgTime(new Date().toISOString()), deleted: false }]);
