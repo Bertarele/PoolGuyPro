@@ -3410,7 +3410,7 @@ function MarketplaceScreen({ ctx }) {
       _author: m.author, _authorId: m.author_id,
       pools: 1,
       area: m.area || m.loc || '',
-      name: m.description || m.name || '',
+      name: m.name || m.description || '',
       desc: m.description || '',
       revenue: m.price ? `$${Number(m.price).toLocaleString()}/mo` : '',
       est: Number(m.asking || m.price) || 0,
@@ -5094,7 +5094,12 @@ function MarketplaceScreen({ ctx }) {
             {routeSub === 'pools' && list.map(p => (
               <div key={p.id||p._liveId} className="pg-card pg-card-tap" onClick={()=>{ setSelected({...p, _type:'pool'}); window.history.pushState({pgPool:p.id},'','?listing=pool-'+p.id); }} style={{padding:0, overflow:'hidden', opacity: p.status==='pending' ? 0.75 : 1}}>
                 <div style={{display:'flex', gap:12, padding:'13px 14px'}}>
-                  {/* Pool icon / mini image */}
+                  {/* Pool thumbnail — photo if available, else icon + count */}
+                  {(p.photoUrl || (p.photoUrls && p.photoUrls[0])) ? (
+                    <div style={{width:82, height:82, borderRadius:12, overflow:'hidden', flexShrink:0}}>
+                      <img src={p.photoUrl || p.photoUrls[0]} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                    </div>
+                  ) : (
                   <div style={{
                     width:82, height:82, borderRadius:12, overflow:'hidden', flexShrink:0,
                     background:'linear-gradient(135deg, var(--pg-blue-100) 0%, var(--pg-blue-50) 100%)',
@@ -5113,6 +5118,7 @@ function MarketplaceScreen({ ctx }) {
                       {p.pools === 1 ? (lang==='pt'?'PISCINA':lang==='es'?'PISCINA':'POOL') : (lang==='pt'?'PISCINAS':lang==='es'?'PISCINAS':'POOLS')}
                     </div>
                   </div>
+                  )}
 
                   <div style={{flex:1, minWidth:0}}>
                     <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:3}}>
@@ -6333,6 +6339,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
 
 // ── Post route form ───────────────────────────────────────────
 function PostPoolSheet({ lang, t, onClose, onSubmit }) {
+  const [title,      setTitle]      = React.useState('');
   const [desc,       setDesc]       = React.useState('');
   const [area,       setArea]       = React.useState('');
   const [address,    setAddress]    = React.useState('');   // optional exact address
@@ -6345,7 +6352,7 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
   const [wMonths,    setWMonths]    = React.useState('');
   const [photos,     setPhotos]     = React.useState([]);
 
-  const isValid = desc.trim().length > 5 && area.trim().length > 0
+  const isValid = title.trim().length > 3 && area.trim().length > 0
     && system !== '' && freq !== '' && price.trim().length > 0 && warranty !== '';
 
   const lbl = (pt, es, en) => lang==='pt'?pt:lang==='es'?es:en;
@@ -6380,6 +6387,13 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
 
       <div style={{flex:1, overflow:'auto', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
 
+        {/* Title — required */}
+        <div>
+          <FormLabel>{lbl('Título da publicação *','Título del anuncio *','Listing title *')}</FormLabel>
+          <input className="pg-field" value={title} onChange={e=>setTitle(e.target.value)}
+            placeholder={lbl('Ex: Piscina à venda em Boca Raton','Ej: Piscina en venta en Boca Raton','e.g. Pool for sale in Boca Raton')}/>
+        </div>
+
         {/* Photos — optional */}
         <PhotoPicker
           photos={photos}
@@ -6391,7 +6405,7 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
 
         {/* Description */}
         <div>
-          <FormLabel>{lbl('Descrição','Descripción','Description')}</FormLabel>
+          <FormLabel>{lbl('Descrição (opcional)','Descripción (opcional)','Description (optional)')}</FormLabel>
           <textarea className="pg-field" value={desc} onChange={e=>setDesc(e.target.value)}
             placeholder={lbl('Descreva a piscina, condição geral, histórico de manutenção…','Describa la piscina, condición general, historial de mantenimiento…','Describe the pool, general condition, maintenance history…')}
             style={{height:90, resize:'none', paddingTop:12, lineHeight:1.5}}/>
@@ -6473,7 +6487,7 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
 
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
         <button onClick={()=>onSubmit && onSubmit({
-            type:'pool', desc, area, address: address||null, sizeFt, gallons, system, freq,
+            type:'pool', name: title, desc, area, address: address||null, sizeFt, gallons, system, freq,
             price: parseFloat(price)||0, est: parseFloat(price)||0,
             warranty, warrantyMonths: warranty==='yes' ? wMonths : null,
             photoUrl: photos[0]||null, photoUrls: photos,
@@ -6488,6 +6502,7 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
 }
 
 function PostRouteSheet({ lang, t, onClose, onSubmit }) {
+  const [title,     setTitle]     = React.useState('');
   const [routeName, setRouteName] = React.useState('');
   const [clients,   setClients]   = React.useState('');
   const [revenue,   setRevenue]   = React.useState('');
@@ -6496,7 +6511,7 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
   const [address,   setAddress]   = React.useState('');   // optional exact address
   const [photos,    setPhotos]    = React.useState([]);   // optional photos
 
-  const isValid = routeName.trim().length > 2 && clients.trim().length > 0 && asking.trim().length > 0;
+  const isValid = title.trim().length > 3 && routeName.trim().length > 2 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
   const lbl = (pt, es, en) => lang==='pt'?pt:lang==='es'?es:en;
 
@@ -6509,6 +6524,13 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
       </div>
 
       <div style={{flex:1, overflow:'auto', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
+
+        {/* Title — required */}
+        <div>
+          <FormLabel>{lbl('Título da publicação *','Título del anuncio *','Listing title *')}</FormLabel>
+          <input className="pg-field" value={title} onChange={e=>setTitle(e.target.value)}
+            placeholder={lbl('Ex: Rota à venda em Pompano Beach','Ej: Ruta en venta en Pompano Beach','e.g. Route for sale in Pompano Beach')}/>
+        </div>
 
         {/* Photos — optional */}
         <PhotoPicker
@@ -6556,7 +6578,7 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
       </div>
 
       <div style={{padding:'12px 18px 20px', borderTop:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
-        <button onClick={()=>onSubmit && onSubmit({ type:'route', routeName, clients, revenue, asking, area, address: address||null, photoUrl: photos[0]||null, photoUrls: photos })}
+        <button onClick={()=>onSubmit && onSubmit({ type:'route', name: title, routeName, clients, revenue, asking, area, address: address||null, photoUrl: photos[0]||null, photoUrls: photos })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.pin(17,'#fff')} {t.postListingBtn}

@@ -325,7 +325,7 @@ function ViewMarketModal({ row, onClose, onApprove, onReject }) {
           </span>
           {row.type && (
             <span style={{position:'absolute',top:10,left:row.status==='approved'?130:160,fontSize:11,fontWeight:700,padding:'4px 11px',borderRadius:8,background:'rgba(14,186,199,0.85)',color:'#fff',letterSpacing:'.05em',textTransform:'uppercase'}}>
-              {row.type==='sell'?'VENDA':row.type==='rent'?'ALUGUEL':'ROTA'}
+              {row.type==='sell'?'VENDA':row.type==='rent'?'ALUGUEL':row.type==='route'?'ROTA':row.type==='pool'?'PISCINA':row.type.toUpperCase()}
             </span>
           )}
         </div>
@@ -335,21 +335,60 @@ function ViewMarketModal({ row, onClose, onApprove, onReject }) {
           <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12,marginBottom:14}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:18,fontWeight:800,color:'#f1f5f9',lineHeight:1.2,letterSpacing:'-0.02em'}}>{row.name||row.route_name||'—'}</div>
-              {row.loc && <div style={{fontSize:12,color:'#64748b',marginTop:3}}>📍 {row.loc}</div>}
+              {(row.area||row.loc) && <div style={{fontSize:12,color:'#64748b',marginTop:3}}>📍 {row.area||row.loc}</div>}
+              {row.address && <div style={{fontSize:11,color:'#475569',marginTop:2}}>🏠 {row.address}</div>}
             </div>
             <div style={{textAlign:'right',flexShrink:0}}>
               {row.price_mode==='neg'
                 ? <span style={{fontSize:13,fontWeight:700,padding:'4px 11px',borderRadius:999,background:'#1e293b',color:'#94a3b8',border:'1px solid #334155'}}>🤝 Negociável</span>
+                : row.asking ? <div style={{fontSize:26,fontWeight:800,color:'#0EBAC7',lineHeight:1}}>${Number(row.asking).toLocaleString()}</div>
                 : row.price ? <div style={{fontSize:26,fontWeight:800,color:'#0EBAC7',lineHeight:1}}>${Number(row.price).toLocaleString()}</div> : null}
+              {row.price && row.asking && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>${Number(row.price).toLocaleString()}/mês</div>}
             </div>
           </div>
 
-          {/* Badges */}
-          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:14}}>
-            {[row.cat, row.condition, row.rent_period].filter(Boolean).map((b,i)=>(
-              <span key={i} style={{fontSize:11,fontWeight:600,padding:'3px 10px',borderRadius:999,background:'#1e293b',color:'#94a3b8',border:'1px solid #334155'}}>{b}</span>
-            ))}
-          </div>
+          {/* Badges — equip */}
+          {(row.cat||row.condition||row.rent_period) && (
+            <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:14}}>
+              {[row.cat, row.condition, row.rent_period].filter(Boolean).map((b,i)=>(
+                <span key={i} style={{fontSize:11,fontWeight:600,padding:'3px 10px',borderRadius:999,background:'#1e293b',color:'#94a3b8',border:'1px solid #334155'}}>{b}</span>
+              ))}
+            </div>
+          )}
+
+          {/* Route details */}
+          {row.type==='route' && (row.clients||row.revenue) && (
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:14}}>
+              {row.clients && <span style={{fontSize:12,fontWeight:700,padding:'4px 12px',borderRadius:999,background:'#0EBAC715',color:'#0EBAC7',border:'1px solid #0EBAC730'}}>🏊 {row.clients} piscinas</span>}
+              {row.revenue && <span style={{fontSize:12,fontWeight:700,padding:'4px 12px',borderRadius:999,background:'#22c55e15',color:'#22c55e',border:'1px solid #22c55e30'}}>💰 ${Number(row.revenue).toLocaleString()}/mês</span>}
+            </div>
+          )}
+
+          {/* Pool-specific details */}
+          {row.type==='pool' && (row.pool_system||row.size_ft||row.gallons||row.freq_week||row.warranty) && (
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:8,marginBottom:14}}>
+              {row.pool_system && <div style={{padding:'8px 10px',borderRadius:10,background:'#0f1117',border:'1px solid #1e293b'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:3}}>Sistema</div>
+                <div style={{fontSize:13,fontWeight:600,color:'#94a3b8'}}>{row.pool_system==='salt'?'💧 Sal':'🧪 Cloro'}</div>
+              </div>}
+              {row.size_ft && <div style={{padding:'8px 10px',borderRadius:10,background:'#0f1117',border:'1px solid #1e293b'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:3}}>Tamanho</div>
+                <div style={{fontSize:13,fontWeight:600,color:'#94a3b8'}}>{row.size_ft}</div>
+              </div>}
+              {row.gallons && <div style={{padding:'8px 10px',borderRadius:10,background:'#0f1117',border:'1px solid #1e293b'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:3}}>Galões</div>
+                <div style={{fontSize:13,fontWeight:600,color:'#94a3b8'}}>{Number(row.gallons).toLocaleString()} gal</div>
+              </div>}
+              {row.freq_week && <div style={{padding:'8px 10px',borderRadius:10,background:'#0f1117',border:'1px solid #1e293b'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:3}}>Visitas/sem</div>
+                <div style={{fontSize:13,fontWeight:600,color:'#94a3b8'}}>{row.freq_week==='7'?'Diário':row.freq_week+'x/sem'}</div>
+              </div>}
+              {row.warranty && <div style={{padding:'8px 10px',borderRadius:10,background: row.warranty==='yes'?'#22c55e10':'#0f1117',border:'1px solid '+(row.warranty==='yes'?'#22c55e30':'#1e293b')}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:3}}>Garantia</div>
+                <div style={{fontSize:13,fontWeight:600,color:row.warranty==='yes'?'#22c55e':'#94a3b8'}}>{row.warranty==='yes'?(row.warranty_months?row.warranty_months+' meses':'Sim'):'Não'}</div>
+              </div>}
+            </div>
+          )}
 
           {/* Descrição */}
           {row.description && (
@@ -363,8 +402,8 @@ function ViewMarketModal({ row, onClose, onApprove, onReject }) {
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:16}}>
             <Field label="Autor" value={row.author}/>
             <Field label="Publicado em" value={fmtDate(row.created_at)}/>
-            <Field label="Categoria" value={row.cat}/>
-            <Field label="Condição" value={row.condition}/>
+            {row.type==='pool'||row.type==='route' ? <Field label="Cidade" value={row.area}/> : <Field label="Categoria" value={row.cat}/>}
+            {row.type==='pool'||row.type==='route' ? <Field label="Endereço" value={row.address||'—'}/> : <Field label="Condição" value={row.condition}/>}
             <Field label="Fotos enviadas" value={photos.length>0 ? photos.length+' foto'+(photos.length!==1?'s':'') : 'Nenhuma'}/>
             <Field label="ID do post" value={row.id ? row.id.slice(0,12)+'…' : '—'}/>
           </div>
@@ -413,20 +452,27 @@ function ViewMarketModal({ row, onClose, onApprove, onReject }) {
 // ── Modal de edição ───────────────────────────────────────────
 function EditMarketModal({ row, onClose, onSave }) {
   const [form, setForm] = React.useState({
-    name:       row.name       || '',
-    type:       row.type       || 'sell',
-    cat:        row.cat        || '',
-    condition:  row.condition  || '',
-    price:      row.price      || '',
-    price_mode: row.price_mode || 'fixed',
-    loc:        row.loc        || '',
-    status:     row.status     || 'pending',
-    description:row.description|| '',
-    route_name: row.route_name || '',
-    area:       row.area       || '',
-    asking:     row.asking     || '',
-    clients:    row.clients    || '',
-    revenue:    row.revenue    || '',
+    name:            row.name            || '',
+    type:            row.type            || 'sell',
+    cat:             row.cat             || '',
+    condition:       row.condition       || '',
+    price:           row.price           || '',
+    price_mode:      row.price_mode      || 'fixed',
+    loc:             row.loc             || '',
+    status:          row.status          || 'pending',
+    description:     row.description     || '',
+    route_name:      row.route_name      || '',
+    area:            row.area            || '',
+    asking:          row.asking          || '',
+    clients:         row.clients         || '',
+    revenue:         row.revenue         || '',
+    address:         row.address         || '',
+    pool_system:     row.pool_system     || '',
+    size_ft:         row.size_ft         || '',
+    gallons:         row.gallons         || '',
+    freq_week:       row.freq_week       || '',
+    warranty:        row.warranty        || '',
+    warranty_months: row.warranty_months || '',
   });
   const [saving, setSaving] = React.useState(false);
   const set = (k,v) => setForm(f=>({...f,[k]:v}));
@@ -450,20 +496,35 @@ function EditMarketModal({ row, onClose, onSave }) {
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
           <div style={{gridColumn:'1/-1'}}>{lbl('Título / Nome')}<input {...inp} value={form.name} onChange={e=>set('name',e.target.value)}/></div>
-          <div>{lbl('Tipo')}<select {...inp} value={form.type} onChange={e=>set('type',e.target.value)}><option value="sell">Venda</option><option value="rent">Aluguel</option><option value="route">Rota</option></select></div>
+          <div>{lbl('Tipo')}<select {...inp} value={form.type} onChange={e=>set('type',e.target.value)}><option value="sell">Venda</option><option value="rent">Aluguel</option><option value="route">Rota</option><option value="pool">Piscina Avulsa</option></select></div>
           <div>{lbl('Status')}<select {...inp} value={form.status} onChange={e=>set('status',e.target.value)}><option value="pending">Pendente</option><option value="approved">Aprovado</option></select></div>
-          <div>{lbl('Categoria')}<input {...inp} value={form.cat} onChange={e=>set('cat',e.target.value)} placeholder="Pumps, Vacuum…"/></div>
-          <div>{lbl('Condição')}<input {...inp} value={form.condition} onChange={e=>set('condition',e.target.value)} placeholder="Novo, Usado…"/></div>
-          <div>{lbl('Preço (R$)')}<input {...inp} type="number" value={form.price} onChange={e=>set('price',e.target.value)}/></div>
-          <div>{lbl('Modo de preço')}<select {...inp} value={form.price_mode} onChange={e=>set('price_mode',e.target.value)}><option value="fixed">Fixo</option><option value="neg">Negociável</option></select></div>
-          <div style={{gridColumn:'1/-1'}}>{lbl('Localização')}<input {...inp} value={form.loc} onChange={e=>set('loc',e.target.value)}/></div>
+          {(form.type==='sell'||form.type==='rent') && <>
+            <div>{lbl('Categoria')}<input {...inp} value={form.cat} onChange={e=>set('cat',e.target.value)} placeholder="Pumps, Vacuum…"/></div>
+            <div>{lbl('Condição')}<input {...inp} value={form.condition} onChange={e=>set('condition',e.target.value)} placeholder="Novo, Usado…"/></div>
+            <div>{lbl('Preço ($)')}<input {...inp} type="number" value={form.price} onChange={e=>set('price',e.target.value)}/></div>
+            <div>{lbl('Modo de preço')}<select {...inp} value={form.price_mode} onChange={e=>set('price_mode',e.target.value)}><option value="fixed">Fixo</option><option value="neg">Negociável</option></select></div>
+            <div style={{gridColumn:'1/-1'}}>{lbl('Localização')}<input {...inp} value={form.loc} onChange={e=>set('loc',e.target.value)}/></div>
+          </>}
           <div style={{gridColumn:'1/-1'}}>{lbl('Descrição')}<textarea {...inp} value={form.description} onChange={e=>set('description',e.target.value)} rows={3} style={{...inp.style,resize:'vertical',minHeight:72,lineHeight:1.5}}/></div>
           {form.type==='route' && <>
             <div style={{gridColumn:'1/-1'}}>{lbl('Nome da rota')}<input {...inp} value={form.route_name} onChange={e=>set('route_name',e.target.value)}/></div>
-            <div>{lbl('Clientes')}<input {...inp} type="number" value={form.clients} onChange={e=>set('clients',e.target.value)}/></div>
-            <div>{lbl('Receita/mês')}<input {...inp} type="number" value={form.revenue} onChange={e=>set('revenue',e.target.value)}/></div>
+            <div>{lbl('Piscinas (clientes)')}<input {...inp} type="number" value={form.clients} onChange={e=>set('clients',e.target.value)}/></div>
+            <div>{lbl('Receita/mês ($)')}<input {...inp} type="number" value={form.revenue} onChange={e=>set('revenue',e.target.value)}/></div>
             <div>{lbl('Pedindo ($)')}<input {...inp} type="number" value={form.asking} onChange={e=>set('asking',e.target.value)}/></div>
-            <div>{lbl('Região')}<input {...inp} value={form.area} onChange={e=>set('area',e.target.value)}/></div>
+            <div>{lbl('Cidade / Região')}<input {...inp} value={form.area} onChange={e=>set('area',e.target.value)}/></div>
+            <div>{lbl('Endereço')}<input {...inp} value={form.address} onChange={e=>set('address',e.target.value)}/></div>
+          </>}
+          {form.type==='pool' && <>
+            <div>{lbl('Cidade')}<input {...inp} value={form.area} onChange={e=>set('area',e.target.value)}/></div>
+            <div>{lbl('Endereço')}<input {...inp} value={form.address} onChange={e=>set('address',e.target.value)}/></div>
+            <div>{lbl('Preço/mês ($)')}<input {...inp} type="number" value={form.price} onChange={e=>set('price',e.target.value)}/></div>
+            <div>{lbl('Pedindo ($)')}<input {...inp} type="number" value={form.asking} onChange={e=>set('asking',e.target.value)}/></div>
+            <div>{lbl('Tamanho (ex: 10x20 ft)')}<input {...inp} value={form.size_ft} onChange={e=>set('size_ft',e.target.value)}/></div>
+            <div>{lbl('Galões')}<input {...inp} type="number" value={form.gallons} onChange={e=>set('gallons',e.target.value)}/></div>
+            <div>{lbl('Sistema')}<select {...inp} value={form.pool_system} onChange={e=>set('pool_system',e.target.value)}><option value="">—</option><option value="chlorine">Cloro</option><option value="salt">Sal</option></select></div>
+            <div>{lbl('Visitas/semana')}<select {...inp} value={form.freq_week} onChange={e=>set('freq_week',e.target.value)}><option value="">—</option><option value="1">1x/sem</option><option value="2">2x/sem</option><option value="3">3x/sem</option><option value="7">Diário</option></select></div>
+            <div>{lbl('Garantia')}<select {...inp} value={form.warranty} onChange={e=>set('warranty',e.target.value)}><option value="">—</option><option value="yes">Sim</option><option value="no">Não</option></select></div>
+            <div>{lbl('Meses de garantia')}<input {...inp} type="number" value={form.warranty_months} onChange={e=>set('warranty_months',e.target.value)}/></div>
           </>}
         </div>
         <div style={{display:'flex',gap:10,marginTop:20}}>

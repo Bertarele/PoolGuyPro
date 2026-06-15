@@ -41,7 +41,10 @@
       "Bash(node build.js)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(node -e ' *)",
+      "Bash(grep -v \"//\\\\|route\\\\|equip\\\\|rental\\\\|thumb\\\\|avatar\")",
+      "Bash(grep -v \"//\\\\|rental\\\\|rental_req\\\\|request\\\\|reqStatus\\\\|hasActive\\\\|isAppr\\\\b\\\\|isComp\\\\b\\\\|isDisp\\\\b\\\\|isPend\\\\b\\\\|blockedStat\")"
     ]
   }
 }

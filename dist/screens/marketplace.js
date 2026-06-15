@@ -6417,7 +6417,7 @@ function MarketplaceScreen({
     _authorId: m.author_id,
     pools: 1,
     area: m.area || m.loc || '',
-    name: m.description || m.name || '',
+    name: m.name || m.description || '',
     desc: m.description || '',
     revenue: m.price ? `$${Number(m.price).toLocaleString()}/mo` : '',
     est: Number(m.asking || m.price) || 0,
@@ -9969,7 +9969,23 @@ function MarketplaceScreen({
       gap: 12,
       padding: '13px 14px'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, p.photoUrl || p.photoUrls && p.photoUrls[0] ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 82,
+      height: 82,
+      borderRadius: 12,
+      overflow: 'hidden',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: p.photoUrl || p.photoUrls[0],
+    alt: "",
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    }
+  })) : /*#__PURE__*/React.createElement("div", {
     style: {
       width: 82,
       height: 82,
@@ -12346,6 +12362,7 @@ function PostPoolSheet({
   onClose,
   onSubmit
 }) {
+  const [title, setTitle] = React.useState('');
   const [desc, setDesc] = React.useState('');
   const [area, setArea] = React.useState('');
   const [address, setAddress] = React.useState(''); // optional exact address
@@ -12357,7 +12374,7 @@ function PostPoolSheet({
   const [warranty, setWarranty] = React.useState('');
   const [wMonths, setWMonths] = React.useState('');
   const [photos, setPhotos] = React.useState([]);
-  const isValid = desc.trim().length > 5 && area.trim().length > 0 && system !== '' && freq !== '' && price.trim().length > 0 && warranty !== '';
+  const isValid = title.trim().length > 3 && area.trim().length > 0 && system !== '' && freq !== '' && price.trim().length > 0 && warranty !== '';
   const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
   const ToggleGroup = ({
     value,
@@ -12436,14 +12453,19 @@ function PostPoolSheet({
       flexDirection: 'column',
       gap: 18
     }
-  }, /*#__PURE__*/React.createElement(PhotoPicker, {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Título da publicação *', 'Título del anuncio *', 'Listing title *')), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: title,
+    onChange: e => setTitle(e.target.value),
+    placeholder: lbl('Ex: Piscina à venda em Boca Raton', 'Ej: Piscina en venta en Boca Raton', 'e.g. Pool for sale in Boca Raton')
+  })), /*#__PURE__*/React.createElement(PhotoPicker, {
     photos: photos,
     onAdd: url => setPhotos(p => [...p, url]),
     onRemove: url => setPhotos(p => p.filter(u => u !== url)),
     max: 5,
     lang: lang,
     title: lbl('Fotos da piscina (opcional)', 'Fotos de la piscina (opcional)', 'Pool photos (optional)')
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Descrição', 'Descripción', 'Description')), /*#__PURE__*/React.createElement("textarea", {
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Descrição (opcional)', 'Descripción (opcional)', 'Description (optional)')), /*#__PURE__*/React.createElement("textarea", {
     className: "pg-field",
     value: desc,
     onChange: e => setDesc(e.target.value),
@@ -12583,6 +12605,7 @@ function PostPoolSheet({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => onSubmit && onSubmit({
       type: 'pool',
+      name: title,
       desc,
       area,
       address: address || null,
@@ -12613,6 +12636,7 @@ function PostRouteSheet({
   onClose,
   onSubmit
 }) {
+  const [title, setTitle] = React.useState('');
   const [routeName, setRouteName] = React.useState('');
   const [clients, setClients] = React.useState('');
   const [revenue, setRevenue] = React.useState('');
@@ -12621,7 +12645,7 @@ function PostRouteSheet({
   const [address, setAddress] = React.useState(''); // optional exact address
   const [photos, setPhotos] = React.useState([]); // optional photos
 
-  const isValid = routeName.trim().length > 2 && clients.trim().length > 0 && asking.trim().length > 0;
+  const isValid = title.trim().length > 3 && routeName.trim().length > 2 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
   const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
   return /*#__PURE__*/React.createElement("div", {
@@ -12671,7 +12695,12 @@ function PostRouteSheet({
       flexDirection: 'column',
       gap: 18
     }
-  }, /*#__PURE__*/React.createElement(PhotoPicker, {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Título da publicação *', 'Título del anuncio *', 'Listing title *')), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: title,
+    onChange: e => setTitle(e.target.value),
+    placeholder: lbl('Ex: Rota à venda em Pompano Beach', 'Ej: Ruta en venta en Pompano Beach', 'e.g. Route for sale in Pompano Beach')
+  })), /*#__PURE__*/React.createElement(PhotoPicker, {
     photos: photos,
     onAdd: url => setPhotos(p => [...p, url]),
     onRemove: url => setPhotos(p => p.filter(u => u !== url)),
@@ -12773,6 +12802,7 @@ function PostRouteSheet({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => onSubmit && onSubmit({
       type: 'route',
+      name: title,
       routeName,
       clients,
       revenue,
