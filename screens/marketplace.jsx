@@ -4005,7 +4005,7 @@ function MarketplaceScreen({ ctx }) {
                 <div style={{display:'flex', gap:10, marginBottom:24}}>
                   {[
                     { id:'routes', label: lang==='pt'?'Rotas (5+ piscinas)':'Routes (5+ pools)' },
-                    { id:'pools',  label: lang==='pt'?'Piscinas avulsas (1–4)':'Individual Pools (1–4)' },
+                    { id:'pools',  label: lang==='pt'?'Piscinas avulsas':'Individual Pools' },
                   ].map(s => (
                     <button key={s.id} onClick={()=>setRouteSub(s.id)} style={{
                       padding:'10px 20px', borderRadius:12, border:'none', cursor:'pointer', fontFamily:'inherit',
@@ -4819,7 +4819,7 @@ function MarketplaceScreen({ ctx }) {
                     </svg>
                   ),
                   label: lang==='pt'?'Piscinas':lang==='es'?'Piscinas':'Pools',
-                  sub:   lang==='pt'?'1–4 piscinas avulsas':lang==='es'?'1–4 piscinas sueltas':'1–4 individual pools',
+                  sub:   lang==='pt'?'Piscinas avulsas':lang==='es'?'Piscinas sueltas':'Individual pools',
                   count: allPools.length },
               ].map(tab => {
                 const on = routeSub === tab.id;
@@ -5308,7 +5308,7 @@ function MarketplaceListingPicker({ lang, t, currentView, onPick, onClose }) {
         </svg>
       ),
       title: lang==='pt'?'Vender piscina avulsa':lang==='es'?'Vender piscina suelta':'Sell single pool(s)',
-      sub:   lang==='pt'?'1 a 4 piscinas residenciais ou de cond.':lang==='es'?'1 a 4 piscinas residenciales o cond.':'1–4 residential or condo pools',
+      sub:   lang==='pt'?'Piscina residencial ou de condomínio':lang==='es'?'Piscina residencial o de cond.':'Residential or condo pool',
       badge: lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool',
       badgeColor:'var(--pg-aqua-700)',
     },
