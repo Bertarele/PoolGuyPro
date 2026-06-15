@@ -277,10 +277,11 @@ function AdminLogin({ onLogin }) {
 }
 
 // ── Modal de detalhes completos (fotos + todas as info) ───────
-function ViewMarketModal({ row, onClose, onApprove, onReject }) {
+function ViewMarketModal({ row, onClose, onApprove, onReject, onDelete }) {
   const photos = (row.photo_urls && row.photo_urls.length > 0)
     ? row.photo_urls : (row.photo_url ? [row.photo_url] : []);
   const [imgIdx, setImgIdx] = React.useState(0);
+  const [confirmDel, setConfirmDel] = React.useState(false);
   const prev = () => setImgIdx(i => (i-1+photos.length)%photos.length);
   const next = () => setImgIdx(i => (i+1)%photos.length);
   const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
@@ -443,6 +444,22 @@ function ViewMarketModal({ row, onClose, onApprove, onReject }) {
             )}
             <button onClick={onClose} style={{flex:1,height:46,borderRadius:12,border:'1px solid #334155',background:'transparent',color:'#64748b',fontWeight:600,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>Fechar</button>
           </div>
+          {/* Delete */}
+          {onDelete && !confirmDel && (
+            <button onClick={()=>setConfirmDel(true)} style={{marginTop:8,width:'100%',height:40,borderRadius:10,border:'1px solid #ef444440',background:'transparent',color:'#ef4444',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+              🗑 Apagar publicação
+            </button>
+          )}
+          {onDelete && confirmDel && (
+            <div style={{marginTop:8,display:'flex',gap:8}}>
+              <button onClick={()=>{onDelete(row);onClose();}} style={{flex:1,height:40,borderRadius:10,border:'none',background:'#ef4444',color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                Confirmar exclusão
+              </button>
+              <button onClick={()=>setConfirmDel(false)} style={{flex:1,height:40,borderRadius:10,border:'1px solid #334155',background:'transparent',color:'#94a3b8',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                Cancelar
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1797,7 +1814,8 @@ function AdminApp({ adminUser, onLogout }) {
       )}
 
       {/* ── Modal View ── */}
-      {viewRow && <ViewMarketModal row={viewRow} onClose={()=>setViewRow(null)} onApprove={approveMarket} onReject={rejectMarket}/>}
+      {viewRow && <ViewMarketModal row={viewRow} onClose={()=>setViewRow(null)} onApprove={approveMarket} onReject={rejectMarket}
+        onDelete={row=>{deleteRow('marketplace',row);setMarket(p=>p.filter(m=>m.id!==row.id));}}/>}
 
       {/* ── Modal Edit ── */}
       {editRow && <EditMarketModal row={editRow} onClose={()=>setEditRow(null)} onSave={(updated)=>{setMarket(p=>p.map(m=>m.id===updated.id?updated:m));setEditRow(null);showToast('✓ Anúncio atualizado!');}}/>}

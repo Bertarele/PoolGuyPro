@@ -6419,6 +6419,7 @@ function MarketplaceScreen({
     area: m.area || m.loc || '',
     name: m.name || m.description || '',
     desc: m.description || '',
+    poolKind: m.cat || 'house',
     revenue: m.price ? `$${Number(m.price).toLocaleString()}/mo` : '',
     est: Number(m.asking || m.price) || 0,
     photoUrl: m.photoUrl || null,
@@ -9950,6 +9951,13 @@ function MarketplaceScreen({
     key: p.id || p._liveId,
     className: "pg-card pg-card-tap",
     onClick: () => {
+      if (p._live) {
+        const m = liveMarket.find(x => x._id === p._liveId);
+        if (m) {
+          isMyPost(m) ? setMyPostDetail(m) : openListing(m);
+          return;
+        }
+      }
       setSelected({
         ...p,
         _type: 'pool'
@@ -10050,7 +10058,7 @@ function MarketplaceScreen({
       color: 'var(--pg-blue-700)',
       fontSize: 9
     }
-  }, p.type === 'condo' ? 'CONDO' : lang === 'pt' ? 'RESIDENCIAL' : lang === 'es' ? 'RESIDENCIAL' : 'HOUSE'), /*#__PURE__*/React.createElement("span", {
+  }, p.poolKind === 'condo' ? 'CONDO' : lang === 'pt' ? 'CASA' : lang === 'es' ? 'CASA' : 'HOUSE'), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: 'var(--pg-ink-400)'
@@ -12363,6 +12371,7 @@ function PostPoolSheet({
   onSubmit
 }) {
   const [title, setTitle] = React.useState('');
+  const [poolKind, setPoolKind] = React.useState('house');
   const [desc, setDesc] = React.useState('');
   const [area, setArea] = React.useState('');
   const [address, setAddress] = React.useState(''); // optional exact address
@@ -12458,6 +12467,16 @@ function PostPoolSheet({
     value: title,
     onChange: e => setTitle(e.target.value),
     placeholder: lbl('Ex: Piscina à venda em Boca Raton', 'Ej: Piscina en venta en Boca Raton', 'e.g. Pool for sale in Boca Raton')
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Tipo de imóvel *', 'Tipo de propiedad *', 'Property type *')), /*#__PURE__*/React.createElement(ToggleGroup, {
+    value: poolKind,
+    onChange: setPoolKind,
+    options: [{
+      id: 'house',
+      label: lbl('Casa', 'Casa', 'House')
+    }, {
+      id: 'condo',
+      label: lbl('Condomínio', 'Condominio', 'Condo')
+    }]
   })), /*#__PURE__*/React.createElement(PhotoPicker, {
     photos: photos,
     onAdd: url => setPhotos(p => [...p, url]),
@@ -12606,6 +12625,7 @@ function PostPoolSheet({
     onClick: () => onSubmit && onSubmit({
       type: 'pool',
       name: title,
+      cat: poolKind,
       desc,
       area,
       address: address || null,
@@ -12637,6 +12657,7 @@ function PostRouteSheet({
   onSubmit
 }) {
   const [title, setTitle] = React.useState('');
+  const [poolKind, setPoolKind] = React.useState('house');
   const [routeName, setRouteName] = React.useState('');
   const [clients, setClients] = React.useState('');
   const [revenue, setRevenue] = React.useState('');
@@ -12648,6 +12669,36 @@ function PostRouteSheet({
   const isValid = title.trim().length > 3 && routeName.trim().length > 2 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
   const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
+  const ToggleGroup = ({
+    value,
+    onChange,
+    options
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      flexWrap: 'wrap'
+    }
+  }, options.map(o => {
+    const on = value === o.id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: o.id,
+      onClick: () => onChange(o.id),
+      style: {
+        padding: '8px 16px',
+        borderRadius: 10,
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 13,
+        fontWeight: 600,
+        transition: 'all .12s',
+        background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+        color: on ? '#fff' : 'var(--pg-ink-700)',
+        boxShadow: on ? '0 2px 8px rgba(0,119,182,0.25)' : 'none'
+      }
+    }, o.label);
+  }));
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -12700,6 +12751,16 @@ function PostRouteSheet({
     value: title,
     onChange: e => setTitle(e.target.value),
     placeholder: lbl('Ex: Rota à venda em Pompano Beach', 'Ej: Ruta en venta en Pompano Beach', 'e.g. Route for sale in Pompano Beach')
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Tipo de imóvel *', 'Tipo de propiedad *', 'Property type *')), /*#__PURE__*/React.createElement(ToggleGroup, {
+    value: poolKind,
+    onChange: setPoolKind,
+    options: [{
+      id: 'house',
+      label: lbl('Casa', 'Casa', 'House')
+    }, {
+      id: 'condo',
+      label: lbl('Condomínio', 'Condominio', 'Condo')
+    }]
   })), /*#__PURE__*/React.createElement(PhotoPicker, {
     photos: photos,
     onAdd: url => setPhotos(p => [...p, url]),
@@ -12803,6 +12864,7 @@ function PostRouteSheet({
     onClick: () => onSubmit && onSubmit({
       type: 'route',
       name: title,
+      cat: poolKind,
       routeName,
       clients,
       revenue,
