@@ -11144,526 +11144,617 @@ function ListingDetail({
   }, t.verified)));
 
   // ── ROUTE ──────────────────────────────────────────────────────
-  if (selected._type === 'route') return /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative',
-      height: selected.photoUrls && selected.photoUrls.length > 0 || selected.photoUrl ? 220 : 190,
-      flexShrink: 0,
-      background: 'linear-gradient(135deg, #011B5A 0%, #023EBA 55%, #0077B6 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 10,
-      overflow: 'hidden'
-    }
-  }, (selected.photoUrls && selected.photoUrls[0] || selected.photoUrl) && /*#__PURE__*/React.createElement("img", {
-    src: selected.photoUrls && selected.photoUrls[0] || selected.photoUrl,
-    alt: "",
-    style: {
-      position: 'absolute',
-      inset: 0,
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover',
-      opacity: 0.35
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: onClose,
-    style: {
-      position: 'absolute',
-      top: 12,
-      right: 12,
-      zIndex: 2,
-      border: 'none',
-      background: 'rgba(255,255,255,0.15)',
-      width: 30,
-      height: 30,
-      borderRadius: '50%',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, Icon.x(14, '#fff')), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 28,
-      alignItems: 'center',
-      position: 'relative',
-      zIndex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: 'center',
-      color: '#fff'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 44,
-      fontWeight: 800,
-      lineHeight: 1,
-      letterSpacing: '-0.02em'
-    }
-  }, selected.clients), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      opacity: 0.60,
-      fontWeight: 600,
-      marginTop: 4,
-      letterSpacing: '0.04em'
-    }
-  }, lang === 'pt' ? 'PISCINAS' : lang === 'es' ? 'PISCINAS' : 'POOLS')), /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 1,
-      height: 52,
-      background: 'rgba(255,255,255,0.20)'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: 'center',
-      color: '#fff'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 22,
-      fontWeight: 800,
-      lineHeight: 1,
-      letterSpacing: '-0.01em'
-    }
-  }, tr(selected.revenue, lang)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      opacity: 0.60,
-      fontWeight: 600,
-      marginTop: 4,
-      letterSpacing: '0.04em'
-    }
-  }, lang === 'pt' ? 'RECEITA/MÊS' : lang === 'es' ? 'INGRESO/MES' : 'REVENUE/MO'))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 4
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 5,
-      background: 'rgba(255,255,255,0.12)',
-      border: '1px solid rgba(255,255,255,0.22)',
-      borderRadius: 999,
-      padding: '4px 12px'
-    }
-  }, Icon.pin(11, 'rgba(255,255,255,0.80)'), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      fontWeight: 600,
-      color: 'rgba(255,255,255,0.80)'
-    }
-  }, selected.area)), selected.address && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: 'rgba(255,255,255,0.65)',
-      fontWeight: 500
-    }
-  }, selected.address))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      overflowY: 'auto',
-      padding: '16px 18px 24px',
-      display: 'flex',
-      flexDirection: 'column'
-    }
-  }, /*#__PURE__*/React.createElement("h2", {
-    style: {
-      margin: 0,
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 20,
-      fontWeight: 700,
-      letterSpacing: '-0.02em',
-      lineHeight: 1.2
-    }
-  }, tr(selected.name, lang)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'baseline',
-      gap: 8,
-      marginTop: 10
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      color: 'var(--pg-ink-400)',
-      fontWeight: 700,
-      letterSpacing: '0.06em'
-    }
-  }, t.asking.toUpperCase()), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 32,
-      fontWeight: 700,
-      color: 'var(--pg-blue-500)',
-      letterSpacing: '-0.02em'
-    }
-  }, "$", selected.est.toLocaleString())), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 10,
-      marginTop: 12
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: openChat,
-    className: "pg-btn pg-btn-ghost",
-    style: {
-      flex: 1
-    }
-  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.message), /*#__PURE__*/React.createElement("button", {
-    onClick: openOffer,
-    className: "pg-btn pg-btn-primary",
-    style: {
-      flex: 2
-    }
-  }, t.makeOffer))));
+  if (selected._type === 'route') {
+    const routePhotos = selected.photoUrls && selected.photoUrls.length > 0 ? selected.photoUrls : selected.photoUrl ? [selected.photoUrl] : [];
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%'
+      }
+    }, routePhotos.length > 0 ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'relative',
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement(PhotoCarousel, {
+      urls: routePhotos,
+      fallbackCat: "Tools",
+      height: 220
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: onClose,
+      style: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        zIndex: 10,
+        border: 'none',
+        background: 'rgba(0,0,0,0.45)',
+        width: 32,
+        height: 32,
+        borderRadius: '50%',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, Icon.x(14, '#fff'))) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'relative',
+        height: 190,
+        flexShrink: 0,
+        background: 'linear-gradient(135deg, #011B5A 0%, #023EBA 55%, #0077B6 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        overflow: 'hidden'
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: onClose,
+      style: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        zIndex: 2,
+        border: 'none',
+        background: 'rgba(255,255,255,0.15)',
+        width: 30,
+        height: 30,
+        borderRadius: '50%',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, Icon.x(14, '#fff')), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 28,
+        alignItems: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: 'center',
+        color: '#fff'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 44,
+        fontWeight: 800,
+        lineHeight: 1,
+        letterSpacing: '-0.02em'
+      }
+    }, selected.clients), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        opacity: 0.60,
+        fontWeight: 600,
+        marginTop: 4,
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'PISCINAS' : lang === 'es' ? 'PISCINAS' : 'POOLS')), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 1,
+        height: 52,
+        background: 'rgba(255,255,255,0.20)'
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: 'center',
+        color: '#fff'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 22,
+        fontWeight: 800,
+        lineHeight: 1,
+        letterSpacing: '-0.01em'
+      }
+    }, tr(selected.revenue, lang)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        opacity: 0.60,
+        fontWeight: 600,
+        marginTop: 4,
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'RECEITA/MÊS' : lang === 'es' ? 'INGRESO/MES' : 'REVENUE/MO'))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 4
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        background: 'rgba(255,255,255,0.12)',
+        border: '1px solid rgba(255,255,255,0.22)',
+        borderRadius: 999,
+        padding: '4px 12px'
+      }
+    }, Icon.pin(11, 'rgba(255,255,255,0.80)'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 600,
+        color: 'rgba(255,255,255,0.80)'
+      }
+    }, selected.area)), selected.address && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.65)',
+        fontWeight: 500
+      }
+    }, selected.address))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        overflowY: 'auto',
+        padding: '16px 18px 24px',
+        display: 'flex',
+        flexDirection: 'column'
+      }
+    }, routePhotos.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 10,
+        paddingBottom: 14,
+        marginBottom: 4,
+        borderBottom: '0.5px solid var(--pg-ink-100)'
+      }
+    }, selected.clients && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '7px 12px',
+        borderRadius: 10,
+        background: 'var(--pg-blue-50)',
+        border: '0.5px solid var(--pg-blue-100)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'var(--pg-blue-700)',
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'PISCINAS' : lang === 'es' ? 'PISCINAS' : 'POOLS'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 15,
+        fontWeight: 800,
+        color: 'var(--pg-blue-500)'
+      }
+    }, selected.clients)), selected.revenue && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '7px 12px',
+        borderRadius: 10,
+        background: 'var(--pg-aqua-100)',
+        border: '0.5px solid var(--pg-aqua-400)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'var(--pg-aqua-700)',
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'RECEITA/MÊS' : lang === 'es' ? 'INGRESO/MES' : 'REV/MO'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: 'var(--pg-ink-900)'
+      }
+    }, tr(selected.revenue, lang))), selected.area && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '7px 12px',
+        borderRadius: 10,
+        background: 'var(--pg-ink-50,var(--pg-blue-50))',
+        border: '0.5px solid var(--pg-ink-200)'
+      }
+    }, Icon.pin(11, 'var(--pg-ink-500)'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        fontWeight: 600,
+        color: 'var(--pg-ink-700)'
+      }
+    }, selected.area)), selected.address && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: 'var(--pg-ink-500)',
+        padding: '7px 0',
+        alignSelf: 'center'
+      }
+    }, selected.address)), /*#__PURE__*/React.createElement("h2", {
+      style: {
+        margin: 0,
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 20,
+        fontWeight: 700,
+        letterSpacing: '-0.02em',
+        lineHeight: 1.2
+      }
+    }, tr(selected.name, lang)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: 8,
+        marginTop: 10
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: 'var(--pg-ink-400)',
+        fontWeight: 700,
+        letterSpacing: '0.06em'
+      }
+    }, t.asking.toUpperCase()), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 32,
+        fontWeight: 700,
+        color: 'var(--pg-blue-500)',
+        letterSpacing: '-0.02em'
+      }
+    }, "$", selected.est.toLocaleString())), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 10,
+        marginTop: 12
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: openChat,
+      className: "pg-btn pg-btn-ghost",
+      style: {
+        flex: 1
+      }
+    }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.message), /*#__PURE__*/React.createElement("button", {
+      onClick: openOffer,
+      className: "pg-btn pg-btn-primary",
+      style: {
+        flex: 2
+      }
+    }, t.makeOffer))));
+  }
 
   // ── SINGLE POOL ────────────────────────────────────────────────
-  if (selected._type === 'pool') return /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%'
-    }
-  }, selected.photoUrls && selected.photoUrls.length > 0 || selected.photoUrl ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative',
-      height: 220,
-      flexShrink: 0,
-      background: '#000'
-    }
-  }, /*#__PURE__*/React.createElement("img", {
-    src: selected.photoUrls && selected.photoUrls[0] || selected.photoUrl,
-    alt: "",
-    style: {
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover',
-      opacity: 0.92
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: onClose,
-    style: {
-      position: 'absolute',
-      top: 12,
-      right: 12,
-      border: 'none',
-      background: 'rgba(0,0,0,0.45)',
-      width: 32,
-      height: 32,
-      borderRadius: '50%',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, Icon.x(14, '#fff'))) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative',
-      height: 180,
-      flexShrink: 0,
-      background: 'linear-gradient(135deg, #011B5A 0%, #023EBA 55%, #0077B6 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 4
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onClose,
-    style: {
-      position: 'absolute',
-      top: 12,
-      right: 12,
-      border: 'none',
-      background: 'rgba(255,255,255,0.15)',
-      width: 30,
-      height: 30,
-      borderRadius: '50%',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, Icon.x(14, '#fff')), /*#__PURE__*/React.createElement("svg", {
-    width: "34",
-    height: "34",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "rgba(255,255,255,0.90)",
-    strokeWidth: "1.8",
-    strokeLinecap: "round"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M2 18 Q6 14 10 18 Q14 22 18 18 Q20 16 22 18"
-  }), /*#__PURE__*/React.createElement("circle", {
-    cx: "12",
-    cy: "5",
-    r: "2.5"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 54,
-      fontWeight: 800,
-      color: '#fff',
-      lineHeight: 1,
-      letterSpacing: '-0.02em'
-    }
-  }, selected.pools), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: 'rgba(255,255,255,0.65)',
-      letterSpacing: '0.06em'
-    }
-  }, selected.pools === 1 ? lang === 'pt' ? 'PISCINA' : lang === 'es' ? 'PISCINA' : 'POOL' : lang === 'pt' ? 'PISCINAS' : lang === 'es' ? 'PISCINAS' : 'POOLS')), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      overflowY: 'auto',
-      padding: '16px 18px 24px'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 7,
-      marginBottom: 6
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "pg-badge",
-    style: {
-      background: 'var(--pg-blue-100)',
-      color: 'var(--pg-blue-700)',
-      fontSize: 9
-    }
-  }, selected.type === 'condo' ? 'CONDO' : lang === 'pt' ? 'RESIDENCIAL' : lang === 'es' ? 'RESIDENCIAL' : 'HOUSE'), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      color: 'var(--pg-ink-400)'
-    }
-  }, selected.area), selected.address && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      color: 'var(--pg-ink-400)'
-    }
-  }, " \xB7 ", selected.address)), /*#__PURE__*/React.createElement("h2", {
-    style: {
-      margin: 0,
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 20,
-      fontWeight: 700,
-      letterSpacing: '-0.02em',
-      lineHeight: 1.2
-    }
-  }, tr(selected.name || selected.desc, lang)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'baseline',
-      gap: 8,
-      marginTop: 10,
-      flexWrap: 'wrap'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      color: 'var(--pg-ink-400)',
-      fontWeight: 700,
-      letterSpacing: '0.06em'
-    }
-  }, t.asking.toUpperCase()), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 32,
-      fontWeight: 700,
-      color: 'var(--pg-blue-500)',
-      letterSpacing: '-0.02em'
-    }
-  }, "$", selected.est.toLocaleString()), /*#__PURE__*/React.createElement("span", {
-    className: "pg-chip",
-    style: {
-      fontSize: 11,
-      background: 'var(--pg-blue-50)',
-      color: 'var(--pg-blue-700)',
-      borderColor: 'var(--pg-blue-100)'
-    }
-  }, tr(selected.revenue, lang))), (selected.desc || selected.description) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 12,
-      fontSize: 13,
-      lineHeight: 1.55,
-      color: 'var(--pg-ink-600)'
-    }
-  }, tr(selected.desc || selected.description, lang)), (selected.system || selected.sizeFt || selected.gallons || selected.freq || selected.warranty) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 14,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 8
-    }
-  }, (selected.sizeFt || selected.gallons) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 8,
-      flexWrap: 'wrap'
-    }
-  }, selected.sizeFt && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 6,
-      padding: '7px 12px',
-      borderRadius: 10,
-      background: 'var(--pg-ink-50,var(--pg-blue-50))',
-      border: '0.5px solid var(--pg-ink-200)'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: 'var(--pg-ink-500)',
-      letterSpacing: '0.04em'
-    }
-  }, lang === 'pt' ? 'TAMANHO' : lang === 'es' ? 'TAMAÑO' : 'SIZE'), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      fontWeight: 600,
-      color: 'var(--pg-ink-900)'
-    }
-  }, selected.sizeFt)), selected.gallons && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 6,
-      padding: '7px 12px',
-      borderRadius: 10,
-      background: 'var(--pg-ink-50,var(--pg-blue-50))',
-      border: '0.5px solid var(--pg-ink-200)'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: 'var(--pg-ink-500)',
-      letterSpacing: '0.04em'
-    }
-  }, lang === 'pt' ? 'GALÕES' : 'GALLONS'), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      fontWeight: 600,
-      color: 'var(--pg-ink-900)'
-    }
-  }, Number(selected.gallons).toLocaleString(), " gal"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 8,
-      flexWrap: 'wrap'
-    }
-  }, selected.system && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 6,
-      padding: '7px 12px',
-      borderRadius: 10,
-      background: 'var(--pg-aqua-100)',
-      border: '0.5px solid var(--pg-aqua-400)'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: 'var(--pg-aqua-700)',
-      letterSpacing: '0.04em'
-    }
-  }, lang === 'pt' ? 'SISTEMA' : lang === 'es' ? 'SISTEMA' : 'SYSTEM'), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      fontWeight: 600,
-      color: 'var(--pg-ink-900)'
-    }
-  }, selected.system === 'salt' ? lang === 'pt' ? 'Sal' : lang === 'es' ? 'Sal' : 'Salt' : lang === 'pt' ? 'Cloro' : lang === 'es' ? 'Cloro' : 'Chlorine')), selected.freq && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 6,
-      padding: '7px 12px',
-      borderRadius: 10,
-      background: 'var(--pg-aqua-100)',
-      border: '0.5px solid var(--pg-aqua-400)'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: 'var(--pg-aqua-700)',
-      letterSpacing: '0.04em'
-    }
-  }, lang === 'pt' ? 'VISITAS' : lang === 'es' ? 'VISITAS' : 'VISITS'), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      fontWeight: 600,
-      color: 'var(--pg-ink-900)'
-    }
-  }, selected.freq === '7' ? lang === 'pt' ? 'Diário' : lang === 'es' ? 'Diario' : 'Daily' : `${selected.freq}x/${lang === 'pt' || lang === 'es' ? 'sem' : 'wk'}`)), selected.warranty && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 6,
-      padding: '7px 12px',
-      borderRadius: 10,
-      background: selected.warranty === 'yes' ? '#F0FDF4' : 'var(--pg-ink-100)',
-      border: `0.5px solid ${selected.warranty === 'yes' ? '#86EFAC' : 'var(--pg-ink-200)'}`
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: selected.warranty === 'yes' ? '#15803D' : 'var(--pg-ink-500)',
-      letterSpacing: '0.04em'
-    }
-  }, lang === 'pt' ? 'GARANTIA' : lang === 'es' ? 'GARANTÍA' : 'WARRANTY'), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      fontWeight: 600,
-      color: 'var(--pg-ink-900)'
-    }
-  }, selected.warranty === 'yes' ? selected.warrantyMonths ? `${selected.warrantyMonths} ${lang === 'pt' ? 'meses' : lang === 'es' ? 'meses' : 'mo'}` : lang === 'pt' ? 'Sim' : lang === 'es' ? 'Sí' : 'Yes' : lang === 'pt' ? 'Não' : lang === 'es' ? 'No' : 'No')))), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 10,
-      marginTop: 12
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: openChat,
-    className: "pg-btn pg-btn-ghost",
-    style: {
-      flex: 1
-    }
-  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.message), /*#__PURE__*/React.createElement("button", {
-    onClick: openOffer,
-    className: "pg-btn pg-btn-primary",
-    style: {
-      flex: 2
-    }
-  }, t.makeOffer))));
+  if (selected._type === 'pool') {
+    const poolPhotos = selected.photoUrls && selected.photoUrls.length > 0 ? selected.photoUrls : selected.photoUrl ? [selected.photoUrl] : [];
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%'
+      }
+    }, poolPhotos.length > 0 ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'relative',
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement(PhotoCarousel, {
+      urls: poolPhotos,
+      fallbackCat: "Tools",
+      height: 220
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: onClose,
+      style: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        zIndex: 10,
+        border: 'none',
+        background: 'rgba(0,0,0,0.45)',
+        width: 32,
+        height: 32,
+        borderRadius: '50%',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, Icon.x(14, '#fff'))) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'relative',
+        height: 180,
+        flexShrink: 0,
+        background: 'linear-gradient(135deg, #011B5A 0%, #023EBA 55%, #0077B6 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: onClose,
+      style: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        border: 'none',
+        background: 'rgba(255,255,255,0.15)',
+        width: 30,
+        height: 30,
+        borderRadius: '50%',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, Icon.x(14, '#fff')), /*#__PURE__*/React.createElement("svg", {
+      width: "34",
+      height: "34",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "rgba(255,255,255,0.90)",
+      strokeWidth: "1.8",
+      strokeLinecap: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M2 18 Q6 14 10 18 Q14 22 18 18 Q20 16 22 18"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "5",
+      r: "2.5"
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 54,
+        fontWeight: 800,
+        color: '#fff',
+        lineHeight: 1,
+        letterSpacing: '-0.02em'
+      }
+    }, selected.pools), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'rgba(255,255,255,0.65)',
+        letterSpacing: '0.06em'
+      }
+    }, selected.pools === 1 ? lang === 'pt' ? 'PISCINA' : lang === 'es' ? 'PISCINA' : 'POOL' : lang === 'pt' ? 'PISCINAS' : lang === 'es' ? 'PISCINAS' : 'POOLS')), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        overflowY: 'auto',
+        padding: '16px 18px 24px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 7,
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "pg-badge",
+      style: {
+        background: 'var(--pg-blue-100)',
+        color: 'var(--pg-blue-700)',
+        fontSize: 9
+      }
+    }, selected.type === 'condo' ? 'CONDO' : lang === 'pt' ? 'RESIDENCIAL' : lang === 'es' ? 'RESIDENCIAL' : 'HOUSE'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: 'var(--pg-ink-400)'
+      }
+    }, selected.area), selected.address && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: 'var(--pg-ink-400)'
+      }
+    }, " \xB7 ", selected.address)), /*#__PURE__*/React.createElement("h2", {
+      style: {
+        margin: 0,
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 20,
+        fontWeight: 700,
+        letterSpacing: '-0.02em',
+        lineHeight: 1.2
+      }
+    }, tr(selected.name || selected.desc, lang)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: 8,
+        marginTop: 10,
+        flexWrap: 'wrap'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: 'var(--pg-ink-400)',
+        fontWeight: 700,
+        letterSpacing: '0.06em'
+      }
+    }, t.asking.toUpperCase()), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 32,
+        fontWeight: 700,
+        color: 'var(--pg-blue-500)',
+        letterSpacing: '-0.02em'
+      }
+    }, "$", selected.est.toLocaleString()), /*#__PURE__*/React.createElement("span", {
+      className: "pg-chip",
+      style: {
+        fontSize: 11,
+        background: 'var(--pg-blue-50)',
+        color: 'var(--pg-blue-700)',
+        borderColor: 'var(--pg-blue-100)'
+      }
+    }, tr(selected.revenue, lang))), (selected.desc || selected.description) && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 12,
+        fontSize: 13,
+        lineHeight: 1.55,
+        color: 'var(--pg-ink-600)'
+      }
+    }, tr(selected.desc || selected.description, lang)), (selected.system || selected.sizeFt || selected.gallons || selected.freq || selected.warranty) && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 14,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8
+      }
+    }, (selected.sizeFt || selected.gallons) && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 8,
+        flexWrap: 'wrap'
+      }
+    }, selected.sizeFt && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '7px 12px',
+        borderRadius: 10,
+        background: 'var(--pg-ink-50,var(--pg-blue-50))',
+        border: '0.5px solid var(--pg-ink-200)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'var(--pg-ink-500)',
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'TAMANHO' : lang === 'es' ? 'TAMAÑO' : 'SIZE'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--pg-ink-900)'
+      }
+    }, selected.sizeFt)), selected.gallons && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '7px 12px',
+        borderRadius: 10,
+        background: 'var(--pg-ink-50,var(--pg-blue-50))',
+        border: '0.5px solid var(--pg-ink-200)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'var(--pg-ink-500)',
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'GALÕES' : 'GALLONS'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--pg-ink-900)'
+      }
+    }, Number(selected.gallons).toLocaleString(), " gal"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 8,
+        flexWrap: 'wrap'
+      }
+    }, selected.system && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '7px 12px',
+        borderRadius: 10,
+        background: 'var(--pg-aqua-100)',
+        border: '0.5px solid var(--pg-aqua-400)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'var(--pg-aqua-700)',
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'SISTEMA' : lang === 'es' ? 'SISTEMA' : 'SYSTEM'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--pg-ink-900)'
+      }
+    }, selected.system === 'salt' ? lang === 'pt' ? 'Sal' : lang === 'es' ? 'Sal' : 'Salt' : lang === 'pt' ? 'Cloro' : lang === 'es' ? 'Cloro' : 'Chlorine')), selected.freq && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '7px 12px',
+        borderRadius: 10,
+        background: 'var(--pg-aqua-100)',
+        border: '0.5px solid var(--pg-aqua-400)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'var(--pg-aqua-700)',
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'VISITAS' : lang === 'es' ? 'VISITAS' : 'VISITS'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--pg-ink-900)'
+      }
+    }, selected.freq === '7' ? lang === 'pt' ? 'Diário' : lang === 'es' ? 'Diario' : 'Daily' : `${selected.freq}x/${lang === 'pt' || lang === 'es' ? 'sem' : 'wk'}`)), selected.warranty && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '7px 12px',
+        borderRadius: 10,
+        background: selected.warranty === 'yes' ? '#F0FDF4' : 'var(--pg-ink-100)',
+        border: `0.5px solid ${selected.warranty === 'yes' ? '#86EFAC' : 'var(--pg-ink-200)'}`
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: selected.warranty === 'yes' ? '#15803D' : 'var(--pg-ink-500)',
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'GARANTIA' : lang === 'es' ? 'GARANTÍA' : 'WARRANTY'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--pg-ink-900)'
+      }
+    }, selected.warranty === 'yes' ? selected.warrantyMonths ? `${selected.warrantyMonths} ${lang === 'pt' ? 'meses' : lang === 'es' ? 'meses' : 'mo'}` : lang === 'pt' ? 'Sim' : lang === 'es' ? 'Sí' : 'Yes' : lang === 'pt' ? 'Não' : lang === 'es' ? 'No' : 'No')))), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 10,
+        marginTop: 12
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: openChat,
+      className: "pg-btn pg-btn-ghost",
+      style: {
+        flex: 1
+      }
+    }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.message), /*#__PURE__*/React.createElement("button", {
+      onClick: openOffer,
+      className: "pg-btn pg-btn-primary",
+      style: {
+        flex: 2
+      }
+    }, t.makeOffer))));
+  }
 
   // ── EQUIPMENT (default) ────────────────────────────────────────
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ItemPhotoCarousel, {
@@ -12333,11 +12424,11 @@ function PostPoolSheet({
       paddingTop: 12,
       lineHeight: 1.5
     }
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, t.location), /*#__PURE__*/React.createElement(CityAutocomplete, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Cidade', 'Ciudad', 'City')), /*#__PURE__*/React.createElement(CityAutocomplete, {
     value: area,
     onChange: v => setArea(v),
     lang: lang
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Endereço exato (opcional)', 'Dirección exacta (opcional)', 'Exact address (optional)')), /*#__PURE__*/React.createElement("input", {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Endereço (opcional)', 'Dirección (opcional)', 'Address (optional)')), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
     value: address,
     onChange: e => setAddress(e.target.value),
@@ -12634,11 +12725,11 @@ function PostRouteSheet({
       color: 'var(--pg-blue-500)',
       fontFamily: 'var(--pg-font-display)'
     }
-  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, t.location), /*#__PURE__*/React.createElement(CityAutocomplete, {
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Cidade', 'Ciudad', 'City')), /*#__PURE__*/React.createElement(CityAutocomplete, {
     value: area,
     onChange: v => setArea(v),
     lang: lang
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Endereço exato (opcional)', 'Dirección exacta (opcional)', 'Exact address (optional)')), /*#__PURE__*/React.createElement("input", {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Endereço (opcional)', 'Dirección (opcional)', 'Address (optional)')), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
     value: address,
     onChange: e => setAddress(e.target.value),
