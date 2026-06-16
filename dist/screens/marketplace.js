@@ -6374,9 +6374,8 @@ function MarketplaceScreen({
     soldAt: r.sold_at || null
   });
 
-  // Returns true if a sold item should still appear in marketplace (< 24h after sold)
-  // Show sold items for 7 days (for all users) OR indefinitely for own items
-  const isSoldVisible = item => item.status === 'sold' && (isMyPost(item) || item.soldAt && Date.now() - new Date(item.soldAt).getTime() < 7 * 86400000);
+  // Show sold items for 1 day only, then they get auto-deleted from marketplace (archived to history)
+  const isSoldVisible = item => item.status === 'sold' && (isMyPost(item) || item.soldAt && Date.now() - new Date(item.soldAt).getTime() < 86400000);
 
   // Never show raw email as author — if author is an email, show the part before @
   const fmtAuthor = a => {

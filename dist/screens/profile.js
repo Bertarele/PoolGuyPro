@@ -882,6 +882,9 @@ function ProfileScreen({
   }), /*#__PURE__*/React.createElement(HistorySection, {
     user: user,
     lang: lang
+  }), /*#__PURE__*/React.createElement(PurchasesSection, {
+    user: user,
+    lang: lang
   }), /*#__PURE__*/React.createElement(Section, {
     title: t.workRegions,
     action: t.edit,
@@ -2139,79 +2142,132 @@ function SettingRow({
     }
   }, detail), right, chev && Icon.chev(14, 'var(--pg-ink-400)'));
 }
-
-// ── History Section — sold listings ────────────────────────────
-function HistorySection({
-  user,
-  lang
-}) {
-  const [items, setItems] = React.useState(null); // null = loading
-  const [expanded, setExpanded] = React.useState(false);
-  React.useEffect(() => {
-    if (!user?.uid || !window.sb) {
-      setItems([]);
-      return;
-    }
-    window.sb.from('marketplace').select('id, name, price, price_mode, cat, loc, photo_url, type, status, sold_at, created_at').eq('author_id', user.uid).eq('status', 'sold').order('sold_at', {
-      ascending: false
-    }).then(({
-      data
-    }) => {
-      setItems(data || []);
-    });
-  }, [user?.uid]);
-  const title = lang === 'pt' ? 'HISTÓRICO' : lang === 'es' ? 'HISTORIAL' : 'HISTORY';
-  const fmtDate = iso => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    return d.toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-MX' : 'en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-  const fmtType = type => {
-    if (type === 'sell') return lang === 'pt' ? 'Venda' : lang === 'es' ? 'Venta' : 'Sold';
-    if (type === 'rent') return lang === 'pt' ? 'Aluguel' : lang === 'es' ? 'Renta' : 'Rental';
-    if (type === 'route') return lang === 'pt' ? 'Rota' : lang === 'es' ? 'Ruta' : 'Route';
-    return lang === 'pt' ? 'Marketplace' : 'Marketplace';
-  };
-  const visibleItems = expanded ? items || [] : (items || []).slice(0, 3);
-  return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+function _historyItemRow(m, idx, isLast, fmtDate, fmtType, badge) {
+  return /*#__PURE__*/React.createElement("div", {
+    key: m.id,
     style: {
       display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'baseline',
-      marginBottom: 8
+      alignItems: 'center',
+      gap: 12,
+      padding: '12px 14px',
+      borderBottom: isLast ? 'none' : '0.5px solid var(--pg-ink-100)'
     }
-  }, /*#__PURE__*/React.createElement("h3", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      margin: 0,
-      fontWeight: 700,
-      color: 'var(--pg-ink-700)',
-      letterSpacing: '-0.01em',
-      textTransform: 'uppercase',
-      fontSize: 11
+      width: 48,
+      height: 48,
+      borderRadius: 10,
+      overflow: 'hidden',
+      flexShrink: 0,
+      background: 'var(--pg-ink-100)',
+      position: 'relative'
     }
-  }, title), items && items.length > 0 && /*#__PURE__*/React.createElement("span", {
+  }, m.photo_url ? /*#__PURE__*/React.createElement("img", {
+    src: m.photo_url,
+    alt: m.name,
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      filter: 'grayscale(0.4)'
+    }
+  }) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 18
+    }
+  }, "\uD83D\uDCE6"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      background: 'rgba(0,0,0,0.55)',
+      fontSize: 8,
+      fontWeight: 800,
+      color: '#fff',
+      textAlign: 'center',
+      letterSpacing: '0.06em',
+      padding: '2px 0'
+    }
+  }, badge)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      color: 'var(--pg-ink-900)'
+    }
+  }, m.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 2,
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      padding: '2px 7px',
+      borderRadius: 5,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-500)',
+      letterSpacing: '0.04em'
+    }
+  }, fmtType(m.type)), m.price_mode !== 'neg' && m.price && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 12,
       fontWeight: 700,
-      color: 'var(--pg-ink-500)'
+      color: 'var(--pg-ink-700)'
     }
-  }, items.length)), /*#__PURE__*/React.createElement("div", {
-    className: "pg-card",
+  }, "$", m.price))), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: items && items.length > 0 ? 0 : '16px 14px',
-      overflow: 'hidden'
+      fontSize: 11,
+      color: 'var(--pg-ink-400)',
+      textAlign: 'right',
+      flexShrink: 0
     }
-  }, items === null ? /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 600,
+      color: '#16A34A',
+      fontSize: 10,
+      letterSpacing: '0.04em',
+      marginBottom: 2
+    }
+  }, "\u2713 ", badge), m.sold_at && /*#__PURE__*/React.createElement("div", null, fmtDate(m.sold_at))));
+}
+function _historyList({
+  items,
+  expanded,
+  setExpanded,
+  emptyMsg,
+  fmtDate,
+  fmtType,
+  badge,
+  lang
+}) {
+  const visibleItems = expanded ? items || [] : (items || []).slice(0, 3);
+  if (items === null) return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '16px 14px',
       fontSize: 13,
       color: 'var(--pg-ink-400)'
     }
-  }, lang === 'pt' ? 'Carregando…' : lang === 'es' ? 'Cargando…' : 'Loading…') : items.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Carregando…' : lang === 'es' ? 'Cargando…' : 'Loading…');
+  if (items.length === 0) return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -2244,113 +2300,10 @@ function HistorySection({
       fontSize: 13,
       color: 'var(--pg-ink-400)'
     }
-  }, lang === 'pt' ? 'Nenhuma venda ainda' : lang === 'es' ? 'Sin ventas aún' : 'No completed sales yet')) : /*#__PURE__*/React.createElement(React.Fragment, null, visibleItems.map((m, idx) => {
+  }, emptyMsg));
+  return /*#__PURE__*/React.createElement(React.Fragment, null, visibleItems.map((m, idx) => {
     const isLast = idx === visibleItems.length - 1 && (!expanded || items.length <= 3);
-    return /*#__PURE__*/React.createElement("div", {
-      key: m.id,
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '12px 14px',
-        borderBottom: isLast ? 'none' : '0.5px solid var(--pg-ink-100)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 48,
-        height: 48,
-        borderRadius: 10,
-        overflow: 'hidden',
-        flexShrink: 0,
-        background: 'var(--pg-ink-100)',
-        position: 'relative'
-      }
-    }, m.photo_url ? /*#__PURE__*/React.createElement("img", {
-      src: m.photo_url,
-      alt: m.name,
-      style: {
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        filter: 'grayscale(0.5)'
-      }
-    }) : /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 18
-      }
-    }, "\uD83D\uDCE6"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        background: 'rgba(0,0,0,0.55)',
-        fontSize: 8,
-        fontWeight: 800,
-        color: '#fff',
-        textAlign: 'center',
-        letterSpacing: '0.06em',
-        padding: '2px 0'
-      }
-    }, "SOLD")), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 600,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        color: 'var(--pg-ink-900)'
-      }
-    }, m.name), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        marginTop: 2,
-        flexWrap: 'wrap'
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 10,
-        fontWeight: 700,
-        padding: '2px 7px',
-        borderRadius: 5,
-        background: 'var(--pg-ink-100)',
-        color: 'var(--pg-ink-500)',
-        letterSpacing: '0.04em'
-      }
-    }, fmtType(m.type)), m.price_mode !== 'neg' && m.price && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 12,
-        fontWeight: 700,
-        color: 'var(--pg-ink-700)'
-      }
-    }, "$", m.price))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: 'var(--pg-ink-400)',
-        textAlign: 'right',
-        flexShrink: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 600,
-        color: '#16A34A',
-        fontSize: 10,
-        letterSpacing: '0.04em',
-        marginBottom: 2
-      }
-    }, "\u2713 SOLD"), m.sold_at && /*#__PURE__*/React.createElement("div", null, fmtDate(m.sold_at))));
+    return _historyItemRow(m, idx, isLast, fmtDate, fmtType, badge);
   }), items.length > 3 && /*#__PURE__*/React.createElement("button", {
     onClick: () => setExpanded(!expanded),
     style: {
@@ -2379,7 +2332,155 @@ function HistorySection({
     strokeLinecap: "round"
   }, /*#__PURE__*/React.createElement("polyline", {
     points: expanded ? "18 15 12 9 6 15" : "6 9 12 15 18 9"
-  }))))));
+  }))));
+}
+
+// ── History Section — items I sold ───────────────────────────────
+function HistorySection({
+  user,
+  lang
+}) {
+  const [items, setItems] = React.useState(null);
+  const [expanded, setExpanded] = React.useState(false);
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb) {
+      setItems([]);
+      return;
+    }
+    window.sb.from('marketplace_history').select('id, name, price, price_mode, cat, loc, photo_url, type, sold_at, created_at, buyer_name').eq('author_id', user.uid).order('sold_at', {
+      ascending: false
+    }).then(({
+      data
+    }) => setItems(data || []));
+  }, [user?.uid]);
+  const fmtDate = iso => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-MX' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+  const fmtType = type => {
+    if (type === 'sell') return lang === 'pt' ? 'Venda' : lang === 'es' ? 'Venta' : 'Sold';
+    if (type === 'rent') return lang === 'pt' ? 'Aluguel' : lang === 'es' ? 'Renta' : 'Rental';
+    if (type === 'route') return lang === 'pt' ? 'Rota' : lang === 'es' ? 'Ruta' : 'Route';
+    return 'Marketplace';
+  };
+  const title = lang === 'pt' ? 'VENDAS' : lang === 'es' ? 'VENTAS' : 'SALES';
+  const emptyMsg = lang === 'pt' ? 'Nenhuma venda ainda' : lang === 'es' ? 'Sin ventas aún' : 'No completed sales yet';
+  return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      margin: 0,
+      fontWeight: 700,
+      color: 'var(--pg-ink-700)',
+      letterSpacing: '-0.01em',
+      textTransform: 'uppercase',
+      fontSize: 11
+    }
+  }, title), items && items.length > 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)'
+    }
+  }, items.length)), /*#__PURE__*/React.createElement("div", {
+    className: "pg-card",
+    style: {
+      padding: items && items.length > 0 ? 0 : '16px 14px',
+      overflow: 'hidden'
+    }
+  }, _historyList({
+    items,
+    expanded,
+    setExpanded,
+    emptyMsg,
+    fmtDate,
+    fmtType,
+    badge: 'SOLD',
+    lang
+  })));
+}
+
+// ── Purchases Section — items I bought ───────────────────────────
+function PurchasesSection({
+  user,
+  lang
+}) {
+  const [items, setItems] = React.useState(null);
+  const [expanded, setExpanded] = React.useState(false);
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb) {
+      setItems([]);
+      return;
+    }
+    window.sb.from('marketplace_history').select('id, name, price, price_mode, cat, loc, photo_url, type, sold_at, created_at, author').eq('buyer_id', user.uid).order('sold_at', {
+      ascending: false
+    }).then(({
+      data
+    }) => setItems(data || []));
+  }, [user?.uid]);
+  const fmtDate = iso => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-MX' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+  const fmtType = type => {
+    if (type === 'sell') return lang === 'pt' ? 'Compra' : lang === 'es' ? 'Compra' : 'Purchase';
+    if (type === 'rent') return lang === 'pt' ? 'Aluguel' : lang === 'es' ? 'Renta' : 'Rental';
+    if (type === 'route') return lang === 'pt' ? 'Rota' : lang === 'es' ? 'Ruta' : 'Route';
+    return 'Marketplace';
+  };
+  const title = lang === 'pt' ? 'COMPRAS' : lang === 'es' ? 'COMPRAS' : 'PURCHASES';
+  const emptyMsg = lang === 'pt' ? 'Nenhuma compra ainda' : lang === 'es' ? 'Sin compras aún' : 'No purchases yet';
+  return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      margin: 0,
+      fontWeight: 700,
+      color: 'var(--pg-ink-700)',
+      letterSpacing: '-0.01em',
+      textTransform: 'uppercase',
+      fontSize: 11
+    }
+  }, title), items && items.length > 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)'
+    }
+  }, items.length)), /*#__PURE__*/React.createElement("div", {
+    className: "pg-card",
+    style: {
+      padding: items && items.length > 0 ? 0 : '16px 14px',
+      overflow: 'hidden'
+    }
+  }, _historyList({
+    items,
+    expanded,
+    setExpanded,
+    emptyMsg,
+    fmtDate,
+    fmtType,
+    badge: 'BOUGHT',
+    lang
+  })));
 }
 Object.assign(window, {
   ProfileScreen

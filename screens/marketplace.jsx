@@ -3303,12 +3303,11 @@ function MarketplaceScreen({ ctx }) {
     rentPeriod:r.rent_period||null, rentPrices:r.rent_prices||null, status:r.status||'pending',
     createdAt:r.created_at||null, soldAt:r.sold_at||null });
 
-  // Returns true if a sold item should still appear in marketplace (< 24h after sold)
-  // Show sold items for 7 days (for all users) OR indefinitely for own items
+  // Show sold items for 1 day only, then they get auto-deleted from marketplace (archived to history)
   const isSoldVisible = (item) =>
     item.status === 'sold' && (
       isMyPost(item) ||
-      (item.soldAt && (Date.now() - new Date(item.soldAt).getTime()) < 7 * 86400000)
+      (item.soldAt && (Date.now() - new Date(item.soldAt).getTime()) < 86400000)
     );
 
   // Never show raw email as author — if author is an email, show the part before @

@@ -690,6 +690,9 @@ function App() {
       soldAt: r.sold_at || null
     });
 
+    // Clean up sold listings older than 1 day (fire-and-forget)
+    window.sb.rpc('cleanup_old_sold_listings').then(() => {}).catch(() => {});
+
     // Data fetch — runs AFTER auth is ready (authReady gate above)
     const doFetch = async () => {
       const [j, tc, v, m] = await Promise.all([window.sb.from('jobs').select('*').order('created_at', {
