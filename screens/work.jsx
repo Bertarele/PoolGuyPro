@@ -328,10 +328,9 @@ function WorkScreen({ ctx }) {
 
                   {/* County + actions */}
                   <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
-                    <button onClick={()=>setWorkLocationFilterOpen(true)} style={{display:'flex',alignItems:'center',gap:6,background:workUserLocation?'var(--pg-aqua-100)':_locBg,border:workUserLocation?'1px solid var(--pg-aqua-400)':_locBr,borderRadius:999,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
-                      {Icon.pin(12,workUserLocation?'var(--pg-aqua-600)':_sub)}
-                      <span style={{fontSize:12,fontWeight:600,color:workUserLocation?'var(--pg-aqua-700)':_locTx,whiteSpace:'nowrap'}}>{workUserLocation?`${workRadiusMiles} mi`:(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL')}</span>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <button onClick={()=>setWorkLocationFilterOpen(true)} style={{display:'flex',alignItems:'center',gap:6,background:workUserLocation?'var(--pg-aqua-100)':_locBg,border:workUserLocation?'1px solid var(--pg-aqua-400)':_locBr,borderRadius:999,padding:workUserLocation?'6px 12px':'6px 10px',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':_sub} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                      {workUserLocation && <span style={{fontSize:12,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workUserLocation.city||''}{workUserLocation.city?' · ':''}{workRadiusMiles} mi</span>}
                     </button>
                     <button onClick={()=>openChat&&openChat()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative'}}>
                       {Icon.msg(18,_tx)}
@@ -701,15 +700,9 @@ function WorkScreen({ ctx }) {
                 <div style={{width:1, height:28, background:H.divider}}/>
                 <button onClick={()=>setWorkLocationFilterOpen(true)}
                   style={{display:'flex', alignItems:'center', gap:5, background:workUserLocation?'var(--pg-aqua-100)':H.cntyBg, border:workUserLocation?'1px solid var(--pg-aqua-400)':H.cntyBdr,
-                    borderRadius:999, padding:'5px 11px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                  {Icon.pin(11,workUserLocation?'var(--pg-aqua-600)':H.cntyIc)}
-                  <span style={{fontSize:11, fontWeight:600, color:workUserLocation?'var(--pg-aqua-700)':H.cntyTxt, whiteSpace:'nowrap'}}>
-                    {workUserLocation ? `${workRadiusMiles} mi` : (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL')}
-                  </span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={H.editIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
+                    borderRadius:999, padding:workUserLocation?'5px 11px':'5px 9px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':H.cntyIc} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                  {workUserLocation && <span style={{fontSize:11,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workUserLocation.city||''}{workUserLocation.city?' · ':''}{workRadiusMiles} mi</span>}
                 </button>
               </>}
               {sub === 'techs' && <>
@@ -725,15 +718,9 @@ function WorkScreen({ ctx }) {
                 <div style={{width:1, height:28, background:H.divider}}/>
                 <button onClick={()=>setWorkLocationFilterOpen(true)}
                   style={{display:'flex', alignItems:'center', gap:5, background:workUserLocation?'var(--pg-aqua-100)':H.cntyBg, border:workUserLocation?'1px solid var(--pg-aqua-400)':H.cntyBdr,
-                    borderRadius:999, padding:'5px 11px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                  {Icon.pin(11,workUserLocation?'var(--pg-aqua-600)':H.cntyIc)}
-                  <span style={{fontSize:11, fontWeight:600, color:workUserLocation?'var(--pg-aqua-700)':H.cntyTxt, whiteSpace:'nowrap'}}>
-                    {workUserLocation ? `${workRadiusMiles} mi` : (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL')}
-                  </span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={H.editIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
+                    borderRadius:999, padding:workUserLocation?'5px 11px':'5px 9px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':H.cntyIc} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                  {workUserLocation && <span style={{fontSize:11,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workUserLocation.city||''}{workUserLocation.city?' · ':''}{workRadiusMiles} mi</span>}
                 </button>
               </>}
               {sub === 'vac' && <>
