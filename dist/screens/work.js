@@ -39,8 +39,9 @@ function WorkScreen({
   const [myActivityTab, setMyActivityTab] = React.useState('applications'); // 'applications' | 'myposts'
   const [activityLimit, setActivityLimit] = React.useState(4);
   const [deletedAppIds, setDeletedAppIds] = React.useState(new Set());
-  const [workCountyFilter, setWorkCountyFilter] = React.useState(['Broward', 'Miami-Dade', 'Palm Beach']);
-  const [workCountyPickerOpen, setWorkCountyPickerOpen] = React.useState(false);
+  const [workUserLocation, setWorkUserLocation] = React.useState(null); // {lat, lng} or null
+  const [workRadiusMiles, setWorkRadiusMiles] = React.useState(25);
+  const [workLocationFilterOpen, setWorkLocationFilterOpen] = React.useState(false);
   const subIcons = {
     hiring: (s, c) => Icon.briefcase(s, c),
     techs: (s, c) => /*#__PURE__*/React.createElement("svg", {
@@ -223,28 +224,17 @@ function WorkScreen({
   const staticPostsHiring = MY_POSTS.filter(p => p.type === 'hiring');
   const myPostsVac = MY_POSTS.filter(p => p.type === 'vacation');
 
-  // County filter helpers
-  const workCityToCounty = React.useMemo(() => {
-    const map = {};
-    Object.entries(window.FL_COUNTIES || {}).forEach(([county, cities]) => {
-      cities.forEach(city => {
-        map[city.toLowerCase()] = county;
-      });
-    });
-    return map;
-  }, []);
-  const countyMatch = loc => {
-    if (!loc || workCountyFilter.length === 3) return true;
-    const locL = loc.trim().toLowerCase();
-    // direct county name match (e.g. 'Broward', 'Miami-Dade', 'Palm Beach')
-    if (workCountyFilter.some(c => locL.includes(c.toLowerCase()))) return true;
-    // city-to-county lookup
-    const county = workCityToCounty[locL];
-    return !county || workCountyFilter.includes(county);
-  };
-  const filteredLiveJobs = liveJobs.filter(j => countyMatch(j.loc || j.region || ''));
-  const filteredLiveTechs = liveTechs.filter(t => countyMatch(t.loc || t.region || ''));
-  const filteredLiveVacations = liveVacations.filter(v => countyMatch(v.region || v.loc || ''));
+  // Radius filter — haversine distance from user location
+  const radiusMatch = React.useCallback(loc => {
+    if (!workUserLocation || !loc) return true;
+    const city = loc.trim();
+    const c = (window.FL_CITY_COORDS || {})[city];
+    if (!c) return true; // city not in dict → show
+    return window.haversine(workUserLocation.lat, workUserLocation.lng, c[0], c[1]) <= workRadiusMiles;
+  }, [workUserLocation, workRadiusMiles]);
+  const filteredLiveJobs = liveJobs.filter(j => radiusMatch(j.loc || j.region || ''));
+  const filteredLiveTechs = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
+  const filteredLiveVacations = liveVacations.filter(v => radiusMatch(v.region || v.loc || ''));
 
   // Live jobs created by me → appear in My Posts
   const myLiveJobs = liveJobs.filter(j => j.author_id && user.uid && j.author_id === user.uid).map(j => {
@@ -651,13 +641,13 @@ function WorkScreen({
           flexShrink: 0
         }
       }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => setWorkCountyPickerOpen(true),
+        onClick: () => setWorkLocationFilterOpen(true),
         style: {
           display: 'flex',
           alignItems: 'center',
           gap: 6,
-          background: _locBg,
-          border: _locBr,
+          background: workUserLocation ? 'var(--pg-aqua-100)' : _locBg,
+          border: workUserLocation ? '1px solid var(--pg-aqua-400)' : _locBr,
           borderRadius: 999,
           padding: '6px 12px',
           cursor: 'pointer',
@@ -665,14 +655,14 @@ function WorkScreen({
           color: 'inherit',
           touchAction: 'manipulation'
         }
-      }, Icon.pin(12, _sub), /*#__PURE__*/React.createElement("span", {
+      }, Icon.pin(12, workUserLocation ? 'var(--pg-aqua-600)' : _sub), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 12,
           fontWeight: 600,
-          color: _locTx,
+          color: workUserLocation ? 'var(--pg-aqua-700)' : _locTx,
           whiteSpace: 'nowrap'
         }
-      }, workCountyFilter.length === 3 ? lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL' : workCountyFilter.map(c => c === 'Miami-Dade' ? 'Dade' : c).join(' · ')), /*#__PURE__*/React.createElement("svg", {
+      }, workUserLocation ? `${workRadiusMiles} mi` : lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL'), /*#__PURE__*/React.createElement("svg", {
         width: "10",
         height: "10",
         viewBox: "0 0 24 24",
@@ -1334,9 +1324,7 @@ function WorkScreen({
       liveJobs: filteredLiveJobs,
       showToast: showToast,
       onDeleteJob: removeJob,
-      liveApplications: liveApplications,
-      countyFilter: workCountyFilter,
-      cityToCounty: workCityToCounty
+      liveApplications: liveApplications
     }), sub === 'techs' && /*#__PURE__*/React.createElement(TechsPanel, {
       t: t,
       lang: lang,
@@ -1346,9 +1334,7 @@ function WorkScreen({
       liveTechs: filteredLiveTechs,
       user: ctx.user,
       showToast: showToast,
-      onDeleteTech: removeTech,
-      countyFilter: workCountyFilter,
-      cityToCounty: workCityToCounty
+      onDeleteTech: removeTech
     }), sub === 'vac' && /*#__PURE__*/React.createElement(VacationPanel, {
       t: t,
       lang: lang,
@@ -1364,141 +1350,15 @@ function WorkScreen({
       user: ctx.user,
       showToast: showToast,
       onDeleteVac: removeVacation
-    })))), workCountyPickerOpen && /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.50)',
-        zIndex: 6000,
-        display: 'flex',
-        alignItems: 'flex-end'
-      },
-      onClick: () => setWorkCountyPickerOpen(false)
-    }, /*#__PURE__*/React.createElement("div", {
-      onClick: e => e.stopPropagation(),
-      style: {
-        width: '100%',
-        maxWidth: 480,
-        margin: '0 auto',
-        background: 'var(--pg-white)',
-        borderRadius: '22px 22px 0 0',
-        padding: '10px 18px 36px',
-        boxShadow: '0 -4px 32px rgba(0,0,0,0.18)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 36,
-        height: 4,
-        borderRadius: 999,
-        background: 'var(--pg-ink-200)',
-        margin: '0 auto 18px'
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--pg-font-display)',
-        fontSize: 17,
-        fontWeight: 700,
-        color: 'var(--pg-ink-900)',
-        marginBottom: 4
-      }
-    }, lang === 'pt' ? 'Região de busca' : lang === 'es' ? 'Región de búsqueda' : 'Search region'), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        color: 'var(--pg-ink-500)',
-        marginBottom: 18,
-        lineHeight: 1.4
-      }
-    }, lang === 'pt' ? 'Selecione os condados para filtrar as vagas' : lang === 'es' ? 'Seleccione los condados para filtrar' : 'Select counties to filter job listings'), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10
-      }
-    }, [{
-      id: 'Broward',
-      label: 'Broward County',
-      sub: lang === 'pt' ? 'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…' : 'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…'
-    }, {
-      id: 'Miami-Dade',
-      label: 'Miami-Dade County',
-      sub: lang === 'pt' ? 'Miami, Coral Gables, Doral, Hialeah…' : 'Miami, Coral Gables, Doral, Hialeah…'
-    }, {
-      id: 'Palm Beach',
-      label: 'Palm Beach County',
-      sub: lang === 'pt' ? 'Boca Raton, Boynton Beach, Wellington, Jupiter…' : 'Boca Raton, Boynton Beach, Wellington, Jupiter…'
-    }].map(county => {
-      const on = workCountyFilter.includes(county.id);
-      return /*#__PURE__*/React.createElement("button", {
-        key: county.id,
-        onClick: () => {
-          setWorkCountyFilter(prev => {
-            if (on && prev.length === 1) return prev;
-            return on ? prev.filter(c => c !== county.id) : [...prev, county.id];
-          });
-        },
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          padding: '14px 16px',
-          borderRadius: 14,
-          border: on ? '1.5px solid var(--pg-blue-500)' : '1.5px solid var(--pg-ink-200)',
-          background: on ? 'var(--pg-blue-50)' : 'var(--pg-ink-50)',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          textAlign: 'left',
-          transition: 'all .15s'
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          width: 22,
-          height: 22,
-          borderRadius: 7,
-          flexShrink: 0,
-          border: on ? '2px solid var(--pg-blue-500)' : '2px solid var(--pg-ink-300)',
-          background: on ? 'var(--pg-blue-500)' : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all .12s'
-        }
-      }, on && /*#__PURE__*/React.createElement("svg", {
-        width: "12",
-        height: "12",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "#fff",
-        strokeWidth: "3.5",
-        strokeLinecap: "round"
-      }, /*#__PURE__*/React.createElement("polyline", {
-        points: "20 6 9 17 4 12"
-      }))), /*#__PURE__*/React.createElement("div", {
-        style: {
-          flex: 1
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 14,
-          fontWeight: 700,
-          color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-900)'
-        }
-      }, county.label), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 12,
-          color: 'var(--pg-ink-500)',
-          marginTop: 2,
-          lineHeight: 1.3
-        }
-      }, county.sub)));
-    })), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setWorkCountyPickerOpen(false),
-      className: "pg-btn pg-btn-primary",
-      style: {
-        width: '100%',
-        marginTop: 20,
-        height: 48
-      }
-    }, lang === 'pt' ? 'Confirmar' : lang === 'es' ? 'Confirmar' : 'Confirm'))));
+    })))), /*#__PURE__*/React.createElement(LocationFilterSheet, {
+      open: workLocationFilterOpen,
+      onClose: () => setWorkLocationFilterOpen(false),
+      userLocation: workUserLocation,
+      setUserLocation: setWorkUserLocation,
+      radiusMiles: workRadiusMiles,
+      setRadiusMiles: setWorkRadiusMiles,
+      lang: lang
+    }));
   }
   // ── END desktop ────────────────────────────────────────────────
 
@@ -1677,13 +1537,13 @@ function WorkScreen({
         background: H.divider
       }
     }), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setWorkCountyPickerOpen(true),
+      onClick: () => setWorkLocationFilterOpen(true),
       style: {
         display: 'flex',
         alignItems: 'center',
         gap: 5,
-        background: H.cntyBg,
-        border: H.cntyBdr,
+        background: workUserLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
+        border: workUserLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
         borderRadius: 999,
         padding: '5px 11px',
         cursor: 'pointer',
@@ -1691,14 +1551,14 @@ function WorkScreen({
         color: 'inherit',
         touchAction: 'manipulation'
       }
-    }, Icon.pin(11, H.cntyIc), /*#__PURE__*/React.createElement("span", {
+    }, Icon.pin(11, workUserLocation ? 'var(--pg-aqua-600)' : H.cntyIc), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 600,
-        color: H.cntyTxt,
+        color: workUserLocation ? 'var(--pg-aqua-700)' : H.cntyTxt,
         whiteSpace: 'nowrap'
       }
-    }, workCountyFilter.length === 3 ? lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL' : workCountyFilter.map(c => c === 'Miami-Dade' ? 'Dade' : c).join(' · ')), /*#__PURE__*/React.createElement("svg", {
+    }, workUserLocation ? `${workRadiusMiles} mi` : lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL'), /*#__PURE__*/React.createElement("svg", {
       width: "10",
       height: "10",
       viewBox: "0 0 24 24",
@@ -1765,13 +1625,13 @@ function WorkScreen({
         background: H.divider
       }
     }), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setWorkCountyPickerOpen(true),
+      onClick: () => setWorkLocationFilterOpen(true),
       style: {
         display: 'flex',
         alignItems: 'center',
         gap: 5,
-        background: H.cntyBg,
-        border: H.cntyBdr,
+        background: workUserLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
+        border: workUserLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
         borderRadius: 999,
         padding: '5px 11px',
         cursor: 'pointer',
@@ -1779,14 +1639,14 @@ function WorkScreen({
         color: 'inherit',
         touchAction: 'manipulation'
       }
-    }, Icon.pin(11, H.cntyIc), /*#__PURE__*/React.createElement("span", {
+    }, Icon.pin(11, workUserLocation ? 'var(--pg-aqua-600)' : H.cntyIc), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 600,
-        color: H.cntyTxt,
+        color: workUserLocation ? 'var(--pg-aqua-700)' : H.cntyTxt,
         whiteSpace: 'nowrap'
       }
-    }, workCountyFilter.length === 3 ? lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL' : workCountyFilter.map(c => c === 'Miami-Dade' ? 'Dade' : c).join(' · ')), /*#__PURE__*/React.createElement("svg", {
+    }, workUserLocation ? `${workRadiusMiles} mi` : lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL'), /*#__PURE__*/React.createElement("svg", {
       width: "10",
       height: "10",
       viewBox: "0 0 24 24",
@@ -1887,139 +1747,15 @@ function WorkScreen({
         color: H.text
       }
     }, lang === 'pt' ? 'aplicadas' : lang === 'es' ? 'aplicadas' : 'applied'))))));
-  })(), workCountyPickerOpen && /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.50)',
-      zIndex: 6000,
-      display: 'flex',
-      alignItems: 'flex-end'
-    },
-    onClick: () => setWorkCountyPickerOpen(false)
-  }, /*#__PURE__*/React.createElement("div", {
-    onClick: e => e.stopPropagation(),
-    style: {
-      width: '100%',
-      background: 'var(--pg-white)',
-      borderRadius: '22px 22px 0 0',
-      padding: '10px 18px 36px',
-      boxShadow: '0 -4px 32px rgba(0,0,0,0.18)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 36,
-      height: 4,
-      borderRadius: 999,
-      background: 'var(--pg-ink-200)',
-      margin: '0 auto 18px'
-    }
+  })(), /*#__PURE__*/React.createElement(LocationFilterSheet, {
+    open: workLocationFilterOpen,
+    onClose: () => setWorkLocationFilterOpen(false),
+    userLocation: workUserLocation,
+    setUserLocation: setWorkUserLocation,
+    radiusMiles: workRadiusMiles,
+    setRadiusMiles: setWorkRadiusMiles,
+    lang: lang
   }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 17,
-      fontWeight: 700,
-      color: 'var(--pg-ink-900)',
-      marginBottom: 4
-    }
-  }, lang === 'pt' ? 'Região de busca' : lang === 'es' ? 'Región de búsqueda' : 'Search region'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: 'var(--pg-ink-500)',
-      marginBottom: 18,
-      lineHeight: 1.4
-    }
-  }, lang === 'pt' ? 'Selecione os condados para filtrar as vagas' : lang === 'es' ? 'Seleccione los condados para filtrar' : 'Select counties to filter job listings'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10
-    }
-  }, [{
-    id: 'Broward',
-    label: 'Broward County',
-    sub: lang === 'pt' ? 'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…' : 'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…'
-  }, {
-    id: 'Miami-Dade',
-    label: 'Miami-Dade County',
-    sub: lang === 'pt' ? 'Miami, Coral Gables, Doral, Hialeah…' : 'Miami, Coral Gables, Doral, Hialeah…'
-  }, {
-    id: 'Palm Beach',
-    label: 'Palm Beach County',
-    sub: lang === 'pt' ? 'Boca Raton, Boynton Beach, Wellington, Jupiter…' : 'Boca Raton, Boynton Beach, Wellington, Jupiter…'
-  }].map(county => {
-    const on = workCountyFilter.includes(county.id);
-    return /*#__PURE__*/React.createElement("button", {
-      key: county.id,
-      onClick: () => {
-        setWorkCountyFilter(prev => {
-          if (on && prev.length === 1) return prev;
-          return on ? prev.filter(c => c !== county.id) : [...prev, county.id];
-        });
-      },
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 14,
-        padding: '14px 16px',
-        borderRadius: 14,
-        border: on ? '1.5px solid var(--pg-blue-500)' : '1.5px solid var(--pg-ink-200)',
-        background: on ? 'var(--pg-blue-50)' : 'var(--pg-ink-50)',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        textAlign: 'left',
-        transition: 'all .15s'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 22,
-        height: 22,
-        borderRadius: 7,
-        flexShrink: 0,
-        border: on ? '2px solid var(--pg-blue-500)' : '2px solid var(--pg-ink-300)',
-        background: on ? 'var(--pg-blue-500)' : 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all .12s'
-      }
-    }, on && /*#__PURE__*/React.createElement("svg", {
-      width: "12",
-      height: "12",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "#fff",
-      strokeWidth: "3.5",
-      strokeLinecap: "round"
-    }, /*#__PURE__*/React.createElement("polyline", {
-      points: "20 6 9 17 4 12"
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 14,
-        fontWeight: 700,
-        color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-900)'
-      }
-    }, county.label), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: 'var(--pg-ink-500)',
-        marginTop: 2,
-        lineHeight: 1.3
-      }
-    }, county.sub)));
-  })), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setWorkCountyPickerOpen(false),
-    className: "pg-btn pg-btn-primary",
-    style: {
-      width: '100%',
-      marginTop: 20,
-      height: 48
-    }
-  }, lang === 'pt' ? 'Confirmar' : lang === 'es' ? 'Confirmar' : 'Confirm'))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '10px 18px 0'
     }
@@ -2459,9 +2195,7 @@ function WorkScreen({
     liveJobs: filteredLiveJobs,
     showToast: showToast,
     onDeleteJob: removeJob,
-    liveApplications: liveApplications,
-    countyFilter: workCountyFilter,
-    cityToCounty: workCityToCounty
+    liveApplications: liveApplications
   }), sub === 'techs' && /*#__PURE__*/React.createElement(TechsPanel, {
     t: t,
     lang: lang,
@@ -2471,9 +2205,7 @@ function WorkScreen({
     liveTechs: filteredLiveTechs,
     user: ctx.user,
     showToast: showToast,
-    onDeleteTech: removeTech,
-    countyFilter: workCountyFilter,
-    cityToCounty: workCityToCounty
+    onDeleteTech: removeTech
   }), sub === 'vac' && /*#__PURE__*/React.createElement(VacationPanel, {
     t: t,
     lang: lang,
@@ -2750,9 +2482,7 @@ function HiringPanel({
   liveJobs = [],
   showToast,
   onDeleteJob,
-  liveApplications = [],
-  countyFilter = [],
-  cityToCounty = {}
+  liveApplications = []
 }) {
   const Company = (s = 20, c = 'var(--pg-blue-500)') => /*#__PURE__*/React.createElement("svg", {
     width: s,
@@ -3533,10 +3263,7 @@ function HiringPanel({
     d: "M14 11v6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete'))), HIRING.filter(h => !hiddenStatic.includes(h.id) && (countyFilter.length === 0 || countyFilter.length === 3 || countyFilter.some(c => (h.loc || '').toLowerCase().includes(c.toLowerCase())) || (() => {
-    const county = cityToCounty[(h.loc || '').toLowerCase()];
-    return !county || countyFilter.includes(county);
-  })())).map(h => /*#__PURE__*/React.createElement("article", {
+  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete'))), HIRING.filter(h => !hiddenStatic.includes(h.id)).map(h => /*#__PURE__*/React.createElement("article", {
     key: h.id,
     className: "pg-card",
     style: {
@@ -3963,9 +3690,7 @@ function TechsPanel({
   liveTechs = [],
   user,
   showToast,
-  onDeleteTech,
-  countyFilter = [],
-  cityToCounty = {}
+  onDeleteTech
 }) {
   const [contactOpen, setContactOpen] = React.useState(null);
   const [ratingFor, setRatingFor] = React.useState(null);
@@ -4194,10 +3919,7 @@ function TechsPanel({
     d: "M14 11v6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete'))), TECHS.filter(tech => !hiddenStatic.includes(tech.id) && (countyFilter.length === 0 || countyFilter.length === 3 || countyFilter.some(c => (tech.loc || '').toLowerCase().includes(c.toLowerCase())) || (() => {
-    const county = cityToCounty[(tech.loc || '').toLowerCase()];
-    return !county || countyFilter.includes(county);
-  })())).map(tech => /*#__PURE__*/React.createElement("article", {
+  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete'))), TECHS.filter(tech => !hiddenStatic.includes(tech.id)).map(tech => /*#__PURE__*/React.createElement("article", {
     key: tech.id,
     className: "pg-card",
     style: {

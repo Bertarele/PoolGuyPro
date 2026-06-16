@@ -3231,7 +3231,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
               )}
               <div>
                 {lbl(lang==='pt'?'Localização':'Location')}
-                <input {...inp} value={form.loc} onChange={e=>set('loc',e.target.value)}/>
+                <CityAutocomplete value={form.loc} onChange={v=>set('loc',v)} lang={lang}/>
               </div>
               {/* For equipment: show Category + Condition */}
               {item.type !== 'pool' && item.type !== 'route' && (
@@ -3347,8 +3347,9 @@ function MarketplaceScreen({ ctx }) {
   const [regionOpen, setRegionOpen] = React.useState(false);  // region dropdown open
   const [regionSearch, setRegionSearch] = React.useState('');  // region search query
   const [routeRegion,setRouteRegion]= React.useState('all');  // routes region filter
-  const [countyFilter,     setCountyFilter]     = React.useState(['Broward','Miami-Dade','Palm Beach']);
-  const [countyPickerOpen, setCountyPickerOpen] = React.useState(false);
+  const [userLocation,     setUserLocation]     = React.useState(null); // {lat, lng} or null
+  const [radiusMiles,      setRadiusMiles]      = React.useState(25);
+  const [locationFilterOpen, setLocationFilterOpen] = React.useState(false);
   const [routePrice, setRoutePrice] = React.useState('all');  // routes price filter
   const [routeSub,   setRouteSub]   = React.useState('routes'); // 'routes' | 'pools'
   const [poolPrice,  setPoolPrice]  = React.useState('all');  // individual pools price filter
@@ -3478,25 +3479,18 @@ function MarketplaceScreen({ ctx }) {
   const isEquipment = view === 'buy' || view === 'rent';
   const mode = view === 'rent' ? 'rent' : 'sell';
 
-  // County filter — city → county lookup from FL_COUNTIES
-  const cityToCounty = React.useMemo(() => {
-    const map = {};
-    Object.entries(window.FL_COUNTIES || {}).forEach(([county, cities]) => {
-      cities.forEach(city => { map[city.toLowerCase()] = county; });
-    });
-    return map;
-  }, []);
-
+  // Radius filter — haversine distance from user location
   const marketByCounty = React.useMemo(() => {
-    if (countyFilter.length === 0 || countyFilter.length === 3) return liveMarket;
+    if (!userLocation) return liveMarket;
+    const coords = window.FL_CITY_COORDS || {};
     return liveMarket.filter(m => {
-      const loc = (m.loc || m.area || '').trim().toLowerCase();
-      if (!loc) return true;
-      const county = cityToCounty[loc];
-      if (!county) return true; // unknown city → show
-      return countyFilter.includes(county);
+      const city = (m.loc || m.area || '').trim();
+      if (!city) return true;
+      const c = coords[city];
+      if (!c) return true; // city not in dict → show
+      return window.haversine(userLocation.lat, userLocation.lng, c[0], c[1]) <= radiusMiles;
     });
-  }, [liveMarket, countyFilter, cityToCounty]);
+  }, [liveMarket, userLocation, radiusMiles]);
 
   // Rotas reais do banco (type='route', aprovadas ou próprias pendentes)
   const liveRoutes = marketByCounty
@@ -3828,13 +3822,13 @@ function MarketplaceScreen({ ctx }) {
 
                 {/* County + actions */}
                 <div style={{display:'flex', alignItems:'center', gap:8, flexShrink:0}}>
-                  <button onClick={()=>setCountyPickerOpen(true)} style={{display:'flex', alignItems:'center', gap:6,
+                  <button onClick={()=>setLocationFilterOpen(true)} style={{display:'flex', alignItems:'center', gap:6,
                     background:_locBg, border:_locBr,
                     borderRadius:999, padding:'6px 12px',
                     cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                    {Icon.pin(12,_sub)}
-                    <span style={{fontSize:12, fontWeight:600, color:_locTx, whiteSpace:'nowrap'}}>
-                      {countyFilter.length===3?(lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL'):countyFilter.map(c=>c==='Miami-Dade'?'Dade':c).join(' · ')}
+                    {Icon.pin(12, userLocation ? 'var(--pg-aqua-600)' : _sub)}
+                    <span style={{fontSize:12, fontWeight:600, color: userLocation ? 'var(--pg-aqua-700)' : _locTx, whiteSpace:'nowrap'}}>
+                      {userLocation ? `${radiusMiles} mi` : (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL')}
                     </span>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
@@ -4274,59 +4268,9 @@ function MarketplaceScreen({ ctx }) {
           onSubmit={async(data)=>{ setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false&&showToast)showToast(lang==='pt'?'✓ Piscina enviada para revisão':'✓ Pool sent for review');}}}/>
       </Sheet>
 
-      {/* ── County picker sheet (desktop) ── */}
-      {countyPickerOpen && (
-        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.50)', zIndex:6000, display:'flex', alignItems:'flex-end'}} onClick={()=>setCountyPickerOpen(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{width:'100%', maxWidth:480, margin:'0 auto', background:'var(--pg-white)', borderRadius:'22px 22px 0 0', padding:'10px 18px 36px', boxShadow:'0 -4px 32px rgba(0,0,0,0.18)'}}>
-            <div style={{width:36, height:4, borderRadius:999, background:'var(--pg-ink-200)', margin:'0 auto 18px'}}/>
-            <div style={{fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:4}}>
-              {lang==='pt'?'Região de busca':lang==='es'?'Región de búsqueda':'Search region'}
-            </div>
-            <div style={{fontSize:13, color:'var(--pg-ink-500)', marginBottom:18, lineHeight:1.4}}>
-              {lang==='pt'?'Selecione os condados para filtrar os anúncios':lang==='es'?'Seleccione los condados para filtrar':'Select counties to filter listings'}
-            </div>
-            <div style={{display:'flex', flexDirection:'column', gap:10}}>
-              {[
-                {id:'Broward',    label:'Broward County',    sub: lang==='pt'?'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…':'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…'},
-                {id:'Miami-Dade', label:'Miami-Dade County', sub: lang==='pt'?'Miami, Coral Gables, Doral, Hialeah…':'Miami, Coral Gables, Doral, Hialeah…'},
-                {id:'Palm Beach', label:'Palm Beach County', sub: lang==='pt'?'Boca Raton, Boynton Beach, Wellington, Jupiter…':'Boca Raton, Boynton Beach, Wellington, Jupiter…'},
-              ].map(county => {
-                const on = countyFilter.includes(county.id);
-                return (
-                  <button key={county.id} onClick={()=>{
-                    setCountyFilter(prev => {
-                      if (on && prev.length === 1) return prev;
-                      return on ? prev.filter(c=>c!==county.id) : [...prev, county.id];
-                    });
-                  }} style={{
-                    display:'flex', alignItems:'center', gap:14,
-                    padding:'14px 16px', borderRadius:14,
-                    border: on ? '1.5px solid var(--pg-blue-500)' : '1.5px solid var(--pg-ink-200)',
-                    background: on ? 'var(--pg-blue-50)' : 'var(--pg-ink-50)',
-                    cursor:'pointer', fontFamily:'inherit', textAlign:'left', transition:'all .15s',
-                  }}>
-                    <div style={{
-                      width:22, height:22, borderRadius:7, flexShrink:0,
-                      border: on ? '2px solid var(--pg-blue-500)' : '2px solid var(--pg-ink-300)',
-                      background: on ? 'var(--pg-blue-500)' : 'transparent',
-                      display:'flex', alignItems:'center', justifyContent:'center', transition:'all .12s',
-                    }}>
-                      {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                    </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:14, fontWeight:700, color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-900)'}}>{county.label}</div>
-                      <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:2, lineHeight:1.3}}>{county.sub}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <button onClick={()=>setCountyPickerOpen(false)} className="pg-btn pg-btn-primary" style={{width:'100%', marginTop:20, height:48}}>
-              {lang==='pt'?'Confirmar':lang==='es'?'Confirmar':'Confirm'}
-            </button>
-          </div>
-        </div>
-      )}
+      <LocationFilterSheet open={locationFilterOpen} onClose={()=>setLocationFilterOpen(false)}
+        userLocation={userLocation} setUserLocation={setUserLocation}
+        radiusMiles={radiusMiles} setRadiusMiles={setRadiusMiles} lang={lang}/>
       </div>
     );
   }
@@ -4408,18 +4352,15 @@ function MarketplaceScreen({ ctx }) {
               </div>
               <div style={{width:1, height:30, background:H.divider}}/>
               {/* County selector */}
-              <button onClick={()=>setCountyPickerOpen(true)}
+              <button onClick={()=>setLocationFilterOpen(true)}
                 style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
-                  background:H.cntyBg, border:H.cntyBdr,
+                  background: userLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
+                  border: userLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
                   borderRadius:999, padding:'6px 12px',
                   cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                {Icon.pin(12,H.cntyIc)}
-                <span style={{fontSize:12, fontWeight:600, color:H.cntyTxt, whiteSpace:'nowrap'}}>
-                  {countyFilter.length === 0
-                    ? (lang==='pt'?'Nenhuma região':'No region')
-                    : countyFilter.length === 3
-                      ? (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL')
-                      : countyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
+                {Icon.pin(12, userLocation ? 'var(--pg-aqua-600)' : H.cntyIc)}
+                <span style={{fontSize:12, fontWeight:600, color: userLocation ? 'var(--pg-aqua-700)' : H.cntyTxt, whiteSpace:'nowrap'}}>
+                  {userLocation ? `${radiusMiles} mi` : (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL')}
                 </span>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={H.editIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -4431,59 +4372,10 @@ function MarketplaceScreen({ ctx }) {
         );
       })()}
 
-      {/* ── County picker sheet ── */}
-      {countyPickerOpen && (
-        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.50)', zIndex:6000, display:'flex', alignItems:'flex-end'}} onClick={()=>setCountyPickerOpen(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{width:'100%', background:'var(--pg-white)', borderRadius:'22px 22px 0 0', padding:'10px 18px 36px', boxShadow:'0 -4px 32px rgba(0,0,0,0.18)'}}>
-            <div style={{width:36, height:4, borderRadius:999, background:'var(--pg-ink-200)', margin:'0 auto 18px'}}/>
-            <div style={{fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:4}}>
-              {lang==='pt'?'Região de busca':lang==='es'?'Región de búsqueda':'Search region'}
-            </div>
-            <div style={{fontSize:13, color:'var(--pg-ink-500)', marginBottom:18, lineHeight:1.4}}>
-              {lang==='pt'?'Selecione os condados para filtrar os anúncios':lang==='es'?'Seleccione los condados para filtrar':'Select counties to filter listings'}
-            </div>
-            <div style={{display:'flex', flexDirection:'column', gap:10}}>
-              {[
-                {id:'Broward',    label:'Broward County',      sub: lang==='pt'?'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…':'Fort Lauderdale, Weston, Hollywood, Pembroke Pines…'},
-                {id:'Miami-Dade', label:'Miami-Dade County',   sub: lang==='pt'?'Miami, Coral Gables, Doral, Hialeah…':'Miami, Coral Gables, Doral, Hialeah…'},
-                {id:'Palm Beach', label:'Palm Beach County',   sub: lang==='pt'?'Boca Raton, Boynton Beach, Wellington, Jupiter…':'Boca Raton, Boynton Beach, Wellington, Jupiter…'},
-              ].map(county => {
-                const on = countyFilter.includes(county.id);
-                return (
-                  <button key={county.id} onClick={()=>{
-                    setCountyFilter(prev => {
-                      if (on && prev.length === 1) return prev; // mínimo 1 condado
-                      return on ? prev.filter(c=>c!==county.id) : [...prev, county.id];
-                    });
-                  }} style={{
-                    display:'flex', alignItems:'center', gap:14,
-                    padding:'14px 16px', borderRadius:14,
-                    border: on ? '1.5px solid var(--pg-blue-500)' : '1.5px solid var(--pg-ink-200)',
-                    background: on ? 'var(--pg-blue-50)' : 'var(--pg-ink-50)',
-                    cursor:'pointer', fontFamily:'inherit', textAlign:'left', transition:'all .15s',
-                  }}>
-                    <div style={{
-                      width:22, height:22, borderRadius:7, flexShrink:0,
-                      border: on ? '2px solid var(--pg-blue-500)' : '2px solid var(--pg-ink-300)',
-                      background: on ? 'var(--pg-blue-500)' : 'transparent',
-                      display:'flex', alignItems:'center', justifyContent:'center', transition:'all .12s',
-                    }}>
-                      {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                    </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:14, fontWeight:700, color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-900)'}}>{county.label}</div>
-                      <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:2, lineHeight:1.3}}>{county.sub}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <button onClick={()=>setCountyPickerOpen(false)} className="pg-btn pg-btn-primary" style={{width:'100%', marginTop:20, height:48}}>
-              {lang==='pt'?'Confirmar':lang==='es'?'Confirmar':'Confirm'}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ── Location filter sheet ── */}
+      <LocationFilterSheet open={locationFilterOpen} onClose={()=>setLocationFilterOpen(false)}
+        userLocation={userLocation} setUserLocation={setUserLocation}
+        radiusMiles={radiusMiles} setRadiusMiles={setRadiusMiles} lang={lang}/>
 
       {/* ── Pending ratings banner ── */}
       {pendingRatings.length > 0 && (

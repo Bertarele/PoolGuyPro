@@ -326,6 +326,169 @@ const FL_COUNTIES = {
   'Hamilton':     ['Jasper','White Springs'],
 };
 
+// City → [lat, lng] for South Florida (used by radius filter)
+const FL_CITY_COORDS = {
+  // Broward
+  'Coconut Creek':[26.2656,-80.1786],'Cooper City':[26.0551,-80.2717],'Coral Springs':[26.2709,-80.2706],
+  'Dania Beach':[26.0523,-80.1439],'Davie':[26.0765,-80.2521],'Deerfield Beach':[26.3182,-80.0998],
+  'Fort Lauderdale':[26.1224,-80.1373],'Hallandale Beach':[25.9812,-80.1481],'Hillsboro Beach':[26.3148,-80.0775],
+  'Hollywood':[26.0112,-80.1495],'Lauderdale Lakes':[26.1671,-80.2095],'Lauderdale-by-the-Sea':[26.1940,-80.0956],
+  'Lauderhill':[26.1681,-80.2131],'Lighthouse Point':[26.2765,-80.0898],'Margate':[26.2448,-80.2065],
+  'Miramar':[25.9874,-80.2323],'North Lauderdale':[26.2198,-80.2220],'Oakland Park':[26.1723,-80.1320],
+  'Parkland':[26.3173,-80.2323],'Pembroke Park':[25.9935,-80.1737],'Pembroke Pines':[26.0073,-80.2962],
+  'Plantation':[26.1256,-80.2331],'Pompano Beach':[26.2379,-80.1248],'Sea Ranch Lakes':[26.1779,-80.0902],
+  'Southwest Ranches':[26.0404,-80.2967],'Sunrise':[26.1667,-80.2561],'Tamarac':[26.2130,-80.2499],
+  'Weston':[26.1003,-80.3998],'Wilton Manors':[26.1612,-80.1331],
+  // Miami-Dade
+  'Aventura':[25.9565,-80.1393],'Bal Harbour':[25.9017,-80.1223],'Bay Harbor Islands':[25.8880,-80.1297],
+  'Biscayne Park':[25.8959,-80.1754],'Coral Gables':[25.7215,-80.2684],'Cutler Bay':[25.5772,-80.3459],
+  'Doral':[25.8195,-80.3536],'El Portal':[25.8654,-80.1846],'Florida City':[25.4478,-80.4790],
+  'Golden Beach':[25.9737,-80.1276],'Hialeah':[25.8576,-80.2781],'Hialeah Gardens':[25.8776,-80.3376],
+  'Homestead':[25.4687,-80.4776],'Indian Creek':[25.8869,-80.1249],'Key Biscayne':[25.6911,-80.1626],
+  'Medley':[25.8213,-80.3460],'Miami':[25.7617,-80.1918],'Miami Beach':[25.7907,-80.1300],
+  'Miami Gardens':[25.9420,-80.2456],'Miami Lakes':[25.9099,-80.3115],'Miami Shores':[25.8654,-80.1820],
+  'Miami Springs':[25.8232,-80.2926],'North Bay Village':[25.8489,-80.1514],'North Miami':[25.8899,-80.1864],
+  'North Miami Beach':[25.9326,-80.1626],'Opa-locka':[25.8993,-80.2498],'Palmetto Bay':[25.6268,-80.3320],
+  'Pinecrest':[25.6651,-80.3051],'South Miami':[25.7083,-80.2924],'Sunny Isles Beach':[25.9376,-80.1224],
+  'Surfside':[25.8759,-80.1229],'Sweetwater':[25.7742,-80.3722],'Virginia Gardens':[25.8087,-80.3135],
+  'West Miami':[25.7623,-80.3117],'Kendall':[25.6751,-80.3568],'Westchester':[25.7503,-80.3476],
+  'Islandia':[25.7617,-80.1918],
+  // Palm Beach
+  'Atlantis':[26.5840,-80.0959],'Belle Glade':[26.6893,-80.6693],'Boca Raton':[26.3683,-80.1289],
+  'Boynton Beach':[26.5317,-80.0905],'Briny Breezes':[26.5357,-80.0595],'Cloud Lake':[26.6801,-80.1140],
+  'Delray Beach':[26.4615,-80.0728],'Glen Ridge':[26.6801,-80.1104],'Golf':[26.6802,-80.1140],
+  'Greenacres':[26.6251,-80.1334],'Gulf Stream':[26.4926,-80.0676],'Haverhill':[26.6890,-80.1428],
+  'Highland Beach':[26.4084,-80.0704],'Hypoluxo':[26.5584,-80.0540],'Juno Beach':[26.8784,-80.0553],
+  'Jupiter':[26.9342,-80.0942],'Jupiter Inlet Colony':[26.9523,-80.0748],'Lake Clarke Shores':[26.6429,-80.0914],
+  'Lake Park':[26.8012,-80.0637],'Lake Worth Beach':[26.6151,-80.0598],'Lantana':[26.5859,-80.0529],
+  'Manalapan':[26.5515,-80.0487],'Mangonia Park':[26.7473,-80.0900],'North Palm Beach':[26.8198,-80.0681],
+  'Ocean Ridge':[26.5218,-80.0537],'Pahokee':[26.8201,-80.6657],'Palm Beach':[26.7046,-80.0366],
+  'Palm Beach Gardens':[26.8234,-80.1384],'Palm Beach Shores':[26.7782,-80.0378],'Palm Springs':[26.6397,-80.1003],
+  'Riviera Beach':[26.7754,-80.0586],'Royal Palm Beach':[26.7109,-80.2265],'South Bay':[26.6678,-80.7165],
+  'South Palm Beach':[26.5776,-80.0489],'Tequesta':[26.9690,-80.1036],'Wellington':[26.6590,-80.2673],
+  'West Palm Beach':[26.7153,-80.0534],
+};
+window.FL_CITY_COORDS = FL_CITY_COORDS;
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 3958.8; // miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+window.haversine = haversine;
+
+// Shared location/radius filter sheet (used in marketplace + work)
+function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, radiusMiles, setRadiusMiles, lang }) {
+  const [locError, setLocError] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  if (!open) return null;
+
+  const radii = [10, 25, 50, 100];
+  const t = {
+    title:    lang==='pt'?'Filtro por localização':lang==='es'?'Filtro por ubicación':'Location filter',
+    useBtn:   lang==='pt'?'Usar minha localização':lang==='es'?'Usar mi ubicación':'Use my location',
+    disable:  lang==='pt'?'Desativar filtro de distância':lang==='es'?'Desactivar filtro de distancia':'Disable distance filter',
+    radius:   lang==='pt'?'Raio de busca':lang==='es'?'Radio de búsqueda':'Search radius',
+    active:   lang==='pt'?'Localização ativa — mostrando anúncios dentro de':lang==='es'?'Ubicación activa — mostrando en':
+              'Location active — showing listings within',
+    miles:    lang==='pt'?'milhas':lang==='es'?'millas':'miles',
+    noLoc:    lang==='pt'?'Ativar localização para ver anúncios perto de você.':lang==='es'?'Activa la ubicación para ver anuncios cerca de ti.':'Enable location to see listings near you.',
+    errDenied:lang==='pt'?'Permissão de localização negada. Verifique as configurações do navegador.':lang==='es'?'Permiso de ubicación denegado.':'Location permission denied. Check browser settings.',
+    errFail:  lang==='pt'?'Não foi possível obter a localização. Tente novamente.':lang==='es'?'No se pudo obtener la ubicación.':'Could not get location. Try again.',
+    done:     lang==='pt'?'Pronto':lang==='es'?'Listo':'Done',
+  };
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) { setLocError(t.errFail); return; }
+    setLoading(true); setLocError('');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLoading(false); },
+      () => { setLocError(t.errDenied); setLoading(false); },
+      { timeout: 8000 }
+    );
+  };
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.50)',zIndex:6000,display:'flex',alignItems:'flex-end'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        width:'100%',maxWidth:520,margin:'0 auto',
+        background:'var(--pg-white)',borderRadius:'20px 20px 0 0',
+        padding:'20px 20px 36px',boxSizing:'border-box',
+      }}>
+        <div style={{width:40,height:4,borderRadius:2,background:'var(--pg-ink-200)',margin:'-6px auto 20px'}}/>
+        <div style={{fontSize:17,fontWeight:800,color:'var(--pg-ink-900)',fontFamily:'var(--pg-font-display)',marginBottom:18}}>
+          📍 {t.title}
+        </div>
+
+        {/* Location status */}
+        {userLocation ? (
+          <div style={{background:'var(--pg-aqua-100)',border:'1px solid var(--pg-aqua-400)',borderRadius:14,padding:'12px 14px',marginBottom:16}}>
+            <div style={{fontSize:13,fontWeight:600,color:'var(--pg-aqua-700)',marginBottom:4}}>
+              ✓ {t.active} <strong>{radiusMiles} {t.miles}</strong>
+            </div>
+            <button onClick={()=>{setUserLocation(null);}} style={{
+              border:'none',background:'none',cursor:'pointer',padding:0,
+              fontSize:12,color:'var(--pg-ink-400)',fontFamily:'inherit',textDecoration:'underline',
+            }}>{t.disable}</button>
+          </div>
+        ) : (
+          <div style={{background:'var(--pg-ink-50)',borderRadius:14,padding:'12px 14px',marginBottom:16,fontSize:13,color:'var(--pg-ink-500)'}}>
+            {t.noLoc}
+          </div>
+        )}
+
+        {locError && (
+          <div style={{fontSize:12,color:'#DC2626',marginBottom:12,padding:'8px 12px',background:'#FEF2F2',borderRadius:10}}>{locError}</div>
+        )}
+
+        {!userLocation && (
+          <button onClick={requestLocation} disabled={loading} style={{
+            width:'100%',padding:'13px',borderRadius:14,border:'none',cursor:loading?'default':'pointer',
+            background:'var(--pg-blue-500)',color:'#fff',fontSize:14,fontWeight:700,
+            fontFamily:'inherit',marginBottom:16,opacity:loading?0.7:1,
+            display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+          }}>
+            {loading ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:'spin 1s linear infinite'}}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+            )}
+            {t.useBtn}
+          </button>
+        )}
+
+        {/* Radius selector */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-500)',letterSpacing:'0.06em',marginBottom:10,textTransform:'uppercase'}}>{t.radius}</div>
+          <div style={{display:'flex',gap:8}}>
+            {radii.map(r => {
+              const on = r === radiusMiles;
+              return (
+                <button key={r} onClick={()=>setRadiusMiles(r)} style={{
+                  flex:1,padding:'10px 4px',borderRadius:11,border:'none',cursor:'pointer',fontFamily:'inherit',
+                  fontSize:13,fontWeight:700,transition:'all .12s',
+                  background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+                  color: on ? '#fff' : 'var(--pg-ink-600)',
+                  boxShadow: on ? '0 4px 10px oklch(0.58 0.16 235 / 0.25)' : 'none',
+                }}>{r} {lang==='pt'?'mi':lang==='es'?'mi':'mi'}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        <button onClick={onClose} className="pg-btn pg-btn-primary" style={{width:'100%',height:48}}>{t.done}</button>
+      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+window.LocationFilterSheet = LocationFilterSheet;
+
 function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsByDay, county }) {
   const t = STRINGS[lang];
   const [openDay, setOpenDay] = React.useState('mon');
