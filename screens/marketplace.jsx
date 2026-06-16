@@ -3843,11 +3843,11 @@ function MarketplaceScreen({ ctx }) {
                 {/* County + actions */}
                 <div style={{display:'flex', alignItems:'center', gap:8, flexShrink:0}}>
                   <button onClick={()=>setLocationFilterOpen(true)} style={{display:'flex', alignItems:'center', gap:6,
-                    background: userLocation ? 'var(--pg-aqua-100)' : _locBg,
-                    border: userLocation ? '1px solid var(--pg-aqua-400)' : _locBr,
-                    borderRadius:999, padding: userLocation ? '6px 12px' : '7px 10px',
+                    background: userLocation ? 'var(--pg-aqua-100)' : (darkMode?'rgba(0,119,182,0.32)':'rgba(0,119,182,0.15)'),
+                    border: userLocation ? '1.5px solid var(--pg-aqua-400)' : (darkMode?'1.5px solid rgba(0,119,182,0.60)':'1.5px solid rgba(0,119,182,0.45)'),
+                    borderRadius:999, padding: userLocation ? '7px 14px' : '7px 12px',
                     cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={userLocation?'var(--pg-aqua-600)':_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={userLocation?'var(--pg-aqua-600)':(darkMode?'rgba(255,255,255,0.92)':'#0077B6')} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={userLocation?'var(--pg-aqua-400)':'none'}/>
                       <circle cx="12" cy="9" r="2.5" fill={userLocation?'white':'none'}/>
                     </svg>

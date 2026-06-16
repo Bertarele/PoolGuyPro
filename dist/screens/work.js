@@ -693,21 +693,21 @@ function WorkScreen({
           display: 'flex',
           alignItems: 'center',
           gap: 6,
-          background: workUserLocation ? 'var(--pg-aqua-100)' : _locBg,
-          border: workUserLocation ? '1px solid var(--pg-aqua-400)' : _locBr,
+          background: workUserLocation ? 'var(--pg-aqua-100)' : darkMode ? 'rgba(0,119,182,0.32)' : 'rgba(0,119,182,0.15)',
+          border: workUserLocation ? '1.5px solid var(--pg-aqua-400)' : darkMode ? '1.5px solid rgba(0,119,182,0.60)' : '1.5px solid rgba(0,119,182,0.45)',
           borderRadius: 999,
-          padding: workUserLocation ? '6px 12px' : '7px 10px',
+          padding: workUserLocation ? '7px 14px' : '7px 12px',
           cursor: 'pointer',
           fontFamily: 'inherit',
           color: 'inherit',
           touchAction: 'manipulation'
         }
       }, /*#__PURE__*/React.createElement("svg", {
-        width: "17",
-        height: "17",
+        width: "19",
+        height: "19",
         viewBox: "0 0 24 24",
         fill: "none",
-        stroke: workUserLocation ? 'var(--pg-aqua-600)' : _sub,
+        stroke: workUserLocation ? 'var(--pg-aqua-600)' : darkMode ? 'rgba(255,255,255,0.92)' : '#0077B6',
         strokeWidth: "2.2",
         strokeLinecap: "round",
         strokeLinejoin: "round"
