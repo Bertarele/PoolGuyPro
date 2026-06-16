@@ -1215,7 +1215,7 @@ function MyApplicationsSection({ apps, lang, onChat, type='hiring' }) {
 
                 {/* Actions */}
                 <div style={{display:'flex', gap:8, paddingTop:10, borderTop:'0.5px solid var(--pg-ink-100)'}}>
-                  <button onClick={()=>onChat(app.author_id ? { id: app.author_id, name: app.company } : app.company)} className="pg-btn pg-btn-ghost"
+                  <button onClick={()=>onChat(app.author_id ? { id: app.author_id, name: app.company, listingId: app.job_id || null, listingContext: { name: tr(app.title, lang) || app.company, type: 'hiring' } } : app.company)} className="pg-btn pg-btn-ghost"
                     style={{height:34, padding:'0 14px', fontSize:12.5, borderRadius:999}}>
                     {Icon.msg(13, 'var(--pg-blue-700)')}
                   </button>
@@ -2143,7 +2143,7 @@ function AcceptedVacCard({ v, lang, onChat, onSchedule, openPublicProfile }) {
 
         {/* Action row */}
         <div style={{display:'flex', gap:8, marginTop:12, paddingTop:10, borderTop:'0.5px solid var(--pg-ink-100)'}}>
-          <button onClick={()=>onChat(v.author_id ? { id: v.author_id, name: v.owner || v.author || '?' } : (v.owner || v.author || '?'))} className="pg-btn pg-btn-ghost"
+          <button onClick={()=>onChat(v.author_id ? { id: v.author_id, name: v.owner || v.author || '?', listingId: v._id || null, listingContext: { name: v.name || v.title || (lang==='pt'?'Cobertura':'Coverage'), type: 'vac' } } : (v.owner || v.author || '?'))} className="pg-btn pg-btn-ghost"
             style={{height:34, padding:'0 14px', fontSize:12.5, borderRadius:999}}>
             {Icon.msg(13, 'var(--pg-blue-700)')}
           </button>

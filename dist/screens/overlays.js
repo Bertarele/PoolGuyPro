@@ -1998,7 +1998,12 @@ function ApplicantsSheet({
       onClick: () => {
         onChat(a.applicant_id ? {
           id: a.applicant_id,
-          name: a.name
+          name: a.name,
+          listingId: post?._id || null,
+          listingContext: {
+            name: post?.name || (lang === 'pt' ? 'Vaga' : 'Job'),
+            type: post?.type || 'hiring'
+          }
         } : a.name);
         onClose();
       },
@@ -6562,7 +6567,12 @@ function HiringAppDetailSheet({
       setTimeout(() => {
         onChat(authorId ? {
           id: authorId,
-          name: authorName
+          name: authorName,
+          listingId: display.job_id || null,
+          listingContext: {
+            name: tr(display.title, lang) || display.company || (lang === 'pt' ? 'Vaga' : 'Job'),
+            type: 'hiring'
+          }
         } : null);
       }, 300);
     },

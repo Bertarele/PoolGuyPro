@@ -2691,7 +2691,12 @@ function MyApplicationsSection({
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => onChat(app.author_id ? {
         id: app.author_id,
-        name: app.company
+        name: app.company,
+        listingId: app.job_id || null,
+        listingContext: {
+          name: tr(app.title, lang) || app.company,
+          type: 'hiring'
+        }
       } : app.company),
       className: "pg-btn pg-btn-ghost",
       style: {
@@ -4817,7 +4822,12 @@ function AcceptedVacCard({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => onChat(v.author_id ? {
       id: v.author_id,
-      name: v.owner || v.author || '?'
+      name: v.owner || v.author || '?',
+      listingId: v._id || null,
+      listingContext: {
+        name: v.name || v.title || (lang === 'pt' ? 'Cobertura' : 'Coverage'),
+        type: 'vac'
+      }
     } : v.owner || v.author || '?'),
     className: "pg-btn pg-btn-ghost",
     style: {
