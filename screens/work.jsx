@@ -15,9 +15,11 @@ function WorkScreen({ ctx }) {
   const [myActivityTab, setMyActivityTab] = React.useState('applications'); // 'applications' | 'myposts'
   const [activityLimit, setActivityLimit] = React.useState(4);
   const [deletedAppIds, setDeletedAppIds] = React.useState(new Set());
-  const [workUserLocation,     setWorkUserLocation]     = React.useState(null); // {lat, lng} or null
-  const [workRadiusMiles,      setWorkRadiusMiles]      = React.useState(25);
+  const [workUserLocation,     setWorkUserLocation]     = React.useState(() => { try { const s=localStorage.getItem('pg_loc'); return s?JSON.parse(s):null; } catch(e){return null;} });
+  const [workRadiusMiles,      setWorkRadiusMiles]      = React.useState(() => { try { const s=localStorage.getItem('pg_loc_r'); return s?Number(s):25; } catch(e){return 25;} });
   const [workLocationFilterOpen, setWorkLocationFilterOpen] = React.useState(false);
+  React.useEffect(()=>{ try{ if(workUserLocation) localStorage.setItem('pg_loc',JSON.stringify(workUserLocation)); else localStorage.removeItem('pg_loc'); }catch(e){} },[workUserLocation]);
+  React.useEffect(()=>{ try{ localStorage.setItem('pg_loc_r',String(workRadiusMiles)); }catch(e){} },[workRadiusMiles]);
 
   const subIcons = {
     hiring: (s, c) => Icon.briefcase(s, c),
