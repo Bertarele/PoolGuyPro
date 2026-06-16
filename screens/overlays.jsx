@@ -308,7 +308,7 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
 
       {/* Listing context card */}
       {convo.listingContext && (
-        <div onClick={()=>{ if(onOpenListing && convo.listingId) onOpenListing(convo.listingId); }}
+        <div onClick={()=>{ if(onOpenListing && convo.listingId) { onClose(); onOpenListing(convo.listingId); } }}
           style={{
             margin:'0 12px', padding:'10px 12px',
             borderRadius:12, border:'1px solid var(--pg-ink-200)',

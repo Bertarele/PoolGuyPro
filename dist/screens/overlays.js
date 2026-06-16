@@ -554,7 +554,10 @@ function ChatConversation({
     }
   }, Icon.x(14, 'var(--pg-ink-700)'))), convo.listingContext && /*#__PURE__*/React.createElement("div", {
     onClick: () => {
-      if (onOpenListing && convo.listingId) onOpenListing(convo.listingId);
+      if (onOpenListing && convo.listingId) {
+        onClose();
+        onOpenListing(convo.listingId);
+      }
     },
     style: {
       margin: '0 12px',
