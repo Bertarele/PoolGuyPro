@@ -750,6 +750,20 @@ function haversine(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 window.haversine = haversine;
+function nearestCity(lat, lng) {
+  const coords = FL_CITY_COORDS;
+  let best = null,
+    bestDist = Infinity;
+  for (const [city, [clat, clng]] of Object.entries(coords)) {
+    const d = haversine(lat, lng, clat, clng);
+    if (d < bestDist) {
+      bestDist = d;
+      best = city;
+    }
+  }
+  return best;
+}
+window.nearestCity = nearestCity;
 
 // Shared location/radius filter sheet (used in marketplace + work)
 function LocationFilterSheet({
@@ -785,9 +799,13 @@ function LocationFilterSheet({
     setLoading(true);
     setLocError('');
     navigator.geolocation.getCurrentPosition(pos => {
+      const lat = pos.coords.latitude,
+        lng = pos.coords.longitude;
+      const city = nearestCity(lat, lng) || '';
       setUserLocation({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
+        lat,
+        lng,
+        city
       });
       setLoading(false);
     }, () => {
@@ -849,7 +867,7 @@ function LocationFilterSheet({
       color: 'var(--pg-aqua-700)',
       marginBottom: 4
     }
-  }, "\u2713 ", t.active, " ", /*#__PURE__*/React.createElement("strong", null, radiusMiles, " ", t.miles)), /*#__PURE__*/React.createElement("button", {
+  }, "\u2713 ", userLocation.city && /*#__PURE__*/React.createElement("span", null, userLocation.city, " \xB7 "), t.active, " ", /*#__PURE__*/React.createElement("strong", null, radiusMiles, " ", t.miles)), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setUserLocation(null);
     },

@@ -3479,6 +3479,14 @@ function MarketplaceScreen({ ctx }) {
   const isEquipment = view === 'buy' || view === 'rent';
   const mode = view === 'rent' ? 'rent' : 'sell';
 
+  // City label for location button (fallback: compute from lat/lng if city not stored)
+  const locCity = React.useMemo(() => {
+    if (!userLocation) return '';
+    if (userLocation.city) return userLocation.city;
+    const fn = window.nearestCity;
+    return fn ? (fn(userLocation.lat, userLocation.lng) || '') : '';
+  }, [userLocation]);
+
   // Radius filter — haversine distance from user location
   const marketByCounty = React.useMemo(() => {
     if (!userLocation) return liveMarket;
@@ -3833,7 +3841,7 @@ function MarketplaceScreen({ ctx }) {
                     </svg>
                     {userLocation && (
                       <span style={{fontSize:12, fontWeight:600, color:'var(--pg-aqua-700)', whiteSpace:'nowrap'}}>
-                        {userLocation.city || ''}{userLocation.city ? ' · ' : ''}{radiusMiles} mi
+                        {locCity ? `${locCity} · ` : ''}{radiusMiles} mi
                       </span>
                     )}
                   </button>

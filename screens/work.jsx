@@ -135,6 +135,14 @@ function WorkScreen({ ctx }) {
   const staticPostsHiring = MY_POSTS.filter(p => p.type === 'hiring');
   const myPostsVac        = MY_POSTS.filter(p => p.type === 'vacation');
 
+  // City label for location button (fallback: compute from lat/lng if city not stored)
+  const workLocCity = React.useMemo(() => {
+    if (!workUserLocation) return '';
+    if (workUserLocation.city) return workUserLocation.city;
+    const fn = window.nearestCity;
+    return fn ? (fn(workUserLocation.lat, workUserLocation.lng) || '') : '';
+  }, [workUserLocation]);
+
   // Radius filter — haversine distance from user location
   const radiusMatch = React.useCallback((loc) => {
     if (!workUserLocation || !loc) return true;
@@ -330,7 +338,7 @@ function WorkScreen({ ctx }) {
                   <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
                     <button onClick={()=>setWorkLocationFilterOpen(true)} style={{display:'flex',alignItems:'center',gap:6,background:workUserLocation?'var(--pg-aqua-100)':_locBg,border:workUserLocation?'1px solid var(--pg-aqua-400)':_locBr,borderRadius:999,padding:workUserLocation?'6px 12px':'7px 10px',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
                       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
-                      {workUserLocation && <span style={{fontSize:12,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workUserLocation.city||''}{workUserLocation.city?' · ':''}{workRadiusMiles} mi</span>}
+                      {workUserLocation && <span style={{fontSize:12,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workLocCity ? `${workLocCity} · ` : ''}{workRadiusMiles} mi</span>}
                     </button>
                     <button onClick={()=>openChat&&openChat()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative'}}>
                       {Icon.msg(18,_tx)}
@@ -702,7 +710,7 @@ function WorkScreen({ ctx }) {
                   style={{display:'flex', alignItems:'center', gap:5, background:workUserLocation?'var(--pg-aqua-100)':H.cntyBg, border:workUserLocation?'1px solid var(--pg-aqua-400)':H.cntyBdr,
                     borderRadius:999, padding:workUserLocation?'5px 11px':'5px 9px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':H.cntyIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
-                  {workUserLocation && <span style={{fontSize:11,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workUserLocation.city||''}{workUserLocation.city?' · ':''}{workRadiusMiles} mi</span>}
+                  {workUserLocation && <span style={{fontSize:11,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workLocCity ? `${workLocCity} · ` : ''}{workRadiusMiles} mi</span>}
                 </button>
               </>}
               {sub === 'techs' && <>
@@ -720,7 +728,7 @@ function WorkScreen({ ctx }) {
                   style={{display:'flex', alignItems:'center', gap:5, background:workUserLocation?'var(--pg-aqua-100)':H.cntyBg, border:workUserLocation?'1px solid var(--pg-aqua-400)':H.cntyBdr,
                     borderRadius:999, padding:workUserLocation?'5px 11px':'5px 9px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':H.cntyIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
-                  {workUserLocation && <span style={{fontSize:11,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workUserLocation.city||''}{workUserLocation.city?' · ':''}{workRadiusMiles} mi</span>}
+                  {workUserLocation && <span style={{fontSize:11,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workLocCity ? `${workLocCity} · ` : ''}{workRadiusMiles} mi</span>}
                 </button>
               </>}
               {sub === 'vac' && <>

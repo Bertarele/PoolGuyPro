@@ -224,6 +224,14 @@ function WorkScreen({
   const staticPostsHiring = MY_POSTS.filter(p => p.type === 'hiring');
   const myPostsVac = MY_POSTS.filter(p => p.type === 'vacation');
 
+  // City label for location button (fallback: compute from lat/lng if city not stored)
+  const workLocCity = React.useMemo(() => {
+    if (!workUserLocation) return '';
+    if (workUserLocation.city) return workUserLocation.city;
+    const fn = window.nearestCity;
+    return fn ? fn(workUserLocation.lat, workUserLocation.lng) || '' : '';
+  }, [workUserLocation]);
+
   // Radius filter — haversine distance from user location
   const radiusMatch = React.useCallback(loc => {
     if (!workUserLocation || !loc) return true;
@@ -649,33 +657,37 @@ function WorkScreen({
           background: workUserLocation ? 'var(--pg-aqua-100)' : _locBg,
           border: workUserLocation ? '1px solid var(--pg-aqua-400)' : _locBr,
           borderRadius: 999,
-          padding: '6px 12px',
+          padding: workUserLocation ? '6px 12px' : '7px 10px',
           cursor: 'pointer',
           fontFamily: 'inherit',
           color: 'inherit',
           touchAction: 'manipulation'
         }
-      }, Icon.pin(12, workUserLocation ? 'var(--pg-aqua-600)' : _sub), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 12,
-          fontWeight: 600,
-          color: workUserLocation ? 'var(--pg-aqua-700)' : _locTx,
-          whiteSpace: 'nowrap'
-        }
-      }, workUserLocation ? `${workRadiusMiles} mi` : lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL'), /*#__PURE__*/React.createElement("svg", {
-        width: "10",
-        height: "10",
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "17",
+        height: "17",
         viewBox: "0 0 24 24",
         fill: "none",
-        stroke: _sub,
+        stroke: workUserLocation ? 'var(--pg-aqua-600)' : _sub,
         strokeWidth: "2.2",
         strokeLinecap: "round",
         strokeLinejoin: "round"
       }, /*#__PURE__*/React.createElement("path", {
-        d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-      }), /*#__PURE__*/React.createElement("path", {
-        d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-      }))), /*#__PURE__*/React.createElement("button", {
+        d: "M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z",
+        fill: workUserLocation ? 'var(--pg-aqua-400)' : 'none'
+      }), /*#__PURE__*/React.createElement("circle", {
+        cx: "12",
+        cy: "9",
+        r: "2.5",
+        fill: workUserLocation ? 'white' : 'none'
+      })), workUserLocation && /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 12,
+          fontWeight: 600,
+          color: 'var(--pg-aqua-700)',
+          whiteSpace: 'nowrap'
+        }
+      }, workLocCity ? `${workLocCity} · ` : '', workRadiusMiles, " mi")), /*#__PURE__*/React.createElement("button", {
         onClick: () => openChat && openChat(),
         style: {
           width: 38,
@@ -1545,33 +1557,37 @@ function WorkScreen({
         background: workUserLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
         border: workUserLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
         borderRadius: 999,
-        padding: '5px 11px',
+        padding: workUserLocation ? '5px 11px' : '5px 9px',
         cursor: 'pointer',
         fontFamily: 'inherit',
         color: 'inherit',
         touchAction: 'manipulation'
       }
-    }, Icon.pin(11, workUserLocation ? 'var(--pg-aqua-600)' : H.cntyIc), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        fontWeight: 600,
-        color: workUserLocation ? 'var(--pg-aqua-700)' : H.cntyTxt,
-        whiteSpace: 'nowrap'
-      }
-    }, workUserLocation ? `${workRadiusMiles} mi` : lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL'), /*#__PURE__*/React.createElement("svg", {
-      width: "10",
-      height: "10",
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "16",
+      height: "16",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: H.editIc,
+      stroke: workUserLocation ? 'var(--pg-aqua-600)' : H.cntyIc,
       strokeWidth: "2.2",
       strokeLinecap: "round",
       strokeLinejoin: "round"
     }, /*#__PURE__*/React.createElement("path", {
-      d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-    })))), sub === 'techs' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      d: "M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z",
+      fill: workUserLocation ? 'var(--pg-aqua-400)' : 'none'
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "9",
+      r: "2.5",
+      fill: workUserLocation ? 'white' : 'none'
+    })), workUserLocation && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 600,
+        color: 'var(--pg-aqua-700)',
+        whiteSpace: 'nowrap'
+      }
+    }, workLocCity ? `${workLocCity} · ` : '', workRadiusMiles, " mi"))), sub === 'techs' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -1633,33 +1649,37 @@ function WorkScreen({
         background: workUserLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
         border: workUserLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
         borderRadius: 999,
-        padding: '5px 11px',
+        padding: workUserLocation ? '5px 11px' : '5px 9px',
         cursor: 'pointer',
         fontFamily: 'inherit',
         color: 'inherit',
         touchAction: 'manipulation'
       }
-    }, Icon.pin(11, workUserLocation ? 'var(--pg-aqua-600)' : H.cntyIc), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        fontWeight: 600,
-        color: workUserLocation ? 'var(--pg-aqua-700)' : H.cntyTxt,
-        whiteSpace: 'nowrap'
-      }
-    }, workUserLocation ? `${workRadiusMiles} mi` : lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL'), /*#__PURE__*/React.createElement("svg", {
-      width: "10",
-      height: "10",
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "16",
+      height: "16",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: H.editIc,
+      stroke: workUserLocation ? 'var(--pg-aqua-600)' : H.cntyIc,
       strokeWidth: "2.2",
       strokeLinecap: "round",
       strokeLinejoin: "round"
     }, /*#__PURE__*/React.createElement("path", {
-      d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-    })))), sub === 'vac' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      d: "M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z",
+      fill: workUserLocation ? 'var(--pg-aqua-400)' : 'none'
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "9",
+      r: "2.5",
+      fill: workUserLocation ? 'white' : 'none'
+    })), workUserLocation && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 600,
+        color: 'var(--pg-aqua-700)',
+        whiteSpace: 'nowrap'
+      }
+    }, workLocCity ? `${workLocCity} · ` : '', workRadiusMiles, " mi"))), sub === 'vac' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
