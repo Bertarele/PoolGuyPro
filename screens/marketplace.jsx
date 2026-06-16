@@ -3479,12 +3479,22 @@ function MarketplaceScreen({ ctx }) {
   const isEquipment = view === 'buy' || view === 'rent';
   const mode = view === 'rent' ? 'rent' : 'sell';
 
-  // City label for location button (fallback: compute from lat/lng if city not stored)
+  // City label for location button — uses stored city, falls back to haversine lookup
   const locCity = React.useMemo(() => {
     if (!userLocation) return '';
     if (userLocation.city) return userLocation.city;
-    const fn = window.nearestCity;
-    return fn ? (fn(userLocation.lat, userLocation.lng) || '') : '';
+    const lat = userLocation.lat, lng = userLocation.lng;
+    if (lat == null || lng == null) return '';
+    const coords = window.FL_CITY_COORDS || {};
+    let best = '', bestDist = Infinity;
+    for (const [name, [clat, clng]] of Object.entries(coords)) {
+      const dLat = (clat - lat) * Math.PI / 180;
+      const dLng = (clng - lng) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat*Math.PI/180)*Math.cos(clat*Math.PI/180)*Math.sin(dLng/2)**2;
+      const d = 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      if (d < bestDist) { bestDist = d; best = name; }
+    }
+    return best;
   }, [userLocation]);
 
   // Radius filter — haversine distance from user location
@@ -4377,7 +4387,7 @@ function MarketplaceScreen({ ctx }) {
                 </svg>
                 {userLocation && (
                   <span style={{fontSize:12, fontWeight:600, color:'var(--pg-aqua-700)', whiteSpace:'nowrap'}}>
-                    {userLocation.city || ''}{userLocation.city ? ' · ' : ''}{radiusMiles} mi
+                    {locCity ? `${locCity} · ` : ''}{radiusMiles} mi
                   </span>
                 )}
               </button>

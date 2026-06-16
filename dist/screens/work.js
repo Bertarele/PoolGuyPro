@@ -224,12 +224,27 @@ function WorkScreen({
   const staticPostsHiring = MY_POSTS.filter(p => p.type === 'hiring');
   const myPostsVac = MY_POSTS.filter(p => p.type === 'vacation');
 
-  // City label for location button (fallback: compute from lat/lng if city not stored)
+  // City label for location button — uses stored city, falls back to haversine lookup
   const workLocCity = React.useMemo(() => {
     if (!workUserLocation) return '';
     if (workUserLocation.city) return workUserLocation.city;
-    const fn = window.nearestCity;
-    return fn ? fn(workUserLocation.lat, workUserLocation.lng) || '' : '';
+    const lat = workUserLocation.lat,
+      lng = workUserLocation.lng;
+    if (lat == null || lng == null) return '';
+    const coords = window.FL_CITY_COORDS || {};
+    let best = '',
+      bestDist = Infinity;
+    for (const [name, [clat, clng]] of Object.entries(coords)) {
+      const dLat = (clat - lat) * Math.PI / 180;
+      const dLng = (clng - lng) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat * Math.PI / 180) * Math.cos(clat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      const d = 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      if (d < bestDist) {
+        bestDist = d;
+        best = name;
+      }
+    }
+    return best;
   }, [workUserLocation]);
 
   // Radius filter — haversine distance from user location
