@@ -3823,14 +3823,19 @@ function MarketplaceScreen({ ctx }) {
                 {/* County + actions */}
                 <div style={{display:'flex', alignItems:'center', gap:8, flexShrink:0}}>
                   <button onClick={()=>setLocationFilterOpen(true)} style={{display:'flex', alignItems:'center', gap:6,
-                    background:_locBg, border:_locBr,
-                    borderRadius:999, padding:'6px 12px',
+                    background: userLocation ? 'var(--pg-aqua-100)' : _locBg,
+                    border: userLocation ? '1px solid var(--pg-aqua-400)' : _locBr,
+                    borderRadius:999, padding: userLocation ? '6px 12px' : '7px 10px',
                     cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                    {Icon.pin(12, userLocation ? 'var(--pg-aqua-600)' : _sub)}
-                    <span style={{fontSize:12, fontWeight:600, color: userLocation ? 'var(--pg-aqua-700)' : _locTx, whiteSpace:'nowrap'}}>
-                      {userLocation ? `${radiusMiles} mi` : (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL')}
-                    </span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={userLocation?'var(--pg-aqua-600)':_sub} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={userLocation?'var(--pg-aqua-400)':'none'}/>
+                      <circle cx="12" cy="9" r="2.5" fill={userLocation?'white':'none'}/>
+                    </svg>
+                    {userLocation && (
+                      <span style={{fontSize:12, fontWeight:600, color:'var(--pg-aqua-700)', whiteSpace:'nowrap'}}>
+                        {userLocation.city || ''}{userLocation.city ? ' · ' : ''}{radiusMiles} mi
+                      </span>
+                    )}
                   </button>
                   <div style={{position:'relative'}}>
                     <button onClick={()=>openChat&&openChat()} style={{
@@ -4356,16 +4361,17 @@ function MarketplaceScreen({ ctx }) {
                 style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
                   background: userLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
                   border: userLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
-                  borderRadius:999, padding:'6px 12px',
+                  borderRadius:999, padding: userLocation ? '6px 12px' : '7px 10px',
                   cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                {Icon.pin(12, userLocation ? 'var(--pg-aqua-600)' : H.cntyIc)}
-                <span style={{fontSize:12, fontWeight:600, color: userLocation ? 'var(--pg-aqua-700)' : H.cntyTxt, whiteSpace:'nowrap'}}>
-                  {userLocation ? `${radiusMiles} mi` : (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL')}
-                </span>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={H.editIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={userLocation?'var(--pg-aqua-600)':H.cntyIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={userLocation?'var(--pg-aqua-400)':'none'}/>
+                  <circle cx="12" cy="9" r="2.5" fill={userLocation?'white':'none'}/>
                 </svg>
+                {userLocation && (
+                  <span style={{fontSize:12, fontWeight:600, color:'var(--pg-aqua-700)', whiteSpace:'nowrap'}}>
+                    {userLocation.city || ''}{userLocation.city ? ' · ' : ''}{radiusMiles} mi
+                  </span>
+                )}
               </button>
             </div>
           </NavyBar>
