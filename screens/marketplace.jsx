@@ -4417,7 +4417,9 @@ function MarketplaceScreen({ ctx }) {
                 <span style={{fontSize:12, fontWeight:600, color:H.cntyTxt, whiteSpace:'nowrap'}}>
                   {countyFilter.length === 0
                     ? (lang==='pt'?'Nenhuma região':'No region')
-                    : countyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
+                    : countyFilter.length === 3
+                      ? (lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South FL')
+                      : countyFilter.map(c => c==='Miami-Dade'?'Dade':c).join(' · ')}
                 </span>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={H.editIc} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>

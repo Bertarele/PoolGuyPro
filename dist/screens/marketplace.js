@@ -8627,7 +8627,7 @@ function MarketplaceScreen({
         color: H.cntyTxt,
         whiteSpace: 'nowrap'
       }
-    }, countyFilter.length === 0 ? lang === 'pt' ? 'Nenhuma região' : 'No region' : countyFilter.map(c => c === 'Miami-Dade' ? 'Dade' : c).join(' · ')), /*#__PURE__*/React.createElement("svg", {
+    }, countyFilter.length === 0 ? lang === 'pt' ? 'Nenhuma região' : 'No region' : countyFilter.length === 3 ? lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South FL' : countyFilter.map(c => c === 'Miami-Dade' ? 'Dade' : c).join(' · ')), /*#__PURE__*/React.createElement("svg", {
       width: "11",
       height: "11",
       viewBox: "0 0 24 24",
