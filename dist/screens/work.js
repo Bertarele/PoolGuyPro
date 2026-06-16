@@ -1592,22 +1592,22 @@ function WorkScreen({
       style: {
         display: 'flex',
         alignItems: 'center',
-        gap: 5,
-        background: workUserLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
-        border: workUserLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
+        gap: 6,
+        background: workUserLocation ? 'var(--pg-aqua-100)' : darkMode ? 'rgba(0,119,182,0.30)' : 'rgba(0,119,182,0.13)',
+        border: workUserLocation ? '1.5px solid var(--pg-aqua-400)' : darkMode ? '1.5px solid rgba(0,119,182,0.55)' : '1.5px solid rgba(0,119,182,0.42)',
         borderRadius: 999,
-        padding: workUserLocation ? '5px 11px' : '5px 9px',
+        padding: workUserLocation ? '7px 14px' : '7px 12px',
         cursor: 'pointer',
         fontFamily: 'inherit',
         color: 'inherit',
         touchAction: 'manipulation'
       }
     }, /*#__PURE__*/React.createElement("svg", {
-      width: "16",
-      height: "16",
+      width: "19",
+      height: "19",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: workUserLocation ? 'var(--pg-aqua-600)' : H.cntyIc,
+      stroke: workUserLocation ? 'var(--pg-aqua-600)' : darkMode ? 'rgba(255,255,255,0.90)' : '#0077B6',
       strokeWidth: "2.2",
       strokeLinecap: "round",
       strokeLinejoin: "round"
@@ -1621,7 +1621,7 @@ function WorkScreen({
       fill: workUserLocation ? 'white' : 'none'
     })), workUserLocation && /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 600,
         color: 'var(--pg-aqua-700)',
         whiteSpace: 'nowrap'
@@ -1684,22 +1684,22 @@ function WorkScreen({
       style: {
         display: 'flex',
         alignItems: 'center',
-        gap: 5,
-        background: workUserLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
-        border: workUserLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
+        gap: 6,
+        background: workUserLocation ? 'var(--pg-aqua-100)' : darkMode ? 'rgba(0,119,182,0.30)' : 'rgba(0,119,182,0.13)',
+        border: workUserLocation ? '1.5px solid var(--pg-aqua-400)' : darkMode ? '1.5px solid rgba(0,119,182,0.55)' : '1.5px solid rgba(0,119,182,0.42)',
         borderRadius: 999,
-        padding: workUserLocation ? '5px 11px' : '5px 9px',
+        padding: workUserLocation ? '7px 14px' : '7px 12px',
         cursor: 'pointer',
         fontFamily: 'inherit',
         color: 'inherit',
         touchAction: 'manipulation'
       }
     }, /*#__PURE__*/React.createElement("svg", {
-      width: "16",
-      height: "16",
+      width: "19",
+      height: "19",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: workUserLocation ? 'var(--pg-aqua-600)' : H.cntyIc,
+      stroke: workUserLocation ? 'var(--pg-aqua-600)' : darkMode ? 'rgba(255,255,255,0.90)' : '#0077B6',
       strokeWidth: "2.2",
       strokeLinecap: "round",
       strokeLinejoin: "round"
@@ -1713,7 +1713,7 @@ function WorkScreen({
       fill: workUserLocation ? 'white' : 'none'
     })), workUserLocation && /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 600,
         color: 'var(--pg-aqua-700)',
         whiteSpace: 'nowrap'

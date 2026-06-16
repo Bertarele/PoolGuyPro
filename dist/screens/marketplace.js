@@ -8529,21 +8529,21 @@ function MarketplaceScreen({
         display: 'flex',
         alignItems: 'center',
         gap: 6,
-        background: userLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
-        border: userLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
+        background: userLocation ? 'var(--pg-aqua-100)' : darkMode ? 'rgba(0,119,182,0.30)' : 'rgba(0,119,182,0.13)',
+        border: userLocation ? '1.5px solid var(--pg-aqua-400)' : darkMode ? '1.5px solid rgba(0,119,182,0.55)' : '1.5px solid rgba(0,119,182,0.42)',
         borderRadius: 999,
-        padding: userLocation ? '6px 12px' : '7px 10px',
+        padding: userLocation ? '7px 14px' : '7px 12px',
         cursor: 'pointer',
         fontFamily: 'inherit',
         color: 'inherit',
         touchAction: 'manipulation'
       }
     }, /*#__PURE__*/React.createElement("svg", {
-      width: "17",
-      height: "17",
+      width: "19",
+      height: "19",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: userLocation ? 'var(--pg-aqua-600)' : H.cntyIc,
+      stroke: userLocation ? 'var(--pg-aqua-600)' : darkMode ? 'rgba(255,255,255,0.90)' : '#0077B6',
       strokeWidth: "2.2",
       strokeLinecap: "round",
       strokeLinejoin: "round"
