@@ -4378,7 +4378,7 @@ function MarketplaceScreen({ ctx }) {
               <div style={{width:1, height:30, background:H.divider}}/>
               {/* County selector */}
               <button onClick={()=>setLocationFilterOpen(true)}
-                style={{marginLeft:'auto', display:'flex', alignItems:'center', gap:6,
+                style={{display:'flex', alignItems:'center', gap:6,
                   background: userLocation ? 'var(--pg-aqua-100)' : H.cntyBg,
                   border: userLocation ? '1px solid var(--pg-aqua-400)' : H.cntyBdr,
                   borderRadius:999, padding: userLocation ? '6px 12px' : '7px 10px',

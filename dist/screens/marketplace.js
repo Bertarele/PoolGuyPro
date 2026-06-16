@@ -8526,7 +8526,6 @@ function MarketplaceScreen({
     }), /*#__PURE__*/React.createElement("button", {
       onClick: () => setLocationFilterOpen(true),
       style: {
-        marginLeft: 'auto',
         display: 'flex',
         alignItems: 'center',
         gap: 6,
