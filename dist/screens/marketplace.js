@@ -960,6 +960,7 @@ function ViewListingSheet({
     if (openChat) openChat(item.author_id ? {
       id: item.author_id,
       name: item.author || 'Seller',
+      listingId: item._id || null,
       listingContext: _listingCtx()
     } : item.author || 'Seller');
   };
@@ -1022,6 +1023,7 @@ function ViewListingSheet({
       openChat({
         id: item.author_id,
         name: item.author || 'Owner',
+        listingId: item._id || null,
         listingContext: _listingCtx()
       });
     }
@@ -8072,6 +8074,7 @@ function MarketplaceScreen({
           openChat({
             id: r._authorId,
             name: r._author || 'Seller',
+            listingId: r._liveId || null,
             listingContext: {
               name: tr(r.name, lang),
               photoUrl: r.photoUrls && r.photoUrls[0] || r.photoUrl || null,
@@ -10173,6 +10176,7 @@ function MarketplaceScreen({
         openChat({
           id: r._authorId,
           name: r._author || 'Seller',
+          listingId: r._liveId || null,
           listingContext: {
             name: tr(r.name, lang),
             photoUrl: r.photoUrls && r.photoUrls[0] || r.photoUrl || null,
@@ -10404,6 +10408,7 @@ function MarketplaceScreen({
       if (m && m.author_id) openChat({
         id: m.author_id,
         name: m.author || 'Seller',
+        listingId: p._liveId || null,
         listingContext: {
           name: p.name,
           photoUrl: p.photoUrls && p.photoUrls[0] || p.photoUrl || null,

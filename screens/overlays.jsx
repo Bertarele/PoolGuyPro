@@ -29,7 +29,7 @@ function fmtMsgTime(iso) {
 }
 
 // ── Chat (inbox + conversation) ───────────────────────────────
-function ChatSheet({ open, onClose, lang='en', initialConvo=null, currentUser=null, onUnreadChange=null }) {
+function ChatSheet({ open, onClose, lang='en', initialConvo=null, currentUser=null, onUnreadChange=null, onOpenListing=null }) {
   const t = STRINGS[lang];
   const [activeConvo, setActiveConvo] = React.useState(initialConvo);
 
@@ -49,7 +49,8 @@ function ChatSheet({ open, onClose, lang='en', initialConvo=null, currentUser=nu
       {activeConvo
         ? <ChatConversation convo={activeConvo} lang={lang} t={t}
             onBack={()=>{ setActiveConvo(null); if(onUnreadChange) onUnreadChange(); }}
-            onClose={onClose} currentUser={currentUser} onUnreadChange={onUnreadChange}/>
+            onClose={onClose} currentUser={currentUser} onUnreadChange={onUnreadChange}
+            onOpenListing={onOpenListing}/>
         : <ChatInbox lang={lang} t={t} onSelect={setActiveConvo} onClose={onClose} currentUser={currentUser}/>
       }
     </Sheet>
@@ -177,7 +178,7 @@ function ChatInbox({ lang, t, onSelect, onClose, currentUser }) {
   );
 }
 
-function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnreadChange }) {
+function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnreadChange, onOpenListing }) {
   const isLive  = !!(currentUser?.uid && convo.receiverId);
   const convoId = isLive ? makeConvoId(currentUser.uid, convo.receiverId, convo.listingId || null) : null;
 
@@ -307,13 +308,18 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
 
       {/* Listing context card */}
       {convo.listingContext && (
-        <div style={{
-          margin:'0 12px', padding:'10px 12px',
-          borderRadius:12, border:'1px solid var(--pg-ink-200)',
-          background:'var(--pg-ink-50)',
-          display:'flex', alignItems:'center', gap:10,
-          flexShrink:0,
-        }}>
+        <div onClick={()=>{ if(onOpenListing && convo.listingId) onOpenListing(convo.listingId); }}
+          style={{
+            margin:'0 12px', padding:'10px 12px',
+            borderRadius:12, border:'1px solid var(--pg-ink-200)',
+            background:'var(--pg-ink-50)',
+            display:'flex', alignItems:'center', gap:10,
+            flexShrink:0,
+            cursor: onOpenListing && convo.listingId ? 'pointer' : 'default',
+            transition:'background .15s',
+          }}
+          onMouseEnter={e=>{ if(onOpenListing && convo.listingId) e.currentTarget.style.background='var(--pg-ink-100)'; }}
+          onMouseLeave={e=>{ e.currentTarget.style.background='var(--pg-ink-50)'; }}>
           {convo.listingContext.photoUrl ? (
             <img src={convo.listingContext.photoUrl} alt=""
               style={{width:48, height:48, borderRadius:8, objectFit:'cover', flexShrink:0, border:'1px solid var(--pg-ink-200)'}}/>
@@ -340,9 +346,16 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
               {convo.listingContext.type === 'rent' ? (lang==='pt'?' · Aluguel':' · Rental') : convo.listingContext.type === 'sell' ? (lang==='pt'?' · Venda':' · For sale') : ''}
             </div>
           </div>
-          <div style={{fontSize:10, fontWeight:600, color:'var(--pg-ink-400)',
-            padding:'3px 7px', borderRadius:999, background:'var(--pg-ink-200)', flexShrink:0}}>
-            {lang==='pt'?'Anúncio':lang==='es'?'Anuncio':'Listing'}
+          <div style={{display:'flex', alignItems:'center', gap:6, flexShrink:0}}>
+            <div style={{fontSize:10, fontWeight:600, color:'var(--pg-ink-400)',
+              padding:'3px 7px', borderRadius:999, background:'var(--pg-ink-200)'}}>
+              {lang==='pt'?'Anúncio':lang==='es'?'Anuncio':'Listing'}
+            </div>
+            {onOpenListing && convo.listingId && (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            )}
           </div>
         </div>
       )}

@@ -834,7 +834,8 @@ function App() {
       <ChatSheet open={chatOpen}
         onClose={()=>{ setChatOpen(false); setChatConvoTarget(null); recheckUnread(); }}
         lang={lang} initialConvo={initialConvo} currentUser={user}
-        onUnreadChange={recheckUnread}/>
+        onUnreadChange={recheckUnread}
+        onOpenListing={ctx.openListingById}/>
       <NotificationsSheet open={notifOpen} onClose={()=>setNotifOpen(false)} lang={lang} user={user}
         onUnreadChange={(c)=>setHasUnreadNotif(c>0)}
         onNavigate={(type, linkId)=>{

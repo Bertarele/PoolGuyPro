@@ -2,8 +2,9 @@
 //               language picker, applicants sheet
 
 // ── Chat helpers ──────────────────────────────────────────────
-function makeConvoId(uidA, uidB) {
-  return [uidA, uidB].sort().join('_');
+function makeConvoId(uidA, uidB, listingId) {
+  const base = [uidA, uidB].sort().join('_');
+  return listingId ? base + '_lst_' + listingId : base;
 }
 // Relative time formatter — module-scope so all sheets can use it
 function relTimeGlobal(iso) {
@@ -40,7 +41,8 @@ function ChatSheet({
   lang = 'en',
   initialConvo = null,
   currentUser = null,
-  onUnreadChange = null
+  onUnreadChange = null,
+  onOpenListing = null
 }) {
   const t = STRINGS[lang];
   const [activeConvo, setActiveConvo] = React.useState(initialConvo);
@@ -73,7 +75,8 @@ function ChatSheet({
     },
     onClose: onClose,
     currentUser: currentUser,
-    onUnreadChange: onUnreadChange
+    onUnreadChange: onUnreadChange,
+    onOpenListing: onOpenListing
   }) : /*#__PURE__*/React.createElement(ChatInbox, {
     lang: lang,
     t: t,
@@ -114,7 +117,10 @@ function ChatInbox({
         name: amP1 ? c.name_2 || '?' : c.name_1 || '?',
         lastMsg: c.last_message || '',
         lastTime: c.last_message_at,
-        unread: amP1 ? c.unread_1 || 0 : c.unread_2 || 0
+        unread: amP1 ? c.unread_1 || 0 : c.unread_2 || 0,
+        listingId: c.listing_id || null,
+        listingName: c.listing_name || null,
+        listingPhoto: c.listing_photo_url || null
       };
     });
     setConvos(mapped);
@@ -223,7 +229,16 @@ function ChatInbox({
     }
   }, noChatsSubLbl)) : convos.map(c => /*#__PURE__*/React.createElement("button", {
     key: c.convoId,
-    onClick: () => onSelect(c),
+    onClick: () => onSelect({
+      convoId: c.convoId,
+      receiverId: c.receiverId,
+      name: c.name,
+      listingId: c.listingId || null,
+      listingContext: c.listingName ? {
+        name: c.listingName,
+        photoUrl: c.listingPhoto || null
+      } : null
+    }),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -242,7 +257,17 @@ function ChatInbox({
       position: 'relative',
       flexShrink: 0
     }
-  }, /*#__PURE__*/React.createElement(Avatar, {
+  }, c.listingPhoto ? /*#__PURE__*/React.createElement("img", {
+    src: c.listingPhoto,
+    alt: "",
+    style: {
+      width: 44,
+      height: 44,
+      borderRadius: 10,
+      objectFit: 'cover',
+      border: '1px solid var(--pg-ink-200)'
+    }
+  }) : /*#__PURE__*/React.createElement(Avatar, {
     name: c.name,
     size: 44
   }), c.unread > 0 && /*#__PURE__*/React.createElement("span", {
@@ -290,7 +315,32 @@ function ChatInbox({
       flexShrink: 0,
       fontWeight: c.unread > 0 ? 600 : 400
     }
-  }, fmtMsgTime(c.lastTime))), /*#__PURE__*/React.createElement("div", {
+  }, fmtMsgTime(c.lastTime))), c.listingName && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-blue-600)',
+      fontWeight: 600,
+      marginTop: 1,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "10",
+    height: "10",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.5",
+    strokeLinecap: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"
+  })), c.listingName), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12.5,
       color: c.unread > 0 ? 'var(--pg-ink-700)' : 'var(--pg-ink-500)',
@@ -309,10 +359,11 @@ function ChatConversation({
   onBack,
   onClose,
   currentUser,
-  onUnreadChange
+  onUnreadChange,
+  onOpenListing
 }) {
   const isLive = !!(currentUser?.uid && convo.receiverId);
-  const convoId = isLive ? makeConvoId(currentUser.uid, convo.receiverId) : null;
+  const convoId = isLive ? makeConvoId(currentUser.uid, convo.receiverId, convo.listingId || null) : null;
   const [messages, setMessages] = React.useState([]);
   const [draft, setDraft] = React.useState('');
   const [sending, setSending] = React.useState(false);
@@ -392,6 +443,14 @@ function ChatConversation({
         p_my_name: myName,
         p_other_name: convo.name
       });
+      // Store listing context in the conversation row so seller also sees it
+      if (convo.listingId || convo.listingContext?.name) {
+        window.sb.from('conversations').update({
+          listing_id: convo.listingId || null,
+          listing_name: convo.listingContext?.name || null,
+          listing_photo_url: convo.listingContext?.photoUrl || null
+        }).eq('id', convoId).then(() => {});
+      }
       await loadMessages();
     } else {
       setMessages(m => [...m, {
@@ -494,6 +553,9 @@ function ChatConversation({
       flexShrink: 0
     }
   }, Icon.x(14, 'var(--pg-ink-700)'))), convo.listingContext && /*#__PURE__*/React.createElement("div", {
+    onClick: () => {
+      if (onOpenListing && convo.listingId) onOpenListing(convo.listingId);
+    },
     style: {
       margin: '0 12px',
       padding: '10px 12px',
@@ -503,7 +565,15 @@ function ChatConversation({
       display: 'flex',
       alignItems: 'center',
       gap: 10,
-      flexShrink: 0
+      flexShrink: 0,
+      cursor: onOpenListing && convo.listingId ? 'pointer' : 'default',
+      transition: 'background .15s'
+    },
+    onMouseEnter: e => {
+      if (onOpenListing && convo.listingId) e.currentTarget.style.background = 'var(--pg-ink-100)';
+    },
+    onMouseLeave: e => {
+      e.currentTarget.style.background = 'var(--pg-ink-50)';
     }
   }, convo.listingContext.photoUrl ? /*#__PURE__*/React.createElement("img", {
     src: convo.listingContext.photoUrl,
@@ -569,15 +639,32 @@ function ChatConversation({
     }
   }, convo.listingContext.priceMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : convo.listingContext.price ? `$${Number(convo.listingContext.price).toLocaleString()}` : '', convo.listingContext.type === 'rent' ? lang === 'pt' ? ' · Aluguel' : ' · Rental' : convo.listingContext.type === 'sell' ? lang === 'pt' ? ' · Venda' : ' · For sale' : '')), /*#__PURE__*/React.createElement("div", {
     style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 10,
       fontWeight: 600,
       color: 'var(--pg-ink-400)',
       padding: '3px 7px',
       borderRadius: 999,
-      background: 'var(--pg-ink-200)',
-      flexShrink: 0
+      background: 'var(--pg-ink-200)'
     }
-  }, lang === 'pt' ? 'Anúncio' : lang === 'es' ? 'Anuncio' : 'Listing')), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Anúncio' : lang === 'es' ? 'Anuncio' : 'Listing'), onOpenListing && convo.listingId && /*#__PURE__*/React.createElement("svg", {
+    width: "13",
+    height: "13",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "var(--pg-ink-400)",
+    strokeWidth: "2.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M9 18l6-6-6-6"
+  })))), /*#__PURE__*/React.createElement("div", {
     ref: scroller,
     style: {
       flex: 1,

@@ -1154,6 +1154,7 @@ function App() {
         pt: 'Mensagem direta',
         es: 'Mensaje directo'
       },
+      listingId: isObj ? chatConvoTarget.listingId || null : null,
       listingContext: isObj ? chatConvoTarget.listingContext || null : null
     };
   }, [chatConvoTarget]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1193,7 +1194,8 @@ function App() {
     lang: lang,
     initialConvo: initialConvo,
     currentUser: user,
-    onUnreadChange: recheckUnread
+    onUnreadChange: recheckUnread,
+    onOpenListing: ctx.openListingById
   }), /*#__PURE__*/React.createElement(NotificationsSheet, {
     open: notifOpen,
     onClose: () => setNotifOpen(false),
