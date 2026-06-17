@@ -367,6 +367,76 @@ function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) 
   );
 }
 
+// ── Route hero card (no photo) ────────────────────────────────
+function RouteNoPhotoHero({ item, lang }) {
+  const n = Number(item.revenue || 0);
+  const revFmt = n >= 1000 ? `${Math.round(n / 1000)}k` : n > 0 ? n.toLocaleString() : null;
+  const cities = (item.area || '').split(',').map(c => c.trim()).filter(Boolean);
+  const poolsLabel = lang === 'pt' ? 'Piscinas' : lang === 'es' ? 'Piscinas' : 'Pools';
+  const revLabel   = lang === 'pt' ? 'Receita/mês' : lang === 'es' ? 'Ingresos/mes' : 'Revenue/mo';
+  const moSfx      = lang === 'pt' ? '/mês' : '/mo';
+  return (
+    <div style={{
+      width:'100%', height:'100%', minHeight:240,
+      background:'linear-gradient(135deg, #0b1a5c 0%, #1d3faa 55%, #2563eb 100%)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      gap:18, padding:'20px 24px',
+    }}>
+      {/* Stats row */}
+      {(item.clients || revFmt) && (
+        <div style={{display:'flex', alignItems:'center'}}>
+          {item.clients && (
+            <div style={{textAlign:'center', padding:'0 28px'}}>
+              <div style={{fontSize:58, fontWeight:800, color:'#fff', lineHeight:1, letterSpacing:'-1px'}}>
+                {item.clients}
+              </div>
+              <div style={{fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.55)',
+                letterSpacing:'0.14em', marginTop:5, textTransform:'uppercase'}}>
+                {poolsLabel}
+              </div>
+            </div>
+          )}
+          {item.clients && revFmt && (
+            <div style={{width:1, height:60, background:'rgba(255,255,255,0.22)', flexShrink:0}}/>
+          )}
+          {revFmt && (
+            <div style={{textAlign:'center', padding:'0 28px'}}>
+              <div style={{fontSize: item.clients ? 34 : 46, fontWeight:800, color:'#fff', lineHeight:1, letterSpacing:'-0.5px'}}>
+                ${revFmt}
+                <span style={{fontSize:16, fontWeight:700, opacity:0.8}}>{moSfx}</span>
+              </div>
+              <div style={{fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.55)',
+                letterSpacing:'0.14em', marginTop:5, textTransform:'uppercase'}}>
+                {revLabel}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {/* City pills */}
+      {cities.length > 0 && (
+        <div style={{display:'flex', flexWrap:'wrap', gap:6, justifyContent:'center', maxWidth:320}}>
+          {cities.map(city => (
+            <div key={city} style={{
+              display:'inline-flex', alignItems:'center', gap:5,
+              background:'rgba(255,255,255,0.13)', backdropFilter:'blur(8px)',
+              WebkitBackdropFilter:'blur(8px)',
+              border:'1px solid rgba(255,255,255,0.22)',
+              borderRadius:999, padding:'6px 14px',
+              fontSize:13, fontWeight:600, color:'#fff',
+            }}>
+              <svg width="11" height="13" viewBox="0 0 24 28" fill="currentColor">
+                <path d="M12 0C7.58 0 4 3.58 4 8c0 6 8 16 8 16s8-10 8-16c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
+              </svg>
+              {city}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
 // canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
 function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, onEdit, currentUser, showToast, onDeleted, isSaved, onToggleSave, onShare, liveMarket=[], onOpenListing, onAfterSold }) {
@@ -2152,7 +2222,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                       style={{width:'100%', height:'100%', objectFit:'cover', display:'block',
                         cursor:'zoom-in', transition:'transform .3s ease'}}
                     />
-                  : <NoPhotoPlaceholder height='100%'/>
+                  : item.type === 'route'
+                    ? <RouteNoPhotoHero item={item} lang={lang}/>
+                    : <NoPhotoPlaceholder height='100%'/>
                 }
 
                 {/* Status badge */}
@@ -2487,7 +2559,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               onClick={() => setViewerOpen(true)}
               style={{width:'100%', height:'100%', objectFit:'cover', display:'block', cursor: allPhotos.length > 1 ? 'default' : 'zoom-in'}}
             />
-          : <NoPhotoPlaceholder height={240}/>
+          : item.type === 'route'
+            ? <RouteNoPhotoHero item={item} lang={lang}/>
+            : <NoPhotoPlaceholder height={240}/>
         }
 
         {/* Back arrow — top left */}
