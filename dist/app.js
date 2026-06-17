@@ -1198,7 +1198,8 @@ function App() {
     initialConvo: initialConvo,
     currentUser: user,
     onUnreadChange: recheckUnread,
-    onOpenListing: ctx.openListingById
+    onOpenListing: ctx.openListingById,
+    openPublicProfile: ctx.openPublicProfile
   }), /*#__PURE__*/React.createElement(NotificationsSheet, {
     open: notifOpen,
     onClose: () => setNotifOpen(false),

@@ -29,7 +29,7 @@ function fmtMsgTime(iso) {
 }
 
 // ── Chat (inbox + conversation) ───────────────────────────────
-function ChatSheet({ open, onClose, lang='en', initialConvo=null, currentUser=null, onUnreadChange=null, onOpenListing=null }) {
+function ChatSheet({ open, onClose, lang='en', initialConvo=null, currentUser=null, onUnreadChange=null, onOpenListing=null, openPublicProfile=null }) {
   const t = STRINGS[lang];
   const [activeConvo, setActiveConvo] = React.useState(initialConvo);
 
@@ -50,7 +50,7 @@ function ChatSheet({ open, onClose, lang='en', initialConvo=null, currentUser=nu
         ? <ChatConversation convo={activeConvo} lang={lang} t={t}
             onBack={()=>{ setActiveConvo(null); if(onUnreadChange) onUnreadChange(); }}
             onClose={onClose} currentUser={currentUser} onUnreadChange={onUnreadChange}
-            onOpenListing={onOpenListing}/>
+            onOpenListing={onOpenListing} openPublicProfile={openPublicProfile}/>
         : <ChatInbox lang={lang} t={t} onSelect={setActiveConvo} onClose={onClose} currentUser={currentUser}/>
       }
     </Sheet>
@@ -178,7 +178,7 @@ function ChatInbox({ lang, t, onSelect, onClose, currentUser }) {
   );
 }
 
-function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnreadChange, onOpenListing }) {
+function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnreadChange, onOpenListing, openPublicProfile }) {
   const isLive  = !!(currentUser?.uid && convo.receiverId);
   const convoId = isLive ? makeConvoId(currentUser.uid, convo.receiverId, convo.listingId || null) : null;
 
@@ -186,9 +186,16 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
   const [draft,         setDraft]         = React.useState('');
   const [sending,       setSending]       = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState(null);
+  const [receiverPhoto, setReceiverPhoto] = React.useState(null);
   const scroller = React.useRef(null);
   const pollRef  = React.useRef(null);
   const lastCount = React.useRef(0);
+
+  React.useEffect(() => {
+    if (!convo.receiverId || !window.sb) return;
+    window.sb.from('profiles').select('photo_url').eq('id', convo.receiverId).single()
+      .then(({ data }) => { if (data?.photo_url) setReceiverPhoto(data.photo_url); });
+  }, [convo.receiverId]);
 
   const fmtMsg = React.useCallback((m) => ({
     id:        m.id,
@@ -292,9 +299,17 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
         <button onClick={onBack} style={{border:'none', background:'transparent', cursor:'pointer', padding:6, color:'var(--pg-blue-600)', display:'flex'}}>
           {Icon.chev(18,'var(--pg-blue-600)','left')}
         </button>
-        <Avatar name={convo.name} size={38}/>
+        <Avatar name={convo.name} size={38} src={receiverPhoto}/>
         <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:14, fontWeight:600}}>{convo.name}</div>
+          {openPublicProfile && convo.receiverId
+            ? <button onClick={()=>openPublicProfile({ userId: convo.receiverId, userName: convo.name })}
+                style={{background:'none', border:'none', padding:0, cursor:'pointer', fontFamily:'inherit',
+                  fontSize:14, fontWeight:600, color:'var(--pg-ink-900)', textAlign:'left',
+                  textDecoration:'underline', textDecorationColor:'rgba(0,0,0,0.18)', textUnderlineOffset:2}}>
+                {convo.name}
+              </button>
+            : <div style={{fontSize:14, fontWeight:600}}>{convo.name}</div>
+          }
           {isLive && (
             <div style={{fontSize:11, color:'var(--pg-aqua-700)', display:'flex', alignItems:'center', gap:4}}>
               <span style={{width:6, height:6, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/> Live

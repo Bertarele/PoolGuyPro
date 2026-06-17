@@ -42,7 +42,8 @@ function ChatSheet({
   initialConvo = null,
   currentUser = null,
   onUnreadChange = null,
-  onOpenListing = null
+  onOpenListing = null,
+  openPublicProfile = null
 }) {
   const t = STRINGS[lang];
   const [activeConvo, setActiveConvo] = React.useState(initialConvo);
@@ -76,7 +77,8 @@ function ChatSheet({
     onClose: onClose,
     currentUser: currentUser,
     onUnreadChange: onUnreadChange,
-    onOpenListing: onOpenListing
+    onOpenListing: onOpenListing,
+    openPublicProfile: openPublicProfile
   }) : /*#__PURE__*/React.createElement(ChatInbox, {
     lang: lang,
     t: t,
@@ -360,7 +362,8 @@ function ChatConversation({
   onClose,
   currentUser,
   onUnreadChange,
-  onOpenListing
+  onOpenListing,
+  openPublicProfile
 }) {
   const isLive = !!(currentUser?.uid && convo.receiverId);
   const convoId = isLive ? makeConvoId(currentUser.uid, convo.receiverId, convo.listingId || null) : null;
@@ -368,9 +371,18 @@ function ChatConversation({
   const [draft, setDraft] = React.useState('');
   const [sending, setSending] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState(null);
+  const [receiverPhoto, setReceiverPhoto] = React.useState(null);
   const scroller = React.useRef(null);
   const pollRef = React.useRef(null);
   const lastCount = React.useRef(0);
+  React.useEffect(() => {
+    if (!convo.receiverId || !window.sb) return;
+    window.sb.from('profiles').select('photo_url').eq('id', convo.receiverId).single().then(({
+      data
+    }) => {
+      if (data?.photo_url) setReceiverPhoto(data.photo_url);
+    });
+  }, [convo.receiverId]);
   const fmtMsg = React.useCallback(m => ({
     id: m.id,
     from: m.sender_id === currentUser?.uid ? 'me' : 'them',
@@ -512,13 +524,33 @@ function ChatConversation({
     }
   }, Icon.chev(18, 'var(--pg-blue-600)', 'left')), /*#__PURE__*/React.createElement(Avatar, {
     name: convo.name,
-    size: 38
+    size: 38,
+    src: receiverPhoto
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, openPublicProfile && convo.receiverId ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => openPublicProfile({
+      userId: convo.receiverId,
+      userName: convo.name
+    }),
+    style: {
+      background: 'none',
+      border: 'none',
+      padding: 0,
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 14,
+      fontWeight: 600,
+      color: 'var(--pg-ink-900)',
+      textAlign: 'left',
+      textDecoration: 'underline',
+      textDecorationColor: 'rgba(0,0,0,0.18)',
+      textUnderlineOffset: 2
+    }
+  }, convo.name) : /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 600
