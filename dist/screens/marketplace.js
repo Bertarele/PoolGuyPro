@@ -12858,7 +12858,7 @@ function PostRouteSheet({
   const [revenue, setRevenue] = React.useState('');
   const [asking, setAsking] = React.useState('');
   const [area, setArea] = React.useState([]);
-  const [cityInput, setCityInput] = React.useState('');
+  const [cityKey, setCityKey] = React.useState(0);
   const [photos, setPhotos] = React.useState([]);
   const isValid = title.trim().length > 3 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
@@ -13077,10 +13077,11 @@ function PostRouteSheet({
       fontWeight: 400
     }
   }, "\xD7")))), /*#__PURE__*/React.createElement(CityAutocomplete, {
-    value: cityInput,
+    key: cityKey,
+    value: "",
     onChange: v => {
       if (v && !area.includes(v)) setArea(prev => [...prev, v]);
-      setCityInput('');
+      setCityKey(k => k + 1);
     },
     lang: lang
   }))), /*#__PURE__*/React.createElement("div", {

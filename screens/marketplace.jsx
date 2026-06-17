@@ -6635,7 +6635,7 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
   const [revenue,   setRevenue]   = React.useState('');
   const [asking,    setAsking]    = React.useState('');
   const [area,      setArea]      = React.useState([]);
-  const [cityInput, setCityInput] = React.useState('');
+  const [cityKey,   setCityKey]   = React.useState(0);
   const [photos,    setPhotos]    = React.useState([]);
 
   const isValid = title.trim().length > 3 && clients.trim().length > 0 && asking.trim().length > 0;
@@ -6731,7 +6731,7 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
               ))}
             </div>
           )}
-          <CityAutocomplete value={cityInput} onChange={v => { if (v && !area.includes(v)) setArea(prev => [...prev, v]); setCityInput(''); }} lang={lang}/>
+          <CityAutocomplete key={cityKey} value='' onChange={v => { if (v && !area.includes(v)) setArea(prev => [...prev, v]); setCityKey(k => k+1); }} lang={lang}/>
         </div>
       </div>
 
