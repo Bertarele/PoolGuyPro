@@ -942,7 +942,7 @@ function ViewListingSheet({
   const periodSfx = item.type === 'rent' ? getPeriodSfx(displayPeriod) : '';
   const hasMultiPeriod = availablePeriods.length > 1;
   const authorDisplay = item.author ? item.author.includes('@') ? item.author.split('@')[0] : item.author : 'Unknown';
-  const locationLabel = [item.loc, item.cat].filter(Boolean).join(' · ');
+  const locationLabel = item.type === 'route' ? item.area || '' : [item.loc, item.cat].filter(Boolean).join(' · ');
   const timeAgoLabel = item.createdAt ? timeAgo(item.createdAt, lang) : '';
   const _listingCtx = () => ({
     name: item.name || '',
@@ -1474,7 +1474,7 @@ function ViewListingSheet({
       letterSpacing: '-0.03em',
       lineHeight: 1
     }
-  }, item.type === 'pool' ? `$${Number(item.asking || 0).toLocaleString()}` : `$${item.price}`, item.type !== 'pool' && periodSfx && /*#__PURE__*/React.createElement("span", {
+  }, item.type === 'pool' || item.type === 'route' ? `$${Number(item.asking || 0).toLocaleString()}` : `$${item.price}`, item.type !== 'pool' && item.type !== 'route' && periodSfx && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: large ? 16 : 13,
       fontWeight: 500,
@@ -4963,7 +4963,7 @@ function ViewListingSheet({
       letterSpacing: '-0.02em',
       lineHeight: 1
     }
-  }, item.type === 'pool' ? `$${Number(item.asking || 0).toLocaleString()}` : /*#__PURE__*/React.createElement(React.Fragment, null, "$", item.price, periodSfx && /*#__PURE__*/React.createElement("span", {
+  }, item.type === 'pool' || item.type === 'route' ? `$${Number(item.asking || 0).toLocaleString()}` : /*#__PURE__*/React.createElement(React.Fragment, null, item.type === 'route' ? `$${Number(item.asking || 0).toLocaleString()}` : item.price, periodSfx && item.type !== 'route' && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 500,
@@ -5048,39 +5048,59 @@ function ViewListingSheet({
     }
   }, item.description) : null, (item.type === 'pool' || item.type === 'route') && (() => {
     const rows = [];
-    if (item.loc) rows.push({
-      label: lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City',
-      value: item.loc
-    });
-    if (item.address) rows.push({
-      label: lang === 'pt' ? 'Endereço' : lang === 'es' ? 'Dirección' : 'Address',
-      value: item.address,
-      full: true
-    });
-    if (item.sizeFt) rows.push({
-      label: lang === 'pt' ? 'Tamanho' : lang === 'es' ? 'Tamaño' : 'Size',
-      value: item.sizeFt
-    });
-    if (item.gallons) rows.push({
-      label: lang === 'pt' ? 'Capacidade' : lang === 'es' ? 'Capacidad' : 'Capacity',
-      value: `${Number(item.gallons).toLocaleString()} gal`
-    });
-    if (item.system) rows.push({
-      label: lang === 'pt' ? 'Sistema' : lang === 'es' ? 'Sistema' : 'System',
-      value: item.system === 'salt' ? lang === 'pt' ? 'Sal' : 'Salt' : lang === 'pt' ? 'Cloro' : 'Chlorine'
-    });
-    if (item.freq) rows.push({
-      label: lang === 'pt' ? 'Visitas/semana' : lang === 'es' ? 'Visitas/semana' : 'Visits/week',
-      value: `${item.freq}x`
-    });
-    if (item.price) rows.push({
-      label: lang === 'pt' ? 'Valor/mês' : lang === 'es' ? 'Valor/mes' : 'Monthly rate',
-      value: `$${Number(item.price).toLocaleString()}/mo`
-    });
-    if (item.warranty) rows.push({
-      label: lang === 'pt' ? 'Garantia' : lang === 'es' ? 'Garantía' : 'Warranty',
-      value: item.warranty === 'yes' ? item.warrantyMonths ? `${item.warrantyMonths} ${lang === 'pt' ? 'meses' : 'months'}` : lang === 'pt' ? 'Sim' : 'Yes' : lang === 'pt' ? 'Não' : 'No'
-    });
+    if (item.type === 'route') {
+      if (item.area) rows.push({
+        label: lang === 'pt' ? 'Cidades' : lang === 'es' ? 'Ciudades' : 'Cities',
+        value: item.area,
+        full: true
+      });
+      if (item.clients) rows.push({
+        label: lang === 'pt' ? 'Nº clientes' : lang === 'es' ? 'Nº clientes' : 'Clients',
+        value: String(item.clients)
+      });
+      if (item.revenue) rows.push({
+        label: lang === 'pt' ? 'Receita/mês' : lang === 'es' ? 'Ingreso/mes' : 'Revenue/mo',
+        value: `$${Number(item.revenue).toLocaleString()}/mo`
+      });
+      if (item.cat) rows.push({
+        label: lang === 'pt' ? 'Tipo de cliente' : lang === 'es' ? 'Tipo de cliente' : 'Client type',
+        value: item.cat
+      });
+    } else {
+      if (item.loc) rows.push({
+        label: lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City',
+        value: item.loc
+      });
+      if (item.address) rows.push({
+        label: lang === 'pt' ? 'Endereço' : lang === 'es' ? 'Dirección' : 'Address',
+        value: item.address,
+        full: true
+      });
+      if (item.sizeFt) rows.push({
+        label: lang === 'pt' ? 'Tamanho' : lang === 'es' ? 'Tamaño' : 'Size',
+        value: item.sizeFt
+      });
+      if (item.gallons) rows.push({
+        label: lang === 'pt' ? 'Capacidade' : lang === 'es' ? 'Capacidad' : 'Capacity',
+        value: `${Number(item.gallons).toLocaleString()} gal`
+      });
+      if (item.system) rows.push({
+        label: lang === 'pt' ? 'Sistema' : lang === 'es' ? 'Sistema' : 'System',
+        value: item.system === 'salt' ? lang === 'pt' ? 'Sal' : 'Salt' : lang === 'pt' ? 'Cloro' : 'Chlorine'
+      });
+      if (item.freq) rows.push({
+        label: lang === 'pt' ? 'Visitas/semana' : lang === 'es' ? 'Visitas/semana' : 'Visits/week',
+        value: `${item.freq}x`
+      });
+      if (item.price) rows.push({
+        label: lang === 'pt' ? 'Valor/mês' : lang === 'es' ? 'Valor/mes' : 'Monthly rate',
+        value: `$${Number(item.price).toLocaleString()}/mo`
+      });
+      if (item.warranty) rows.push({
+        label: lang === 'pt' ? 'Garantia' : lang === 'es' ? 'Garantía' : 'Warranty',
+        value: item.warranty === 'yes' ? item.warrantyMonths ? `${item.warrantyMonths} ${lang === 'pt' ? 'meses' : 'months'}` : lang === 'pt' ? 'Sim' : 'Yes' : lang === 'pt' ? 'Não' : 'No'
+      });
+    }
     if (rows.length === 0) return null;
     return /*#__PURE__*/React.createElement("div", {
       style: {
@@ -9996,6 +10016,12 @@ function MarketplaceScreen({
       fontSize: 13
     }
   }, t.contact))), r._live && (user.role === 'admin' || isMyPost(liveMarket.find(x => x._id === r._liveId) || {})) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '0 12px 10px',
+      display: 'flex',
+      justifyContent: 'flex-end'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     onClick: async e => {
       e.stopPropagation();
       if (!window.confirm(lang === 'pt' ? `Excluir "${r.name}"?` : `Delete "${r.name}"?`)) return;
@@ -10010,24 +10036,21 @@ function MarketplaceScreen({
       if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(r._liveId);
     },
     style: {
-      margin: '0 12px 12px',
-      padding: '6px 0',
-      borderRadius: 8,
-      background: '#FEF2F2',
-      border: '1px solid #FCA5A5',
+      padding: '4px 10px',
+      borderRadius: 6,
+      background: 'rgba(239,68,68,0.07)',
+      border: '1px solid rgba(239,68,68,0.25)',
       color: '#EF4444',
       fontSize: 11,
       fontWeight: 700,
-      textAlign: 'center',
       cursor: 'pointer',
-      display: 'flex',
+      display: 'inline-flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: 5
+      gap: 4
     }
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "11",
-    height: "11",
+    width: "10",
+    height: "10",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
@@ -10037,7 +10060,7 @@ function MarketplaceScreen({
     points: "3 6 5 6 21 6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-  })), lang === 'pt' ? 'Excluir rota' : lang === 'es' ? 'Eliminar ruta' : 'Delete route'))), routeSub === 'pools' && list.map(p => /*#__PURE__*/React.createElement("div", {
+  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete')))), routeSub === 'pools' && list.map(p => /*#__PURE__*/React.createElement("div", {
     key: p.id || p._liveId,
     className: "pg-card pg-card-tap",
     onClick: () => {

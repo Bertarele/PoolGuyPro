@@ -277,7 +277,7 @@ function AdminLogin({ onLogin }) {
 }
 
 // ── Modal de detalhes completos (fotos + todas as info) ───────
-function ViewMarketModal({ row, onClose, onApprove, onReject, onDelete }) {
+function ViewMarketModal({ row, onClose, onApprove, onReject, onDelete, onViewAuthor }) {
   const photos = (row.photo_urls && row.photo_urls.length > 0)
     ? row.photo_urls : (row.photo_url ? [row.photo_url] : []);
   const [imgIdx, setImgIdx] = React.useState(0);
@@ -416,7 +416,12 @@ function ViewMarketModal({ row, onClose, onApprove, onReject, onDelete }) {
 
           {/* Grid de detalhes */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:16}}>
-            <Field label="Autor" value={row.author}/>
+            <div style={{padding:'10px 13px', background:'#0f1117', borderRadius:10, border:'1px solid #1e293b'}}>
+              <div style={{fontSize:10, fontWeight:700, color:'#475569', letterSpacing:'.07em', textTransform:'uppercase', marginBottom:4}}>Autor</div>
+              <button onClick={()=>onViewAuthor&&onViewAuthor(row)} style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:600,color:'#0EBAC7',padding:0,textAlign:'left',textDecoration:'underline',textDecorationColor:'rgba(14,186,199,0.35)',textUnderlineOffset:3}}>
+                {row.author||'—'}
+              </button>
+            </div>
             <Field label="Publicado em" value={fmtDate(row.created_at)}/>
             {row.type==='pool'||row.type==='route' ? <Field label="Cidade" value={row.area}/> : <Field label="Categoria" value={row.cat}/>}
             {row.type==='pool'||row.type==='route' ? <Field label="Endereço" value={row.address||'—'}/> : <Field label="Condição" value={row.condition}/>}
@@ -1367,7 +1372,15 @@ function AdminApp({ adminUser, onLogout }) {
     {key:'price',       label:'Preço',     render:(v,r)=>r.price_mode==='neg'?'🤝 Neg.':(v?'$'+v:'—')},
     {key:'description', label:'Descrição', render:v=>v?<span style={{color:'#94a3b8',fontSize:11.5}}>{v.slice(0,50)}{v.length>50?'…':''}</span>:<span style={{color:'#334155',fontSize:11}}>—</span>},
     {key:'photo_urls',  label:'Fotos',     render:(v,r)=>{const p=(v&&v.length>0)?v:(r.photo_url?[r.photo_url]:[]);return p.length>0?<span style={{fontSize:11,fontWeight:700,color:'#0EBAC7'}}>📷 {p.length}</span>:<span style={{fontSize:11,color:'#334155'}}>Sem foto</span>;}},
-    {key:'author',      label:'Autor'},
+    {key:'author', label:'Autor', render:(v,row)=>(
+      <button onClick={()=>setViewUserModal({userId:row.author_id, userName:row.author})}
+        style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',
+          fontSize:13,fontWeight:600,color:'#0EBAC7',padding:0,textAlign:'left',
+          textDecoration:'underline',textDecorationColor:'rgba(14,186,199,0.35)',
+          textUnderlineOffset:3,whiteSpace:'nowrap',maxWidth:130,overflow:'hidden',textOverflow:'ellipsis',display:'block'}}>
+        {v||'—'}
+      </button>
+    )},
     {key:'created_at',  label:'Publicado', render:fmtDate},
   ];
 
@@ -1897,7 +1910,8 @@ function AdminApp({ adminUser, onLogout }) {
 
       {/* ── Modal View ── */}
       {viewRow && <ViewMarketModal row={viewRow} onClose={()=>setViewRow(null)} onApprove={approveMarket} onReject={rejectMarket}
-        onDelete={row=>{deleteRow('marketplace',row);setMarket(p=>p.filter(m=>m.id!==row.id));}}/>}
+        onDelete={row=>{deleteRow('marketplace',row);setMarket(p=>p.filter(m=>m.id!==row.id));}}
+        onViewAuthor={r=>setViewUserModal({userId:r.author_id, userName:r.author})}/>}
 
       {/* ── Modal Edit ── */}
       {editRow && <EditMarketModal row={editRow} onClose={()=>setEditRow(null)} onSave={(updated)=>{setMarket(p=>p.map(m=>m.id===updated.id?updated:m));setEditRow(null);showToast('✓ Anúncio atualizado!');}}/>}

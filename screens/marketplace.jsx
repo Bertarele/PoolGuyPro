@@ -580,7 +580,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const authorDisplay = item.author
     ? (item.author.includes('@') ? item.author.split('@')[0] : item.author)
     : 'Unknown';
-  const locationLabel = [item.loc, item.cat].filter(Boolean).join(' · ');
+  const locationLabel = item.type === 'route'
+    ? (item.area || '')
+    : [item.loc, item.cat].filter(Boolean).join(' · ');
   const timeAgoLabel  = item.createdAt ? timeAgo(item.createdAt, lang) : '';
 
   const _listingCtx = () => ({
@@ -948,10 +950,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             fontWeight:800, color:'var(--pg-blue-500)',
             letterSpacing:'-0.03em', lineHeight:1,
           }}>
-            {item.type === 'pool'
+            {(item.type === 'pool' || item.type === 'route')
               ? `$${Number(item.asking||0).toLocaleString()}`
               : `$${item.price}`}
-            {item.type !== 'pool' && periodSfx && <span style={{fontSize: large?16:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:3}}>{periodSfx}</span>}
+            {item.type !== 'pool' && item.type !== 'route' && periodSfx && <span style={{fontSize: large?16:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:3}}>{periodSfx}</span>}
           </span>
           {item.condition && (
             <span style={{
@@ -2580,9 +2582,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           ) : (
             <>
               <span style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
-                {item.type === 'pool'
+                {(item.type === 'pool' || item.type === 'route')
                   ? `$${Number(item.asking||0).toLocaleString()}`
-                  : <>${item.price}{periodSfx && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}</>
+                  : <>{item.type==='route'?`$${Number(item.asking||0).toLocaleString()}`:item.price}{periodSfx && item.type !== 'route' && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}</>
                 }
               </span>
               {item.condition && (
@@ -2630,14 +2632,21 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         {/* ── Pool / Route details grid ── */}
         {(item.type === 'pool' || item.type === 'route') && (() => {
           const rows = [];
-          if (item.loc)           rows.push({ label: lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City',              value: item.loc });
-          if (item.address)       rows.push({ label: lang==='pt'?'Endereço':lang==='es'?'Dirección':'Address',       value: item.address, full: true });
-          if (item.sizeFt)        rows.push({ label: lang==='pt'?'Tamanho':lang==='es'?'Tamaño':'Size',              value: item.sizeFt });
-          if (item.gallons)       rows.push({ label: lang==='pt'?'Capacidade':lang==='es'?'Capacidad':'Capacity',    value: `${Number(item.gallons).toLocaleString()} gal` });
-          if (item.system)        rows.push({ label: lang==='pt'?'Sistema':lang==='es'?'Sistema':'System',           value: item.system === 'salt' ? (lang==='pt'?'Sal':'Salt') : (lang==='pt'?'Cloro':'Chlorine') });
-          if (item.freq)          rows.push({ label: lang==='pt'?'Visitas/semana':lang==='es'?'Visitas/semana':'Visits/week', value: `${item.freq}x` });
-          if (item.price)         rows.push({ label: lang==='pt'?'Valor/mês':lang==='es'?'Valor/mes':'Monthly rate', value: `$${Number(item.price).toLocaleString()}/mo` });
-          if (item.warranty)      rows.push({ label: lang==='pt'?'Garantia':lang==='es'?'Garantía':'Warranty',       value: item.warranty === 'yes' ? (item.warrantyMonths ? `${item.warrantyMonths} ${lang==='pt'?'meses':'months'}` : (lang==='pt'?'Sim':'Yes')) : (lang==='pt'?'Não':'No') });
+          if (item.type === 'route') {
+            if (item.area)    rows.push({ label: lang==='pt'?'Cidades':lang==='es'?'Ciudades':'Cities',               value: item.area, full: true });
+            if (item.clients) rows.push({ label: lang==='pt'?'Nº clientes':lang==='es'?'Nº clientes':'Clients',       value: String(item.clients) });
+            if (item.revenue) rows.push({ label: lang==='pt'?'Receita/mês':lang==='es'?'Ingreso/mes':'Revenue/mo',    value: `$${Number(item.revenue).toLocaleString()}/mo` });
+            if (item.cat)     rows.push({ label: lang==='pt'?'Tipo de cliente':lang==='es'?'Tipo de cliente':'Client type', value: item.cat });
+          } else {
+            if (item.loc)      rows.push({ label: lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City',              value: item.loc });
+            if (item.address)  rows.push({ label: lang==='pt'?'Endereço':lang==='es'?'Dirección':'Address',       value: item.address, full: true });
+            if (item.sizeFt)   rows.push({ label: lang==='pt'?'Tamanho':lang==='es'?'Tamaño':'Size',             value: item.sizeFt });
+            if (item.gallons)  rows.push({ label: lang==='pt'?'Capacidade':lang==='es'?'Capacidad':'Capacity',    value: `${Number(item.gallons).toLocaleString()} gal` });
+            if (item.system)   rows.push({ label: lang==='pt'?'Sistema':lang==='es'?'Sistema':'System',          value: item.system === 'salt' ? (lang==='pt'?'Sal':'Salt') : (lang==='pt'?'Cloro':'Chlorine') });
+            if (item.freq)     rows.push({ label: lang==='pt'?'Visitas/semana':lang==='es'?'Visitas/semana':'Visits/week', value: `${item.freq}x` });
+            if (item.price)    rows.push({ label: lang==='pt'?'Valor/mês':lang==='es'?'Valor/mes':'Monthly rate', value: `$${Number(item.price).toLocaleString()}/mo` });
+            if (item.warranty) rows.push({ label: lang==='pt'?'Garantia':lang==='es'?'Garantía':'Warranty',      value: item.warranty === 'yes' ? (item.warrantyMonths ? `${item.warrantyMonths} ${lang==='pt'?'meses':'months'}` : (lang==='pt'?'Sim':'Yes')) : (lang==='pt'?'Não':'No') });
+          }
           if (rows.length === 0) return null;
           return (
             <div style={{marginTop:14, background:'var(--pg-ink-50)', borderRadius:14, padding:'14px 16px', border:'1px solid var(--pg-ink-200)'}}>
@@ -5130,21 +5139,23 @@ function MarketplaceScreen({ ctx }) {
                 </div>
                 {/* Quick delete — owner or admin */}
                 {r._live && (user.role==='admin' || isMyPost(liveMarket.find(x=>x._id===r._liveId)||{})) && (
-                  <div onClick={async(e)=>{
-                    e.stopPropagation();
-                    if(!window.confirm(lang==='pt'?`Excluir "${r.name}"?`:`Delete "${r.name}"?`)) return;
-                    const {error} = await window.sb.from('marketplace').delete().eq('id', r._liveId);
-                    if(error){showToast&&showToast('❌ '+error.message);return;}
-                    showToast&&showToast(lang==='pt'?'🗑️ Rota excluída':'🗑️ Route deleted');
-                    if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(r._liveId);
-                  }} style={{margin:'0 12px 12px', padding:'6px 0', borderRadius:8,
-                    background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
-                    fontSize:11, fontWeight:700, textAlign:'center', cursor:'pointer',
-                    display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    </svg>
-                    {lang==='pt'?'Excluir rota':lang==='es'?'Eliminar ruta':'Delete route'}
+                  <div style={{padding:'0 12px 10px', display:'flex', justifyContent:'flex-end'}}>
+                    <div onClick={async(e)=>{
+                      e.stopPropagation();
+                      if(!window.confirm(lang==='pt'?`Excluir "${r.name}"?`:`Delete "${r.name}"?`)) return;
+                      const {error} = await window.sb.from('marketplace').delete().eq('id', r._liveId);
+                      if(error){showToast&&showToast('❌ '+error.message);return;}
+                      showToast&&showToast(lang==='pt'?'🗑️ Rota excluída':'🗑️ Route deleted');
+                      if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(r._liveId);
+                    }} style={{padding:'4px 10px', borderRadius:6,
+                      background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.25)', color:'#EF4444',
+                      fontSize:11, fontWeight:700, cursor:'pointer',
+                      display:'inline-flex', alignItems:'center', gap:4}}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      </svg>
+                      {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+                    </div>
                   </div>
                 )}
               </div>
