@@ -348,7 +348,7 @@ function WorkScreen({ ctx }) {
 
                   {/* County + actions */}
                   <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
-                    <button onClick={()=>setWorkLocationFilterOpen(true)} style={{display:'flex',alignItems:'center',gap:6,background:workUserLocation?'var(--pg-aqua-100)':(darkMode?'rgba(0,119,182,0.32)':'rgba(0,119,182,0.15)'),border:workUserLocation?'1.5px solid var(--pg-aqua-400)':(darkMode?'1.5px solid rgba(0,119,182,0.60)':'1.5px solid rgba(0,119,182,0.45)'),borderRadius:999,padding:workUserLocation?'7px 14px':'7px 12px',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
+                    <button onClick={()=>setWorkLocationFilterOpen(true)} style={{display:'flex',alignItems:'center',gap:6,background:workUserLocation?'var(--pg-aqua-100)':(darkMode?'rgba(255,255,255,0.16)':'rgba(255,255,255,0.92)'),border:workUserLocation?'1.5px solid var(--pg-aqua-400)':(darkMode?'1.5px solid rgba(255,255,255,0.36)':'1.5px solid rgba(0,119,182,0.30)'),borderRadius:999,padding:workUserLocation?'7px 14px':'7px 12px',boxShadow:workUserLocation?'none':'0 2px 8px rgba(0,0,0,0.18)',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
                       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':(darkMode?'rgba(255,255,255,0.92)':'#0077B6')} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
                       {workUserLocation && <span style={{fontSize:12,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workLocCity ? `${workLocCity} · ` : ''}{workRadiusMiles} mi</span>}
                     </button>
@@ -719,9 +719,9 @@ function WorkScreen({ ctx }) {
                 </div>
                 <div style={{width:1, height:28, background:H.divider}}/>
                 <button onClick={()=>setWorkLocationFilterOpen(true)}
-                  style={{display:'flex', alignItems:'center', gap:6, background:workUserLocation?'var(--pg-aqua-100)':(darkMode?'rgba(0,119,182,0.30)':'rgba(0,119,182,0.13)'), border:workUserLocation?'1.5px solid var(--pg-aqua-400)':(darkMode?'1.5px solid rgba(0,119,182,0.55)':'1.5px solid rgba(0,119,182,0.42)'),
-                    borderRadius:999, padding:workUserLocation?'7px 14px':'7px 12px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':(darkMode?'rgba(255,255,255,0.90)':'#0077B6')} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
+                  style={{display:'flex', alignItems:'center', gap:6, background:workUserLocation?'var(--pg-aqua-100)':(darkMode?'rgba(255,255,255,0.16)':'rgba(255,255,255,0.92)'), border:workUserLocation?'1.5px solid var(--pg-aqua-400)':(darkMode?'1.5px solid rgba(255,255,255,0.36)':'1.5px solid rgba(0,119,182,0.30)'),
+                    borderRadius:999, padding:workUserLocation?'7px 14px':'7px 12px', boxShadow:workUserLocation?'none':'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':(darkMode?'rgba(255,255,255,0.95)':'#0077B6')} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
                   {workUserLocation && <span style={{fontSize:12,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workLocCity ? `${workLocCity} · ` : ''}{workRadiusMiles} mi</span>}
                 </button>
               </>}
@@ -737,9 +737,9 @@ function WorkScreen({ ctx }) {
                 </div>
                 <div style={{width:1, height:28, background:H.divider}}/>
                 <button onClick={()=>setWorkLocationFilterOpen(true)}
-                  style={{display:'flex', alignItems:'center', gap:6, background:workUserLocation?'var(--pg-aqua-100)':(darkMode?'rgba(0,119,182,0.30)':'rgba(0,119,182,0.13)'), border:workUserLocation?'1.5px solid var(--pg-aqua-400)':(darkMode?'1.5px solid rgba(0,119,182,0.55)':'1.5px solid rgba(0,119,182,0.42)'),
-                    borderRadius:999, padding:workUserLocation?'7px 14px':'7px 12px', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':(darkMode?'rgba(255,255,255,0.90)':'#0077B6')} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
+                  style={{display:'flex', alignItems:'center', gap:6, background:workUserLocation?'var(--pg-aqua-100)':(darkMode?'rgba(255,255,255,0.16)':'rgba(255,255,255,0.92)'), border:workUserLocation?'1.5px solid var(--pg-aqua-400)':(darkMode?'1.5px solid rgba(255,255,255,0.36)':'1.5px solid rgba(0,119,182,0.30)'),
+                    borderRadius:999, padding:workUserLocation?'7px 14px':'7px 12px', boxShadow:workUserLocation?'none':'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer', fontFamily:'inherit', color:'inherit', touchAction:'manipulation'}}>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':(darkMode?'rgba(255,255,255,0.95)':'#0077B6')} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
                   {workUserLocation && <span style={{fontSize:12,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workLocCity ? `${workLocCity} · ` : ''}{workRadiusMiles} mi</span>}
                 </button>
               </>}
