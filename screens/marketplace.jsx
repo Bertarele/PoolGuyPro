@@ -3599,7 +3599,10 @@ function MarketplaceScreen({ ctx }) {
 
   const sellForView = { buy:'sell', rent:'rent', routes:'route' };
 
-  const totalItems = EQUIPMENT.length;
+  const totalItems = marketByCounty.filter(m =>
+    (m.type === 'sell' || m.type === 'rent') &&
+    (m.status === 'approved' || (m.status === 'pending' && isMyPost(m)))
+  ).length + EQUIPMENT.length;
   const totalRoutes = allRoutes.length;
   const locationLbl = lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South Florida';
 
