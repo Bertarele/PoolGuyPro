@@ -5167,7 +5167,7 @@ function MarketplaceScreen({ ctx }) {
                   }
                   setSelected({...p, _type:'pool'}); window.history.pushState({pgPool:p.id},'','?listing=pool-'+p.id);
                 }}
-                style={{padding:0, overflow:'hidden', opacity: p.status==='pending' ? 0.75 : 1}}>
+                style={{padding:0, overflow:'hidden', position:'relative', opacity: p.status==='pending' ? 0.75 : 1}}>
                 <div style={{display:'flex', gap:12, padding:'13px 14px'}}>
                   {/* Pool thumbnail — photo if available, else icon + count */}
                   {(p.photoUrl || (p.photoUrls && p.photoUrls[0])) ? (
@@ -5240,22 +5240,20 @@ function MarketplaceScreen({ ctx }) {
 
                 {/* Quick delete — owner or admin */}
                 {p._live && (user.role==='admin' || isMyPost(liveMarket.find(x=>x._id===p._liveId)||{})) && (
-                  <div onClick={async(e)=>{
+                  <button onClick={async(e)=>{
                     e.stopPropagation();
                     if(!window.confirm(lang==='pt'?`Excluir "${p.name}"?`:`Delete "${p.name}"?`)) return;
                     const {error} = await window.sb.from('marketplace').delete().eq('id', p._liveId);
                     if(error){showToast&&showToast('❌ '+error.message);return;}
                     showToast&&showToast(lang==='pt'?'🗑️ Piscina excluída':'🗑️ Pool deleted');
                     if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(p._liveId);
-                  }} style={{margin:'0 12px 12px', padding:'6px 0', borderRadius:8,
-                    background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
-                    fontSize:11, fontWeight:700, textAlign:'center', cursor:'pointer',
-                    display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  }} style={{position:'absolute', top:10, right:10, width:28, height:28, borderRadius:7,
+                    background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
+                    color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                       <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                     </svg>
-                    {lang==='pt'?'Excluir piscina':lang==='es'?'Eliminar piscina':'Delete pool'}
-                  </div>
+                  </button>
                 )}
               </div>
             ))}

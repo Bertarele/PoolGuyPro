@@ -10079,6 +10079,7 @@ function MarketplaceScreen({
     style: {
       padding: 0,
       overflow: 'hidden',
+      position: 'relative',
       opacity: p.status === 'pending' ? 0.75 : 1
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -10256,7 +10257,7 @@ function MarketplaceScreen({
       WebkitBoxOrient: 'vertical',
       overflow: 'hidden'
     }
-  }, tr(p.desc, lang)) : null, p._live && (user.role === 'admin' || isMyPost(liveMarket.find(x => x._id === p._liveId) || {})) && /*#__PURE__*/React.createElement("div", {
+  }, tr(p.desc, lang)) : null, p._live && (user.role === 'admin' || isMyPost(liveMarket.find(x => x._id === p._liveId) || {})) && /*#__PURE__*/React.createElement("button", {
     onClick: async e => {
       e.stopPropagation();
       if (!window.confirm(lang === 'pt' ? `Excluir "${p.name}"?` : `Delete "${p.name}"?`)) return;
@@ -10271,34 +10272,34 @@ function MarketplaceScreen({
       if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(p._liveId);
     },
     style: {
-      margin: '0 12px 12px',
-      padding: '6px 0',
-      borderRadius: 8,
-      background: '#FEF2F2',
-      border: '1px solid #FCA5A5',
+      position: 'absolute',
+      top: 10,
+      right: 10,
+      width: 28,
+      height: 28,
+      borderRadius: 7,
+      background: 'rgba(239,68,68,0.08)',
+      border: '1px solid rgba(239,68,68,0.22)',
       color: '#EF4444',
-      fontSize: 11,
-      fontWeight: 700,
-      textAlign: 'center',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 5
+      zIndex: 2
     }
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "11",
-    height: "11",
+    width: "13",
+    height: "13",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: "2.5",
+    strokeWidth: "2.2",
     strokeLinecap: "round"
   }, /*#__PURE__*/React.createElement("polyline", {
     points: "3 6 5 6 21 6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-  })), lang === 'pt' ? 'Excluir piscina' : lang === 'es' ? 'Eliminar piscina' : 'Delete pool')))))), viewListing && /*#__PURE__*/React.createElement("div", {
+  })))))))), viewListing && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
       inset: 0,
