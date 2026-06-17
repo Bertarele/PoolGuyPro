@@ -302,7 +302,7 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
         <Avatar name={convo.name} size={38} src={receiverPhoto}/>
         <div style={{flex:1, minWidth:0}}>
           {openPublicProfile && convo.receiverId
-            ? <button onClick={()=>openPublicProfile({ userId: convo.receiverId, userName: convo.name })}
+            ? <button onClick={()=>openPublicProfile({ uid: convo.receiverId, name: convo.name })}
                 style={{background:'none', border:'none', padding:0, cursor:'pointer', fontFamily:'inherit',
                   fontSize:14, fontWeight:600, color:'var(--pg-ink-900)', textAlign:'left',
                   textDecoration:'underline', textDecorationColor:'rgba(0,0,0,0.18)', textUnderlineOffset:2}}>
@@ -3892,11 +3892,23 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
 
 // ── Public user profile sheet ────────────────────────────────
 function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
-  const [realRatings, setRealRatings] = React.useState(null); // null = not loaded yet
+  const [realRatings,  setRealRatings]  = React.useState(null);
+  const [fetchedProfile, setFetchedProfile] = React.useState(null);
 
   React.useEffect(() => {
     if (open) { _lockScreen(); return () => _unlockScreen(); }
   }, [open]);
+
+  // Fetch full profile from Supabase when opened (fills in photo, role, loc, etc.)
+  React.useEffect(() => {
+    setFetchedProfile(null);
+    if (!open || !profile?.uid || !window.sb) return;
+    window.sb.from('profiles')
+      .select('id,name,photo_url,role,verified,loc,jobs_completed')
+      .eq('id', profile.uid).single()
+      .then(({ data }) => { if (data) setFetchedProfile(data); })
+      .catch(() => {});
+  }, [open, profile?.uid]);
 
   // Load real ratings from Supabase whenever the profile changes
   React.useEffect(() => {
@@ -3913,7 +3925,9 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
   }, [open, profile?.uid]);
 
   if (!open || !profile) return null;
-  const name = profile.name || 'User';
+  const name  = fetchedProfile?.name  || profile.name  || 'User';
+  const photo = fetchedProfile?.photo_url || profile.photo || undefined;
+  const loc   = fetchedProfile?.loc   || profile.loc   || 'South Florida';
 
   // Use real ratings if loaded, otherwise fall back to profile prop
   const ratingList   = realRatings || [];
@@ -3927,8 +3941,7 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
   const hasRating = realRatings !== null ? reviewCount > 0 : (profile.rating !== undefined && profile.rating !== null);
   const rating    = realRatings !== null ? avgRating : (profile.rating ?? 4.8);
   const reviews   = realRatings !== null ? reviewCount : (profile.reviews ?? 0);
-  const jobs      = profile.jobs !== undefined ? profile.jobs : reviews;
-  const loc       = profile.loc || 'South Florida';
+  const jobs      = fetchedProfile?.jobs_completed ?? (profile.jobs !== undefined ? profile.jobs : reviews);
 
   const msgLbl = lang==='pt'?'Mensagem':lang==='es'?'Mensaje':'Message';
   const jobsLbl = lang==='pt'?'Trabalhos':lang==='es'?'Trabajos':'Jobs';
@@ -3952,7 +3965,7 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
 
           <div style={{display:'inline-block', position:'relative', marginBottom:12}}>
             <div style={{padding:3, borderRadius:'50%', background:'linear-gradient(135deg,var(--pg-aqua-500),#0D7280)'}}>
-              <Avatar name={name} size={72} src={profile.photo || undefined}/>
+              <Avatar name={name} size={72} src={photo}/>
             </div>
             <div style={{position:'absolute', bottom:2, right:2, width:20, height:20, borderRadius:'50%',
               background:'var(--pg-aqua-500)', border:'2px solid #040D18',
