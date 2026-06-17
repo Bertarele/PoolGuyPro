@@ -6452,7 +6452,8 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
   const [photos,     setPhotos]     = React.useState([]);
 
   const isValid = title.trim().length > 3 && area.trim().length > 0
-    && system !== '' && freq !== '' && askingPrice.trim().length > 0 && warranty !== '';
+    && system !== '' && freq !== '' && askingPrice.trim().length > 0 && warranty !== ''
+    && (warranty !== 'yes' || wMonths !== '');
 
   const lbl = (pt, es, en) => lang==='pt'?pt:lang==='es'?es:en;
 
