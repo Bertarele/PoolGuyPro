@@ -651,7 +651,7 @@ const FL_CITY_COORDS = {
   'Lighthouse Point': [26.2765, -80.0898],
   'Margate': [26.2448, -80.2065],
   'Miramar': [25.9874, -80.2323],
-  'North Lauderdale': [26.2198, -80.2220],
+  'North Lauderdale': [26.2150, -80.2290],
   'Oakland Park': [26.1723, -80.1320],
   'Parkland': [26.3173, -80.2323],
   'Pembroke Park': [25.9935, -80.1737],

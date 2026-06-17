@@ -334,7 +334,7 @@ const FL_CITY_COORDS = {
   'Fort Lauderdale':[26.1224,-80.1373],'Hallandale Beach':[25.9812,-80.1481],'Hillsboro Beach':[26.3148,-80.0775],
   'Hollywood':[26.0112,-80.1495],'Lauderdale Lakes':[26.1671,-80.2095],'Lauderdale-by-the-Sea':[26.1940,-80.0956],
   'Lauderhill':[26.1681,-80.2131],'Lighthouse Point':[26.2765,-80.0898],'Margate':[26.2448,-80.2065],
-  'Miramar':[25.9874,-80.2323],'North Lauderdale':[26.2198,-80.2220],'Oakland Park':[26.1723,-80.1320],
+  'Miramar':[25.9874,-80.2323],'North Lauderdale':[26.2150,-80.2290],'Oakland Park':[26.1723,-80.1320],
   'Parkland':[26.3173,-80.2323],'Pembroke Park':[25.9935,-80.1737],'Pembroke Pines':[26.0073,-80.2962],
   'Plantation':[26.1256,-80.2331],'Pompano Beach':[26.2379,-80.1248],'Sea Ranch Lakes':[26.1779,-80.0902],
   'Southwest Ranches':[26.0404,-80.2967],'Sunrise':[26.1667,-80.2561],'Tamarac':[26.2130,-80.2499],
