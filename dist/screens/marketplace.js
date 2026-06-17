@@ -12801,12 +12801,15 @@ function PostPoolSheet({
     style: {
       marginTop: 12
     }
-  }, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Meses de garantia', 'Meses de garantía', 'Warranty months')), /*#__PURE__*/React.createElement("input", {
-    className: "pg-field",
+  }, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Meses de garantia', 'Meses de garantía', 'Warranty months')), /*#__PURE__*/React.createElement(ToggleGroup, {
     value: wMonths,
-    onChange: e => setWMonths(e.target.value),
-    placeholder: lbl('Ex: 3 meses', 'Ej: 3 meses', 'e.g. 3 months'),
-    type: "number"
+    onChange: v => setWMonths(v),
+    options: Array.from({
+      length: 12
+    }, (_, i) => ({
+      id: String(i + 1),
+      label: `${i + 1} ${lang === 'pt' ? 'mes' + (i === 0 ? '' : 'es') : lang === 'es' ? 'mes' + (i === 0 ? '' : 'es') : 'mo' + (i === 0 ? '' : 's')}`
+    }))
   })))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 18px 20px',
