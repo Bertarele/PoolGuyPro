@@ -10015,13 +10015,7 @@ function MarketplaceScreen({
       padding: '0 14px',
       fontSize: 13
     }
-  }, t.contact))), r._live && (user.role === 'admin' || isMyPost(liveMarket.find(x => x._id === r._liveId) || {})) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '0 12px 10px',
-      display: 'flex',
-      justifyContent: 'flex-end'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, t.contact))), r._live && (user.role === 'admin' || isMyPost(liveMarket.find(x => x._id === r._liveId) || {})) && /*#__PURE__*/React.createElement("button", {
     onClick: async e => {
       e.stopPropagation();
       if (!window.confirm(lang === 'pt' ? `Excluir "${r.name}"?` : `Delete "${r.name}"?`)) return;
@@ -10036,31 +10030,34 @@ function MarketplaceScreen({
       if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(r._liveId);
     },
     style: {
-      padding: '4px 10px',
-      borderRadius: 6,
-      background: 'rgba(239,68,68,0.07)',
-      border: '1px solid rgba(239,68,68,0.25)',
+      position: 'absolute',
+      top: 10,
+      right: 10,
+      width: 28,
+      height: 28,
+      borderRadius: 7,
+      background: 'rgba(239,68,68,0.08)',
+      border: '1px solid rgba(239,68,68,0.22)',
       color: '#EF4444',
-      fontSize: 11,
-      fontWeight: 700,
       cursor: 'pointer',
-      display: 'inline-flex',
+      display: 'flex',
       alignItems: 'center',
-      gap: 4
+      justifyContent: 'center',
+      zIndex: 2
     }
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "10",
-    height: "10",
+    width: "13",
+    height: "13",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: "2.5",
+    strokeWidth: "2.2",
     strokeLinecap: "round"
   }, /*#__PURE__*/React.createElement("polyline", {
     points: "3 6 5 6 21 6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete')))), routeSub === 'pools' && list.map(p => /*#__PURE__*/React.createElement("div", {
+  }))))), routeSub === 'pools' && list.map(p => /*#__PURE__*/React.createElement("div", {
     key: p.id || p._liveId,
     className: "pg-card pg-card-tap",
     onClick: () => {
