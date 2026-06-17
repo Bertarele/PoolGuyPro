@@ -12853,16 +12853,14 @@ function PostRouteSheet({
   onSubmit
 }) {
   const [title, setTitle] = React.useState('');
-  const [poolKind, setPoolKind] = React.useState('house');
-  const [routeName, setRouteName] = React.useState('');
+  const [poolKind, setPoolKind] = React.useState('residential');
   const [clients, setClients] = React.useState('');
   const [revenue, setRevenue] = React.useState('');
   const [asking, setAsking] = React.useState('');
-  const [area, setArea] = React.useState('');
-  const [address, setAddress] = React.useState(''); // optional exact address
-  const [photos, setPhotos] = React.useState([]); // optional photos
-
-  const isValid = title.trim().length > 3 && routeName.trim().length > 2 && clients.trim().length > 0 && asking.trim().length > 0;
+  const [area, setArea] = React.useState([]);
+  const [cityInput, setCityInput] = React.useState('');
+  const [photos, setPhotos] = React.useState([]);
+  const isValid = title.trim().length > 3 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
   const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
   const ToggleGroup = ({
@@ -12947,29 +12945,34 @@ function PostRouteSheet({
     value: title,
     onChange: e => setTitle(e.target.value),
     placeholder: lbl('Ex: Rota à venda em Pompano Beach', 'Ej: Ruta en venta en Pompano Beach', 'e.g. Route for sale in Pompano Beach')
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Tipo de imóvel *', 'Tipo de propiedad *', 'Property type *')), /*#__PURE__*/React.createElement(ToggleGroup, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Tipo de cliente *', 'Tipo de cliente *', 'Client type *')), /*#__PURE__*/React.createElement(ToggleGroup, {
     value: poolKind,
     onChange: setPoolKind,
     options: [{
-      id: 'house',
-      label: lbl('Casa', 'Casa', 'House')
+      id: 'residential',
+      label: lbl('Residencial', 'Residencial', 'Residential')
     }, {
-      id: 'condo',
-      label: lbl('Condomínio', 'Condominio', 'Condo')
+      id: 'commercial',
+      label: lbl('Comercial', 'Comercial', 'Commercial')
+    }, {
+      id: 'mixed',
+      label: lbl('Misto', 'Mixto', 'Mixed')
     }]
-  })), /*#__PURE__*/React.createElement(PhotoPicker, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(PhotoPicker, {
     photos: photos,
     onAdd: url => setPhotos(p => [...p, url]),
     onRemove: url => setPhotos(p => p.filter(u => u !== url)),
     max: 5,
     lang: lang,
     title: lbl('Fotos da rota (opcional)', 'Fotos de la ruta (opcional)', 'Route photos (optional)')
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, t.routeNameLbl), /*#__PURE__*/React.createElement("input", {
-    className: "pg-field",
-    value: routeName,
-    onChange: e => setRouteName(e.target.value),
-    placeholder: t.routeNamePh
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, t.clientsLbl), /*#__PURE__*/React.createElement("input", {
+  }), /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: '6px 0 0',
+      fontSize: 12,
+      color: 'var(--pg-ink-500)',
+      lineHeight: 1.4
+    }
+  }, lbl('Pode ser print do Skimmer, PoolBrain, etc.', 'Puede ser captura de Skimmer, PoolBrain, etc.', 'Can be a screenshot from Skimmer, PoolBrain, etc.'))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, t.clientsLbl), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
     value: clients,
     onChange: e => setClients(e.target.value),
@@ -13041,15 +13044,45 @@ function PostRouteSheet({
       color: 'var(--pg-blue-500)',
       fontFamily: 'var(--pg-font-display)'
     }
-  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Cidade', 'Ciudad', 'City')), /*#__PURE__*/React.createElement(CityAutocomplete, {
-    value: area,
-    onChange: v => setArea(v),
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Cidades da rota', 'Ciudades de la ruta', 'Route cities')), area.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginBottom: 10
+    }
+  }, area.map(city => /*#__PURE__*/React.createElement("div", {
+    key: city,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 5,
+      background: 'var(--pg-blue-100)',
+      color: 'var(--pg-blue-700)',
+      borderRadius: 20,
+      padding: '5px 10px 5px 12px',
+      fontSize: 13,
+      fontWeight: 600
+    }
+  }, city, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setArea(prev => prev.filter(c => c !== city)),
+    style: {
+      border: 'none',
+      background: 'transparent',
+      cursor: 'pointer',
+      padding: '0 0 0 2px',
+      lineHeight: 1,
+      color: 'var(--pg-blue-400)',
+      fontSize: 17,
+      fontWeight: 400
+    }
+  }, "\xD7")))), /*#__PURE__*/React.createElement(CityAutocomplete, {
+    value: cityInput,
+    onChange: v => {
+      if (v && !area.includes(v)) setArea(prev => [...prev, v]);
+      setCityInput('');
+    },
     lang: lang
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(FormLabel, null, lbl('Endereço (opcional)', 'Dirección (opcional)', 'Address (optional)')), /*#__PURE__*/React.createElement("input", {
-    className: "pg-field",
-    value: address,
-    onChange: e => setAddress(e.target.value),
-    placeholder: lbl('Ex: 1234 NW 5th St, Fort Lauderdale', 'Ej: 1234 NW 5th St, Fort Lauderdale', 'e.g. 1234 NW 5th St, Fort Lauderdale')
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 18px 20px',
@@ -13061,12 +13094,10 @@ function PostRouteSheet({
       type: 'route',
       name: title,
       cat: poolKind,
-      routeName,
       clients,
       revenue,
       asking,
-      area,
-      address: address || null,
+      area: area.join(', '),
       photoUrl: photos[0] || null,
       photoUrls: photos
     }),
