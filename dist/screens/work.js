@@ -49,7 +49,7 @@ function WorkScreen({
   });
   const [workRadiusMiles, setWorkRadiusMiles] = React.useState(() => {
     try {
-      const s = localStorage.getItem('pg_loc_r');
+      const s = localStorage.getItem('pg_loc_r_work');
       return s ? Number(s) : 25;
     } catch (e) {
       return 25;
@@ -63,9 +63,14 @@ function WorkScreen({
   }, [workUserLocation]);
   React.useEffect(() => {
     try {
-      localStorage.setItem('pg_loc_r', String(workRadiusMiles));
+      localStorage.setItem('pg_loc_r_work', String(workRadiusMiles));
     } catch (e) {}
   }, [workRadiusMiles]);
+  React.useEffect(() => {
+    const h = e => setWorkUserLocation(e.detail);
+    window.addEventListener('pg_loc_updated', h);
+    return () => window.removeEventListener('pg_loc_updated', h);
+  }, []);
   const subIcons = {
     hiring: (s, c) => Icon.briefcase(s, c),
     techs: (s, c) => /*#__PURE__*/React.createElement("svg", {
@@ -688,46 +693,6 @@ function WorkScreen({
           flexShrink: 0
         }
       }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => setWorkLocationFilterOpen(true),
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: workUserLocation ? 'var(--pg-aqua-100)' : 'rgba(0,178,169,0.10)',
-          border: '1.5px solid var(--pg-aqua-400)',
-          borderRadius: 999,
-          padding: workUserLocation ? '7px 14px' : '7px 12px',
-          boxShadow: 'none',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          color: 'inherit',
-          touchAction: 'manipulation'
-        }
-      }, /*#__PURE__*/React.createElement("svg", {
-        width: "19",
-        height: "19",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: workUserLocation ? 'var(--pg-aqua-600)' : 'var(--pg-aqua-500)',
-        strokeWidth: "2.2",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }, /*#__PURE__*/React.createElement("path", {
-        d: "M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z",
-        fill: workUserLocation ? 'var(--pg-aqua-400)' : 'none'
-      }), /*#__PURE__*/React.createElement("circle", {
-        cx: "12",
-        cy: "9",
-        r: "2.5",
-        fill: workUserLocation ? 'white' : 'none'
-      })), workUserLocation && /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 12,
-          fontWeight: 600,
-          color: 'var(--pg-aqua-700)',
-          whiteSpace: 'nowrap'
-        }
-      }, workLocCity ? `${workLocCity} · ` : '', workRadiusMiles, " mi")), /*#__PURE__*/React.createElement("button", {
         onClick: () => openChat && openChat(),
         style: {
           width: 38,
@@ -1357,7 +1322,48 @@ function WorkScreen({
         color: 'var(--pg-ink-500)',
         marginTop: 2
       }
-    }, sub === 'hiring' ? `${HIRING.length + liveJobs.length} ${lang === 'pt' ? 'vagas · Broward County' : lang === 'es' ? 'empleos · Broward County' : 'openings · Broward County'}` : sub === 'techs' ? `${TECHS.length + liveTechs.length} ${lang === 'pt' ? 'técnicos · South Florida' : lang === 'es' ? 'técnicos · South Florida' : 'techs · South Florida'}` : `${VACATION_LISTINGS.length + liveVacations.length} ${lang === 'pt' ? 'coberturas disponíveis' : lang === 'es' ? 'coberturas disponibles' : 'covers available'}`))), /*#__PURE__*/React.createElement("div", {
+    }, sub === 'hiring' ? `${HIRING.length + liveJobs.length} ${lang === 'pt' ? 'vagas · Broward County' : lang === 'es' ? 'empleos · Broward County' : 'openings · Broward County'}` : sub === 'techs' ? `${TECHS.length + liveTechs.length} ${lang === 'pt' ? 'técnicos · South Florida' : lang === 'es' ? 'técnicos · South Florida' : 'techs · South Florida'}` : `${VACATION_LISTINGS.length + liveVacations.length} ${lang === 'pt' ? 'coberturas disponíveis' : lang === 'es' ? 'coberturas disponibles' : 'covers available'}`)), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setWorkLocationFilterOpen(true),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        background: workUserLocation ? 'var(--pg-aqua-100)' : 'rgba(0,178,169,0.10)',
+        border: '1.5px solid var(--pg-aqua-400)',
+        borderRadius: 999,
+        padding: workUserLocation ? '7px 14px' : '7px 12px',
+        boxShadow: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        color: 'inherit',
+        touchAction: 'manipulation',
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "19",
+      height: "19",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: workUserLocation ? 'var(--pg-aqua-600)' : 'var(--pg-aqua-500)',
+      strokeWidth: "2.2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z",
+      fill: workUserLocation ? 'var(--pg-aqua-400)' : 'none'
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "9",
+      r: "2.5",
+      fill: workUserLocation ? 'white' : 'none'
+    })), workUserLocation && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        fontWeight: 600,
+        color: 'var(--pg-aqua-700)',
+        whiteSpace: 'nowrap'
+      }
+    }, workLocCity ? `${workLocCity} · ` : '', workRadiusMiles, " mi"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',

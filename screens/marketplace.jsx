@@ -3350,7 +3350,7 @@ function MarketplaceScreen({ ctx }) {
   const [userLocation,     setUserLocation]     = React.useState(() => { try { const s=localStorage.getItem('pg_loc'); return s?JSON.parse(s):null; } catch(e){return null;} });
   const [radiusMiles,      setRadiusMiles]      = React.useState(() => { try { const s=localStorage.getItem('pg_loc_r'); return s?Number(s):25; } catch(e){return 25;} });
   const [locationFilterOpen, setLocationFilterOpen] = React.useState(false);
-  React.useEffect(()=>{ try{ if(userLocation) localStorage.setItem('pg_loc',JSON.stringify(userLocation)); else localStorage.removeItem('pg_loc'); }catch(e){} },[userLocation]);
+  React.useEffect(()=>{ try{ if(userLocation) localStorage.setItem('pg_loc',JSON.stringify(userLocation)); else localStorage.removeItem('pg_loc'); window.dispatchEvent(new CustomEvent('pg_loc_updated',{detail:userLocation})); }catch(e){} },[userLocation]);
   React.useEffect(()=>{ try{ localStorage.setItem('pg_loc_r',String(radiusMiles)); }catch(e){} },[radiusMiles]);
   const [routePrice, setRoutePrice] = React.useState('all');  // routes price filter
   const [routeSub,   setRouteSub]   = React.useState('routes'); // 'routes' | 'pools'

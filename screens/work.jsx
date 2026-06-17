@@ -16,10 +16,11 @@ function WorkScreen({ ctx }) {
   const [activityLimit, setActivityLimit] = React.useState(4);
   const [deletedAppIds, setDeletedAppIds] = React.useState(new Set());
   const [workUserLocation,     setWorkUserLocation]     = React.useState(() => { try { const s=localStorage.getItem('pg_loc'); return s?JSON.parse(s):null; } catch(e){return null;} });
-  const [workRadiusMiles,      setWorkRadiusMiles]      = React.useState(() => { try { const s=localStorage.getItem('pg_loc_r'); return s?Number(s):25; } catch(e){return 25;} });
+  const [workRadiusMiles,      setWorkRadiusMiles]      = React.useState(() => { try { const s=localStorage.getItem('pg_loc_r_work'); return s?Number(s):25; } catch(e){return 25;} });
   const [workLocationFilterOpen, setWorkLocationFilterOpen] = React.useState(false);
   React.useEffect(()=>{ try{ if(workUserLocation) localStorage.setItem('pg_loc',JSON.stringify(workUserLocation)); else localStorage.removeItem('pg_loc'); }catch(e){} },[workUserLocation]);
-  React.useEffect(()=>{ try{ localStorage.setItem('pg_loc_r',String(workRadiusMiles)); }catch(e){} },[workRadiusMiles]);
+  React.useEffect(()=>{ try{ localStorage.setItem('pg_loc_r_work',String(workRadiusMiles)); }catch(e){} },[workRadiusMiles]);
+  React.useEffect(()=>{ const h=(e)=>setWorkUserLocation(e.detail); window.addEventListener('pg_loc_updated',h); return ()=>window.removeEventListener('pg_loc_updated',h); },[]);
 
   const subIcons = {
     hiring: (s, c) => Icon.briefcase(s, c),
@@ -348,10 +349,6 @@ function WorkScreen({ ctx }) {
 
                   {/* County + actions */}
                   <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
-                    <button onClick={()=>setWorkLocationFilterOpen(true)} style={{display:'flex',alignItems:'center',gap:6,background:workUserLocation?'var(--pg-aqua-100)':'rgba(0,178,169,0.10)',border:'1.5px solid var(--pg-aqua-400)',borderRadius:999,padding:workUserLocation?'7px 14px':'7px 12px',boxShadow:'none',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation'}}>
-                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':'var(--pg-aqua-500)'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
-                      {workUserLocation && <span style={{fontSize:12,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workLocCity ? `${workLocCity} · ` : ''}{workRadiusMiles} mi</span>}
-                    </button>
                     <button onClick={()=>openChat&&openChat()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative'}}>
                       {Icon.msg(18,_tx)}
                       {hasUnreadChat&&<span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${darkMode?'#0077B6':'#c5e4f5'}`}}/>}
@@ -631,6 +628,10 @@ function WorkScreen({ ctx }) {
                       : `${VACATION_LISTINGS.length + liveVacations.length} ${lang==='pt'?'coberturas disponíveis':lang==='es'?'coberturas disponibles':'covers available'}`}
                 </div>
               </div>
+              <button onClick={()=>setWorkLocationFilterOpen(true)} style={{display:'flex',alignItems:'center',gap:6,background:workUserLocation?'var(--pg-aqua-100)':'rgba(0,178,169,0.10)',border:'1.5px solid var(--pg-aqua-400)',borderRadius:999,padding:workUserLocation?'7px 14px':'7px 12px',boxShadow:'none',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation',flexShrink:0}}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={workUserLocation?'var(--pg-aqua-600)':'var(--pg-aqua-500)'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" fill={workUserLocation?'var(--pg-aqua-400)':'none'}/><circle cx="12" cy="9" r="2.5" fill={workUserLocation?'white':'none'}/></svg>
+                {workUserLocation && <span style={{fontSize:12,fontWeight:600,color:'var(--pg-aqua-700)',whiteSpace:'nowrap'}}>{workLocCity ? `${workLocCity} · ` : ''}{workRadiusMiles} mi</span>}
+              </button>
             </div>
 
             {/* Panel content */}

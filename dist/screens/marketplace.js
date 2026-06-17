@@ -6429,6 +6429,9 @@ function MarketplaceScreen({
   React.useEffect(() => {
     try {
       if (userLocation) localStorage.setItem('pg_loc', JSON.stringify(userLocation));else localStorage.removeItem('pg_loc');
+      window.dispatchEvent(new CustomEvent('pg_loc_updated', {
+        detail: userLocation
+      }));
     } catch (e) {}
   }, [userLocation]);
   React.useEffect(() => {
