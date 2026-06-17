@@ -522,11 +522,20 @@ function ChatConversation({
       color: 'var(--pg-blue-600)',
       display: 'flex'
     }
-  }, Icon.chev(18, 'var(--pg-blue-600)', 'left')), /*#__PURE__*/React.createElement(Avatar, {
+  }, Icon.chev(18, 'var(--pg-blue-600)', 'left')), /*#__PURE__*/React.createElement("div", {
+    onClick: openPublicProfile && convo.receiverId ? () => openPublicProfile({
+      uid: convo.receiverId,
+      name: convo.name
+    }) : undefined,
+    style: {
+      cursor: openPublicProfile && convo.receiverId ? 'pointer' : 'default',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
     name: convo.name,
     size: 38,
     src: receiverPhoto
-  }), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0
@@ -7490,7 +7499,7 @@ function PublicProfileSheet({
   React.useEffect(() => {
     setFetchedProfile(null);
     if (!open || !profile?.uid || !window.sb) return;
-    window.sb.from('profiles').select('id,name,photo_url,role,verified,loc,jobs_completed').eq('id', profile.uid).single().then(({
+    window.sb.from('profiles').select('id,name,photo_url,role,verified,region').eq('id', profile.uid).single().then(({
       data
     }) => {
       if (data) setFetchedProfile(data);
@@ -7514,7 +7523,7 @@ function PublicProfileSheet({
   if (!open || !profile) return null;
   const name = fetchedProfile?.name || profile.name || 'User';
   const photo = fetchedProfile?.photo_url || profile.photo || undefined;
-  const loc = fetchedProfile?.loc || profile.loc || 'South Florida';
+  const loc = fetchedProfile?.region || profile.loc || 'South Florida';
 
   // Use real ratings if loaded, otherwise fall back to profile prop
   const ratingList = realRatings || [];
@@ -7526,7 +7535,7 @@ function PublicProfileSheet({
   const hasRating = realRatings !== null ? reviewCount > 0 : profile.rating !== undefined && profile.rating !== null;
   const rating = realRatings !== null ? avgRating : profile.rating ?? 4.8;
   const reviews = realRatings !== null ? reviewCount : profile.reviews ?? 0;
-  const jobs = fetchedProfile?.jobs_completed ?? (profile.jobs !== undefined ? profile.jobs : reviews);
+  const jobs = profile.jobs !== undefined ? profile.jobs : reviews;
   const msgLbl = lang === 'pt' ? 'Mensagem' : lang === 'es' ? 'Mensaje' : 'Message';
   const jobsLbl = lang === 'pt' ? 'Trabalhos' : lang === 'es' ? 'Trabajos' : 'Jobs';
   const ratingLbl = lang === 'pt' ? 'Avaliação' : lang === 'es' ? 'Calificación' : 'Rating';

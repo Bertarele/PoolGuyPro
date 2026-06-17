@@ -299,7 +299,10 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
         <button onClick={onBack} style={{border:'none', background:'transparent', cursor:'pointer', padding:6, color:'var(--pg-blue-600)', display:'flex'}}>
           {Icon.chev(18,'var(--pg-blue-600)','left')}
         </button>
-        <Avatar name={convo.name} size={38} src={receiverPhoto}/>
+        <div onClick={openPublicProfile && convo.receiverId ? ()=>openPublicProfile({ uid: convo.receiverId, name: convo.name }) : undefined}
+          style={{cursor: openPublicProfile && convo.receiverId ? 'pointer' : 'default', flexShrink:0}}>
+          <Avatar name={convo.name} size={38} src={receiverPhoto}/>
+        </div>
         <div style={{flex:1, minWidth:0}}>
           {openPublicProfile && convo.receiverId
             ? <button onClick={()=>openPublicProfile({ uid: convo.receiverId, name: convo.name })}
@@ -3904,7 +3907,7 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
     setFetchedProfile(null);
     if (!open || !profile?.uid || !window.sb) return;
     window.sb.from('profiles')
-      .select('id,name,photo_url,role,verified,loc,jobs_completed')
+      .select('id,name,photo_url,role,verified,region')
       .eq('id', profile.uid).single()
       .then(({ data }) => { if (data) setFetchedProfile(data); })
       .catch(() => {});
@@ -3925,9 +3928,9 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
   }, [open, profile?.uid]);
 
   if (!open || !profile) return null;
-  const name  = fetchedProfile?.name  || profile.name  || 'User';
+  const name  = fetchedProfile?.name     || profile.name  || 'User';
   const photo = fetchedProfile?.photo_url || profile.photo || undefined;
-  const loc   = fetchedProfile?.loc   || profile.loc   || 'South Florida';
+  const loc   = fetchedProfile?.region   || profile.loc   || 'South Florida';
 
   // Use real ratings if loaded, otherwise fall back to profile prop
   const ratingList   = realRatings || [];
@@ -3941,7 +3944,7 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
   const hasRating = realRatings !== null ? reviewCount > 0 : (profile.rating !== undefined && profile.rating !== null);
   const rating    = realRatings !== null ? avgRating : (profile.rating ?? 4.8);
   const reviews   = realRatings !== null ? reviewCount : (profile.reviews ?? 0);
-  const jobs      = fetchedProfile?.jobs_completed ?? (profile.jobs !== undefined ? profile.jobs : reviews);
+  const jobs      = profile.jobs !== undefined ? profile.jobs : reviews;
 
   const msgLbl = lang==='pt'?'Mensagem':lang==='es'?'Mensaje':'Message';
   const jobsLbl = lang==='pt'?'Trabalhos':lang==='es'?'Trabajos':'Jobs';
