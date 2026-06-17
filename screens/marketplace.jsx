@@ -3771,7 +3771,7 @@ function MarketplaceScreen({ ctx }) {
   if (isDesktop) {
     const liveEquipment = marketByCounty.filter(m => m.type === mode &&
       (cat === 'All' || !m.cat || m.cat === cat) &&
-      (user.role==='admin' || m.status==='approved' || (m.status==='pending'&&isMyPost(m)) || isSoldVisible(m))
+      (m.status==='approved' || (m.status==='pending'&&isMyPost(m)))
     );
     return (
       <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
@@ -4529,12 +4529,8 @@ function MarketplaceScreen({ ctx }) {
             {marketByCounty
               .filter(m => m.type === mode &&
                 (cat === 'All' || !m.cat || m.cat === cat) &&
-                (
-                  user.role === 'admin' ||   // admin vê tudo (pending de qualquer um)
-                  m.status === 'approved' ||
-                  (m.status === 'pending' && isMyPost(m)) ||
-                  isSoldVisible(m)
-                ))
+                (m.status === 'approved' || (m.status === 'pending' && isMyPost(m)))
+              )
               .map(item => {
                 const isPending = item.status === 'pending';
                 const isSoldItem = item.status === 'sold';

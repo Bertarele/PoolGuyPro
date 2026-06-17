@@ -7122,7 +7122,7 @@ function MarketplaceScreen({
   // ── DESKTOP LAYOUT (≥ 900px) ─────────────────────────────────
   // ══════════════════════════════════════════════════════════════
   if (isDesktop) {
-    const liveEquipment = marketByCounty.filter(m => m.type === mode && (cat === 'All' || !m.cat || m.cat === cat) && (user.role === 'admin' || m.status === 'approved' || m.status === 'pending' && isMyPost(m) || isSoldVisible(m)));
+    const liveEquipment = marketByCounty.filter(m => m.type === mode && (cat === 'All' || !m.cat || m.cat === cat) && (m.status === 'approved' || m.status === 'pending' && isMyPost(m)));
     return /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'relative',
@@ -8784,9 +8784,7 @@ function MarketplaceScreen({
       gap: 12,
       marginTop: 14
     }
-  }, marketByCounty.filter(m => m.type === mode && (cat === 'All' || !m.cat || m.cat === cat) && (user.role === 'admin' ||
-  // admin vê tudo (pending de qualquer um)
-  m.status === 'approved' || m.status === 'pending' && isMyPost(m) || isSoldVisible(m))).map(item => {
+  }, marketByCounty.filter(m => m.type === mode && (cat === 'All' || !m.cat || m.cat === cat) && (m.status === 'approved' || m.status === 'pending' && isMyPost(m))).map(item => {
     const isPending = item.status === 'pending';
     const isSoldItem = item.status === 'sold';
     const canAdminDelete = user.role === 'admin' || isMyPost(item);
