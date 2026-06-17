@@ -807,12 +807,14 @@ function LocationFilterSheet({
         lng,
         city
       });
+      setLocError('');
       setLoading(false);
-    }, () => {
-      setLocError(t.errDenied);
+    }, err => {
+      setLocError(err.code === 1 ? t.errDenied : t.errFail);
       setLoading(false);
     }, {
-      timeout: 8000
+      timeout: 15000,
+      enableHighAccuracy: false
     });
   };
   return /*#__PURE__*/React.createElement("div", {
@@ -890,7 +892,7 @@ function LocationFilterSheet({
       fontSize: 13,
       color: 'var(--pg-ink-500)'
     }
-  }, t.noLoc), locError && /*#__PURE__*/React.createElement("div", {
+  }, t.noLoc), locError && !userLocation && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#DC2626',

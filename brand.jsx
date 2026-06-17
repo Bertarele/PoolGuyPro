@@ -379,6 +379,17 @@ function haversine(lat1, lng1, lat2, lng2) {
 }
 window.haversine = haversine;
 
+function nearestCity(lat, lng) {
+  const coords = FL_CITY_COORDS;
+  let best = null, bestDist = Infinity;
+  for (const [city, [clat, clng]] of Object.entries(coords)) {
+    const d = haversine(lat, lng, clat, clng);
+    if (d < bestDist) { bestDist = d; best = city; }
+  }
+  return best;
+}
+window.nearestCity = nearestCity;
+
 // Shared location/radius filter sheet (used in marketplace + work)
 function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, radiusMiles, setRadiusMiles, lang }) {
   const [locError, setLocError] = React.useState('');
@@ -405,9 +416,15 @@ function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, rad
     if (!navigator.geolocation) { setLocError(t.errFail); return; }
     setLoading(true); setLocError('');
     navigator.geolocation.getCurrentPosition(
-      (pos) => { setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLoading(false); },
-      () => { setLocError(t.errDenied); setLoading(false); },
-      { timeout: 8000 }
+      (pos) => {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        const city = nearestCity(lat, lng) || '';
+        setUserLocation({ lat, lng, city });
+        setLocError('');
+        setLoading(false);
+      },
+      (err) => { setLocError(err.code === 1 ? t.errDenied : t.errFail); setLoading(false); },
+      { timeout: 15000, enableHighAccuracy: false }
     );
   };
 
@@ -427,7 +444,7 @@ function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, rad
         {userLocation ? (
           <div style={{background:'var(--pg-aqua-100)',border:'1px solid var(--pg-aqua-400)',borderRadius:14,padding:'12px 14px',marginBottom:16}}>
             <div style={{fontSize:13,fontWeight:600,color:'var(--pg-aqua-700)',marginBottom:4}}>
-              ✓ {t.active} <strong>{radiusMiles} {t.miles}</strong>
+              ✓ {userLocation.city && <span>{userLocation.city} · </span>}{t.active} <strong>{radiusMiles} {t.miles}</strong>
             </div>
             <button onClick={()=>{setUserLocation(null);}} style={{
               border:'none',background:'none',cursor:'pointer',padding:0,
@@ -440,7 +457,7 @@ function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, rad
           </div>
         )}
 
-        {locError && (
+        {locError && !userLocation && (
           <div style={{fontSize:12,color:'#DC2626',marginBottom:12,padding:'8px 12px',background:'#FEF2F2',borderRadius:10}}>{locError}</div>
         )}
 
