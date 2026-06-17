@@ -137,7 +137,7 @@ function headerTheme(dark) {
 }
 
 // ── App bar (light/dark responsive) ───────────────────────────
-function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode=true, bgOverride=null, centerDecor=null }) {
+function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode=true, bgOverride=null, centerDecor=null, compact=false }) {
   const H = headerTheme(darkMode);
   const bg = bgOverride || (darkMode
     ? 'linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)'
@@ -147,7 +147,7 @@ function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode
     <div style={{
       background: bg,
       color: H.text,
-      padding: wave ? '2px 18px 14px' : '12px 18px 10px', position:'relative', overflow:'hidden',
+      padding: compact ? '6px 18px 6px' : (wave ? '2px 18px 14px' : '12px 18px 10px'), position:'relative', overflow:'hidden',
     }}>
       {/* Aqua glow top-right */}
       <div style={{position:'absolute', top:-60, right:-60, width:200, height:200, borderRadius:'50%',

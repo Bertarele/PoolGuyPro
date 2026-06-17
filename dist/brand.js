@@ -288,7 +288,8 @@ function NavyBar({
   wave = true,
   darkMode = true,
   bgOverride = null,
-  centerDecor = null
+  centerDecor = null,
+  compact = false
 }) {
   const H = headerTheme(darkMode);
   const bg = bgOverride || (darkMode ? 'linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)' : 'linear-gradient(145deg, #f0f9ff 0%, #dff0fb 52%, #cce8f5 100%)');
@@ -296,7 +297,7 @@ function NavyBar({
     style: {
       background: bg,
       color: H.text,
-      padding: wave ? '2px 18px 14px' : '12px 18px 10px',
+      padding: compact ? '6px 18px 6px' : wave ? '2px 18px 14px' : '12px 18px 10px',
       position: 'relative',
       overflow: 'hidden'
     }
