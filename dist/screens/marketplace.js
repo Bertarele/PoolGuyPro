@@ -710,7 +710,7 @@ function RouteNoPhotoHero({
   lang
 }) {
   const n = Number(item.revenue || 0);
-  const revFmt = n >= 1000 ? `${Math.round(n / 1000)}k` : n > 0 ? n.toLocaleString() : null;
+  const revFmt = n > 0 ? n % 1000 === 0 ? `${n / 1000}k` : n.toLocaleString('en-US') : null;
   const cities = (item.area || '').split(',').map(c => c.trim()).filter(Boolean);
   const poolsLabel = lang === 'pt' ? 'Piscinas' : lang === 'es' ? 'Piscinas' : 'Pools';
   const revLabel = lang === 'pt' ? 'Receita/mês' : lang === 'es' ? 'Ingresos/mes' : 'Revenue/mo';
@@ -5188,10 +5188,30 @@ function ViewListingSheet({
         label: lang === 'pt' ? 'Receita/mês' : lang === 'es' ? 'Ingreso/mes' : 'Revenue/mo',
         value: `$${Number(item.revenue).toLocaleString()}/mo`
       });
-      if (item.cat) rows.push({
-        label: lang === 'pt' ? 'Tipo de cliente' : lang === 'es' ? 'Tipo de cliente' : 'Client type',
-        value: item.cat
-      });
+      if (item.cat) {
+        const catTr = {
+          residential: {
+            pt: 'Residencial',
+            es: 'Residencial',
+            en: 'Residential'
+          },
+          commercial: {
+            pt: 'Comercial',
+            es: 'Comercial',
+            en: 'Commercial'
+          },
+          mixed: {
+            pt: 'Misto',
+            es: 'Mixto',
+            en: 'Mixed'
+          }
+        };
+        const catVal = (catTr[item.cat] || {})[lang] || (catTr[item.cat] || {}).en || item.cat;
+        rows.push({
+          label: lang === 'pt' ? 'Tipo de cliente' : lang === 'es' ? 'Tipo de cliente' : 'Client type',
+          value: catVal
+        });
+      }
     } else {
       if (item.loc) rows.push({
         label: lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City',
