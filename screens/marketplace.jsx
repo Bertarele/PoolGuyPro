@@ -3353,9 +3353,6 @@ function MarketplaceScreen({ ctx }) {
   const [postMode,   setPostMode]   = React.useState(null); // 'sell'|'rent'|'route'
   const [priceRange, setPriceRange] = React.useState('all');  // equipment price filter
   const [priceOpen,  setPriceOpen]  = React.useState(false);  // price dropdown open
-  const [regionOpen, setRegionOpen] = React.useState(false);  // region dropdown open
-  const [regionSearch, setRegionSearch] = React.useState('');  // region search query
-  const [routeRegion,setRouteRegion]= React.useState('all');  // routes region filter
   const [userLocation,     setUserLocation]     = React.useState(() => { try { const s=localStorage.getItem('pg_loc'); return s?JSON.parse(s):null; } catch(e){return null;} });
   const [radiusMiles,      setRadiusMiles]      = React.useState(() => { try { const s=localStorage.getItem('pg_loc_r'); return s?Number(s):25; } catch(e){return 25;} });
   const [locationFilterOpen, setLocationFilterOpen] = React.useState(false);
@@ -3576,14 +3573,12 @@ function MarketplaceScreen({ ctx }) {
       )
     : view === 'routes' && routeSub === 'pools'
       ? allPools.filter(p =>
-          (routeRegion === 'all' || (p.area||'').toLowerCase().includes(routeRegion.toLowerCase())) &&
           (poolPrice === 'all' ||
            (poolPrice === 'u1500' && p.est < 1500) ||
            (poolPrice === '1500-3k' && p.est >= 1500 && p.est <= 3000) ||
            (poolPrice === 'o3k'   && p.est > 3000))
         )
       : allRoutes.filter(r =>
-          (routeRegion === 'all' || (r.area||'').toLowerCase().includes(routeRegion.toLowerCase())) &&
           (routePrice === 'all' ||
            (routePrice === 'u5k'   && r.est < 5000) ||
            (routePrice === '5k-8k' && r.est >= 5000 && r.est <= 8000) ||
@@ -4163,19 +4158,6 @@ function MarketplaceScreen({ ctx }) {
                       boxShadow: routeSub===s.id ? '0 4px 12px rgba(0,119,182,0.25)' : 'none',
                       transition:'all .15s',
                     }}>{s.label}</button>
-                  ))}
-                </div>
-                {/* Region filter */}
-                <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:24}}>
-                  {['all','Broward','Dade','Palm Beach'].map(r => (
-                    <button key={r} onClick={()=>setRouteRegion(r)} style={{
-                      padding:'7px 14px', borderRadius:999, border:'none', cursor:'pointer', fontFamily:'inherit',
-                      background: routeRegion===r?'var(--pg-blue-500)':'var(--pg-white)',
-                      color:       routeRegion===r?'#fff':'var(--pg-ink-600)',
-                      fontSize:12, fontWeight:600,
-                      border: `1px solid ${routeRegion===r?'var(--pg-blue-500)':'var(--pg-ink-200)'}`,
-                      transition:'all .12s',
-                    }}>{r==='all'?(lang==='pt'?'Todas regiões':'All regions'):r}</button>
                   ))}
                 </div>
                 {/* Route cards in 2-column grid on desktop */}
@@ -4905,105 +4887,6 @@ function MarketplaceScreen({ ctx }) {
 
             {/* Filters card */}
             <div className="pg-card" style={{padding:'12px 14px', display:'flex', flexDirection:'column', gap:10}}>
-              {/* Region filter — dropdown using same FL_COUNTIES as post form */}
-              {(() => {
-                const FL = window.FL_COUNTIES || {};
-                // Flat sorted city list with county label — same source as CityAutocomplete
-                const cityList = Object.entries(FL)
-                  .flatMap(([county, cities]) => cities.map(city => ({ id: city, label: city, county })))
-                  .sort((a,b) => a.label.localeCompare(b.label));
-                const allRegionOpts = [
-                  { id:'all', label: lang==='pt'?'Todas as regiões':lang==='es'?'Todas las regiones':'All regions', county: null },
-                  ...cityList,
-                ];
-                const q = regionSearch.toLowerCase();
-                const regionOpts = q
-                  ? allRegionOpts.filter(o =>
-                      o.id === 'all' ||
-                      o.label.toLowerCase().includes(q) ||
-                      (o.county && o.county.toLowerCase().includes(q))
-                    )
-                  : allRegionOpts;
-                const activeLabel = routeRegion === 'all'
-                  ? (lang==='pt'?'Todas as regiões':lang==='es'?'Todas las regiones':'All regions')
-                  : routeRegion;
-                return (
-                  <div>
-                    {/* Trigger chip */}
-                    <button
-                      onClick={()=>{ setRegionOpen(o=>!o); setRegionSearch(''); }}
-                      className={`pg-chip ${routeRegion!=='all'?'pg-chip-on':''}`}
-                      style={{width:'100%', justifyContent:'space-between', borderRadius:10, padding:'9px 12px'}}>
-                      <div style={{display:'flex', alignItems:'center', gap:6, minWidth:0, flex:1}}>
-                        {Icon.pin(12, routeRegion!=='all' ? '#fff' : 'var(--pg-ink-500)')}
-                        <span style={{fontSize:13, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{activeLabel}</span>
-                      </div>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0, marginLeft:6}}>
-                        <polyline points={regionOpen ? '18 15 12 9 6 15' : '6 9 12 15 18 9'}/>
-                      </svg>
-                    </button>
-                    {/* Dropdown */}
-                    {regionOpen && (
-                      <div style={{
-                        marginTop:4, borderRadius:10, overflow:'hidden',
-                        border:'0.5px solid var(--pg-ink-200)',
-                        boxShadow:'0 4px 18px rgba(0,0,0,0.12)',
-                        background:'var(--pg-white)',
-                      }}>
-                        {/* Search bar */}
-                        <div style={{padding:'8px 10px', borderBottom:'0.5px solid var(--pg-ink-100)', background:'var(--pg-ink-50)'}}>
-                          <div style={{display:'flex', alignItems:'center', gap:7, background:'var(--pg-white)', borderRadius:8, padding:'6px 10px', border:'0.5px solid var(--pg-ink-200)'}}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                            </svg>
-                            <input
-                              autoFocus
-                              value={regionSearch}
-                              onChange={e=>setRegionSearch(e.target.value)}
-                              placeholder={lang==='pt'?'Buscar cidade ou condado...':lang==='es'?'Buscar ciudad o condado...':'Search city or county...'}
-                              onClick={e=>e.stopPropagation()}
-                              style={{border:'none', outline:'none', background:'transparent', fontSize:13, fontFamily:'inherit', color:'var(--pg-ink-900)', flex:1, minWidth:0}}
-                            />
-                            {regionSearch && (
-                              <button onClick={e=>{ e.stopPropagation(); setRegionSearch(''); }}
-                                style={{border:'none', background:'none', cursor:'pointer', padding:0, lineHeight:1, color:'var(--pg-ink-400)', fontSize:16}}>×</button>
-                            )}
-                          </div>
-                        </div>
-                        {/* City list */}
-                        <div style={{maxHeight:230, overflowY:'auto'}}>
-                          {regionOpts.length === 0 ? (
-                            <div style={{padding:'14px', fontSize:13, color:'var(--pg-ink-400)', textAlign:'center'}}>
-                              {lang==='pt'?'Nenhuma cidade encontrada':lang==='es'?'No se encontró ciudad':'No city found'}
-                            </div>
-                          ) : regionOpts.map((opt, i) => {
-                            const on = routeRegion === opt.id;
-                            return (
-                              <button key={`${opt.id}-${i}`} onClick={()=>{ setRouteRegion(opt.id); setRegionOpen(false); setRegionSearch(''); }} style={{
-                                width:'100%', display:'flex', alignItems:'center', gap:8,
-                                padding:'9px 14px', border:'none', cursor:'pointer', fontFamily:'inherit',
-                                background: on ? 'var(--pg-blue-50)' : 'transparent',
-                                borderTop: i > 0 ? '0.5px solid var(--pg-ink-100)' : 'none',
-                                textAlign:'left', transition:'background .1s',
-                              }}>
-                                <span style={{flex:1, fontSize:13, fontWeight: on ? 700 : 500, color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)'}}>
-                                  {opt.label}
-                                </span>
-                                {opt.county && <span style={{fontSize:11, color:'var(--pg-ink-400)', fontWeight:500}}>{opt.county}</span>}
-                                {on && (
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}>
-                                    <polyline points="20 6 9 17 4 12"/>
-                                  </svg>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
 
               {/* Price filter — routes */}
               {routeSub === 'routes' && (
@@ -5062,7 +4945,7 @@ function MarketplaceScreen({ ctx }) {
               )}
 
               {/* Active filters badge */}
-              {(routeRegion !== 'all' || routePrice !== 'all' || poolPrice !== 'all') && (
+              {(routePrice !== 'all' || poolPrice !== 'all') && (
                 <div style={{display:'flex', alignItems:'center', justifyContent:'space-between',
                   paddingTop:8, borderTop:'0.5px solid var(--pg-ink-200)'}}>
                   <span style={{fontSize:11.5, color:'var(--pg-blue-600)', fontWeight:600}}>
@@ -5070,7 +4953,7 @@ function MarketplaceScreen({ ctx }) {
                       ? (lang==='pt'?'piscina(s) encontrada(s)':lang==='es'?'piscina(s) encontrada(s)':'pool(s) found')
                       : (lang==='pt'?'rota(s) encontrada(s)':lang==='es'?'ruta(s) encontrada(s)':'route(s) found')}
                   </span>
-                  <button onClick={()=>{ setRouteRegion('all'); setRoutePrice('all'); setPoolPrice('all'); }} style={{
+                  <button onClick={()=>{ setRoutePrice('all'); setPoolPrice('all'); }} style={{
                     border:'none', background:'var(--pg-ink-100)', borderRadius:6,
                     fontSize:11, fontWeight:600, color:'var(--pg-ink-600)', cursor:'pointer',
                     padding:'4px 9px', fontFamily:'inherit',

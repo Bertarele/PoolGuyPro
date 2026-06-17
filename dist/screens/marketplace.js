@@ -6426,9 +6426,6 @@ function MarketplaceScreen({
   const [postMode, setPostMode] = React.useState(null); // 'sell'|'rent'|'route'
   const [priceRange, setPriceRange] = React.useState('all'); // equipment price filter
   const [priceOpen, setPriceOpen] = React.useState(false); // price dropdown open
-  const [regionOpen, setRegionOpen] = React.useState(false); // region dropdown open
-  const [regionSearch, setRegionSearch] = React.useState(''); // region search query
-  const [routeRegion, setRouteRegion] = React.useState('all'); // routes region filter
   const [userLocation, setUserLocation] = React.useState(() => {
     try {
       const s = localStorage.getItem('pg_loc');
@@ -6746,7 +6743,7 @@ function MarketplaceScreen({
   }));
   // Combina piscinas reais (primeiro) + piscinas demo estáticas
   const allPools = [...livePools, ...SINGLE_POOLS];
-  const list = isEquipment ? EQUIPMENT.filter(e => e.mode === mode && (cat === 'All' || e.category === cat) && (q === '' || e.name.toLowerCase().includes(q.toLowerCase())) && (priceRange === 'all' || priceRange === 'u100' && e.price < 100 || priceRange === '100-500' && e.price >= 100 && e.price <= 500 || priceRange === 'o500' && e.price > 500)) : view === 'routes' && routeSub === 'pools' ? allPools.filter(p => (routeRegion === 'all' || (p.area || '').toLowerCase().includes(routeRegion.toLowerCase())) && (poolPrice === 'all' || poolPrice === 'u1500' && p.est < 1500 || poolPrice === '1500-3k' && p.est >= 1500 && p.est <= 3000 || poolPrice === 'o3k' && p.est > 3000)) : allRoutes.filter(r => (routeRegion === 'all' || (r.area || '').toLowerCase().includes(routeRegion.toLowerCase())) && (routePrice === 'all' || routePrice === 'u5k' && r.est < 5000 || routePrice === '5k-8k' && r.est >= 5000 && r.est <= 8000 || routePrice === 'o8k' && r.est > 8000));
+  const list = isEquipment ? EQUIPMENT.filter(e => e.mode === mode && (cat === 'All' || e.category === cat) && (q === '' || e.name.toLowerCase().includes(q.toLowerCase())) && (priceRange === 'all' || priceRange === 'u100' && e.price < 100 || priceRange === '100-500' && e.price >= 100 && e.price <= 500 || priceRange === 'o500' && e.price > 500)) : view === 'routes' && routeSub === 'pools' ? allPools.filter(p => poolPrice === 'all' || poolPrice === 'u1500' && p.est < 1500 || poolPrice === '1500-3k' && p.est >= 1500 && p.est <= 3000 || poolPrice === 'o3k' && p.est > 3000) : allRoutes.filter(r => routePrice === 'all' || routePrice === 'u5k' && r.est < 5000 || routePrice === '5k-8k' && r.est >= 5000 && r.est <= 8000 || routePrice === 'o8k' && r.est > 8000);
   const tabIcons = {
     buy: (s, c) => Icon.cart(s, c),
     rent: (s, c) => Icon.key(s, c),
@@ -7971,29 +7968,6 @@ function MarketplaceScreen({
         transition: 'all .15s'
       }
     }, s.label))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: 8,
-        flexWrap: 'wrap',
-        marginBottom: 24
-      }
-    }, ['all', 'Broward', 'Dade', 'Palm Beach'].map(r => /*#__PURE__*/React.createElement("button", {
-      key: r,
-      onClick: () => setRouteRegion(r),
-      style: {
-        padding: '7px 14px',
-        borderRadius: 999,
-        border: 'none',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        background: routeRegion === r ? 'var(--pg-blue-500)' : 'var(--pg-white)',
-        color: routeRegion === r ? '#fff' : 'var(--pg-ink-600)',
-        fontSize: 12,
-        fontWeight: 600,
-        border: `1px solid ${routeRegion === r ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)'}`,
-        transition: 'all .12s'
-      }
-    }, r === 'all' ? lang === 'pt' ? 'Todas regiões' : 'All regions' : r))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(360px,1fr))',
@@ -9520,202 +9494,7 @@ function MarketplaceScreen({
       flexDirection: 'column',
       gap: 10
     }
-  }, (() => {
-    const FL = window.FL_COUNTIES || {};
-    // Flat sorted city list with county label — same source as CityAutocomplete
-    const cityList = Object.entries(FL).flatMap(([county, cities]) => cities.map(city => ({
-      id: city,
-      label: city,
-      county
-    }))).sort((a, b) => a.label.localeCompare(b.label));
-    const allRegionOpts = [{
-      id: 'all',
-      label: lang === 'pt' ? 'Todas as regiões' : lang === 'es' ? 'Todas las regiones' : 'All regions',
-      county: null
-    }, ...cityList];
-    const q = regionSearch.toLowerCase();
-    const regionOpts = q ? allRegionOpts.filter(o => o.id === 'all' || o.label.toLowerCase().includes(q) || o.county && o.county.toLowerCase().includes(q)) : allRegionOpts;
-    const activeLabel = routeRegion === 'all' ? lang === 'pt' ? 'Todas as regiões' : lang === 'es' ? 'Todas las regiones' : 'All regions' : routeRegion;
-    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setRegionOpen(o => !o);
-        setRegionSearch('');
-      },
-      className: `pg-chip ${routeRegion !== 'all' ? 'pg-chip-on' : ''}`,
-      style: {
-        width: '100%',
-        justifyContent: 'space-between',
-        borderRadius: 10,
-        padding: '9px 12px'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        minWidth: 0,
-        flex: 1
-      }
-    }, Icon.pin(12, routeRegion !== 'all' ? '#fff' : 'var(--pg-ink-500)'), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 13,
-        fontWeight: 600,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap'
-      }
-    }, activeLabel)), /*#__PURE__*/React.createElement("svg", {
-      width: "12",
-      height: "12",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      strokeWidth: "2.5",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      style: {
-        flexShrink: 0,
-        marginLeft: 6
-      }
-    }, /*#__PURE__*/React.createElement("polyline", {
-      points: regionOpen ? '18 15 12 9 6 15' : '6 9 12 15 18 9'
-    }))), regionOpen && /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginTop: 4,
-        borderRadius: 10,
-        overflow: 'hidden',
-        border: '0.5px solid var(--pg-ink-200)',
-        boxShadow: '0 4px 18px rgba(0,0,0,0.12)',
-        background: 'var(--pg-white)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '8px 10px',
-        borderBottom: '0.5px solid var(--pg-ink-100)',
-        background: 'var(--pg-ink-50)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7,
-        background: 'var(--pg-white)',
-        borderRadius: 8,
-        padding: '6px 10px',
-        border: '0.5px solid var(--pg-ink-200)'
-      }
-    }, /*#__PURE__*/React.createElement("svg", {
-      width: "13",
-      height: "13",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "var(--pg-ink-400)",
-      strokeWidth: "2.5",
-      strokeLinecap: "round",
-      strokeLinejoin: "round"
-    }, /*#__PURE__*/React.createElement("circle", {
-      cx: "11",
-      cy: "11",
-      r: "8"
-    }), /*#__PURE__*/React.createElement("line", {
-      x1: "21",
-      y1: "21",
-      x2: "16.65",
-      y2: "16.65"
-    })), /*#__PURE__*/React.createElement("input", {
-      autoFocus: true,
-      value: regionSearch,
-      onChange: e => setRegionSearch(e.target.value),
-      placeholder: lang === 'pt' ? 'Buscar cidade ou condado...' : lang === 'es' ? 'Buscar ciudad o condado...' : 'Search city or county...',
-      onClick: e => e.stopPropagation(),
-      style: {
-        border: 'none',
-        outline: 'none',
-        background: 'transparent',
-        fontSize: 13,
-        fontFamily: 'inherit',
-        color: 'var(--pg-ink-900)',
-        flex: 1,
-        minWidth: 0
-      }
-    }), regionSearch && /*#__PURE__*/React.createElement("button", {
-      onClick: e => {
-        e.stopPropagation();
-        setRegionSearch('');
-      },
-      style: {
-        border: 'none',
-        background: 'none',
-        cursor: 'pointer',
-        padding: 0,
-        lineHeight: 1,
-        color: 'var(--pg-ink-400)',
-        fontSize: 16
-      }
-    }, "\xD7"))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        maxHeight: 230,
-        overflowY: 'auto'
-      }
-    }, regionOpts.length === 0 ? /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '14px',
-        fontSize: 13,
-        color: 'var(--pg-ink-400)',
-        textAlign: 'center'
-      }
-    }, lang === 'pt' ? 'Nenhuma cidade encontrada' : lang === 'es' ? 'No se encontró ciudad' : 'No city found') : regionOpts.map((opt, i) => {
-      const on = routeRegion === opt.id;
-      return /*#__PURE__*/React.createElement("button", {
-        key: `${opt.id}-${i}`,
-        onClick: () => {
-          setRouteRegion(opt.id);
-          setRegionOpen(false);
-          setRegionSearch('');
-        },
-        style: {
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '9px 14px',
-          border: 'none',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          background: on ? 'var(--pg-blue-50)' : 'transparent',
-          borderTop: i > 0 ? '0.5px solid var(--pg-ink-100)' : 'none',
-          textAlign: 'left',
-          transition: 'background .1s'
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          flex: 1,
-          fontSize: 13,
-          fontWeight: on ? 700 : 500,
-          color: on ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)'
-        }
-      }, opt.label), opt.county && /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 11,
-          color: 'var(--pg-ink-400)',
-          fontWeight: 500
-        }
-      }, opt.county), on && /*#__PURE__*/React.createElement("svg", {
-        width: "14",
-        height: "14",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "var(--pg-blue-500)",
-        strokeWidth: "2.5",
-        strokeLinecap: "round",
-        style: {
-          flexShrink: 0
-        }
-      }, /*#__PURE__*/React.createElement("polyline", {
-        points: "20 6 9 17 4 12"
-      })));
-    }))));
-  })(), routeSub === 'routes' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, routeSub === 'routes' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       fontWeight: 700,
@@ -9805,7 +9584,7 @@ function MarketplaceScreen({
         boxShadow: on ? '0 2px 6px rgba(0,119,182,0.25)' : 'none'
       }
     }, opt.label);
-  }))), (routeRegion !== 'all' || routePrice !== 'all' || poolPrice !== 'all') && /*#__PURE__*/React.createElement("div", {
+  }))), (routePrice !== 'all' || poolPrice !== 'all') && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -9821,7 +9600,6 @@ function MarketplaceScreen({
     }
   }, list.length, " ", routeSub === 'pools' ? lang === 'pt' ? 'piscina(s) encontrada(s)' : lang === 'es' ? 'piscina(s) encontrada(s)' : 'pool(s) found' : lang === 'pt' ? 'rota(s) encontrada(s)' : lang === 'es' ? 'ruta(s) encontrada(s)' : 'route(s) found'), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      setRouteRegion('all');
       setRoutePrice('all');
       setPoolPrice('all');
     },
