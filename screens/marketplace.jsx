@@ -6456,6 +6456,7 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
     && (warranty !== 'yes' || wMonths !== '');
 
   const lbl = (pt, es, en) => lang==='pt'?pt:lang==='es'?es:en;
+  const fmtP = v => { if (!v) return ''; const n = parseInt(String(v).replace(/[^\d]/g,''),10); if (isNaN(n)) return ''; const s = n.toLocaleString('en-US'); return lang==='en' ? s : s.replace(/,/g,'.'); };
 
   const ToggleGroup = ({ value, onChange, options }) => (
     <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
@@ -6573,7 +6574,7 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
           </div>
           <div style={{position:'relative'}}>
             <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
-            <input className="pg-field" value={askingPrice} onChange={e=>setAskingPrice(e.target.value)} placeholder="3500" type="number"
+            <input className="pg-field" value={fmtP(askingPrice)} onChange={e=>setAskingPrice(e.target.value.replace(/[^\d]/g,''))} placeholder={fmtP('3500')||'3,500'} type="text" inputMode="numeric"
               style={{height:56, paddingLeft:36, fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}/>
           </div>
         </div>
@@ -6586,7 +6587,7 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
           </div>
           <div style={{position:'relative'}}>
             <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
-            <input className="pg-field" value={price} onChange={e=>setPrice(e.target.value)} placeholder="120" type="number"
+            <input className="pg-field" value={fmtP(price)} onChange={e=>setPrice(e.target.value.replace(/[^\d]/g,''))} placeholder="120" type="text" inputMode="numeric"
               style={{height:56, paddingLeft:36, fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}/>
             <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--pg-ink-500)'}}>{lbl('/mês','/mes','/mo')}</span>
           </div>
@@ -6641,6 +6642,7 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
   const isValid = title.trim().length > 3 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
   const lbl = (pt, es, en) => lang==='pt'?pt:lang==='es'?es:en;
+  const fmtP = v => { if (!v) return ''; const n = parseInt(String(v).replace(/[^\d]/g,''),10); if (isNaN(n)) return ''; const s = n.toLocaleString('en-US'); return lang==='en' ? s : s.replace(/,/g,'.'); };
   const ToggleGroup = ({ value, onChange, options }) => (
     <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
       {options.map(o => {
@@ -6706,7 +6708,7 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
           <FormLabel>{t.revenueMonthly}</FormLabel>
           <div style={{position:'relative'}}>
             <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:18, fontWeight:700, color:'var(--pg-aqua-700)', fontFamily:'var(--pg-font-display)'}}>$</span>
-            <input className="pg-field" value={revenue} onChange={e=>setRevenue(e.target.value)} placeholder="3,800" type="number"
+            <input className="pg-field" value={fmtP(revenue)} onChange={e=>setRevenue(e.target.value.replace(/[^\d]/g,''))} placeholder={fmtP('3800')||'3,800'} type="text" inputMode="numeric"
               style={{paddingLeft:34, fontSize:18, fontWeight:700, color:'var(--pg-aqua-700)', fontFamily:'var(--pg-font-display)'}}/>
             <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--pg-ink-500)'}}>{lang==='pt'?'/mês':lang==='es'?'/mes':'/mo'}</span>
           </div>
@@ -6715,7 +6717,7 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
           <FormLabel>{t.asking}</FormLabel>
           <div style={{position:'relative'}}>
             <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
-            <input className="pg-field" value={asking} onChange={e=>setAsking(e.target.value)} placeholder="5,800" type="number"
+            <input className="pg-field" value={fmtP(asking)} onChange={e=>setAsking(e.target.value.replace(/[^\d]/g,''))} placeholder={fmtP('5800')||'5,800'} type="text" inputMode="numeric"
               style={{height:56, paddingLeft:36, fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}/>
           </div>
         </div>

@@ -12534,6 +12534,13 @@ function PostPoolSheet({
   const [photos, setPhotos] = React.useState([]);
   const isValid = title.trim().length > 3 && area.trim().length > 0 && system !== '' && freq !== '' && askingPrice.trim().length > 0 && warranty !== '' && (warranty !== 'yes' || wMonths !== '');
   const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
+  const fmtP = v => {
+    if (!v) return '';
+    const n = parseInt(String(v).replace(/[^\d]/g, ''), 10);
+    if (isNaN(n)) return '';
+    const s = n.toLocaleString('en-US');
+    return lang === 'en' ? s : s.replace(/,/g, '.');
+  };
   const ToggleGroup = ({
     value,
     onChange,
@@ -12727,10 +12734,11 @@ function PostPoolSheet({
     }
   }, "$"), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
-    value: askingPrice,
-    onChange: e => setAskingPrice(e.target.value),
-    placeholder: "3500",
-    type: "number",
+    value: fmtP(askingPrice),
+    onChange: e => setAskingPrice(e.target.value.replace(/[^\d]/g, '')),
+    placeholder: fmtP('3500') || '3,500',
+    type: "text",
+    inputMode: "numeric",
     style: {
       height: 56,
       paddingLeft: 36,
@@ -12763,10 +12771,11 @@ function PostPoolSheet({
     }
   }, "$"), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
-    value: price,
-    onChange: e => setPrice(e.target.value),
+    value: fmtP(price),
+    onChange: e => setPrice(e.target.value.replace(/[^\d]/g, '')),
     placeholder: "120",
-    type: "number",
+    type: "text",
+    inputMode: "numeric",
     style: {
       height: 56,
       paddingLeft: 36,
@@ -12863,6 +12872,13 @@ function PostRouteSheet({
   const isValid = title.trim().length > 3 && clients.trim().length > 0 && asking.trim().length > 0;
   const headLbl = t.pmSellRoute;
   const lbl = (pt, es, en) => lang === 'pt' ? pt : lang === 'es' ? es : en;
+  const fmtP = v => {
+    if (!v) return '';
+    const n = parseInt(String(v).replace(/[^\d]/g, ''), 10);
+    if (isNaN(n)) return '';
+    const s = n.toLocaleString('en-US');
+    return lang === 'en' ? s : s.replace(/,/g, '.');
+  };
   const ToggleGroup = ({
     value,
     onChange,
@@ -12995,10 +13011,11 @@ function PostRouteSheet({
     }
   }, "$"), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
-    value: revenue,
-    onChange: e => setRevenue(e.target.value),
-    placeholder: "3,800",
-    type: "number",
+    value: fmtP(revenue),
+    onChange: e => setRevenue(e.target.value.replace(/[^\d]/g, '')),
+    placeholder: fmtP('3800') || '3,800',
+    type: "text",
+    inputMode: "numeric",
     style: {
       paddingLeft: 34,
       fontSize: 18,
@@ -13032,10 +13049,11 @@ function PostRouteSheet({
     }
   }, "$"), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
-    value: asking,
-    onChange: e => setAsking(e.target.value),
-    placeholder: "5,800",
-    type: "number",
+    value: fmtP(asking),
+    onChange: e => setAsking(e.target.value.replace(/[^\d]/g, '')),
+    placeholder: fmtP('5800') || '5,800',
+    type: "text",
+    inputMode: "numeric",
     style: {
       height: 56,
       paddingLeft: 36,
