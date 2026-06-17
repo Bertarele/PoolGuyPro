@@ -401,6 +401,8 @@ function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, rad
   const t = {
     title:    lang==='pt'?'Filtro por localização':lang==='es'?'Filtro por ubicación':'Location filter',
     useBtn:   lang==='pt'?'Usar minha localização':lang==='es'?'Usar mi ubicación':'Use my location',
+    refresh:  lang==='pt'?'Atualizar localização':lang==='es'?'Actualizar ubicación':'Update location',
+    refreshing:lang==='pt'?'Atualizando...':lang==='es'?'Actualizando...':'Updating...',
     disable:  lang==='pt'?'Desativar filtro de distância':lang==='es'?'Desactivar filtro de distancia':'Disable distance filter',
     radius:   lang==='pt'?'Raio de busca':lang==='es'?'Radio de búsqueda':'Search radius',
     active:   lang==='pt'?'Localização ativa — mostrando anúncios dentro de':lang==='es'?'Ubicación activa — mostrando en':
@@ -443,13 +445,26 @@ function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, rad
         {/* Location status */}
         {userLocation ? (
           <div style={{background:'var(--pg-aqua-100)',border:'1px solid var(--pg-aqua-400)',borderRadius:14,padding:'12px 14px',marginBottom:16}}>
-            <div style={{fontSize:13,fontWeight:600,color:'var(--pg-aqua-700)',marginBottom:4}}>
+            <div style={{fontSize:13,fontWeight:600,color:'var(--pg-aqua-700)',marginBottom:8}}>
               ✓ {userLocation.city && <span>{userLocation.city} · </span>}{t.active} <strong>{radiusMiles} {t.miles}</strong>
             </div>
-            <button onClick={()=>{setUserLocation(null);}} style={{
-              border:'none',background:'none',cursor:'pointer',padding:0,
-              fontSize:12,color:'var(--pg-ink-400)',fontFamily:'inherit',textDecoration:'underline',
-            }}>{t.disable}</button>
+            <div style={{display:'flex',alignItems:'center',gap:14}}>
+              <button onClick={requestLocation} disabled={loading} style={{
+                border:'none',background:'none',cursor:loading?'default':'pointer',padding:0,
+                fontSize:12,color:'var(--pg-aqua-600)',fontFamily:'inherit',fontWeight:600,
+                display:'flex',alignItems:'center',gap:5,opacity:loading?0.6:1,
+              }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={loading?{animation:'spin 1s linear infinite'}:{}}>
+                  <path d="M21 12a9 9 0 1 1-2.33-6.17M21 3v6h-6"/>
+                </svg>
+                {loading ? t.refreshing : t.refresh}
+              </button>
+              <span style={{color:'var(--pg-aqua-300)'}}>·</span>
+              <button onClick={()=>{setUserLocation(null);}} style={{
+                border:'none',background:'none',cursor:'pointer',padding:0,
+                fontSize:12,color:'var(--pg-ink-400)',fontFamily:'inherit',textDecoration:'underline',
+              }}>{t.disable}</button>
+            </div>
           </div>
         ) : (
           <div style={{background:'var(--pg-ink-50)',borderRadius:14,padding:'12px 14px',marginBottom:16,fontSize:13,color:'var(--pg-ink-500)'}}>
