@@ -284,7 +284,12 @@ function WorkScreen({
     if (!c) return true; // city not in dict → show
     return window.haversine(workUserLocation.lat, workUserLocation.lng, c[0], c[1]) <= workRadiusMiles;
   }, [workUserLocation, workRadiusMiles]);
-  const filteredLiveJobs = liveJobs.filter(j => radiusMatch(j.loc || j.region || ''));
+  const filteredLiveJobs = liveJobs.filter(j => {
+    const isOwn = user?.uid && j.author_id === user.uid;
+    if (isOwn) return true; // always show own jobs regardless of radius
+    if (j.hiredAt) return true; // hired jobs visible to everyone (position is filled — informational)
+    return radiusMatch(j.loc || j.region || '');
+  });
   const filteredLiveTechs = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
   const filteredLiveVacations = liveVacations.filter(v => radiusMatch(v.region || v.loc || ''));
 
@@ -1382,6 +1387,7 @@ function WorkScreen({
       liveJobs: filteredLiveJobs,
       showToast: showToast,
       onDeleteJob: removeJob,
+      onJobUpdated: ctx.loadLiveJobs,
       liveApplications: liveApplications
     }), sub === 'techs' && /*#__PURE__*/React.createElement(TechsPanel, {
       t: t,
@@ -2264,6 +2270,7 @@ function WorkScreen({
     liveJobs: filteredLiveJobs,
     showToast: showToast,
     onDeleteJob: removeJob,
+    onJobUpdated: ctx.loadLiveJobs,
     liveApplications: liveApplications
   }), sub === 'techs' && /*#__PURE__*/React.createElement(TechsPanel, {
     t: t,
@@ -2551,6 +2558,7 @@ function HiringPanel({
   liveJobs = [],
   showToast,
   onDeleteJob,
+  onJobUpdated,
   liveApplications = []
 }) {
   const Company = (s = 20, c = 'var(--pg-blue-500)') => /*#__PURE__*/React.createElement("svg", {
@@ -2599,6 +2607,7 @@ function HiringPanel({
   })[c] || c;
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const [selectedJob, setSelectedJob] = React.useState(null);
+  const [editingJob, setEditingJob] = React.useState(null);
   React.useEffect(() => {
     if (window.__pgOpenJobId && liveJobs.length > 0) {
       const job = liveJobs.find(j => j._id === window.__pgOpenJobId);
@@ -2607,6 +2616,37 @@ function HiringPanel({
     }
   }, [liveJobs]);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sheet, {
+    open: !!editingJob,
+    onClose: () => setEditingJob(null),
+    height: "92%"
+  }, editingJob && /*#__PURE__*/React.createElement(PostHiringSheet, {
+    lang: lang,
+    onClose: () => setEditingJob(null),
+    initialValues: editingJob,
+    onSubmit: async data => {
+      const {
+        error
+      } = await window.sb.from('jobs').update({
+        role: data.role,
+        loc: data.loc,
+        description: data.desc,
+        contract: data.contract,
+        pay_mode: data.payMode,
+        pay: data.pay,
+        car_req: data.carReq,
+        license_req: data.licenseReq,
+        equip_req: data.equipReq,
+        author: data.company
+      }).eq('id', editingJob._id);
+      if (error) {
+        showToast && showToast('❌ ' + error.message);
+        return;
+      }
+      showToast && showToast('✓ ' + (lang === 'pt' ? 'Vaga atualizada!' : lang === 'es' ? '¡Oferta actualizada!' : 'Job updated!'));
+      setEditingJob(null);
+      onJobUpdated && onJobUpdated();
+    }
+  })), /*#__PURE__*/React.createElement(Sheet, {
     open: !!selectedJob,
     onClose: () => setSelectedJob(null),
     height: "92%"
@@ -2643,7 +2683,37 @@ function HiringPanel({
         fontWeight: 700,
         letterSpacing: '-0.01em'
       }
-    }, lang === 'pt' ? 'Detalhes da Vaga' : lang === 'es' ? 'Detalle del Empleo' : 'Job Details'), /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'Detalhes da Vaga' : lang === 'es' ? 'Detalle del Empleo' : 'Job Details'), user?.uid && job.author_id && user.uid === job.author_id ? /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setSelectedJob(null);
+        setTimeout(() => setEditingJob(job), 50);
+      },
+      style: {
+        border: 'none',
+        background: 'none',
+        color: 'var(--pg-blue-500)',
+        fontSize: 14,
+        fontWeight: 600,
+        cursor: 'pointer',
+        padding: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "14",
+      height: "14",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+    })), lang === 'pt' ? 'Editar' : lang === 'es' ? 'Editar' : 'Edit') : /*#__PURE__*/React.createElement("div", {
       style: {
         width: 60
       }
@@ -2913,329 +2983,381 @@ function HiringPanel({
       flexDirection: 'column',
       gap: 12
     }
-  }, liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).map(job => /*#__PURE__*/React.createElement("article", {
-    key: job._id,
-    className: "pg-card pg-press",
-    onClick: () => setSelectedJob(job),
-    style: {
-      padding: '14px 16px',
-      cursor: 'pointer'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: e => {
-      e.stopPropagation();
-      openPublicProfile && openPublicProfile({
-        name: job.author,
-        rating: 4.8,
-        reviews: 0,
-        jobs: 0,
-        loc: job.loc
-      });
-    },
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      marginBottom: 8,
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      padding: 0,
-      fontFamily: 'inherit',
-      textAlign: 'left',
-      width: '100%'
-    },
-    className: "pg-press"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 28,
-      height: 28,
-      borderRadius: 7,
-      background: 'var(--pg-blue-100)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }
-  }, Company(15, 'var(--pg-blue-700)')), /*#__PURE__*/React.createElement("h3", {
-    style: {
-      margin: 0,
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 15,
-      fontWeight: 700,
-      letterSpacing: '-0.015em',
-      flex: 1,
-      minWidth: 0
-    }
-  }, job.author), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 9.5,
-      fontWeight: 700,
-      padding: '2px 8px',
-      borderRadius: 6,
-      background: 'var(--pg-aqua-100)',
-      color: 'var(--pg-aqua-700)',
-      flexShrink: 0,
-      letterSpacing: '0.05em',
-      marginLeft: 4
-    }
-  }, "NEW")), job.role && /*#__PURE__*/React.createElement("p", {
-    style: {
-      margin: '0 0 4px',
-      fontSize: 13.5,
-      fontWeight: 600,
-      color: 'var(--pg-ink-900)',
-      lineHeight: 1.3
-    }
-  }, job.role), job.desc && /*#__PURE__*/React.createElement("p", {
-    style: {
-      margin: '0 0 10px',
-      fontSize: 12.5,
-      color: 'var(--pg-ink-600)',
-      lineHeight: 1.45
-    }
-  }, job.desc), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 6,
-      marginTop: job.desc ? 0 : 8,
-      fontSize: 12.5,
-      color: 'var(--pg-ink-500)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-      flexWrap: 'wrap'
-    }
-  }, job.loc && /*#__PURE__*/React.createElement("span", {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 5
-    }
-  }, Icon.pin(13, 'var(--pg-ink-500)'), " ", job.loc), job.equipReq === 'companyEquip' && /*#__PURE__*/React.createElement("span", {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 5
-    }
-  }, Briefcase(13), " ", eqProv), job.equipReq === 'ownEquip' && /*#__PURE__*/React.createElement("span", {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 5
-    }
-  }, Briefcase(13), " ", lang === 'pt' ? 'Equip. próprio' : lang === 'es' ? 'Equipo propio' : 'Own equipment')), job.carReq === 'companyCar' && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 5
-    }
-  }, License(13), " ", lang === 'pt' ? 'Carro da empresa incluso' : lang === 'es' ? 'Auto de empresa incluido' : 'Company car provided'), job.carReq === 'ownCar' && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 5
-    }
-  }, License(13), " ", lang === 'pt' ? 'Carro próprio necessário' : lang === 'es' ? 'Auto propio requerido' : 'Own car required'), job.licenseReq === 'required' && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 5
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "13",
-    height: "13",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "var(--pg-ink-500)",
-    strokeWidth: "1.8",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("rect", {
-    x: "2",
-    y: "6",
-    width: "20",
-    height: "13",
-    rx: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M7 11h4M7 14h6M15 10h2v4h-2z"
-  })), lang === 'pt' ? "Driver's license obrigatória" : lang === 'es' ? "Driver's license requerida" : "Driver's license required"), job.licenseReq === 'notRequired' && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 5
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "13",
-    height: "13",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "var(--pg-ink-500)",
-    strokeWidth: "1.8",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("circle", {
-    cx: "12",
-    cy: "12",
-    r: "9"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M9 12h6"
-  })), lang === 'pt' ? "Driver's license não necessária" : lang === 'es' ? "Driver's license no requerida" : "No driver's license needed")), job.contract && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      flexWrap: 'wrap',
-      marginTop: 8
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "pg-chip",
-    style: {
-      fontSize: 11
-    }
-  }, contractLabel(job.contract))), /*#__PURE__*/React.createElement("div", {
-    className: "pg-divider",
-    style: {
-      margin: '12px 0'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 16,
-      fontWeight: 700,
-      color: job.payMode === 'neg' ? 'var(--pg-aqua-700)' : 'var(--pg-blue-500)',
-      letterSpacing: '-0.01em'
-    }
-  }, job.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : `$${job.pay}${job.payMode === 'weekly' ? lang === 'pt' ? '/sem' : '/wk' : '/pool'}`), (() => {
+  }, liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).map(job => {
+    const isOwner = user?.uid && user.uid === job.author_id;
+    const isAdmin = user?.role === 'admin';
+    const isHired = !!job.hiredAt;
     const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
-    if (myApp?.status === 'rejected') {
-      return /*#__PURE__*/React.createElement("div", {
-        style: {
-          height: 36,
-          padding: '0 16px',
-          borderRadius: 999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'rgba(239,68,68,0.10)',
-          border: '1.5px solid rgba(239,68,68,0.35)',
-          color: '#EF4444',
-          fontSize: 12.5,
-          fontWeight: 700,
-          letterSpacing: '0.02em',
-          userSelect: 'none'
+    return /*#__PURE__*/React.createElement("article", {
+      key: job._id,
+      className: isHired ? 'pg-card' : 'pg-card pg-press',
+      onClick: () => !isHired && setSelectedJob(job),
+      style: {
+        padding: '14px 16px',
+        cursor: isHired ? 'default' : 'pointer',
+        position: 'relative',
+        opacity: isHired ? 0.72 : 1,
+        background: isHired ? 'var(--pg-ink-50)' : undefined,
+        filter: isHired ? 'grayscale(0.45)' : undefined
+      }
+    }, (isOwner || isAdmin) && !isHired && /*#__PURE__*/React.createElement("button", {
+      onClick: async e => {
+        e.stopPropagation();
+        const msg = lang === 'pt' ? `Excluir a vaga "${job.role}"?` : `Delete job "${job.role}"?`;
+        if (!window.confirm(msg)) return;
+        const {
+          error
+        } = await window.sb.from('jobs').delete().eq('id', job._id);
+        if (error) {
+          showToast && showToast('❌ ' + error.message);
+          return;
         }
-      }, /*#__PURE__*/React.createElement("svg", {
-        width: "13",
-        height: "13",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: "2.2",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }, /*#__PURE__*/React.createElement("circle", {
-        cx: "12",
-        cy: "12",
-        r: "9"
-      }), /*#__PURE__*/React.createElement("path", {
-        d: "M15 9l-6 6M9 9l6 6"
-      })), lang === 'pt' ? 'Recusado' : lang === 'es' ? 'Rechazado' : 'Rejected');
-    }
-    if (myApp?.status === 'pending') {
-      return /*#__PURE__*/React.createElement("div", {
-        style: {
-          height: 36,
-          padding: '0 16px',
-          borderRadius: 999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'rgba(245,158,11,0.10)',
-          border: '1.5px solid rgba(245,158,11,0.35)',
-          color: '#D97706',
-          fontSize: 12.5,
-          fontWeight: 700,
-          letterSpacing: '0.02em',
-          userSelect: 'none'
-        }
-      }, /*#__PURE__*/React.createElement("svg", {
-        width: "13",
-        height: "13",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: "2",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }, /*#__PURE__*/React.createElement("circle", {
-        cx: "12",
-        cy: "12",
-        r: "9"
-      }), /*#__PURE__*/React.createElement("path", {
-        d: "M12 7v5l3 3"
-      })), lang === 'pt' ? 'Enviado' : lang === 'es' ? 'Enviado' : 'Applied');
-    }
-    if (myApp?.status === 'accepted') {
-      return /*#__PURE__*/React.createElement("div", {
-        style: {
-          height: 36,
-          padding: '0 16px',
-          borderRadius: 999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'rgba(16,185,129,0.10)',
-          border: '1.5px solid rgba(16,185,129,0.35)',
-          color: '#10B981',
-          fontSize: 12.5,
-          fontWeight: 700,
-          letterSpacing: '0.02em',
-          userSelect: 'none'
-        }
-      }, /*#__PURE__*/React.createElement("svg", {
-        width: "13",
-        height: "13",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: "2.2",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }, /*#__PURE__*/React.createElement("circle", {
-        cx: "12",
-        cy: "12",
-        r: "9"
-      }), /*#__PURE__*/React.createElement("path", {
-        d: "M9 12l2 2 4-4"
-      })), lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted');
-    }
-    // Own job — don't show apply button
-    if (user?.uid && user.uid === job.author_id) {
-      return /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 11,
-          fontWeight: 700,
-          padding: '4px 10px',
-          borderRadius: 999,
-          background: 'rgba(0,119,182,0.12)',
-          color: 'var(--pg-blue-600)',
-          border: '1px solid rgba(0,119,182,0.25)'
-        }
-      }, lang === 'pt' ? 'Sua vaga' : lang === 'es' ? 'Tu oferta' : 'Your listing');
-    }
-    // Not applied yet — show Candidatar button
-    return /*#__PURE__*/React.createElement("button", {
-      onClick: () => onApply && onApply(job),
+        showToast && showToast('🗑️ ' + (lang === 'pt' ? 'Vaga excluída' : 'Job deleted'));
+        onDeleteJob && onDeleteJob(job._id);
+      },
+      style: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        width: 28,
+        height: 28,
+        borderRadius: 7,
+        background: 'rgba(239,68,68,0.08)',
+        border: '1px solid rgba(239,68,68,0.22)',
+        color: '#EF4444',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 2
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.2",
+      strokeLinecap: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "3 6 5 6 21 6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 8,
+        paddingRight: (isOwner || isAdmin) && !isHired ? 36 : 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 28,
+        height: 28,
+        borderRadius: 7,
+        background: 'var(--pg-blue-100)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }
+    }, Company(15, 'var(--pg-blue-700)')), /*#__PURE__*/React.createElement("h3", {
+      style: {
+        margin: 0,
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 15,
+        fontWeight: 700,
+        letterSpacing: '-0.015em',
+        flex: 1,
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }
+    }, job.author), !(isOwner || isAdmin) && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 9.5,
+        fontWeight: 700,
+        padding: '2px 8px',
+        borderRadius: 6,
+        background: 'var(--pg-aqua-100)',
+        color: 'var(--pg-aqua-700)',
+        flexShrink: 0,
+        letterSpacing: '0.05em'
+      }
+    }, "NEW")), isHired && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 7,
+        marginBottom: 10,
+        padding: '7px 12px',
+        borderRadius: 8,
+        background: 'rgba(107,114,128,0.10)',
+        border: '1px solid rgba(107,114,128,0.25)',
+        color: '#6B7280',
+        fontSize: 12,
+        fontWeight: 700
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.5",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "20 6 9 17 4 12"
+    })), lang === 'pt' ? 'Funcionário já contratado' : lang === 'es' ? 'Empleado ya contratado' : 'Employee already hired'), job.role && /*#__PURE__*/React.createElement("p", {
+      style: {
+        margin: '0 0 4px',
+        fontSize: 13.5,
+        fontWeight: 600,
+        color: 'var(--pg-ink-900)',
+        lineHeight: 1.3
+      }
+    }, job.role), job.desc && /*#__PURE__*/React.createElement("p", {
+      style: {
+        margin: '0 0 10px',
+        fontSize: 12.5,
+        color: 'var(--pg-ink-600)',
+        lineHeight: 1.45
+      }
+    }, job.desc), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        marginTop: job.desc ? 0 : 8,
+        fontSize: 12.5,
+        color: 'var(--pg-ink-500)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        flexWrap: 'wrap'
+      }
+    }, job.loc && /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, Icon.pin(13, 'var(--pg-ink-500)'), " ", job.loc), job.equipReq === 'companyEquip' && /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, Briefcase(13), " ", eqProv), job.equipReq === 'ownEquip' && /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, Briefcase(13), " ", lang === 'pt' ? 'Equip. próprio' : lang === 'es' ? 'Equipo propio' : 'Own equipment')), job.carReq === 'companyCar' && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, License(13), " ", lang === 'pt' ? 'Carro da empresa incluso' : lang === 'es' ? 'Auto de empresa incluido' : 'Company car provided'), job.carReq === 'ownCar' && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, License(13), " ", lang === 'pt' ? 'Carro próprio necessário' : lang === 'es' ? 'Auto propio requerido' : 'Own car required'), job.licenseReq === 'required' && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "var(--pg-ink-500)",
+      strokeWidth: "1.8",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("rect", {
+      x: "2",
+      y: "6",
+      width: "20",
+      height: "13",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M7 11h4M7 14h6M15 10h2v4h-2z"
+    })), lang === 'pt' ? "Driver's license obrigatória" : lang === 'es' ? "Driver's license requerida" : "Driver's license required"), job.licenseReq === 'notRequired' && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "var(--pg-ink-500)",
+      strokeWidth: "1.8",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "9"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 12h6"
+    })), lang === 'pt' ? "Driver's license não necessária" : lang === 'es' ? "Driver's license no requerida" : "No driver's license needed")), job.contract && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 6,
+        flexWrap: 'wrap',
+        marginTop: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "pg-chip",
+      style: {
+        fontSize: 11
+      }
+    }, contractLabel(job.contract))), /*#__PURE__*/React.createElement("div", {
+      className: "pg-divider",
+      style: {
+        margin: '12px 0'
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 16,
+        fontWeight: 700,
+        color: job.payMode === 'neg' ? 'var(--pg-aqua-700)' : 'var(--pg-blue-500)',
+        letterSpacing: '-0.01em'
+      }
+    }, job.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : `$${job.pay}${job.payMode === 'weekly' ? lang === 'pt' ? '/sem' : '/wk' : '/pool'}`), isHired ? /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '4px 10px',
+        borderRadius: 999,
+        background: 'rgba(107,114,128,0.12)',
+        color: '#6B7280',
+        border: '1px solid rgba(107,114,128,0.25)'
+      }
+    }, lang === 'pt' ? 'Encerrada' : lang === 'es' ? 'Cerrada' : 'Closed') : myApp?.status === 'rejected' ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 36,
+        padding: '0 16px',
+        borderRadius: 999,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        background: 'rgba(239,68,68,0.10)',
+        border: '1.5px solid rgba(239,68,68,0.35)',
+        color: '#EF4444',
+        fontSize: 12.5,
+        fontWeight: 700,
+        userSelect: 'none'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.2",
+      strokeLinecap: "round"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "9"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M15 9l-6 6M9 9l6 6"
+    })), lang === 'pt' ? 'Recusado' : lang === 'es' ? 'Rechazado' : 'Rejected') : myApp?.status === 'pending' ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 36,
+        padding: '0 16px',
+        borderRadius: 999,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        background: 'rgba(245,158,11,0.10)',
+        border: '1.5px solid rgba(245,158,11,0.35)',
+        color: '#D97706',
+        fontSize: 12.5,
+        fontWeight: 700,
+        userSelect: 'none'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "9"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M12 7v5l3 3"
+    })), lang === 'pt' ? 'Enviado' : lang === 'es' ? 'Enviado' : 'Applied') : myApp?.status === 'accepted' ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 36,
+        padding: '0 16px',
+        borderRadius: 999,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        background: 'rgba(16,185,129,0.10)',
+        border: '1.5px solid rgba(16,185,129,0.35)',
+        color: '#10B981',
+        fontSize: 12.5,
+        fontWeight: 700,
+        userSelect: 'none'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.2",
+      strokeLinecap: "round"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "9"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 12l2 2 4-4"
+    })), lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted') : isOwner ? /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '4px 10px',
+        borderRadius: 999,
+        background: 'rgba(0,119,182,0.12)',
+        color: 'var(--pg-blue-600)',
+        border: '1px solid rgba(0,119,182,0.25)'
+      }
+    }, lang === 'pt' ? 'Sua vaga' : lang === 'es' ? 'Tu oferta' : 'Your listing') : /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        onApply && onApply(job);
+      },
       className: "pg-btn pg-btn-primary",
       style: {
         height: 36,
@@ -3243,96 +3365,52 @@ function HiringPanel({
         fontSize: 13,
         borderRadius: 999
       }
-    }, t.apply);
-  })()), user?.uid && user.uid === job.author_id && user?.role !== 'admin' && /*#__PURE__*/React.createElement("div", {
-    onClick: async () => {
-      const msg = lang === 'pt' ? `Encerrar a vaga "${job.role}"? Isso indica que você já preencheu a posição.` : lang === 'es' ? `¿Cerrar la oferta "${job.role}"? Esto indica que ya cubriste el puesto.` : `Close the "${job.role}" listing? This means you've already filled the position.`;
-      if (!window.confirm(msg)) return;
-      const {
-        error
-      } = await window.sb.from('jobs').delete().eq('id', job._id);
-      if (error) {
-        showToast && showToast('❌ ' + error.message);
-        return;
+    }, t.apply)), isOwner && !isHired && /*#__PURE__*/React.createElement("div", {
+      onClick: async e => {
+        e.stopPropagation();
+        const msg = lang === 'pt' ? `Marcar "${job.role}" como preenchida? A vaga ficará visível por 1 dia e depois some.` : lang === 'es' ? `¿Marcar "${job.role}" como cubierta?` : `Mark "${job.role}" as filled? It will remain visible for 1 day then disappear.`;
+        if (!window.confirm(msg)) return;
+        const {
+          error
+        } = await window.sb.from('jobs').update({
+          hired_at: new Date().toISOString()
+        }).eq('id', job._id);
+        if (error) {
+          showToast && showToast('❌ ' + error.message);
+          return;
+        }
+        showToast && showToast('✓ ' + (lang === 'pt' ? 'Contratação registrada!' : lang === 'es' ? '¡Contratación registrada!' : 'Hiring recorded!'));
+        onJobUpdated && onJobUpdated();
+      },
+      style: {
+        marginTop: 8,
+        padding: '5px 0',
+        borderRadius: 8,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 5,
+        background: 'rgba(16,185,129,0.07)',
+        border: '1px solid rgba(16,185,129,0.28)',
+        color: '#10B981',
+        fontSize: 11,
+        fontWeight: 700,
+        width: '100%'
       }
-      showToast && showToast('✓ ' + (lang === 'pt' ? 'Vaga encerrada!' : lang === 'es' ? '¡Oferta cerrada!' : 'Listing closed!'));
-      onDeleteJob && onDeleteJob(job._id);
-    },
-    style: {
-      marginTop: 8,
-      padding: '7px 0',
-      borderRadius: 8,
-      cursor: 'pointer',
-      background: 'rgba(16,185,129,0.08)',
-      border: '1px solid rgba(16,185,129,0.28)',
-      color: '#10B981',
-      fontSize: 11,
-      fontWeight: 700,
-      textAlign: 'center',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "12",
-    height: "12",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.5",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M20 6L9 17l-5-5"
-  })), lang === 'pt' ? 'Já contratei — Encerrar vaga' : lang === 'es' ? 'Ya contraté — Cerrar oferta' : 'Hired someone — Close listing'), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
-    onClick: async () => {
-      if (!window.confirm(lang === 'pt' ? `Excluir vaga "${job.role}"?` : `Delete job "${job.role}"?`)) return;
-      const {
-        error
-      } = await window.sb.from('jobs').delete().eq('id', job._id);
-      if (error) {
-        showToast && showToast('❌ ' + error.message);
-        return;
-      }
-      showToast && showToast('🗑️ ' + (lang === 'pt' ? 'Vaga excluída' : 'Job deleted'));
-      onDeleteJob && onDeleteJob(job._id);
-    },
-    style: {
-      marginTop: 4,
-      padding: '6px 0',
-      borderRadius: 8,
-      cursor: 'pointer',
-      background: '#FEF2F2',
-      border: '1px solid #FCA5A5',
-      color: '#EF4444',
-      fontSize: 11,
-      fontWeight: 700,
-      textAlign: 'center',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 5
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "11",
-    height: "11",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.5",
-    strokeLinecap: "round"
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "3 6 5 6 21 6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M10 11v6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M14 11v6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete'))), HIRING.filter(h => !hiddenStatic.includes(h.id)).map(h => /*#__PURE__*/React.createElement("article", {
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "11",
+      height: "11",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.5",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M20 6L9 17l-5-5"
+    })), lang === 'pt' ? 'Já contratei' : lang === 'es' ? 'Ya contraté' : 'Hired someone'));
+  }), HIRING.filter(h => !hiddenStatic.includes(h.id)).map(h => /*#__PURE__*/React.createElement("article", {
     key: h.id,
     className: "pg-card",
     style: {
@@ -3524,25 +3602,40 @@ function TechReviewSheet({
   open,
   onClose,
   tech,
-  lang = 'en'
+  lang = 'en',
+  user = null
 }) {
   const [rating, setRating] = React.useState(0);
   const [hover, setHover] = React.useState(0);
   const [comment, setComment] = React.useState('');
   const [submitted, setSubmitted] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [alreadyRated, setAlreadyRated] = React.useState(false);
+  const [checking, setChecking] = React.useState(false);
   React.useEffect(() => {
-    if (open) {
-      setRating(0);
-      setHover(0);
-      setComment('');
-      setSubmitted(false);
+    if (!open) return;
+    setRating(0);
+    setHover(0);
+    setComment('');
+    setSubmitted(false);
+    setAlreadyRated(false);
+    setSubmitting(false);
+    if (user?.uid && tech?.author_id && window.sb) {
+      setChecking(true);
+      window.sb.from('ratings').select('id').eq('from_id', user.uid).eq('to_id', tech.author_id).maybeSingle().then(({
+        data
+      }) => {
+        setAlreadyRated(!!data);
+        setChecking(false);
+      });
     }
   }, [open]);
   if (!tech) return null;
+  const canRate = !!user?.phoneVerified;
+  const isSelf = user?.uid && user.uid === tech.author_id;
   const titleLbl = lang === 'pt' ? 'Avaliar técnico' : lang === 'es' ? 'Calificar técnico' : 'Rate technician';
-  const reviewPh = lang === 'pt' ? 'Compartilhe sua experiência com este técnico…' : lang === 'es' ? 'Comparte tu experiencia con este técnico…' : 'Share your experience with this technician…';
+  const reviewPh = lang === 'pt' ? 'Compartilhe sua experiência…' : lang === 'es' ? 'Comparte tu experiencia…' : 'Share your experience…';
   const submitLbl = lang === 'pt' ? 'Enviar avaliação' : lang === 'es' ? 'Enviar reseña' : 'Submit review';
-  const skipLbl = lang === 'pt' ? 'Pular por agora' : lang === 'es' ? 'Omitir por ahora' : 'Skip for now';
   const sentLbl = lang === 'pt' ? 'Avaliação enviada!' : lang === 'es' ? '¡Reseña enviada!' : 'Review submitted!';
   const sentSubLbl = lang === 'pt' ? 'Obrigado! Isso ajuda outros pool guys a escolher técnicos de qualidade.' : lang === 'es' ? '¡Gracias! Esto ayuda a otros pool guys a elegir técnicos de calidad.' : 'Thanks! This helps other pool guys choose quality technicians.';
   const starLabels = {
@@ -3552,10 +3645,64 @@ function TechReviewSheet({
   };
   const sLabels = starLabels[lang] || starLabels.en;
   const displayed = hover || rating;
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!rating || !window.sb || !user?.uid || !tech?.author_id) return;
+    setSubmitting(true);
+    const {
+      error
+    } = await window.sb.from('ratings').insert({
+      stars: rating,
+      comment: comment || null,
+      from_id: user.uid,
+      to_id: tech.author_id,
+      from_name: user.name || '',
+      listing_name: tech.name || '',
+      pending: false
+    });
+    setSubmitting(false);
+    if (error) {
+      return;
+    }
     setSubmitted(true);
     setTimeout(() => onClose(), 1900);
   };
+  const BlockedState = ({
+    icon,
+    title,
+    sub
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '24px 0 8px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 38,
+      marginBottom: 12
+    }
+  }, icon), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+      marginBottom: 6
+    }
+  }, title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: 'var(--pg-ink-500)',
+      lineHeight: 1.5,
+      maxWidth: 260,
+      margin: '0 auto 20px'
+    }
+  }, sub), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    className: "pg-btn pg-btn-ghost",
+    style: {
+      width: '100%',
+      height: 46
+    }
+  }, lang === 'pt' ? 'Fechar' : lang === 'es' ? 'Cerrar' : 'Close'));
   return /*#__PURE__*/React.createElement(Sheet, {
     open: open,
     onClose: onClose,
@@ -3564,10 +3711,37 @@ function TechReviewSheet({
     style: {
       padding: '6px 20px 36px'
     }
-  }, submitted ? /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontSize: 18,
+      fontWeight: 700,
+      letterSpacing: '-0.01em'
+    }
+  }, titleLbl), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      border: 'none',
+      background: 'var(--pg-ink-100)',
+      width: 30,
+      height: 30,
+      borderRadius: '50%',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, Icon.x(16, 'var(--pg-ink-700)'))), submitted ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
-      padding: '20px 0 10px'
+      padding: '8px 0 10px'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3595,34 +3769,26 @@ function TechReviewSheet({
       maxWidth: 260,
       margin: '8px auto 0'
     }
-  }, sentSubLbl)) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, sentSubLbl)) : isSelf ? /*#__PURE__*/React.createElement(BlockedState, {
+    icon: "\uD83D\uDEAB",
+    title: lang === 'pt' ? 'Você não pode se avaliar' : lang === 'es' ? 'No puedes evaluarte' : 'You cannot rate yourself',
+    sub: lang === 'pt' ? 'Avaliações só podem ser feitas por outros usuários.' : lang === 'es' ? 'Las reseñas solo pueden ser hechas por otros usuarios.' : 'Reviews can only be submitted by other users.'
+  }) : !canRate ? /*#__PURE__*/React.createElement(BlockedState, {
+    icon: "\uD83D\uDCF1",
+    title: lang === 'pt' ? 'Verificação de celular necessária' : lang === 'es' ? 'Verificación de celular requerida' : 'Phone verification required',
+    sub: lang === 'pt' ? 'Apenas usuários com número de celular verificado podem avaliar. Verifique seu número no perfil.' : lang === 'es' ? 'Solo usuarios con número verificado pueden calificar. Verifica tu número en el perfil.' : 'Only users with a verified phone number can leave reviews. Verify your number in your profile.'
+  }) : checking ? /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8
+      textAlign: 'center',
+      padding: '32px 0',
+      color: 'var(--pg-ink-400)',
+      fontSize: 13
     }
-  }, /*#__PURE__*/React.createElement("h2", {
-    style: {
-      margin: 0,
-      fontSize: 18,
-      fontWeight: 700,
-      letterSpacing: '-0.01em'
-    }
-  }, titleLbl), /*#__PURE__*/React.createElement("button", {
-    onClick: onClose,
-    style: {
-      border: 'none',
-      background: 'var(--pg-ink-100)',
-      width: 30,
-      height: 30,
-      borderRadius: '50%',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, Icon.x(16, 'var(--pg-ink-700)'))), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Verificando…' : 'Checking…') : alreadyRated ? /*#__PURE__*/React.createElement(BlockedState, {
+    icon: "\u2B50",
+    title: lang === 'pt' ? 'Você já avaliou este técnico' : lang === 'es' ? 'Ya evaluaste a este técnico' : 'You already rated this technician',
+    sub: lang === 'pt' ? 'Cada usuário pode avaliar uma pessoa apenas uma vez no aplicativo.' : lang === 'es' ? 'Cada usuario puede calificar a una persona solo una vez.' : 'Each user can rate another person only once in the app.'
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -3656,23 +3822,7 @@ function TechReviewSheet({
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
     }
-  }, tr(tech.speciality, lang), " \xB7 ", tech.loc)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 4,
-      flexShrink: 0
-    }
-  }, /*#__PURE__*/React.createElement(Stars, {
-    rating: tech.rating,
-    size: 11
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: 'var(--pg-ink-500)'
-    }
-  }, tech.rating))), /*#__PURE__*/React.createElement("div", {
+  }, tr(tech.speciality || tech.specialty, lang), " \xB7 ", tech.loc))), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       marginBottom: 20
@@ -3725,28 +3875,16 @@ function TechReviewSheet({
     }
   }), /*#__PURE__*/React.createElement("button", {
     onClick: handleSubmit,
-    disabled: rating === 0,
+    disabled: rating === 0 || submitting,
     className: "pg-btn pg-btn-primary",
     style: {
       width: '100%',
       height: 52,
       fontSize: 16,
       marginTop: 14,
-      opacity: rating > 0 ? 1 : 0.45
+      opacity: rating > 0 && !submitting ? 1 : 0.45
     }
-  }, Icon.star(18, '#fff', true), " ", submitLbl), /*#__PURE__*/React.createElement("button", {
-    onClick: onClose,
-    style: {
-      width: '100%',
-      padding: '10px',
-      border: 'none',
-      background: 'transparent',
-      color: 'var(--pg-ink-500)',
-      fontSize: 13,
-      cursor: 'pointer',
-      fontFamily: 'inherit'
-    }
-  }, skipLbl))));
+  }, Icon.star(18, '#fff', true), " ", submitting ? lang === 'pt' ? 'Enviando…' : 'Sending…' : submitLbl))));
 }
 
 // ── Technicians — same card layout as Hiring ─────────────────
@@ -3810,185 +3948,275 @@ function TechsPanel({
       flexDirection: 'column',
       gap: 12
     }
-  }, liveTechs.map(tech => /*#__PURE__*/React.createElement("article", {
-    key: tech._id,
-    className: "pg-card",
-    style: {
-      padding: '14px 16px',
-      border: '1.5px solid var(--pg-aqua-400,#38bdf8)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement(Avatar, {
-    name: tech.name,
-    size: 36
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 700,
-      color: 'var(--pg-ink-900)'
-    }
-  }, tech.name), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--pg-ink-500)',
-      marginTop: 1
-    }
-  }, tech.specialty, " \xB7 ", tech.loc)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 9.5,
-      fontWeight: 700,
-      padding: '2px 8px',
-      borderRadius: 6,
-      background: 'var(--pg-aqua-100)',
-      color: 'var(--pg-aqua-700)',
-      flexShrink: 0,
-      letterSpacing: '0.05em'
-    }
-  }, "NEW")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      flexWrap: 'wrap',
-      marginBottom: 10
-    }
-  }, tech.rateMode === 'fixed' && tech.rate ? /*#__PURE__*/React.createElement("span", {
-    className: "pg-chip pg-chip-aqua",
-    style: {
-      fontSize: 12
-    }
-  }, "$", tech.rate, lang === 'pt' ? '/visita' : lang === 'es' ? '/visita' : '/visit') : /*#__PURE__*/React.createElement("span", {
-    className: "pg-chip",
-    style: {
-      fontSize: 12
-    }
-  }, lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable'), /*#__PURE__*/React.createElement("span", {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 4,
-      fontSize: 11,
-      color: 'var(--pg-ink-500)'
-    }
-  }, Icon.pin(11, 'var(--pg-ink-400)'), " ", tech.loc)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 8
-    }
-  }, tech.phone && /*#__PURE__*/React.createElement("a", {
-    href: `tel:${tech.phone}`,
-    className: "pg-btn pg-btn-ghost",
-    style: {
-      flex: 1,
-      height: 36,
-      fontSize: 12.5,
-      borderRadius: 999,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 5,
-      textDecoration: 'none',
-      color: 'inherit'
-    }
-  }, "\uD83D\uDCDE ", tech.phone)), user?.uid && user.uid === tech.author_id && user?.role !== 'admin' && /*#__PURE__*/React.createElement("div", {
-    onClick: async () => {
-      const msg = lang === 'pt' ? 'Remover seu perfil de técnico? Você pode republicar quando quiser.' : lang === 'es' ? '¿Eliminar tu perfil de técnico? Puedes volver a publicar cuando quieras.' : 'Remove your technician profile? You can re-post whenever you want.';
-      if (!window.confirm(msg)) return;
-      const {
-        error
-      } = await window.sb.from('techs').delete().eq('id', tech._id);
-      if (error) {
-        showToast && showToast('❌ ' + error.message);
-        return;
+  }, liveTechs.map(tech => {
+    const isOwner = user?.uid && user.uid === tech.author_id;
+    const isOpen = contactOpen === tech._id;
+    const rateIsFixed = (tech.rateMode || tech.rate_mode) === 'fixed' && tech.rate;
+    const rateDisplay = rateIsFixed ? `$${tech.rate}${lang === 'pt' ? '/visita' : lang === 'es' ? '/visita' : '/visit'}` : lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable';
+    return /*#__PURE__*/React.createElement("article", {
+      key: tech._id,
+      className: "pg-card",
+      style: {
+        padding: '14px 16px',
+        position: 'relative'
       }
-      showToast && showToast('✓ ' + (lang === 'pt' ? 'Perfil removido' : lang === 'es' ? 'Perfil eliminado' : 'Profile removed'));
-      onDeleteTech && onDeleteTech(tech._id);
-    },
-    style: {
-      marginTop: 8,
-      padding: '7px 0',
-      borderRadius: 8,
-      cursor: 'pointer',
-      background: 'rgba(16,185,129,0.08)',
-      border: '1px solid rgba(16,185,129,0.28)',
-      color: '#10B981',
-      fontSize: 11,
-      fontWeight: 700,
-      textAlign: 'center',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "12",
-    height: "12",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.5",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M20 6L9 17l-5-5"
-  })), lang === 'pt' ? 'Já fui contratado — Remover perfil' : lang === 'es' ? 'Ya fui contratado — Eliminar perfil' : 'Got hired — Remove profile'), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
-    onClick: async () => {
-      if (!window.confirm(lang === 'pt' ? `Excluir técnico "${tech.name}"?` : `Delete technician "${tech.name}"?`)) return;
-      const {
-        error
-      } = await window.sb.from('techs').delete().eq('id', tech._id);
-      if (error) {
-        showToast && showToast('❌ ' + error.message);
-        return;
+    }, (isOwner || user?.role === 'admin') && /*#__PURE__*/React.createElement("button", {
+      onClick: async e => {
+        e.stopPropagation();
+        if (!window.confirm(lang === 'pt' ? `Excluir "${tech.name}"?` : `Delete "${tech.name}"?`)) return;
+        const {
+          error
+        } = await window.sb.from('techs').delete().eq('id', tech._id);
+        if (error) {
+          showToast && showToast('❌ ' + error.message);
+          return;
+        }
+        showToast && showToast('🗑️ ' + (lang === 'pt' ? 'Perfil removido' : 'Profile removed'));
+        onDeleteTech && onDeleteTech(tech._id);
+      },
+      style: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        width: 28,
+        height: 28,
+        borderRadius: 7,
+        background: 'rgba(239,68,68,0.08)',
+        border: '1px solid rgba(239,68,68,0.22)',
+        color: '#EF4444',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 2
       }
-      showToast && showToast('🗑️ ' + (lang === 'pt' ? 'Técnico excluído' : 'Technician deleted'));
-      onDeleteTech && onDeleteTech(tech._id);
-    },
-    style: {
-      marginTop: 4,
-      padding: '6px 0',
-      borderRadius: 8,
-      cursor: 'pointer',
-      background: '#FEF2F2',
-      border: '1px solid #FCA5A5',
-      color: '#EF4444',
-      fontSize: 11,
-      fontWeight: 700,
-      textAlign: 'center',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 5
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "11",
-    height: "11",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.5",
-    strokeLinecap: "round"
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "3 6 5 6 21 6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M10 11v6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M14 11v6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete'))), TECHS.filter(tech => !hiddenStatic.includes(tech.id)).map(tech => /*#__PURE__*/React.createElement("article", {
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.2",
+      strokeLinecap: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "3 6 5 6 21 6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+    }))), /*#__PURE__*/React.createElement("button", {
+      onClick: () => openPublicProfile && openPublicProfile({
+        name: tech.name,
+        photo: tech.photoUrl,
+        loc: tech.loc,
+        uid: tech.author_id
+      }),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 8,
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0,
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        width: '100%',
+        paddingRight: isOwner || user?.role === 'admin' ? 36 : 0
+      }
+    }, /*#__PURE__*/React.createElement(Avatar, {
+      name: tech.name,
+      size: 28,
+      src: tech.photoUrl || undefined
+    }), /*#__PURE__*/React.createElement("h3", {
+      style: {
+        margin: 0,
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 16,
+        fontWeight: 700,
+        letterSpacing: '-0.015em',
+        flex: 1,
+        minWidth: 0
+      }
+    }, tech.name)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        marginBottom: 10,
+        fontSize: 12.5,
+        color: 'var(--pg-ink-500)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        flexWrap: 'wrap'
+      }
+    }, tech.loc && /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, Icon.pin(13, 'var(--pg-ink-500)'), " ", tech.loc), tech.specialty && /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, Tool(13, 'var(--pg-ink-500)'), " ", tech.specialty)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
+      }
+    }, Icon.shield(13, 'var(--pg-ink-500)'), " ", verifiedLbl)), /*#__PURE__*/React.createElement("div", {
+      className: "pg-divider",
+      style: {
+        margin: '0 0 12px'
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 16,
+        fontWeight: 700,
+        color: rateIsFixed ? 'var(--pg-blue-500)' : 'var(--pg-aqua-700)',
+        letterSpacing: '-0.01em'
+      }
+    }, rateDisplay), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 8
+      }
+    }, !isOwner && /*#__PURE__*/React.createElement("button", {
+      onClick: () => setRatingFor(tech),
+      className: "pg-btn pg-btn-ghost",
+      title: lang === 'pt' ? 'Avaliar técnico' : lang === 'es' ? 'Calificar técnico' : 'Rate technician',
+      style: {
+        height: 36,
+        width: 36,
+        padding: 0,
+        borderRadius: 999,
+        flexShrink: 0
+      }
+    }, Icon.star(16, 'oklch(0.72 0.17 80)', false)), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setContactOpen(isOpen ? null : tech._id),
+      className: isOpen ? 'pg-btn pg-btn-ghost' : 'pg-btn pg-btn-primary',
+      style: {
+        height: 36,
+        padding: '0 18px',
+        fontSize: 13,
+        borderRadius: 999
+      }
+    }, isOpen ? lang === 'pt' ? 'Fechar' : lang === 'es' ? 'Cerrar' : 'Close' : t.contact))), isOpen && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 10,
+        padding: '12px 14px',
+        borderRadius: 12,
+        background: 'var(--pg-blue-50)',
+        border: '0.5px solid var(--pg-blue-100)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10
+      }
+    }, tech.phone && /*#__PURE__*/React.createElement("a", {
+      href: `tel:${tech.phone}`,
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        textDecoration: 'none'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        flexShrink: 0,
+        background: 'var(--pg-blue-500)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "16",
+      height: "16",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"
+    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10.5,
+        fontWeight: 700,
+        letterSpacing: '0.06em',
+        color: 'var(--pg-ink-400)'
+      }
+    }, lang === 'pt' ? 'TELEFONE' : lang === 'es' ? 'TELÉFONO' : 'PHONE'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 700,
+        color: 'var(--pg-blue-700)',
+        letterSpacing: '-0.01em'
+      }
+    }, tech.phone))), tech.email && /*#__PURE__*/React.createElement("a", {
+      href: `mailto:${tech.email}`,
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        textDecoration: 'none'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        flexShrink: 0,
+        background: 'var(--pg-aqua-100)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "16",
+      height: "16",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "var(--pg-aqua-700)",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+    }), /*#__PURE__*/React.createElement("polyline", {
+      points: "22,6 12,13 2,6"
+    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10.5,
+        fontWeight: 700,
+        letterSpacing: '0.06em',
+        color: 'var(--pg-ink-400)'
+      }
+    }, "EMAIL"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--pg-aqua-700)'
+      }
+    }, tech.email)))));
+  }), TECHS.filter(tech => !hiddenStatic.includes(tech.id)).map(tech => /*#__PURE__*/React.createElement("article", {
     key: tech.id,
     className: "pg-card",
     style: {
@@ -4306,7 +4534,8 @@ function TechsPanel({
     open: !!ratingFor,
     onClose: () => setRatingFor(null),
     tech: ratingFor,
-    lang: lang
+    lang: lang,
+    user: user
   }));
 }
 
@@ -6422,21 +6651,23 @@ function HiringRequirementCard({
 function PostHiringSheet({
   onClose,
   lang = 'en',
-  onSubmit
+  onSubmit,
+  initialValues = null
 }) {
   const t = STRINGS[lang];
-  const [company, setCompany] = React.useState('');
-  const [role, setRole] = React.useState('');
-  const [loc, setLoc] = React.useState([]);
+  const isEdit = !!initialValues;
+  const [company, setCompany] = React.useState(initialValues?.author || '');
+  const [role, setRole] = React.useState(initialValues?.role || '');
+  const [loc, setLoc] = React.useState(initialValues?.loc ? initialValues.loc.split(', ').filter(Boolean) : []);
   const [cityKey, setCityKey] = React.useState(0);
-  const [contract, setContract] = React.useState('fullTime');
-  const [payMode, setPayMode] = React.useState('perPool');
-  const [pay, setPay] = React.useState('');
-  const [carReq, setCarReq] = React.useState('');
-  const [equipReq, setEquipReq] = React.useState('');
-  const [licenseReq, setLicenseReq] = React.useState('');
-  const [desc, setDesc] = React.useState('');
-  const headLbl = lang === 'pt' ? 'Publicar vaga' : lang === 'es' ? 'Publicar empleo' : 'Post a job';
+  const [contract, setContract] = React.useState(initialValues?.contract || 'fullTime');
+  const [payMode, setPayMode] = React.useState(initialValues?.payMode || 'perPool');
+  const [pay, setPay] = React.useState(initialValues?.pay || '');
+  const [carReq, setCarReq] = React.useState(initialValues?.carReq || '');
+  const [equipReq, setEquipReq] = React.useState(initialValues?.equipReq || '');
+  const [licenseReq, setLicenseReq] = React.useState(initialValues?.licenseReq || '');
+  const [desc, setDesc] = React.useState(initialValues?.desc || '');
+  const headLbl = isEdit ? lang === 'pt' ? 'Editar vaga' : lang === 'es' ? 'Editar empleo' : 'Edit job' : lang === 'pt' ? 'Publicar vaga' : lang === 'es' ? 'Publicar empleo' : 'Post a job';
   const companyLbl = lang === 'pt' ? 'Nome da empresa' : lang === 'es' ? 'Nombre de la empresa' : 'Company name';
   const companyPh = lang === 'pt' ? 'ex: South Florida Pools Inc.' : lang === 'es' ? 'ej: South Florida Pools Inc.' : 'e.g. South Florida Pools Inc.';
   const roleLbl = lang === 'pt' ? 'Título do cargo' : lang === 'es' ? 'Título del puesto' : 'Job title';
@@ -6446,7 +6677,7 @@ function PostHiringSheet({
   const payLbl = lang === 'pt' ? 'Tipo de pagamento' : lang === 'es' ? 'Tipo de pago' : 'Payment type';
   const descLbl = lang === 'pt' ? 'Descrição da vaga' : lang === 'es' ? 'Descripción del puesto' : 'Job description';
   const descPh = lang === 'pt' ? 'Descreva as responsabilidades, horários, benefícios…' : lang === 'es' ? 'Describa las responsabilidades, horarios, beneficios…' : 'Describe responsibilities, schedule, benefits…';
-  const submitLbl = lang === 'pt' ? 'Publicar vaga' : lang === 'es' ? 'Publicar empleo' : 'Post job';
+  const submitLbl = isEdit ? lang === 'pt' ? 'Atualizar vaga' : lang === 'es' ? 'Actualizar empleo' : 'Update job' : lang === 'pt' ? 'Publicar vaga' : lang === 'es' ? 'Publicar empleo' : 'Post job';
   const contractTypes = [{
     id: 'fullTime',
     label: lang === 'pt' ? 'Full-time' : lang === 'es' ? 'Tiempo completo' : 'Full-time'
@@ -6901,20 +7132,18 @@ function PostHiringSheet({
 function PostTechSheet({
   onClose,
   lang = 'en',
-  onSubmit
+  onSubmit,
+  user = null
 }) {
   const t = STRINGS[lang];
-  const [name, setName] = React.useState('');
   const [specialty, setSpecialty] = React.useState('');
   const [loc, setLoc] = React.useState('');
-  const [phone, setPhone] = React.useState('');
-  const [email, setEmail] = React.useState('');
+  const [phone, setPhone] = React.useState(user?.phone || '');
+  const [email, setEmail] = React.useState(user?.email || '');
   const [photos, setPhotos] = React.useState([]);
   const [rateMode, setRateMode] = React.useState('fixed');
   const [rate, setRate] = React.useState('90');
   const headLbl = lang === 'pt' ? 'Cadastrar técnico' : lang === 'es' ? 'Registrar técnico' : 'Register as technician';
-  const nameLbl = lang === 'pt' ? 'Nome completo' : lang === 'es' ? 'Nombre completo' : 'Full name';
-  const namePh = lang === 'pt' ? 'ex: Rafael Silva' : lang === 'es' ? 'ej: Rafael Silva' : 'e.g. Rafael Silva';
   const specLbl = lang === 'pt' ? 'Especialidade' : lang === 'es' ? 'Especialidad' : 'Specialty';
   const specPh = lang === 'pt' ? 'ex: Reparo de bombas e motores' : lang === 'es' ? 'ej: Reparación de bombas y motores' : 'e.g. Pump & Motor Repair';
   const locLbl = lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City';
@@ -6931,7 +7160,7 @@ function PostTechSheet({
     if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
     return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
   };
-  const isValid = name.trim().length > 0 && specialty.trim().length > 0 && loc.trim().length > 0 && phone.replace(/\D/g, '').length === 10;
+  const isValid = specialty.trim().length > 0 && loc.trim().length > 0 && phone.replace(/\D/g, '').length === 10;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '8px 0 24px'
@@ -6985,20 +7214,59 @@ function PostTechSheet({
       height: 0,
       borderTop: '0.5px solid var(--pg-ink-200)'
     }
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      color: 'var(--pg-ink-500)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '10px 14px',
+      borderRadius: 12,
+      background: 'var(--pg-ink-50)',
+      border: '1px solid var(--pg-ink-100)'
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: user?.name || '?',
+    size: 36,
+    src: user?.photoUrl || undefined
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: 'var(--pg-ink-400)',
       fontWeight: 700,
       letterSpacing: '0.06em',
-      marginBottom: 8
+      marginBottom: 2
     }
-  }, nameLbl.toUpperCase()), /*#__PURE__*/React.createElement("input", {
-    className: "pg-field",
-    value: name,
-    onChange: e => setName(e.target.value),
-    placeholder: namePh
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'PUBLICANDO COMO' : lang === 'es' ? 'PUBLICANDO COMO' : 'POSTING AS'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  }, user?.name || '—')), /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "var(--pg-ink-300)",
+    strokeWidth: "2",
+    strokeLinecap: "round"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "11",
+    width: "18",
+    height: "11",
+    rx: "2"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M7 11V7a5 5 0 0 1 10 0v4"
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: 'var(--pg-ink-500)',
@@ -7133,7 +7401,7 @@ function PostTechSheet({
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => onSubmit && onSubmit({
-      name,
+      name: user?.name || '',
       specialty,
       loc,
       phone,

@@ -1626,7 +1626,7 @@ function TechReviewSheet({ open, onClose, tech, lang='en', user=null }) {
                 {[1,2,3,4,5].map(s => (
                   <button key={s} onMouseEnter={()=>setHover(s)} onMouseLeave={()=>setHover(0)} onClick={()=>setRating(s)}
                     style={{border:'none', background:'transparent', cursor:'pointer', padding:4, transform:displayed>=s?'scale(1.1)':'scale(1)', transition:'transform .12s'}}>
-                    {Icon.star(38, displayed>=s?'oklch(0.78 0.18 80)':'rgba(255,255,255,0.35)', displayed>=s)}
+                    {Icon.star(38, displayed>=s?'oklch(0.78 0.18 80)':'var(--pg-ink-200)', displayed>=s)}
                   </button>
                 ))}
               </div>
