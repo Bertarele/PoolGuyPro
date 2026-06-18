@@ -1702,7 +1702,21 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
             <Avatar name={tech.name} size={28}/>
             <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{tech.name}</h3>
-            <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>
+            {(isOwner || user?.role === 'admin') ? (
+              <button onClick={async () => {
+                if (!window.confirm(lang==='pt'?`Excluir "${tech.name}"?`:`Delete "${tech.name}"?`)) return;
+                const { error } = await window.sb.from('techs').delete().eq('id', tech._id);
+                if (error) { showToast && showToast('❌ ' + error.message); return; }
+                showToast && showToast('🗑️ ' + (lang==='pt'?'Perfil removido':'Profile removed'));
+                onDeleteTech && onDeleteTech(tech._id);
+              }} style={{width:32, height:32, borderRadius:10, border:'1.5px solid #FCA5A5',
+                background:'#FEF2F2', color:'#EF4444', cursor:'pointer', flexShrink:0,
+                display:'flex', alignItems:'center', justifyContent:'center'}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+            ) : (
+              <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>
+            )}
           </div>
 
           {/* Info rows */}
@@ -1777,36 +1791,6 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
             </div>
           )}
 
-          {/* Owner — remove profile */}
-          {isOwner && user?.role !== 'admin' && (
-            <div onClick={async () => {
-              if (!window.confirm(lang==='pt'?'Remover seu perfil de técnico?':'Remove your technician profile?')) return;
-              const { error } = await window.sb.from('techs').delete().eq('id', tech._id);
-              if (error) { showToast && showToast('❌ ' + error.message); return; }
-              showToast && showToast('✓ ' + (lang==='pt'?'Perfil removido':'Profile removed'));
-              onDeleteTech && onDeleteTech(tech._id);
-            }} style={{marginTop:10, padding:'7px 0', borderRadius:8, cursor:'pointer',
-              background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
-              fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:6}}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-              {lang==='pt'?'Já fui contratado — Remover perfil':'Got hired — Remove profile'}
-            </div>
-          )}
-          {/* Admin quick-delete */}
-          {user?.role === 'admin' && (
-            <div onClick={async () => {
-              if (!window.confirm(lang==='pt'?`Excluir "${tech.name}"?`:`Delete "${tech.name}"?`)) return;
-              const { error } = await window.sb.from('techs').delete().eq('id', tech._id);
-              if (error) { showToast && showToast('❌ ' + error.message); return; }
-              showToast && showToast('🗑️ ' + (lang==='pt'?'Técnico excluído':'Technician deleted'));
-              onDeleteTech && onDeleteTech(tech._id);
-            }} style={{marginTop:6, padding:'6px 0', borderRadius:8, cursor:'pointer',
-              background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
-              fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-              {lang==='pt'?'Excluir':'Delete'}
-            </div>
-          )}
         </article>
         );
       })}
