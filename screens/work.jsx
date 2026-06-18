@@ -165,7 +165,7 @@ function WorkScreen({ ctx }) {
     return window.haversine(workUserLocation.lat, workUserLocation.lng, c[0], c[1]) <= workRadiusMiles;
   }, [workUserLocation, workRadiusMiles]);
 
-  const filteredLiveJobs      = liveJobs.filter(j => radiusMatch(j.loc || j.region || ''));
+  const filteredLiveJobs      = liveJobs.filter(j => (user?.uid && j.author_id === user.uid) || radiusMatch(j.loc || j.region || ''));
   const filteredLiveTechs     = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
   const filteredLiveVacations = liveVacations.filter(v => radiusMatch(v.region || v.loc || ''));
 
