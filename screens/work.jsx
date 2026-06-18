@@ -1323,13 +1323,12 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
           }}>
           {/* Header row: profile button + trash (owner/admin) OR NEW badge */}
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
-            <button onClick={(e)=>{ e.stopPropagation(); openPublicProfile && openPublicProfile({ name:job.author, rating:4.8, reviews:0, jobs:0, loc:job.loc }); }}
-              style={{display:'flex', alignItems:'center', gap:10, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', flex:1, minWidth:0}} className="pg-press">
+            <div style={{display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0}}>
               <div style={{width:28, height:28, borderRadius:7, background:'var(--pg-blue-100)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
                 {Company(15, 'var(--pg-blue-700)')}
               </div>
               <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{job.author}</h3>
-            </button>
+            </div>
             {(isOwner || isAdmin) ? (
               <button onClick={async (e) => {
                 e.stopPropagation();
