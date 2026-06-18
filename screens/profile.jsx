@@ -751,35 +751,37 @@ function PersonalInfoCard({ user, setUser, lang }) {
               />
             ) : otpSent ? (
               /* OTP code entry */
-              <div style={{display:'flex', flexDirection:'column', gap:7, marginTop:4}}>
-                <div style={{fontSize:12, color:'var(--pg-ink-500)'}}>
-                  📱 {lang==='pt'?'Código enviado para':'Code sent to'} {user.phone}
+              <div style={{display:'flex', flexDirection:'column', gap:8, marginTop:4}}>
+                <div style={{fontSize:12, color:'var(--pg-ink-500)', lineHeight:1.4}}>
+                  📱 {lang==='pt'?'Código enviado para':'Code sent to'} <strong style={{color:'var(--pg-ink-700)'}}>{user.phone}</strong>
                 </div>
-                <div style={{display:'flex', gap:6}}>
-                  <input
-                    type="number"
-                    value={otpCode}
-                    onChange={e=>setOtpCode(e.target.value.slice(0,6))}
-                    placeholder="000000"
-                    style={{flex:1, height:36, borderRadius:8, border:'1.5px solid var(--pg-ink-200)',
-                      background:'var(--pg-bg)', color:'var(--pg-ink-900)', fontSize:18, fontWeight:700,
-                      textAlign:'center', letterSpacing:'0.15em', outline:'none', fontFamily:'inherit'}}
-                    autoFocus
-                  />
-                  <button onClick={verifyOtp} disabled={otpLoading||!otpCode} style={{
-                    height:36, padding:'0 12px', borderRadius:8, border:'none',
-                    background:otpCode?'#16A34A':'var(--pg-ink-200)', color:otpCode?'#fff':'var(--pg-ink-400)',
-                    fontSize:12, fontWeight:700, cursor:otpCode?'pointer':'not-allowed', fontFamily:'inherit',
-                  }}>{otpLoading?'…':(lang==='pt'?'Confirmar':'Confirm')}</button>
-                  <button onClick={()=>{setOtpSent(false);setOtpCode('');setOtpError('');}} style={{
-                    height:36, padding:'0 8px', borderRadius:8, border:'1px solid var(--pg-ink-200)',
-                    background:'transparent', color:'var(--pg-ink-500)', fontSize:11, cursor:'pointer', fontFamily:'inherit',
-                  }}>✕</button>
-                </div>
+                <input
+                  type="number"
+                  value={otpCode}
+                  onChange={e=>setOtpCode(e.target.value.slice(0,6))}
+                  placeholder="000000"
+                  style={{width:'100%', height:48, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
+                    background:'var(--pg-bg)', color:'var(--pg-ink-900)', fontSize:24, fontWeight:700,
+                    textAlign:'center', letterSpacing:'0.2em', outline:'none', fontFamily:'inherit',
+                    boxSizing:'border-box'}}
+                  autoFocus
+                />
                 {otpError && <div style={{fontSize:11, color:'#EF4444'}}>{otpError}</div>}
-                <button onClick={sendOtp} style={{background:'none',border:'none',color:'var(--pg-blue-500)',fontSize:11,cursor:'pointer',textAlign:'left',padding:0}}>
-                  {lang==='pt'?'Reenviar código':'Resend code'}
-                </button>
+                <button onClick={verifyOtp} disabled={otpLoading||!otpCode} style={{
+                  width:'100%', height:40, borderRadius:9, border:'none',
+                  background:otpCode&&!otpLoading?'#16A34A':'var(--pg-ink-200)',
+                  color:otpCode&&!otpLoading?'#fff':'var(--pg-ink-400)',
+                  fontSize:13, fontWeight:700, cursor:otpCode?'pointer':'not-allowed',
+                  fontFamily:'inherit', boxSizing:'border-box',
+                }}>{otpLoading?'…':(lang==='pt'?'Confirmar código':'Confirm code')}</button>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                  <button onClick={sendOtp} style={{background:'none',border:'none',color:'var(--pg-blue-500)',fontSize:11,cursor:'pointer',padding:0,fontFamily:'inherit'}}>
+                    {lang==='pt'?'Reenviar código':'Resend code'}
+                  </button>
+                  <button onClick={()=>{setOtpSent(false);setOtpCode('');setOtpError('');}} style={{background:'none',border:'none',color:'var(--pg-ink-400)',fontSize:11,cursor:'pointer',padding:0,fontFamily:'inherit'}}>
+                    {lang==='pt'?'Cancelar':'Cancel'}
+                  </button>
+                </div>
               </div>
             ) : (
               <div style={{display:'flex', alignItems:'center', gap:8}}>
