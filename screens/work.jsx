@@ -1526,111 +1526,124 @@ function descForHiring(h, lang) {
 }
 
 // ── Tech Review Sheet ─────────────────────────────────────────
-function TechReviewSheet({ open, onClose, tech, lang='en' }) {
-  const [rating,   setRating]   = React.useState(0);
-  const [hover,    setHover]    = React.useState(0);
-  const [comment,  setComment]  = React.useState('');
-  const [submitted, setSubmitted] = React.useState(false);
+function TechReviewSheet({ open, onClose, tech, lang='en', user=null }) {
+  const [rating,      setRating]      = React.useState(0);
+  const [hover,       setHover]       = React.useState(0);
+  const [comment,     setComment]     = React.useState('');
+  const [submitted,   setSubmitted]   = React.useState(false);
+  const [submitting,  setSubmitting]  = React.useState(false);
+  const [alreadyRated, setAlreadyRated] = React.useState(false);
+  const [checking,    setChecking]    = React.useState(false);
 
   React.useEffect(() => {
-    if (open) { setRating(0); setHover(0); setComment(''); setSubmitted(false); }
+    if (!open) return;
+    setRating(0); setHover(0); setComment(''); setSubmitted(false); setAlreadyRated(false); setSubmitting(false);
+    if (user?.uid && tech?.author_id && window.sb) {
+      setChecking(true);
+      window.sb.from('ratings').select('id').eq('from_id', user.uid).eq('to_id', tech.author_id)
+        .maybeSingle().then(({ data }) => { setAlreadyRated(!!data); setChecking(false); });
+    }
   }, [open]);
 
   if (!tech) return null;
 
+  const canRate    = !!user?.phoneVerified;
+  const isSelf     = user?.uid && user.uid === tech.author_id;
+
   const titleLbl   = lang==='pt' ? 'Avaliar técnico'    : lang==='es' ? 'Calificar técnico'   : 'Rate technician';
-  const reviewPh   = lang==='pt' ? 'Compartilhe sua experiência com este técnico…' : lang==='es' ? 'Comparte tu experiencia con este técnico…' : 'Share your experience with this technician…';
+  const reviewPh   = lang==='pt' ? 'Compartilhe sua experiência…' : lang==='es' ? 'Comparte tu experiencia…' : 'Share your experience…';
   const submitLbl  = lang==='pt' ? 'Enviar avaliação'   : lang==='es' ? 'Enviar reseña'        : 'Submit review';
-  const skipLbl    = lang==='pt' ? 'Pular por agora'    : lang==='es' ? 'Omitir por ahora'     : 'Skip for now';
   const sentLbl    = lang==='pt' ? 'Avaliação enviada!' : lang==='es' ? '¡Reseña enviada!'     : 'Review submitted!';
   const sentSubLbl = lang==='pt' ? 'Obrigado! Isso ajuda outros pool guys a escolher técnicos de qualidade.'
                    : lang==='es' ? '¡Gracias! Esto ayuda a otros pool guys a elegir técnicos de calidad.'
                    : 'Thanks! This helps other pool guys choose quality technicians.';
+  const starLabels = { en:['Terrible','Bad','OK','Good','Excellent'], pt:['Péssimo','Ruim','Ok','Bom','Excelente'], es:['Pésimo','Malo','Ok','Bueno','Excelente'] };
+  const sLabels    = starLabels[lang] || starLabels.en;
+  const displayed  = hover || rating;
 
-  const starLabels = {
-    en:['Terrible','Bad','OK','Good','Excellent'],
-    pt:['Péssimo','Ruim','Ok','Bom','Excelente'],
-    es:['Pésimo','Malo','Ok','Bueno','Excelente'],
-  };
-  const sLabels  = starLabels[lang] || starLabels.en;
-  const displayed = hover || rating;
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!rating || !window.sb || !user?.uid || !tech?.author_id) return;
+    setSubmitting(true);
+    const { error } = await window.sb.from('ratings').insert({
+      stars: rating, comment: comment || null,
+      from_id: user.uid, to_id: tech.author_id,
+      from_name: user.name || '', listing_name: tech.name || '',
+      pending: false,
+    });
+    setSubmitting(false);
+    if (error) { return; }
     setSubmitted(true);
     setTimeout(() => onClose(), 1900);
   };
 
+  const BlockedState = ({ icon, title, sub }) => (
+    <div style={{textAlign:'center', padding:'24px 0 8px'}}>
+      <div style={{fontSize:38, marginBottom:12}}>{icon}</div>
+      <div style={{fontSize:16, fontWeight:700, letterSpacing:'-0.01em', marginBottom:6}}>{title}</div>
+      <div style={{fontSize:13, color:'var(--pg-ink-500)', lineHeight:1.5, maxWidth:260, margin:'0 auto 20px'}}>{sub}</div>
+      <button onClick={onClose} className="pg-btn pg-btn-ghost" style={{width:'100%', height:46}}>{lang==='pt'?'Fechar':lang==='es'?'Cerrar':'Close'}</button>
+    </div>
+  );
+
   return (
     <Sheet open={open} onClose={onClose} height="auto">
       <div style={{padding:'6px 20px 36px'}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
+          <h2 style={{margin:0, fontSize:18, fontWeight:700, letterSpacing:'-0.01em'}}>{titleLbl}</h2>
+          <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
+            {Icon.x(16,'var(--pg-ink-700)')}
+          </button>
+        </div>
+
         {submitted ? (
-          <div style={{textAlign:'center', padding:'20px 0 10px'}}>
+          <div style={{textAlign:'center', padding:'8px 0 10px'}}>
             <div style={{width:68, height:68, borderRadius:'50%', background:'var(--pg-aqua-100)', margin:'0 auto 14px', display:'flex', alignItems:'center', justifyContent:'center'}}>
               {Icon.check(30,'var(--pg-aqua-700)')}
             </div>
             <div style={{fontSize:20, fontWeight:700, letterSpacing:'-0.02em'}}>{sentLbl}</div>
             <div style={{fontSize:13, color:'var(--pg-ink-500)', marginTop:8, lineHeight:1.5, maxWidth:260, margin:'8px auto 0'}}>{sentSubLbl}</div>
           </div>
+        ) : isSelf ? (
+          <BlockedState icon="🚫"
+            title={lang==='pt'?'Você não pode se avaliar':lang==='es'?'No puedes evaluarte':'You cannot rate yourself'}
+            sub={lang==='pt'?'Avaliações só podem ser feitas por outros usuários.':lang==='es'?'Las reseñas solo pueden ser hechas por otros usuarios.':'Reviews can only be submitted by other users.'}/>
+        ) : !canRate ? (
+          <BlockedState icon="📱"
+            title={lang==='pt'?'Verificação de celular necessária':lang==='es'?'Verificación de celular requerida':'Phone verification required'}
+            sub={lang==='pt'?'Apenas usuários com número de celular verificado podem avaliar. Verifique seu número no perfil.':lang==='es'?'Solo usuarios con número verificado pueden calificar. Verifica tu número en el perfil.':'Only users with a verified phone number can leave reviews. Verify your number in your profile.'}/>
+        ) : checking ? (
+          <div style={{textAlign:'center', padding:'32px 0', color:'var(--pg-ink-400)', fontSize:13}}>{lang==='pt'?'Verificando…':'Checking…'}</div>
+        ) : alreadyRated ? (
+          <BlockedState icon="⭐"
+            title={lang==='pt'?'Você já avaliou este técnico':lang==='es'?'Ya evaluaste a este técnico':'You already rated this technician'}
+            sub={lang==='pt'?'Cada usuário pode avaliar uma pessoa apenas uma vez no aplicativo.':lang==='es'?'Cada usuario puede calificar a una persona solo una vez.':'Each user can rate another person only once in the app.'}/>
         ) : (
           <>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
-              <h2 style={{margin:0, fontSize:18, fontWeight:700, letterSpacing:'-0.01em'}}>{titleLbl}</h2>
-              <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                {Icon.x(16,'var(--pg-ink-700)')}
-              </button>
-            </div>
-
-            {/* Tech info card */}
+            {/* Tech info */}
             <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:11, background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-100)', marginBottom:20}}>
               <Avatar name={tech.name} size={38}/>
               <div style={{flex:1, minWidth:0}}>
                 <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{tech.name}</div>
-                <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                  {tr(tech.speciality, lang)} · {tech.loc}
-                </div>
-              </div>
-              <div style={{display:'flex', alignItems:'center', gap:4, flexShrink:0}}>
-                <Stars rating={tech.rating} size={11}/>
-                <span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-500)'}}>{tech.rating}</span>
+                <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{tr(tech.speciality||tech.specialty, lang)} · {tech.loc}</div>
               </div>
             </div>
-
             {/* Star picker */}
             <div style={{textAlign:'center', marginBottom:20}}>
               <div style={{display:'flex', justifyContent:'center', gap:6, marginBottom:10}}>
                 {[1,2,3,4,5].map(s => (
-                  <button key={s}
-                    onMouseEnter={()=>setHover(s)} onMouseLeave={()=>setHover(0)}
-                    onClick={()=>setRating(s)}
-                    style={{border:'none', background:'transparent', cursor:'pointer', padding:4,
-                      transform:displayed>=s?'scale(1.1)':'scale(1)', transition:'transform .12s'}}>
+                  <button key={s} onMouseEnter={()=>setHover(s)} onMouseLeave={()=>setHover(0)} onClick={()=>setRating(s)}
+                    style={{border:'none', background:'transparent', cursor:'pointer', padding:4, transform:displayed>=s?'scale(1.1)':'scale(1)', transition:'transform .12s'}}>
                     {Icon.star(38, displayed>=s?'oklch(0.78 0.18 80)':'var(--pg-ink-200)', displayed>=s)}
                   </button>
                 ))}
               </div>
-              {displayed > 0 && (
-                <div style={{fontSize:15, fontWeight:700, color:'oklch(0.55 0.18 80)', letterSpacing:'-0.01em'}}>
-                  {sLabels[displayed-1]}
-                </div>
-              )}
+              {displayed > 0 && <div style={{fontSize:15, fontWeight:700, color:'oklch(0.55 0.18 80)', letterSpacing:'-0.01em'}}>{sLabels[displayed-1]}</div>}
             </div>
-
-            <textarea
-              value={comment} onChange={e=>setComment(e.target.value)}
-              placeholder={reviewPh} rows={3}
-              style={{width:'100%', borderRadius:12, border:'1px solid var(--pg-ink-200)',
-                padding:'12px 14px', fontSize:14, fontFamily:'inherit',
-                resize:'none', outline:'none', background:'var(--pg-ink-50)',
-                boxSizing:'border-box', color:'var(--pg-ink-900)', lineHeight:1.5}}
-            />
-
-            <button onClick={handleSubmit} disabled={rating===0}
-              className="pg-btn pg-btn-primary"
-              style={{width:'100%', height:52, fontSize:16, marginTop:14, opacity:rating>0?1:0.45}}>
-              {Icon.star(18,'#fff',true)} {submitLbl}
-            </button>
-            <button onClick={onClose} style={{width:'100%', padding:'10px', border:'none', background:'transparent', color:'var(--pg-ink-500)', fontSize:13, cursor:'pointer', fontFamily:'inherit'}}>
-              {skipLbl}
+            <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder={reviewPh} rows={3}
+              style={{width:'100%', borderRadius:12, border:'1px solid var(--pg-ink-200)', padding:'12px 14px', fontSize:14, fontFamily:'inherit', resize:'none', outline:'none', background:'var(--pg-ink-50)', boxSizing:'border-box', color:'var(--pg-ink-900)', lineHeight:1.5}}/>
+            <button onClick={handleSubmit} disabled={rating===0||submitting} className="pg-btn pg-btn-primary"
+              style={{width:'100%', height:52, fontSize:16, marginTop:14, opacity:rating>0&&!submitting?1:0.45}}>
+              {Icon.star(18,'#fff',true)} {submitting?(lang==='pt'?'Enviando…':'Sending…'):submitLbl}
             </button>
           </>
         )}
@@ -1698,6 +1711,15 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
             {tech.phone && <a href={`tel:${tech.phone}`} className="pg-btn pg-btn-ghost" style={{flex:1, height:36, fontSize:12.5, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:5, textDecoration:'none', color:'inherit'}}>
               📞 {tech.phone}
             </a>}
+            {/* Rate button — only for non-owners */}
+            {!(user?.uid && user.uid === tech.author_id) && user?.role !== 'admin' && (
+              <button onClick={()=>setRatingFor(tech)}
+                className="pg-btn pg-btn-ghost"
+                title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
+                style={{height:36, width:36, padding:0, borderRadius:999, flexShrink:0}}>
+                {Icon.star(16,'oklch(0.72 0.17 80)',false)}
+              </button>
+            )}
           </div>
           {/* Owner — remove own profile */}
           {user?.uid && user.uid === tech.author_id && user?.role !== 'admin' && (
@@ -1884,7 +1906,7 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
     {/* Tech Review Sheet */}
     <TechReviewSheet
       open={!!ratingFor} onClose={()=>setRatingFor(null)}
-      tech={ratingFor} lang={lang}/>
+      tech={ratingFor} lang={lang} user={user}/>
     </>
   );
 }
@@ -3332,8 +3354,8 @@ function PostTechSheet({ onClose, lang='en', onSubmit }) {
   const [rate, setRate]         = React.useState('90');
 
   const headLbl     = lang==='pt'?'Cadastrar técnico':lang==='es'?'Registrar técnico':'Register as technician';
-  const nameLbl     = lang==='pt'?'Nome completo':lang==='es'?'Nombre completo':'Full name';
-  const namePh      = lang==='pt'?'ex: Rafael Silva':lang==='es'?'ej: Rafael Silva':'e.g. Rafael Silva';
+  const nameLbl     = lang==='pt'?'Nome/Empresa':lang==='es'?'Nombre/Empresa':'Name/Company';
+  const namePh      = lang==='pt'?'ex: Rafael Silva ou South FL Pools':lang==='es'?'ej: Rafael Silva o South FL Pools':'e.g. Rafael Silva or South FL Pools';
   const specLbl     = lang==='pt'?'Especialidade':lang==='es'?'Especialidad':'Specialty';
   const specPh      = lang==='pt'?'ex: Reparo de bombas e motores':lang==='es'?'ej: Reparación de bombas y motores':'e.g. Pump & Motor Repair';
   const locLbl      = lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City';
