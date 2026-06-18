@@ -429,17 +429,7 @@ const QUICK_POOLS = [
       es:'Ya tengo la unidad nueva en sitio, necesito ayuda con instalación + prueba de fugas.' } },
 ];
 
-const HIRING = [
-  { id:1, company:'Aqua Solutions LLC', role:{en:'Pool Service Technician', pt:'Técnico de Manutenção', es:'Técnico de Servicio'}, loc:'Miami-Dade',
-    pay:{en:'$28–34/hr', pt:'R$140–170/h', es:'$28–34/h'}, type:{en:'Full-time', pt:'Tempo integral', es:'Tiempo completo'},
-    perks:{en:['Truck', 'Health', 'PTO'], pt:['Veículo','Saúde','Férias'], es:['Camioneta','Salud','Vacaciones']}, rating:4.8 },
-  { id:2, company:'BluClear Pools',     role:{en:'Senior Route Tech', pt:'Técnico Sênior', es:'Técnico Sénior de Ruta'},        loc:'Broward',
-    pay:{en:'$36/hr', pt:'R$180/h', es:'$36/h'}, type:{en:'Full-time', pt:'Tempo integral', es:'Tiempo completo'},
-    perks:{en:['Truck', 'Bonus'], pt:['Veículo','Bônus'], es:['Camioneta','Bono']}, rating:4.6 },
-  { id:3, company:'Crystal Pool Co.',   role:{en:'Apprentice / Entry', pt:'Aprendiz / Iniciante', es:'Aprendiz / Inicial'},       loc:'Palm Beach',
-    pay:{en:'$19–22/hr', pt:'R$95–110/h', es:'$19–22/h'}, type:{en:'Part-time', pt:'Meio período', es:'Medio tiempo'},
-    perks:{en:['Training'], pt:['Treinamento'], es:['Capacitación']}, rating:4.5 },
-];
+const HIRING = [];
 
 const TECHS = [
   { id:1, name:'Rafael S.',  speciality:{en:'Pump & Motor Repair', pt:'Reparo de Bombas e Motores', es:'Reparación de Bombas'},    rate:{en:'$90/visit', pt:'R$450/visita', es:'$90/visita'}, rating:4.9, jobs:142, loc:'Miami',          phone:'(305) 487-2910', email:'rafael.pool@gmail.com' },
