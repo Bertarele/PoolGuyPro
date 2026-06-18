@@ -611,10 +611,14 @@ function App() {
 
   const loadLiveJobs = React.useCallback(async () => {
     if (!window.sb) return;
-    const { data } = await window.sb.from('jobs').select('*').order('created_at', { ascending: false });
+    const oneDayAgo = new Date(Date.now() - 24*60*60*1000).toISOString();
+    const { data } = await window.sb.from('jobs').select('*')
+      .or(`hired_at.is.null,hired_at.gte.${oneDayAgo}`)
+      .order('created_at', { ascending: false });
     if (data) setLiveJobs(data.map(r => ({ _id:r.id, _live:true, role:r.role, loc:r.loc, desc:r.description,
       contract:r.contract, payMode:r.pay_mode, pay:r.pay,
-      carReq:r.car_req, licenseReq:r.license_req, equipReq:r.equip_req, author:r.author, author_id:r.author_id||null })));
+      carReq:r.car_req, licenseReq:r.license_req, equipReq:r.equip_req, author:r.author, author_id:r.author_id||null,
+      hiredAt: r.hired_at || null })));
   }, []);
 
   // Live job applications — current user's applications + real-time status updates

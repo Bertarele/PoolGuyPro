@@ -1247,7 +1247,8 @@ function AdminApp({ adminUser, onLogout }) {
     if(v.data) setVacs(v.data);
     if(d.data) setDisputes(d.data);
     if(w.data) setWarnings(w.data);
-    setStats({ users:u.data?.length??0, jobs:j.data?.length??0, techs:tc.data?.length??0, market:m.data?.length??0, vacs:v.data?.length??0, disputes:d.data?.filter(x=>x.status==='pending')?.length??0 });
+    const hiringsCount = j.data?.filter(x=>x.hired_at)?.length??0;
+    setStats({ users:u.data?.length??0, jobs:j.data?.length??0, techs:tc.data?.length??0, market:m.data?.length??0, vacs:v.data?.length??0, disputes:d.data?.filter(x=>x.status==='pending')?.length??0, hirings:hiringsCount });
     setLoading(false);
   };
   React.useEffect(()=>{ fetchAll(); },[]);
@@ -1343,13 +1344,14 @@ function AdminApp({ adminUser, onLogout }) {
   };
 
   const navItems = [
-    { id:'dashboard', label:'Painel',       icon:IC.dash,   badge:0 },
-    { id:'users',     label:'Usuários',     icon:IC.users,  badge:verifyCount },
-    { id:'jobs',      label:'Vagas',        icon:IC.jobs,   badge:0 },
-    { id:'techs',     label:'Técnicos',     icon:IC.techs,  badge:0 },
-    { id:'market',    label:'Marketplace',  icon:IC.market, badge:pendingCount },
-    { id:'vacations', label:'Férias',       icon:IC.vac,    badge:0 },
-    { id:'disputes',  label:'Reclamações',  icon:IC.flag,   badge:disputeCount },
+    { id:'dashboard',  label:'Painel',        icon:IC.dash,   badge:0 },
+    { id:'users',      label:'Usuários',      icon:IC.users,  badge:verifyCount },
+    { id:'jobs',       label:'Vagas',         icon:IC.jobs,   badge:0 },
+    { id:'hirings',    label:'Contratações',  icon:IC.jobs,   badge:0 },
+    { id:'techs',      label:'Técnicos',      icon:IC.techs,  badge:0 },
+    { id:'market',     label:'Marketplace',   icon:IC.market, badge:pendingCount },
+    { id:'vacations',  label:'Férias',        icon:IC.vac,    badge:0 },
+    { id:'disputes',   label:'Reclamações',   icon:IC.flag,   badge:disputeCount },
   ];
 
   const sectionLabel = navItems.find(n=>n.id===section)?.label || '';
@@ -1460,11 +1462,12 @@ function AdminApp({ adminUser, onLogout }) {
               )}
 
               <div className="stat-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:12,marginBottom:24}}>
-                <StatCard label="Total de Usuários"  value={stats.users}  color="#0EBAC7" icon={IC.users}/>
-                <StatCard label="Vagas"              value={stats.jobs}   color="#6366f1" icon={IC.jobs}/>
-                <StatCard label="Técnicos"           value={stats.techs}  color="#10b981" icon={IC.techs}/>
-                <StatCard label="Marketplace"        value={stats.market} color="#f59e0b" icon={IC.market}/>
-                <StatCard label="Rotas de Férias"    value={stats.vacs}   color="#ec4899" icon={IC.vac}/>
+                <StatCard label="Total de Usuários"  value={stats.users}   color="#0EBAC7" icon={IC.users}/>
+                <StatCard label="Vagas"              value={stats.jobs}    color="#6366f1" icon={IC.jobs}/>
+                <StatCard label="Contratações"       value={stats.hirings} color="#22c55e" icon={IC.jobs}/>
+                <StatCard label="Técnicos"           value={stats.techs}   color="#10b981" icon={IC.techs}/>
+                <StatCard label="Marketplace"        value={stats.market}  color="#f59e0b" icon={IC.market}/>
+                <StatCard label="Rotas de Férias"    value={stats.vacs}    color="#ec4899" icon={IC.vac}/>
               </div>
 
               <div style={{background:'#1a1f2e',borderRadius:14,padding:'18px 20px',border:'1px solid #1e293b'}}>
@@ -1568,6 +1571,40 @@ function AdminApp({ adminUser, onLogout }) {
               </div>
             </div>
           )}
+
+          {/* ── Contratações ── */}
+          {section==='hirings' && (() => {
+            const hired = jobs.filter(j => j.hired_at).sort((a,b) => new Date(b.hired_at) - new Date(a.hired_at));
+            return (
+              <div>
+                <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>
+                  Contratações <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({hired.length})</span>
+                </h1>
+                <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Empresas que marcaram uma vaga como preenchida — funcionário contratado.</p>
+                {hired.length === 0 ? (
+                  <div style={{textAlign:'center',padding:'48px 24px',color:'#475569',fontSize:14}}>Nenhuma contratação registrada ainda.</div>
+                ) : (
+                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                    {hired.map(j => (
+                      <div key={j.id} style={{background:'#1a1f2e',borderRadius:12,border:'1px solid #22c55e30',padding:'14px 18px',display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+                        <div style={{width:38,height:38,borderRadius:10,background:'#22c55e18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontWeight:700,fontSize:14,color:'#f1f5f9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{j.author||'—'}</div>
+                          <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{j.role||'—'} · {j.loc||'—'}</div>
+                        </div>
+                        <div style={{textAlign:'right',flexShrink:0}}>
+                          <div style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#22c55e18',color:'#22c55e',border:'1px solid #22c55e35',marginBottom:4}}>✓ Contratado</div>
+                          <div style={{fontSize:11,color:'#475569'}}>{fmtDate(j.hired_at)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ── Técnicos ── */}
           {section==='techs' && (

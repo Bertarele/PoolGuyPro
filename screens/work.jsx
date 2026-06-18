@@ -165,7 +165,12 @@ function WorkScreen({ ctx }) {
     return window.haversine(workUserLocation.lat, workUserLocation.lng, c[0], c[1]) <= workRadiusMiles;
   }, [workUserLocation, workRadiusMiles]);
 
-  const filteredLiveJobs      = liveJobs.filter(j => (user?.uid && j.author_id === user.uid) || radiusMatch(j.loc || j.region || ''));
+  const filteredLiveJobs      = liveJobs.filter(j => {
+    const isOwn  = user?.uid && j.author_id === user.uid;
+    if (j.hiredAt && !isOwn) return false; // hired jobs: only owner sees them
+    if (isOwn) return true;                // always show own jobs regardless of radius
+    return radiusMatch(j.loc || j.region || '');
+  });
   const filteredLiveTechs     = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
   const filteredLiveVacations = liveVacations.filter(v => radiusMatch(v.region || v.loc || ''));
 
@@ -1304,62 +1309,72 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
     </Sheet>
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
       {/* ── Live jobs posted by real users (hide own jobs if hidePosted) ── */}
-      {liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).map(job => (
-        <article key={job._id} className="pg-card pg-press" onClick={()=>setSelectedJob(job)} style={{padding:'14px 16px', cursor:'pointer', position:'relative'}}>
-          {/* Trash icon — owner or admin */}
-          {(user?.uid && user.uid === job.author_id || user?.role === 'admin') && (
-            <button onClick={async (e) => {
-              e.stopPropagation();
-              const msg = lang==='pt'?`Excluir a vaga "${job.role}"? Não pode ser desfeito.`
-                :lang==='es'?`¿Eliminar la oferta "${job.role}"? No se puede deshacer.`
-                :`Delete job "${job.role}"? This cannot be undone.`;
-              if (!window.confirm(msg)) return;
-              const { error } = await window.sb.from('jobs').delete().eq('id', job._id);
-              if (error) { showToast && showToast('❌ ' + error.message); return; }
-              showToast && showToast('🗑️ ' + (lang==='pt'?'Vaga excluída':lang==='es'?'Oferta eliminada':'Job deleted'));
-              onDeleteJob && onDeleteJob(job._id);
-            }} style={{
-              position:'absolute', top:10, right:10, zIndex:2,
-              width:28, height:28, borderRadius:8, padding:0,
-              background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.18)',
-              color:'#EF4444', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
-            }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-              </svg>
+      {liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).map(job => {
+        const isOwner   = user?.uid && user.uid === job.author_id;
+        const isAdmin   = user?.role === 'admin';
+        const isHired   = !!job.hiredAt;
+        const myApp     = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
+        return (
+        <article key={job._id} className={isHired ? 'pg-card' : 'pg-card pg-press'} onClick={()=>!isHired && setSelectedJob(job)}
+          style={{padding:'14px 16px', cursor: isHired?'default':'pointer',
+            opacity: isHired ? 0.72 : 1,
+            background: isHired ? 'var(--pg-ink-50)' : undefined,
+            filter: isHired ? 'grayscale(0.45)' : undefined,
+          }}>
+          {/* Header row: profile button + trash (owner/admin) OR NEW badge */}
+          <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
+            <button onClick={(e)=>{ e.stopPropagation(); openPublicProfile && openPublicProfile({ name:job.author, rating:4.8, reviews:0, jobs:0, loc:job.loc }); }}
+              style={{display:'flex', alignItems:'center', gap:10, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', flex:1, minWidth:0}} className="pg-press">
+              <div style={{width:28, height:28, borderRadius:7, background:'var(--pg-blue-100)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                {Company(15, 'var(--pg-blue-700)')}
+              </div>
+              <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{job.author}</h3>
             </button>
+            {(isOwner || isAdmin) ? (
+              <button onClick={async (e) => {
+                e.stopPropagation();
+                const msg = lang==='pt'?`Excluir a vaga "${job.role}"? Não pode ser desfeito.`
+                  :lang==='es'?`¿Eliminar la oferta "${job.role}"? No se puede deshacer.`
+                  :`Delete job "${job.role}"? This cannot be undone.`;
+                if (!window.confirm(msg)) return;
+                const { error } = await window.sb.from('jobs').delete().eq('id', job._id);
+                if (error) { showToast && showToast('❌ ' + error.message); return; }
+                showToast && showToast('🗑️ ' + (lang==='pt'?'Vaga excluída':lang==='es'?'Oferta eliminada':'Job deleted'));
+                onDeleteJob && onDeleteJob(job._id);
+              }} style={{
+                width:32, height:32, borderRadius:10, flexShrink:0, padding:0,
+                border:'1.5px solid #FCA5A5', background:'#FEF2F2', color:'#EF4444',
+                display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+              }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+              </button>
+            ) : (
+              <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>
+            )}
+          </div>
+          {/* Hired banner */}
+          {isHired && (
+            <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:10, padding:'7px 12px', borderRadius:8,
+              background:'rgba(107,114,128,0.10)', border:'1px solid rgba(107,114,128,0.25)', color:'#6B7280', fontSize:12, fontWeight:700}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              {lang==='pt'?'Funcionário já contratado':lang==='es'?'Empleado ya contratado':'Employee already hired'}
+            </div>
           )}
-          {/* Header: author name with building icon + NEW badge */}
-          <button onClick={(e)=>{ e.stopPropagation(); openPublicProfile && openPublicProfile({ name:job.author, rating:4.8, reviews:0, jobs:0, loc:job.loc }); }}
-            style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', width:'100%'}} className="pg-press">
-            <div style={{
-              width:28, height:28, borderRadius:7, background:'var(--pg-blue-100)',
-              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-            }}>{Company(15, 'var(--pg-blue-700)')}</div>
-            <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{job.author}</h3>
-            <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em', marginLeft:4}}>NEW</span>
-          </button>
-          {/* Job role as title + description */}
+          {/* Job role + description */}
           {job.role && <p style={{margin:'0 0 4px', fontSize:13.5, fontWeight:600, color:'var(--pg-ink-900)', lineHeight:1.3}}>{job.role}</p>}
           {job.desc && <p style={{margin:'0 0 10px', fontSize:12.5, color:'var(--pg-ink-600)', lineHeight:1.45}}>{job.desc}</p>}
-          {/* Info rows — same pattern as static cards */}
+          {/* Info rows */}
           <div style={{display:'flex', flexDirection:'column', gap:6, marginTop:job.desc?0:8, fontSize:12.5, color:'var(--pg-ink-500)'}}>
             <div style={{display:'flex', alignItems:'center', gap:12, flexWrap:'wrap'}}>
               {job.loc && <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Icon.pin(13,'var(--pg-ink-500)')} {job.loc}</span>}
               {job.equipReq === 'companyEquip' && <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Briefcase(13)} {eqProv}</span>}
               {job.equipReq === 'ownEquip'     && <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Briefcase(13)} {lang==='pt'?'Equip. próprio':lang==='es'?'Equipo propio':'Own equipment'}</span>}
             </div>
-            {job.carReq === 'companyCar' && (
-              <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
-                {License(13)} {lang==='pt'?'Carro da empresa incluso':lang==='es'?'Auto de empresa incluido':'Company car provided'}
-              </div>
-            )}
-            {job.carReq === 'ownCar' && (
-              <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
-                {License(13)} {lang==='pt'?'Carro próprio necessário':lang==='es'?'Auto propio requerido':'Own car required'}
-              </div>
-            )}
+            {job.carReq === 'companyCar' && <div style={{display:'inline-flex', alignItems:'center', gap:5}}>{License(13)} {lang==='pt'?'Carro da empresa incluso':lang==='es'?'Auto de empresa incluido':'Company car provided'}</div>}
+            {job.carReq === 'ownCar'     && <div style={{display:'inline-flex', alignItems:'center', gap:5}}>{License(13)} {lang==='pt'?'Carro próprio necessário':lang==='es'?'Auto propio requerido':'Own car required'}</div>}
             {job.licenseReq === 'required' && (
               <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-500)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M7 11h4M7 14h6M15 10h2v4h-2z"/></svg>
@@ -1374,81 +1389,65 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
             )}
           </div>
           {/* Contract chip */}
-          {job.contract && (
-            <div style={{display:'flex', gap:6, flexWrap:'wrap', marginTop:8}}>
-              <span className="pg-chip" style={{fontSize:11}}>{contractLabel(job.contract)}</span>
+          {job.contract && <div style={{display:'flex', gap:6, flexWrap:'wrap', marginTop:8}}><span className="pg-chip" style={{fontSize:11}}>{contractLabel(job.contract)}</span></div>}
+          <div className="pg-divider" style={{margin:'12px 0'}}/>
+          {/* Salary + action */}
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            <div style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, color: job.payMode==='neg'?'var(--pg-aqua-700)':'var(--pg-blue-500)', letterSpacing:'-0.01em'}}>
+              {job.payMode === 'neg' ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable') : `$${job.pay}${job.payMode==='weekly'?(lang==='pt'?'/sem':'/wk'):'/pool'}`}
+            </div>
+            {isHired ? (
+              <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(107,114,128,0.12)', color:'#6B7280', border:'1px solid rgba(107,114,128,0.25)'}}>
+                {lang==='pt'?'Encerrada':lang==='es'?'Cerrada':'Closed'}
+              </span>
+            ) : myApp?.status === 'rejected' ? (
+              <div style={{height:36, padding:'0 16px', borderRadius:999, display:'flex', alignItems:'center', gap:6, background:'rgba(239,68,68,0.10)', border:'1.5px solid rgba(239,68,68,0.35)', color:'#EF4444', fontSize:12.5, fontWeight:700, userSelect:'none'}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                {lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected'}
+              </div>
+            ) : myApp?.status === 'pending' ? (
+              <div style={{height:36, padding:'0 16px', borderRadius:999, display:'flex', alignItems:'center', gap:6, background:'rgba(245,158,11,0.10)', border:'1.5px solid rgba(245,158,11,0.35)', color:'#D97706', fontSize:12.5, fontWeight:700, userSelect:'none'}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                {lang==='pt'?'Enviado':lang==='es'?'Enviado':'Applied'}
+              </div>
+            ) : myApp?.status === 'accepted' ? (
+              <div style={{height:36, padding:'0 16px', borderRadius:999, display:'flex', alignItems:'center', gap:6, background:'rgba(16,185,129,0.10)', border:'1.5px solid rgba(16,185,129,0.35)', color:'#10B981', fontSize:12.5, fontWeight:700, userSelect:'none'}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+                {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
+              </div>
+            ) : isOwner ? (
+              <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(0,119,182,0.12)', color:'var(--pg-blue-600)', border:'1px solid rgba(0,119,182,0.25)'}}>
+                {lang==='pt'?'Sua vaga':lang==='es'?'Tu oferta':'Your listing'}
+              </span>
+            ) : (
+              <button onClick={(e)=>{ e.stopPropagation(); onApply && onApply(job); }} className="pg-btn pg-btn-primary" style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
+                {t.apply}
+              </button>
+            )}
+          </div>
+          {/* "Já contratei" — owner only, not yet hired */}
+          {isOwner && !isHired && (
+            <div onClick={async (e) => {
+              e.stopPropagation();
+              const msg = lang==='pt'?`Marcar "${job.role}" como preenchida? A vaga ficará visível por 1 dia e depois some.`
+                :lang==='es'?`¿Marcar "${job.role}" como cubierta?`:`Mark "${job.role}" as filled? It will remain visible for 1 day then disappear.`;
+              if (!window.confirm(msg)) return;
+              const { error } = await window.sb.from('jobs').update({ hired_at: new Date().toISOString() }).eq('id', job._id);
+              if (error) { showToast && showToast('❌ ' + error.message); return; }
+              showToast && showToast('✓ ' + (lang==='pt'?'Contratação registrada!':lang==='es'?'¡Contratación registrada!':'Hiring recorded!'));
+              onJobUpdated && onJobUpdated();
+            }} style={{
+              marginTop:8, padding:'5px 12px', borderRadius:8, cursor:'pointer', display:'inline-flex',
+              alignItems:'center', gap:5, background:'rgba(16,185,129,0.07)',
+              border:'1px solid rgba(16,185,129,0.28)', color:'#10B981', fontSize:11, fontWeight:700,
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              {lang==='pt'?'Já contratei':lang==='es'?'Ya contraté':'Hired someone'}
             </div>
           )}
-          <div className="pg-divider" style={{margin:'12px 0'}}/>
-          {/* Salary + Apply */}
-          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-            <div style={{
-              fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700,
-              color: job.payMode === 'neg' ? 'var(--pg-aqua-700)' : 'var(--pg-blue-500)',
-              letterSpacing:'-0.01em',
-            }}>
-              {job.payMode === 'neg'
-                ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
-                : `$${job.pay}${job.payMode==='weekly'?(lang==='pt'?'/sem':'/wk'):'/pool'}`}
-            </div>
-            {(() => {
-              const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
-              if (myApp?.status === 'rejected') {
-                return (
-                  <div style={{
-                    height:36, padding:'0 16px', borderRadius:999, display:'flex', alignItems:'center', gap:6,
-                    background:'rgba(239,68,68,0.10)', border:'1.5px solid rgba(239,68,68,0.35)',
-                    color:'#EF4444', fontSize:12.5, fontWeight:700, letterSpacing:'0.02em', userSelect:'none',
-                  }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
-                    {lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected'}
-                  </div>
-                );
-              }
-              if (myApp?.status === 'pending') {
-                return (
-                  <div style={{
-                    height:36, padding:'0 16px', borderRadius:999, display:'flex', alignItems:'center', gap:6,
-                    background:'rgba(245,158,11,0.10)', border:'1.5px solid rgba(245,158,11,0.35)',
-                    color:'#D97706', fontSize:12.5, fontWeight:700, letterSpacing:'0.02em', userSelect:'none',
-                  }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                    {lang==='pt'?'Enviado':lang==='es'?'Enviado':'Applied'}
-                  </div>
-                );
-              }
-              if (myApp?.status === 'accepted') {
-                return (
-                  <div style={{
-                    height:36, padding:'0 16px', borderRadius:999, display:'flex', alignItems:'center', gap:6,
-                    background:'rgba(16,185,129,0.10)', border:'1.5px solid rgba(16,185,129,0.35)',
-                    color:'#10B981', fontSize:12.5, fontWeight:700, letterSpacing:'0.02em', userSelect:'none',
-                  }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
-                    {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
-                  </div>
-                );
-              }
-              // Own job — don't show apply button
-              if (user?.uid && user.uid === job.author_id) {
-                return (
-                  <span style={{fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:999,
-                    background:'rgba(0,119,182,0.12)',color:'var(--pg-blue-600)',
-                    border:'1px solid rgba(0,119,182,0.25)'}}>
-                    {lang==='pt'?'Sua vaga':lang==='es'?'Tu oferta':'Your listing'}
-                  </span>
-                );
-              }
-              // Not applied yet — show Candidatar button
-              return (
-                <button onClick={()=>onApply && onApply(job)} className="pg-btn pg-btn-primary" style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
-                  {t.apply}
-                </button>
-              );
-            })()}
-          </div>
         </article>
-      ))}
+        );
+      })}
       {/* ── Static seed jobs ── */}
       {HIRING.filter(h => !hiddenStatic.includes(h.id)).map(h => (
         <article key={h.id} className="pg-card" style={{padding:'14px 16px 14px'}}>
