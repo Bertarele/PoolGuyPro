@@ -1685,7 +1685,7 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
       {liveTechs.map(tech => {
         const isOwner = user?.uid && user.uid === tech.author_id;
         const isOpen  = contactOpen === tech._id;
-        const rateIsFixed = tech.rate_mode === 'fixed' && tech.rate;
+        const rateIsFixed = (tech.rateMode || tech.rate_mode) === 'fixed' && tech.rate;
         const rateDisplay = rateIsFixed
           ? `$${tech.rate}${lang==='pt'?'/visita':lang==='es'?'/visita':'/visit'}`
           : (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable');
