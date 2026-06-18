@@ -943,6 +943,7 @@ function App() {
       <Sheet open={techSheetOpen} onClose={()=>setTechSheetOpen(false)} height="80%">
         <PostTechSheet
           lang={lang}
+          user={user}
           onClose={()=>setTechSheetOpen(false)}
           onSubmit={(data)=>{ setTechSheetOpen(false); if(data) dbWrite('techs', data); showToast(lang==='pt'?'Perfil publicado ✓':lang==='es'?'Perfil publicado ✓':'Profile posted ✓'); }}
         />

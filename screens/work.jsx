@@ -1712,7 +1712,13 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, paddingRight:(isOwner||user?.role==='admin')?36:0}}>
             <Avatar name={tech.name} size={28}/>
             <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{tech.name}</h3>
-            {!isOwner && user?.role !== 'admin' && <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>}
+            {!isOwner && user?.role !== 'admin' && (
+              <button onClick={()=>setRatingFor(tech)}
+                title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
+                style={{border:'none', background:'transparent', cursor:'pointer', padding:4, flexShrink:0, display:'flex', alignItems:'center'}}>
+                {Icon.star(20,'oklch(0.72 0.17 80)',false)}
+              </button>
+            )}
           </div>
 
           {/* Info rows */}
@@ -1735,13 +1741,6 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               {rateDisplay}
             </div>
             <div style={{display:'flex', gap:8}}>
-              {!isOwner && user?.role !== 'admin' && (
-                <button onClick={()=>setRatingFor(tech)} className="pg-btn pg-btn-ghost"
-                  title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
-                  style={{height:36, width:36, padding:0, borderRadius:999, flexShrink:0}}>
-                  {Icon.star(16,'oklch(0.72 0.17 80)',false)}
-                </button>
-              )}
               <button onClick={()=>setContactOpen(isOpen ? null : tech._id)}
                 className={isOpen ? 'pg-btn pg-btn-ghost' : 'pg-btn pg-btn-primary'}
                 style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
@@ -3365,20 +3364,17 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
 }
 
 // ── Post Tech profile sheet ───────────────────────────────────
-function PostTechSheet({ onClose, lang='en', onSubmit }) {
+function PostTechSheet({ onClose, lang='en', onSubmit, user=null }) {
   const t = STRINGS[lang];
-  const [name, setName]         = React.useState('');
   const [specialty, setSpecialty] = React.useState('');
   const [loc, setLoc]           = React.useState('');
-  const [phone, setPhone]       = React.useState('');
-  const [email, setEmail]       = React.useState('');
+  const [phone, setPhone]       = React.useState(user?.phone || '');
+  const [email, setEmail]       = React.useState(user?.email || '');
   const [photos, setPhotos]     = React.useState([]);
   const [rateMode, setRateMode] = React.useState('fixed');
   const [rate, setRate]         = React.useState('90');
 
   const headLbl     = lang==='pt'?'Cadastrar técnico':lang==='es'?'Registrar técnico':'Register as technician';
-  const nameLbl     = lang==='pt'?'Nome/Empresa':lang==='es'?'Nombre/Empresa':'Name/Company';
-  const namePh      = lang==='pt'?'ex: Rafael Silva ou South FL Pools':lang==='es'?'ej: Rafael Silva o South FL Pools':'e.g. Rafael Silva or South FL Pools';
   const specLbl     = lang==='pt'?'Especialidade':lang==='es'?'Especialidad':'Specialty';
   const specPh      = lang==='pt'?'ex: Reparo de bombas e motores':lang==='es'?'ej: Reparación de bombas y motores':'e.g. Pump & Motor Repair';
   const locLbl      = lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City';
@@ -3396,7 +3392,7 @@ function PostTechSheet({ onClose, lang='en', onSubmit }) {
     return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
   };
 
-  const isValid = name.trim().length > 0 && specialty.trim().length > 0
+  const isValid = specialty.trim().length > 0
                && loc.trim().length > 0 && phone.replace(/\D/g,'').length === 10;
 
   return (
@@ -3417,9 +3413,19 @@ function PostTechSheet({ onClose, lang='en', onSubmit }) {
           title={lang==='pt'?'Foto do perfil':lang==='es'?'Foto de perfil':'Profile photo'}
         />
         <div style={{height:0,borderTop:'0.5px solid var(--pg-ink-200)'}}/>
-        <div>
-          <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em', marginBottom:8}}>{nameLbl.toUpperCase()}</div>
-          <input className="pg-field" value={name} onChange={e=>setName(e.target.value)} placeholder={namePh}/>
+        {/* Nome do perfil — não editável */}
+        <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderRadius:12,
+          background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-100)'}}>
+          <Avatar name={user?.name||'?'} size={36}/>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em', marginBottom:2}}>
+              {lang==='pt'?'PUBLICANDO COMO':lang==='es'?'PUBLICANDO COMO':'POSTING AS'}
+            </div>
+            <div style={{fontSize:15, fontWeight:700, color:'var(--pg-ink-900)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+              {user?.name || '—'}
+            </div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-300)" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
         <div>
           <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em', marginBottom:8}}>{specLbl.toUpperCase()}</div>
@@ -3469,7 +3475,7 @@ function PostTechSheet({ onClose, lang='en', onSubmit }) {
       </div>
 
       <div style={{padding:'18px 18px 8px', position:'sticky', bottom:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
-        <button onClick={()=>onSubmit && onSubmit({ name, specialty, loc, phone, email, rateMode, rate, photoUrl: photos[0]||null })}
+        <button onClick={()=>onSubmit && onSubmit({ name: user?.name||'', specialty, loc, phone, email, rateMode, rate, photoUrl: photos[0]||null })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.shield(17, '#fff')} {submitLbl}
