@@ -798,6 +798,7 @@ function App() {
     // Update item in local state (e.g. mark as sold without waiting for realtime)
     updateMarketItem:  (id, patch) => setLiveMarket(prev => prev.map(m => m._id === id ? {...m, ...patch} : m)),
     removeJob:         (id) => setLiveJobs(prev      => prev.filter(j => j._id !== id)),
+    loadLiveJobs,
     removeTech:        (id) => setLiveTechs(prev     => prev.filter(t => t._id !== id)),
     removeVacation:    (id) => setLiveVacations(prev => prev.filter(v => v._id !== id)),
   };

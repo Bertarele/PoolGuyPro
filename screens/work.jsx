@@ -636,7 +636,7 @@ function WorkScreen({ ctx }) {
 
             {/* Panel content */}
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
-              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} liveApplications={liveApplications}/>}
+              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
               {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
             </div>
@@ -992,7 +992,7 @@ function WorkScreen({ ctx }) {
 
       {/* ── Content panels ── */}
       <div style={{padding:'14px 18px 0'}}>
-        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} liveApplications={liveApplications}/>}
+        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications}/>}
         {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
                               onChat={openChat} onCreate={openVacSheet}
@@ -1147,7 +1147,7 @@ function MyApplicationsSection({ apps, lang, onChat, type='hiring' }) {
 }
 
 // ── Card with company-style header ────────────────────────────
-function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile, liveJobs=[], showToast, onDeleteJob, liveApplications=[] }) {
+function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile, liveJobs=[], showToast, onDeleteJob, onJobUpdated, liveApplications=[] }) {
   const Company = (s=20, c='var(--pg-blue-500)') => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="4" y="3" width="16" height="18" rx="2"/>
@@ -1171,6 +1171,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
 
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const [selectedJob, setSelectedJob] = React.useState(null);
+  const [editingJob,  setEditingJob]  = React.useState(null);
 
   React.useEffect(() => {
     if (window.__pgOpenJobId && liveJobs.length > 0) {
@@ -1182,6 +1183,28 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
 
   return (
     <>
+    {/* ── Job edit sheet ── */}
+    <Sheet open={!!editingJob} onClose={()=>setEditingJob(null)} height="92%">
+      {editingJob && (
+        <PostHiringSheet
+          lang={lang}
+          onClose={()=>setEditingJob(null)}
+          initialValues={editingJob}
+          onSubmit={async (data) => {
+            const { error } = await window.sb.from('jobs').update({
+              role: data.role, loc: data.loc, description: data.desc,
+              contract: data.contract, pay_mode: data.payMode, pay: data.pay,
+              car_req: data.carReq, license_req: data.licenseReq, equip_req: data.equipReq,
+              author: data.company,
+            }).eq('id', editingJob._id);
+            if (error) { showToast && showToast('❌ ' + error.message); return; }
+            showToast && showToast('✓ ' + (lang==='pt'?'Vaga atualizada!':lang==='es'?'¡Oferta actualizada!':'Job updated!'));
+            setEditingJob(null);
+            onJobUpdated && onJobUpdated();
+          }}
+        />
+      )}
+    </Sheet>
     {/* ── Job detail sheet ── */}
     <Sheet open={!!selectedJob} onClose={()=>setSelectedJob(null)} height="92%">
       {selectedJob && (() => {
@@ -1196,7 +1219,19 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
               <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, letterSpacing:'-0.01em'}}>
                 {lang==='pt'?'Detalhes da Vaga':lang==='es'?'Detalle del Empleo':'Job Details'}
               </h2>
-              <div style={{width:60}}/>
+              {user?.uid && job.author_id && user.uid === job.author_id ? (
+                <button onClick={()=>{ setSelectedJob(null); setTimeout(()=>setEditingJob(job), 50); }} style={{
+                  border:'none', background:'none', color:'var(--pg-blue-500)',
+                  fontSize:14, fontWeight:600, cursor:'pointer', padding:0,
+                  display:'flex', alignItems:'center', gap:5,
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
+                </button>
+              ) : <div style={{width:60}}/>}
             </div>
             <div style={{padding:'0 18px', display:'flex', flexDirection:'column', gap:14}}>
               {/* Company */}
@@ -1270,7 +1305,31 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
       {/* ── Live jobs posted by real users (hide own jobs if hidePosted) ── */}
       {liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).map(job => (
-        <article key={job._id} className="pg-card pg-press" onClick={()=>setSelectedJob(job)} style={{padding:'14px 16px', cursor:'pointer'}}>
+        <article key={job._id} className="pg-card pg-press" onClick={()=>setSelectedJob(job)} style={{padding:'14px 16px', cursor:'pointer', position:'relative'}}>
+          {/* Trash icon — owner or admin */}
+          {(user?.uid && user.uid === job.author_id || user?.role === 'admin') && (
+            <button onClick={async (e) => {
+              e.stopPropagation();
+              const msg = lang==='pt'?`Excluir a vaga "${job.role}"? Não pode ser desfeito.`
+                :lang==='es'?`¿Eliminar la oferta "${job.role}"? No se puede deshacer.`
+                :`Delete job "${job.role}"? This cannot be undone.`;
+              if (!window.confirm(msg)) return;
+              const { error } = await window.sb.from('jobs').delete().eq('id', job._id);
+              if (error) { showToast && showToast('❌ ' + error.message); return; }
+              showToast && showToast('🗑️ ' + (lang==='pt'?'Vaga excluída':lang==='es'?'Oferta eliminada':'Job deleted'));
+              onDeleteJob && onDeleteJob(job._id);
+            }} style={{
+              position:'absolute', top:10, right:10, zIndex:2,
+              width:28, height:28, borderRadius:8, padding:0,
+              background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.18)',
+              color:'#EF4444', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+          )}
           {/* Header: author name with building icon + NEW badge */}
           <button onClick={(e)=>{ e.stopPropagation(); openPublicProfile && openPublicProfile({ name:job.author, rating:4.8, reviews:0, jobs:0, loc:job.loc }); }}
             style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', width:'100%'}} className="pg-press">
@@ -1388,50 +1447,6 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
               );
             })()}
           </div>
-          {/* Owner — close listing (already hired) */}
-          {user?.uid && user.uid === job.author_id && user?.role !== 'admin' && (
-            <div onClick={async () => {
-              const msg = lang==='pt'?`Encerrar a vaga "${job.role}"? Isso indica que você já preencheu a posição.`
-                :lang==='es'?`¿Cerrar la oferta "${job.role}"? Esto indica que ya cubriste el puesto.`
-                :`Close the "${job.role}" listing? This means you've already filled the position.`;
-              if (!window.confirm(msg)) return;
-              const { error } = await window.sb.from('jobs').delete().eq('id', job._id);
-              if (error) { showToast && showToast('❌ ' + error.message); return; }
-              showToast && showToast('✓ ' + (lang==='pt'?'Vaga encerrada!':lang==='es'?'¡Oferta cerrada!':'Listing closed!'));
-              onDeleteJob && onDeleteJob(job._id);
-            }} style={{
-              marginTop:8, padding:'7px 0', borderRadius:8, cursor:'pointer',
-              background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
-              fontSize:11, fontWeight:700, textAlign:'center',
-              display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-            }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6L9 17l-5-5"/>
-              </svg>
-              {lang==='pt'?'Já contratei — Encerrar vaga':lang==='es'?'Ya contraté — Cerrar oferta':'Hired someone — Close listing'}
-            </div>
-          )}
-          {/* Admin quick-delete */}
-          {user?.role === 'admin' && (
-            <div onClick={async () => {
-              if (!window.confirm(lang==='pt'?`Excluir vaga "${job.role}"?`:`Delete job "${job.role}"?`)) return;
-              const { error } = await window.sb.from('jobs').delete().eq('id', job._id);
-              if (error) { showToast && showToast('❌ ' + error.message); return; }
-              showToast && showToast('🗑️ ' + (lang==='pt'?'Vaga excluída':'Job deleted'));
-              onDeleteJob && onDeleteJob(job._id);
-            }} style={{
-              marginTop:4, padding:'6px 0', borderRadius:8, cursor:'pointer',
-              background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
-              fontSize:11, fontWeight:700, textAlign:'center',
-              display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-            }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-              </svg>
-              {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
-            </div>
-          )}
         </article>
       ))}
       {/* ── Static seed jobs ── */}
@@ -3090,21 +3105,22 @@ function HiringRequirementCard({ options, value, onChange }) {
   );
 }
 
-function PostHiringSheet({ onClose, lang='en', onSubmit }) {
+function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
   const t = STRINGS[lang];
-  const [company,  setCompany]  = React.useState('');
-  const [role,     setRole]     = React.useState('');
-  const [loc,      setLoc]      = React.useState([]);
+  const isEdit = !!initialValues;
+  const [company,  setCompany]  = React.useState(initialValues?.author || '');
+  const [role,     setRole]     = React.useState(initialValues?.role || '');
+  const [loc,      setLoc]      = React.useState(initialValues?.loc ? initialValues.loc.split(', ').filter(Boolean) : []);
   const [cityKey,  setCityKey]  = React.useState(0);
-  const [contract, setContract] = React.useState('fullTime');
-  const [payMode,  setPayMode]  = React.useState('perPool');
-  const [pay,      setPay]      = React.useState('');
-  const [carReq,     setCarReq]     = React.useState('');
-  const [equipReq,   setEquipReq]   = React.useState('');
-  const [licenseReq, setLicenseReq] = React.useState('');
-  const [desc,       setDesc]       = React.useState('');
+  const [contract, setContract] = React.useState(initialValues?.contract || 'fullTime');
+  const [payMode,  setPayMode]  = React.useState(initialValues?.payMode || 'perPool');
+  const [pay,      setPay]      = React.useState(initialValues?.pay || '');
+  const [carReq,     setCarReq]     = React.useState(initialValues?.carReq || '');
+  const [equipReq,   setEquipReq]   = React.useState(initialValues?.equipReq || '');
+  const [licenseReq, setLicenseReq] = React.useState(initialValues?.licenseReq || '');
+  const [desc,       setDesc]       = React.useState(initialValues?.desc || '');
 
-  const headLbl     = lang==='pt'?'Publicar vaga':lang==='es'?'Publicar empleo':'Post a job';
+  const headLbl     = isEdit ? (lang==='pt'?'Editar vaga':lang==='es'?'Editar empleo':'Edit job') : (lang==='pt'?'Publicar vaga':lang==='es'?'Publicar empleo':'Post a job');
   const companyLbl  = lang==='pt'?'Nome da empresa':lang==='es'?'Nombre de la empresa':'Company name';
   const companyPh   = lang==='pt'?'ex: South Florida Pools Inc.':lang==='es'?'ej: South Florida Pools Inc.':'e.g. South Florida Pools Inc.';
   const roleLbl     = lang==='pt'?'Título do cargo':lang==='es'?'Título del puesto':'Job title';
@@ -3114,7 +3130,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit }) {
   const payLbl      = lang==='pt'?'Tipo de pagamento':lang==='es'?'Tipo de pago':'Payment type';
   const descLbl     = lang==='pt'?'Descrição da vaga':lang==='es'?'Descripción del puesto':'Job description';
   const descPh      = lang==='pt'?'Descreva as responsabilidades, horários, benefícios…':lang==='es'?'Describa las responsabilidades, horarios, beneficios…':'Describe responsibilities, schedule, benefits…';
-  const submitLbl   = lang==='pt'?'Publicar vaga':lang==='es'?'Publicar empleo':'Post job';
+  const submitLbl   = isEdit ? (lang==='pt'?'Atualizar vaga':lang==='es'?'Actualizar empleo':'Update job') : (lang==='pt'?'Publicar vaga':lang==='es'?'Publicar empleo':'Post job');
 
   const contractTypes = [
     { id:'fullTime', label: lang==='pt'?'Full-time':lang==='es'?'Tiempo completo':'Full-time' },
