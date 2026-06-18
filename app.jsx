@@ -672,6 +672,7 @@ function App() {
       name: data.name, specialty: data.specialty, loc: data.loc,
       phone: data.phone, email: data.email,
       rate_mode: data.rateMode, rate: data.rate,
+      photo_url: user.photoUrl || data.photoUrl || null,
       author: authorName, author_id: user.uid || null,
     } : col === 'vacations' ? {
       month_idx: data.monthIdx, year: data.year,
