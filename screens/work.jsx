@@ -1712,13 +1712,6 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, paddingRight:(isOwner||user?.role==='admin')?36:0}}>
             <Avatar name={tech.name} size={28}/>
             <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{tech.name}</h3>
-            {!isOwner && user?.role !== 'admin' && (
-              <button onClick={()=>setRatingFor(tech)}
-                title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
-                style={{border:'none', background:'transparent', cursor:'pointer', padding:4, flexShrink:0, display:'flex', alignItems:'center'}}>
-                {Icon.star(20,'oklch(0.72 0.17 80)',false)}
-              </button>
-            )}
           </div>
 
           {/* Info rows */}
@@ -1741,6 +1734,14 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               {rateDisplay}
             </div>
             <div style={{display:'flex', gap:8}}>
+              {!isOwner && (
+                <button onClick={()=>setRatingFor(tech)}
+                  className="pg-btn pg-btn-ghost"
+                  title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
+                  style={{height:36, width:36, padding:0, borderRadius:999, flexShrink:0}}>
+                  {Icon.star(16,'oklch(0.72 0.17 80)',false)}
+                </button>
+              )}
               <button onClick={()=>setContactOpen(isOpen ? null : tech._id)}
                 className={isOpen ? 'pg-btn pg-btn-ghost' : 'pg-btn pg-btn-primary'}
                 style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
@@ -3416,7 +3417,7 @@ function PostTechSheet({ onClose, lang='en', onSubmit, user=null }) {
         {/* Nome do perfil — não editável */}
         <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderRadius:12,
           background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-100)'}}>
-          <Avatar name={user?.name||'?'} size={36}/>
+          <Avatar name={user?.name||'?'} size={36} src={user?.photoUrl||undefined}/>
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em', marginBottom:2}}>
               {lang==='pt'?'PUBLICANDO COMO':lang==='es'?'PUBLICANDO COMO':'POSTING AS'}
