@@ -1689,40 +1689,73 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
     <>
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
       {/* ── Live techs registered by real users ── */}
-      {liveTechs.map(tech => (
-        <article key={tech._id} className="pg-card" style={{padding:'14px 16px', border:'1.5px solid var(--pg-aqua-400,#38bdf8)'}}>
+      {liveTechs.map(tech => {
+        const isOwner = user?.uid && user.uid === tech.author_id;
+        const rateDisplay = tech.rate_mode === 'fixed' && tech.rate
+          ? `$${tech.rate}${lang==='pt'?'/visita':lang==='es'?'/visita':'/visit'}`
+          : (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable');
+        const rateIsFixed = tech.rate_mode === 'fixed' && tech.rate;
+        return (
+        <article key={tech._id} className="pg-card" style={{padding:'14px 16px'}}>
+          {/* Header — name + NEW badge */}
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
-            <Avatar name={tech.name} size={36}/>
-            <div style={{flex:1, minWidth:0}}>
-              <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{tech.name}</div>
-              <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:1}}>{tech.specialty} · {tech.loc}</div>
-            </div>
+            <Avatar name={tech.name} size={28}/>
+            <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{tech.name}</h3>
             <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>
           </div>
-          <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:10}}>
-            {tech.rateMode === 'fixed' && tech.rate
-              ? <span className="pg-chip pg-chip-aqua" style={{fontSize:12}}>
-                  ${tech.rate}{lang==='pt'?'/visita':lang==='es'?'/visita':'/visit'}
+
+          {/* Info rows */}
+          <div style={{display:'flex', flexDirection:'column', gap:6, fontSize:12.5, color:'var(--pg-ink-500)', marginBottom:12}}>
+            <div style={{display:'flex', alignItems:'center', gap:12, flexWrap:'wrap'}}>
+              <span style={{display:'inline-flex', alignItems:'center', gap:5}}>
+                {Icon.pin(13,'var(--pg-ink-500)')} {tech.loc}
+              </span>
+              {tech.specialty && (
+                <span style={{display:'inline-flex', alignItems:'center', gap:5}}>
+                  {Tool(13,'var(--pg-ink-500)')} {tech.specialty}
                 </span>
-              : <span className="pg-chip" style={{fontSize:12}}>{lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}</span>}
-            <span style={{display:'inline-flex', alignItems:'center', gap:4, fontSize:11, color:'var(--pg-ink-500)'}}>{Icon.pin(11,'var(--pg-ink-400)')} {tech.loc}</span>
-          </div>
-          <div style={{display:'flex', gap:8}}>
-            {tech.phone && <a href={`tel:${tech.phone}`} className="pg-btn pg-btn-ghost" style={{flex:1, height:36, fontSize:12.5, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:5, textDecoration:'none', color:'inherit'}}>
-              📞 {tech.phone}
-            </a>}
-            {/* Rate button — only for non-owners */}
-            {!(user?.uid && user.uid === tech.author_id) && user?.role !== 'admin' && (
-              <button onClick={()=>setRatingFor(tech)}
-                className="pg-btn pg-btn-ghost"
-                title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
-                style={{height:36, width:36, padding:0, borderRadius:999, flexShrink:0}}>
-                {Icon.star(16,'oklch(0.72 0.17 80)',false)}
-              </button>
+              )}
+            </div>
+            {tech.email && (
+              <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-500)" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                {tech.email}
+              </div>
             )}
           </div>
-          {/* Owner — remove own profile */}
-          {user?.uid && user.uid === tech.author_id && user?.role !== 'admin' && (
+
+          <div className="pg-divider" style={{margin:'0 0 12px'}}/>
+
+          {/* Rate + actions */}
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            <div style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700,
+              color: rateIsFixed ? 'var(--pg-blue-500)' : 'var(--pg-aqua-700)',
+              letterSpacing:'-0.01em'}}>
+              {rateDisplay}
+            </div>
+            <div style={{display:'flex', gap:8}}>
+              {/* Rate button — non-owners only */}
+              {!isOwner && user?.role !== 'admin' && (
+                <button onClick={()=>setRatingFor(tech)}
+                  className="pg-btn pg-btn-ghost"
+                  title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
+                  style={{height:36, width:36, padding:0, borderRadius:999, flexShrink:0}}>
+                  {Icon.star(16,'oklch(0.72 0.17 80)',false)}
+                </button>
+              )}
+              {/* Call button */}
+              {tech.phone && (
+                <a href={`tel:${tech.phone}`}
+                  className="pg-btn pg-btn-primary"
+                  style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999, display:'flex', alignItems:'center', gap:6, textDecoration:'none'}}>
+                  📞 {lang==='pt'?'Ligar':lang==='es'?'Llamar':'Call'}
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Owner — remove profile */}
+          {isOwner && user?.role !== 'admin' && (
             <div onClick={async () => {
               const msg = lang==='pt'?'Remover seu perfil de técnico? Você pode republicar quando quiser.'
                 :lang==='es'?'¿Eliminar tu perfil de técnico? Puedes volver a publicar cuando quieras.'
@@ -1733,14 +1766,12 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               showToast && showToast('✓ ' + (lang==='pt'?'Perfil removido':lang==='es'?'Perfil eliminado':'Profile removed'));
               onDeleteTech && onDeleteTech(tech._id);
             }} style={{
-              marginTop:8, padding:'7px 0', borderRadius:8, cursor:'pointer',
+              marginTop:10, padding:'7px 0', borderRadius:8, cursor:'pointer',
               background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
               fontSize:11, fontWeight:700, textAlign:'center',
               display:'flex', alignItems:'center', justifyContent:'center', gap:6,
             }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6L9 17l-5-5"/>
-              </svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
               {lang==='pt'?'Já fui contratado — Remover perfil':lang==='es'?'Ya fui contratado — Eliminar perfil':'Got hired — Remove profile'}
             </div>
           )}
@@ -1753,20 +1784,18 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               showToast && showToast('🗑️ ' + (lang==='pt'?'Técnico excluído':'Technician deleted'));
               onDeleteTech && onDeleteTech(tech._id);
             }} style={{
-              marginTop:4, padding:'6px 0', borderRadius:8, cursor:'pointer',
+              marginTop:6, padding:'6px 0', borderRadius:8, cursor:'pointer',
               background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
               fontSize:11, fontWeight:700, textAlign:'center',
               display:'flex', alignItems:'center', justifyContent:'center', gap:5,
             }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-              </svg>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
               {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
             </div>
           )}
         </article>
-      ))}
+        );
+      })}
       {/* ── Static seed techs ── */}
       {TECHS.filter(tech => !hiddenStatic.includes(tech.id)).map(tech => (
         <article key={tech.id} className="pg-card" style={{padding:'14px 16px 14px'}}>
