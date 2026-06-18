@@ -167,7 +167,8 @@ function WorkScreen({ ctx }) {
 
   const filteredLiveJobs      = liveJobs.filter(j => {
     const isOwn = user?.uid && j.author_id === user.uid;
-    if (isOwn) return true; // always show own jobs regardless of radius
+    if (isOwn) return true;   // always show own jobs regardless of radius
+    if (j.hiredAt) return true; // hired jobs visible to everyone (position is filled — informational)
     return radiusMatch(j.loc || j.region || '');
   });
   const filteredLiveTechs     = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
