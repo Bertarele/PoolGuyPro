@@ -1437,9 +1437,9 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
               showToast && showToast('✓ ' + (lang==='pt'?'Contratação registrada!':lang==='es'?'¡Contratación registrada!':'Hiring recorded!'));
               onJobUpdated && onJobUpdated();
             }} style={{
-              marginTop:8, padding:'5px 12px', borderRadius:8, cursor:'pointer', display:'inline-flex',
-              alignItems:'center', gap:5, background:'rgba(16,185,129,0.07)',
-              border:'1px solid rgba(16,185,129,0.28)', color:'#10B981', fontSize:11, fontWeight:700,
+              marginTop:8, padding:'5px 0', borderRadius:8, cursor:'pointer', display:'flex',
+              alignItems:'center', justifyContent:'center', gap:5, background:'rgba(16,185,129,0.07)',
+              border:'1px solid rgba(16,185,129,0.28)', color:'#10B981', fontSize:11, fontWeight:700, width:'100%',
             }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
               {lang==='pt'?'Já contratei':lang==='es'?'Ya contraté':'Hired someone'}
