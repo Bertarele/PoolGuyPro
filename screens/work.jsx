@@ -1329,7 +1329,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
               </div>
               <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{job.author}</h3>
             </div>
-            {(isOwner || isAdmin) ? (
+            {(isOwner || isAdmin) && !isHired ? (
               <button onClick={async (e) => {
                 e.stopPropagation();
                 const msg = lang==='pt'?`Excluir a vaga "${job.role}"? Não pode ser desfeito.`
