@@ -166,9 +166,8 @@ function WorkScreen({ ctx }) {
   }, [workUserLocation, workRadiusMiles]);
 
   const filteredLiveJobs      = liveJobs.filter(j => {
-    const isOwn  = user?.uid && j.author_id === user.uid;
-    if (j.hiredAt && !isOwn) return false; // hired jobs: only owner sees them
-    if (isOwn) return true;                // always show own jobs regardless of radius
+    const isOwn = user?.uid && j.author_id === user.uid;
+    if (isOwn) return true; // always show own jobs regardless of radius
     return radiusMatch(j.loc || j.region || '');
   });
   const filteredLiveTechs     = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
