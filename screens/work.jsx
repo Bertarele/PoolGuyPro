@@ -1691,13 +1691,14 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
       {/* ── Live techs registered by real users ── */}
       {liveTechs.map(tech => {
         const isOwner = user?.uid && user.uid === tech.author_id;
-        const rateDisplay = tech.rate_mode === 'fixed' && tech.rate
+        const isOpen  = contactOpen === tech._id;
+        const rateIsFixed = tech.rate_mode === 'fixed' && tech.rate;
+        const rateDisplay = rateIsFixed
           ? `$${tech.rate}${lang==='pt'?'/visita':lang==='es'?'/visita':'/visit'}`
           : (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable');
-        const rateIsFixed = tech.rate_mode === 'fixed' && tech.rate;
         return (
         <article key={tech._id} className="pg-card" style={{padding:'14px 16px'}}>
-          {/* Header — name + NEW badge */}
+          {/* Header */}
           <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
             <Avatar name={tech.name} size={28}/>
             <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{tech.name}</h3>
@@ -1705,23 +1706,14 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
           </div>
 
           {/* Info rows */}
-          <div style={{display:'flex', flexDirection:'column', gap:6, fontSize:12.5, color:'var(--pg-ink-500)', marginBottom:12}}>
+          <div style={{display:'flex', flexDirection:'column', gap:6, marginBottom:10, fontSize:12.5, color:'var(--pg-ink-500)'}}>
             <div style={{display:'flex', alignItems:'center', gap:12, flexWrap:'wrap'}}>
-              <span style={{display:'inline-flex', alignItems:'center', gap:5}}>
-                {Icon.pin(13,'var(--pg-ink-500)')} {tech.loc}
-              </span>
-              {tech.specialty && (
-                <span style={{display:'inline-flex', alignItems:'center', gap:5}}>
-                  {Tool(13,'var(--pg-ink-500)')} {tech.specialty}
-                </span>
-              )}
+              {tech.loc && <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Icon.pin(13,'var(--pg-ink-500)')} {tech.loc}</span>}
+              {tech.specialty && <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Tool(13,'var(--pg-ink-500)')} {tech.specialty}</span>}
             </div>
-            {tech.email && (
-              <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-500)" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                {tech.email}
-              </div>
-            )}
+            <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
+              {Icon.shield(13,'var(--pg-ink-500)')} {verifiedLbl}
+            </div>
           </div>
 
           <div className="pg-divider" style={{margin:'0 0 12px'}}/>
@@ -1729,68 +1721,90 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
           {/* Rate + actions */}
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
             <div style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700,
-              color: rateIsFixed ? 'var(--pg-blue-500)' : 'var(--pg-aqua-700)',
-              letterSpacing:'-0.01em'}}>
+              color: rateIsFixed ? 'var(--pg-blue-500)' : 'var(--pg-aqua-700)', letterSpacing:'-0.01em'}}>
               {rateDisplay}
             </div>
             <div style={{display:'flex', gap:8}}>
-              {/* Rate button — non-owners only */}
               {!isOwner && user?.role !== 'admin' && (
-                <button onClick={()=>setRatingFor(tech)}
-                  className="pg-btn pg-btn-ghost"
+                <button onClick={()=>setRatingFor(tech)} className="pg-btn pg-btn-ghost"
                   title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
                   style={{height:36, width:36, padding:0, borderRadius:999, flexShrink:0}}>
                   {Icon.star(16,'oklch(0.72 0.17 80)',false)}
                 </button>
               )}
-              {/* Call button */}
+              <button onClick={()=>setContactOpen(isOpen ? null : tech._id)}
+                className={isOpen ? 'pg-btn pg-btn-ghost' : 'pg-btn pg-btn-primary'}
+                style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999}}>
+                {isOpen ? (lang==='pt'?'Fechar':lang==='es'?'Cerrar':'Close') : t.contact}
+              </button>
+            </div>
+          </div>
+
+          {/* Expandable contact panel */}
+          {isOpen && (
+            <div style={{marginTop:10, padding:'12px 14px', borderRadius:12,
+              background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-100)',
+              display:'flex', flexDirection:'column', gap:10}}>
               {tech.phone && (
-                <a href={`tel:${tech.phone}`}
-                  className="pg-btn pg-btn-primary"
-                  style={{height:36, padding:'0 18px', fontSize:13, borderRadius:999, display:'flex', alignItems:'center', gap:6, textDecoration:'none'}}>
-                  📞 {lang==='pt'?'Ligar':lang==='es'?'Llamar':'Call'}
+                <a href={`tel:${tech.phone}`} style={{display:'flex', alignItems:'center', gap:12, textDecoration:'none'}}>
+                  <div style={{width:36, height:36, borderRadius:10, flexShrink:0,
+                    background:'var(--pg-blue-500)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{fontSize:10.5, fontWeight:700, letterSpacing:'0.06em', color:'var(--pg-ink-400)'}}>{lang==='pt'?'TELEFONE':lang==='es'?'TELÉFONO':'PHONE'}</div>
+                    <div style={{fontSize:15, fontWeight:700, color:'var(--pg-blue-700)', letterSpacing:'-0.01em'}}>{tech.phone}</div>
+                  </div>
+                </a>
+              )}
+              {tech.email && (
+                <a href={`mailto:${tech.email}`} style={{display:'flex', alignItems:'center', gap:12, textDecoration:'none'}}>
+                  <div style={{width:36, height:36, borderRadius:10, flexShrink:0,
+                    background:'var(--pg-aqua-100)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pg-aqua-700)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                      <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{fontSize:10.5, fontWeight:700, letterSpacing:'0.06em', color:'var(--pg-ink-400)'}}>EMAIL</div>
+                    <div style={{fontSize:13, fontWeight:600, color:'var(--pg-aqua-700)'}}>{tech.email}</div>
+                  </div>
                 </a>
               )}
             </div>
-          </div>
+          )}
 
           {/* Owner — remove profile */}
           {isOwner && user?.role !== 'admin' && (
             <div onClick={async () => {
-              const msg = lang==='pt'?'Remover seu perfil de técnico? Você pode republicar quando quiser.'
-                :lang==='es'?'¿Eliminar tu perfil de técnico? Puedes volver a publicar cuando quieras.'
-                :'Remove your technician profile? You can re-post whenever you want.';
-              if (!window.confirm(msg)) return;
+              if (!window.confirm(lang==='pt'?'Remover seu perfil de técnico?':'Remove your technician profile?')) return;
               const { error } = await window.sb.from('techs').delete().eq('id', tech._id);
               if (error) { showToast && showToast('❌ ' + error.message); return; }
-              showToast && showToast('✓ ' + (lang==='pt'?'Perfil removido':lang==='es'?'Perfil eliminado':'Profile removed'));
+              showToast && showToast('✓ ' + (lang==='pt'?'Perfil removido':'Profile removed'));
               onDeleteTech && onDeleteTech(tech._id);
-            }} style={{
-              marginTop:10, padding:'7px 0', borderRadius:8, cursor:'pointer',
+            }} style={{marginTop:10, padding:'7px 0', borderRadius:8, cursor:'pointer',
               background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
-              fontSize:11, fontWeight:700, textAlign:'center',
-              display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-            }}>
+              fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:6}}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-              {lang==='pt'?'Já fui contratado — Remover perfil':lang==='es'?'Ya fui contratado — Eliminar perfil':'Got hired — Remove profile'}
+              {lang==='pt'?'Já fui contratado — Remover perfil':'Got hired — Remove profile'}
             </div>
           )}
           {/* Admin quick-delete */}
           {user?.role === 'admin' && (
             <div onClick={async () => {
-              if (!window.confirm(lang==='pt'?`Excluir técnico "${tech.name}"?`:`Delete technician "${tech.name}"?`)) return;
+              if (!window.confirm(lang==='pt'?`Excluir "${tech.name}"?`:`Delete "${tech.name}"?`)) return;
               const { error } = await window.sb.from('techs').delete().eq('id', tech._id);
               if (error) { showToast && showToast('❌ ' + error.message); return; }
               showToast && showToast('🗑️ ' + (lang==='pt'?'Técnico excluído':'Technician deleted'));
               onDeleteTech && onDeleteTech(tech._id);
-            }} style={{
-              marginTop:6, padding:'6px 0', borderRadius:8, cursor:'pointer',
+            }} style={{marginTop:6, padding:'6px 0', borderRadius:8, cursor:'pointer',
               background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
-              fontSize:11, fontWeight:700, textAlign:'center',
-              display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-            }}>
+              fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-              {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+              {lang==='pt'?'Excluir':'Delete'}
             </div>
           )}
         </article>
