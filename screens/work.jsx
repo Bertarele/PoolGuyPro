@@ -1316,43 +1316,36 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
         const myApp     = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
         return (
         <article key={job._id} className={isHired ? 'pg-card' : 'pg-card pg-press'} onClick={()=>!isHired && setSelectedJob(job)}
-          style={{padding:'14px 16px', cursor: isHired?'default':'pointer',
+          style={{padding:'14px 16px', cursor: isHired?'default':'pointer', position:'relative',
             opacity: isHired ? 0.72 : 1,
             background: isHired ? 'var(--pg-ink-50)' : undefined,
             filter: isHired ? 'grayscale(0.45)' : undefined,
           }}>
-          {/* Header row: profile button + trash (owner/admin) OR NEW badge */}
-          <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
-            <div style={{display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0}}>
-              <div style={{width:28, height:28, borderRadius:7, background:'var(--pg-blue-100)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
-                {Company(15, 'var(--pg-blue-700)')}
-              </div>
-              <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{job.author}</h3>
+          {/* Trash — absolute top-right, owner/admin, not hired */}
+          {(isOwner || isAdmin) && !isHired && (
+            <button onClick={async (e) => {
+              e.stopPropagation();
+              const msg = lang==='pt'?`Excluir a vaga "${job.role}"?`:`Delete job "${job.role}"?`;
+              if (!window.confirm(msg)) return;
+              const { error } = await window.sb.from('jobs').delete().eq('id', job._id);
+              if (error) { showToast && showToast('❌ ' + error.message); return; }
+              showToast && showToast('🗑️ ' + (lang==='pt'?'Vaga excluída':'Job deleted'));
+              onDeleteJob && onDeleteJob(job._id);
+            }} style={{position:'absolute', top:10, right:10, width:28, height:28, borderRadius:7,
+              background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
+              color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              </svg>
+            </button>
+          )}
+          {/* Header row */}
+          <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, paddingRight:(isOwner||isAdmin)&&!isHired?36:0}}>
+            <div style={{width:28, height:28, borderRadius:7, background:'var(--pg-blue-100)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+              {Company(15, 'var(--pg-blue-700)')}
             </div>
-            {(isOwner || isAdmin) && !isHired ? (
-              <button onClick={async (e) => {
-                e.stopPropagation();
-                const msg = lang==='pt'?`Excluir a vaga "${job.role}"? Não pode ser desfeito.`
-                  :lang==='es'?`¿Eliminar la oferta "${job.role}"? No se puede deshacer.`
-                  :`Delete job "${job.role}"? This cannot be undone.`;
-                if (!window.confirm(msg)) return;
-                const { error } = await window.sb.from('jobs').delete().eq('id', job._id);
-                if (error) { showToast && showToast('❌ ' + error.message); return; }
-                showToast && showToast('🗑️ ' + (lang==='pt'?'Vaga excluída':lang==='es'?'Oferta eliminada':'Job deleted'));
-                onDeleteJob && onDeleteJob(job._id);
-              }} style={{
-                width:32, height:32, borderRadius:10, flexShrink:0, padding:0,
-                border:'1.5px solid #FCA5A5', background:'#FEF2F2', color:'#EF4444',
-                display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
-              }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-              </button>
-            ) : (
-              <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>
-            )}
+            <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{job.author}</h3>
+            {!(isOwner || isAdmin) && <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>}
           </div>
           {/* Hired banner */}
           {isHired && (
@@ -1697,26 +1690,29 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
           ? `$${tech.rate}${lang==='pt'?'/visita':lang==='es'?'/visita':'/visit'}`
           : (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable');
         return (
-        <article key={tech._id} className="pg-card" style={{padding:'14px 16px'}}>
+        <article key={tech._id} className="pg-card" style={{padding:'14px 16px', position:'relative'}}>
+          {/* Trash — absolute top-right, owner/admin only */}
+          {(isOwner || user?.role === 'admin') && (
+            <button onClick={async (e) => {
+              e.stopPropagation();
+              if (!window.confirm(lang==='pt'?`Excluir "${tech.name}"?`:`Delete "${tech.name}"?`)) return;
+              const { error } = await window.sb.from('techs').delete().eq('id', tech._id);
+              if (error) { showToast && showToast('❌ ' + error.message); return; }
+              showToast && showToast('🗑️ ' + (lang==='pt'?'Perfil removido':'Profile removed'));
+              onDeleteTech && onDeleteTech(tech._id);
+            }} style={{position:'absolute', top:10, right:10, width:28, height:28, borderRadius:7,
+              background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
+              color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              </svg>
+            </button>
+          )}
           {/* Header */}
-          <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
+          <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, paddingRight:(isOwner||user?.role==='admin')?36:0}}>
             <Avatar name={tech.name} size={28}/>
             <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{tech.name}</h3>
-            {(isOwner || user?.role === 'admin') ? (
-              <button onClick={async () => {
-                if (!window.confirm(lang==='pt'?`Excluir "${tech.name}"?`:`Delete "${tech.name}"?`)) return;
-                const { error } = await window.sb.from('techs').delete().eq('id', tech._id);
-                if (error) { showToast && showToast('❌ ' + error.message); return; }
-                showToast && showToast('🗑️ ' + (lang==='pt'?'Perfil removido':'Profile removed'));
-                onDeleteTech && onDeleteTech(tech._id);
-              }} style={{width:52, height:52, borderRadius:14, border:'1.5px solid #FCA5A5',
-                background:'#FEF2F2', color:'#EF4444', cursor:'pointer', flexShrink:0,
-                display:'flex', alignItems:'center', justifyContent:'center'}}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-              </button>
-            ) : (
-              <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>
-            )}
+            {!isOwner && user?.role !== 'admin' && <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, letterSpacing:'0.05em'}}>NEW</span>}
           </div>
 
           {/* Info rows */}
