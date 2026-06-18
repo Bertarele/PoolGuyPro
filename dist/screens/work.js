@@ -6427,7 +6427,8 @@ function PostHiringSheet({
   const t = STRINGS[lang];
   const [company, setCompany] = React.useState('');
   const [role, setRole] = React.useState('');
-  const [loc, setLoc] = React.useState('');
+  const [loc, setLoc] = React.useState([]);
+  const [cityKey, setCityKey] = React.useState(0);
   const [contract, setContract] = React.useState('fullTime');
   const [payMode, setPayMode] = React.useState('perPool');
   const [pay, setPay] = React.useState('');
@@ -6440,7 +6441,7 @@ function PostHiringSheet({
   const companyPh = lang === 'pt' ? 'ex: South Florida Pools Inc.' : lang === 'es' ? 'ej: South Florida Pools Inc.' : 'e.g. South Florida Pools Inc.';
   const roleLbl = lang === 'pt' ? 'Título do cargo' : lang === 'es' ? 'Título del puesto' : 'Job title';
   const rolePh = lang === 'pt' ? 'ex: Técnico de Piscina' : lang === 'es' ? 'ej: Técnico de Piscina' : 'e.g. Pool Service Technician';
-  const locLbl = lang === 'pt' ? 'Localização' : lang === 'es' ? 'Ubicación' : 'Location';
+  const locLbl = lang === 'pt' ? 'Localização da rota' : lang === 'es' ? 'Ubicación de la ruta' : 'Route location';
   const contractLbl = lang === 'pt' ? 'Tipo de contrato' : lang === 'es' ? 'Tipo de contrato' : 'Contract type';
   const payLbl = lang === 'pt' ? 'Tipo de pagamento' : lang === 'es' ? 'Tipo de pago' : 'Payment type';
   const descLbl = lang === 'pt' ? 'Descrição da vaga' : lang === 'es' ? 'Descripción del puesto' : 'Job description';
@@ -6600,7 +6601,7 @@ function PostHiringSheet({
     label: lang === 'pt' ? "Driver's license não necessária" : lang === 'es' ? "Driver's license no requerida" : "Driver's license not required",
     sublabel: lang === 'pt' ? 'Sem necessidade para este cargo' : lang === 'es' ? 'No se requiere para este puesto' : 'No license needed for this role'
   }];
-  const isValid = company.trim().length > 0 && role.trim().length > 0 && loc.trim().length > 0 && carReq !== '' && equipReq !== '' && licenseReq !== '';
+  const isValid = company.trim().length > 0 && role.trim().length > 0 && loc.length > 0 && carReq !== '' && equipReq !== '' && licenseReq !== '';
   return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '8px 0 24px'
@@ -6658,9 +6659,46 @@ function PostHiringSheet({
     placeholder: rolePh
   })), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: locLbl
-  }, /*#__PURE__*/React.createElement(CityAutocomplete, {
-    value: loc,
-    onChange: setLoc,
+  }, loc.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginBottom: 10
+    }
+  }, loc.map(city => /*#__PURE__*/React.createElement("div", {
+    key: city,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 5,
+      background: 'var(--pg-blue-100)',
+      color: 'var(--pg-blue-700)',
+      borderRadius: 20,
+      padding: '5px 10px 5px 12px',
+      fontSize: 13,
+      fontWeight: 600
+    }
+  }, city, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setLoc(prev => prev.filter(c => c !== city)),
+    style: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      color: 'inherit',
+      fontSize: 15,
+      lineHeight: 1,
+      padding: '0 2px',
+      display: 'flex',
+      alignItems: 'center'
+    }
+  }, "\xD7")))), /*#__PURE__*/React.createElement(CityAutocomplete, {
+    key: cityKey,
+    value: "",
+    onChange: v => {
+      if (v && !loc.includes(v)) setLoc(prev => [...prev, v]);
+      setCityKey(k => k + 1);
+    },
     lang: lang
   })), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: contractLbl
@@ -6838,7 +6876,7 @@ function PostHiringSheet({
     onClick: () => onSubmit && onSubmit({
       company,
       role,
-      loc,
+      loc: loc.join(', '),
       contract,
       payMode,
       pay,
