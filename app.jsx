@@ -436,7 +436,8 @@ function App() {
     // Normalizers — Supabase uses snake_case columns
     const normJob = r => ({ _id:r.id, _live:true, role:r.role, loc:r.loc, desc:r.description,
       contract:r.contract, payMode:r.pay_mode, pay:r.pay,
-      carReq:r.car_req, licenseReq:r.license_req, equipReq:r.equip_req, author:r.author, author_id:r.author_id||null });
+      carReq:r.car_req, licenseReq:r.license_req, equipReq:r.equip_req, author:r.author, author_id:r.author_id||null,
+      hiredAt: r.hired_at || null });
     const normTech = r => ({ _id:r.id, _live:true, name:r.name, specialty:r.specialty,
       loc:r.loc, phone:r.phone, email:r.email,
       rateMode:r.rate_mode, rate:r.rate, author:r.author, author_id:r.author_id||null });
@@ -542,6 +543,10 @@ function App() {
     const channel = window.sb.channel('app-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jobs' },
         p => setLiveJobs(prev => [normJob(p.new), ...prev]))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'jobs' },
+        p => setLiveJobs(prev => prev.map(j => j._id === p.new.id ? normJob(p.new) : j)))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'jobs' },
+        p => setLiveJobs(prev => prev.filter(j => j._id !== p.old.id)))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'techs' },
         p => setLiveTechs(prev => [normTech(p.new), ...prev]))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vacations' },
