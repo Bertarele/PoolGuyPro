@@ -3611,8 +3611,7 @@ function MarketplaceScreen({ ctx }) {
       photoUrls: m.photoUrls || [],
       status: m.status,
     }));
-  // Combina rotas reais (primeiro) + rotas demo estáticas
-  const allRoutes = [...liveRoutes, ...POOL_ROUTES];
+  const allRoutes = [...liveRoutes];
 
   // Piscinas avulsas reais do banco (type='pool', aprovadas ou próprias pendentes)
   const livePools = marketByCounty
@@ -3636,8 +3635,7 @@ function MarketplaceScreen({ ctx }) {
       warranty: m.warranty || null, warrantyMonths: m.warrantyMonths || null,
       address: m.address || null,
     }));
-  // Combina piscinas reais (primeiro) + piscinas demo estáticas
-  const allPools = [...livePools, ...SINGLE_POOLS];
+  const allPools = [...livePools];
 
   const list = isEquipment
     ? EQUIPMENT.filter(e =>
