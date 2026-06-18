@@ -438,7 +438,7 @@ function App() {
       contract:r.contract, payMode:r.pay_mode, pay:r.pay,
       carReq:r.car_req, licenseReq:r.license_req, equipReq:r.equip_req, author:r.author, author_id:r.author_id||null,
       hiredAt: r.hired_at || null });
-    const normTech = r => ({ _id:r.id, _live:true, name:r.name, specialty:r.specialty,
+    const normTech = r => ({ _id:r.id, _live:true, name:r.name, specialty:r.specialty, photoUrl:r.photo_url||null,
       loc:r.loc, phone:r.phone, email:r.email,
       rateMode:r.rate_mode, rate:r.rate, author:r.author, author_id:r.author_id||null });
     const normVac = r => ({ _id:r.id, _live:true, monthIdx:r.month_idx, year:r.year,

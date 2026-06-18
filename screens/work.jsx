@@ -1708,11 +1708,12 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               </svg>
             </button>
           )}
-          {/* Header */}
-          <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, paddingRight:(isOwner||user?.role==='admin')?36:0}}>
-            <Avatar name={tech.name} size={28}/>
-            <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{tech.name}</h3>
-          </div>
+          {/* Header — click opens public profile */}
+          <button onClick={()=>openPublicProfile&&openPublicProfile({name:tech.name,photo:tech.photoUrl,loc:tech.loc,uid:tech.author_id})}
+            style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit',textAlign:'left',width:'100%',paddingRight:(isOwner||user?.role==='admin')?36:0}}>
+            <Avatar name={tech.name} size={28} src={tech.photoUrl||undefined}/>
+            <h3 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:16,fontWeight:700,letterSpacing:'-0.015em',flex:1,minWidth:0}}>{tech.name}</h3>
+          </button>
 
           {/* Info rows */}
           <div style={{display:'flex', flexDirection:'column', gap:6, marginBottom:10, fontSize:12.5, color:'var(--pg-ink-500)'}}>
