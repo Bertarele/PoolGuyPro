@@ -609,6 +609,14 @@ function App() {
     return () => window.sb.removeChannel(ch);
   }, [authReady, user?.uid]);
 
+  const loadLiveJobs = React.useCallback(async () => {
+    if (!window.sb) return;
+    const { data } = await window.sb.from('jobs').select('*').order('created_at', { ascending: false });
+    if (data) setLiveJobs(data.map(r => ({ _id:r.id, _live:true, role:r.role, loc:r.loc, desc:r.description,
+      contract:r.contract, payMode:r.pay_mode, pay:r.pay,
+      carReq:r.car_req, licenseReq:r.license_req, equipReq:r.equip_req, author:r.author, author_id:r.author_id||null })));
+  }, []);
+
   // Live job applications — current user's applications + real-time status updates
   const loadLiveApplications = React.useCallback(async (uid) => {
     if (!window.sb || !uid) return;
@@ -919,7 +927,7 @@ function App() {
         <PostHiringSheet
           lang={lang}
           onClose={()=>setHiringSheetOpen(false)}
-          onSubmit={(data)=>{ setHiringSheetOpen(false); if(data) dbWrite('jobs', data); showToast(lang==='pt'?'Vaga publicada ✓':lang==='es'?'Empleo publicado ✓':'Job posted ✓'); }}
+          onSubmit={(data)=>{ setHiringSheetOpen(false); if(data) dbWrite('jobs', data).then(()=>loadLiveJobs()); showToast(lang==='pt'?'Vaga publicada ✓':lang==='es'?'Empleo publicado ✓':'Job posted ✓'); }}
         />
       </Sheet>
       <Sheet open={techSheetOpen} onClose={()=>setTechSheetOpen(false)} height="80%">
