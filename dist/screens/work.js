@@ -6371,7 +6371,10 @@ function WeekdayRegionRow({
     const selected = values.includes(m.city);
     return /*#__PURE__*/React.createElement("button", {
       key: m.city,
-      onClick: () => onToggle(m.city),
+      onClick: () => {
+        if (!values.includes(m.city)) setQ('');
+        onToggle(m.city);
+      },
       style: {
         display: 'flex',
         alignItems: 'center',

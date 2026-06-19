@@ -3007,7 +3007,7 @@ function WeekdayRegionRow({ label, values, cities, onToggle, poolCount, onPoolCh
               {matches.map(m => {
                 const selected = values.includes(m.city);
                 return (
-                  <button key={m.city} onClick={()=>onToggle(m.city)} style={{
+                  <button key={m.city} onClick={()=>{ if (!values.includes(m.city)) setQ(''); onToggle(m.city); }} style={{
                     display:'flex', alignItems:'center', gap:8, padding:'7px 10px',
                     background: selected ? 'var(--pg-aqua-100)' : 'transparent',
                     border:'none', borderRadius:8, cursor:'pointer', textAlign:'left',
