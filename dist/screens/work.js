@@ -7587,9 +7587,9 @@ function DayChips({
     return /*#__PURE__*/React.createElement("span", {
       key: d,
       style: {
-        minWidth: yearMonth ? 32 : size,
-        height: yearMonth ? 46 : size,
-        padding: yearMonth ? '3px 6px' : 0,
+        minWidth: wd !== null ? 30 : size,
+        height: wd !== null ? 38 : size,
+        padding: wd !== null ? '3px 5px' : 0,
         borderRadius: 7,
         fontWeight: 700,
         display: 'inline-flex',
@@ -7601,21 +7601,12 @@ function DayChips({
         color: isPast ? 'var(--pg-ink-300)' : booked ? 'var(--pg-ink-300)' : sel ? '#fff' : 'var(--pg-blue-600)',
         opacity: isPast ? 0.55 : 1
       }
-    }, yearMonth && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 7,
-        fontWeight: 700,
-        letterSpacing: '0.05em',
-        opacity: isPast ? 0.6 : 0.65,
-        lineHeight: 1,
-        textTransform: 'uppercase'
-      }
-    }, moShort[yearMonth.month]), wd !== null && /*#__PURE__*/React.createElement("span", {
+    }, wd !== null && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 8,
         fontWeight: 700,
         letterSpacing: '0.04em',
-        opacity: booked ? 0.5 : 0.8,
+        opacity: booked ? 0.5 : 0.75,
         lineHeight: 1.2
       }
     }, wdShort[wd].toUpperCase()), /*#__PURE__*/React.createElement("span", {
