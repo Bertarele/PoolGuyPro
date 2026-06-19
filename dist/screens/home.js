@@ -695,11 +695,7 @@ function HomeScreen({
         borderRadius: 9,
         overflow: 'hidden',
         flexShrink: 0,
-        marginBottom: 9,
-        background: 'linear-gradient(135deg, var(--pg-blue-100), var(--pg-ink-100))',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
+        marginBottom: 9
       }
     }, item.photoUrl ? /*#__PURE__*/React.createElement("img", {
       src: item.photoUrl,
@@ -709,28 +705,10 @@ function HomeScreen({
         height: '100%',
         objectFit: 'cover'
       }
-    }) : /*#__PURE__*/React.createElement("svg", {
-      width: "28",
-      height: "28",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "var(--pg-blue-300)",
-      strokeWidth: "1.6",
-      strokeLinecap: "round",
-      strokeLinejoin: "round"
-    }, /*#__PURE__*/React.createElement("rect", {
-      x: "3",
-      y: "3",
-      width: "18",
-      height: "18",
-      rx: "4"
-    }), /*#__PURE__*/React.createElement("circle", {
-      cx: "8.5",
-      cy: "8.5",
-      r: "1.5"
-    }), /*#__PURE__*/React.createElement("polyline", {
-      points: "21 15 16 10 5 21"
-    }))), /*#__PURE__*/React.createElement("div", {
+    }) : /*#__PURE__*/React.createElement(NoPhotoPlaceholder, {
+      height: 72,
+      small: true
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
