@@ -1,5 +1,12 @@
 // marketplace.jsx — navy header + dual seg + distance + categories
 
+// ── Locale-aware number/price formatter ──────────────────────
+// PT/ES use "." as thousands sep; EN uses ","
+function fmtN(n, lang) {
+  const s = Number(n||0).toLocaleString('en-US');
+  return lang === 'en' ? s : s.replace(/,/g, '.');
+}
+
 // ── Time ago helper ──────────────────────────────────────────
 function timeAgo(iso, lang='en') {
   if (!iso) return '';
@@ -370,7 +377,7 @@ function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) 
 // ── Route hero card (no photo) ────────────────────────────────
 function RouteNoPhotoHero({ item, lang }) {
   const n = Number(item.revenue || 0);
-  const revFmt = n > 0 ? (n % 1000 === 0 ? `${n/1000}k` : n.toLocaleString('en-US')) : null;
+  const revFmt = n > 0 ? (n % 1000 === 0 ? `${n/1000}k` : fmtN(n, lang)) : null;
   const cities = (item.area || '').split(',').map(c => c.trim()).filter(Boolean);
   const poolsLabel = lang === 'pt' ? 'Piscinas' : lang === 'es' ? 'Piscinas' : 'Pools';
   const revLabel   = lang === 'pt' ? 'Receita/mês' : lang === 'es' ? 'Ingresos/mes' : 'Revenue/mo';
@@ -1021,7 +1028,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             letterSpacing:'-0.03em', lineHeight:1,
           }}>
             {(item.type === 'pool' || item.type === 'route')
-              ? `$${Number(item.asking||0).toLocaleString()}`
+              ? `$${fmtN(item.asking||0, lang)}`
               : `$${item.price}`}
             {item.type !== 'pool' && item.type !== 'route' && periodSfx && <span style={{fontSize: large?16:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:3}}>{periodSfx}</span>}
           </span>
@@ -1413,7 +1420,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               {lang==='pt'?'Total estimado':'Estimated total'}
             </span>
             <span style={{fontSize:20, fontWeight:800, color:'#0EBAC7', fontFamily:'var(--pg-font-display)'}}>
-              ${totalPrice.toLocaleString()}
+              ${fmtN(totalPrice, lang)}
             </span>
           </div>
 
@@ -1524,7 +1531,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   {req.total_price && (
                     <span style={{fontSize:11,fontWeight:800,padding:'3px 9px',borderRadius:999,
                       background:'rgba(22,163,74,0.12)',color:'#22C55E',border:'1px solid rgba(22,163,74,0.3)',marginLeft:'auto'}}>
-                      ${Number(req.total_price).toLocaleString()}
+                      ${fmtN(req.total_price, lang)}
                     </span>
                   )}
                 </div>
@@ -2323,10 +2330,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 if (item.loc)       rows.push({ label: lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City',              value: item.loc });
                 if (item.address)   rows.push({ label: lang==='pt'?'Endereço':lang==='es'?'Dirección':'Address',       value: item.address, full: true });
                 if (item.sizeFt)    rows.push({ label: lang==='pt'?'Tamanho':lang==='es'?'Tamaño':'Size',              value: item.sizeFt });
-                if (item.gallons)   rows.push({ label: lang==='pt'?'Capacidade':lang==='es'?'Capacidad':'Capacity',    value: `${Number(item.gallons).toLocaleString()} gal` });
+                if (item.gallons)   rows.push({ label: lang==='pt'?'Capacidade':lang==='es'?'Capacidad':'Capacity',    value: `${fmtN(item.gallons, lang)} gal` });
                 if (item.system)    rows.push({ label: lang==='pt'?'Sistema':lang==='es'?'Sistema':'System',           value: item.system === 'salt' ? (lang==='pt'?'Sal':'Salt') : (lang==='pt'?'Cloro':'Chlorine') });
                 if (item.freq)      rows.push({ label: lang==='pt'?'Visitas/semana':lang==='es'?'Visitas/semana':'Visits/week', value: `${item.freq}x` });
-                if (item.price)     rows.push({ label: lang==='pt'?'Valor/mês':lang==='es'?'Valor/mes':'Monthly rate', value: `$${Number(item.price).toLocaleString()}/mo` });
+                if (item.price)     rows.push({ label: lang==='pt'?'Valor/mês':lang==='es'?'Valor/mes':'Monthly rate', value: `$${fmtN(item.price, lang)}/mo` });
                 if (item.warranty)  rows.push({ label: lang==='pt'?'Garantia':lang==='es'?'Garantía':'Warranty',       value: item.warranty === 'yes' ? (item.warrantyMonths ? `${item.warrantyMonths} ${lang==='pt'?'meses':'months'}` : (lang==='pt'?'Sim':'Yes')) : (lang==='pt'?'Não':'No') });
                 if (rows.length === 0) return null;
                 return (
@@ -2657,8 +2664,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             <>
               <span style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
                 {(item.type === 'pool' || item.type === 'route')
-                  ? `$${Number(item.asking||0).toLocaleString()}`
-                  : <>{item.type==='route'?`$${Number(item.asking||0).toLocaleString()}`:item.price}{periodSfx && item.type !== 'route' && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}</>
+                  ? `$${fmtN(item.asking||0, lang)}`
+                  : <>{item.type==='route'?`$${fmtN(item.asking||0, lang)}`:item.price}{periodSfx && item.type !== 'route' && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}</>
                 }
               </span>
               {item.condition && (
@@ -2709,7 +2716,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           if (item.type === 'route') {
             if (item.area)    rows.push({ label: lang==='pt'?'Cidades':lang==='es'?'Ciudades':'Cities',               value: item.area, full: true });
             if (item.clients) rows.push({ label: lang==='pt'?'Nº clientes':lang==='es'?'Nº clientes':'Clients',       value: String(item.clients) });
-            if (item.revenue) rows.push({ label: lang==='pt'?'Receita/mês':lang==='es'?'Ingreso/mes':'Revenue/mo',    value: `$${Number(item.revenue).toLocaleString()}/mo` });
+            if (item.revenue) rows.push({ label: lang==='pt'?'Receita/mês':lang==='es'?'Ingreso/mes':'Revenue/mo',    value: `$${fmtN(item.revenue, lang)}/mo` });
             if (item.cat) {
               const catTr = { residential: {pt:'Residencial',es:'Residencial',en:'Residential'}, commercial: {pt:'Comercial',es:'Comercial',en:'Commercial'}, mixed: {pt:'Misto',es:'Mixto',en:'Mixed'} };
               const catVal = (catTr[item.cat]||{})[lang] || (catTr[item.cat]||{}).en || item.cat;
@@ -2719,10 +2726,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             if (item.loc)      rows.push({ label: lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City',              value: item.loc });
             if (item.address)  rows.push({ label: lang==='pt'?'Endereço':lang==='es'?'Dirección':'Address',       value: item.address, full: true });
             if (item.sizeFt)   rows.push({ label: lang==='pt'?'Tamanho':lang==='es'?'Tamaño':'Size',             value: item.sizeFt });
-            if (item.gallons)  rows.push({ label: lang==='pt'?'Capacidade':lang==='es'?'Capacidad':'Capacity',    value: `${Number(item.gallons).toLocaleString()} gal` });
+            if (item.gallons)  rows.push({ label: lang==='pt'?'Capacidade':lang==='es'?'Capacidad':'Capacity',    value: `${fmtN(item.gallons, lang)} gal` });
             if (item.system)   rows.push({ label: lang==='pt'?'Sistema':lang==='es'?'Sistema':'System',          value: item.system === 'salt' ? (lang==='pt'?'Sal':'Salt') : (lang==='pt'?'Cloro':'Chlorine') });
             if (item.freq)     rows.push({ label: lang==='pt'?'Visitas/semana':lang==='es'?'Visitas/semana':'Visits/week', value: `${item.freq}x` });
-            if (item.price)    rows.push({ label: lang==='pt'?'Valor/mês':lang==='es'?'Valor/mes':'Monthly rate', value: `$${Number(item.price).toLocaleString()}/mo` });
+            if (item.price)    rows.push({ label: lang==='pt'?'Valor/mês':lang==='es'?'Valor/mes':'Monthly rate', value: `$${fmtN(item.price, lang)}/mo` });
             if (item.warranty) rows.push({ label: lang==='pt'?'Garantia':lang==='es'?'Garantía':'Warranty',      value: item.warranty === 'yes' ? (item.warrantyMonths ? `${item.warrantyMonths} ${lang==='pt'?'meses':'months'}` : (lang==='pt'?'Sim':'Yes')) : (lang==='pt'?'Não':'No') });
           }
           if (rows.length === 0) return null;
@@ -3106,7 +3113,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
                 {item.type==='route' ? (
                   <div>
                     <div style={{fontFamily:'var(--pg-font-display)',fontSize:26,fontWeight:800,color:'var(--pg-blue-500)',letterSpacing:'-0.03em',lineHeight:1}}>
-                      {item.asking ? `$${Number(item.asking).toLocaleString()}` : '—'}
+                      {item.asking ? `$${fmtN(item.asking, lang)}` : '—'}
                     </div>
                     <div style={{fontSize:10,color:'var(--pg-ink-400)',marginTop:2}}>{lang==='pt'?'Pedindo':lang==='es'?'Pidiendo':'Asking'}</div>
                   </div>
@@ -3118,7 +3125,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
                 ) : (
                   <div>
                     <div style={{fontFamily:'var(--pg-font-display)',fontSize:26,fontWeight:800,color:'var(--pg-blue-500)',letterSpacing:'-0.03em',lineHeight:1}}>
-                      {item.price ? `$${Number(item.price).toLocaleString()}` : '—'}
+                      {item.price ? `$${fmtN(item.price, lang)}` : '—'}
                     </div>
                     {periodSfx && <div style={{fontSize:11,color:'var(--pg-ink-400)',marginTop:2,textAlign:'right'}}>{periodSfx}</div>}
                   </div>
@@ -3131,7 +3138,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
               {item.type==='route' ? (
                 <>
                   {item.clients && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-blue-50)',color:'var(--pg-blue-700)',border:'1px solid var(--pg-blue-100)'}}>🏊 {item.clients} {lang==='pt'?'piscinas':'pools'}</span>}
-                  {item.revenue && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'rgba(16,185,129,0.08)',color:'#065F46',border:'1px solid rgba(16,185,129,0.25)'}}>💰 ${Number(item.revenue).toLocaleString()}/mo</span>}
+                  {item.revenue && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'rgba(16,185,129,0.08)',color:'#065F46',border:'1px solid rgba(16,185,129,0.25)'}}>💰 ${fmtN(item.revenue, lang)}/mo</span>}
                   {item.area && <span style={{fontSize:12,fontWeight:600,padding:'4px 11px',borderRadius:999,background:'var(--pg-ink-100)',color:'var(--pg-ink-700)'}}>{item.area}</span>}
                 </>
               ) : (
@@ -3605,7 +3612,7 @@ function MarketplaceScreen({ ctx }) {
       name: m.name || m.routeName || '',
       clients: m.clients ? String(m.clients) : '?',
       area: m.area || m.loc || '',
-      revenue: m.revenue ? `$${Number(m.revenue).toLocaleString()}/mo` : '',
+      revenue: m.revenue ? `$${fmtN(m.revenue, lang)}/mo` : '',
       est: Number(m.asking) || 0,
       photoUrl: m.photoUrl || null,
       photoUrls: m.photoUrls || [],
@@ -3624,7 +3631,7 @@ function MarketplaceScreen({ ctx }) {
       name: m.name || m.description || '',
       desc: m.description || '',
       poolKind: m.cat || 'house',
-      revenue: m.price ? `$${Number(m.price).toLocaleString()}/mo` : '',
+      revenue: m.price ? `$${fmtN(m.price, lang)}/mo` : '',
       est: Number(m.asking || m.price) || 0,
       photoUrl: m.photoUrl || null,
       photoUrls: m.photoUrls || [],
@@ -4278,7 +4285,7 @@ function MarketplaceScreen({ ctx }) {
                               <div style={{fontSize:10, color:'var(--pg-ink-400)', marginBottom:2}}>{t.asking}</div>
                               <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800,
                                 color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
-                                ${(r.est||r.asking||0).toLocaleString()}
+                                ${fmtN(r.est||r.asking||0, lang)}
                               </div>
                             </div>
                             {!isMyPost(liveMarket.find(x=>x._id===r._liveId)||{}) && (
@@ -5083,7 +5090,7 @@ function MarketplaceScreen({ ctx }) {
                   <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:8}}>
                     <div>
                       <div style={{fontSize:10, color:'var(--pg-ink-400)'}}>{t.asking}</div>
-                      <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${(r.est||0).toLocaleString()}</div>
+                      <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${fmtN(r.est||0, lang)}</div>
                     </div>
                     {!isMyPost(liveMarket.find(x=>x._id===r._liveId)||{}) && (
                       <button onClick={(e)=>{ e.stopPropagation();
@@ -5171,7 +5178,7 @@ function MarketplaceScreen({ ctx }) {
                     <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:7}}>
                       <div>
                         <div style={{fontSize:10, color:'var(--pg-ink-400)'}}>{t.asking}</div>
-                        <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${p.est.toLocaleString()}</div>
+                        <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${fmtN(p.est, lang)}</div>
                       </div>
                       {!isMyPost(liveMarket.find(x=>x._id===p._liveId)||{}) && (
                         <button onClick={(e)=>{ e.stopPropagation();
@@ -5937,7 +5944,7 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
           <div style={{display:'flex', alignItems:'baseline', gap:8, marginTop:10}}>
             <span style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em'}}>{t.asking.toUpperCase()}</span>
             <span style={{fontFamily:'var(--pg-font-display)', fontSize:32, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
-              ${selected.est.toLocaleString()}
+              ${fmtN(selected.est, lang)}
             </span>
           </div>
           {sellerRow}
@@ -6005,7 +6012,7 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
         <div style={{display:'flex', alignItems:'baseline', gap:8, marginTop:10, flexWrap:'wrap'}}>
           <span style={{fontSize:10, color:'var(--pg-ink-400)', fontWeight:700, letterSpacing:'0.06em'}}>{t.asking.toUpperCase()}</span>
           <span style={{fontFamily:'var(--pg-font-display)', fontSize:32, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
-            ${selected.est.toLocaleString()}
+            ${fmtN(selected.est, lang)}
           </span>
           <span className="pg-chip" style={{fontSize:11, background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', borderColor:'var(--pg-blue-100)'}}>{tr(selected.revenue, lang)}</span>
         </div>
@@ -6029,7 +6036,7 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
                 {selected.gallons && (
                   <div style={{display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:10, background:'var(--pg-ink-50,var(--pg-blue-50))', border:'0.5px solid var(--pg-ink-200)'}}>
                     <span style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.04em'}}>{lang==='pt'?'GALÕES':'GALLONS'}</span>
-                    <span style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>{Number(selected.gallons).toLocaleString()} gal</span>
+                    <span style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>{fmtN(selected.gallons, lang)} gal</span>
                   </div>
                 )}
               </div>

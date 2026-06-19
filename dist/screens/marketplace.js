@@ -1,6 +1,13 @@
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 // marketplace.jsx — navy header + dual seg + distance + categories
 
+// ── Locale-aware number/price formatter ──────────────────────
+// PT/ES use "." as thousands sep; EN uses ","
+function fmtN(n, lang) {
+  const s = Number(n || 0).toLocaleString('en-US');
+  return lang === 'en' ? s : s.replace(/,/g, '.');
+}
+
 // ── Time ago helper ──────────────────────────────────────────
 function timeAgo(iso, lang = 'en') {
   if (!iso) return '';
@@ -710,7 +717,7 @@ function RouteNoPhotoHero({
   lang
 }) {
   const n = Number(item.revenue || 0);
-  const revFmt = n > 0 ? n % 1000 === 0 ? `${n / 1000}k` : n.toLocaleString('en-US') : null;
+  const revFmt = n > 0 ? n % 1000 === 0 ? `${n / 1000}k` : fmtN(n, lang) : null;
   const cities = (item.area || '').split(',').map(c => c.trim()).filter(Boolean);
   const poolsLabel = lang === 'pt' ? 'Piscinas' : lang === 'es' ? 'Piscinas' : 'Pools';
   const revLabel = lang === 'pt' ? 'Receita/mês' : lang === 'es' ? 'Ingresos/mes' : 'Revenue/mo';
@@ -1594,7 +1601,7 @@ function ViewListingSheet({
       letterSpacing: '-0.03em',
       lineHeight: 1
     }
-  }, item.type === 'pool' || item.type === 'route' ? `$${Number(item.asking || 0).toLocaleString()}` : `$${item.price}`, item.type !== 'pool' && item.type !== 'route' && periodSfx && /*#__PURE__*/React.createElement("span", {
+  }, item.type === 'pool' || item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : `$${item.price}`, item.type !== 'pool' && item.type !== 'route' && periodSfx && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: large ? 16 : 13,
       fontWeight: 500,
@@ -2648,7 +2655,7 @@ function ViewListingSheet({
         color: '#0EBAC7',
         fontFamily: 'var(--pg-font-display)'
       }
-    }, "$", totalPrice.toLocaleString())), /*#__PURE__*/React.createElement("button", {
+    }, "$", fmtN(totalPrice, lang))), /*#__PURE__*/React.createElement("button", {
       onClick: handleRequestRental,
       disabled: reqLoading || !reqPeriod,
       style: {
@@ -2864,7 +2871,7 @@ function ViewListingSheet({
           border: '1px solid rgba(22,163,74,0.3)',
           marginLeft: 'auto'
         }
-      }, "$", Number(req.total_price).toLocaleString())), isComp && !dismissedDecisions.has(req.id) && /*#__PURE__*/React.createElement("div", {
+      }, "$", fmtN(req.total_price, lang))), isComp && !dismissedDecisions.has(req.id) && /*#__PURE__*/React.createElement("div", {
         style: {
           marginTop: 10,
           borderRadius: 12,
@@ -4554,7 +4561,7 @@ function ViewListingSheet({
       });
       if (item.gallons) rows.push({
         label: lang === 'pt' ? 'Capacidade' : lang === 'es' ? 'Capacidad' : 'Capacity',
-        value: `${Number(item.gallons).toLocaleString()} gal`
+        value: `${fmtN(item.gallons, lang)} gal`
       });
       if (item.system) rows.push({
         label: lang === 'pt' ? 'Sistema' : lang === 'es' ? 'Sistema' : 'System',
@@ -4566,7 +4573,7 @@ function ViewListingSheet({
       });
       if (item.price) rows.push({
         label: lang === 'pt' ? 'Valor/mês' : lang === 'es' ? 'Valor/mes' : 'Monthly rate',
-        value: `$${Number(item.price).toLocaleString()}/mo`
+        value: `$${fmtN(item.price, lang)}/mo`
       });
       if (item.warranty) rows.push({
         label: lang === 'pt' ? 'Garantia' : lang === 'es' ? 'Garantía' : 'Warranty',
@@ -5089,7 +5096,7 @@ function ViewListingSheet({
       letterSpacing: '-0.02em',
       lineHeight: 1
     }
-  }, item.type === 'pool' || item.type === 'route' ? `$${Number(item.asking || 0).toLocaleString()}` : /*#__PURE__*/React.createElement(React.Fragment, null, item.type === 'route' ? `$${Number(item.asking || 0).toLocaleString()}` : item.price, periodSfx && item.type !== 'route' && /*#__PURE__*/React.createElement("span", {
+  }, item.type === 'pool' || item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : /*#__PURE__*/React.createElement(React.Fragment, null, item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : item.price, periodSfx && item.type !== 'route' && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 500,
@@ -5186,7 +5193,7 @@ function ViewListingSheet({
       });
       if (item.revenue) rows.push({
         label: lang === 'pt' ? 'Receita/mês' : lang === 'es' ? 'Ingreso/mes' : 'Revenue/mo',
-        value: `$${Number(item.revenue).toLocaleString()}/mo`
+        value: `$${fmtN(item.revenue, lang)}/mo`
       });
       if (item.cat) {
         const catTr = {
@@ -5228,7 +5235,7 @@ function ViewListingSheet({
       });
       if (item.gallons) rows.push({
         label: lang === 'pt' ? 'Capacidade' : lang === 'es' ? 'Capacidad' : 'Capacity',
-        value: `${Number(item.gallons).toLocaleString()} gal`
+        value: `${fmtN(item.gallons, lang)} gal`
       });
       if (item.system) rows.push({
         label: lang === 'pt' ? 'Sistema' : lang === 'es' ? 'Sistema' : 'System',
@@ -5240,7 +5247,7 @@ function ViewListingSheet({
       });
       if (item.price) rows.push({
         label: lang === 'pt' ? 'Valor/mês' : lang === 'es' ? 'Valor/mes' : 'Monthly rate',
-        value: `$${Number(item.price).toLocaleString()}/mo`
+        value: `$${fmtN(item.price, lang)}/mo`
       });
       if (item.warranty) rows.push({
         label: lang === 'pt' ? 'Garantia' : lang === 'es' ? 'Garantía' : 'Warranty',
@@ -5978,7 +5985,7 @@ function MyPostDetailSheet({
       letterSpacing: '-0.03em',
       lineHeight: 1
     }
-  }, item.asking ? `$${Number(item.asking).toLocaleString()}` : '—'), /*#__PURE__*/React.createElement("div", {
+  }, item.asking ? `$${fmtN(item.asking, lang)}` : '—'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: 'var(--pg-ink-400)',
@@ -6004,7 +6011,7 @@ function MyPostDetailSheet({
       letterSpacing: '-0.03em',
       lineHeight: 1
     }
-  }, item.price ? `$${Number(item.price).toLocaleString()}` : '—'), periodSfx && /*#__PURE__*/React.createElement("div", {
+  }, item.price ? `$${fmtN(item.price, lang)}` : '—'), periodSfx && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: 'var(--pg-ink-400)',
@@ -6038,7 +6045,7 @@ function MyPostDetailSheet({
       color: '#065F46',
       border: '1px solid rgba(16,185,129,0.25)'
     }
-  }, "\uD83D\uDCB0 $", Number(item.revenue).toLocaleString(), "/mo"), item.area && /*#__PURE__*/React.createElement("span", {
+  }, "\uD83D\uDCB0 $", fmtN(item.revenue, lang), "/mo"), item.area && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 12,
       fontWeight: 600,
@@ -6851,14 +6858,13 @@ function MarketplaceScreen({
     name: m.name || m.routeName || '',
     clients: m.clients ? String(m.clients) : '?',
     area: m.area || m.loc || '',
-    revenue: m.revenue ? `$${Number(m.revenue).toLocaleString()}/mo` : '',
+    revenue: m.revenue ? `$${fmtN(m.revenue, lang)}/mo` : '',
     est: Number(m.asking) || 0,
     photoUrl: m.photoUrl || null,
     photoUrls: m.photoUrls || [],
     status: m.status
   }));
-  // Combina rotas reais (primeiro) + rotas demo estáticas
-  const allRoutes = [...liveRoutes, ...POOL_ROUTES];
+  const allRoutes = [...liveRoutes];
 
   // Piscinas avulsas reais do banco (type='pool', aprovadas ou próprias pendentes)
   const livePools = marketByCounty.filter(m => m.type === 'pool' && (m.status === 'approved' || m.status === 'pending' && isMyPost(m))).map(m => ({
@@ -6873,7 +6879,7 @@ function MarketplaceScreen({
     name: m.name || m.description || '',
     desc: m.description || '',
     poolKind: m.cat || 'house',
-    revenue: m.price ? `$${Number(m.price).toLocaleString()}/mo` : '',
+    revenue: m.price ? `$${fmtN(m.price, lang)}/mo` : '',
     est: Number(m.asking || m.price) || 0,
     photoUrl: m.photoUrl || null,
     photoUrls: m.photoUrls || [],
@@ -6887,8 +6893,7 @@ function MarketplaceScreen({
     warrantyMonths: m.warrantyMonths || null,
     address: m.address || null
   }));
-  // Combina piscinas reais (primeiro) + piscinas demo estáticas
-  const allPools = [...livePools, ...SINGLE_POOLS];
+  const allPools = [...livePools];
   const list = isEquipment ? EQUIPMENT.filter(e => e.mode === mode && (cat === 'All' || e.category === cat) && (q === '' || e.name.toLowerCase().includes(q.toLowerCase())) && (priceRange === 'all' || priceRange === 'u100' && e.price < 100 || priceRange === '100-500' && e.price >= 100 && e.price <= 500 || priceRange === 'o500' && e.price > 500)) : view === 'routes' && routeSub === 'pools' ? allPools.filter(p => poolPrice === 'all' || poolPrice === 'u1500' && p.est < 1500 || poolPrice === '1500-3k' && p.est >= 1500 && p.est <= 3000 || poolPrice === 'o3k' && p.est > 3000) : allRoutes.filter(r => routePrice === 'all' || routePrice === 'u5k' && r.est < 5000 || routePrice === '5k-8k' && r.est >= 5000 && r.est <= 8000 || routePrice === 'o8k' && r.est > 8000);
   const tabIcons = {
     buy: (s, c) => Icon.cart(s, c),
@@ -8255,7 +8260,7 @@ function MarketplaceScreen({
         letterSpacing: '-0.02em',
         lineHeight: 1
       }
-    }, "$", (r.est || r.asking || 0).toLocaleString())), !isMyPost(liveMarket.find(x => x._id === r._liveId) || {}) && /*#__PURE__*/React.createElement("button", {
+    }, "$", fmtN(r.est || r.asking || 0, lang))), !isMyPost(liveMarket.find(x => x._id === r._liveId) || {}) && /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         if (r._live && r._authorId) {
@@ -9913,7 +9918,7 @@ function MarketplaceScreen({
       color: 'var(--pg-blue-500)',
       letterSpacing: '-0.02em'
     }
-  }, "$", (r.est || 0).toLocaleString())), !isMyPost(liveMarket.find(x => x._id === r._liveId) || {}) && /*#__PURE__*/React.createElement("button", {
+  }, "$", fmtN(r.est || 0, lang))), !isMyPost(liveMarket.find(x => x._id === r._liveId) || {}) && /*#__PURE__*/React.createElement("button", {
     onClick: e => {
       e.stopPropagation();
       if (r._live && r._authorId) {
@@ -10146,7 +10151,7 @@ function MarketplaceScreen({
       color: 'var(--pg-blue-500)',
       letterSpacing: '-0.02em'
     }
-  }, "$", p.est.toLocaleString())), !isMyPost(liveMarket.find(x => x._id === p._liveId) || {}) && /*#__PURE__*/React.createElement("button", {
+  }, "$", fmtN(p.est, lang))), !isMyPost(liveMarket.find(x => x._id === p._liveId) || {}) && /*#__PURE__*/React.createElement("button", {
     onClick: e => {
       e.stopPropagation();
       const m = liveMarket.find(x => x._id === p._liveId);
@@ -11555,7 +11560,7 @@ function ListingDetail({
         color: 'var(--pg-blue-500)',
         letterSpacing: '-0.02em'
       }
-    }, "$", selected.est.toLocaleString())), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
+    }, "$", fmtN(selected.est, lang))), sellerRow, OfferPanel, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 10,
@@ -11733,7 +11738,7 @@ function ListingDetail({
         color: 'var(--pg-blue-500)',
         letterSpacing: '-0.02em'
       }
-    }, "$", selected.est.toLocaleString()), /*#__PURE__*/React.createElement("span", {
+    }, "$", fmtN(selected.est, lang)), /*#__PURE__*/React.createElement("span", {
       className: "pg-chip",
       style: {
         fontSize: 11,
@@ -11807,7 +11812,7 @@ function ListingDetail({
         fontWeight: 600,
         color: 'var(--pg-ink-900)'
       }
-    }, Number(selected.gallons).toLocaleString(), " gal"))), /*#__PURE__*/React.createElement("div", {
+    }, fmtN(selected.gallons, lang), " gal"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 8,
