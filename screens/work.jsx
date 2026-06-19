@@ -2264,47 +2264,200 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
 
         {/* ── Live vacation posts (Supabase) ── */}
         {sortedLiveVac.length > 0 && (
-          <div style={{display:'flex', flexDirection:'column', gap:12, marginBottom:12}}>
-            {sortedLiveVac.map(vac => (
-              <article key={vac._id} className="pg-card" style={{padding:'14px 16px', border:'1.5px solid var(--pg-aqua-400,#38bdf8)'}}>
-                <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6}}>
-                  <div style={{flex:1, minWidth:0}}>
-                    <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>
-                      {lang==='pt'?'Cobertura de Férias':lang==='es'?'Cobertura de Vacaciones':'Vacation Coverage'}
+          <div style={{display:'flex', flexDirection:'column', gap:14, marginBottom:12}}>
+            {sortedLiveVac.map(vac => {
+              const monthNamesArr = lang==='pt'
+                ? ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+                : lang==='es'
+                  ? ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+                  : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+              const monthName = vac.yearMonth ? (monthNamesArr[vac.yearMonth.month] + ' ' + vac.yearMonth.year) : '';
+              const liveAvailDays = (vac.days||[]).filter(d =>
+                !(vac.bookedDays||[]).includes(d) &&
+                (vac.yearMonth ? new Date(vac.yearMonth.year, vac.yearMonth.month, d) >= today : true));
+              const poolCounts = Object.values(vac.poolsByWeekday||{}).map(Number);
+              const avgPools = poolCounts.length ? Math.round(poolCounts.reduce((a,b)=>a+b,0)/poolCounts.length) : 0;
+              const liveMaxEarnings = vac.priceMode !== 'neg' ? liveAvailDays.reduce((sum, d) => {
+                const wd = vac.yearMonth ? new Date(vac.yearMonth.year, vac.yearMonth.month, d).getDay() : 0;
+                const pools = Number(vac.poolsByWeekday?.[wd] ?? avgPools ?? 0);
+                return sum + (vac.priceMode === 'pool' ? pools * Number(vac.price||0) : Number(vac.price||0));
+              }, 0) : 0;
+              const isOwner = !!(user?.uid && user.uid === vac.author_id);
+              const wdShortNames = lang==='pt'
+                ? ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+                : lang==='es'
+                  ? ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+                  : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+              return (
+              <article key={vac._id} className="pg-card" style={{padding:0, overflow:'hidden'}}>
+
+                {/* ── Gradient header ── */}
+                <div style={{
+                  background:'linear-gradient(120deg, oklch(0.26 0.10 232) 0%, oklch(0.33 0.13 215) 100%)',
+                  padding:'12px 14px 11px',
+                  display:'flex', justifyContent:'space-between', alignItems:'flex-end',
+                }}>
+                  <div>
+                    <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.09em',
+                      color:'rgba(255,255,255,0.52)', marginBottom:3, textTransform:'uppercase'}}>
+                      {vac.region || 'Broward County'}
                     </div>
-                    <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:2}}>
-                      👤 {vac.author}
+                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:700,
+                      color:'#fff', letterSpacing:'-0.02em', lineHeight:1.1}}>
+                      {monthName}
                     </div>
                   </div>
-                  <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0, marginLeft:8, letterSpacing:'0.05em'}}>NEW</span>
+                  <div style={{textAlign:'right'}}>
+                    {vac.priceMode !== 'neg' ? (<>
+                      <div style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:800,
+                        color:'oklch(0.88 0.16 90)', letterSpacing:'-0.03em', lineHeight:1}}>
+                        ${vac.price}
+                        <span style={{fontSize:11.5, fontWeight:500, color:'rgba(255,255,255,0.45)'}}>
+                          /{vac.priceMode==='pool'?'pool':'day'}
+                        </span>
+                      </div>
+                      {avgPools > 0 && (
+                        <div style={{fontSize:11, color:'rgba(255,255,255,0.52)', marginTop:1}}>
+                          {avgPools} {t.poolsPerDay}
+                        </div>
+                      )}
+                    </>) : (
+                      <div style={{fontSize:14, fontWeight:700, color:'oklch(0.88 0.16 90)'}}>
+                        {lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:6}}>
-                  {vac.price && <span className="pg-chip pg-chip-aqua" style={{fontSize:11}}>${vac.price}{vac.priceMode==='pool'?'/pool':'/day'}</span>}
-                  {vac.priceMode === 'neg' && <span className="pg-chip" style={{fontSize:11}}>{lang==='pt'?'Negociável':'Negotiable'}</span>}
-                </div>
-                {/* Owner — close vacation post */}
-                {user?.uid && user.uid === vac.author_id && user?.role !== 'admin' && (
-                  <div onClick={async () => {
-                    const msg = lang==='pt'?'Encerrar sua cobertura de férias? Isso indica que você encontrou alguém.'
-                      :lang==='es'?'¿Cerrar tu cobertura de vacaciones? Indica que ya encontraste a alguien.'
-                      :'Close your vacation coverage post? This means you found someone.';
-                    if (!window.confirm(msg)) return;
-                    const { error } = await window.sb.from('vacations').delete().eq('id', vac._id);
-                    if (error) { showToast && showToast('❌ ' + error.message); return; }
-                    showToast && showToast('✓ ' + (lang==='pt'?'Cobertura encerrada!':lang==='es'?'¡Cobertura cerrada!':'Coverage closed!'));
-                    onDeleteVac && onDeleteVac(vac._id);
-                  }} style={{
-                    marginTop:8, padding:'7px 0', borderRadius:8, cursor:'pointer',
-                    background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
-                    fontSize:11, fontWeight:700, textAlign:'center',
-                    display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+
+                {/* ── Card body ── */}
+                <div style={{padding:'11px 14px 14px'}}>
+
+                  {/* Owner row */}
+                  <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+                    <button onClick={()=>openPublicProfile && openPublicProfile({ name:vac.author })}
+                      style={{display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left'}} className="pg-press">
+                      <Avatar name={vac.author} size={30}/>
+                      <div style={{flex:1, minWidth:0}}>
+                        <span style={{fontSize:13, fontWeight:600}}>{vac.author}</span>
+                      </div>
+                    </button>
+                    {liveAvailDays.length > 0 && (
+                      <span style={{fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999,
+                        background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0}}>
+                        {liveAvailDays.length} {daysFreeLabel}
+                      </span>
+                    )}
+                    {(vac.bookedDays||[]).length > 0 && (
+                      <span style={{fontSize:11, fontWeight:600, padding:'2px 8px', borderRadius:999,
+                        background:'var(--pg-ink-100)', color:'var(--pg-ink-500)', flexShrink:0}}>
+                        {(vac.bookedDays||[]).length} {bookedLabel}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Day chips */}
+                  <DayChips days={vac.days||[]} bookedDays={vac.bookedDays||[]}
+                    yearMonth={vac.yearMonth} lang={lang}
+                    showPastDays={isOwner} isOwner={isOwner}/>
+
+                  {/* Pools per available day */}
+                  {Object.keys(vac.poolsByWeekday||{}).length > 0 && liveAvailDays.length > 0 && (
+                    <div style={{marginTop:8, padding:'7px 10px', borderRadius:9,
+                      background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-100)'}}>
+                      <div style={{fontSize:9.5, fontWeight:700, letterSpacing:'0.07em',
+                        color:'var(--pg-blue-700)', marginBottom:5, textTransform:'uppercase'}}>
+                        {lang==='pt'?'Piscinas por dia':lang==='es'?'Piscinas por día':'Pools per day'}
+                      </div>
+                      <div style={{display:'flex', gap:5, flexWrap:'wrap'}}>
+                        {liveAvailDays.map(d => {
+                          const wd = vac.yearMonth
+                            ? new Date(vac.yearMonth.year, vac.yearMonth.month, d).getDay()
+                            : null;
+                          const count = (wd !== null && vac.poolsByWeekday?.[wd] !== undefined)
+                            ? vac.poolsByWeekday[wd]
+                            : '?';
+                          return (
+                            <div key={d} style={{
+                              display:'flex', flexDirection:'column', alignItems:'center',
+                              padding:'5px 9px', borderRadius:7,
+                              background:'var(--pg-white)', border:'0.5px solid var(--pg-blue-200)',
+                              minWidth:36, gap:2,
+                            }}>
+                              {wd !== null && (
+                                <span style={{fontSize:9, fontWeight:700, color:'var(--pg-blue-600)',
+                                  letterSpacing:'0.04em', lineHeight:1}}>
+                                  {wdShortNames[wd].toUpperCase()}
+                                </span>
+                              )}
+                              <span style={{fontSize:13, fontWeight:800, color:'var(--pg-ink-900)',
+                                fontFamily:'var(--pg-font-display)', lineHeight:1.1}}>{count}</span>
+                              <span style={{fontSize:9, color:'var(--pg-ink-400)'}}>🏊</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Note */}
+                  {vac.note && (
+                    <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:7, lineHeight:1.45}}>
+                      {vac.note}
+                    </div>
+                  )}
+
+                  {/* Footer: max earnings + CTA */}
+                  <div style={{
+                    display:'flex', alignItems:'center', justifyContent:'space-between',
+                    marginTop:12, paddingTop:10, borderTop:'0.5px solid var(--pg-ink-100)',
                   }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 6L9 17l-5-5"/>
-                    </svg>
-                    {lang==='pt'?'Já encontrei alguém — Encerrar':lang==='es'?'Ya encontré a alguien — Cerrar':'Found someone — Close post'}
+                    <div>
+                      {liveMaxEarnings > 0 ? (<>
+                        <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.06em', color:'var(--pg-ink-400)'}}>
+                          {maxEarnLabel}
+                        </div>
+                        <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800,
+                          color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1.1}}>
+                          ${liveMaxEarnings.toLocaleString()}
+                        </div>
+                      </>) : (
+                        <span className="pg-chip" style={{fontSize:11}}>
+                          {lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'}
+                        </span>
+                      )}
+                    </div>
+                    {!isOwner && (
+                      <button onClick={()=>openDayPicker && openDayPicker(vac)}
+                        className="pg-btn pg-btn-primary"
+                        style={{height:38, padding:'0 20px', fontSize:13.5, borderRadius:999, gap:5}}>
+                        {pickDaysLabel} →
+                      </button>
+                    )}
+                    {isOwner && user?.role !== 'admin' && (
+                      <div onClick={async () => {
+                        const msg = lang==='pt'?'Encerrar sua cobertura de férias?'
+                          :lang==='es'?'¿Cerrar tu cobertura de vacaciones?'
+                          :'Close your vacation coverage post?';
+                        if (!window.confirm(msg)) return;
+                        const { error } = await window.sb.from('vacations').delete().eq('id', vac._id);
+                        if (error) { showToast && showToast('❌ ' + error.message); return; }
+                        showToast && showToast('✓ ' + (lang==='pt'?'Cobertura encerrada!':lang==='es'?'¡Cobertura cerrada!':'Coverage closed!'));
+                        onDeleteVac && onDeleteVac(vac._id);
+                      }} style={{
+                        padding:'7px 14px', borderRadius:8, cursor:'pointer',
+                        background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
+                        fontSize:11, fontWeight:700,
+                        display:'flex', alignItems:'center', gap:6,
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6L9 17l-5-5"/>
+                        </svg>
+                        {lang==='pt'?'Encerrar':lang==='es'?'Cerrar':'Close post'}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+
                 {/* Admin quick-delete */}
                 {user?.role === 'admin' && (
                   <div onClick={async () => {
@@ -2314,7 +2467,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
                     showToast && showToast('🗑️ ' + (lang==='pt'?'Férias excluídas':'Vacation deleted'));
                     onDeleteVac && onDeleteVac(vac._id);
                   }} style={{
-                    marginTop:4, padding:'6px 0', borderRadius:8, cursor:'pointer',
+                    margin:'0 14px 14px', padding:'6px 0', borderRadius:8, cursor:'pointer',
                     background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#EF4444',
                     fontSize:11, fontWeight:700, textAlign:'center',
                     display:'flex', alignItems:'center', justifyContent:'center', gap:5,
@@ -2327,7 +2480,8 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
                   </div>
                 )}
               </article>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -2545,6 +2699,7 @@ function PostVacationSheet({ onClose, lang='en', onSubmit }) {
   const [wdAddresses, setWdAddresses]         = React.useState({});  // {wd: string[]}
   const [price, setPrice] = React.useState('55');
   const [priceMode, setPriceMode] = React.useState('fixed');
+  const [note, setNote] = React.useState('');
 
   // Calendar — get days in selected month
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
@@ -2864,6 +3019,26 @@ function PostVacationSheet({ onClose, lang='en', onSubmit }) {
                 </div>
               </div>
             )}
+
+            {/* Note / observações */}
+            {selectedDays.size > 0 && (
+              <div style={{marginTop:16}}>
+                <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.07em', color:'var(--pg-ink-500)', textTransform:'uppercase', marginBottom:8}}>
+                  {lang==='pt'?'Observações (opcional)':lang==='es'?'Observaciones (opcional)':'Notes (optional)'}
+                </div>
+                <textarea
+                  value={note}
+                  onChange={e=>setNote(e.target.value)}
+                  placeholder={lang==='pt'?'Ex: rota tranquila, clientes fieis, equipamento incluso…':lang==='es'?'Ej: ruta tranquila, clientes fieles, equipo incluido…':'E.g. easy route, loyal clients, equipment included…'}
+                  rows={3}
+                  style={{
+                    width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
+                    fontSize:13, fontFamily:'inherit', resize:'vertical', lineHeight:1.5,
+                    background:'var(--pg-white)', color:'var(--pg-ink-900)', boxSizing:'border-box',
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2910,7 +3085,7 @@ function PostVacationSheet({ onClose, lang='en', onSubmit }) {
           </div>
         )}
         <button
-          onClick={()=>onSubmit && onSubmit({ monthIdx, year, selectedDays:[...selectedDays], weekdayRegions, poolsPerWeekday, price, priceMode })}
+          onClick={()=>onSubmit && onSubmit({ monthIdx, year, selectedDays:[...selectedDays], weekdayRegions, poolsPerWeekday, price, priceMode, note: note.trim() || null })}
           disabled={!isValid}
           className="pg-btn pg-btn-primary"
           style={{

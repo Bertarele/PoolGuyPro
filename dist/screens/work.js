@@ -5114,158 +5114,350 @@ function VacationPanel({
     style: {
       display: 'flex',
       flexDirection: 'column',
-      gap: 12,
+      gap: 14,
       marginBottom: 12
     }
-  }, sortedLiveVac.map(vac => /*#__PURE__*/React.createElement("article", {
-    key: vac._id,
-    className: "pg-card",
-    style: {
-      padding: '14px 16px',
-      border: '1.5px solid var(--pg-aqua-400,#38bdf8)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      marginBottom: 6
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 700,
-      color: 'var(--pg-ink-900)'
-    }
-  }, lang === 'pt' ? 'Cobertura de Férias' : lang === 'es' ? 'Cobertura de Vacaciones' : 'Vacation Coverage'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--pg-ink-500)',
-      marginTop: 2
-    }
-  }, "\uD83D\uDC64 ", vac.author)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 9.5,
-      fontWeight: 700,
-      padding: '2px 8px',
-      borderRadius: 6,
-      background: 'var(--pg-aqua-100)',
-      color: 'var(--pg-aqua-700)',
-      flexShrink: 0,
-      marginLeft: 8,
-      letterSpacing: '0.05em'
-    }
-  }, "NEW")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      flexWrap: 'wrap',
-      marginBottom: 6
-    }
-  }, vac.price && /*#__PURE__*/React.createElement("span", {
-    className: "pg-chip pg-chip-aqua",
-    style: {
-      fontSize: 11
-    }
-  }, "$", vac.price, vac.priceMode === 'pool' ? '/pool' : '/day'), vac.priceMode === 'neg' && /*#__PURE__*/React.createElement("span", {
-    className: "pg-chip",
-    style: {
-      fontSize: 11
-    }
-  }, lang === 'pt' ? 'Negociável' : 'Negotiable')), user?.uid && user.uid === vac.author_id && user?.role !== 'admin' && /*#__PURE__*/React.createElement("div", {
-    onClick: async () => {
-      const msg = lang === 'pt' ? 'Encerrar sua cobertura de férias? Isso indica que você encontrou alguém.' : lang === 'es' ? '¿Cerrar tu cobertura de vacaciones? Indica que ya encontraste a alguien.' : 'Close your vacation coverage post? This means you found someone.';
-      if (!window.confirm(msg)) return;
-      const {
-        error
-      } = await window.sb.from('vacations').delete().eq('id', vac._id);
-      if (error) {
-        showToast && showToast('❌ ' + error.message);
-        return;
+  }, sortedLiveVac.map(vac => {
+    const monthNamesArr = lang === 'pt' ? ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'] : lang === 'es' ? ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'] : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = vac.yearMonth ? monthNamesArr[vac.yearMonth.month] + ' ' + vac.yearMonth.year : '';
+    const liveAvailDays = (vac.days || []).filter(d => !(vac.bookedDays || []).includes(d) && (vac.yearMonth ? new Date(vac.yearMonth.year, vac.yearMonth.month, d) >= today : true));
+    const poolCounts = Object.values(vac.poolsByWeekday || {}).map(Number);
+    const avgPools = poolCounts.length ? Math.round(poolCounts.reduce((a, b) => a + b, 0) / poolCounts.length) : 0;
+    const liveMaxEarnings = vac.priceMode !== 'neg' ? liveAvailDays.reduce((sum, d) => {
+      const wd = vac.yearMonth ? new Date(vac.yearMonth.year, vac.yearMonth.month, d).getDay() : 0;
+      const pools = Number(vac.poolsByWeekday?.[wd] ?? avgPools ?? 0);
+      return sum + (vac.priceMode === 'pool' ? pools * Number(vac.price || 0) : Number(vac.price || 0));
+    }, 0) : 0;
+    const isOwner = !!(user?.uid && user.uid === vac.author_id);
+    const wdShortNames = lang === 'pt' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] : lang === 'es' ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return /*#__PURE__*/React.createElement("article", {
+      key: vac._id,
+      className: "pg-card",
+      style: {
+        padding: 0,
+        overflow: 'hidden'
       }
-      showToast && showToast('✓ ' + (lang === 'pt' ? 'Cobertura encerrada!' : lang === 'es' ? '¡Cobertura cerrada!' : 'Coverage closed!'));
-      onDeleteVac && onDeleteVac(vac._id);
-    },
-    style: {
-      marginTop: 8,
-      padding: '7px 0',
-      borderRadius: 8,
-      cursor: 'pointer',
-      background: 'rgba(16,185,129,0.08)',
-      border: '1px solid rgba(16,185,129,0.28)',
-      color: '#10B981',
-      fontSize: 11,
-      fontWeight: 700,
-      textAlign: 'center',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "12",
-    height: "12",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.5",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M20 6L9 17l-5-5"
-  })), lang === 'pt' ? 'Já encontrei alguém — Encerrar' : lang === 'es' ? 'Ya encontré a alguien — Cerrar' : 'Found someone — Close post'), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
-    onClick: async () => {
-      if (!window.confirm(lang === 'pt' ? 'Excluir este registro de férias?' : 'Delete this vacation post?')) return;
-      const {
-        error
-      } = await window.sb.from('vacations').delete().eq('id', vac._id);
-      if (error) {
-        showToast && showToast('❌ ' + error.message);
-        return;
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: 'linear-gradient(120deg, oklch(0.26 0.10 232) 0%, oklch(0.33 0.13 215) 100%)',
+        padding: '12px 14px 11px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end'
       }
-      showToast && showToast('🗑️ ' + (lang === 'pt' ? 'Férias excluídas' : 'Vacation deleted'));
-      onDeleteVac && onDeleteVac(vac._id);
-    },
-    style: {
-      marginTop: 4,
-      padding: '6px 0',
-      borderRadius: 8,
-      cursor: 'pointer',
-      background: '#FEF2F2',
-      border: '1px solid #FCA5A5',
-      color: '#EF4444',
-      fontSize: 11,
-      fontWeight: 700,
-      textAlign: 'center',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 5
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "11",
-    height: "11",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.5",
-    strokeLinecap: "round"
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "3 6 5 6 21 6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M10 11v6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M14 11v6"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete')))), sortedStaticVac.length === 0 && sortedLiveVac.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.09em',
+        color: 'rgba(255,255,255,0.52)',
+        marginBottom: 3,
+        textTransform: 'uppercase'
+      }
+    }, vac.region || 'Broward County'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 18,
+        fontWeight: 700,
+        color: '#fff',
+        letterSpacing: '-0.02em',
+        lineHeight: 1.1
+      }
+    }, monthName)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: 'right'
+      }
+    }, vac.priceMode !== 'neg' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 26,
+        fontWeight: 800,
+        color: 'oklch(0.88 0.16 90)',
+        letterSpacing: '-0.03em',
+        lineHeight: 1
+      }
+    }, "$", vac.price, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11.5,
+        fontWeight: 500,
+        color: 'rgba(255,255,255,0.45)'
+      }
+    }, "/", vac.priceMode === 'pool' ? 'pool' : 'day')), avgPools > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.52)',
+        marginTop: 1
+      }
+    }, avgPools, " ", t.poolsPerDay)) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 700,
+        color: 'oklch(0.88 0.16 90)'
+      }
+    }, lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable'))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: '11px 14px 14px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => openPublicProfile && openPublicProfile({
+        name: vac.author
+      }),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        flex: 1,
+        minWidth: 0,
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0,
+        fontFamily: 'inherit',
+        textAlign: 'left'
+      },
+      className: "pg-press"
+    }, /*#__PURE__*/React.createElement(Avatar, {
+      name: vac.author,
+      size: 30
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600
+      }
+    }, vac.author))), liveAvailDays.length > 0 && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '2px 8px',
+        borderRadius: 999,
+        background: 'var(--pg-aqua-100)',
+        color: 'var(--pg-aqua-700)',
+        flexShrink: 0
+      }
+    }, liveAvailDays.length, " ", daysFreeLabel), (vac.bookedDays || []).length > 0 && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 600,
+        padding: '2px 8px',
+        borderRadius: 999,
+        background: 'var(--pg-ink-100)',
+        color: 'var(--pg-ink-500)',
+        flexShrink: 0
+      }
+    }, (vac.bookedDays || []).length, " ", bookedLabel)), /*#__PURE__*/React.createElement(DayChips, {
+      days: vac.days || [],
+      bookedDays: vac.bookedDays || [],
+      yearMonth: vac.yearMonth,
+      lang: lang,
+      showPastDays: isOwner,
+      isOwner: isOwner
+    }), Object.keys(vac.poolsByWeekday || {}).length > 0 && liveAvailDays.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 8,
+        padding: '7px 10px',
+        borderRadius: 9,
+        background: 'var(--pg-blue-50)',
+        border: '0.5px solid var(--pg-blue-100)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9.5,
+        fontWeight: 700,
+        letterSpacing: '0.07em',
+        color: 'var(--pg-blue-700)',
+        marginBottom: 5,
+        textTransform: 'uppercase'
+      }
+    }, lang === 'pt' ? 'Piscinas por dia' : lang === 'es' ? 'Piscinas por día' : 'Pools per day'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 5,
+        flexWrap: 'wrap'
+      }
+    }, liveAvailDays.map(d => {
+      const wd = vac.yearMonth ? new Date(vac.yearMonth.year, vac.yearMonth.month, d).getDay() : null;
+      const count = wd !== null && vac.poolsByWeekday?.[wd] !== undefined ? vac.poolsByWeekday[wd] : '?';
+      return /*#__PURE__*/React.createElement("div", {
+        key: d,
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '5px 9px',
+          borderRadius: 7,
+          background: 'var(--pg-white)',
+          border: '0.5px solid var(--pg-blue-200)',
+          minWidth: 36,
+          gap: 2
+        }
+      }, wd !== null && /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 9,
+          fontWeight: 700,
+          color: 'var(--pg-blue-600)',
+          letterSpacing: '0.04em',
+          lineHeight: 1
+        }
+      }, wdShortNames[wd].toUpperCase()), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 13,
+          fontWeight: 800,
+          color: 'var(--pg-ink-900)',
+          fontFamily: 'var(--pg-font-display)',
+          lineHeight: 1.1
+        }
+      }, count), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 9,
+          color: 'var(--pg-ink-400)'
+        }
+      }, "\uD83C\uDFCA"));
+    }))), vac.note && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-ink-400)',
+        marginTop: 7,
+        lineHeight: 1.45
+      }
+    }, vac.note), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 12,
+        paddingTop: 10,
+        borderTop: '0.5px solid var(--pg-ink-100)'
+      }
+    }, /*#__PURE__*/React.createElement("div", null, liveMaxEarnings > 0 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.06em',
+        color: 'var(--pg-ink-400)'
+      }
+    }, maxEarnLabel), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 20,
+        fontWeight: 800,
+        color: 'var(--pg-blue-500)',
+        letterSpacing: '-0.02em',
+        lineHeight: 1.1
+      }
+    }, "$", liveMaxEarnings.toLocaleString())) : /*#__PURE__*/React.createElement("span", {
+      className: "pg-chip",
+      style: {
+        fontSize: 11
+      }
+    }, lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable')), !isOwner && /*#__PURE__*/React.createElement("button", {
+      onClick: () => openDayPicker && openDayPicker(vac),
+      className: "pg-btn pg-btn-primary",
+      style: {
+        height: 38,
+        padding: '0 20px',
+        fontSize: 13.5,
+        borderRadius: 999,
+        gap: 5
+      }
+    }, pickDaysLabel, " \u2192"), isOwner && user?.role !== 'admin' && /*#__PURE__*/React.createElement("div", {
+      onClick: async () => {
+        const msg = lang === 'pt' ? 'Encerrar sua cobertura de férias?' : lang === 'es' ? '¿Cerrar tu cobertura de vacaciones?' : 'Close your vacation coverage post?';
+        if (!window.confirm(msg)) return;
+        const {
+          error
+        } = await window.sb.from('vacations').delete().eq('id', vac._id);
+        if (error) {
+          showToast && showToast('❌ ' + error.message);
+          return;
+        }
+        showToast && showToast('✓ ' + (lang === 'pt' ? 'Cobertura encerrada!' : lang === 'es' ? '¡Cobertura cerrada!' : 'Coverage closed!'));
+        onDeleteVac && onDeleteVac(vac._id);
+      },
+      style: {
+        padding: '7px 14px',
+        borderRadius: 8,
+        cursor: 'pointer',
+        background: 'rgba(16,185,129,0.08)',
+        border: '1px solid rgba(16,185,129,0.28)',
+        color: '#10B981',
+        fontSize: 11,
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "12",
+      height: "12",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.5",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M20 6L9 17l-5-5"
+    })), lang === 'pt' ? 'Encerrar' : lang === 'es' ? 'Cerrar' : 'Close post'))), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
+      onClick: async () => {
+        if (!window.confirm(lang === 'pt' ? 'Excluir este registro de férias?' : 'Delete this vacation post?')) return;
+        const {
+          error
+        } = await window.sb.from('vacations').delete().eq('id', vac._id);
+        if (error) {
+          showToast && showToast('❌ ' + error.message);
+          return;
+        }
+        showToast && showToast('🗑️ ' + (lang === 'pt' ? 'Férias excluídas' : 'Vacation deleted'));
+        onDeleteVac && onDeleteVac(vac._id);
+      },
+      style: {
+        margin: '0 14px 14px',
+        padding: '6px 0',
+        borderRadius: 8,
+        cursor: 'pointer',
+        background: '#FEF2F2',
+        border: '1px solid #FCA5A5',
+        color: '#EF4444',
+        fontSize: 11,
+        fontWeight: 700,
+        textAlign: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 5
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "11",
+      height: "11",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.5",
+      strokeLinecap: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "3 6 5 6 21 6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M10 11v6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M14 11v6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
+    })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete'));
+  })), sortedStaticVac.length === 0 && sortedLiveVac.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       padding: '28px 16px',
@@ -5598,6 +5790,7 @@ function PostVacationSheet({
   const [wdAddresses, setWdAddresses] = React.useState({}); // {wd: string[]}
   const [price, setPrice] = React.useState('55');
   const [priceMode, setPriceMode] = React.useState('fixed');
+  const [note, setNote] = React.useState('');
 
   // Calendar — get days in selected month
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
@@ -6080,7 +6273,38 @@ function PostVacationSheet({
       };
     }),
     lang: lang
-  }))))))), /*#__PURE__*/React.createElement("div", {
+  })))), selectedDays.size > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: '0.07em',
+      color: 'var(--pg-ink-500)',
+      textTransform: 'uppercase',
+      marginBottom: 8
+    }
+  }, lang === 'pt' ? 'Observações (opcional)' : lang === 'es' ? 'Observaciones (opcional)' : 'Notes (optional)'), /*#__PURE__*/React.createElement("textarea", {
+    value: note,
+    onChange: e => setNote(e.target.value),
+    placeholder: lang === 'pt' ? 'Ex: rota tranquila, clientes fieis, equipamento incluso…' : lang === 'es' ? 'Ej: ruta tranquila, clientes fieles, equipo incluido…' : 'E.g. easy route, loyal clients, equipment included…',
+    rows: 3,
+    style: {
+      width: '100%',
+      padding: '10px 12px',
+      borderRadius: 10,
+      border: '1.5px solid var(--pg-ink-200)',
+      fontSize: 13,
+      fontFamily: 'inherit',
+      resize: 'vertical',
+      lineHeight: 1.5,
+      background: 'var(--pg-white)',
+      color: 'var(--pg-ink-900)',
+      boxSizing: 'border-box'
+    }
+  }))))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '14px 20px 18px',
       flexShrink: 0,
@@ -6194,7 +6418,8 @@ function PostVacationSheet({
       weekdayRegions,
       poolsPerWeekday,
       price,
-      priceMode
+      priceMode,
+      note: note.trim() || null
     }),
     disabled: !isValid,
     className: "pg-btn pg-btn-primary",

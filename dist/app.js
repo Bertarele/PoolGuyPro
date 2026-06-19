@@ -628,13 +628,15 @@ function App() {
       licenseReq: r.license_req,
       equipReq: r.equip_req,
       author: r.author,
-      author_id: r.author_id || null
+      author_id: r.author_id || null,
+      hiredAt: r.hired_at || null
     });
     const normTech = r => ({
       _id: r.id,
       _live: true,
       name: r.name,
       specialty: r.specialty,
+      photoUrl: r.photo_url || null,
       loc: r.loc,
       phone: r.phone,
       email: r.email,
@@ -643,19 +645,34 @@ function App() {
       author: r.author,
       author_id: r.author_id || null
     });
-    const normVac = r => ({
-      _id: r.id,
-      _live: true,
-      monthIdx: r.month_idx,
-      year: r.year,
-      selectedDays: r.selected_days,
-      weekdayRegions: r.weekday_regions,
-      poolsPerWeekday: r.pools_per_weekday,
-      price: r.price,
-      priceMode: r.price_mode,
-      author: r.author,
-      author_id: r.author_id || null
-    });
+    const normVac = r => {
+      const wr = r.weekday_regions || {};
+      const allCities = [...new Set(Object.values(wr).flat())];
+      const region = allCities.slice(0, 3).join(' / ') || '';
+      return {
+        _id: r.id,
+        _live: true,
+        monthIdx: r.month_idx,
+        year: r.year,
+        yearMonth: {
+          year: r.year,
+          month: r.month_idx
+        },
+        days: r.selected_days || [],
+        selectedDays: r.selected_days,
+        bookedDays: r.booked_days || [],
+        weekdayRegions: wr,
+        poolsByWeekday: r.pools_per_weekday || {},
+        poolsPerWeekday: r.pools_per_weekday,
+        price: r.price,
+        priceMode: r.price_mode,
+        note: r.note || null,
+        region,
+        author: r.author,
+        author_id: r.author_id || null,
+        ownerId: r.author_id || null
+      };
+    };
     const normMkt = r => ({
       _id: r.id,
       _live: true,
@@ -787,6 +804,14 @@ function App() {
       schema: 'public',
       table: 'jobs'
     }, p => setLiveJobs(prev => [normJob(p.new), ...prev])).on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'jobs'
+    }, p => setLiveJobs(prev => prev.map(j => j._id === p.new.id ? normJob(p.new) : j))).on('postgres_changes', {
+      event: 'DELETE',
+      schema: 'public',
+      table: 'jobs'
+    }, p => setLiveJobs(prev => prev.filter(j => j._id !== p.old.id))).on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'techs'
@@ -879,9 +904,10 @@ function App() {
   }, [authReady, user?.uid]);
   const loadLiveJobs = React.useCallback(async () => {
     if (!window.sb) return;
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const {
       data
-    } = await window.sb.from('jobs').select('*').order('created_at', {
+    } = await window.sb.from('jobs').select('*').or(`hired_at.is.null,hired_at.gte.${oneDayAgo}`).order('created_at', {
       ascending: false
     });
     if (data) setLiveJobs(data.map(r => ({
@@ -897,7 +923,8 @@ function App() {
       licenseReq: r.license_req,
       equipReq: r.equip_req,
       author: r.author,
-      author_id: r.author_id || null
+      author_id: r.author_id || null,
+      hiredAt: r.hired_at || null
     })));
   }, []);
 
@@ -958,6 +985,7 @@ function App() {
       email: data.email,
       rate_mode: data.rateMode,
       rate: data.rate,
+      photo_url: user.photoUrl || data.photoUrl || null,
       author: authorName,
       author_id: user.uid || null
     } : col === 'vacations' ? {
@@ -968,6 +996,7 @@ function App() {
       pools_per_weekday: data.poolsPerWeekday,
       price: data.price,
       price_mode: data.priceMode,
+      note: data.note || null,
       author: authorName,
       author_id: user.uid || null
     } : col === 'marketplace' ? {
@@ -1152,6 +1181,7 @@ function App() {
       ...patch
     } : m)),
     removeJob: id => setLiveJobs(prev => prev.filter(j => j._id !== id)),
+    loadLiveJobs,
     removeTech: id => setLiveTechs(prev => prev.filter(t => t._id !== id)),
     removeVacation: id => setLiveVacations(prev => prev.filter(v => v._id !== id))
   };
@@ -1363,6 +1393,7 @@ function App() {
     height: "80%"
   }, /*#__PURE__*/React.createElement(PostTechSheet, {
     lang: lang,
+    user: user,
     onClose: () => setTechSheetOpen(false),
     onSubmit: data => {
       setTechSheetOpen(false);

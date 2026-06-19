@@ -441,10 +441,28 @@ function App() {
     const normTech = r => ({ _id:r.id, _live:true, name:r.name, specialty:r.specialty, photoUrl:r.photo_url||null,
       loc:r.loc, phone:r.phone, email:r.email,
       rateMode:r.rate_mode, rate:r.rate, author:r.author, author_id:r.author_id||null });
-    const normVac = r => ({ _id:r.id, _live:true, monthIdx:r.month_idx, year:r.year,
-      selectedDays:r.selected_days, weekdayRegions:r.weekday_regions,
-      poolsPerWeekday:r.pools_per_weekday, price:r.price,
-      priceMode:r.price_mode, author:r.author, author_id:r.author_id||null });
+    const normVac = r => {
+      const wr = r.weekday_regions || {};
+      const allCities = [...new Set(Object.values(wr).flat())];
+      const region = allCities.slice(0, 3).join(' / ') || '';
+      return {
+        _id: r.id, _live: true,
+        monthIdx: r.month_idx, year: r.year,
+        yearMonth: { year: r.year, month: r.month_idx },
+        days: r.selected_days || [],
+        selectedDays: r.selected_days,
+        bookedDays: r.booked_days || [],
+        weekdayRegions: wr,
+        poolsByWeekday: r.pools_per_weekday || {},
+        poolsPerWeekday: r.pools_per_weekday,
+        price: r.price,
+        priceMode: r.price_mode,
+        note: r.note || null,
+        region,
+        author: r.author, author_id: r.author_id || null,
+        ownerId: r.author_id || null,
+      };
+    };
     const normMkt = r => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
       condition:r.condition, price:r.price, priceMode:r.price_mode,
       loc:r.loc, routeName:r.route_name, clients:r.clients,
@@ -679,6 +697,7 @@ function App() {
       selected_days: data.selectedDays, weekday_regions: data.weekdayRegions,
       pools_per_weekday: data.poolsPerWeekday,
       price: data.price, price_mode: data.priceMode,
+      note: data.note || null,
       author: authorName, author_id: user.uid || null,
     } : col === 'marketplace' ? {
       type: data.type, name: data.name, cat: data.cat,
