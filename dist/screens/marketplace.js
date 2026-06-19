@@ -6568,7 +6568,14 @@ function MarketplaceScreen({
   // (prevents false-match when two users share the same display name)
   !m.author_id && myAuthor && m.author === myAuthor || !m.author_id && user.name && m.author === user.name || !m.author_id && user.email && m.author === user.email.split('@')[0];
   const t = STRINGS[lang];
-  const [view, setView] = React.useState('buy');
+  const [view, setView] = React.useState(() => {
+    try {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      const [base, seg] = hash.split('/');
+      if (base === 'market' && ['buy', 'rent', 'routes', 'sell'].includes(seg)) return seg;
+    } catch (e) {}
+    return 'buy';
+  });
   const [cat, setCat] = React.useState('All');
   const [q, setQ] = React.useState('');
   const [selected, setSelected] = React.useState(null);
@@ -6614,6 +6621,27 @@ function MarketplaceScreen({
   const [poolPrice, setPoolPrice] = React.useState('all'); // individual pools price filter
   const [savedIds, setSavedIds] = React.useState(new Set());
   const [shareItem, setShareItem] = React.useState(null);
+
+  // Sync view to URL hash
+  React.useEffect(() => {
+    try {
+      const base = window.location.hash.replace(/^#\/?/, '').split('/')[0];
+      if (base === 'market') window.history.replaceState(null, '', '#market/' + view);
+    } catch (e) {}
+  }, [view]);
+
+  // Browser back/forward: update view when hash changes
+  React.useEffect(() => {
+    const onHash = () => {
+      try {
+        const hash = window.location.hash.replace(/^#\/?/, '');
+        const [base, seg] = hash.split('/');
+        if (base === 'market' && ['buy', 'rent', 'routes', 'sell'].includes(seg)) setView(seg);
+      } catch (e) {}
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   // ── Listing open / close with URL state ──────────────────────
   const openListing = React.useCallback(item => {

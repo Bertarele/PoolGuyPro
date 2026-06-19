@@ -35,8 +35,36 @@ function WorkScreen({
     isDesktop = false
   } = ctx;
   const t = STRINGS[lang];
-  const [sub, setSub] = React.useState('hiring');
+  const [sub, setSub] = React.useState(() => {
+    try {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      const [base, seg] = hash.split('/');
+      if (base === 'work' && ['hiring', 'techs', 'vac'].includes(seg)) return seg;
+    } catch (e) {}
+    return 'hiring';
+  });
   const [vacTab, setVacTab] = React.useState('applied');
+
+  // Sync sub-tab to URL hash
+  React.useEffect(() => {
+    try {
+      const base = window.location.hash.replace(/^#\/?/, '').split('/')[0];
+      if (base === 'work') window.history.replaceState(null, '', '#work/' + sub);
+    } catch (e) {}
+  }, [sub]);
+
+  // Browser back/forward: update sub when hash changes
+  React.useEffect(() => {
+    const onHash = () => {
+      try {
+        const hash = window.location.hash.replace(/^#\/?/, '');
+        const [base, seg] = hash.split('/');
+        if (base === 'work' && ['hiring', 'techs', 'vac'].includes(seg)) setSub(seg);
+      } catch (e) {}
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
   const [myActivityTab, setMyActivityTab] = React.useState('applications'); // 'applications' | 'myposts'
   const [activityLimit, setActivityLimit] = React.useState(4);
   const [deletedAppIds, setDeletedAppIds] = React.useState(new Set());

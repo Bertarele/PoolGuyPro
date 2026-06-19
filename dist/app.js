@@ -258,20 +258,26 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   // If launched via a listing deep link, start on market tab; otherwise restore from URL hash
+  // Hash format: #tab  OR  #tab/sub  (e.g. #work/vac, #market/routes)
   const [tab, setTab] = React.useState(() => {
     try {
       const hash = window.location.hash.replace(/^#\/?/, '');
+      const base = hash.split('/')[0];
       const VALID = ['home', 'market', 'quick', 'work', 'profile'];
-      if (VALID.includes(hash)) return hash;
+      if (VALID.includes(base)) return base;
       return new URLSearchParams(window.location.search).get('listing') ? 'market' : 'home';
     } catch (e) {
       return 'home';
     }
   });
 
-  // Keep URL hash in sync with active tab (covers all setTab/switchTab calls)
+  // Keep URL hash in sync with active tab — preserve sub-segment when already on same base
   React.useEffect(() => {
     try {
+      const cur = window.location.hash.replace(/^#\/?/, '');
+      const curBase = cur.split('/')[0];
+      // If already on this tab and has a sub-segment, preserve it
+      if (curBase === tab && cur.includes('/')) return;
       window.history.replaceState(null, '', '#' + tab);
     } catch (e) {}
   }, [tab]);
@@ -280,8 +286,9 @@ function App() {
   React.useEffect(() => {
     const onHash = () => {
       const hash = window.location.hash.replace(/^#\/?/, '');
+      const base = hash.split('/')[0];
       const VALID = ['home', 'market', 'quick', 'work', 'profile'];
-      if (VALID.includes(hash)) setTab(hash);
+      if (VALID.includes(base)) setTab(base);
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
