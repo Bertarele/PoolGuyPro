@@ -1601,7 +1601,7 @@ function ViewListingSheet({
       letterSpacing: '-0.03em',
       lineHeight: 1
     }
-  }, item.type === 'pool' || item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : `$${item.price}`, item.type !== 'pool' && item.type !== 'route' && periodSfx && /*#__PURE__*/React.createElement("span", {
+  }, item.type === 'pool' || item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : `$${fmtN(item.price, lang)}`, item.type !== 'pool' && item.type !== 'route' && periodSfx && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: large ? 16 : 13,
       fontWeight: 500,
@@ -3522,7 +3522,7 @@ function ViewListingSheet({
         color: 'var(--pg-blue-500)',
         marginTop: 3
       }
-    }, m.priceMode === 'neg' ? lang === 'pt' ? 'Negociável' : 'Negotiable' : `$${m.price}`))))));
+    }, m.priceMode === 'neg' ? lang === 'pt' ? 'Negociável' : 'Negotiable' : `$${fmtN(m.price, lang)}`))))));
   };
   const MarkSoldSheetSlot = () => /*#__PURE__*/React.createElement(Sheet, {
     open: markSoldOpen,
@@ -5096,7 +5096,7 @@ function ViewListingSheet({
       letterSpacing: '-0.02em',
       lineHeight: 1
     }
-  }, item.type === 'pool' || item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : /*#__PURE__*/React.createElement(React.Fragment, null, item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : item.price, periodSfx && item.type !== 'route' && /*#__PURE__*/React.createElement("span", {
+  }, item.type === 'pool' || item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : /*#__PURE__*/React.createElement(React.Fragment, null, item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : fmtN(item.price, lang), periodSfx && item.type !== 'route' && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 500,
@@ -5728,7 +5728,7 @@ function ViewListingSheet({
         color: 'var(--pg-blue-500)',
         marginTop: 3
       }
-    }, m.priceMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : `$${m.price}`))))));
+    }, m.priceMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : `$${fmtN(m.price, lang)}`))))));
   })(), viewerOpen && allPhotos.length > 0 && /*#__PURE__*/React.createElement(PhotoViewer, {
     photos: allPhotos,
     startIdx: imgIdx,
@@ -5822,7 +5822,7 @@ function MyPostDetailSheet({
   const statusBg = isPending ? '#FEF3C7' : isSoldItem ? '#F3F4F6' : '#DCFCE7';
   const statusLabel = isPending ? lang === 'pt' ? '⏳ Em revisão' : lang === 'es' ? '⏳ En revisión' : '⏳ Under review' : isSoldItem ? lang === 'pt' ? '✓ Vendido' : lang === 'es' ? '✓ Vendido' : '✓ Sold' : lang === 'pt' ? '✓ Ativo' : lang === 'es' ? '✓ Activo' : '✓ Active';
   const _sfxOf = p => p === 'week' ? lang === 'pt' ? '/sem' : '/wk' : p === 'month' ? lang === 'pt' ? '/mês' : '/mo' : lang === 'pt' ? '/dia' : '/day';
-  const periodSfx = item.type === 'rent' ? item.rentPrices && typeof item.rentPrices === 'object' ? Object.entries(item.rentPrices).filter(([, v]) => v > 0).map(([k, v]) => `$${v}${_sfxOf(k)}`).join(' · ') : `$${item.price}${_sfxOf(item.rentPeriod || 'day')}` : '';
+  const periodSfx = item.type === 'rent' ? item.rentPrices && typeof item.rentPrices === 'object' ? Object.entries(item.rentPrices).filter(([, v]) => v > 0).map(([k, v]) => `$${fmtN(v, lang)}${_sfxOf(k)}`).join(' · ') : `$${fmtN(item.price, lang)}${_sfxOf(item.rentPeriod || 'day')}` : '';
   const handleSave = async () => {
     if (!window.sb) return;
     setSaving(true);
@@ -7120,7 +7120,7 @@ function MarketplaceScreen({
         flexShrink: 0,
         textDecoration: isSoldItem ? 'line-through' : 'none'
       }
-    }, "$", item.price), /*#__PURE__*/React.createElement("div", {
+    }, "$", fmtN(item.price, lang)), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -8073,7 +8073,7 @@ function MarketplaceScreen({
         letterSpacing: '-0.02em',
         lineHeight: 1
       }
-    }, "$", e.price, e.unit && /*#__PURE__*/React.createElement("span", {
+    }, "$", fmtN(e.price, lang), e.unit && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 500,
@@ -9123,7 +9123,7 @@ function MarketplaceScreen({
         flexShrink: 0
       }
     }, (() => {
-      if (item.type !== 'rent' || isPending) return `$${item.price}`;
+      if (item.type !== 'rent' || isPending) return `$${fmtN(item.price, lang)}`;
       // Multi-period: show cheapest rate with "from" prefix
       if (item.rentPrices && typeof item.rentPrices === 'object') {
         const order = ['day', 'week', 'month'];
@@ -9131,7 +9131,7 @@ function MarketplaceScreen({
           k,
           v: item.rentPrices[k]
         }));
-        if (entries.length === 0) return `$${item.price}`;
+        if (entries.length === 0) return `$${fmtN(item.price, lang)}`;
         const first = entries[0];
         const sfx = first.k === 'week' ? lang === 'pt' ? '/sem' : '/wk' : first.k === 'month' ? lang === 'pt' ? '/mês' : '/mo' : lang === 'pt' ? '/dia' : '/day';
         return /*#__PURE__*/React.createElement(React.Fragment, null, entries.length > 1 && /*#__PURE__*/React.createElement("span", {
@@ -9141,7 +9141,7 @@ function MarketplaceScreen({
             color: 'var(--pg-ink-400)',
             marginRight: 2
           }
-        }, lang === 'pt' ? 'de' : 'from'), "$", first.v, /*#__PURE__*/React.createElement("span", {
+        }, lang === 'pt' ? 'de' : 'from'), "$", fmtN(first.v, lang), /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 11,
             fontWeight: 500,
@@ -9152,7 +9152,7 @@ function MarketplaceScreen({
       }
       // Legacy single period
       const sfx = item.rentPeriod === 'week' ? lang === 'pt' ? '/sem' : '/wk' : item.rentPeriod === 'month' ? lang === 'pt' ? '/mês' : '/mo' : lang === 'pt' ? '/dia' : '/day';
-      return /*#__PURE__*/React.createElement(React.Fragment, null, "$", item.price, /*#__PURE__*/React.createElement("span", {
+      return /*#__PURE__*/React.createElement(React.Fragment, null, "$", fmtN(item.price, lang), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
           fontWeight: 500,
@@ -9495,7 +9495,7 @@ function MarketplaceScreen({
       letterSpacing: '-0.02em',
       lineHeight: 1
     }
-  }, "$", e.price), e.unit && /*#__PURE__*/React.createElement("span", {
+  }, "$", fmtN(e.price, lang)), e.unit && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       fontWeight: 500,
@@ -11960,7 +11960,7 @@ function ListingDetail({
       color: 'var(--pg-blue-500)',
       letterSpacing: '-0.02em'
     }
-  }, "$", selected.price), selected.unit && /*#__PURE__*/React.createElement("span", {
+  }, "$", fmtN(selected.price, lang)), selected.unit && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       color: 'var(--pg-ink-500)'

@@ -1029,7 +1029,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           }}>
             {(item.type === 'pool' || item.type === 'route')
               ? `$${fmtN(item.asking||0, lang)}`
-              : `$${item.price}`}
+              : `$${fmtN(item.price, lang)}`}
             {item.type !== 'pool' && item.type !== 'route' && periodSfx && <span style={{fontSize: large?16:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:3}}>{periodSfx}</span>}
           </span>
           {item.condition && (
@@ -1812,7 +1812,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 <div style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-900)',lineHeight:1.3,
                   overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.name}</div>
                 <div style={{fontSize:13,fontWeight:700,color:'var(--pg-blue-500)',marginTop:3}}>
-                  {m.priceMode==='neg'?(lang==='pt'?'Negociável':'Negotiable'):`$${m.price}`}
+                  {m.priceMode==='neg'?(lang==='pt'?'Negociável':'Negotiable'):`$${fmtN(m.price, lang)}`}
                 </div>
               </div>
             </button>
@@ -2665,7 +2665,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               <span style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
                 {(item.type === 'pool' || item.type === 'route')
                   ? `$${fmtN(item.asking||0, lang)}`
-                  : <>{item.type==='route'?`$${fmtN(item.asking||0, lang)}`:item.price}{periodSfx && item.type !== 'route' && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}</>
+                  : <>{item.type==='route'?`$${fmtN(item.asking||0, lang)}`:fmtN(item.price, lang)}{periodSfx && item.type !== 'route' && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}</>
                 }
               </span>
               {item.condition && (
@@ -2949,7 +2949,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                     <div style={{fontSize:13, fontWeight:700, color:'var(--pg-blue-500)', marginTop:3}}>
                       {m.priceMode==='neg'
                         ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
-                        : `$${m.price}`}
+                        : `$${fmtN(m.price, lang)}`}
                     </div>
                   </div>
                 </button>
@@ -3034,8 +3034,8 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
   const _sfxOf = p => p==='week'?(lang==='pt'?'/sem':'/wk'):p==='month'?(lang==='pt'?'/mês':'/mo'):(lang==='pt'?'/dia':'/day');
   const periodSfx = item.type === 'rent'
     ? (item.rentPrices && typeof item.rentPrices === 'object'
-        ? Object.entries(item.rentPrices).filter(([,v])=>v>0).map(([k,v])=>`$${v}${_sfxOf(k)}`).join(' · ')
-        : `$${item.price}${_sfxOf(item.rentPeriod||'day')}`)
+        ? Object.entries(item.rentPrices).filter(([,v])=>v>0).map(([k,v])=>`$${fmtN(v, lang)}${_sfxOf(k)}`).join(' · ')
+        : `$${fmtN(item.price, lang)}${_sfxOf(item.rentPeriod||'day')}`)
     : '';
 
   const handleSave = async () => {
@@ -3794,7 +3794,7 @@ function MarketplaceScreen({ ctx }) {
               <span style={{fontFamily:'var(--pg-font-display)', fontSize: desktopMode?24:22, fontWeight:800,
                 color: isPending?'var(--pg-ink-400)':isSoldItem?'var(--pg-ink-400)':'var(--pg-blue-500)',
                 letterSpacing:'-0.02em', lineHeight:1, flexShrink:0, textDecoration: isSoldItem?'line-through':'none'}}>
-                ${item.price}
+                ${fmtN(item.price, lang)}
               </span>
             )}
             <div style={{display:'flex', alignItems:'center', gap:4, minWidth:0}}>
@@ -4213,7 +4213,7 @@ function MarketplaceScreen({ ctx }) {
                       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
                         <span style={{fontFamily:'var(--pg-font-display)', fontSize:24, fontWeight:800,
                           color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
-                          ${e.price}{e.unit&&<span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{tr(e.unit,lang)}</span>}
+                          ${fmtN(e.price, lang)}{e.unit&&<span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{tr(e.unit,lang)}</span>}
                         </span>
                         <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>{sellerFor(e)}</span>
                       </div>
@@ -4722,19 +4722,19 @@ function MarketplaceScreen({ ctx }) {
                             color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
                             letterSpacing:'-0.02em', lineHeight:1, flexShrink:0}}>
                             {(() => {
-                              if (item.type !== 'rent' || isPending) return `$${item.price}`;
+                              if (item.type !== 'rent' || isPending) return `$${fmtN(item.price, lang)}`;
                               // Multi-period: show cheapest rate with "from" prefix
                               if (item.rentPrices && typeof item.rentPrices==='object') {
                                 const order=['day','week','month'];
                                 const entries=order.filter(k=>item.rentPrices[k]&&item.rentPrices[k]>0).map(k=>({k,v:item.rentPrices[k]}));
-                                if (entries.length===0) return `$${item.price}`;
+                                if (entries.length===0) return `$${fmtN(item.price, lang)}`;
                                 const first=entries[0];
                                 const sfx=first.k==='week'?(lang==='pt'?'/sem':'/wk'):first.k==='month'?(lang==='pt'?'/mês':'/mo'):(lang==='pt'?'/dia':'/day');
-                                return <>{entries.length>1&&<span style={{fontSize:10,fontWeight:600,color:'var(--pg-ink-400)',marginRight:2}}>{lang==='pt'?'de':'from'}</span>}${first.v}<span style={{fontSize:11,fontWeight:500,color:'var(--pg-ink-400)',marginLeft:2}}>{sfx}</span></>;
+                                return <>{entries.length>1&&<span style={{fontSize:10,fontWeight:600,color:'var(--pg-ink-400)',marginRight:2}}>{lang==='pt'?'de':'from'}</span>}${fmtN(first.v, lang)}<span style={{fontSize:11,fontWeight:500,color:'var(--pg-ink-400)',marginLeft:2}}>{sfx}</span></>;
                               }
                               // Legacy single period
                               const sfx=item.rentPeriod==='week'?(lang==='pt'?'/sem':'/wk'):item.rentPeriod==='month'?(lang==='pt'?'/mês':'/mo'):(lang==='pt'?'/dia':'/day');
-                              return <>${item.price}<span style={{fontSize:11,fontWeight:500,color:'var(--pg-ink-400)',marginLeft:2}}>{sfx}</span></>;
+                              return <>${fmtN(item.price, lang)}<span style={{fontSize:11,fontWeight:500,color:'var(--pg-ink-400)',marginLeft:2}}>{sfx}</span></>;
                             })()}
                           </span>
                         )}
@@ -4892,7 +4892,7 @@ function MarketplaceScreen({ ctx }) {
                   <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
                     <div>
                       <span style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
-                        ${e.price}
+                        ${fmtN(e.price, lang)}
                       </span>
                       {e.unit && <span style={{fontSize:11, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{tr(e.unit, lang)}</span>}
                     </div>
@@ -6100,7 +6100,7 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
           </button>
         </div>
         <div style={{display:'flex', alignItems:'baseline', gap:6, marginTop:8}}>
-          <span style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${selected.price}</span>
+          <span style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>${fmtN(selected.price, lang)}</span>
           {selected.unit && <span style={{fontSize:13, color:'var(--pg-ink-500)'}}>{tr(selected.unit, lang)}</span>}
           <span className="pg-chip" style={{marginLeft:8, padding:'2px 9px', fontSize:11, background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', borderColor:'transparent'}}>
             {tr(selected.condition, lang).toLowerCase()}
