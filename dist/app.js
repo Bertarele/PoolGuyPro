@@ -665,6 +665,7 @@ function App() {
         poolsByWeekday: r.pools_per_weekday || {},
         poolsPerWeekday: r.pools_per_weekday,
         price: r.price,
+        pricePerPool: r.price,
         priceMode: r.price_mode,
         note: r.note || null,
         region,
