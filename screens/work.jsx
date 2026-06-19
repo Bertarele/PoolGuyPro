@@ -2157,6 +2157,32 @@ function PoolRouteMap({ pools=[], style={}, doneIndices=null }) {
 // ── Vacation panel ────────────────────────────────────────────
 function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac }) {
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
+
+  const today = React.useMemo(() => { const t = new Date(); t.setHours(0,0,0,0); return t; }, []);
+
+  // Returns timestamp of first future day (or last day if all past) — for sorting
+  const getFirstDay = (ym, days) => {
+    if (!ym || !days || !days.length) return Infinity;
+    const future = days.filter(d => new Date(ym.year, ym.month, d) >= today);
+    const ref = future.length ? Math.min(...future) : Math.max(...days);
+    return new Date(ym.year, ym.month, ref).getTime();
+  };
+
+  // Filter static listings: hide if ALL days are in the past
+  const sortedStaticVac = React.useMemo(() => {
+    return VACATION_LISTINGS
+      .filter(v => !hiddenStatic.includes(v.id))
+      .filter(v => {
+        if (!v.yearMonth) return true;
+        return v.days.some(d => new Date(v.yearMonth.year, v.yearMonth.month, d) >= today);
+      })
+      .sort((a, b) => getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days));
+  }, [hiddenStatic, today]);
+
+  // Sort live vacations by proximity
+  const sortedLiveVac = React.useMemo(() => {
+    return [...liveVacations].sort((a, b) => getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days));
+  }, [liveVacations, today]);
   const boost = {
     title: lang==='pt'
       ? 'Cobrir férias impulsiona seu perfil'
@@ -2237,9 +2263,9 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
         </div>
 
         {/* ── Live vacation posts (Supabase) ── */}
-        {liveVacations.length > 0 && (
+        {sortedLiveVac.length > 0 && (
           <div style={{display:'flex', flexDirection:'column', gap:12, marginBottom:12}}>
-            {liveVacations.map(vac => (
+            {sortedLiveVac.map(vac => (
               <article key={vac._id} className="pg-card" style={{padding:'14px 16px', border:'1.5px solid var(--pg-aqua-400,#38bdf8)'}}>
                 <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6}}>
                   <div style={{flex:1, minWidth:0}}>
@@ -2306,14 +2332,15 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
         )}
 
         {/* ── Job-board style listing cards ── */}
-        {VACATION_LISTINGS.filter(v => !hiddenStatic.includes(v.id)).length === 0 && liveVacations.length === 0 ? (
+        {sortedStaticVac.length === 0 && sortedLiveVac.length === 0 ? (
           <div style={{textAlign:'center', padding:'28px 16px', color:'var(--pg-ink-400)', fontSize:13}}>
             {lang==='pt'?'Nenhuma vaga disponível agora':lang==='es'?'Sin vacantes disponibles ahora':'No vacations available right now'}
           </div>
         ) : (
           <div style={{display:'flex', flexDirection:'column', gap:14}}>
-            {VACATION_LISTINGS.filter(v => !hiddenStatic.includes(v.id)).map(v => {
-              const availDays = v.days.filter(d => !v.bookedDays.includes(d));
+            {sortedStaticVac.map(v => {
+              // Only count future available days
+              const availDays = v.days.filter(d => !v.bookedDays.includes(d) && new Date(v.yearMonth?.year, v.yearMonth?.month, d) >= today);
               const maxEarnings = availDays.length * v.poolsPerDay * v.pricePerPool;
               return (
               <article key={v.id} className="pg-card" style={{padding:0, overflow:'hidden'}}>
@@ -2376,7 +2403,9 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
 
                   {/* Day chips */}
                   <DayChips days={v.days} bookedDays={v.bookedDays}
-                    yearMonth={v.yearMonth} lang={lang}/>
+                    yearMonth={v.yearMonth} lang={lang}
+                    showPastDays={!!(user?.uid && user.uid === v.ownerId)}
+                    isOwner={!!(user?.uid && user.uid === v.ownerId)}/>
 
                   {/* Pools per available day — one chip per day, matching the day chips above */}
                   {(v.poolsByWeekday || v.poolsPerDay) && (() => {
@@ -2385,7 +2414,8 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
                       : lang==='es'
                         ? ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
                         : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-                    const availDays = v.days.filter(d => !(v.bookedDays||[]).includes(d));
+                    // Only show future available days
+                    const availDays = v.days.filter(d => !(v.bookedDays||[]).includes(d) && new Date(v.yearMonth?.year, v.yearMonth?.month, d) >= today);
                     return (
                       <div style={{marginTop:8, padding:'7px 10px', borderRadius:9,
                         background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-100)'}}>
@@ -3545,9 +3575,12 @@ function MiniCal({ days, bookedDays=[], selectedDays=null, yearMonth=null, varia
 }
 
 // ── Compact day chips (for ApplicantsSheet + Applied cards) ────
-function DayChips({ days, bookedDays=[], selectedDays=null, size=26, yearMonth=null, lang='en' }) {
+function DayChips({ days, bookedDays=[], selectedDays=null, size=26, yearMonth=null, lang='en', showPastDays=false, isOwner=false, userSelectedDays=null }) {
   const bookedSet = new Set(bookedDays);
   const selSet    = selectedDays ? new Set(selectedDays) : null;
+  const userSelSet = userSelectedDays ? new Set(userSelectedDays) : null;
+
+  const today = React.useMemo(() => { const t = new Date(); t.setHours(0,0,0,0); return t; }, []);
 
   const wdShort = lang==='pt'
     ? ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
@@ -3555,27 +3588,46 @@ function DayChips({ days, bookedDays=[], selectedDays=null, size=26, yearMonth=n
       ? ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
       : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
+  const moShort = lang==='pt'
+    ? ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    : lang==='es'
+      ? ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+      : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
   return (
     <div style={{display:'flex', flexWrap:'wrap', gap:4}}>
       {days.map(d => {
         const booked = bookedSet.has(d);
         const sel    = selSet ? selSet.has(d) : !booked;
         const wd     = yearMonth ? new Date(yearMonth.year, yearMonth.month, d).getDay() : null;
+        const fullDate = yearMonth ? new Date(yearMonth.year, yearMonth.month, d) : null;
+        const isPast   = fullDate ? fullDate < today : false;
+        const userPicked = userSelSet ? userSelSet.has(d) : false;
+
+        // Hide past days unless owner or user had selected that day
+        if (isPast && !showPastDays && !isOwner && !userPicked) return null;
+
         return (
           <span key={d} style={{
-            minWidth: wd !== null ? 30 : size,
-            height:   wd !== null ? 38 : size,
-            padding:  wd !== null ? '3px 5px' : 0,
+            minWidth: yearMonth ? 32 : size,
+            height:   yearMonth ? 46 : size,
+            padding:  yearMonth ? '3px 6px' : 0,
             borderRadius:7, fontWeight:700,
             display:'inline-flex', flexDirection:'column',
             alignItems:'center', justifyContent:'center', gap:0,
-            background: booked ? 'var(--pg-ink-100)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
-            color:      booked ? 'var(--pg-ink-300)' : sel ? '#fff'               : 'var(--pg-blue-600)',
-            textDecoration: booked ? 'line-through' : 'none',
+            background: isPast ? 'var(--pg-ink-100)' : booked ? 'var(--pg-ink-100)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
+            color:      isPast ? 'var(--pg-ink-300)' : booked ? 'var(--pg-ink-300)' : sel ? '#fff' : 'var(--pg-blue-600)',
+            opacity: isPast ? 0.55 : 1,
           }}>
+            {yearMonth && (
+              <span style={{fontSize:7, fontWeight:700, letterSpacing:'0.05em',
+                opacity: isPast ? 0.6 : 0.65, lineHeight:1, textTransform:'uppercase'}}>
+                {moShort[yearMonth.month]}
+              </span>
+            )}
             {wd !== null && (
               <span style={{fontSize:8, fontWeight:700, letterSpacing:'0.04em',
-                opacity: booked ? 0.5 : 0.75, lineHeight:1.2}}>
+                opacity: booked ? 0.5 : 0.8, lineHeight:1.2}}>
                 {wdShort[wd].toUpperCase()}
               </span>
             )}

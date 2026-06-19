@@ -4954,6 +4954,32 @@ function VacationPanel({
   onDeleteVac
 }) {
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
+  const today = React.useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }, []);
+
+  // Returns timestamp of first future day (or last day if all past) — for sorting
+  const getFirstDay = (ym, days) => {
+    if (!ym || !days || !days.length) return Infinity;
+    const future = days.filter(d => new Date(ym.year, ym.month, d) >= today);
+    const ref = future.length ? Math.min(...future) : Math.max(...days);
+    return new Date(ym.year, ym.month, ref).getTime();
+  };
+
+  // Filter static listings: hide if ALL days are in the past
+  const sortedStaticVac = React.useMemo(() => {
+    return VACATION_LISTINGS.filter(v => !hiddenStatic.includes(v.id)).filter(v => {
+      if (!v.yearMonth) return true;
+      return v.days.some(d => new Date(v.yearMonth.year, v.yearMonth.month, d) >= today);
+    }).sort((a, b) => getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days));
+  }, [hiddenStatic, today]);
+
+  // Sort live vacations by proximity
+  const sortedLiveVac = React.useMemo(() => {
+    return [...liveVacations].sort((a, b) => getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days));
+  }, [liveVacations, today]);
   const boost = {
     title: lang === 'pt' ? 'Cobrir férias impulsiona seu perfil' : lang === 'es' ? 'Cubrir vacaciones impulsa tu perfil' : 'Covering vacations boosts your profile',
     body: lang === 'pt' ? 'Pool guys que cobrem férias ganham impulsionamento no perfil e melhores avaliações — aparecendo no topo das buscas.' : lang === 'es' ? 'Los pool guys que cubren vacaciones obtienen impulso en el perfil y mejores reseñas — apareciendo en el top de las búsquedas.' : 'Pool guys who cover vacations earn a profile boost and better reviews — showing up at the top of searches.',
@@ -5084,14 +5110,14 @@ function VacationPanel({
       opacity: 0.75,
       marginTop: 1
     }
-  }, boost.chip))), liveVacations.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, boost.chip))), sortedLiveVac.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
       gap: 12,
       marginBottom: 12
     }
-  }, liveVacations.map(vac => /*#__PURE__*/React.createElement("article", {
+  }, sortedLiveVac.map(vac => /*#__PURE__*/React.createElement("article", {
     key: vac._id,
     className: "pg-card",
     style: {
@@ -5239,7 +5265,7 @@ function VacationPanel({
     d: "M14 11v6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete')))), VACATION_LISTINGS.filter(v => !hiddenStatic.includes(v.id)).length === 0 && liveVacations.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete')))), sortedStaticVac.length === 0 && sortedLiveVac.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       padding: '28px 16px',
@@ -5252,8 +5278,9 @@ function VacationPanel({
       flexDirection: 'column',
       gap: 14
     }
-  }, VACATION_LISTINGS.filter(v => !hiddenStatic.includes(v.id)).map(v => {
-    const availDays = v.days.filter(d => !v.bookedDays.includes(d));
+  }, sortedStaticVac.map(v => {
+    // Only count future available days
+    const availDays = v.days.filter(d => !v.bookedDays.includes(d) && new Date(v.yearMonth?.year, v.yearMonth?.month, d) >= today);
     const maxEarnings = availDays.length * v.poolsPerDay * v.pricePerPool;
     return /*#__PURE__*/React.createElement("article", {
       key: v.id,
@@ -5389,10 +5416,13 @@ function VacationPanel({
       days: v.days,
       bookedDays: v.bookedDays,
       yearMonth: v.yearMonth,
-      lang: lang
+      lang: lang,
+      showPastDays: !!(user?.uid && user.uid === v.ownerId),
+      isOwner: !!(user?.uid && user.uid === v.ownerId)
     }), (v.poolsByWeekday || v.poolsPerDay) && (() => {
       const wdShortNames = lang === 'pt' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] : lang === 'es' ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const availDays = v.days.filter(d => !(v.bookedDays || []).includes(d));
+      // Only show future available days
+      const availDays = v.days.filter(d => !(v.bookedDays || []).includes(d) && new Date(v.yearMonth?.year, v.yearMonth?.month, d) >= today);
       return /*#__PURE__*/React.createElement("div", {
         style: {
           marginTop: 8,
@@ -7523,11 +7553,21 @@ function DayChips({
   selectedDays = null,
   size = 26,
   yearMonth = null,
-  lang = 'en'
+  lang = 'en',
+  showPastDays = false,
+  isOwner = false,
+  userSelectedDays = null
 }) {
   const bookedSet = new Set(bookedDays);
   const selSet = selectedDays ? new Set(selectedDays) : null;
+  const userSelSet = userSelectedDays ? new Set(userSelectedDays) : null;
+  const today = React.useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }, []);
   const wdShort = lang === 'pt' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] : lang === 'es' ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const moShort = lang === 'pt' ? ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'] : lang === 'es' ? ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'] : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -7538,12 +7578,18 @@ function DayChips({
     const booked = bookedSet.has(d);
     const sel = selSet ? selSet.has(d) : !booked;
     const wd = yearMonth ? new Date(yearMonth.year, yearMonth.month, d).getDay() : null;
+    const fullDate = yearMonth ? new Date(yearMonth.year, yearMonth.month, d) : null;
+    const isPast = fullDate ? fullDate < today : false;
+    const userPicked = userSelSet ? userSelSet.has(d) : false;
+
+    // Hide past days unless owner or user had selected that day
+    if (isPast && !showPastDays && !isOwner && !userPicked) return null;
     return /*#__PURE__*/React.createElement("span", {
       key: d,
       style: {
-        minWidth: wd !== null ? 30 : size,
-        height: wd !== null ? 38 : size,
-        padding: wd !== null ? '3px 5px' : 0,
+        minWidth: yearMonth ? 32 : size,
+        height: yearMonth ? 46 : size,
+        padding: yearMonth ? '3px 6px' : 0,
         borderRadius: 7,
         fontWeight: 700,
         display: 'inline-flex',
@@ -7551,16 +7597,25 @@ function DayChips({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 0,
-        background: booked ? 'var(--pg-ink-100)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
-        color: booked ? 'var(--pg-ink-300)' : sel ? '#fff' : 'var(--pg-blue-600)',
-        textDecoration: booked ? 'line-through' : 'none'
+        background: isPast ? 'var(--pg-ink-100)' : booked ? 'var(--pg-ink-100)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
+        color: isPast ? 'var(--pg-ink-300)' : booked ? 'var(--pg-ink-300)' : sel ? '#fff' : 'var(--pg-blue-600)',
+        opacity: isPast ? 0.55 : 1
       }
-    }, wd !== null && /*#__PURE__*/React.createElement("span", {
+    }, yearMonth && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 7,
+        fontWeight: 700,
+        letterSpacing: '0.05em',
+        opacity: isPast ? 0.6 : 0.65,
+        lineHeight: 1,
+        textTransform: 'uppercase'
+      }
+    }, moShort[yearMonth.month]), wd !== null && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 8,
         fontWeight: 700,
         letterSpacing: '0.04em',
-        opacity: booked ? 0.5 : 0.75,
+        opacity: booked ? 0.5 : 0.8,
         lineHeight: 1.2
       }
     }, wdShort[wd].toUpperCase()), /*#__PURE__*/React.createElement("span", {
