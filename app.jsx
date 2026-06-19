@@ -371,6 +371,7 @@ function App() {
   const [reviewApp,      setReviewApp]      = React.useState(null);
   const [marketPostOpen, setMarketPostOpen] = React.useState(false);
   const [vacSheetOpen,   setVacSheetOpen]   = React.useState(false);
+  const [editingVac,     setEditingVac]     = React.useState(null); // vac object being edited
   const [hiringSheetOpen,setHiringSheetOpen]= React.useState(false);
   const [techSheetOpen,  setTechSheetOpen]  = React.useState(false);
   const [dayPickerVac,   setDayPickerVac]   = React.useState(null);
@@ -795,7 +796,8 @@ function App() {
     openWallet:         () => setWalletOpen(true),
     openJobDetail:      (app) => setJobDetailApp(app),
     openReview:         (app) => setReviewApp(app),
-    openVacSheet:       () => setVacSheetOpen(true),
+    openVacSheet:       () => { setEditingVac(null); setVacSheetOpen(true); },
+    openEditVacSheet:   (vac) => { setEditingVac(vac); setVacSheetOpen(true); },
     openHiringSheet:    () => setHiringSheetOpen(true),
     openTechSheet:      () => setTechSheetOpen(true),
     openDayPicker:      (vac) => setDayPickerVac(vac),
@@ -939,11 +941,44 @@ function App() {
         open={!!reviewApp} onClose={()=>setReviewApp(null)}
         app={reviewApp} lang={lang}
         onSubmitDone={()=>{ setReviewApp(null); showToast(lang==='pt'?'Avaliação enviada ✓':lang==='es'?'Reseña enviada ✓':'Review submitted ✓'); }}/>
-      <Sheet open={vacSheetOpen} onClose={()=>setVacSheetOpen(false)} height="92%">
+      <Sheet open={vacSheetOpen} onClose={()=>{ setVacSheetOpen(false); setEditingVac(null); }} height="92%">
         <PostVacationSheet
           lang={lang}
-          onClose={()=>setVacSheetOpen(false)}
-          onSubmit={(data)=>{ setVacSheetOpen(false); if(data) dbWrite('vacations', data); showToast(lang==='pt'?'Férias publicadas ✓':lang==='es'?'Vacaciones publicadas ✓':'Vacation posted ✓'); }}
+          initialData={editingVac}
+          onClose={()=>{ setVacSheetOpen(false); setEditingVac(null); }}
+          onSubmit={(data)=>{
+            setVacSheetOpen(false);
+            if (!data) { setEditingVac(null); return; }
+            if (editingVac) {
+              const row = {
+                month_idx: data.monthIdx, year: data.year,
+                selected_days: data.selectedDays, weekday_regions: data.weekdayRegions,
+                pools_per_weekday: data.poolsPerWeekday,
+                price: data.price, price_mode: data.priceMode,
+                note: data.note || null,
+              };
+              window.sb.from('vacations').update(row).eq('id', editingVac._id).then(({ error }) => {
+                if (error) { showToast('❌ ' + error.message); return; }
+                const wr = data.weekdayRegions || {};
+                const allCities = [...new Set(Object.values(wr).flat())];
+                const region = allCities.slice(0, 3).join(' / ') || editingVac.region;
+                setLiveVacations(prev => prev.map(v => v._id !== editingVac._id ? v : {
+                  ...v, monthIdx: data.monthIdx, year: data.year,
+                  yearMonth: { year: data.year, month: data.monthIdx },
+                  days: data.selectedDays || [], selectedDays: data.selectedDays,
+                  weekdayRegions: wr, poolsByWeekday: data.poolsPerWeekday || {},
+                  poolsPerWeekday: data.poolsPerWeekday,
+                  price: data.price, pricePerPool: data.price, priceMode: data.priceMode,
+                  note: data.note || null, region,
+                }));
+                showToast(lang==='pt'?'Férias atualizadas ✓':lang==='es'?'Vacaciones actualizadas ✓':'Vacation updated ✓');
+              });
+              setEditingVac(null);
+            } else {
+              dbWrite('vacations', data);
+              showToast(lang==='pt'?'Férias publicadas ✓':lang==='es'?'Vacaciones publicadas ✓':'Vacation posted ✓');
+            }
+          }}
         />
       </Sheet>
       <Sheet open={!!dayPickerVac} onClose={()=>setDayPickerVac(null)} height="88%">

@@ -13,6 +13,7 @@ function WorkScreen({
     openHiringAppDetail,
     openApplyJob,
     openVacSheet,
+    openEditVacSheet,
     openHiringSheet,
     openTechSheet,
     openDayPicker,
@@ -1406,6 +1407,7 @@ function WorkScreen({
       setVacTab: setVacTab,
       onChat: openChat,
       onCreate: openVacSheet,
+      onEditVac: openEditVacSheet,
       onViewApplicants: openApplicants,
       openDayPicker: openDayPicker,
       openSchedule: openSchedule,
@@ -2289,6 +2291,7 @@ function WorkScreen({
     setVacTab: setVacTab,
     onChat: openChat,
     onCreate: openVacSheet,
+    onEditVac: openEditVacSheet,
     onViewApplicants: openApplicants,
     openDayPicker: openDayPicker,
     openSchedule: openSchedule,
@@ -4944,6 +4947,7 @@ function VacationPanel({
   setVacTab,
   onChat,
   onCreate,
+  onEditVac,
   onViewApplicants,
   openDayPicker,
   openSchedule,
@@ -5372,6 +5376,34 @@ function VacationPanel({
         gap: 5
       }
     }, pickDaysLabel, " \u2192"), isOwner && user?.role !== 'admin' && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => onEditVac && onEditVac(vac),
+      className: "pg-btn pg-btn-primary",
+      style: {
+        height: 36,
+        padding: '0 16px',
+        fontSize: 13,
+        borderRadius: 999,
+        gap: 5
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.3",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+    })), lang === 'pt' ? 'Editar' : lang === 'es' ? 'Editar' : 'Edit'), /*#__PURE__*/React.createElement("div", {
       onClick: async () => {
         const msg = lang === 'pt' ? 'Encerrar sua cobertura de férias?' : lang === 'es' ? '¿Cerrar tu cobertura de vacaciones?' : 'Close your vacation coverage post?';
         if (!window.confirm(msg)) return;
@@ -5386,7 +5418,7 @@ function VacationPanel({
         onDeleteVac && onDeleteVac(vac._id);
       },
       style: {
-        padding: '7px 14px',
+        padding: '7px 12px',
         borderRadius: 8,
         cursor: 'pointer',
         background: 'rgba(16,185,129,0.08)',
@@ -5396,7 +5428,7 @@ function VacationPanel({
         fontWeight: 700,
         display: 'flex',
         alignItems: 'center',
-        gap: 6
+        gap: 5
       }
     }, /*#__PURE__*/React.createElement("svg", {
       width: "12",
@@ -5409,7 +5441,7 @@ function VacationPanel({
       strokeLinejoin: "round"
     }, /*#__PURE__*/React.createElement("path", {
       d: "M20 6L9 17l-5-5"
-    })), lang === 'pt' ? 'Encerrar' : lang === 'es' ? 'Cerrar' : 'Close post'))), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
+    })), lang === 'pt' ? 'Encerrar' : lang === 'es' ? 'Cerrar' : 'Close')))), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
       onClick: async () => {
         if (!window.confirm(lang === 'pt' ? 'Excluir este registro de férias?' : 'Delete this vacation post?')) return;
         const {
@@ -5767,7 +5799,8 @@ function VacationPanel({
 function PostVacationSheet({
   onClose,
   lang = 'en',
-  onSubmit
+  onSubmit,
+  initialData = null
 }) {
   const t = STRINGS[lang];
   const allMonths = lang === 'pt' ? ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'] : lang === 'es' ? ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'] : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -5782,15 +5815,15 @@ function PostVacationSheet({
   })).filter(({
     idx
   }) => idx >= currentMonthIdx);
-  const [monthIdx, setMonthIdx] = React.useState(currentMonthIdx);
-  const [year] = React.useState(new Date().getFullYear());
-  const [selectedDays, setSelectedDays] = React.useState(new Set());
-  const [weekdayRegions, setWeekdayRegions] = React.useState({}); // {wd: string[]}
-  const [poolsPerWeekday, setPoolsPerWeekday] = React.useState({}); // {wd: number}
+  const [monthIdx, setMonthIdx] = React.useState(initialData?.monthIdx ?? currentMonthIdx);
+  const [year] = React.useState(initialData?.year ?? new Date().getFullYear());
+  const [selectedDays, setSelectedDays] = React.useState(() => new Set(initialData?.selectedDays || []));
+  const [weekdayRegions, setWeekdayRegions] = React.useState(initialData?.weekdayRegions || {});
+  const [poolsPerWeekday, setPoolsPerWeekday] = React.useState(initialData?.poolsPerWeekday || {});
   const [wdAddresses, setWdAddresses] = React.useState({}); // {wd: string[]}
-  const [price, setPrice] = React.useState('55');
-  const [priceMode, setPriceMode] = React.useState('fixed');
-  const [note, setNote] = React.useState('');
+  const [price, setPrice] = React.useState(initialData?.price ?? '55');
+  const [priceMode, setPriceMode] = React.useState(initialData?.priceMode ?? 'fixed');
+  const [note, setNote] = React.useState(initialData?.note || '');
 
   // Calendar — get days in selected month
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
@@ -5875,12 +5908,13 @@ function PostVacationSheet({
     })));
     return out;
   }, []);
-  const headLbl = lang === 'pt' ? 'Publicar disponibilidade' : lang === 'es' ? 'Publicar disponibilidad' : 'Post availability';
+  const isEditing = !!initialData;
+  const headLbl = isEditing ? lang === 'pt' ? 'Editar publicação' : lang === 'es' ? 'Editar publicación' : 'Edit posting' : lang === 'pt' ? 'Publicar disponibilidade' : lang === 'es' ? 'Publicar disponibilidad' : 'Post availability';
   const monthLbl = lang === 'pt' ? 'Mês' : lang === 'es' ? 'Mes' : 'Month';
   const daysLbl = lang === 'pt' ? 'Dias em que estarei fora' : lang === 'es' ? 'Días que estaré fuera' : 'Days I will be away';
   const regsLbl = lang === 'pt' ? 'Localização, piscinas e endereços por dia' : lang === 'es' ? 'Ubicación, piscinas y direcciones por día' : 'Location, pools & addresses by weekday';
   const priceLbl = lang === 'pt' ? 'Preço por piscina' : lang === 'es' ? 'Precio por piscina' : 'Price per pool';
-  const submitLbl = lang === 'pt' ? 'Publicar férias' : lang === 'es' ? 'Publicar vacaciones' : 'Post vacation';
+  const submitLbl = isEditing ? lang === 'pt' ? 'Salvar alterações' : lang === 'es' ? 'Guardar cambios' : 'Save changes' : lang === 'pt' ? 'Publicar férias' : lang === 'es' ? 'Publicar vacaciones' : 'Post vacation';
   const isValid = selectedDays.size > 0 && involvedWeekdays.every(wd => (weekdayRegions[wd]?.length || 0) > 0);
 
   // Desktop-friendly calendar: fixed 40px cells regardless of container width

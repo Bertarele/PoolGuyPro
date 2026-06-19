@@ -3,7 +3,7 @@
 function WorkScreen({ ctx }) {
   const { lang, openChat, goTab, openPostMenu, openApplicants, openJobDetail,
           openHiringAppDetail, openApplyJob,
-          openVacSheet, openHiringSheet, openTechSheet, openDayPicker, openSchedule,
+          openVacSheet, openEditVacSheet, openHiringSheet, openTechSheet, openDayPicker, openSchedule,
           openPublicProfile, showToast,
           removeJob, removeTech, removeVacation,
           liveJobs=[], liveTechs=[], liveVacations=[],
@@ -643,7 +643,7 @@ function WorkScreen({ ctx }) {
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
               {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
-              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
+              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
             </div>
           </div>
         </div>
@@ -1000,7 +1000,7 @@ function WorkScreen({ ctx }) {
         {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications}/>}
         {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
-                              onChat={openChat} onCreate={openVacSheet}
+                              onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet}
                               onViewApplicants={openApplicants}
                               openDayPicker={openDayPicker}
                               openSchedule={openSchedule}
@@ -2155,7 +2155,7 @@ function PoolRouteMap({ pools=[], style={}, doneIndices=null }) {
 }
 
 // ── Vacation panel ────────────────────────────────────────────
-function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac }) {
+function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac }) {
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
 
   const today = React.useMemo(() => { const t = new Date(); t.setHours(0,0,0,0); return t; }, []);
@@ -2434,25 +2434,36 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
                       </button>
                     )}
                     {isOwner && user?.role !== 'admin' && (
-                      <div onClick={async () => {
-                        const msg = lang==='pt'?'Encerrar sua cobertura de férias?'
-                          :lang==='es'?'¿Cerrar tu cobertura de vacaciones?'
-                          :'Close your vacation coverage post?';
-                        if (!window.confirm(msg)) return;
-                        const { error } = await window.sb.from('vacations').delete().eq('id', vac._id);
-                        if (error) { showToast && showToast('❌ ' + error.message); return; }
-                        showToast && showToast('✓ ' + (lang==='pt'?'Cobertura encerrada!':lang==='es'?'¡Cobertura cerrada!':'Coverage closed!'));
-                        onDeleteVac && onDeleteVac(vac._id);
-                      }} style={{
-                        padding:'7px 14px', borderRadius:8, cursor:'pointer',
-                        background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
-                        fontSize:11, fontWeight:700,
-                        display:'flex', alignItems:'center', gap:6,
-                      }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                        {lang==='pt'?'Encerrar':lang==='es'?'Cerrar':'Close post'}
+                      <div style={{display:'flex', gap:6}}>
+                        <button onClick={()=>onEditVac && onEditVac(vac)}
+                          className="pg-btn pg-btn-primary"
+                          style={{height:36, padding:'0 16px', fontSize:13, borderRadius:999, gap:5}}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                          {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
+                        </button>
+                        <div onClick={async () => {
+                          const msg = lang==='pt'?'Encerrar sua cobertura de férias?'
+                            :lang==='es'?'¿Cerrar tu cobertura de vacaciones?'
+                            :'Close your vacation coverage post?';
+                          if (!window.confirm(msg)) return;
+                          const { error } = await window.sb.from('vacations').delete().eq('id', vac._id);
+                          if (error) { showToast && showToast('❌ ' + error.message); return; }
+                          showToast && showToast('✓ ' + (lang==='pt'?'Cobertura encerrada!':lang==='es'?'¡Cobertura cerrada!':'Coverage closed!'));
+                          onDeleteVac && onDeleteVac(vac._id);
+                        }} style={{
+                          padding:'7px 12px', borderRadius:8, cursor:'pointer',
+                          background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.28)', color:'#10B981',
+                          fontSize:11, fontWeight:700,
+                          display:'flex', alignItems:'center', gap:5,
+                        }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6L9 17l-5-5"/>
+                          </svg>
+                          {lang==='pt'?'Encerrar':lang==='es'?'Cerrar':'Close'}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2667,7 +2678,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onViewApp
 }
 
 // ── New Vacation creation sheet ───────────────────────────────
-function PostVacationSheet({ onClose, lang='en', onSubmit }) {
+function PostVacationSheet({ onClose, lang='en', onSubmit, initialData=null }) {
   const t = STRINGS[lang];
   const allMonths = lang==='pt'
     ? ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -2691,15 +2702,15 @@ function PostVacationSheet({ onClose, lang='en', onSubmit }) {
     .map((m, i) => ({ name: m, idx: i }))
     .filter(({ idx }) => idx >= currentMonthIdx);
 
-  const [monthIdx, setMonthIdx] = React.useState(currentMonthIdx);
-  const [year] = React.useState(new Date().getFullYear());
-  const [selectedDays, setSelectedDays] = React.useState(new Set());
-  const [weekdayRegions, setWeekdayRegions] = React.useState({});   // {wd: string[]}
-  const [poolsPerWeekday, setPoolsPerWeekday] = React.useState({});  // {wd: number}
+  const [monthIdx, setMonthIdx] = React.useState(initialData?.monthIdx ?? currentMonthIdx);
+  const [year] = React.useState(initialData?.year ?? new Date().getFullYear());
+  const [selectedDays, setSelectedDays] = React.useState(() => new Set(initialData?.selectedDays || []));
+  const [weekdayRegions, setWeekdayRegions] = React.useState(initialData?.weekdayRegions || {});
+  const [poolsPerWeekday, setPoolsPerWeekday] = React.useState(initialData?.poolsPerWeekday || {});
   const [wdAddresses, setWdAddresses]         = React.useState({});  // {wd: string[]}
-  const [price, setPrice] = React.useState('55');
-  const [priceMode, setPriceMode] = React.useState('fixed');
-  const [note, setNote] = React.useState('');
+  const [price, setPrice] = React.useState(initialData?.price ?? '55');
+  const [priceMode, setPriceMode] = React.useState(initialData?.priceMode ?? 'fixed');
+  const [note, setNote] = React.useState(initialData?.note || '');
 
   // Calendar — get days in selected month
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
@@ -2773,12 +2784,17 @@ function PostVacationSheet({ onClose, lang='en', onSubmit }) {
     return out;
   }, []);
 
-  const headLbl   = lang==='pt'?'Publicar disponibilidade':lang==='es'?'Publicar disponibilidad':'Post availability';
+  const isEditing = !!initialData;
+  const headLbl   = isEditing
+    ? (lang==='pt'?'Editar publicação':lang==='es'?'Editar publicación':'Edit posting')
+    : (lang==='pt'?'Publicar disponibilidade':lang==='es'?'Publicar disponibilidad':'Post availability');
   const monthLbl  = lang==='pt'?'Mês':lang==='es'?'Mes':'Month';
   const daysLbl   = lang==='pt'?'Dias em que estarei fora':lang==='es'?'Días que estaré fuera':'Days I will be away';
   const regsLbl   = lang==='pt'?'Localização, piscinas e endereços por dia':lang==='es'?'Ubicación, piscinas y direcciones por día':'Location, pools & addresses by weekday';
   const priceLbl  = lang==='pt'?'Preço por piscina':lang==='es'?'Precio por piscina':'Price per pool';
-  const submitLbl = lang==='pt'?'Publicar férias':lang==='es'?'Publicar vacaciones':'Post vacation';
+  const submitLbl = isEditing
+    ? (lang==='pt'?'Salvar alterações':lang==='es'?'Guardar cambios':'Save changes')
+    : (lang==='pt'?'Publicar férias':lang==='es'?'Publicar vacaciones':'Post vacation');
 
   const isValid = selectedDays.size > 0 && involvedWeekdays.every(wd => (weekdayRegions[wd]?.length || 0) > 0);
 
