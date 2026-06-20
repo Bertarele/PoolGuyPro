@@ -27,3 +27,7 @@ package-lock.json
 __pycache__/
 *.pyc
 .claude/
+.claude/settings.local.json
+icone_b64.txt
+icone_b64_str.txt
+supabase/.temp/

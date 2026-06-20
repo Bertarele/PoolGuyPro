@@ -521,7 +521,7 @@ function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, rad
 }
 window.LocationFilterSheet = LocationFilterSheet;
 
-function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsByDay, county }) {
+function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsByDay, saveRegionsByDay, county }) {
   const t = STRINGS[lang];
   const [openDay, setOpenDay] = React.useState('mon');
   const [activeCounty, setActiveCounty] = React.useState(county || 'Broward');
@@ -706,7 +706,7 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
 
         {/* Save */}
         <div style={{padding:'12px 18px 18px', borderTop:'0.5px solid var(--pg-ink-200)', background:'#fff'}}>
-          <button onClick={onClose} className="pg-btn pg-btn-primary" style={{width:'100%', height:50, fontSize:15}}>
+          <button onClick={()=>{ saveRegionsByDay && saveRegionsByDay(regionsByDay); onClose(); }} className="pg-btn pg-btn-primary" style={{width:'100%', height:50, fontSize:15}}>
             {head.save}
           </button>
         </div>

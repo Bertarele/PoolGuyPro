@@ -1,4 +1,4 @@
-// quickpools.jsx — Google-Maps-style map with clickable pins + premium gate
+// quickpools.jsx — Express Pools live feed + posting + push notifications
 
 function QuickPoolsScreen({ ctx }) {
   const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false } = ctx;
@@ -7,6 +7,59 @@ function QuickPoolsScreen({ ctx }) {
   const [highlighted, setHighlighted] = React.useState(null);
   const [applied,     setApplied]     = React.useState({});
   const [isDesktop,   setIsDesktop]   = React.useState(() => window.innerWidth >= 900);
+
+  // Live jobs from Supabase
+  const [jobs, setJobs] = React.useState(QUICK_POOLS);
+  const [jobsLoading, setJobsLoading] = React.useState(false);
+
+  // Post job sheet
+  const [postOpen, setPostOpen] = React.useState(false);
+
+  const loadJobs = React.useCallback(async () => {
+    if (!window.sb) return;
+    setJobsLoading(true);
+    try {
+      const { data } = await window.sb.from('quick_pool_jobs')
+        .select('*').eq('status','open').order('created_at',{ ascending:false }).limit(50);
+      if (data && data.length > 0) {
+        // Normalize live data to match card format
+        setJobs(data.map(j => ({
+          id: j.id, _live: true,
+          title: { en: j.description || `Pool job in ${j.city}`, pt: j.description || `Vaga em ${j.city}`, es: j.description || `Vaga en ${j.city}` },
+          loc: j.city, dist: { en:'', pt:'', es:'' },
+          price: j.price_negotiable ? 'neg' : j.price_per_pool,
+          type: j.pool_type || 'residential',
+          urgency: 'new',
+          poster: j.poster_name,
+          poster_phone: j.poster_phone,
+          poster_id: j.poster_id,
+          when: { en: j.when_label||'', pt: j.when_label||'', es: j.when_label||'' },
+          pools: j.pools_count || 1,
+          day_of_week: j.day_of_week,
+          body: { en: j.description||'', pt: j.description||'', es: j.description||'' },
+          created_at: j.created_at,
+        })));
+      }
+    } catch {}
+    setJobsLoading(false);
+  }, []);
+
+  React.useEffect(() => { loadJobs(); }, [loadJobs]);
+
+  // Handle deep link from push notification: /#express-pools?job=<id>
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.includes('express-pools')) return;
+    const params = new URLSearchParams(hash.split('?')[1] || '');
+    const jobId = params.get('job');
+    if (!jobId) return;
+    const find = () => {
+      const j = jobs.find(x => String(x.id) === String(jobId));
+      if (j) { setSelected(j); window.location.hash = 'express-pools'; }
+    };
+    if (jobs.length > 0) find();
+    else setTimeout(find, 1200);
+  }, [jobs]);
 
   React.useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 900);
@@ -24,7 +77,6 @@ function QuickPoolsScreen({ ctx }) {
     [regionsByDay]
   );
 
-  const jobs = QUICK_POOLS;
   const cardRefs = React.useRef({});
 
   const scrollToJob = (id) => {
@@ -361,6 +413,8 @@ function QuickPoolsScreen({ ctx }) {
         </div>
       </div>
       <JobSheet/>
+      <PostJobSheet open={postOpen} onClose={()=>setPostOpen(false)} lang={lang} user={user}
+        onPosted={j=>{ loadJobs(); }}/>
       </div>
     );
   }
@@ -398,6 +452,15 @@ function QuickPoolsScreen({ ctx }) {
             {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
           </h1>
           <div style={{display:'flex',gap:6}}>
+            <button onClick={()=>setPostOpen(true)} style={{
+              height:36,padding:'0 12px',borderRadius:11,
+              background:'rgba(0,180,216,0.28)',border:'0.5px solid rgba(0,200,240,0.5)',
+              cursor:'pointer',display:'flex',alignItems:'center',gap:5,
+              color:'#fff',fontSize:12,fontWeight:700,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
+            </button>
             <div style={{position:'relative'}}>
               <button onClick={()=>openChat&&openChat()} style={{width:36,height:36,borderRadius:11,background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 {Icon.msg(17,'#fff')}
@@ -484,6 +547,8 @@ function QuickPoolsScreen({ ctx }) {
 
     </div>
     <JobSheet/>
+    <PostJobSheet open={postOpen} onClose={()=>setPostOpen(false)} lang={lang} user={user}
+      onPosted={j=>{ loadJobs(); }}/>
     </div>
   );
 }
@@ -679,18 +744,36 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
       </div>
 
       <div style={{
-        position:'sticky', bottom:0, padding:'12px 18px',
+        position:'sticky', bottom:0, padding:'12px 18px 16px',
         background:'linear-gradient(180deg, transparent, var(--pg-white) 25%)',
-        display:'flex', gap:10, marginTop:14,
+        display:'flex', flexDirection:'column', gap:8, marginTop:14,
       }}>
-        <button onClick={()=>onChat(job.author_id ? { id: job.author_id, name: job.poster } : job.poster)} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
-          {Icon.msg(16, 'var(--pg-blue-700)')} {t.contact}
-        </button>
-        <button onClick={locked ? onUnlock : onApply} className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`} style={{flex:2, borderRadius:999}}>
-          {locked ? <>{Icon.lock(14, '#fff')} {t.unlockApply}</> :
-           applied ? <>{Icon.check(15, 'var(--pg-blue-700)')} {t.applied}</> :
-           <>{t.apply} — {t.fastTrack}</>}
-        </button>
+        {/* Phone button for live jobs */}
+        {job._live && job.poster_phone && (
+          <a href={`tel:${job.poster_phone}`} style={{
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            height:46, borderRadius:999, textDecoration:'none',
+            background:'linear-gradient(135deg, #16A34A, #22C55E)',
+            color:'#fff', fontSize:14, fontWeight:700,
+          }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12 19.79 19.79 0 0 1 1.97 3.4 2 2 0 0 1 3.94 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z"/>
+            </svg>
+            {job.poster_phone}
+          </a>
+        )}
+        <div style={{display:'flex', gap:8}}>
+          <button onClick={()=>onChat(job.poster_id ? { id: job.poster_id, name: job.poster } : job.poster)} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
+            {Icon.msg(16, 'var(--pg-blue-700)')} {t.contact}
+          </button>
+          {!job._live && (
+            <button onClick={locked ? onUnlock : onApply} className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`} style={{flex:2, borderRadius:999}}>
+              {locked ? <>{Icon.lock(14, '#fff')} {t.unlockApply}</> :
+               applied ? <>{Icon.check(15, 'var(--pg-blue-700)')} {t.applied}</> :
+               <>{t.apply} — {t.fastTrack}</>}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -705,6 +788,190 @@ function DetailPill({ icon, label, value }) {
         <div style={{fontSize:13, fontWeight:600, marginTop:1}}>{value}</div>
       </div>
     </div>
+  );
+}
+
+function PostJobSheet({ open, onClose, lang, user, onPosted }) {
+  const DAY_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
+  const DAY_LABELS_PT = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  const DAY_LABELS_EN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const dayLabels = lang==='pt' ? DAY_LABELS_PT : DAY_LABELS_EN;
+
+  const [city,      setCity]      = React.useState('');
+  const [day,       setDay]       = React.useState('');
+  const [desc,      setDesc]      = React.useState('');
+  const [pools,     setPools]     = React.useState(1);
+  const [price,     setPrice]     = React.useState('');
+  const [neg,       setNeg]       = React.useState(false);
+  const [phone,     setPhone]     = React.useState(user?.phone || '');
+  const [saving,    setSaving]    = React.useState(false);
+  const [err,       setErr]       = React.useState('');
+
+  const allCities = React.useMemo(() => {
+    return Object.values(FL_COUNTIES).flat().filter((c,i,a)=>a.indexOf(c)===i).sort();
+  }, []);
+  const [cityQ, setCityQ] = React.useState('');
+  const filteredCities = cityQ ? allCities.filter(c=>c.toLowerCase().includes(cityQ.toLowerCase())) : allCities;
+
+  const reset = () => { setCity(''); setDay(''); setDesc(''); setPools(1); setPrice(''); setNeg(false); setPhone(user?.phone||''); setErr(''); setCityQ(''); };
+
+  const submit = async () => {
+    if (!city) return setErr(lang==='pt'?'Escolha a cidade':'Choose city');
+    if (!day)  return setErr(lang==='pt'?'Escolha o dia':'Choose day');
+    if (!desc.trim()) return setErr(lang==='pt'?'Descreva o serviço':'Describe the job');
+    if (!window.sb || !user?.uid) return setErr('Login required');
+    setSaving(true);
+    const job = {
+      poster_id: user.uid, poster_name: user.name || user.email || 'Pool Guy',
+      poster_phone: phone||null, city, day_of_week: day,
+      when_label: dayLabels[DAY_KEYS.indexOf(day)],
+      pools_count: pools, price_per_pool: neg ? null : (parseFloat(price)||null),
+      price_negotiable: neg, description: desc.trim(), pool_type:'residential', status:'open',
+    };
+    const { data, error } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
+    if (error) { setSaving(false); return setErr(error.message); }
+    // Trigger push notifications for matching pool guys
+    try {
+      await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ job: data }),
+      });
+    } catch {}
+    setSaving(false);
+    reset();
+    onClose();
+    onPosted && onPosted(data);
+  };
+
+  const inp = { width:'100%', height:44, borderRadius:10, border:'1px solid var(--pg-ink-200)', background:'var(--pg-ink-50)', padding:'0 12px', fontSize:16, fontFamily:'inherit', color:'var(--pg-ink-900)', outline:'none', boxSizing:'border-box' };
+
+  return (
+    <Sheet open={open} onClose={()=>{ reset(); onClose(); }} height="92%">
+      <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+        {/* Header */}
+        <div style={{padding:'4px 18px 14px', borderBottom:'0.5px solid var(--pg-ink-200)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+            <h2 style={{margin:0,fontSize:18,fontWeight:700,letterSpacing:'-0.02em'}}>
+              {lang==='pt'?'Publicar vaga':lang==='es'?'Publicar trabajo':'Post a job'}
+            </h2>
+            <button onClick={()=>{ reset(); onClose(); }} style={{border:'none',background:'var(--pg-ink-100)',width:30,height:30,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              {Icon.x(16,'var(--pg-ink-700)')}
+            </button>
+          </div>
+          <p style={{margin:0,fontSize:12,color:'var(--pg-ink-500)',lineHeight:1.4}}>
+            {lang==='pt'?'Pool guys com essa cidade e dia configurados serão notificados na hora.':'Pool guys with this city and day configured will be notified instantly.'}
+          </p>
+        </div>
+
+        {/* Body */}
+        <div style={{flex:1,overflow:'auto',padding:'16px 18px',display:'flex',flexDirection:'column',gap:14}}>
+
+          {/* City */}
+          <div>
+            <label style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-600)',letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+              {lang==='pt'?'Cidade':'City'}
+            </label>
+            {city ? (
+              <div style={{display:'flex',alignItems:'center',gap:8,height:44,borderRadius:10,border:'1.5px solid var(--pg-blue-500)',background:'var(--pg-blue-50)',padding:'0 12px'}}>
+                <span style={{flex:1,fontSize:14,fontWeight:600,color:'var(--pg-blue-700)'}}>{city}</span>
+                <button onClick={()=>setCity('')} style={{border:'none',background:'transparent',cursor:'pointer',padding:2}}>{Icon.x(14,'var(--pg-ink-400)')}</button>
+              </div>
+            ) : (
+              <>
+                <input value={cityQ} onChange={e=>setCityQ(e.target.value)} placeholder={lang==='pt'?'Buscar cidade...':'Search city...'} style={{...inp,marginBottom:6}}/>
+                <div style={{maxHeight:140,overflow:'auto',border:'1px solid var(--pg-ink-200)',borderRadius:10,background:'#fff'}}>
+                  {filteredCities.slice(0,30).map(c=>(
+                    <button key={c} onClick={()=>{ setCity(c); setCityQ(''); }} style={{display:'block',width:'100%',textAlign:'left',padding:'9px 12px',border:'none',background:'transparent',cursor:'pointer',fontSize:13,fontWeight:500,color:'var(--pg-ink-900)',borderBottom:'0.5px solid var(--pg-ink-100)'}}>
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Day */}
+          <div>
+            <label style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-600)',letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+              {lang==='pt'?'Dia da semana':'Day of week'}
+            </label>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6}}>
+              {DAY_KEYS.map((dk,i)=>{
+                const on = dk===day;
+                return (
+                  <button key={dk} onClick={()=>setDay(dk)} style={{
+                    padding:'8px 4px',borderRadius:9,border:'1px solid '+(on?'var(--pg-blue-500)':'var(--pg-ink-200)'),
+                    background:on?'var(--pg-blue-500)':'var(--pg-ink-50)',
+                    color:on?'#fff':'var(--pg-ink-700)',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
+                  }}>{dayLabels[i].slice(0,3)}</button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-600)',letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+              {lang==='pt'?'Descrição':'Description'}
+            </label>
+            <textarea value={desc} onChange={e=>setDesc(e.target.value)}
+              placeholder={lang==='pt'?'Ex: Piscina residencial, produto no local, portão com código...':'E.g. Residential pool, chemicals on site, gate code required...'}
+              style={{width:'100%',minHeight:80,borderRadius:10,border:'1px solid var(--pg-ink-200)',background:'var(--pg-ink-50)',padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'none',outline:'none',color:'var(--pg-ink-900)',boxSizing:'border-box'}}/>
+          </div>
+
+          {/* Pools + Price row */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-600)',letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+                {lang==='pt'?'Nº piscinas':'# Pools'}
+              </label>
+              <div style={{display:'flex',alignItems:'center',height:44,borderRadius:10,border:'1px solid var(--pg-ink-200)',background:'var(--pg-ink-50)',overflow:'hidden'}}>
+                <button onClick={()=>setPools(Math.max(1,pools-1))} style={{width:40,height:'100%',border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:'var(--pg-ink-600)'}}>−</button>
+                <span style={{flex:1,textAlign:'center',fontSize:16,fontWeight:700}}>{pools}</span>
+                <button onClick={()=>setPools(pools+1)} style={{width:40,height:'100%',border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:'var(--pg-ink-600)'}}>+</button>
+              </div>
+            </div>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-600)',letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+                {lang==='pt'?'$/piscina':'$/pool'}
+              </label>
+              <div style={{position:'relative'}}>
+                <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:14,color:neg?'var(--pg-ink-300)':'var(--pg-ink-600)',fontWeight:600}}>$</span>
+                <input type="number" value={price} onChange={e=>setPrice(e.target.value)} disabled={neg}
+                  placeholder="45" style={{...inp,paddingLeft:24,opacity:neg?0.4:1}}/>
+              </div>
+              <label style={{display:'flex',alignItems:'center',gap:6,marginTop:6,cursor:'pointer',fontSize:12,color:'var(--pg-ink-500)'}}>
+                <input type="checkbox" checked={neg} onChange={e=>setNeg(e.target.checked)} style={{width:14,height:14}}/>
+                {lang==='pt'?'A combinar':'Negotiable'}
+              </label>
+            </div>
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label style={{fontSize:12,fontWeight:700,color:'var(--pg-ink-600)',letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+              {lang==='pt'?'Telefone (opcional)':'Phone (optional)'}
+            </label>
+            <input value={phone} onChange={e=>setPhone(e.target.value)} type="tel"
+              placeholder="(954) 000-0000" style={inp}/>
+            <p style={{margin:'4px 0 0',fontSize:11,color:'var(--pg-ink-400)'}}>
+              {lang==='pt'?'Ficará visível no anúncio para contato direto.':'Will be visible on the listing for direct contact.'}
+            </p>
+          </div>
+
+          {err && <div style={{background:'#FEE2E2',borderRadius:9,padding:'9px 12px',fontSize:13,color:'#DC2626',fontWeight:500}}>{err}</div>}
+        </div>
+
+        {/* Submit */}
+        <div style={{padding:'12px 18px 18px',borderTop:'0.5px solid var(--pg-ink-200)'}}>
+          <button onClick={submit} disabled={saving} className="pg-btn pg-btn-primary" style={{width:'100%',height:50,fontSize:15,borderRadius:14}}>
+            {saving
+              ? (lang==='pt'?'Publicando...':'Posting...')
+              : (lang==='pt'?'Publicar agora':'Post now')}
+          </button>
+        </div>
+      </div>
+    </Sheet>
   );
 }
 

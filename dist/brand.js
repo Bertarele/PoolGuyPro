@@ -1047,6 +1047,7 @@ function RegionEditorSheet({
   lang = 'en',
   regionsByDay,
   setRegionsByDay,
+  saveRegionsByDay,
   county
 }) {
   const t = STRINGS[lang];
@@ -1367,7 +1368,10 @@ function RegionEditorSheet({
       background: '#fff'
     }
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: onClose,
+    onClick: () => {
+      saveRegionsByDay && saveRegionsByDay(regionsByDay);
+      onClose();
+    },
     className: "pg-btn pg-btn-primary",
     style: {
       width: '100%',

@@ -444,6 +444,10 @@ function App() {
       phoneVerified: profile?.phone_verified || false,
       banned: profile?.banned || false
     }));
+    // Load regionsByDay from profile if saved
+    if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
+      setRegionsByDay(profile.regions_by_day);
+    }
   }, []);
 
   // authReady gates the data fetch — ensures profile is loaded before querying DB
@@ -505,16 +509,24 @@ function App() {
       return t.lang;
     }
   });
-  // Per-weekday region preferences for notifications
+  // Per-weekday region preferences for notifications (loaded from Supabase on login)
   const [regionsByDay, setRegionsByDay] = React.useState({
-    mon: ['Pompano Beach', 'Fort Lauderdale'],
-    tue: ['Deerfield Beach', 'Boca Raton'],
-    wed: ['Pompano Beach', 'Fort Lauderdale'],
-    thu: ['Plantation', 'Davie'],
-    fri: ['Weston', 'Plantation'],
+    mon: [],
+    tue: [],
+    wed: [],
+    thu: [],
+    fri: [],
     sat: [],
     sun: []
   });
+  const saveRegionsByDay = React.useCallback(async rbd => {
+    if (!window.sb || !user?.uid) return;
+    try {
+      await window.sb.from('profiles').update({
+        regions_by_day: rbd
+      }).eq('id', user.uid);
+    } catch {}
+  }, [user?.uid]);
   const [county] = React.useState('Broward');
 
   // ── Real unread chat count from Supabase ─────────────────────
@@ -1178,6 +1190,7 @@ function App() {
     setLang,
     regionsByDay,
     setRegionsByDay,
+    saveRegionsByDay,
     county,
     deepLinkListingId,
     clearDeepLink: () => setDeepLinkListingId(null),
@@ -1405,6 +1418,7 @@ function App() {
     lang: lang,
     regionsByDay: regionsByDay,
     setRegionsByDay: setRegionsByDay,
+    saveRegionsByDay: saveRegionsByDay,
     county: county
   }), /*#__PURE__*/React.createElement(LanguagePickerSheet, {
     open: langPickerOpen,
