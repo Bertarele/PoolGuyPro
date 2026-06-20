@@ -142,8 +142,7 @@ function QuickPoolsScreen({
   };
 
   // ── Apply to a live job ───────────────────────────────────────
-  const applyToJob = async (jobId, e) => {
-    e && e.stopPropagation();
+  const applyToJob = async (jobId, sharePhone = false) => {
     if (!window.sb || !user?.uid) return;
     setApplied(prev => ({
       ...prev,
@@ -154,7 +153,7 @@ function QuickPoolsScreen({
         job_id: jobId,
         applicant_id: user.uid,
         applicant_name: user.name || user.email || 'Pool Guy',
-        applicant_phone: user.phone || null,
+        applicant_phone: sharePhone ? user.phone || null : null,
         status: 'pending'
       });
     } catch {}
@@ -450,7 +449,10 @@ function QuickPoolsScreen({
         gap: 6
       }
     }, Icon.check(13, '#15803D'), " ", t.applied) : /*#__PURE__*/React.createElement("button", {
-      onClick: e => applyToJob(j.id, e),
+      onClick: e => {
+        e.stopPropagation();
+        setSelected(j);
+      },
       style: {
         height: 36,
         padding: '0 18px',
@@ -479,7 +481,7 @@ function QuickPoolsScreen({
     t: t,
     lang: lang,
     applied: !!applied[selected.id],
-    onApply: () => applyToJob(selected.id),
+    onApply: sharePhone => applyToJob(selected.id, sharePhone),
     onUnlock: openPaywall,
     onChat: openChat,
     onClose: () => setSelected(null),
@@ -1405,18 +1407,31 @@ function QuickPoolDetails({
   const [applicants, setApplicants] = React.useState([]);
   const [loadingApps, setLoadingApps] = React.useState(false);
   const [showApplicants, setShowApplicants] = React.useState(false);
+  const [myApp, setMyApp] = React.useState(null); // own application record
+  const [showConsent, setShowConsent] = React.useState(false);
+  const [sharePhone, setSharePhone] = React.useState(false);
+
+  // Load all applicants (owner) or own application (others)
   React.useEffect(() => {
-    if (!isOwn || !window.sb || !job._live) return;
-    setLoadingApps(true);
-    window.sb.from('quick_pool_applications').select('*').eq('job_id', job.id).order('created_at', {
-      ascending: true
-    }).then(({
-      data
-    }) => {
-      setApplicants(data || []);
-      setLoadingApps(false);
-    });
-  }, [isOwn, job.id]);
+    if (!window.sb || !job._live) return;
+    if (isOwn) {
+      setLoadingApps(true);
+      window.sb.from('quick_pool_applications').select('*').eq('job_id', job.id).order('created_at', {
+        ascending: true
+      }).then(({
+        data
+      }) => {
+        setApplicants(data || []);
+        setLoadingApps(false);
+      });
+    } else if (user?.uid) {
+      window.sb.from('quick_pool_applications').select('status,applicant_phone').eq('job_id', job.id).eq('applicant_id', user.uid).maybeSingle().then(({
+        data
+      }) => {
+        setMyApp(data || null);
+      });
+    }
+  }, [isOwn, job.id, user?.uid]);
   const acceptApplicant = async (appId, applicantId) => {
     if (!window.sb) return;
     await window.sb.from('quick_pool_applications').update({
@@ -1910,7 +1925,7 @@ function QuickPoolDetails({
   })), lang === 'pt' ? `${showApplicants ? 'Fechar' : 'Ver'} candidatos${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}` : `${showApplicants ? 'Close' : 'View'} applicants${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}`)) :
   /*#__PURE__*/
   /* Non-owner actions */
-  React.createElement(React.Fragment, null, job._live && job.poster_phone && !isOwn && /*#__PURE__*/React.createElement("a", {
+  React.createElement(React.Fragment, null, job._live && job.poster_phone && myApp?.status === 'accepted' && /*#__PURE__*/React.createElement("a", {
     href: `tel:${job.poster_phone}`,
     style: {
       display: 'flex',
@@ -1920,7 +1935,7 @@ function QuickPoolDetails({
       height: 46,
       borderRadius: 999,
       textDecoration: 'none',
-      background: 'linear-gradient(135deg, #16A34A, #22C55E)',
+      background: 'linear-gradient(135deg,#16A34A,#22C55E)',
       color: '#fff',
       fontSize: 14,
       fontWeight: 700
@@ -1936,7 +1951,74 @@ function QuickPoolDetails({
     strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("path", {
     d: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12 19.79 19.79 0 0 1 1.97 3.4 2 2 0 0 1 3.94 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z"
-  })), job.poster_phone), /*#__PURE__*/React.createElement("div", {
+  })), job.poster_phone), showConsent && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'var(--pg-ink-50)',
+      border: '1px solid var(--pg-ink-200)',
+      borderRadius: 14,
+      padding: '14px 16px',
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: '0 0 12px',
+      fontSize: 13,
+      fontWeight: 600,
+      color: 'var(--pg-ink-800)',
+      lineHeight: 1.4
+    }
+  }, lang === 'pt' ? 'O dono pode ver seu número de telefone?' : lang === 'es' ? '¿El propietario puede ver tu número?' : 'Can the owner see your phone number?'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSharePhone(true),
+    style: {
+      flex: 1,
+      height: 38,
+      borderRadius: 10,
+      border: sharePhone ? '2px solid #0077B6' : '1px solid var(--pg-ink-200)',
+      background: sharePhone ? 'var(--pg-blue-50)' : 'var(--pg-white)',
+      color: sharePhone ? 'var(--pg-blue-700)' : 'var(--pg-ink-600)',
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: 'pointer'
+    }
+  }, lang === 'pt' ? 'Sim, compartilhar' : lang === 'es' ? 'Sí' : 'Yes, share'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSharePhone(false),
+    style: {
+      flex: 1,
+      height: 38,
+      borderRadius: 10,
+      border: !sharePhone ? '2px solid #0077B6' : '1px solid var(--pg-ink-200)',
+      background: !sharePhone ? 'var(--pg-blue-50)' : 'var(--pg-white)',
+      color: !sharePhone ? 'var(--pg-blue-700)' : 'var(--pg-ink-600)',
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: 'pointer'
+    }
+  }, lang === 'pt' ? 'Não, só chat' : lang === 'es' ? 'No, solo chat' : 'No, chat only')), /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: '8px 0 12px',
+      fontSize: 11,
+      color: 'var(--pg-ink-400)',
+      lineHeight: 1.4
+    }
+  }, lang === 'pt' ? 'Seu número só fica visível para o dono se você escolher compartilhar.' : 'Your number is only visible to the owner if you choose to share.'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      onApply(sharePhone);
+      setShowConsent(false);
+    },
+    className: "pg-btn pg-btn-primary",
+    style: {
+      width: '100%',
+      height: 42,
+      borderRadius: 11,
+      fontSize: 14
+    }
+  }, lang === 'pt' ? 'Confirmar candidatura' : lang === 'es' ? 'Confirmar' : 'Confirm application')), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 8
@@ -1969,9 +2051,7 @@ function QuickPoolDetails({
       fontWeight: 700
     }
   }, "\u23F3 ", lang === 'pt' ? 'Em curso' : lang === 'es' ? 'En curso' : 'In progress') : job._live ? /*#__PURE__*/React.createElement("button", {
-    onClick: locked ? onUnlock : () => {
-      onApply();
-    },
+    onClick: locked ? onUnlock : applied ? undefined : () => setShowConsent(v => !v),
     disabled: applied,
     className: `pg-btn ${applied ? 'pg-btn-ghost' : 'pg-btn-primary'}`,
     style: {
@@ -1980,7 +2060,7 @@ function QuickPoolDetails({
       opacity: applied ? 0.7 : 1
     }
   }, locked ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.lock(14, '#fff'), " ", t.unlockApply) : applied ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.check(15, 'var(--pg-blue-700)'), " ", lang === 'pt' ? 'Candidatado' : t.applied) : /*#__PURE__*/React.createElement(React.Fragment, null, lang === 'pt' ? 'Candidatar' : t.apply)) : /*#__PURE__*/React.createElement("button", {
-    onClick: locked ? onUnlock : onApply,
+    onClick: locked ? onUnlock : () => setShowConsent(v => !v),
     className: `pg-btn ${applied ? 'pg-btn-ghost' : 'pg-btn-primary'}`,
     style: {
       flex: 2,
@@ -2038,6 +2118,7 @@ function PostJobSheet({
   const [pools, setPools] = React.useState(1);
   const [price, setPrice] = React.useState('');
   const [neg, setNeg] = React.useState(false);
+  const [showPhone, setShowPhone] = React.useState(false);
   const [phone, setPhone] = React.useState(user?.phone || '');
   const [saving, setSaving] = React.useState(false);
   const [err, setErr] = React.useState('');
@@ -2053,6 +2134,7 @@ function PostJobSheet({
     setPools(1);
     setPrice('');
     setNeg(false);
+    setShowPhone(false);
     setPhone(user?.phone || '');
     setErr('');
     setCityQ('');
@@ -2066,7 +2148,7 @@ function PostJobSheet({
     const job = {
       poster_id: user.uid,
       poster_name: user.name || user.email || 'Pool Guy',
-      poster_phone: phone || null,
+      poster_phone: showPhone ? phone || null : null,
       city,
       day_of_week: day,
       when_label: dayLabels[DAY_KEYS.indexOf(day)],
@@ -2419,29 +2501,80 @@ function PostJobSheet({
       width: 14,
       height: 14
     }
-  }), lang === 'pt' ? 'A combinar' : 'Negotiable'))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+  }), lang === 'pt' ? 'A combinar' : 'Negotiable'))), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 12,
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '14px 16px',
+      cursor: 'pointer',
+      background: 'var(--pg-white)'
+    },
+    onClick: () => setShowPhone(v => !v)
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)',
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Mostrar telefone para candidato aceito?' : lang === 'es' ? '¿Mostrar teléfono al candidato aceptado?' : 'Show phone to accepted candidate?'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)'
+    }
+  }, lang === 'pt' ? 'Apenas quem você aceitar terá acesso ao seu número.' : 'Only the candidate you accept will see your number.')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 44,
+      height: 26,
+      borderRadius: 999,
+      flexShrink: 0,
+      marginLeft: 12,
+      background: showPhone ? '#0077B6' : 'var(--pg-ink-300)',
+      position: 'relative',
+      transition: 'background .2s'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 3,
+      left: showPhone ? 18 : 3,
+      width: 20,
+      height: 20,
+      borderRadius: '50%',
+      background: '#fff',
+      transition: 'left .2s',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+    }
+  }))), showPhone && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '0 16px 14px',
+      borderTop: '0.5px solid var(--pg-ink-100)',
+      background: 'var(--pg-ink-50)'
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 11,
       fontWeight: 700,
       color: 'var(--pg-ink-600)',
       letterSpacing: '0.04em',
       textTransform: 'uppercase',
       display: 'block',
-      marginBottom: 6
+      margin: '12px 0 6px'
     }
-  }, lang === 'pt' ? 'Telefone (opcional)' : 'Phone (optional)'), /*#__PURE__*/React.createElement("input", {
+  }, lang === 'pt' ? 'Seu telefone' : 'Your phone'), /*#__PURE__*/React.createElement("input", {
     value: phone,
     onChange: e => setPhone(e.target.value),
     type: "tel",
     placeholder: "(954) 000-0000",
     style: inp
-  }), /*#__PURE__*/React.createElement("p", {
-    style: {
-      margin: '4px 0 0',
-      fontSize: 11,
-      color: 'var(--pg-ink-400)'
-    }
-  }, lang === 'pt' ? 'Ficará visível no anúncio para contato direto.' : 'Will be visible on the listing for direct contact.')), err && /*#__PURE__*/React.createElement("div", {
+  }))), err && /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#FEE2E2',
       borderRadius: 9,
