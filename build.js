@@ -45,6 +45,8 @@ const STATIC_GLOBS = [
   'admin.html',
   'sw.js',
   'manifest.json',
+  'icone-splash.png',
+  'icone-splash.webp',
 ];
 
 // ── Babel config: JSX → React.createElement ───────────────────

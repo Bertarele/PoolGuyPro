@@ -146,31 +146,10 @@
   <div id="pgSplash">
     <div class="pgSplashGlow"></div>
     <div class="pgSplashIcon">
-      <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="xGradA" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#48cae4"/>
-            <stop offset="55%" stop-color="#0096c7"/>
-            <stop offset="100%" stop-color="#023e8a"/>
-          </linearGradient>
-          <linearGradient id="xGradB" x1="72" y1="0" x2="0" y2="72" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#48cae4"/>
-            <stop offset="55%" stop-color="#0096c7"/>
-            <stop offset="100%" stop-color="#023e8a"/>
-          </linearGradient>
-          <linearGradient id="waveGrad" x1="4" y1="0" x2="68" y2="0" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#0077b6"/>
-            <stop offset="50%" stop-color="#00b4d8"/>
-            <stop offset="100%" stop-color="#0096c7"/>
-          </linearGradient>
-        </defs>
-        <!-- X — bar top-left → bottom-right -->
-        <rect x="10" y="29" width="52" height="14" rx="7" fill="url(#xGradA)" transform="rotate(45 36 36)"/>
-        <!-- X — bar top-right → bottom-left -->
-        <rect x="10" y="29" width="52" height="14" rx="7" fill="url(#xGradB)" transform="rotate(-45 36 36)"/>
-        <!-- Wave swoosh -->
-        <path d="M 6 56 Q 20 44 34 52 Q 48 60 66 46" stroke="url(#waveGrad)" stroke-width="5.5" stroke-linecap="round" fill="none"/>
-      </svg>
+      <picture>
+        <source srcset="/icone-splash.webp" type="image/webp"/>
+        <img src="/icone-splash.png" alt="PoolGuyX" width="84" height="84" style="display:block;"/>
+      </picture>
     </div>
     <div class="pgSplashWordmark">
       <span class="pgSplashWord">PoolGuy<em>X</em></span>
