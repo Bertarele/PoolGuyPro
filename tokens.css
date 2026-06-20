@@ -122,6 +122,11 @@ button { font-family: inherit; }
 
 .pg-divider { height: 0.5px; background: var(--pg-ink-200); }
 
+@keyframes pg-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* Bottom sheet animation */
 @keyframes pg-sheet-up {
   from { transform: translateY(100%); opacity: 0.6; }

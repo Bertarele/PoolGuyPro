@@ -191,6 +191,36 @@ function App() {
   }, []);
   const screenRef = React.useRef(null);
 
+  // ── Pull-to-refresh ──────────────────────────────────────────
+  const pullStartY  = React.useRef(null);
+  const [pullDist,  setPullDist]  = React.useState(0);  // px pulled (0-80)
+  const [refreshing,setRefreshing]= React.useState(false);
+  const PULL_THRESHOLD = 64;
+
+  const onPTRTouchStart = React.useCallback((e) => {
+    if (screenRef.current && screenRef.current.scrollTop === 0) {
+      pullStartY.current = e.touches[0].clientY;
+    }
+  }, []);
+
+  const onPTRTouchMove = React.useCallback((e) => {
+    if (pullStartY.current === null) return;
+    const dy = e.touches[0].clientY - pullStartY.current;
+    if (dy > 0) setPullDist(Math.min(dy * 0.55, 80));
+    else { pullStartY.current = null; setPullDist(0); }
+  }, []);
+
+  const onPTRTouchEnd = React.useCallback(() => {
+    if (pullDist >= PULL_THRESHOLD) {
+      setRefreshing(true);
+      setPullDist(PULL_THRESHOLD);
+      setTimeout(() => window.location.reload(), 600);
+    } else {
+      setPullDist(0);
+    }
+    pullStartY.current = null;
+  }, [pullDist]);
+
   const switchTab = React.useCallback((newTab) => {
     setTab(prev => {
       // Double-tap Home → reload page
@@ -1562,8 +1592,41 @@ function App() {
       {/* ── Main app ── */}
       {isLoggedIn && !user.banned && (
         <>
+          {/* Pull-to-refresh indicator */}
+          {(pullDist > 4 || refreshing) && (
+            <div style={{
+              position:'absolute', top:0, left:0, right:0, zIndex:2000,
+              display:'flex', justifyContent:'center',
+              pointerEvents:'none',
+              transform:`translateY(${Math.min(pullDist, PULL_THRESHOLD) - 40}px)`,
+              transition: pullDist === 0 || refreshing ? 'transform .25s ease' : 'none',
+            }}>
+              <div style={{
+                width:34, height:34, borderRadius:'50%',
+                background:'var(--pg-white)',
+                boxShadow:'0 2px 12px rgba(0,0,0,0.18)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="var(--pg-blue-500)" strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round"
+                  style={{
+                    animation: refreshing ? 'pg-spin .7s linear infinite' : 'none',
+                    transform: !refreshing ? `rotate(${(pullDist/PULL_THRESHOLD)*270}deg)` : undefined,
+                    transition: !refreshing ? 'none' : undefined,
+                  }}>
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+              </div>
+            </div>
+          )}
+
           {/* Screen content */}
-          <div ref={screenRef} data-pg-screen style={{position:'absolute', inset:0, paddingBottom:56, overflow:'auto'}}>
+          <div ref={screenRef} data-pg-screen
+            onTouchStart={onPTRTouchStart}
+            onTouchMove={onPTRTouchMove}
+            onTouchEnd={onPTRTouchEnd}
+            style={{position:'absolute', inset:0, paddingBottom:56, overflow:'auto', overscrollBehaviorY:'none'}}>
             {tab === 'home'    && <HomeScreen ctx={ctx}/>}
             {tab === 'market'  && <MarketplaceScreen ctx={ctx}/>}
             {tab === 'quick'   && <QuickPoolsScreen ctx={ctx}/>}
