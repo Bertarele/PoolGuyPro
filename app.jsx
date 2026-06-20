@@ -1639,13 +1639,14 @@ function App() {
       {/* ── Main app ── */}
       {isLoggedIn && !user.banned && (
         <>
-          {/* Pull-to-refresh indicator */}
+          {/* Pull-to-refresh indicator — fixed in the safe-area zone above the header */}
           {(pullDist > 4 || refreshing) && (
             <div style={{
-              position:'absolute', top:0, left:0, right:0, zIndex:2000,
+              position:'fixed', top:0, left:0, right:0, zIndex:9999,
               display:'flex', justifyContent:'center',
+              paddingTop:'max(10px, env(safe-area-inset-top, 10px))',
               pointerEvents:'none',
-              transform:`translateY(${Math.min(pullDist, PULL_THRESHOLD) - 40}px)`,
+              transform:`translateY(${Math.min(pullDist, PULL_THRESHOLD) - PULL_THRESHOLD}px)`,
               transition: pullDist === 0 || refreshing ? 'transform .25s ease' : 'none',
             }}>
               <div style={{

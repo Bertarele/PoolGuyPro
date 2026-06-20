@@ -2748,15 +2748,16 @@ function App() {
     }
   }, lang === 'pt' ? 'Sair da conta' : lang === 'es' ? 'Cerrar sesión' : 'Sign out')), isLoggedIn && !user.banned && /*#__PURE__*/React.createElement(React.Fragment, null, (pullDist > 4 || refreshing) && /*#__PURE__*/React.createElement("div", {
     style: {
-      position: 'absolute',
+      position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
-      zIndex: 2000,
+      zIndex: 9999,
       display: 'flex',
       justifyContent: 'center',
+      paddingTop: 'max(10px, env(safe-area-inset-top, 10px))',
       pointerEvents: 'none',
-      transform: `translateY(${Math.min(pullDist, PULL_THRESHOLD) - 40}px)`,
+      transform: `translateY(${Math.min(pullDist, PULL_THRESHOLD) - PULL_THRESHOLD}px)`,
       transition: pullDist === 0 || refreshing ? 'transform .25s ease' : 'none'
     }
   }, /*#__PURE__*/React.createElement("div", {
