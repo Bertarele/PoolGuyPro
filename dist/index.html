@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>PoolGuyPro — Florida Pool Network</title>
+  <title>PoolGuyX — Florida Pool Network</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="theme-color" content="#0077B6"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="PoolGuyPro"/>
+  <meta name="apple-mobile-web-app-title" content="PoolGuyX"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="apple-touch-icon" href="/icone.png"/>
   <!-- Preconnect to all external origins for faster loading -->
@@ -19,7 +19,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mqlu21hl">
+  <link rel="stylesheet" href="tokens.css?v=mqlu5nrg">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -42,33 +42,120 @@
     /* ── Splash screen — shown instantly before any JS loads ── */
     #pgSplash {
       position: fixed; inset: 0; z-index: 99999;
-      background: #0b1220;
+      background: #040d18;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 20px;
-      transition: opacity 0.28s ease;
+      align-items: center; justify-content: center;
+      gap: 0;
+      transition: opacity 0.4s ease;
     }
     #pgSplash.fade { opacity: 0; pointer-events: none; }
-    @keyframes pgSpin { to { transform: rotate(360deg); } }
-    .pgSpinner {
-      width: 44px; height: 44px;
-      border: 3.5px solid rgba(255,255,255,0.12);
-      border-top-color: #38bdf8;
+
+    /* Radial glow behind the icon */
+    .pgSplashGlow {
+      position: absolute;
+      width: 320px; height: 320px;
       border-radius: 50%;
-      animation: pgSpin 0.7s linear infinite;
+      background: radial-gradient(circle, rgba(0,180,216,0.18) 0%, rgba(0,119,182,0.10) 45%, transparent 72%);
+      pointer-events: none;
     }
-    .pgSplashLogo {
-      font-family: -apple-system, system-ui, sans-serif;
-      font-size: 15px; font-weight: 700;
-      color: rgba(255,255,255,0.5);
-      letter-spacing: 0.04em;
+
+    /* Icon badge */
+    .pgSplashIcon {
+      width: 100px; height: 100px;
+      border-radius: 24px;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow:
+        0 0 0 1px rgba(0,180,216,0.18),
+        0 8px 32px rgba(0,119,182,0.28),
+        0 2px 8px rgba(0,0,0,0.5);
+      overflow: hidden;
+      position: relative; z-index: 1;
+      animation: pgSplashPop 0.55s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .pgSplashIcon img {
+      width: 88px; height: 88px;
+      object-fit: contain;
+    }
+
+    /* PoolGuyX wordmark */
+    .pgSplashWordmark {
+      margin-top: 22px;
+      position: relative; z-index: 1;
+      display: flex; align-items: baseline; gap: 0;
+      animation: pgSplashFadeUp 0.5s 0.2s ease both;
+    }
+    .pgSplashWord {
+      font-family: "Raleway", "Poppins", sans-serif;
+      font-weight: 800;
+      font-size: 32px;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+    .pgSplashWord em {
+      font-style: normal;
+      background: linear-gradient(135deg, #00b4d8, #0077b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Tagline */
+    .pgSplashTag {
+      margin-top: 6px;
+      font-family: "Poppins", sans-serif;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.32);
+      position: relative; z-index: 1;
+      animation: pgSplashFadeUp 0.5s 0.35s ease both;
+    }
+
+    /* Loading bar */
+    .pgSplashBar {
+      margin-top: 48px;
+      width: 56px; height: 2px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+      position: relative; z-index: 1;
+      animation: pgSplashFadeUp 0.4s 0.45s ease both;
+    }
+    .pgSplashBarFill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #00b4d8, #0077b6);
+      animation: pgBarSlide 1.4s 0.5s ease-in-out infinite;
+    }
+
+    @keyframes pgSplashPop {
+      from { opacity: 0; transform: scale(0.72); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pgSplashFadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pgBarSlide {
+      0%   { transform: translateX(-100%) scaleX(0.5); }
+      50%  { transform: translateX(20%)  scaleX(1.2); }
+      100% { transform: translateX(200%) scaleX(0.5); }
     }
   </style>
 </head>
 <body>
   <!-- Splash: renders immediately (no JS needed) and is hidden once React mounts -->
   <div id="pgSplash">
-    <div class="pgSpinner"></div>
-    <div class="pgSplashLogo">PoolGuyPro</div>
+    <div class="pgSplashGlow"></div>
+    <div class="pgSplashIcon">
+      <img src="/icone.png" alt="PoolGuyX"/>
+    </div>
+    <div class="pgSplashWordmark">
+      <span class="pgSplashWord">PoolGuy<em>X</em></span>
+    </div>
+    <div class="pgSplashTag">Florida Pool Network</div>
+    <div class="pgSplashBar"><div class="pgSplashBarFill"></div></div>
   </div>
   <div id="stage"><div id="root"></div></div>
 
@@ -356,20 +443,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mqlu21hl"></script>
-  <script src="tweaks-panel.js?v=mqlu21hl"></script>
-  <script src="components.js?v=mqlu21hl"></script>
-  <script src="brand.js?v=mqlu21hl"></script>
-  <script src="data.js?v=mqlu21hl"></script>
-  <script src="screens/login.js?v=mqlu21hl"></script>
-  <script src="screens/home.js?v=mqlu21hl"></script>
-  <script src="screens/marketplace.js?v=mqlu21hl"></script>
-  <script src="screens/quickpools.js?v=mqlu21hl"></script>
-  <script src="screens/post.js?v=mqlu21hl"></script>
-  <script src="screens/work.js?v=mqlu21hl"></script>
-  <script src="screens/profile.js?v=mqlu21hl"></script>
-  <script src="screens/overlays.js?v=mqlu21hl"></script>
-  <script src="app.js?v=mqlu21hl"></script>
+  <script src="ios-frame.js?v=mqlu5nrg"></script>
+  <script src="tweaks-panel.js?v=mqlu5nrg"></script>
+  <script src="components.js?v=mqlu5nrg"></script>
+  <script src="brand.js?v=mqlu5nrg"></script>
+  <script src="data.js?v=mqlu5nrg"></script>
+  <script src="screens/login.js?v=mqlu5nrg"></script>
+  <script src="screens/home.js?v=mqlu5nrg"></script>
+  <script src="screens/marketplace.js?v=mqlu5nrg"></script>
+  <script src="screens/quickpools.js?v=mqlu5nrg"></script>
+  <script src="screens/post.js?v=mqlu5nrg"></script>
+  <script src="screens/work.js?v=mqlu5nrg"></script>
+  <script src="screens/profile.js?v=mqlu5nrg"></script>
+  <script src="screens/overlays.js?v=mqlu5nrg"></script>
+  <script src="app.js?v=mqlu5nrg"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {
