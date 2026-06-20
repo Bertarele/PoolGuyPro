@@ -207,9 +207,6 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
                       style={{height:64, paddingLeft:36, fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', fontFamily:'var(--pg-font-display)'}}/>
                     <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--pg-ink-500)'}}>{t.perPool}</span>
                   </div>
-                  <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:8}}>
-                    {t.typicalRange} <b style={{color:'var(--pg-ink-700)'}}>$40 — $65</b> {t.perPool}.
-                  </div>
                 </Field>
               )}
 

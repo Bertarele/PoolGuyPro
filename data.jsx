@@ -159,7 +159,7 @@ const STRINGS = {
     hasDoorman:'Tem porteiro', hasDog:'Tem cachorro na propriedade',
     when:'Quando', priceQ:'Como você quer pagar?',
     fixedPrice:'Preço fixo', priceNeg:'Negociável',
-    pricePerPool:'Preço por piscina (BRL)', typicalRange:'Faixa típica na sua área:',
+    pricePerPool:'Preço por piscina (USD)', typicalRange:'',
     summary:'RESUMO', sumTitle:'Título', sumPools:'Piscinas', sumType:'Tipo',
     sumLocation:'Localização', sumWhen:'Quando', sumPrice:'Preço', totalBudget:'Orçamento total',
     matchNotice:'piscineiros correspondem à sua região. Eles serão notificados imediatamente.',

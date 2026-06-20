@@ -131,6 +131,16 @@ function QuickPoolsScreen({
     if (selected && String(selected.id) === String(jobId)) setSelected(null);
   };
 
+  // ── Finalize a filled job (owner marks complete → removed) ──
+  const finalizeJob = async jobId => {
+    if (!window.sb) return;
+    await window.sb.from('quick_pool_jobs').update({
+      status: 'completed'
+    }).eq('id', jobId);
+    setJobs(prev => prev.filter(j => String(j.id) !== String(jobId)));
+    setSelected(null);
+  };
+
   // ── Apply to a live job ───────────────────────────────────────
   const applyToJob = async (jobId, e) => {
     e && e.stopPropagation();
@@ -178,7 +188,7 @@ function QuickPoolsScreen({
       style: {
         height: 3,
         width: '100%',
-        background: isApplied ? 'linear-gradient(90deg,#16A34A,#22C55E)' : locked ? 'linear-gradient(90deg,#6B7280,#9CA3AF)' : 'linear-gradient(90deg,#0077B6,#38BDF8)'
+        background: j.status === 'filled' ? 'linear-gradient(90deg,#D97706,#F59E0B)' : isApplied ? 'linear-gradient(90deg,#16A34A,#22C55E)' : locked ? 'linear-gradient(90deg,#6B7280,#9CA3AF)' : 'linear-gradient(90deg,#0077B6,#38BDF8)'
       }
     }), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -214,7 +224,20 @@ function QuickPoolsScreen({
         fontWeight: 600,
         color: 'var(--pg-ink-500)'
       }
-    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), isApplied && /*#__PURE__*/React.createElement("span", {
+    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        padding: '2px 8px',
+        borderRadius: 999,
+        background: '#FEF3C7',
+        color: '#92400E',
+        letterSpacing: '0.04em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3
+      }
+    }, "\u23F3 ", lang === 'pt' ? 'Em curso' : lang === 'es' ? 'En curso' : 'In progress'), isApplied && j.status !== 'filled' && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         fontWeight: 700,
@@ -398,7 +421,21 @@ function QuickPoolsScreen({
         gap: 6,
         boxShadow: '0 3px 10px rgba(0,119,182,0.35)'
       }
-    }, Icon.lock(12, '#fff'), " ", t.unlock) : isApplied ? /*#__PURE__*/React.createElement("div", {
+    }, Icon.lock(12, '#fff'), " ", t.unlock) : j.status === 'filled' && !isOwn ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 36,
+        padding: '0 16px',
+        borderRadius: 999,
+        background: '#FEF3C7',
+        border: '1px solid #FCD34D',
+        color: '#92400E',
+        fontSize: 12,
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, "\u23F3 ", lang === 'pt' ? 'Em curso' : lang === 'es' ? 'En curso' : 'In progress') : isApplied ? /*#__PURE__*/React.createElement("div", {
       style: {
         height: 36,
         padding: '0 16px',
@@ -446,7 +483,18 @@ function QuickPoolsScreen({
     onUnlock: openPaywall,
     onChat: openChat,
     onClose: () => setSelected(null),
-    onDelete: deleteJob
+    onDelete: deleteJob,
+    onComplete: finalizeJob,
+    onStatusChange: status => {
+      setJobs(prev => prev.map(j => String(j.id) === String(selected.id) ? {
+        ...j,
+        status
+      } : j));
+      setSelected(prev => prev ? {
+        ...prev,
+        status
+      } : prev);
+    }
   }));
 
   // ══════════════════════════════════════════════════════════════
@@ -1348,7 +1396,9 @@ function QuickPoolDetails({
   onUnlock,
   onChat,
   onClose,
-  onDelete
+  onDelete,
+  onComplete,
+  onStatusChange
 }) {
   const locked = user.tier === 'free';
   const isOwn = job._live && user?.uid && job.poster_id === user.uid;
@@ -1382,6 +1432,7 @@ function QuickPoolDetails({
       ...a,
       status: a.id === appId ? 'accepted' : 'rejected'
     })));
+    onStatusChange && onStatusChange('filled');
     // Notify accepted applicant
     window.sendPush && window.sendPush(applicantId, lang === 'pt' ? '🎉 Candidatura aceita!' : '🎉 Application accepted!', lang === 'pt' ? `Sua candidatura para "${tr(job.title, lang)}" foi aceita.` : `Your application for "${tr(job.title, lang)}" was accepted.`, '/#express-pools');
   };
@@ -1785,7 +1836,43 @@ function QuickPoolDetails({
   }, isOwn ?
   /*#__PURE__*/
   /* Owner actions */
-  React.createElement("button", {
+  React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
+    }
+  }, job.status === 'filled' ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      onComplete && onComplete(job.id);
+    },
+    style: {
+      height: 50,
+      borderRadius: 14,
+      border: 'none',
+      cursor: 'pointer',
+      background: 'linear-gradient(135deg,#16A34A,#22C55E)',
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: 700,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      boxShadow: '0 4px 14px rgba(22,163,74,0.35)'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "20 6 9 17 4 12"
+  })), lang === 'pt' ? 'Finalizar e remover vaga' : lang === 'es' ? 'Finalizar y eliminar' : 'Mark complete & remove') : /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowApplicants(v => !v),
     style: {
       height: 50,
@@ -1820,7 +1907,7 @@ function QuickPoolDetails({
     d: "M23 21v-2a4 4 0 0 0-3-3.87"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M16 3.13a4 4 0 0 1 0 7.75"
-  })), lang === 'pt' ? `${showApplicants ? 'Fechar' : 'Ver'} candidatos${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}` : `${showApplicants ? 'Close' : 'View'} applicants${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}`) :
+  })), lang === 'pt' ? `${showApplicants ? 'Fechar' : 'Ver'} candidatos${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}` : `${showApplicants ? 'Close' : 'View'} applicants${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}`)) :
   /*#__PURE__*/
   /* Non-owner actions */
   React.createElement(React.Fragment, null, job._live && job.poster_phone && !isOwn && /*#__PURE__*/React.createElement("a", {
@@ -1866,7 +1953,22 @@ function QuickPoolDetails({
       opacity: locked ? 0.5 : 1,
       borderRadius: 999
     }
-  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.contact), job._live ? /*#__PURE__*/React.createElement("button", {
+  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.contact), job.status === 'filled' ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 2,
+      height: 46,
+      borderRadius: 999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      background: '#FEF3C7',
+      border: '1px solid #FCD34D',
+      color: '#92400E',
+      fontSize: 14,
+      fontWeight: 700
+    }
+  }, "\u23F3 ", lang === 'pt' ? 'Em curso' : lang === 'es' ? 'En curso' : 'In progress') : job._live ? /*#__PURE__*/React.createElement("button", {
     onClick: locked ? onUnlock : () => {
       onApply();
     },

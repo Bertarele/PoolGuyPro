@@ -292,17 +292,7 @@ function PostQuickPool({
       fontSize: 13,
       color: 'var(--pg-ink-500)'
     }
-  }, t.perPool)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--pg-ink-500)',
-      marginTop: 8
-    }
-  }, t.typicalRange, " ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: 'var(--pg-ink-700)'
-    }
-  }, "$40 \u2014 $65"), " ", t.perPool, ".")), /*#__PURE__*/React.createElement("div", {
+  }, t.perPool))), /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
     style: {
       padding: 14,
