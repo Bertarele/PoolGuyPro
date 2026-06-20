@@ -50,7 +50,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
       : lang==='es'
         ? 'Cada piscina puede estar en una ciudad y tipo diferentes (casa o condominio).'
         : 'Each pool can be in a different city and type (house or condo).',
-    pickLocation: lang==='pt'?'Localização desta piscina':lang==='es'?'Ubicación de esta piscina':'Location of this pool',
+    pickLocation: lang==='pt'?'Cidade desta piscina':lang==='es'?'Ciudad de esta piscina':'City of this pool',
     pickType: lang==='pt'?'Tipo':lang==='es'?'Tipo':'Type',
   };
 

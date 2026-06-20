@@ -53,7 +53,7 @@ function PostQuickPool({
     addPool: lang === 'pt' ? 'Adicionar outra piscina' : lang === 'es' ? 'Agregar otra piscina' : 'Add another pool',
     remove: lang === 'pt' ? 'Remover' : lang === 'es' ? 'Quitar' : 'Remove',
     eachIndependent: lang === 'pt' ? 'Cada piscina pode estar em uma cidade e ter tipo diferentes (casa ou condomínio).' : lang === 'es' ? 'Cada piscina puede estar en una ciudad y tipo diferentes (casa o condominio).' : 'Each pool can be in a different city and type (house or condo).',
-    pickLocation: lang === 'pt' ? 'Localização desta piscina' : lang === 'es' ? 'Ubicación de esta piscina' : 'Location of this pool',
+    pickLocation: lang === 'pt' ? 'Cidade desta piscina' : lang === 'es' ? 'Ciudad de esta piscina' : 'City of this pool',
     pickType: lang === 'pt' ? 'Tipo' : lang === 'es' ? 'Tipo' : 'Type'
   };
   const canContinue = () => {
