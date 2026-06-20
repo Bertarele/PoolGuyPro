@@ -257,7 +257,9 @@
           return{data:null,error:null};
         }
         if(op==='insert'){
-          var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+          var ih=Object.assign({},h,{'Prefer':'return=representation'});
+          if(isSingle) ih['Accept']='application/vnd.pgrst.object+json';
+          var r=await fetch(url,{method:'POST',headers:ih,body:JSON.stringify(body)});
           if(!r.ok){
             var e={}; try{e=await r.json();}catch(x){}
             if(!retried && (r.status===401 || _isExpired(e.message||e.msg||''))) {
@@ -266,7 +268,8 @@
             }
             return{data:null,error:{message:e.message||'Insert failed '+r.status}};
           }
-          return{data:null,error:null};
+          var d=await r.json();
+          return{data:isSingle?d:(Array.isArray(d)?d[0]:d),error:null};
         }
         if(op==='update'){
           var qs=filters.join('&');

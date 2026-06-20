@@ -256,7 +256,13 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "showDevControls": true
 } /*EDITMODE-END*/;
 function App() {
-  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const _savedTier = typeof localStorage !== 'undefined' && localStorage.getItem('pg_tier') || null;
+  const [t, setTweak] = useTweaks({
+    ...TWEAK_DEFAULTS,
+    ...(_savedTier ? {
+      tier: _savedTier
+    } : {})
+  });
   // If launched via a listing deep link, start on market tab; otherwise restore from URL hash
   // Hash format: #tab  OR  #tab/sub  (e.g. #work/vac, #market/routes)
   const [tab, setTab] = React.useState(() => {
@@ -1153,12 +1159,15 @@ function App() {
     });
   }, [user.name]);
 
-  // Sync tier tweak → user state
+  // Sync tier tweak → user state + persist to localStorage
   React.useEffect(() => {
     setUser(u => ({
       ...u,
       tier: t.tier
     }));
+    try {
+      localStorage.setItem('pg_tier', t.tier);
+    } catch {}
   }, [t.tier]);
   const setLang = l => {
     setLangState(l);

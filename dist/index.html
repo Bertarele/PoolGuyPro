@@ -19,7 +19,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mqmnow36">
+  <link rel="stylesheet" href="tokens.css?v=mqn0ifm9">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -256,7 +256,9 @@
           return{data:null,error:null};
         }
         if(op==='insert'){
-          var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal'}),body:JSON.stringify(body)});
+          var ih=Object.assign({},h,{'Prefer':'return=representation'});
+          if(isSingle) ih['Accept']='application/vnd.pgrst.object+json';
+          var r=await fetch(url,{method:'POST',headers:ih,body:JSON.stringify(body)});
           if(!r.ok){
             var e={}; try{e=await r.json();}catch(x){}
             if(!retried && (r.status===401 || _isExpired(e.message||e.msg||''))) {
@@ -265,7 +267,8 @@
             }
             return{data:null,error:{message:e.message||'Insert failed '+r.status}};
           }
-          return{data:null,error:null};
+          var d=await r.json();
+          return{data:isSingle?d:(Array.isArray(d)?d[0]:d),error:null};
         }
         if(op==='update'){
           var qs=filters.join('&');
@@ -437,20 +440,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mqmnow36"></script>
-  <script src="tweaks-panel.js?v=mqmnow36"></script>
-  <script src="components.js?v=mqmnow36"></script>
-  <script src="brand.js?v=mqmnow36"></script>
-  <script src="data.js?v=mqmnow36"></script>
-  <script src="screens/login.js?v=mqmnow36"></script>
-  <script src="screens/home.js?v=mqmnow36"></script>
-  <script src="screens/marketplace.js?v=mqmnow36"></script>
-  <script src="screens/quickpools.js?v=mqmnow36"></script>
-  <script src="screens/post.js?v=mqmnow36"></script>
-  <script src="screens/work.js?v=mqmnow36"></script>
-  <script src="screens/profile.js?v=mqmnow36"></script>
-  <script src="screens/overlays.js?v=mqmnow36"></script>
-  <script src="app.js?v=mqmnow36"></script>
+  <script src="ios-frame.js?v=mqn0ifm9"></script>
+  <script src="tweaks-panel.js?v=mqn0ifm9"></script>
+  <script src="components.js?v=mqn0ifm9"></script>
+  <script src="brand.js?v=mqn0ifm9"></script>
+  <script src="data.js?v=mqn0ifm9"></script>
+  <script src="screens/login.js?v=mqn0ifm9"></script>
+  <script src="screens/home.js?v=mqn0ifm9"></script>
+  <script src="screens/marketplace.js?v=mqn0ifm9"></script>
+  <script src="screens/quickpools.js?v=mqn0ifm9"></script>
+  <script src="screens/post.js?v=mqn0ifm9"></script>
+  <script src="screens/work.js?v=mqn0ifm9"></script>
+  <script src="screens/profile.js?v=mqn0ifm9"></script>
+  <script src="screens/overlays.js?v=mqn0ifm9"></script>
+  <script src="app.js?v=mqn0ifm9"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {
