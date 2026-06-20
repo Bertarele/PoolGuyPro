@@ -286,16 +286,18 @@ button { font-family: inherit; }
 .pg-field {
   width: 100%; height: 48px; padding: 0 14px;
   border-radius: 12px; border: 1px solid var(--pg-ink-200);
-  background: var(--pg-white); font-size: 15px; color: var(--pg-ink-900);
+  background: var(--pg-white); font-size: 16px; color: var(--pg-ink-900);
   font-family: inherit; outline: none; transition: border-color .15s ease;
 }
 .pg-field:focus { border-color: var(--pg-blue-500); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
 .pg-textarea {
   width: 100%; padding: 12px 14px;
   border-radius: 12px; border: 1px solid var(--pg-ink-200);
-  background: var(--pg-white); font-size: 15px; color: var(--pg-ink-900);
+  background: var(--pg-white); font-size: 16px; color: var(--pg-ink-900);
   font-family: inherit; outline: none; min-height: 88px; resize: none;
 }
+/* Prevent iOS auto-zoom on focus — any input smaller than 16px triggers it */
+input, textarea, select { font-size: 16px; }
 
 /* Toggle */
 .pg-toggle {
