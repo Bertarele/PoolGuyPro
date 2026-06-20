@@ -2789,13 +2789,13 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
       setInsertError(errMsg);
       return;
     }
-    // Notify the job owner
+    // Notify the job owner (in-app + push)
     const ownerId = job.author_id || job.job_author_id || null;
     if (ownerId && ownerId !== uid && window.sb) {
       window.sb.from('notifications').insert({
         user_id: ownerId,
         type:    'job_new_application',
-        title:   JSON.stringify({ en:'New application received', pt:'Nova candidatura recebida', es:'Nueva postulación recibida' }),
+        title:   JSON.stringify({ en:'New application received', pt:'Nova candidatura recebida', es:'Nueva postulação recebida' }),
         body:    JSON.stringify({
           en: `${user.name || 'Someone'} applied for "${jobRole || jobCompany}".`,
           pt: `${user.name || 'Alguém'} se candidatou para "${jobRole || jobCompany}".`,
@@ -2804,6 +2804,16 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
         link_id: jobId,
         read:    false,
       });
+      window.sendPush && window.sendPush(
+        ownerId,
+        lang==='pt' ? '📬 Nova candidatura' : lang==='es' ? '📬 Nueva postulación' : '📬 New application',
+        lang==='pt'
+          ? `${user.name || 'Alguém'} se candidatou para "${jobRole || jobCompany}".`
+          : lang==='es'
+          ? `${user.name || 'Alguien'} se postuló para "${jobRole || jobCompany}".`
+          : `${user.name || 'Someone'} applied for "${jobRole || jobCompany}".`,
+        '/#work'
+      );
     }
     setSubmitted(true);
     setTimeout(() => onSubmit && onSubmit(), 2000);

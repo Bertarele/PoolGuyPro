@@ -555,6 +555,65 @@ function App() {
     }
   }, [isLoggedIn, user?.uid, loadPendingRatings]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Push notification subscription ─────────────────────────────
+  const VAPID_PUBLIC = 'BC5W23IjAHOReRjCYC3MtRac1YMPSaodjgrhXXwWWCzHHCvAm7KgZG8_eeDcKK2w_wqbsVBHgHpbdcxZtors-5g';
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  // Global helper: fire-and-forget push to another user via Edge Function
+  window.sendPush = async function (userId, title, body, url) {
+    try {
+      await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/send-push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          title,
+          body,
+          url
+        })
+      });
+    } catch (e) {}
+  };
+  React.useEffect(() => {
+    if (!isLoggedIn || !user?.uid) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    // Wait a bit so the app loads before asking for permission
+    const t = setTimeout(async () => {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return;
+        const reg = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+        const sub = existing || (await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+        }));
+        const {
+          endpoint,
+          keys
+        } = sub.toJSON();
+        await window.sb.from('push_subscriptions').upsert({
+          user_id: user.uid,
+          endpoint: endpoint,
+          p256dh: keys.p256dh,
+          auth: keys.auth
+        }, {
+          onConflict: 'user_id,endpoint'
+        });
+      } catch (e) {
+        console.warn('[push] subscribe failed:', e);
+      }
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [isLoggedIn, user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Overlays
   const [chatOpen, setChatOpen] = React.useState(false);
   const [chatConvoTarget, setChatConvoTarget] = React.useState(null); // string | { id, name }

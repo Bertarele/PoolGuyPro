@@ -966,52 +966,7 @@ const FEATURED = [{
   tag: 'NEW'
 }];
 const EQUIPMENT = [];
-const POOL_ROUTES = [{
-  id: 1,
-  name: {
-    en: 'Weston Lakes — 14 pools',
-    pt: 'Weston Lakes — 14 piscinas',
-    es: 'Weston Lakes — 14 piscinas'
-  },
-  revenue: {
-    en: '$3.8k/mo',
-    pt: 'R$19k/mês',
-    es: '$3.8k/mes'
-  },
-  clients: 14,
-  area: 'Weston',
-  est: 5800
-}, {
-  id: 2,
-  name: {
-    en: 'Coral Gables — 8 pools',
-    pt: 'Coral Gables — 8 piscinas',
-    es: 'Coral Gables — 8 piscinas'
-  },
-  revenue: {
-    en: '$2.4k/mo',
-    pt: 'R$12k/mês',
-    es: '$2.4k/mes'
-  },
-  clients: 8,
-  area: 'Coral Gables',
-  est: 3900
-}, {
-  id: 3,
-  name: {
-    en: 'Pinecrest — 22 pools',
-    pt: 'Pinecrest — 22 piscinas',
-    es: 'Pinecrest — 22 piscinas'
-  },
-  revenue: {
-    en: '$6.1k/mo',
-    pt: 'R$30k/mês',
-    es: '$6.1k/mes'
-  },
-  clients: 22,
-  area: 'Pinecrest',
-  est: 9200
-}];
+const POOL_ROUTES = [];
 const SINGLE_POOLS = [];
 const QUICK_POOLS = [{
   id: 1,

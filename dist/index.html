@@ -4,6 +4,12 @@
   <meta charset="utf-8"/>
   <title>PoolGuyPro — Florida Pool Network</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#0077B6"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="PoolGuyPro"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/icone.png"/>
   <!-- Preconnect to all external origins for faster loading -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +19,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mqizlq0z">
+  <link rel="stylesheet" href="tokens.css?v=mqlu21hl">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -350,20 +356,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mqizlq0z"></script>
-  <script src="tweaks-panel.js?v=mqizlq0z"></script>
-  <script src="components.js?v=mqizlq0z"></script>
-  <script src="brand.js?v=mqizlq0z"></script>
-  <script src="data.js?v=mqizlq0z"></script>
-  <script src="screens/login.js?v=mqizlq0z"></script>
-  <script src="screens/home.js?v=mqizlq0z"></script>
-  <script src="screens/marketplace.js?v=mqizlq0z"></script>
-  <script src="screens/quickpools.js?v=mqizlq0z"></script>
-  <script src="screens/post.js?v=mqizlq0z"></script>
-  <script src="screens/work.js?v=mqizlq0z"></script>
-  <script src="screens/profile.js?v=mqizlq0z"></script>
-  <script src="screens/overlays.js?v=mqizlq0z"></script>
-  <script src="app.js?v=mqizlq0z"></script>
+  <script src="ios-frame.js?v=mqlu21hl"></script>
+  <script src="tweaks-panel.js?v=mqlu21hl"></script>
+  <script src="components.js?v=mqlu21hl"></script>
+  <script src="brand.js?v=mqlu21hl"></script>
+  <script src="data.js?v=mqlu21hl"></script>
+  <script src="screens/login.js?v=mqlu21hl"></script>
+  <script src="screens/home.js?v=mqlu21hl"></script>
+  <script src="screens/marketplace.js?v=mqlu21hl"></script>
+  <script src="screens/quickpools.js?v=mqlu21hl"></script>
+  <script src="screens/post.js?v=mqlu21hl"></script>
+  <script src="screens/work.js?v=mqlu21hl"></script>
+  <script src="screens/profile.js?v=mqlu21hl"></script>
+  <script src="screens/overlays.js?v=mqlu21hl"></script>
+  <script src="app.js?v=mqlu21hl"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {
@@ -394,6 +400,15 @@
           _lastSig = sig;
         } catch(e) {}
       }, 1500);
+    }
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+          .then(reg => { window.__swReg = reg; })
+          .catch(err => console.warn('[SW] register failed:', err));
+      });
     }
   </script>
 </body>

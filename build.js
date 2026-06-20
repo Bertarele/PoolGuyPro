@@ -43,6 +43,8 @@ const STATIC_GLOBS = [
   'logo.png',
   'pgx-logo.png',
   'admin.html',
+  'sw.js',
+  'manifest.json',
 ];
 
 // ── Babel config: JSX → React.createElement ───────────────────

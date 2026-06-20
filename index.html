@@ -4,6 +4,12 @@
   <meta charset="utf-8"/>
   <title>PoolGuyPro — Florida Pool Network</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#0077B6"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="PoolGuyPro"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/icone.png"/>
   <!-- Preconnect to all external origins for faster loading -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -426,6 +432,15 @@
           _lastSig = sig;
         } catch(e) {}
       }, 1500);
+    }
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+          .then(reg => { window.__swReg = reg; })
+          .catch(err => console.warn('[SW] register failed:', err));
+      });
     }
   </script>
 </body>
