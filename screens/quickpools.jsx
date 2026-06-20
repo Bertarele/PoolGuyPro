@@ -425,86 +425,92 @@ function QuickPoolsScreen({ ctx }) {
   return (
     <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
     <div className="pg-screen" style={{paddingBottom:110, height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
-      {/* Express Pools header */}
-      <div style={{
-        background:'linear-gradient(155deg, #010E1F 0%, #012044 40%, #013B78 80%, #004E9A 100%)',
-        padding:`calc(env(safe-area-inset-top, 0px) + 14px) 18px 28px`,
-        position:'relative', overflow:'hidden',
-      }}>
-        {/* Diagonal light streaks — subtle water refraction */}
-        <div style={{position:'absolute',inset:0,pointerEvents:'none',
-          backgroundImage:'repeating-linear-gradient(118deg, transparent, transparent 38px, rgba(255,255,255,0.028) 38px, rgba(255,255,255,0.028) 39px)',
-        }}/>
-        {/* Glow orbs */}
-        <div style={{position:'absolute',top:-55,right:-35,width:190,height:190,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,200,240,0.32) 0%,transparent 65%)',pointerEvents:'none'}}/>
-        <div style={{position:'absolute',top:10,right:55,width:70,height:70,borderRadius:'50%',background:'radial-gradient(circle,rgba(56,189,248,0.18) 0%,transparent 70%)',pointerEvents:'none'}}/>
-        <div style={{position:'absolute',bottom:14,left:-25,width:110,height:110,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,120,210,0.22) 0%,transparent 70%)',pointerEvents:'none'}}/>
-        {/* Bottom wave */}
-        <svg viewBox="0 0 375 28" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"
-          style={{position:'absolute',bottom:0,left:0,width:'100%',height:28,display:'block',pointerEvents:'none'}}>
-          <path d="M0,14 C55,2 110,22 165,12 C220,2 275,20 330,10 C348,6 362,14 375,10 L375,28 L0,28 Z" fill="rgba(255,255,255,0.06)"/>
-          <path d="M0,20 C70,8 140,26 210,16 C265,8 320,22 375,18 L375,28 L0,28 Z" fill="#F4F8FB"/>
-        </svg>
+      {/* Express Pools header — adapts to dark/light mode */}
+      {(()=>{
+        const _bg   = darkMode
+          ? 'linear-gradient(155deg, #010E1F 0%, #012044 40%, #013B78 80%, #004E9A 100%)'
+          : 'linear-gradient(155deg, #daeeff 0%, #c2e4f8 40%, #a8d8f5 80%, #8ec8f0 100%)';
+        const _tx   = darkMode ? '#fff'               : '#0A2840';
+        const _sub  = darkMode ? 'rgba(255,255,255,0.55)' : 'rgba(10,40,64,0.50)';
+        const _btnBg= darkMode ? 'rgba(0,180,216,0.28)'  : 'rgba(0,100,180,0.13)';
+        const _btnBd= darkMode ? 'rgba(0,200,240,0.5)'   : 'rgba(0,100,180,0.30)';
+        const _btnC = darkMode ? '#fff'               : '#004A8F';
+        const _icBg = darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(10,40,64,0.08)';
+        const _icBd = darkMode ? 'rgba(255,255,255,0.18)' : 'rgba(10,40,64,0.14)';
+        const _notifBg = darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(10,40,64,0.07)';
+        const _notifBd = darkMode ? 'rgba(255,255,255,0.13)' : 'rgba(10,40,64,0.13)';
+        const _orb1 = darkMode ? 'rgba(0,200,240,0.32)'  : 'rgba(0,120,200,0.18)';
+        const _orb2 = darkMode ? 'rgba(56,189,248,0.18)' : 'rgba(0,100,180,0.10)';
+        const _orb3 = darkMode ? 'rgba(0,120,210,0.22)'  : 'rgba(0,80,160,0.10)';
+        const _waveFill = darkMode ? '#F4F8FB' : '#F4F8FB';
+        const _dotColor = '#34D399';
+        const _dotBorder = darkMode ? '#010E1F' : '#a8d8f5';
+        return (
+          <div style={{background:_bg, padding:`calc(env(safe-area-inset-top, 0px) + 14px) 18px 28px`, position:'relative', overflow:'hidden'}}>
+            {/* Diagonal light streaks */}
+            <div style={{position:'absolute',inset:0,pointerEvents:'none',
+              backgroundImage:`repeating-linear-gradient(118deg, transparent, transparent 38px, ${darkMode?'rgba(255,255,255,0.028)':'rgba(255,255,255,0.45)'} 38px, ${darkMode?'rgba(255,255,255,0.028)':'rgba(255,255,255,0.45)'} 39px)`,
+            }}/>
+            {/* Glow orbs */}
+            <div style={{position:'absolute',top:-55,right:-35,width:190,height:190,borderRadius:'50%',background:`radial-gradient(circle,${_orb1} 0%,transparent 65%)`,pointerEvents:'none'}}/>
+            <div style={{position:'absolute',top:10,right:55,width:70,height:70,borderRadius:'50%',background:`radial-gradient(circle,${_orb2} 0%,transparent 70%)`,pointerEvents:'none'}}/>
+            <div style={{position:'absolute',bottom:14,left:-25,width:110,height:110,borderRadius:'50%',background:`radial-gradient(circle,${_orb3} 0%,transparent 70%)`,pointerEvents:'none'}}/>
+            {/* Bottom wave */}
+            <svg viewBox="0 0 375 28" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"
+              style={{position:'absolute',bottom:0,left:0,width:'100%',height:28,display:'block',pointerEvents:'none'}}>
+              <path d="M0,14 C55,2 110,22 165,12 C220,2 275,20 330,10 C348,6 362,14 375,10 L375,28 L0,28 Z" fill={darkMode?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.4)'}/>
+              <path d="M0,20 C70,8 140,26 210,16 C265,8 320,22 375,18 L375,28 L0,28 Z" fill={_waveFill}/>
+            </svg>
 
-        {/* Row 1: title + action buttons */}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8,position:'relative',zIndex:1}}>
-          <h1 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:24,fontWeight:800,color:'#fff',letterSpacing:'-0.025em',lineHeight:1}}>
-            {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
-          </h1>
-          <div style={{display:'flex',gap:6}}>
-            <button onClick={()=>setPostOpen(true)} style={{
-              height:36,padding:'0 12px',borderRadius:11,
-              background:'rgba(0,180,216,0.28)',border:'0.5px solid rgba(0,200,240,0.5)',
-              cursor:'pointer',display:'flex',alignItems:'center',gap:5,
-              color:'#fff',fontSize:12,fontWeight:700,
-            }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
-            </button>
-            <div style={{position:'relative'}}>
-              <button onClick={()=>openChat&&openChat()} style={{width:36,height:36,borderRadius:11,background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                {Icon.msg(17,'#fff')}
-              </button>
-              {hasUnreadChat&&<span style={{position:'absolute',top:6,right:6,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #011729',pointerEvents:'none'}}/>}
+            {/* Row 1: title + action buttons */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8,position:'relative',zIndex:1}}>
+              <h1 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:24,fontWeight:800,color:_tx,letterSpacing:'-0.025em',lineHeight:1}}>
+                {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
+              </h1>
+              <div style={{display:'flex',gap:6}}>
+                <button onClick={()=>setPostOpen(true)} style={{
+                  height:36,padding:'0 12px',borderRadius:11,
+                  background:_btnBg, border:`0.5px solid ${_btnBd}`,
+                  cursor:'pointer',display:'flex',alignItems:'center',gap:5,
+                  color:_btnC, fontSize:12, fontWeight:700,
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={_btnC} strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
+                </button>
+                <div style={{position:'relative'}}>
+                  <button onClick={()=>openChat&&openChat()} style={{width:36,height:36,borderRadius:11,background:_icBg,border:`0.5px solid ${_icBd}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    {Icon.msg(17,_tx)}
+                  </button>
+                  {hasUnreadChat&&<span style={{position:'absolute',top:6,right:6,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${_dotBorder}`,pointerEvents:'none'}}/>}
+                </div>
+                <div style={{position:'relative'}}>
+                  <button onClick={()=>openNotifications&&openNotifications()} style={{width:36,height:36,borderRadius:11,background:_icBg,border:`0.5px solid ${_icBd}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    {Icon.bell(17,_tx)}
+                  </button>
+                  {hasUnreadNotif&&<span style={{position:'absolute',top:6,right:6,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${_dotBorder}`,pointerEvents:'none'}}/>}
+                </div>
+              </div>
             </div>
-            <div style={{position:'relative'}}>
-              <button onClick={()=>openNotifications&&openNotifications()} style={{width:36,height:36,borderRadius:11,background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                {Icon.bell(17,'#fff')}
+
+            {/* Row 2: notification info + edit button */}
+            <div style={{position:'relative',zIndex:1,display:'flex',alignItems:'center',gap:8,background:_notifBg,border:`0.5px solid ${_notifBd}`,borderRadius:12,padding:'8px 12px'}}>
+              {Icon.bell(12,_sub)}
+              <span style={{flex:1,minWidth:0,fontSize:12,fontWeight:500,color:_sub,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                {notifCities.length > 0
+                  ? notifCities.slice(0,3).join(' · ')+(notifCities.length>3?` +${notifCities.length-3}`:'')
+                  : (lang==='pt'?'Nenhuma cidade':lang==='es'?'Ninguna ciudad':'No cities')}
+              </span>
+              {activeDayCount > 0 && (
+                <span style={{fontSize:11,fontWeight:700,color:_dotColor,flexShrink:0}}>{activeDayCount}/7</span>
+              )}
+              <div style={{width:1,height:14,background:_notifBd,flexShrink:0}}/>
+              <button onClick={openRegionEditor} style={{background:'transparent',border:'none',color:_sub,fontSize:12,fontWeight:600,cursor:'pointer',padding:0,flexShrink:0,display:'flex',alignItems:'center',gap:4}}>
+                {Icon.cal(12,_sub)} {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
               </button>
-              {hasUnreadNotif&&<span style={{position:'absolute',top:6,right:6,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #011729',pointerEvents:'none'}}/>}
             </div>
           </div>
-        </div>
-
-        {/* Row 2: notification info + edit button */}
-        <div style={{
-          position:'relative',zIndex:1,
-          display:'flex',alignItems:'center',gap:8,
-          background:'rgba(255,255,255,0.08)',
-          border:'0.5px solid rgba(255,255,255,0.13)',
-          borderRadius:12,padding:'8px 12px',
-        }}>
-          {Icon.bell(12,'rgba(255,255,255,0.4)')}
-          <span style={{flex:1,minWidth:0,fontSize:12,fontWeight:500,color:'rgba(255,255,255,0.75)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-            {notifCities.length > 0
-              ? notifCities.slice(0,3).join(' · ')+(notifCities.length>3?` +${notifCities.length-3}`:'')
-              : (lang==='pt'?'Nenhuma cidade':lang==='es'?'Ninguna ciudad':'No cities')}
-          </span>
-          {activeDayCount > 0 && (
-            <span style={{fontSize:11,fontWeight:700,color:'#34D399',flexShrink:0}}>
-              {activeDayCount}/7
-            </span>
-          )}
-          <div style={{width:1,height:14,background:'rgba(255,255,255,0.15)',flexShrink:0}}/>
-          <button onClick={openRegionEditor} style={{
-            background:'transparent',border:'none',color:'rgba(255,255,255,0.7)',
-            fontSize:12,fontWeight:600,cursor:'pointer',padding:0,flexShrink:0,
-            display:'flex',alignItems:'center',gap:4,
-          }}>
-            {Icon.cal(12,'rgba(255,255,255,0.7)')} {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
-          </button>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Map */}
       <div style={{padding:'14px 18px 0'}}>
