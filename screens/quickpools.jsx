@@ -1,5 +1,22 @@
 // quickpools.jsx — Express Pools live feed + posting + push notifications
 
+class JobDetailBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { err: null }; }
+  static getDerivedStateFromError(e) { return { err: e }; }
+  render() {
+    if (this.state.err) {
+      return React.createElement('div', { style: { padding: '24px 18px' } },
+        React.createElement('div', { style: { fontWeight: 700, color: '#DC2626', marginBottom: 8 } }, 'Erro ao carregar detalhes'),
+        React.createElement('pre', { style: { fontSize: 11, color: '#7F1D1D', whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: '#FEF2F2', padding: 10, borderRadius: 8 } },
+          this.state.err && (this.state.err.message + '\n' + (this.state.err.stack || ''))
+        ),
+        React.createElement('button', { onClick: this.props.onClose, style: { marginTop: 12, padding: '8px 16px', borderRadius: 8, border: 'none', background: '#DC2626', color: '#fff', cursor: 'pointer' } }, 'Fechar')
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function QuickPoolsScreen({ ctx }) {
   const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false } = ctx;
   const t = STRINGS[lang];
@@ -298,19 +315,21 @@ function QuickPoolsScreen({ ctx }) {
   const JobSheet = () => (
     <Sheet open={!!selected} onClose={()=>setSelected(null)} height="86%">
       {selected && (
-        <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
-          applied={!!applied[selected.id]}
-          onApply={(sharePhone)=>applyToJob(selected.id, sharePhone)}
-          onUnlock={openPaywall}
-          onChat={openChat}
-          onClose={()=>setSelected(null)}
-          onDelete={deleteJob}
-          onComplete={finalizeJob}
-          onStatusChange={(status) => {
-            setJobs(prev => prev.map(j => String(j.id)===String(selected.id) ? {...j, status} : j));
-            setSelected(prev => prev ? {...prev, status} : prev);
-          }}
-        />
+        <JobDetailBoundary onClose={()=>setSelected(null)}>
+          <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
+            applied={!!applied[selected.id]}
+            onApply={(sharePhone)=>applyToJob(selected.id, sharePhone)}
+            onUnlock={openPaywall}
+            onChat={openChat}
+            onClose={()=>setSelected(null)}
+            onDelete={deleteJob}
+            onComplete={finalizeJob}
+            onStatusChange={(status) => {
+              setJobs(prev => prev.map(j => String(j.id)===String(selected.id) ? {...j, status} : j));
+              setSelected(prev => prev ? {...prev, status} : prev);
+            }}
+          />
+        </JobDetailBoundary>
       )}
     </Sheet>
   );
