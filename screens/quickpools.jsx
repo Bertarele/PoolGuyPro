@@ -371,79 +371,96 @@ function QuickPoolsScreen({ ctx }) {
   return (
     <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
     <div className="pg-screen" style={{paddingBottom:110, height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
-      {/* Navy header */}
-      {(()=>{
-        const _ic   = darkMode ? '#fff' : '#0A2840';
-        const _sub  = darkMode ? 'rgba(255,255,255,0.60)' : 'rgba(10,40,64,0.50)';
-        const _bdr  = darkMode ? '#011B5A' : '#d0e8f5';
-        const _stripBg  = darkMode ? 'rgba(255,255,255,0.10)' : 'rgba(10,40,64,0.06)';
-        const _bellIc   = darkMode ? 'rgba(255,255,255,0.85)' : 'rgba(10,40,64,0.55)';
-        const _btnBdr   = darkMode ? 'rgba(52,205,216,0.55)' : 'rgba(0,119,182,0.35)';
-        const _btnBg    = darkMode ? 'rgba(14,186,199,0.28)' : 'rgba(0,119,182,0.10)';
-        const _btnColor = darkMode ? '#fff' : '#0077B6';
-        return (
-          <NavyBar
-            darkMode={darkMode}
-            wave={false}
-            bgOverride={darkMode
-              ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)'
-              : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)'}
-            title={
-              <div>
-                <div style={{fontSize:10, fontWeight:600, color:_sub, letterSpacing:'0.10em', marginBottom:2, textTransform:'uppercase'}}>
-                  {lang==='pt'?'EXPRESS POOLS':lang==='es'?'EXPRESS POOLS':'EXPRESS POOLS'} · {(county||'BROWARD').toUpperCase()}
-                </div>
-                <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:_ic}}>
-                  {lang==='pt'?`Todos os trabalhos em ${county}`:lang==='es'?`Todos los trabajos en ${county}`:`All jobs in ${county} County`}
-                </div>
-              </div>
-            }
-            right={
-              <div style={{display:'flex', gap:6, alignItems:'center'}}>
-                <div style={{position:'relative', display:'inline-flex'}}>
-                  <IconButton dark={darkMode} onClick={()=>openChat&&openChat()}>
-                    {Icon.msg(20, _ic)}
-                  </IconButton>
-                  {hasUnreadChat && <span style={{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${_bdr}`,pointerEvents:'none'}}/>}
-                </div>
-                <div style={{position:'relative', display:'inline-flex'}}>
-                  <IconButton dark={darkMode} onClick={()=>openNotifications&&openNotifications()}>
-                    {Icon.bell(20, _ic)}
-                  </IconButton>
-                  {hasUnreadNotif && <span style={{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${_bdr}`,pointerEvents:'none'}}/>}
-                </div>
-              </div>
-            }
-          >
-            {/* Notification regions */}
-            <div style={{
-              marginTop:12, display:'flex', alignItems:'center', justifyContent:'space-between',
-              background:_stripBg, borderRadius:12, padding:'10px 14px',
-              backdropFilter:'blur(8px)', gap:10,
-            }}>
-              <div style={{minWidth:0, flex:1}}>
-                <div style={{fontSize:10, letterSpacing:'0.06em', fontWeight:700, display:'flex', alignItems:'center', gap:5, color:_sub}}>
-                  {Icon.bell(11, _bellIc)}
-                  {lang==='pt'?'NOTIFIC. POR DIA':lang==='es'?'NOTIF. POR DÍA':'NOTIF. BY DAY'}
-                </div>
-                <div style={{fontSize:12.5, fontWeight:600, marginTop:3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', color:_ic}}>
-                  {notifCities.length > 0
-                    ? notifCities.slice(0,3).join(' · ')+(notifCities.length>3?` +${notifCities.length-3}`:'')
-                    : (lang==='pt'?'Nenhuma cidade configurada':'No cities set')}
-                </div>
-                <div style={{fontSize:10, marginTop:2, color:_sub}}>
-                  {activeDayCount}/7 {lang==='pt'?'dias ativos':'days active'}
-                </div>
-              </div>
-              <button onClick={openRegionEditor} style={{
-                border:`0.5px solid ${_btnBdr}`, background:_btnBg, color:_btnColor,
-                height:30, padding:'0 12px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer',
-                display:'inline-flex', alignItems:'center', gap:5, flexShrink:0,
-              }}>{Icon.cal(13, _btnColor)} {t.edit}</button>
+      {/* Premium Express Pools header */}
+      <div style={{
+        background:'linear-gradient(160deg, #011729 0%, #012D5C 45%, #014F8A 100%)',
+        padding:`calc(env(safe-area-inset-top, 0px) + 14px) 20px 0`,
+        position:'relative', overflow:'hidden',
+      }}>
+        {/* Glow accents */}
+        <div style={{position:'absolute',top:-70,right:-50,width:210,height:210,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,195,228,0.28) 0%,transparent 65%)',pointerEvents:'none'}}/>
+        <div style={{position:'absolute',bottom:0,left:-30,width:130,height:130,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,119,182,0.22) 0%,transparent 70%)',pointerEvents:'none'}}/>
+
+        {/* Row 1: pill tag + action buttons */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12,position:'relative',zIndex:1}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.2)',borderRadius:20,padding:'5px 11px'}}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2" strokeLinecap="round">
+              <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
+              <path d="M2 17 Q6 13 10 17 Q14 21 18 17 Q20 15 22 17"/>
+              <circle cx="12" cy="5" r="2"/>
+            </svg>
+            <span style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.75)',letterSpacing:'0.09em',textTransform:'uppercase'}}>
+              {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
+            </span>
+          </div>
+          <div style={{display:'flex',gap:7}}>
+            <div style={{position:'relative'}}>
+              <button onClick={()=>openChat&&openChat()} style={{width:37,height:37,borderRadius:11,background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {Icon.msg(18,'#fff')}
+              </button>
+              {hasUnreadChat&&<span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #011729',pointerEvents:'none'}}/>}
             </div>
-          </NavyBar>
-        );
-      })()}
+            <div style={{position:'relative'}}>
+              <button onClick={()=>openNotifications&&openNotifications()} style={{width:37,height:37,borderRadius:11,background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {Icon.bell(18,'#fff')}
+              </button>
+              {hasUnreadNotif&&<span style={{position:'absolute',top:7,right:7,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:'1.5px solid #011729',pointerEvents:'none'}}/>}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: hero title */}
+        <div style={{position:'relative',zIndex:1,marginBottom:16}}>
+          <h1 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:30,fontWeight:800,color:'#fff',letterSpacing:'-0.03em',lineHeight:1.1}}>
+            {lang==='pt'?'Piscinas\nRápidas':lang==='es'?'Piscinas\nRápidas':'Express\nPools'}
+          </h1>
+          <div style={{marginTop:5,display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:12,color:'rgba(255,255,255,0.5)',fontWeight:500}}>
+              {jobs.length} {lang==='pt'?'vagas disponíveis':lang==='es'?'trabajos disponibles':'jobs available'}
+            </span>
+            {activeDayCount > 0 && <>
+              <span style={{width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,0.25)',display:'inline-block'}}/>
+              <span style={{fontSize:12,color:'#34D399',fontWeight:600}}>
+                {activeDayCount}/7 {lang==='pt'?'dias ativos':lang==='es'?'días activos':'active days'}
+              </span>
+            </>}
+          </div>
+        </div>
+
+        {/* Row 3: notification strip — glass card with open bottom */}
+        <div style={{
+          position:'relative',zIndex:1,
+          background:'rgba(255,255,255,0.09)',
+          border:'0.5px solid rgba(255,255,255,0.15)',
+          borderBottom:'none',
+          backdropFilter:'blur(16px)',
+          borderRadius:'14px 14px 0 0',
+          padding:'11px 14px',
+          display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,
+        }}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:3}}>
+              {Icon.bell(11,'rgba(255,255,255,0.45)')}
+              <span style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:'0.09em',textTransform:'uppercase'}}>
+                {lang==='pt'?'Notificações por dia':lang==='es'?'Notif. por día':'Daily notifications'}
+              </span>
+            </div>
+            <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.92)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+              {notifCities.length > 0
+                ? notifCities.slice(0,3).join(' · ')+(notifCities.length>3?` +${notifCities.length-3}`:'')
+                : (lang==='pt'?'Nenhuma cidade configurada':lang==='es'?'Ninguna ciudad':'No cities set')}
+            </div>
+          </div>
+          <button onClick={openRegionEditor} style={{
+            background:'rgba(255,255,255,0.16)',border:'0.5px solid rgba(255,255,255,0.28)',
+            color:'#fff',height:32,padding:'0 13px',borderRadius:9,
+            fontSize:12,fontWeight:600,cursor:'pointer',
+            display:'flex',alignItems:'center',gap:5,flexShrink:0,
+          }}>
+            {Icon.cal(13,'#fff')} {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
+          </button>
+        </div>
+      </div>
 
       {/* Map */}
       <div style={{padding:'14px 18px 0'}}>
