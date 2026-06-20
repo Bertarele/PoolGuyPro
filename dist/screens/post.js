@@ -45,9 +45,9 @@ function PostQuickPool({
     pools: f.pools.length > 1 ? f.pools.filter(p => p.id !== id) : f.pools
   }));
   const nowLbl = lang === 'pt' ? 'Agora' : lang === 'es' ? 'Ahora' : 'Now';
-  const todayPM = `${t.today} · 2 PM`;
-  const tomAM = `${t.tomorrow} · ${lang === 'pt' ? '9h' : '9 AM'}`;
-  const dateOptions = [nowLbl, todayPM, tomAM, t.thisWeek, t.flexible, t.custom];
+  const dateOptions = [nowLbl, t.custom];
+  const [customDT, setCustomDT] = React.useState('');
+  const isCustom = form.date === t.custom;
   const lbl = {
     poolN: lang === 'pt' ? 'Piscina' : lang === 'es' ? 'Piscina' : 'Pool',
     addPool: lang === 'pt' ? 'Adicionar outra piscina' : lang === 'es' ? 'Agregar otra piscina' : 'Add another pool',
@@ -152,7 +152,6 @@ function PostQuickPool({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
-      flexWrap: 'wrap',
       gap: 8
     }
   }, dateOptions.map(d => {
@@ -162,21 +161,54 @@ function PostQuickPool({
       key: d,
       onClick: () => upd('date', d),
       style: {
+        flex: 1,
         display: 'inline-flex',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 6,
-        padding: '8px 13px',
-        borderRadius: 999,
+        padding: '11px 13px',
+        borderRadius: 12,
         cursor: 'pointer',
         background: on ? isNow ? 'var(--pg-danger)' : 'var(--pg-blue-500)' : isNow ? 'oklch(0.96 0.05 25)' : 'var(--pg-ink-100)',
         color: on ? '#fff' : isNow ? 'var(--pg-danger)' : 'var(--pg-ink-700)',
-        border: '0.5px solid ' + (on ? 'transparent' : isNow ? 'oklch(0.62 0.20 25 / 0.5)' : 'var(--pg-ink-200)'),
-        fontSize: 13,
-        fontWeight: 600,
+        border: '1px solid ' + (on ? 'transparent' : isNow ? 'oklch(0.62 0.20 25 / 0.5)' : 'var(--pg-ink-200)'),
+        fontSize: 14,
+        fontWeight: 700,
         fontFamily: 'inherit'
       }
-    }, isNow ? Icon.bolt(13, on ? '#fff' : 'var(--pg-danger)') : Icon.cal(13, on ? '#fff' : 'var(--pg-ink-500)'), d);
-  })))), step === 2 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    }, isNow ? Icon.bolt(14, on ? '#fff' : 'var(--pg-danger)') : Icon.cal(14, on ? '#fff' : 'var(--pg-ink-500)'), d);
+  })), isCustom && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "datetime-local",
+    value: customDT,
+    min: new Date().toISOString().slice(0, 16),
+    onChange: e => setCustomDT(e.target.value),
+    style: {
+      width: '100%',
+      height: 46,
+      borderRadius: 11,
+      border: '1.5px solid var(--pg-blue-500)',
+      background: 'var(--pg-blue-50)',
+      padding: '0 14px',
+      fontSize: 16,
+      fontFamily: 'inherit',
+      color: 'var(--pg-ink-900)',
+      outline: 'none',
+      boxSizing: 'border-box'
+    }
+  }), customDT && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      fontSize: 12,
+      color: 'var(--pg-ink-500)'
+    }
+  }, Icon.bell(12, 'var(--pg-aqua-500)'), /*#__PURE__*/React.createElement("span", null, lang === 'pt' ? 'Pool guys serão notificados às 7h do dia selecionado.' : lang === 'es' ? 'Los pool guys serán notificados a las 7 AM del día seleccionado.' : 'Pool guys will be notified at 7 AM on the selected day.'))))), step === 2 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -424,7 +456,10 @@ function PostQuickPool({
       opacity: canContinue() ? 1 : 0.45
     }
   }, t.continueBtn, " ", Icon.arrow(16, '#fff')) : /*#__PURE__*/React.createElement("button", {
-    onClick: onSubmit,
+    onClick: () => onSubmit({
+      ...form,
+      scheduled_for: isCustom && customDT ? customDT : null
+    }),
     className: "pg-btn pg-btn-aqua",
     style: {
       width: '100%',

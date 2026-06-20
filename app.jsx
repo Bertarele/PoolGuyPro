@@ -984,10 +984,46 @@ function App() {
         <PostQuickPool
           lang={lang}
           onClose={()=>setPostQPOpen(false)}
-          onSubmit={()=>{
+          onSubmit={async (formData)=>{
             setPostQPOpen(false);
             showToast(STRINGS[lang].toastPosted);
             setTab('quick');
+            // Persist to Supabase and trigger notifications
+            if (!window.sb || !user?.uid) return;
+            try {
+              const scheduledFor = formData.scheduled_for
+                ? new Date(formData.scheduled_for).toISOString()
+                : null;
+              // Build notify_at: 7 AM on scheduled day (or null for "now")
+              let notifyAt = null;
+              if (scheduledFor) {
+                const d = new Date(formData.scheduled_for);
+                d.setHours(7, 0, 0, 0);
+                notifyAt = d.toISOString();
+              }
+              const firstPool = formData.pools?.[0] || {};
+              const job = {
+                poster_id: user.uid, poster_name: user.name || user.email || 'Pool Guy',
+                poster_phone: user.phone || null,
+                city: firstPool.location || 'Florida',
+                day_of_week: scheduledFor ? ['sun','mon','tue','wed','thu','fri','sat'][new Date(formData.scheduled_for).getDay()] : 'mon',
+                when_label: scheduledFor ? new Date(scheduledFor).toLocaleDateString(lang==='pt'?'pt-BR':lang==='es'?'es':'en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : (lang==='pt'?'Agora':'Now'),
+                pools_count: formData.pools?.length || 1,
+                price_per_pool: formData.priceMode==='fixed' ? parseFloat(formData.price||0)||null : null,
+                price_negotiable: formData.priceMode==='neg',
+                description: [formData.title, formData.notes].filter(Boolean).join(' — '),
+                status: 'open',
+                notify_at: notifyAt,
+              };
+              const { data: inserted } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
+              // Only notify immediately if "Agora" (no scheduled date)
+              if (inserted && !scheduledFor) {
+                fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
+                  method:'POST', headers:{'Content-Type':'application/json'},
+                  body: JSON.stringify({ job: inserted }),
+                }).catch(()=>{});
+              }
+            } catch {}
           }}
         />
       </Sheet>

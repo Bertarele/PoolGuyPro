@@ -37,9 +37,9 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
   }));
 
   const nowLbl   = lang==='pt'?'Agora':lang==='es'?'Ahora':'Now';
-  const todayPM  = `${t.today} · 2 PM`;
-  const tomAM    = `${t.tomorrow} · ${lang==='pt'?'9h':'9 AM'}`;
-  const dateOptions = [nowLbl, todayPM, tomAM, t.thisWeek, t.flexible, t.custom];
+  const dateOptions = [nowLbl, t.custom];
+  const [customDT, setCustomDT] = React.useState('');
+  const isCustom = form.date === t.custom;
 
   const lbl = {
     poolN: lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool',
@@ -108,27 +108,55 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
 
               {/* When */}
               <Field label={t.when}>
-                <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
+                <div style={{display:'flex', gap:8}}>
                   {dateOptions.map(d => {
                     const isNow = d === nowLbl;
                     const on = form.date === d;
                     return (
                       <button key={d} onClick={()=>upd('date',d)} style={{
-                        display:'inline-flex', alignItems:'center', gap:6,
-                        padding:'8px 13px', borderRadius:999, cursor:'pointer',
+                        flex:1, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6,
+                        padding:'11px 13px', borderRadius:12, cursor:'pointer',
                         background: on
                           ? (isNow ? 'var(--pg-danger)' : 'var(--pg-blue-500)')
                           : (isNow ? 'oklch(0.96 0.05 25)' : 'var(--pg-ink-100)'),
                         color: on ? '#fff' : (isNow ? 'var(--pg-danger)' : 'var(--pg-ink-700)'),
-                        border:'0.5px solid ' + (on ? 'transparent' : (isNow ? 'oklch(0.62 0.20 25 / 0.5)' : 'var(--pg-ink-200)')),
-                        fontSize:13, fontWeight:600, fontFamily:'inherit',
+                        border:'1px solid ' + (on ? 'transparent' : (isNow ? 'oklch(0.62 0.20 25 / 0.5)' : 'var(--pg-ink-200)')),
+                        fontSize:14, fontWeight:700, fontFamily:'inherit',
                       }}>
-                        {isNow ? Icon.bolt(13, on?'#fff':'var(--pg-danger)') : Icon.cal(13, on?'#fff':'var(--pg-ink-500)')}
+                        {isNow ? Icon.bolt(14, on?'#fff':'var(--pg-danger)') : Icon.cal(14, on?'#fff':'var(--pg-ink-500)')}
                         {d}
                       </button>
                     );
                   })}
                 </div>
+                {isCustom && (
+                  <div style={{marginTop:10}}>
+                    <input
+                      type="datetime-local"
+                      value={customDT}
+                      min={new Date().toISOString().slice(0,16)}
+                      onChange={e=>setCustomDT(e.target.value)}
+                      style={{
+                        width:'100%', height:46, borderRadius:11, border:'1.5px solid var(--pg-blue-500)',
+                        background:'var(--pg-blue-50)', padding:'0 14px', fontSize:16,
+                        fontFamily:'inherit', color:'var(--pg-ink-900)', outline:'none',
+                        boxSizing:'border-box',
+                      }}
+                    />
+                    {customDT && (
+                      <div style={{marginTop:6, display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--pg-ink-500)'}}>
+                        {Icon.bell(12,'var(--pg-aqua-500)')}
+                        <span>
+                          {lang==='pt'
+                            ? 'Pool guys serão notificados às 7h do dia selecionado.'
+                            : lang==='es'
+                            ? 'Los pool guys serán notificados a las 7 AM del día seleccionado.'
+                            : 'Pool guys will be notified at 7 AM on the selected day.'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Field>
             </>
           )}
@@ -254,7 +282,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
             {t.continueBtn} {Icon.arrow(16, '#fff')}
           </button>
         ) : (
-          <button onClick={onSubmit} className="pg-btn pg-btn-aqua" style={{width:'100%', height:52, fontSize:16}}>
+          <button onClick={()=>onSubmit({ ...form, scheduled_for: isCustom && customDT ? customDT : null })} className="pg-btn pg-btn-aqua" style={{width:'100%', height:52, fontSize:16}}>
             {Icon.bolt(18, 'var(--pg-blue-900)')} {t.postQuickBtn}
           </button>
         )}
