@@ -152,9 +152,10 @@ function QuickPoolsScreen({ ctx }) {
             {locked ? (
               <button onClick={(e)=>{e.stopPropagation();openPaywall();}} style={{
                 height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
-                background:'var(--pg-ink-900)', color:'#fff', fontFamily:'inherit',
+                background:'linear-gradient(135deg, var(--pg-blue-700), oklch(0.45 0.15 230))',
+                color:'#fff', fontFamily:'inherit',
                 fontSize:12, fontWeight:700, display:'flex', alignItems:'center', gap:6,
-                boxShadow:'0 3px 10px rgba(0,0,0,0.20)',
+                boxShadow:'0 3px 10px rgba(0,119,182,0.35)',
               }}>
                 {Icon.lock(12,'#fff')} {t.unlock}
               </button>
