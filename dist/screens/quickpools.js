@@ -752,23 +752,71 @@ function QuickPoolsScreen({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      background: 'linear-gradient(160deg, #011729 0%, #012D5C 45%, #014F8A 100%)',
-      padding: `calc(env(safe-area-inset-top, 0px) + 14px) 18px 14px`,
+      background: 'linear-gradient(155deg, #010E1F 0%, #012044 40%, #013B78 80%, #004E9A 100%)',
+      padding: `calc(env(safe-area-inset-top, 0px) + 14px) 18px 28px`,
       position: 'relative',
       overflow: 'hidden'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
-      top: -60,
-      right: -40,
-      width: 180,
-      height: 180,
+      inset: 0,
+      pointerEvents: 'none',
+      backgroundImage: 'repeating-linear-gradient(118deg, transparent, transparent 38px, rgba(255,255,255,0.028) 38px, rgba(255,255,255,0.028) 39px)'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: -55,
+      right: -35,
+      width: 190,
+      height: 190,
       borderRadius: '50%',
-      background: 'radial-gradient(circle,rgba(0,195,228,0.25) 0%,transparent 65%)',
+      background: 'radial-gradient(circle,rgba(0,200,240,0.32) 0%,transparent 65%)',
       pointerEvents: 'none'
     }
   }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 10,
+      right: 55,
+      width: 70,
+      height: 70,
+      borderRadius: '50%',
+      background: 'radial-gradient(circle,rgba(56,189,248,0.18) 0%,transparent 70%)',
+      pointerEvents: 'none'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      bottom: 14,
+      left: -25,
+      width: 110,
+      height: 110,
+      borderRadius: '50%',
+      background: 'radial-gradient(circle,rgba(0,120,210,0.22) 0%,transparent 70%)',
+      pointerEvents: 'none'
+    }
+  }), /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 375 28",
+    xmlns: "http://www.w3.org/2000/svg",
+    preserveAspectRatio: "none",
+    style: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      width: '100%',
+      height: 28,
+      display: 'block',
+      pointerEvents: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M0,14 C55,2 110,22 165,12 C220,2 275,20 330,10 C348,6 362,14 375,10 L375,28 L0,28 Z",
+    fill: "rgba(255,255,255,0.06)"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M0,20 C70,8 140,26 210,16 C265,8 320,22 375,18 L375,28 L0,28 Z",
+    fill: "#F4F8FB"
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
