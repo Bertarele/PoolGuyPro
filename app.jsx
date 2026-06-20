@@ -1674,7 +1674,7 @@ function App() {
             onTouchStart={onPTRTouchStart}
             onTouchMove={onPTRTouchMove}
             onTouchEnd={onPTRTouchEnd}
-            style={{position:'absolute', inset:0, paddingBottom:56, overflow:'auto', overscrollBehaviorY:'none'}}>
+            style={{position:'absolute', inset:0, paddingBottom:68, overflow:'auto', overscrollBehaviorY:'none'}}>
             {tab === 'home'    && <HomeScreen ctx={ctx}/>}
             {tab === 'market'  && <MarketplaceScreen ctx={ctx}/>}
             {tab === 'quick'   && <QuickPoolsScreen ctx={ctx}/>}

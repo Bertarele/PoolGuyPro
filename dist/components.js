@@ -845,7 +845,7 @@ function TabBar({
         gap: 3,
         marginTop: 15
       }
-    }, tb.icon(22, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-500)'), /*#__PURE__*/React.createElement("span", {
+    }, tb.icon(24, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-500)'), /*#__PURE__*/React.createElement("span", {
       className: "pg-tab-label"
     }, tb.label));
   }));

@@ -2796,7 +2796,7 @@ function App() {
     style: {
       position: 'absolute',
       inset: 0,
-      paddingBottom: 56,
+      paddingBottom: 68,
       overflow: 'auto',
       overscrollBehaviorY: 'none'
     }
