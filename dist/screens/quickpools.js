@@ -120,6 +120,36 @@ function QuickPoolsScreen({
     setTimeout(() => setHighlighted(null), 1800);
   };
 
+  // ── Delete a live job ─────────────────────────────────────────
+  const deleteJob = async (jobId, e) => {
+    e && e.stopPropagation();
+    if (!window.sb) return;
+    await window.sb.from('quick_pool_jobs').update({
+      status: 'cancelled'
+    }).eq('id', jobId);
+    setJobs(prev => prev.filter(j => String(j.id) !== String(jobId)));
+    if (selected && String(selected.id) === String(jobId)) setSelected(null);
+  };
+
+  // ── Apply to a live job ───────────────────────────────────────
+  const applyToJob = async (jobId, e) => {
+    e && e.stopPropagation();
+    if (!window.sb || !user?.uid) return;
+    setApplied(prev => ({
+      ...prev,
+      [jobId]: true
+    }));
+    try {
+      await window.sb.from('quick_pool_applications').insert({
+        job_id: jobId,
+        applicant_id: user.uid,
+        applicant_name: user.name || user.email || 'Pool Guy',
+        applicant_phone: user.phone || null,
+        status: 'pending'
+      });
+    } catch {}
+  };
+
   // ── Shared job card (used on mobile + desktop) ────────────────
   const JobCard = ({
     j,
@@ -128,6 +158,7 @@ function QuickPoolsScreen({
     const isApplied = !!applied[j.id];
     const isHighlighted = highlighted === j.id;
     const locked = user.tier === 'free';
+    const isOwn = j._live && user?.uid && j.poster_id === user.uid;
     return /*#__PURE__*/React.createElement("article", {
       key: j.id,
       ref: el => {
@@ -314,7 +345,39 @@ function QuickPoolsScreen({
         color: 'var(--pg-ink-500)',
         fontWeight: 500
       }
-    }, j.rating)))), locked ? /*#__PURE__*/React.createElement("button", {
+    }, j.rating)))), isOwn ? /*#__PURE__*/React.createElement("button", {
+      onClick: e => deleteJob(j.id, e),
+      style: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        border: '1px solid #FECACA',
+        background: '#FEF2F2',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "15",
+      height: "15",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#DC2626",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "3 6 5 6 21 6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M10 11v6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M14 11v6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 6V4h6v2"
+    }))) : locked ? /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         openPaywall();
@@ -350,13 +413,7 @@ function QuickPoolsScreen({
         gap: 6
       }
     }, Icon.check(13, '#15803D'), " ", t.applied) : /*#__PURE__*/React.createElement("button", {
-      onClick: e => {
-        e.stopPropagation();
-        setApplied({
-          ...applied,
-          [j.id]: true
-        });
-      },
+      onClick: e => applyToJob(j.id, e),
       style: {
         height: 36,
         padding: '0 18px',
@@ -385,13 +442,11 @@ function QuickPoolsScreen({
     t: t,
     lang: lang,
     applied: !!applied[selected.id],
-    onApply: () => setApplied({
-      ...applied,
-      [selected.id]: true
-    }),
+    onApply: () => applyToJob(selected.id),
     onUnlock: openPaywall,
     onChat: openChat,
-    onClose: () => setSelected(null)
+    onClose: () => setSelected(null),
+    onDelete: deleteJob
   }));
 
   // ══════════════════════════════════════════════════════════════
@@ -1292,9 +1347,44 @@ function QuickPoolDetails({
   onApply,
   onUnlock,
   onChat,
-  onClose
+  onClose,
+  onDelete
 }) {
   const locked = user.tier === 'free';
+  const isOwn = job._live && user?.uid && job.poster_id === user.uid;
+  const [applicants, setApplicants] = React.useState([]);
+  const [loadingApps, setLoadingApps] = React.useState(false);
+  const [showApplicants, setShowApplicants] = React.useState(false);
+  React.useEffect(() => {
+    if (!isOwn || !window.sb || !job._live) return;
+    setLoadingApps(true);
+    window.sb.from('quick_pool_applications').select('*').eq('job_id', job.id).order('created_at', {
+      ascending: true
+    }).then(({
+      data
+    }) => {
+      setApplicants(data || []);
+      setLoadingApps(false);
+    });
+  }, [isOwn, job.id]);
+  const acceptApplicant = async (appId, applicantId) => {
+    if (!window.sb) return;
+    await window.sb.from('quick_pool_applications').update({
+      status: 'accepted'
+    }).eq('id', appId);
+    await window.sb.from('quick_pool_applications').update({
+      status: 'rejected'
+    }).neq('id', appId).eq('job_id', job.id);
+    await window.sb.from('quick_pool_jobs').update({
+      status: 'filled'
+    }).eq('id', job.id);
+    setApplicants(prev => prev.map(a => ({
+      ...a,
+      status: a.id === appId ? 'accepted' : 'rejected'
+    })));
+    // Notify accepted applicant
+    window.sendPush && window.sendPush(applicantId, lang === 'pt' ? '🎉 Candidatura aceita!' : '🎉 Application accepted!', lang === 'pt' ? `Sua candidatura para "${tr(job.title, lang)}" foi aceita.` : `Your application for "${tr(job.title, lang)}" was accepted.`, '/#express-pools');
+  };
   return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '8px 0 100px'
@@ -1303,9 +1393,48 @@ function QuickPoolDetails({
     style: {
       padding: '4px 18px 0',
       display: 'flex',
-      justifyContent: 'flex-end'
+      justifyContent: 'space-between',
+      alignItems: 'center'
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, isOwn ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      onDelete && onDelete(job.id);
+      onClose();
+    },
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      height: 32,
+      padding: '0 12px',
+      borderRadius: 9,
+      border: '1px solid #FECACA',
+      background: '#FEF2F2',
+      cursor: 'pointer',
+      fontSize: 12,
+      fontWeight: 600,
+      color: '#DC2626'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "13",
+    height: "13",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#DC2626",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "3 6 5 6 21 6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M10 11v6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M14 11v6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M9 6V4h6v2"
+  })), lang === 'pt' ? 'Excluir vaga' : lang === 'es' ? 'Eliminar' : 'Delete post') : /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("button", {
     onClick: onClose,
     style: {
       border: 'none',
@@ -1549,7 +1678,100 @@ function QuickPoolDetails({
       marginTop: 10,
       borderRadius: 999
     }
-  }, t.unlockPrice)))), /*#__PURE__*/React.createElement("div", {
+  }, t.unlockPrice)))), isOwn && showApplicants && /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: '0 18px 16px',
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 14px 8px',
+      fontSize: 11,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)',
+      letterSpacing: '0.06em',
+      textTransform: 'uppercase',
+      background: 'var(--pg-ink-50)'
+    }
+  }, lang === 'pt' ? 'Candidatos' : lang === 'es' ? 'Candidatos' : 'Applicants', " (", applicants.length, ")"), loadingApps && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px',
+      fontSize: 13,
+      color: 'var(--pg-ink-400)',
+      textAlign: 'center'
+    }
+  }, "..."), !loadingApps && applicants.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 14px',
+      fontSize: 13,
+      color: 'var(--pg-ink-400)'
+    }
+  }, lang === 'pt' ? 'Nenhuma candidatura ainda.' : lang === 'es' ? 'Ninguna candidatura aún.' : 'No applicants yet.'), applicants.map(a => /*#__PURE__*/React.createElement("div", {
+    key: a.id,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '10px 14px',
+      borderTop: '0.5px solid var(--pg-ink-100)',
+      background: a.status === 'accepted' ? '#F0FDF4' : a.status === 'rejected' ? '#FFF1F1' : '#fff'
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: a.applicant_name,
+    size: 34
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: 'var(--pg-ink-900)'
+    }
+  }, a.applicant_name), a.applicant_phone && /*#__PURE__*/React.createElement("a", {
+    href: `tel:${a.applicant_phone}`,
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-blue-600)',
+      fontWeight: 500,
+      textDecoration: 'none'
+    }
+  }, a.applicant_phone)), a.status === 'accepted' ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: '#16A34A',
+      background: '#DCFCE7',
+      padding: '3px 8px',
+      borderRadius: 8
+    }
+  }, lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted') : a.status === 'rejected' ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: '#DC2626',
+      background: '#FEE2E2',
+      padding: '3px 8px',
+      borderRadius: 8
+    }
+  }, lang === 'pt' ? 'Recusado' : lang === 'es' ? 'Rechazado' : 'Rejected') : /*#__PURE__*/React.createElement("button", {
+    onClick: () => acceptApplicant(a.id, a.applicant_id),
+    style: {
+      height: 30,
+      padding: '0 12px',
+      borderRadius: 8,
+      border: 'none',
+      cursor: 'pointer',
+      background: 'linear-gradient(135deg,#16A34A,#22C55E)',
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: 700
+    }
+  }, lang === 'pt' ? 'Aceitar' : lang === 'es' ? 'Aceptar' : 'Accept')))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'sticky',
       bottom: 0,
@@ -1560,7 +1782,48 @@ function QuickPoolDetails({
       gap: 8,
       marginTop: 14
     }
-  }, job._live && job.poster_phone && /*#__PURE__*/React.createElement("a", {
+  }, isOwn ?
+  /*#__PURE__*/
+  /* Owner actions */
+  React.createElement("button", {
+    onClick: () => setShowApplicants(v => !v),
+    style: {
+      height: 50,
+      borderRadius: 14,
+      border: '1.5px solid var(--pg-blue-400)',
+      background: showApplicants ? 'var(--pg-blue-500)' : '#fff',
+      color: showApplicants ? '#fff' : 'var(--pg-blue-600)',
+      fontSize: 15,
+      fontWeight: 700,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "9",
+    cy: "7",
+    r: "4"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M23 21v-2a4 4 0 0 0-3-3.87"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M16 3.13a4 4 0 0 1 0 7.75"
+  })), lang === 'pt' ? `${showApplicants ? 'Fechar' : 'Ver'} candidatos${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}` : `${showApplicants ? 'Close' : 'View'} applicants${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}`) :
+  /*#__PURE__*/
+  /* Non-owner actions */
+  React.createElement(React.Fragment, null, job._live && job.poster_phone && !isOwn && /*#__PURE__*/React.createElement("a", {
     href: `tel:${job.poster_phone}`,
     style: {
       display: 'flex',
@@ -1603,14 +1866,25 @@ function QuickPoolDetails({
       opacity: locked ? 0.5 : 1,
       borderRadius: 999
     }
-  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.contact), !job._live && /*#__PURE__*/React.createElement("button", {
+  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.contact), job._live ? /*#__PURE__*/React.createElement("button", {
+    onClick: locked ? onUnlock : () => {
+      onApply();
+    },
+    disabled: applied,
+    className: `pg-btn ${applied ? 'pg-btn-ghost' : 'pg-btn-primary'}`,
+    style: {
+      flex: 2,
+      borderRadius: 999,
+      opacity: applied ? 0.7 : 1
+    }
+  }, locked ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.lock(14, '#fff'), " ", t.unlockApply) : applied ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.check(15, 'var(--pg-blue-700)'), " ", lang === 'pt' ? 'Candidatado' : t.applied) : /*#__PURE__*/React.createElement(React.Fragment, null, lang === 'pt' ? 'Candidatar' : t.apply)) : /*#__PURE__*/React.createElement("button", {
     onClick: locked ? onUnlock : onApply,
     className: `pg-btn ${applied ? 'pg-btn-ghost' : 'pg-btn-primary'}`,
     style: {
       flex: 2,
       borderRadius: 999
     }
-  }, locked ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.lock(14, '#fff'), " ", t.unlockApply) : applied ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.check(15, 'var(--pg-blue-700)'), " ", t.applied) : /*#__PURE__*/React.createElement(React.Fragment, null, t.apply, " \u2014 ", t.fastTrack)))));
+  }, locked ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.lock(14, '#fff'), " ", t.unlockApply) : applied ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.check(15, 'var(--pg-blue-700)'), " ", t.applied) : /*#__PURE__*/React.createElement(React.Fragment, null, t.apply, " \u2014 ", t.fastTrack))))));
 }
 function DetailPill({
   icon,

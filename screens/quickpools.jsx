@@ -86,11 +86,36 @@ function QuickPoolsScreen({ ctx }) {
     setTimeout(()=>setHighlighted(null), 1800);
   };
 
+  // ── Delete a live job ─────────────────────────────────────────
+  const deleteJob = async (jobId, e) => {
+    e && e.stopPropagation();
+    if (!window.sb) return;
+    await window.sb.from('quick_pool_jobs').update({ status:'cancelled' }).eq('id', jobId);
+    setJobs(prev => prev.filter(j => String(j.id) !== String(jobId)));
+    if (selected && String(selected.id) === String(jobId)) setSelected(null);
+  };
+
+  // ── Apply to a live job ───────────────────────────────────────
+  const applyToJob = async (jobId, e) => {
+    e && e.stopPropagation();
+    if (!window.sb || !user?.uid) return;
+    setApplied(prev => ({ ...prev, [jobId]: true }));
+    try {
+      await window.sb.from('quick_pool_applications').insert({
+        job_id: jobId, applicant_id: user.uid,
+        applicant_name: user.name || user.email || 'Pool Guy',
+        applicant_phone: user.phone || null,
+        status: 'pending',
+      });
+    } catch {}
+  };
+
   // ── Shared job card (used on mobile + desktop) ────────────────
   const JobCard = ({ j, compact=false }) => {
     const isApplied    = !!applied[j.id];
     const isHighlighted = highlighted === j.id;
     const locked       = user.tier === 'free';
+    const isOwn        = j._live && user?.uid && j.poster_id === user.uid;
 
     return (
       <article key={j.id}
@@ -201,7 +226,16 @@ function QuickPoolsScreen({ ctx }) {
               </div>
             </div>
 
-            {locked ? (
+            {isOwn ? (
+              <button onClick={(e)=>deleteJob(j.id, e)} style={{
+                width:36, height:36, borderRadius:10, border:'1px solid #FECACA',
+                background:'#FEF2F2', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            ) : locked ? (
               <button onClick={(e)=>{e.stopPropagation();openPaywall();}} style={{
                 height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
                 background:'linear-gradient(135deg, var(--pg-blue-700), oklch(0.45 0.15 230))',
@@ -221,7 +255,7 @@ function QuickPoolsScreen({ ctx }) {
                 {Icon.check(13,'#15803D')} {t.applied}
               </div>
             ) : (
-              <button onClick={(e)=>{e.stopPropagation();setApplied({...applied,[j.id]:true});}} style={{
+              <button onClick={(e)=>applyToJob(j.id, e)} style={{
                 height:36, padding:'0 18px', borderRadius:999, border:'none', cursor:'pointer',
                 background:'linear-gradient(135deg,#0077B6,#023E8A)',
                 color:'#fff', fontFamily:'inherit', fontSize:13, fontWeight:700,
@@ -240,10 +274,11 @@ function QuickPoolsScreen({ ctx }) {
       {selected && (
         <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
           applied={!!applied[selected.id]}
-          onApply={()=>setApplied({...applied,[selected.id]:true})}
+          onApply={()=>applyToJob(selected.id)}
           onUnlock={openPaywall}
           onChat={openChat}
           onClose={()=>setSelected(null)}
+          onDelete={deleteJob}
         />
       )}
     </Sheet>
@@ -658,12 +693,49 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
 }
 
 // ── Detail view ──────────────────────────────────────────────
-function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose }) {
-  const locked = user.tier === 'free';
+function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete }) {
+  const locked  = user.tier === 'free';
+  const isOwn   = job._live && user?.uid && job.poster_id === user.uid;
+  const [applicants,    setApplicants]    = React.useState([]);
+  const [loadingApps,   setLoadingApps]   = React.useState(false);
+  const [showApplicants,setShowApplicants] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isOwn || !window.sb || !job._live) return;
+    setLoadingApps(true);
+    window.sb.from('quick_pool_applications')
+      .select('*').eq('job_id', job.id).order('created_at', { ascending: true })
+      .then(({ data }) => { setApplicants(data || []); setLoadingApps(false); });
+  }, [isOwn, job.id]);
+
+  const acceptApplicant = async (appId, applicantId) => {
+    if (!window.sb) return;
+    await window.sb.from('quick_pool_applications').update({ status: 'accepted' }).eq('id', appId);
+    await window.sb.from('quick_pool_applications').update({ status: 'rejected' }).neq('id', appId).eq('job_id', job.id);
+    await window.sb.from('quick_pool_jobs').update({ status: 'filled' }).eq('id', job.id);
+    setApplicants(prev => prev.map(a => ({ ...a, status: a.id === appId ? 'accepted' : 'rejected' })));
+    // Notify accepted applicant
+    window.sendPush && window.sendPush(applicantId,
+      lang==='pt' ? '🎉 Candidatura aceita!' : '🎉 Application accepted!',
+      lang==='pt' ? `Sua candidatura para "${tr(job.title,lang)}" foi aceita.` : `Your application for "${tr(job.title,lang)}" was accepted.`,
+      '/#express-pools'
+    );
+  };
 
   return (
     <div style={{padding:'8px 0 100px'}}>
-      <div style={{padding:'4px 18px 0', display:'flex', justifyContent:'flex-end'}}>
+      <div style={{padding:'4px 18px 0', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+        {isOwn ? (
+          <button onClick={()=>{ onDelete && onDelete(job.id); onClose(); }} style={{
+            display:'flex', alignItems:'center', gap:6, height:32, padding:'0 12px', borderRadius:9,
+            border:'1px solid #FECACA', background:'#FEF2F2', cursor:'pointer', fontSize:12, fontWeight:600, color:'#DC2626',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+            {lang==='pt'?'Excluir vaga':lang==='es'?'Eliminar':'Delete post'}
+          </button>
+        ) : <div/>}
         <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
           {Icon.x(16, 'var(--pg-ink-700)')}
         </button>
@@ -749,37 +821,111 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         )}
       </div>
 
+      {/* Applicants panel — visible to owner */}
+      {isOwn && showApplicants && (
+        <div style={{margin:'0 18px 16px', borderRadius:14, border:'1px solid var(--pg-ink-200)', overflow:'hidden'}}>
+          <div style={{padding:'12px 14px 8px', fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.06em', textTransform:'uppercase', background:'var(--pg-ink-50)'}}>
+            {lang==='pt'?'Candidatos':lang==='es'?'Candidatos':'Applicants'} ({applicants.length})
+          </div>
+          {loadingApps && <div style={{padding:'14px', fontSize:13, color:'var(--pg-ink-400)', textAlign:'center'}}>...</div>}
+          {!loadingApps && applicants.length === 0 && (
+            <div style={{padding:'14px 14px', fontSize:13, color:'var(--pg-ink-400)'}}>
+              {lang==='pt'?'Nenhuma candidatura ainda.':lang==='es'?'Ninguna candidatura aún.':'No applicants yet.'}
+            </div>
+          )}
+          {applicants.map(a => (
+            <div key={a.id} style={{
+              display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
+              borderTop:'0.5px solid var(--pg-ink-100)',
+              background: a.status==='accepted' ? '#F0FDF4' : a.status==='rejected' ? '#FFF1F1' : '#fff',
+            }}>
+              <Avatar name={a.applicant_name} size={34}/>
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>{a.applicant_name}</div>
+                {a.applicant_phone && (
+                  <a href={`tel:${a.applicant_phone}`} style={{fontSize:11, color:'var(--pg-blue-600)', fontWeight:500, textDecoration:'none'}}>
+                    {a.applicant_phone}
+                  </a>
+                )}
+              </div>
+              {a.status === 'accepted' ? (
+                <span style={{fontSize:11, fontWeight:700, color:'#16A34A', background:'#DCFCE7', padding:'3px 8px', borderRadius:8}}>
+                  {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
+                </span>
+              ) : a.status === 'rejected' ? (
+                <span style={{fontSize:11, fontWeight:700, color:'#DC2626', background:'#FEE2E2', padding:'3px 8px', borderRadius:8}}>
+                  {lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected'}
+                </span>
+              ) : (
+                <button onClick={()=>acceptApplicant(a.id, a.applicant_id)} style={{
+                  height:30, padding:'0 12px', borderRadius:8, border:'none', cursor:'pointer',
+                  background:'linear-gradient(135deg,#16A34A,#22C55E)', color:'#fff', fontSize:12, fontWeight:700,
+                }}>
+                  {lang==='pt'?'Aceitar':lang==='es'?'Aceptar':'Accept'}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div style={{
         position:'sticky', bottom:0, padding:'12px 18px 16px',
         background:'linear-gradient(180deg, transparent, var(--pg-white) 25%)',
         display:'flex', flexDirection:'column', gap:8, marginTop:14,
       }}>
-        {/* Phone button for live jobs */}
-        {job._live && job.poster_phone && (
-          <a href={`tel:${job.poster_phone}`} style={{
-            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-            height:46, borderRadius:999, textDecoration:'none',
-            background:'linear-gradient(135deg, #16A34A, #22C55E)',
-            color:'#fff', fontSize:14, fontWeight:700,
+        {isOwn ? (
+          /* Owner actions */
+          <button onClick={()=>setShowApplicants(v=>!v)} style={{
+            height:50, borderRadius:14, border:'1.5px solid var(--pg-blue-400)',
+            background: showApplicants ? 'var(--pg-blue-500)' : '#fff',
+            color: showApplicants ? '#fff' : 'var(--pg-blue-600)',
+            fontSize:15, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
           }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12 19.79 19.79 0 0 1 1.97 3.4 2 2 0 0 1 3.94 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
-            {job.poster_phone}
-          </a>
-        )}
-        <div style={{display:'flex', gap:8}}>
-          <button onClick={()=>onChat(job.poster_id ? { id: job.poster_id, name: job.poster } : job.poster)} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
-            {Icon.msg(16, 'var(--pg-blue-700)')} {t.contact}
+            {lang==='pt'
+              ? `${showApplicants?'Fechar':'Ver'} candidatos${applicants.length>0?' ('+applicants.length+')':''}`
+              : `${showApplicants?'Close':'View'} applicants${applicants.length>0?' ('+applicants.length+')':''}`}
           </button>
-          {!job._live && (
-            <button onClick={locked ? onUnlock : onApply} className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`} style={{flex:2, borderRadius:999}}>
-              {locked ? <>{Icon.lock(14, '#fff')} {t.unlockApply}</> :
-               applied ? <>{Icon.check(15, 'var(--pg-blue-700)')} {t.applied}</> :
-               <>{t.apply} — {t.fastTrack}</>}
-            </button>
-          )}
-        </div>
+        ) : (
+          /* Non-owner actions */
+          <>
+            {job._live && job.poster_phone && !isOwn && (
+              <a href={`tel:${job.poster_phone}`} style={{
+                display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                height:46, borderRadius:999, textDecoration:'none',
+                background:'linear-gradient(135deg, #16A34A, #22C55E)',
+                color:'#fff', fontSize:14, fontWeight:700,
+              }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12 19.79 19.79 0 0 1 1.97 3.4 2 2 0 0 1 3.94 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z"/>
+                </svg>
+                {job.poster_phone}
+              </a>
+            )}
+            <div style={{display:'flex', gap:8}}>
+              <button onClick={()=>onChat(job.poster_id ? { id: job.poster_id, name: job.poster } : job.poster)} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
+                {Icon.msg(16, 'var(--pg-blue-700)')} {t.contact}
+              </button>
+              {job._live ? (
+                <button onClick={locked ? onUnlock : ()=>{ onApply(); }} disabled={applied} className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`} style={{flex:2, borderRadius:999, opacity: applied?0.7:1}}>
+                  {locked ? <>{Icon.lock(14,'#fff')} {t.unlockApply}</> :
+                   applied ? <>{Icon.check(15,'var(--pg-blue-700)')} {lang==='pt'?'Candidatado':t.applied}</> :
+                   <>{lang==='pt'?'Candidatar':t.apply}</>}
+                </button>
+              ) : (
+                <button onClick={locked ? onUnlock : onApply} className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`} style={{flex:2, borderRadius:999}}>
+                  {locked ? <>{Icon.lock(14, '#fff')} {t.unlockApply}</> :
+                   applied ? <>{Icon.check(15, 'var(--pg-blue-700)')} {t.applied}</> :
+                   <>{t.apply} — {t.fastTrack}</>}
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
