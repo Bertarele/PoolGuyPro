@@ -525,6 +525,7 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
   const t = STRINGS[lang];
   const [openDay, setOpenDay] = React.useState('mon');
   const [activeCounty, setActiveCounty] = React.useState(county || 'Broward');
+  const [citySearch, setCitySearch] = React.useState('');
 
   const dayKeys   = ['mon','tue','wed','thu','fri','sat','sun'];
   const dayShort  = lang==='pt'?['Seg','Ter','Qua','Qui','Sex','Sáb','Dom']
@@ -584,7 +585,7 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
               const isOpen = openDay === dk;
               return (
                 <div key={dk} className="pg-card" style={{padding:0, overflow:'hidden'}}>
-                  <button onClick={()=>setOpenDay(isOpen ? null : dk)} style={{
+                  <button onClick={()=>{ setOpenDay(isOpen ? null : dk); setCitySearch(''); }} style={{
                     display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
                     border:'none', background:'transparent', width:'100%', cursor:'pointer',
                     textAlign:'left', fontFamily:'inherit',
@@ -625,15 +626,49 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
                           }}>{head.clearLbl}</button>
                         )}
                       </div>
-                      <div className="pg-scroll-x" style={{display:'flex', gap:6, marginLeft:-14, marginRight:-14, padding:'0 14px 6px'}}>
-                        {Object.keys(FL_COUNTIES).map(c => (
-                          <button key={c} onClick={()=>setActiveCounty(c)} className={`pg-chip ${activeCounty===c?'pg-chip-on':''}`} style={{fontSize:11, padding:'5px 10px'}}>
-                            {c}
-                          </button>
-                        ))}
+                      {/* Search input */}
+                      <div style={{position:'relative', marginBottom:8}}>
+                        <div style={{position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', pointerEvents:'none'}}>
+                          {Icon.search(14, 'var(--pg-ink-400)')}
+                        </div>
+                        <input
+                          value={citySearch}
+                          onChange={e => setCitySearch(e.target.value)}
+                          placeholder={lang==='pt'?'Buscar cidade...':lang==='es'?'Buscar ciudad...':'Search city...'}
+                          style={{
+                            width:'100%', height:38, borderRadius:10,
+                            border:'1px solid var(--pg-ink-200)',
+                            background:'var(--pg-ink-50)',
+                            paddingLeft:34, paddingRight: citySearch ? 34 : 12,
+                            fontSize:13, fontFamily:'inherit',
+                            color:'var(--pg-ink-900)', outline:'none',
+                            boxSizing:'border-box',
+                          }}
+                        />
+                        {citySearch && (
+                          <button onClick={()=>setCitySearch('')} style={{
+                            position:'absolute', right:8, top:'50%', transform:'translateY(-50%)',
+                            border:'none', background:'transparent', cursor:'pointer', padding:4,
+                          }}>{Icon.x(12, 'var(--pg-ink-400)')}</button>
+                        )}
                       </div>
-                      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginTop:8}}>
-                        {FL_COUNTIES[activeCounty].map(city => {
+
+                      {/* County tabs — hidden while searching */}
+                      {!citySearch && (
+                        <div className="pg-scroll-x" style={{display:'flex', gap:6, marginLeft:-14, marginRight:-14, padding:'0 14px 6px'}}>
+                          {Object.keys(FL_COUNTIES).map(c => (
+                            <button key={c} onClick={()=>setActiveCounty(c)} className={`pg-chip ${activeCounty===c?'pg-chip-on':''}`} style={{fontSize:11, padding:'5px 10px'}}>
+                              {c}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginTop:4}}>
+                        {(citySearch
+                          ? Object.values(FL_COUNTIES).flat().filter((c,i,a)=>a.indexOf(c)===i && c.toLowerCase().includes(citySearch.toLowerCase()))
+                          : FL_COUNTIES[activeCounty]
+                        ).map(city => {
                           const on = cities.includes(city);
                           return (
                             <button key={city} onClick={()=>toggleCityForDay(dk, city)} style={{

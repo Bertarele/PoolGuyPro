@@ -1052,6 +1052,7 @@ function RegionEditorSheet({
   const t = STRINGS[lang];
   const [openDay, setOpenDay] = React.useState('mon');
   const [activeCounty, setActiveCounty] = React.useState(county || 'Broward');
+  const [citySearch, setCitySearch] = React.useState('');
   const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   const dayShort = lang === 'pt' ? ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'] : lang === 'es' ? ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayFull = lang === 'pt' ? ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'] : lang === 'es' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -1153,7 +1154,10 @@ function RegionEditorSheet({
         overflow: 'hidden'
       }
     }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setOpenDay(isOpen ? null : dk),
+      onClick: () => {
+        setOpenDay(isOpen ? null : dk);
+        setCitySearch('');
+      },
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -1243,6 +1247,49 @@ function RegionEditorSheet({
         padding: '2px 6px'
       }
     }, head.clearLbl)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'relative',
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        left: 10,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        pointerEvents: 'none'
+      }
+    }, Icon.search(14, 'var(--pg-ink-400)')), /*#__PURE__*/React.createElement("input", {
+      value: citySearch,
+      onChange: e => setCitySearch(e.target.value),
+      placeholder: lang === 'pt' ? 'Buscar cidade...' : lang === 'es' ? 'Buscar ciudad...' : 'Search city...',
+      style: {
+        width: '100%',
+        height: 38,
+        borderRadius: 10,
+        border: '1px solid var(--pg-ink-200)',
+        background: 'var(--pg-ink-50)',
+        paddingLeft: 34,
+        paddingRight: citySearch ? 34 : 12,
+        fontSize: 13,
+        fontFamily: 'inherit',
+        color: 'var(--pg-ink-900)',
+        outline: 'none',
+        boxSizing: 'border-box'
+      }
+    }), citySearch && /*#__PURE__*/React.createElement("button", {
+      onClick: () => setCitySearch(''),
+      style: {
+        position: 'absolute',
+        right: 8,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        border: 'none',
+        background: 'transparent',
+        cursor: 'pointer',
+        padding: 4
+      }
+    }, Icon.x(12, 'var(--pg-ink-400)'))), !citySearch && /*#__PURE__*/React.createElement("div", {
       className: "pg-scroll-x",
       style: {
         display: 'flex',
@@ -1264,9 +1311,9 @@ function RegionEditorSheet({
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: 6,
-        marginTop: 8
+        marginTop: 4
       }
-    }, FL_COUNTIES[activeCounty].map(city => {
+    }, (citySearch ? Object.values(FL_COUNTIES).flat().filter((c, i, a) => a.indexOf(c) === i && c.toLowerCase().includes(citySearch.toLowerCase())) : FL_COUNTIES[activeCounty]).map(city => {
       const on = cities.includes(city);
       return /*#__PURE__*/React.createElement("button", {
         key: city,
