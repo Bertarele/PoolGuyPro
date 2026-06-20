@@ -745,8 +745,8 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     } else if (user?.uid) {
       window.sb.from('quick_pool_applications')
         .select('status,applicant_phone').eq('job_id', job.id).eq('applicant_id', user.uid)
-        .maybeSingle()
-        .then(({ data }) => { setMyApp(data || null); });
+        .limit(1)
+        .then(({ data }) => { setMyApp((data && data[0]) || null); });
     }
   }, [isOwn, job.id, user?.uid]);
 
