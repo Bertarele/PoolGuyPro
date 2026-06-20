@@ -32,6 +32,7 @@ function QuickPoolsScreen({ ctx }) {
           urgency: 'new',
           poster: j.poster_name,
           poster_phone: j.poster_phone,
+          pool_address: j.pool_address,
           poster_id: j.poster_id,
           when: { en: j.when_label||'', pt: j.when_label||'', es: j.when_label||'' },
           pools: j.pools_count || 1,
@@ -952,7 +953,28 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         ) : (
           /* Non-owner actions */
           <>
-            {/* Phone: only shown to accepted applicant */}
+            {/* Address + Phone: only shown to accepted applicant */}
+            {job._live && job.pool_address && myApp?.status === 'accepted' && (
+              <div style={{
+                display:'flex', alignItems:'flex-start', gap:10,
+                padding:'12px 14px', borderRadius:12,
+                background:'#F0FDF4', border:'1px solid #86EFAC',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}>
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                <div>
+                  <div style={{fontSize:11, fontWeight:700, color:'#15803D', letterSpacing:'0.04em', textTransform:'uppercase', marginBottom:2}}>
+                    {lang==='pt'?'Endereço da piscina':lang==='es'?'Dirección':'Pool address'}
+                  </div>
+                  <div style={{fontSize:14, fontWeight:600, color:'#14532D'}}>{job.pool_address}</div>
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(job.pool_address)}`} target="_blank" rel="noreferrer"
+                    style={{fontSize:11, color:'#16A34A', fontWeight:600, textDecoration:'none', marginTop:2, display:'inline-block'}}>
+                    {lang==='pt'?'Ver no mapa →':lang==='es'?'Ver en mapa →':'Open in Maps →'}
+                  </a>
+                </div>
+              </div>
+            )}
             {job._live && job.poster_phone && myApp?.status === 'accepted' && (
               <a href={`tel:${job.poster_phone}`} style={{
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
@@ -1070,8 +1092,9 @@ function PostJobSheet({ open, onClose, lang, user, onPosted }) {
   const [pools,     setPools]     = React.useState(1);
   const [price,     setPrice]     = React.useState('');
   const [neg,       setNeg]       = React.useState(false);
-  const [showPhone, setShowPhone] = React.useState(false);
-  const [phone,     setPhone]     = React.useState(user?.phone || '');
+  const [showPhone,   setShowPhone]   = React.useState(false);
+  const [phone,       setPhone]       = React.useState(user?.phone || '');
+  const [address,     setAddress]     = React.useState('');
   const [saving,    setSaving]    = React.useState(false);
   const [err,       setErr]       = React.useState('');
 
@@ -1081,7 +1104,7 @@ function PostJobSheet({ open, onClose, lang, user, onPosted }) {
   const [cityQ, setCityQ] = React.useState('');
   const filteredCities = cityQ ? allCities.filter(c=>c.toLowerCase().includes(cityQ.toLowerCase())) : allCities;
 
-  const reset = () => { setCity(''); setDay(''); setDesc(''); setPools(1); setPrice(''); setNeg(false); setShowPhone(false); setPhone(user?.phone||''); setErr(''); setCityQ(''); };
+  const reset = () => { setCity(''); setDay(''); setDesc(''); setPools(1); setPrice(''); setNeg(false); setShowPhone(false); setPhone(user?.phone||''); setAddress(''); setErr(''); setCityQ(''); };
 
   const submit = async () => {
     if (!city) return setErr(lang==='pt'?'Escolha a cidade':'Choose city');
@@ -1091,7 +1114,7 @@ function PostJobSheet({ open, onClose, lang, user, onPosted }) {
     setSaving(true);
     const job = {
       poster_id: user.uid, poster_name: user.name || user.email || 'Pool Guy',
-      poster_phone: showPhone ? (phone||null) : null, city, day_of_week: day,
+      poster_phone: showPhone ? (phone||null) : null, pool_address: address.trim()||null, city, day_of_week: day,
       when_label: dayLabels[DAY_KEYS.indexOf(day)],
       pools_count: pools, price_per_pool: neg ? null : (parseFloat(price)||null),
       price_negotiable: neg, description: desc.trim(), pool_type:'residential', status:'open',
@@ -1249,6 +1272,21 @@ function PostJobSheet({ open, onClose, lang, user, onPosted }) {
                   placeholder="(954) 000-0000" style={inp}/>
               </div>
             )}
+          </div>
+
+          {/* Address — revealed only to accepted candidate */}
+          <div style={{borderRadius:14,border:'1px solid var(--pg-ink-200)',overflow:'hidden',background:'var(--pg-white)'}}>
+            <div style={{padding:'14px 16px'}}>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',marginBottom:2}}>
+                {lang==='pt'?'Endereço da piscina':lang==='es'?'Dirección de la piscina':'Pool address'}
+              </div>
+              <div style={{fontSize:11,color:'var(--pg-ink-500)',marginBottom:10}}>
+                {lang==='pt'?'Visível apenas para o candidato que você aceitar.':'Only visible to the candidate you accept.'}
+              </div>
+              <input value={address} onChange={e=>setAddress(e.target.value)} type="text"
+                placeholder={lang==='pt'?'Ex: 123 Palm Ave, Davie, FL 33325':'E.g. 123 Palm Ave, Davie, FL 33325'}
+                style={inp}/>
+            </div>
           </div>
 
           {err && <div style={{background:'#FEE2E2',borderRadius:9,padding:'9px 12px',fontSize:13,color:'#DC2626',fontWeight:500}}>{err}</div>}

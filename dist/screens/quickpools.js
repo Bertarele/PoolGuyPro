@@ -59,6 +59,7 @@ function QuickPoolsScreen({
           urgency: 'new',
           poster: j.poster_name,
           poster_phone: j.poster_phone,
+          pool_address: j.pool_address,
           poster_id: j.poster_id,
           when: {
             en: j.when_label || '',
@@ -1925,7 +1926,63 @@ function QuickPoolDetails({
   })), lang === 'pt' ? `${showApplicants ? 'Fechar' : 'Ver'} candidatos${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}` : `${showApplicants ? 'Close' : 'View'} applicants${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}`)) :
   /*#__PURE__*/
   /* Non-owner actions */
-  React.createElement(React.Fragment, null, job._live && job.poster_phone && myApp?.status === 'accepted' && /*#__PURE__*/React.createElement("a", {
+  React.createElement(React.Fragment, null, job._live && job.pool_address && myApp?.status === 'accepted' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 10,
+      padding: '12px 14px',
+      borderRadius: 12,
+      background: '#F0FDF4',
+      border: '1px solid #86EFAC'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#16A34A",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      flexShrink: 0,
+      marginTop: 1
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "10",
+    r: "3"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: '#15803D',
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Endereço da piscina' : lang === 'es' ? 'Dirección' : 'Pool address'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      color: '#14532D'
+    }
+  }, job.pool_address), /*#__PURE__*/React.createElement("a", {
+    href: `https://maps.google.com/?q=${encodeURIComponent(job.pool_address)}`,
+    target: "_blank",
+    rel: "noreferrer",
+    style: {
+      fontSize: 11,
+      color: '#16A34A',
+      fontWeight: 600,
+      textDecoration: 'none',
+      marginTop: 2,
+      display: 'inline-block'
+    }
+  }, lang === 'pt' ? 'Ver no mapa →' : lang === 'es' ? 'Ver en mapa →' : 'Open in Maps →'))), job._live && job.poster_phone && myApp?.status === 'accepted' && /*#__PURE__*/React.createElement("a", {
     href: `tel:${job.poster_phone}`,
     style: {
       display: 'flex',
@@ -2120,6 +2177,7 @@ function PostJobSheet({
   const [neg, setNeg] = React.useState(false);
   const [showPhone, setShowPhone] = React.useState(false);
   const [phone, setPhone] = React.useState(user?.phone || '');
+  const [address, setAddress] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const [err, setErr] = React.useState('');
   const allCities = React.useMemo(() => {
@@ -2136,6 +2194,7 @@ function PostJobSheet({
     setNeg(false);
     setShowPhone(false);
     setPhone(user?.phone || '');
+    setAddress('');
     setErr('');
     setCityQ('');
   };
@@ -2149,6 +2208,7 @@ function PostJobSheet({
       poster_id: user.uid,
       poster_name: user.name || user.email || 'Pool Guy',
       poster_phone: showPhone ? phone || null : null,
+      pool_address: address.trim() || null,
       city,
       day_of_week: day,
       when_label: dayLabels[DAY_KEYS.indexOf(day)],
@@ -2573,6 +2633,36 @@ function PostJobSheet({
     onChange: e => setPhone(e.target.value),
     type: "tel",
     placeholder: "(954) 000-0000",
+    style: inp
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      overflow: 'hidden',
+      background: 'var(--pg-white)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)',
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Endereço da piscina' : lang === 'es' ? 'Dirección de la piscina' : 'Pool address'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      marginBottom: 10
+    }
+  }, lang === 'pt' ? 'Visível apenas para o candidato que você aceitar.' : 'Only visible to the candidate you accept.'), /*#__PURE__*/React.createElement("input", {
+    value: address,
+    onChange: e => setAddress(e.target.value),
+    type: "text",
+    placeholder: lang === 'pt' ? 'Ex: 123 Palm Ave, Davie, FL 33325' : 'E.g. 123 Palm Ave, Davie, FL 33325',
     style: inp
   }))), err && /*#__PURE__*/React.createElement("div", {
     style: {
