@@ -19,7 +19,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mqlu5nrg">
+  <link rel="stylesheet" href="tokens.css?v=mqlu9h1c">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -67,15 +67,11 @@
       display: flex; align-items: center; justify-content: center;
       box-shadow:
         0 0 0 1px rgba(0,180,216,0.18),
-        0 8px 32px rgba(0,119,182,0.28),
-        0 2px 8px rgba(0,0,0,0.5);
+        0 8px 40px rgba(0,119,182,0.35),
+        0 2px 8px rgba(0,0,0,0.6);
       overflow: hidden;
       position: relative; z-index: 1;
       animation: pgSplashPop 0.55s cubic-bezier(0.34,1.56,0.64,1) both;
-    }
-    .pgSplashIcon img {
-      width: 88px; height: 88px;
-      object-fit: contain;
     }
 
     /* PoolGuyX wordmark */
@@ -149,7 +145,31 @@
   <div id="pgSplash">
     <div class="pgSplashGlow"></div>
     <div class="pgSplashIcon">
-      <img src="/icone.png" alt="PoolGuyX"/>
+      <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="xGradA" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#48cae4"/>
+            <stop offset="55%" stop-color="#0096c7"/>
+            <stop offset="100%" stop-color="#023e8a"/>
+          </linearGradient>
+          <linearGradient id="xGradB" x1="72" y1="0" x2="0" y2="72" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#48cae4"/>
+            <stop offset="55%" stop-color="#0096c7"/>
+            <stop offset="100%" stop-color="#023e8a"/>
+          </linearGradient>
+          <linearGradient id="waveGrad" x1="4" y1="0" x2="68" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#0077b6"/>
+            <stop offset="50%" stop-color="#00b4d8"/>
+            <stop offset="100%" stop-color="#0096c7"/>
+          </linearGradient>
+        </defs>
+        <!-- X — bar top-left → bottom-right -->
+        <rect x="10" y="29" width="52" height="14" rx="7" fill="url(#xGradA)" transform="rotate(45 36 36)"/>
+        <!-- X — bar top-right → bottom-left -->
+        <rect x="10" y="29" width="52" height="14" rx="7" fill="url(#xGradB)" transform="rotate(-45 36 36)"/>
+        <!-- Wave swoosh -->
+        <path d="M 6 56 Q 20 44 34 52 Q 48 60 66 46" stroke="url(#waveGrad)" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+      </svg>
     </div>
     <div class="pgSplashWordmark">
       <span class="pgSplashWord">PoolGuy<em>X</em></span>
@@ -443,20 +463,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mqlu5nrg"></script>
-  <script src="tweaks-panel.js?v=mqlu5nrg"></script>
-  <script src="components.js?v=mqlu5nrg"></script>
-  <script src="brand.js?v=mqlu5nrg"></script>
-  <script src="data.js?v=mqlu5nrg"></script>
-  <script src="screens/login.js?v=mqlu5nrg"></script>
-  <script src="screens/home.js?v=mqlu5nrg"></script>
-  <script src="screens/marketplace.js?v=mqlu5nrg"></script>
-  <script src="screens/quickpools.js?v=mqlu5nrg"></script>
-  <script src="screens/post.js?v=mqlu5nrg"></script>
-  <script src="screens/work.js?v=mqlu5nrg"></script>
-  <script src="screens/profile.js?v=mqlu5nrg"></script>
-  <script src="screens/overlays.js?v=mqlu5nrg"></script>
-  <script src="app.js?v=mqlu5nrg"></script>
+  <script src="ios-frame.js?v=mqlu9h1c"></script>
+  <script src="tweaks-panel.js?v=mqlu9h1c"></script>
+  <script src="components.js?v=mqlu9h1c"></script>
+  <script src="brand.js?v=mqlu9h1c"></script>
+  <script src="data.js?v=mqlu9h1c"></script>
+  <script src="screens/login.js?v=mqlu9h1c"></script>
+  <script src="screens/home.js?v=mqlu9h1c"></script>
+  <script src="screens/marketplace.js?v=mqlu9h1c"></script>
+  <script src="screens/quickpools.js?v=mqlu9h1c"></script>
+  <script src="screens/post.js?v=mqlu9h1c"></script>
+  <script src="screens/work.js?v=mqlu9h1c"></script>
+  <script src="screens/profile.js?v=mqlu9h1c"></script>
+  <script src="screens/overlays.js?v=mqlu9h1c"></script>
+  <script src="app.js?v=mqlu9h1c"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {
