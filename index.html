@@ -251,8 +251,8 @@
       var run=async function(retried){
         var url=BASE+'/rest/v1/'+table, h=hdrs();
         if(op==='upsert'){
-          var pref='resolution=merge-duplicates'+(upsertConflict?',on_conflict='+upsertConflict:'');
-          var r=await fetch(url,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal,'+pref}),body:JSON.stringify(body)});
+          var uqs=upsertConflict?'?on_conflict='+encodeURIComponent(upsertConflict):'';
+          var r=await fetch(url+uqs,{method:'POST',headers:Object.assign({},h,{'Prefer':'return=minimal,resolution=merge-duplicates'}),body:JSON.stringify(body)});
           if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Upsert failed '+r.status}};}
           return{data:null,error:null};
         }
@@ -329,6 +329,8 @@
       };
       return b;
     }
+
+    window._pgGetTok = function(){ return _tok || KEY; };
 
     window.sb = {
       rpc:async function(fn,params){

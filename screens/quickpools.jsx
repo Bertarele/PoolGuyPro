@@ -1142,7 +1142,8 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
     // Trigger push notifications for matching pool guys
     try {
       await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
-        method:'POST', headers:{'Content-Type':'application/json'},
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+(window._pgGetTok?window._pgGetTok():'')},
         body: JSON.stringify({ job: data }),
       });
     } catch {}

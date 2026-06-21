@@ -967,6 +967,7 @@ function QuickPoolsScreen({
       onClose: () => setPostOpen(false),
       lang: lang,
       user: user,
+      darkMode: darkMode,
       onPosted: j => {
         loadJobs();
       }
@@ -1316,6 +1317,7 @@ function QuickPoolsScreen({
     onClose: () => setPostOpen(false),
     lang: lang,
     user: user,
+    darkMode: darkMode,
     onPosted: j => {
       loadJobs();
     }
@@ -2215,6 +2217,7 @@ function PostJobSheet({
   onClose,
   lang,
   user,
+  darkMode = false,
   onPosted
 }) {
   const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -2224,7 +2227,6 @@ function PostJobSheet({
   const [city, setCity] = React.useState('');
   const [day, setDay] = React.useState('');
   const [desc, setDesc] = React.useState('');
-  const [pools, setPools] = React.useState(1);
   const [price, setPrice] = React.useState('');
   const [neg, setNeg] = React.useState(false);
   const [showPhone, setShowPhone] = React.useState(false);
@@ -2241,7 +2243,6 @@ function PostJobSheet({
     setCity('');
     setDay('');
     setDesc('');
-    setPools(1);
     setPrice('');
     setNeg(false);
     setShowPhone(false);
@@ -2264,7 +2265,7 @@ function PostJobSheet({
       city,
       day_of_week: day,
       when_label: dayLabels[DAY_KEYS.indexOf(day)],
-      pools_count: pools,
+      pools_count: 1,
       price_per_pool: neg ? null : parseFloat(price) || null,
       price_negotiable: neg,
       description: desc.trim(),
@@ -2284,7 +2285,8 @@ function PostJobSheet({
       await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (window._pgGetTok ? window._pgGetTok() : '')
         },
         body: JSON.stringify({
           job: data
@@ -2296,16 +2298,22 @@ function PostJobSheet({
     onClose();
     onPosted && onPosted(data);
   };
+  const dm = darkMode;
+  const inkBg = dm ? 'rgba(255,255,255,0.08)' : 'var(--pg-ink-50)';
+  const inkBdr = dm ? 'rgba(255,255,255,0.12)' : 'var(--pg-ink-200)';
+  const inkText = dm ? '#fff' : 'var(--pg-ink-900)';
+  const inkSub = dm ? 'rgba(255,255,255,0.45)' : 'var(--pg-ink-500)';
+  const cardBg = dm ? 'rgba(255,255,255,0.05)' : 'var(--pg-white)';
   const inp = {
     width: '100%',
     height: 44,
     borderRadius: 10,
-    border: '1px solid var(--pg-ink-200)',
-    background: 'var(--pg-ink-50)',
+    border: `1px solid ${inkBdr}`,
+    background: inkBg,
     padding: '0 12px',
     fontSize: 16,
     fontFamily: 'inherit',
-    color: 'var(--pg-ink-900)',
+    color: inkText,
     outline: 'none',
     boxSizing: 'border-box'
   };
@@ -2325,7 +2333,7 @@ function PostJobSheet({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '4px 18px 14px',
-      borderBottom: '0.5px solid var(--pg-ink-200)'
+      borderBottom: `0.5px solid ${inkBdr}`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2339,7 +2347,8 @@ function PostJobSheet({
       margin: 0,
       fontSize: 18,
       fontWeight: 700,
-      letterSpacing: '-0.02em'
+      letterSpacing: '-0.02em',
+      color: inkText
     }
   }, lang === 'pt' ? 'Publicar vaga' : lang === 'es' ? 'Publicar trabajo' : 'Post a job'), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -2348,7 +2357,7 @@ function PostJobSheet({
     },
     style: {
       border: 'none',
-      background: 'var(--pg-ink-100)',
+      background: inkBg,
       width: 30,
       height: 30,
       borderRadius: '50%',
@@ -2357,11 +2366,11 @@ function PostJobSheet({
       alignItems: 'center',
       justifyContent: 'center'
     }
-  }, Icon.x(16, 'var(--pg-ink-700)'))), /*#__PURE__*/React.createElement("p", {
+  }, Icon.x(16, inkText))), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: 0,
       fontSize: 12,
-      color: 'var(--pg-ink-500)',
+      color: inkSub,
       lineHeight: 1.4
     }
   }, lang === 'pt' ? 'Pool guys com essa cidade e dia configurados serão notificados na hora.' : 'Pool guys with this city and day configured will be notified instantly.')), /*#__PURE__*/React.createElement("div", {
@@ -2377,7 +2386,7 @@ function PostJobSheet({
     style: {
       fontSize: 12,
       fontWeight: 700,
-      color: 'var(--pg-ink-600)',
+      color: inkSub,
       letterSpacing: '0.04em',
       textTransform: 'uppercase',
       display: 'block',
@@ -2391,7 +2400,7 @@ function PostJobSheet({
       height: 44,
       borderRadius: 10,
       border: '1.5px solid var(--pg-blue-500)',
-      background: 'var(--pg-blue-50)',
+      background: dm ? 'rgba(0,119,182,0.18)' : 'var(--pg-blue-50)',
       padding: '0 12px'
     }
   }, /*#__PURE__*/React.createElement("span", {
@@ -2399,7 +2408,7 @@ function PostJobSheet({
       flex: 1,
       fontSize: 14,
       fontWeight: 600,
-      color: 'var(--pg-blue-700)'
+      color: dm ? '#60BBFF' : 'var(--pg-blue-700)'
     }
   }, city), /*#__PURE__*/React.createElement("button", {
     onClick: () => setCity(''),
@@ -2409,7 +2418,7 @@ function PostJobSheet({
       cursor: 'pointer',
       padding: 2
     }
-  }, Icon.x(14, 'var(--pg-ink-400)'))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
+  }, Icon.x(14, inkSub))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
     value: cityQ,
     onChange: e => setCityQ(e.target.value),
     placeholder: lang === 'pt' ? 'Buscar cidade...' : 'Search city...',
@@ -2421,9 +2430,9 @@ function PostJobSheet({
     style: {
       maxHeight: 140,
       overflow: 'auto',
-      border: '1px solid var(--pg-ink-200)',
+      border: `1px solid ${inkBdr}`,
       borderRadius: 10,
-      background: '#fff'
+      background: cardBg
     }
   }, filteredCities.slice(0, 30).map(c => /*#__PURE__*/React.createElement("button", {
     key: c,
@@ -2441,14 +2450,14 @@ function PostJobSheet({
       cursor: 'pointer',
       fontSize: 13,
       fontWeight: 500,
-      color: 'var(--pg-ink-900)',
-      borderBottom: '0.5px solid var(--pg-ink-100)'
+      color: inkText,
+      borderBottom: `0.5px solid ${inkBdr}`
     }
   }, c))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     style: {
       fontSize: 12,
       fontWeight: 700,
-      color: 'var(--pg-ink-600)',
+      color: inkSub,
       letterSpacing: '0.04em',
       textTransform: 'uppercase',
       display: 'block',
@@ -2468,9 +2477,9 @@ function PostJobSheet({
       style: {
         padding: '8px 4px',
         borderRadius: 9,
-        border: '1px solid ' + (on ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)'),
-        background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-50)',
-        color: on ? '#fff' : 'var(--pg-ink-700)',
+        border: '1px solid ' + (on ? 'var(--pg-blue-500)' : inkBdr),
+        background: on ? 'var(--pg-blue-500)' : inkBg,
+        color: on ? '#fff' : inkText,
         fontSize: 12,
         fontWeight: 700,
         cursor: 'pointer',
@@ -2481,7 +2490,7 @@ function PostJobSheet({
     style: {
       fontSize: 12,
       fontWeight: 700,
-      color: 'var(--pg-ink-600)',
+      color: inkSub,
       letterSpacing: '0.04em',
       textTransform: 'uppercase',
       display: 'block',
@@ -2495,76 +2504,21 @@ function PostJobSheet({
       width: '100%',
       minHeight: 80,
       borderRadius: 10,
-      border: '1px solid var(--pg-ink-200)',
-      background: 'var(--pg-ink-50)',
+      border: `1px solid ${inkBdr}`,
+      background: inkBg,
       padding: '10px 12px',
       fontSize: 14,
       fontFamily: 'inherit',
       resize: 'none',
       outline: 'none',
-      color: 'var(--pg-ink-900)',
+      color: inkText,
       boxSizing: 'border-box'
     }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     style: {
       fontSize: 12,
       fontWeight: 700,
-      color: 'var(--pg-ink-600)',
-      letterSpacing: '0.04em',
-      textTransform: 'uppercase',
-      display: 'block',
-      marginBottom: 6
-    }
-  }, lang === 'pt' ? 'Nº piscinas' : '# Pools'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      height: 44,
-      borderRadius: 10,
-      border: '1px solid var(--pg-ink-200)',
-      background: 'var(--pg-ink-50)',
-      overflow: 'hidden'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setPools(Math.max(1, pools - 1)),
-    style: {
-      width: 40,
-      height: '100%',
-      border: 'none',
-      background: 'transparent',
-      fontSize: 18,
-      cursor: 'pointer',
-      color: 'var(--pg-ink-600)'
-    }
-  }, "\u2212"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      flex: 1,
-      textAlign: 'center',
-      fontSize: 16,
-      fontWeight: 700
-    }
-  }, pools), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setPools(pools + 1),
-    style: {
-      width: 40,
-      height: '100%',
-      border: 'none',
-      background: 'transparent',
-      fontSize: 18,
-      cursor: 'pointer',
-      color: 'var(--pg-ink-600)'
-    }
-  }, "+"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: 'var(--pg-ink-600)',
+      color: inkSub,
       letterSpacing: '0.04em',
       textTransform: 'uppercase',
       display: 'block',
@@ -2581,7 +2535,7 @@ function PostJobSheet({
       top: '50%',
       transform: 'translateY(-50%)',
       fontSize: 14,
-      color: neg ? 'var(--pg-ink-300)' : 'var(--pg-ink-600)',
+      color: neg ? inkSub : inkText,
       fontWeight: 600
     }
   }, "$"), /*#__PURE__*/React.createElement("input", {
@@ -2603,7 +2557,7 @@ function PostJobSheet({
       marginTop: 6,
       cursor: 'pointer',
       fontSize: 12,
-      color: 'var(--pg-ink-500)'
+      color: inkSub
     }
   }, /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
@@ -2613,10 +2567,10 @@ function PostJobSheet({
       width: 14,
       height: 14
     }
-  }), lang === 'pt' ? 'A combinar' : 'Negotiable'))), /*#__PURE__*/React.createElement("div", {
+  }), lang === 'pt' ? 'A combinar' : 'Negotiable')), /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
-      border: '1px solid var(--pg-ink-200)',
+      border: `1px solid ${inkBdr}`,
       overflow: 'hidden'
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -2626,20 +2580,20 @@ function PostJobSheet({
       justifyContent: 'space-between',
       padding: '14px 16px',
       cursor: 'pointer',
-      background: 'var(--pg-white)'
+      background: cardBg
     },
     onClick: () => setShowPhone(v => !v)
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       fontWeight: 700,
-      color: 'var(--pg-ink-900)',
+      color: inkText,
       marginBottom: 2
     }
   }, lang === 'pt' ? 'Mostrar telefone para candidato aceito?' : lang === 'es' ? '¿Mostrar teléfono al candidato aceptado?' : 'Show phone to accepted candidate?'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: 'var(--pg-ink-500)'
+      color: inkSub
     }
   }, lang === 'pt' ? 'Apenas quem você aceitar terá acesso ao seu número.' : 'Only the candidate you accept will see your number.')), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2648,7 +2602,7 @@ function PostJobSheet({
       borderRadius: 999,
       flexShrink: 0,
       marginLeft: 12,
-      background: showPhone ? '#0077B6' : 'var(--pg-ink-300)',
+      background: showPhone ? '#0077B6' : inkBdr,
       position: 'relative',
       transition: 'background .2s'
     }
@@ -2667,14 +2621,14 @@ function PostJobSheet({
   }))), showPhone && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 16px 14px',
-      borderTop: '0.5px solid var(--pg-ink-100)',
-      background: 'var(--pg-ink-50)'
+      borderTop: `0.5px solid ${inkBdr}`,
+      background: inkBg
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: {
       fontSize: 11,
       fontWeight: 700,
-      color: 'var(--pg-ink-600)',
+      color: inkSub,
       letterSpacing: '0.04em',
       textTransform: 'uppercase',
       display: 'block',
@@ -2689,9 +2643,9 @@ function PostJobSheet({
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
-      border: '1px solid var(--pg-ink-200)',
+      border: `1px solid ${inkBdr}`,
       overflow: 'hidden',
-      background: 'var(--pg-white)'
+      background: cardBg
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2701,13 +2655,13 @@ function PostJobSheet({
     style: {
       fontSize: 13,
       fontWeight: 700,
-      color: 'var(--pg-ink-900)',
+      color: inkText,
       marginBottom: 2
     }
   }, lang === 'pt' ? 'Endereço da piscina' : lang === 'es' ? 'Dirección de la piscina' : 'Pool address'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: 'var(--pg-ink-500)',
+      color: inkSub,
       marginBottom: 10
     }
   }, lang === 'pt' ? 'Visível apenas para o candidato que você aceitar.' : 'Only visible to the candidate you accept.'), /*#__PURE__*/React.createElement("input", {
@@ -2728,7 +2682,7 @@ function PostJobSheet({
   }, err)), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 18px 18px',
-      borderTop: '0.5px solid var(--pg-ink-200)'
+      borderTop: `0.5px solid ${inkBdr}`
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: submit,
