@@ -411,31 +411,41 @@ function App() {
     } catch(e) {}
   };
 
+  const _setPushLog = (msg) => { try { localStorage.setItem('pg_push_log', msg); } catch{} };
+
+  const _registerPush = React.useCallback(async () => {
+    if (!user?.uid) return;
+    _setPushLog('iniciando...');
+    if (!('serviceWorker' in navigator)) { _setPushLog('❌ serviceWorker não suportado'); return; }
+    if (!('PushManager' in window))      { _setPushLog('❌ PushManager indisponível — abra pelo ícone da Home Screen'); return; }
+    _setPushLog('pedindo permissão...');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') { _setPushLog('❌ permissão negada: ' + permission); return; }
+    _setPushLog('aguardando service worker...');
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      _setPushLog('criando subscription...');
+      const existing = await reg.pushManager.getSubscription();
+      const sub = existing || await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+      });
+      const j = sub.toJSON();
+      _setPushLog('salvando no banco...');
+      const { error } = await window.sb.from('push_subscriptions').upsert({
+        user_id:  user.uid,
+        endpoint: j.endpoint,
+        p256dh:   j.keys.p256dh,
+        auth:     j.keys.auth,
+      }, { onConflict: 'user_id,endpoint' });
+      if (error) { _setPushLog('❌ upsert falhou: ' + error.message); return; }
+      _setPushLog('✅ notificações ativas');
+    } catch(e) { _setPushLog('❌ erro: ' + (e.message || String(e))); }
+  }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
   React.useEffect(() => {
     if (!isLoggedIn || !user?.uid) return;
-    const t = setTimeout(async () => {
-      try {
-        if (!('serviceWorker' in navigator)) { console.warn('[push] no serviceWorker'); return; }
-        if (!('PushManager' in window)) { console.warn('[push] no PushManager — abra pelo ícone da Home Screen'); return; }
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') { console.warn('[push] permission denied:', permission); return; }
-        const reg = await navigator.serviceWorker.ready;
-        const existing = await reg.pushManager.getSubscription();
-        const sub = existing || await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
-        });
-        const j = sub.toJSON();
-        const { data, error } = await window.sb.from('push_subscriptions').upsert({
-          user_id:  user.uid,
-          endpoint: j.endpoint,
-          p256dh:   j.keys.p256dh,
-          auth:     j.keys.auth,
-        }, { onConflict: 'user_id,endpoint' });
-        if (error) console.warn('[push] upsert error:', error.message);
-        else console.log('[push] subscription saved ✓', j.endpoint.slice(-20));
-      } catch(e) { console.warn('[push] subscribe failed:', e.message || e); }
-    }, 2000);
+    const t = setTimeout(_registerPush, 2000);
     return () => clearTimeout(t);
   }, [isLoggedIn, user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -886,6 +896,8 @@ function App() {
       showToast && showToast('✓ Verificação solicitada! Nossa equipe vai analisar em breve.');
     },
     openPushNotif:      () => setPushNotifOpen(true),
+    retryPush: _registerPush,
+    pushLog: (()=>{ try{ return localStorage.getItem('pg_push_log')||''; }catch{return '';} })(),
     openWallet:         () => setWalletOpen(true),
     openJobDetail:      (app) => setJobDetailApp(app),
     openReview:         (app) => setReviewApp(app),

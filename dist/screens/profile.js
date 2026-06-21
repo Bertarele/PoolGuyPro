@@ -27,7 +27,9 @@ function ProfileScreen({
     hasUnreadNotif,
     requestVerification,
     openWallet,
-    isDesktop = false
+    isDesktop = false,
+    retryPush,
+    pushLog = ''
   } = ctx;
   const t = STRINGS[lang];
   const typeIcon = type => {
@@ -1110,13 +1112,40 @@ function ProfileScreen({
       }
     }),
     onClick: toggleDark
-  }), /*#__PURE__*/React.createElement(SettingRow, {
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SettingRow, {
     icon: Icon.bell(18, 'var(--pg-blue-500)'),
     label: t.notifications,
-    detail: t.on,
+    detail: pushLog.startsWith('✅') ? lang === 'pt' ? 'Ativas' : 'Active' : lang === 'pt' ? 'Verificar' : 'Check',
     chev: true,
     onClick: openPushNotif
-  }), /*#__PURE__*/React.createElement(SettingRow, {
+  }), pushLog && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '6px 16px 8px',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: pushLog.startsWith('✅') ? '#16A34A' : pushLog.startsWith('❌') ? '#DC2626' : 'var(--pg-ink-500)',
+      flex: 1,
+      lineHeight: 1.3
+    }
+  }, pushLog), !pushLog.startsWith('✅') && /*#__PURE__*/React.createElement("button", {
+    onClick: retryPush,
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      border: 'none',
+      background: 'transparent',
+      cursor: 'pointer',
+      padding: '2px 6px',
+      whiteSpace: 'nowrap'
+    }
+  }, lang === 'pt' ? 'Tentar novamente' : 'Retry'))), /*#__PURE__*/React.createElement(SettingRow, {
     icon: Icon.globe(18, 'var(--pg-blue-500)'),
     label: t.languageLbl,
     detail: {
