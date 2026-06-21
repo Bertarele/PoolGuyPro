@@ -601,34 +601,44 @@ function App() {
   };
   React.useEffect(() => {
     if (!isLoggedIn || !user?.uid) return;
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-    // Wait a bit so the app loads before asking for permission
     const t = setTimeout(async () => {
       try {
+        if (!('serviceWorker' in navigator)) {
+          console.warn('[push] no serviceWorker');
+          return;
+        }
+        if (!('PushManager' in window)) {
+          console.warn('[push] no PushManager — abra pelo ícone da Home Screen');
+          return;
+        }
         const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        if (permission !== 'granted') {
+          console.warn('[push] permission denied:', permission);
+          return;
+        }
         const reg = await navigator.serviceWorker.ready;
         const existing = await reg.pushManager.getSubscription();
         const sub = existing || (await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
         }));
+        const j = sub.toJSON();
         const {
-          endpoint,
-          keys
-        } = sub.toJSON();
-        await window.sb.from('push_subscriptions').upsert({
+          data,
+          error
+        } = await window.sb.from('push_subscriptions').upsert({
           user_id: user.uid,
-          endpoint: endpoint,
-          p256dh: keys.p256dh,
-          auth: keys.auth
+          endpoint: j.endpoint,
+          p256dh: j.keys.p256dh,
+          auth: j.keys.auth
         }, {
           onConflict: 'user_id,endpoint'
         });
+        if (error) console.warn('[push] upsert error:', error.message);else console.log('[push] subscription saved ✓', j.endpoint.slice(-20));
       } catch (e) {
-        console.warn('[push] subscribe failed:', e);
+        console.warn('[push] subscribe failed:', e.message || e);
       }
-    }, 5000);
+    }, 2000);
     return () => clearTimeout(t);
   }, [isLoggedIn, user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
