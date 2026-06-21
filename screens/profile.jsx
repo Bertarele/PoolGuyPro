@@ -483,16 +483,17 @@ function ProfileScreen({ ctx }) {
               <SettingRow icon={Icon.bell(18,'var(--pg-blue-500)')} label={t.notifications}
                 detail={pushLog.startsWith('✅') ? (lang==='pt'?'Ativas':'Active') : (lang==='pt'?'Verificar':'Check')}
                 chev onClick={openPushNotif}/>
-              {pushLog && (
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 16px 8px',gap:8}}>
-                  <span style={{fontSize:11,color: pushLog.startsWith('✅') ? '#16A34A' : pushLog.startsWith('❌') ? '#DC2626' : 'var(--pg-ink-500)',flex:1,lineHeight:1.3}}>{pushLog}</span>
-                  {!pushLog.startsWith('✅') && (
-                    <button onClick={retryPush} style={{fontSize:11,fontWeight:700,color:'var(--pg-blue-500)',border:'none',background:'transparent',cursor:'pointer',padding:'2px 6px',whiteSpace:'nowrap'}}>
-                      {lang==='pt'?'Tentar novamente':'Retry'}
-                    </button>
-                  )}
-                </div>
-              )}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 16px 10px',gap:8}}>
+                <span style={{fontSize:11,flex:1,lineHeight:1.3,
+                  color: pushLog.startsWith('✅') ? '#16A34A' : pushLog.startsWith('❌') ? '#DC2626' : 'var(--pg-ink-400)'}}>
+                  {pushLog || (lang==='pt'?'Toque para ativar notificações push':'Tap to enable push notifications')}
+                </span>
+                {!pushLog.startsWith('✅') && (
+                  <button onClick={retryPush} style={{fontSize:11,fontWeight:700,color:'var(--pg-blue-500)',border:'none',background:'transparent',cursor:'pointer',padding:'4px 8px',whiteSpace:'nowrap',flexShrink:0}}>
+                    {lang==='pt'?'Ativar':'Enable'}
+                  </button>
+                )}
+              </div>
             </div>
             <SettingRow icon={Icon.globe(18,'var(--pg-blue-500)')} label={t.languageLbl}
               detail={({en:t.english, pt:t.portuguese, es:t.spanish})[lang]} chev
