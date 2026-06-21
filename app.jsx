@@ -411,7 +411,8 @@ function App() {
     } catch(e) {}
   };
 
-  const _setPushLog = (msg) => { try { localStorage.setItem('pg_push_log', msg); } catch{} };
+  const [pushLog, setPushLog] = React.useState(() => { try { return localStorage.getItem('pg_push_log')||''; } catch{ return ''; } });
+  const _setPushLog = (msg) => { setPushLog(msg); try { localStorage.setItem('pg_push_log', msg); } catch{} };
 
   const _registerPush = React.useCallback(async () => {
     if (!user?.uid) return;
@@ -897,7 +898,7 @@ function App() {
     },
     openPushNotif:      () => setPushNotifOpen(true),
     retryPush: _registerPush,
-    pushLog: (()=>{ try{ return localStorage.getItem('pg_push_log')||''; }catch{return '';} })(),
+    pushLog,
     openWallet:         () => setWalletOpen(true),
     openJobDetail:      (app) => setJobDetailApp(app),
     openReview:         (app) => setReviewApp(app),
