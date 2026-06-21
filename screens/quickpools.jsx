@@ -1108,7 +1108,6 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
   const [city,      setCity]      = React.useState('');
   const [day,       setDay]       = React.useState('');
   const [desc,      setDesc]      = React.useState('');
-  const [pools,     setPools]     = React.useState(1);
   const [price,     setPrice]     = React.useState('');
   const [neg,       setNeg]       = React.useState(false);
   const [showPhone,   setShowPhone]   = React.useState(false);
@@ -1123,7 +1122,7 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
   const [cityQ, setCityQ] = React.useState('');
   const filteredCities = cityQ ? allCities.filter(c=>c.toLowerCase().includes(cityQ.toLowerCase())) : allCities;
 
-  const reset = () => { setCity(''); setDay(''); setDesc(''); setPools(1); setPrice(''); setNeg(false); setShowPhone(false); setPhone(user?.phone||''); setAddress(''); setErr(''); setCityQ(''); };
+  const reset = () => { setCity(''); setDay(''); setDesc(''); setPrice(''); setNeg(false); setShowPhone(false); setPhone(user?.phone||''); setAddress(''); setErr(''); setCityQ(''); };
 
   const submit = async () => {
     if (!city) return setErr(lang==='pt'?'Escolha a cidade':'Choose city');
@@ -1135,7 +1134,7 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
       poster_id: user.uid, poster_name: user.name || user.email || 'Pool Guy',
       poster_phone: showPhone ? (phone||null) : null, pool_address: address.trim()||null, city, day_of_week: day,
       when_label: dayLabels[DAY_KEYS.indexOf(day)],
-      pools_count: pools, price_per_pool: neg ? null : (parseFloat(price)||null),
+      pools_count: 1, price_per_pool: neg ? null : (parseFloat(price)||null),
       price_negotiable: neg, description: desc.trim(), pool_type:'residential', status:'open',
     };
     const { data, error } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
@@ -1235,32 +1234,20 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
               style={{width:'100%',minHeight:80,borderRadius:10,border:`1px solid ${inkBdr}`,background:inkBg,padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'none',outline:'none',color:inkText,boxSizing:'border-box'}}/>
           </div>
 
-          {/* Pools + Price row */}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
-                {lang==='pt'?'Nº piscinas':'# Pools'}
-              </label>
-              <div style={{display:'flex',alignItems:'center',height:44,borderRadius:10,border:`1px solid ${inkBdr}`,background:inkBg,overflow:'hidden'}}>
-                <button onClick={()=>setPools(Math.max(1,pools-1))} style={{width:40,height:'100%',border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:inkText}}>−</button>
-                <span style={{flex:1,textAlign:'center',fontSize:16,fontWeight:700,color:inkText}}>{pools}</span>
-                <button onClick={()=>setPools(pools+1)} style={{width:40,height:'100%',border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:inkText}}>+</button>
-              </div>
+          {/* Price */}
+          <div>
+            <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+              {lang==='pt'?'$/piscina':'$/pool'}
+            </label>
+            <div style={{position:'relative'}}>
+              <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:14,color:neg?inkSub:inkText,fontWeight:600}}>$</span>
+              <input type="number" value={price} onChange={e=>setPrice(e.target.value)} disabled={neg}
+                placeholder="45" style={{...inp,paddingLeft:24,opacity:neg?0.4:1}}/>
             </div>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
-                {lang==='pt'?'$/piscina':'$/pool'}
-              </label>
-              <div style={{position:'relative'}}>
-                <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:14,color:neg?inkSub:inkText,fontWeight:600}}>$</span>
-                <input type="number" value={price} onChange={e=>setPrice(e.target.value)} disabled={neg}
-                  placeholder="45" style={{...inp,paddingLeft:24,opacity:neg?0.4:1}}/>
-              </div>
-              <label style={{display:'flex',alignItems:'center',gap:6,marginTop:6,cursor:'pointer',fontSize:12,color:inkSub}}>
-                <input type="checkbox" checked={neg} onChange={e=>setNeg(e.target.checked)} style={{width:14,height:14}}/>
-                {lang==='pt'?'A combinar':'Negotiable'}
-              </label>
-            </div>
+            <label style={{display:'flex',alignItems:'center',gap:6,marginTop:6,cursor:'pointer',fontSize:12,color:inkSub}}>
+              <input type="checkbox" checked={neg} onChange={e=>setNeg(e.target.checked)} style={{width:14,height:14}}/>
+              {lang==='pt'?'A combinar':'Negotiable'}
+            </label>
           </div>
 
           {/* Phone visibility toggle */}
