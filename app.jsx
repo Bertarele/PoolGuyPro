@@ -153,97 +153,6 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "showDevControls": true
 }/*EDITMODE-END*/;
 
-function RegionOnboardingOverlay({ lang, uid, onSave }) {
-  const [search, setSearch] = React.useState('');
-  const [dropOpen, setDropOpen] = React.useState(false);
-  const [region, setRegion] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
-
-  const regionItems = React.useMemo(() => {
-    const FL = window.FL_COUNTIES || {};
-    const items = [];
-    Object.entries(FL).forEach(([county, cities]) => {
-      items.push({ label: county + ' County', value: county + ' County', isCounty: true });
-      cities.forEach(city => items.push({ label: city + ', ' + county, value: city, isCounty: false }));
-    });
-    return items;
-  }, []);
-
-  const filtered = search.length > 1
-    ? regionItems.filter(r => r.label.toLowerCase().includes(search.toLowerCase())).slice(0, 12)
-    : [];
-
-  const handleSave = async () => {
-    if (!region || loading) return;
-    setLoading(true);
-    try {
-      if (window.sb && uid) {
-        await window.sb.from('profiles').update({ region }).eq('id', uid);
-      }
-      onSave(region);
-    } catch(e) {}
-    setLoading(false);
-  };
-
-  const title = lang==='pt' ? 'Qual é a sua região?' : lang==='es' ? '¿Cuál es tu región?' : 'What is your region?';
-  const sub   = lang==='pt' ? 'Selecione a cidade ou condado onde você trabalha' : lang==='es' ? 'Selecciona la ciudad o condado donde trabajas' : 'Select the city or county where you work';
-  const ph    = lang==='pt' ? 'Buscar cidade ou condado…' : lang==='es' ? 'Buscar ciudad o condado…' : 'Search city or county…';
-  const btnLbl = lang==='pt' ? 'Confirmar →' : lang==='es' ? 'Confirmar →' : 'Confirm →';
-
-  return (
-    <div style={{position:'fixed', inset:0, zIndex:3000, background:'rgba(10,40,64,0.72)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', padding:24}}>
-      <div style={{background:'var(--pg-white)', borderRadius:24, boxShadow:'0 20px 60px rgba(0,0,0,0.2)', width:'100%', maxWidth:420, padding:'32px 28px', display:'flex', flexDirection:'column', gap:20}}>
-        <div style={{textAlign:'center'}}>
-          <div style={{width:52, height:52, borderRadius:16, background:'linear-gradient(135deg,#1565E8,#00C2D4)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px'}}>
-            {Icon.pin(24,'#fff')}
-          </div>
-          <div style={{fontSize:22, fontWeight:800, color:'var(--pg-ink-900)', fontFamily:'var(--pg-font-display)', letterSpacing:'-0.02em', marginBottom:6}}>{title}</div>
-          <div style={{fontSize:13, color:'var(--pg-ink-500)', lineHeight:1.5}}>{sub}</div>
-        </div>
-
-        <div style={{position:'relative'}}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2" strokeLinecap="round"
-            style={{position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1}}>
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input type="text" value={search} onChange={e=>{setSearch(e.target.value); setDropOpen(true);}} onFocus={()=>setDropOpen(true)}
-            placeholder={ph}
-            style={{width:'100%', height:48, borderRadius:12, border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-ink-50)', paddingLeft:38, paddingRight:12, fontSize:15, fontFamily:'inherit', color:'var(--pg-ink-900)', outline:'none', boxSizing:'border-box'}}/>
-          {dropOpen && filtered.length > 0 && (
-            <div style={{position:'absolute', top:'calc(100% + 6px)', left:0, right:0, background:'var(--pg-white)', border:'1.5px solid var(--pg-ink-200)', borderRadius:14, boxShadow:'0 8px 32px rgba(0,0,0,0.12)', zIndex:50, overflow:'hidden', maxHeight:240, overflowY:'auto'}}>
-              {filtered.map(r => (
-                <div key={r.value} onClick={()=>{setRegion(r.value); setSearch(r.label); setDropOpen(false);}}
-                  style={{padding:'11px 14px', cursor:'pointer', fontSize:13.5, fontWeight: r.isCounty ? 700 : 400, color: r.isCounty ? 'var(--pg-blue-700)' : 'var(--pg-ink-800)', background:'transparent', borderBottom:'1px solid var(--pg-ink-100)'}}
-                  onMouseEnter={e=>e.currentTarget.style.background='var(--pg-ink-50)'}
-                  onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                  {r.label}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {region && (
-          <div style={{display:'flex', alignItems:'center', gap:8, background:'#EEF4FF', border:'1.5px solid #93c5fd', borderRadius:999, padding:'7px 14px', alignSelf:'flex-start'}}>
-            <span style={{fontSize:13, fontWeight:600, color:'#1e40af'}}>{search}</span>
-            <button onClick={()=>{setRegion(''); setSearch('');}} style={{border:'none', background:'transparent', cursor:'pointer', color:'#93c5fd', padding:0, display:'flex', alignItems:'center', lineHeight:1}}>✕</button>
-          </div>
-        )}
-
-        <button onClick={handleSave} disabled={!region || loading}
-          style={{height:52, borderRadius:14, border:'none', cursor: region ? 'pointer' : 'default', fontFamily:'inherit', fontSize:15, fontWeight:700,
-            background: region ? 'linear-gradient(90deg,#1565E8,#00C2D4)' : 'var(--pg-ink-200)',
-            color: region ? '#fff' : 'var(--pg-ink-400)',
-            boxShadow: region ? '0 8px 28px rgba(21,101,232,0.35)' : 'none', transition:'all .2s',
-            display:'flex', alignItems:'center', justifyContent:'center', gap:8}}>
-          {loading && <span style={{width:15, height:15, borderRadius:'50%', border:'2.5px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', animation:'pgSpin .7s linear infinite', display:'inline-block'}}/>}
-          {btnLbl}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function App() {
   const _savedTier = (typeof localStorage !== 'undefined' && localStorage.getItem('pg_tier')) || null;
   const [t, setTweak] = useTweaks({ ...TWEAK_DEFAULTS, ...(_savedTier ? { tier: _savedTier } : {}) });
@@ -442,28 +351,28 @@ function App() {
     if (!window.sb || !user?.uid) return;
     try { await window.sb.from('profiles').update({ regions_by_day: rbd }).eq('id', user.uid); } catch {}
   }, [user?.uid]);
-  const county = React.useMemo(() => {
+  // Derive county from user.region (city → county lookup via FL_COUNTIES)
+  const county = (() => {
     const FL = window.FL_COUNTIES || {};
-    const lookup = (city) => {
-      if (!city) return null;
+    const region = user.region || '';
+    if (region) {
       for (const [c, cities] of Object.entries(FL)) {
-        if (city === c || city === c + ' County') return c;
-        if (cities.includes(city)) return c;
+        if (region === c || region === c + ' County') return c;
+        if (Array.isArray(cities) && cities.includes(region)) return c;
       }
-      return null;
-    };
-    if (user.region) return lookup(user.region) || user.region.replace(/ County$/,'') || 'Broward';
+    }
     const allCities = Object.values(regionsByDay).flat().filter(Boolean);
     for (const city of allCities) {
-      const c = lookup(city);
-      if (c) return c;
+      for (const [c, cities] of Object.entries(FL)) {
+        if (Array.isArray(cities) && cities.includes(city)) return c;
+      }
     }
     return 'Broward';
-  }, [user.region, regionsByDay]);
+  })();
 
-  // Show region picker when logged-in user has no region set (new Google users, etc.)
-  // Derived — no extra state needed; becomes false automatically when user.region is saved
-  const needsRegion = isLoggedIn && !!user.uid && !user.region;
+  const [regionPickerSearch, setRegionPickerSearch] = React.useState('');
+  const [regionPickerDropOpen, setRegionPickerDropOpen] = React.useState(false);
+  const showRegionPicker = isLoggedIn && !!user.uid && !user.region;
 
   // ── Real unread chat count from Supabase ─────────────────────
   const recheckUnread = React.useCallback(async () => {
@@ -1103,6 +1012,67 @@ function App() {
   const desktopTabLabel = desktopNavItems.find(n=>n.id===tab);
 
   // ── Shared overlays (used in both mobile and desktop) ─────────
+  const RegionPickerOverlay = () => {
+    if (!showRegionPicker) return null;
+    const FL = window.FL_COUNTIES || {};
+    const allItems = [];
+    Object.entries(FL).forEach(([c, cities]) => {
+      allItems.push({ label: c + ' County', value: c + ' County', isCounty: true });
+      if (Array.isArray(cities)) cities.forEach(city => allItems.push({ label: city + ', ' + c, value: city, isCounty: false }));
+    });
+    const filtered = regionPickerSearch.length > 1
+      ? allItems.filter(r => r.label.toLowerCase().includes(regionPickerSearch.toLowerCase())).slice(0, 12)
+      : [];
+    const match = allItems.find(r => r.label === regionPickerSearch);
+    const selVal = match ? match.value : '';
+    const saveRegion = async () => {
+      if (!selVal) return;
+      try { if (window.sb && user.uid) await window.sb.from('profiles').update({ region: selVal }).eq('id', user.uid); } catch(e) {}
+      setUser(u => ({ ...u, region: selVal }));
+      setRegionPickerSearch('');
+      setRegionPickerDropOpen(false);
+    };
+    const title = lang==='pt' ? 'Qual é a sua região?' : lang==='es' ? '¿Cuál es tu región?' : 'What is your region?';
+    const sub   = lang==='pt' ? 'Selecione a cidade ou condado onde você trabalha' : lang==='es' ? 'Selecciona la ciudad o condado donde trabajas' : 'Select the city or county where you work';
+    const ph    = lang==='pt' ? 'Buscar cidade ou condado…' : lang==='es' ? 'Buscar ciudad o condado…' : 'Search city or county…';
+    const btnLbl = lang==='pt' ? 'Confirmar →' : lang==='es' ? 'Confirmar →' : 'Confirm →';
+    return (
+      <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(10,40,64,0.72)',backdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+        <div style={{background:'var(--pg-white)',borderRadius:24,boxShadow:'0 20px 60px rgba(0,0,0,0.2)',width:'100%',maxWidth:420,padding:'32px 28px',display:'flex',flexDirection:'column',gap:20}}>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:800,color:'var(--pg-ink-900)',fontFamily:'var(--pg-font-display)',letterSpacing:'-0.02em',marginBottom:6}}>{title}</div>
+            <div style={{fontSize:13,color:'var(--pg-ink-500)',lineHeight:1.5}}>{sub}</div>
+          </div>
+          <div style={{position:'relative'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2" strokeLinecap="round" style={{position:'absolute',left:13,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',zIndex:1}}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" value={regionPickerSearch}
+              onChange={e=>{setRegionPickerSearch(e.target.value);setRegionPickerDropOpen(true);}}
+              onFocus={()=>setRegionPickerDropOpen(true)}
+              placeholder={ph}
+              style={{width:'100%',height:48,borderRadius:12,border:'1.5px solid var(--pg-ink-200)',background:'var(--pg-ink-50)',paddingLeft:38,paddingRight:12,fontSize:15,fontFamily:'inherit',color:'var(--pg-ink-900)',outline:'none',boxSizing:'border-box'}}/>
+            {regionPickerDropOpen && filtered.length > 0 && (
+              <div style={{position:'absolute',top:'calc(100% + 6px)',left:0,right:0,background:'var(--pg-white)',border:'1.5px solid var(--pg-ink-200)',borderRadius:14,boxShadow:'0 8px 32px rgba(0,0,0,0.12)',zIndex:50,overflow:'hidden',maxHeight:240,overflowY:'auto'}}>
+                {filtered.map(r => (
+                  <div key={r.value} onClick={()=>{setRegionPickerSearch(r.label);setRegionPickerDropOpen(false);}}
+                    style={{padding:'11px 14px',cursor:'pointer',fontSize:13.5,fontWeight:r.isCounty?700:400,color:r.isCounty?'var(--pg-blue-700)':'var(--pg-ink-800)',background:'transparent',borderBottom:'1px solid var(--pg-ink-100)'}}>
+                    {r.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <button onClick={saveRegion} disabled={!selVal}
+            style={{height:52,borderRadius:14,border:'none',cursor:selVal?'pointer':'default',fontFamily:'inherit',fontSize:15,fontWeight:700,
+              background:selVal?'linear-gradient(90deg,#1565E8,#00C2D4)':'var(--pg-ink-200)',
+              color:selVal?'#fff':'var(--pg-ink-400)',
+              boxShadow:selVal?'0 8px 28px rgba(21,101,232,0.35)':'none',transition:'all .2s'}}>
+            {btnLbl}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const OverlayBundle = () => (
     <>
       <ChatSheet open={chatOpen}
@@ -1748,12 +1718,7 @@ function App() {
 
         {/* Overlays — called as function (not component) to avoid remount on re-render */}
         {OverlayBundle()}
-
-        {/* Region onboarding for new users */}
-        {isLoggedIn && needsRegion && (
-          <RegionOnboardingOverlay lang={lang} uid={user.uid}
-            onSave={region => { setUser(u => ({...u, region})); }}/>
-        )}
+        {RegionPickerOverlay()}
 
         {/* Tweaks panel */}
         <TweaksPanel>
@@ -1896,12 +1861,7 @@ function App() {
 
       {/* Overlays — called as function (not component) to avoid remount on re-render */}
       {OverlayBundle()}
-
-      {/* Region onboarding for new users */}
-      {isLoggedIn && needsRegion && (
-        <RegionOnboardingOverlay lang={lang} uid={user.uid}
-          onSave={region => { setUser(u => ({...u, region})); }}/>
-      )}
+      {RegionPickerOverlay()}
 
       {/* Tweaks */}
       <TweaksPanel>
