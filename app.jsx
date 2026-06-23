@@ -992,6 +992,7 @@ function App() {
         onNavigate={(type, linkId)=>{
           setNotifOpen(false);
           if (type==='warning') { setTimeout(()=>switchTab('profile'), 280); }
+          else if (type==='quick_pool_new') { setTimeout(()=>switchTab('quick'), 280); }
           else if (type==='job_new_application' || type==='job_accepted' || type==='job_rejected') { setTimeout(()=>switchTab('work'), 280); }
           else if (linkId) { setTimeout(()=>ctx.openListingById(linkId), 280); }
           else { setTimeout(()=>switchTab('market'), 280); }
@@ -1038,7 +1039,8 @@ function App() {
               // Only notify immediately if "Agora" (no scheduled date)
               if (inserted && !scheduledFor) {
                 fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
-                  method:'POST', headers:{'Content-Type':'application/json'},
+                  method:'POST',
+                  headers:{'Content-Type':'application/json','Authorization':'Bearer '+(window._pgGetTok?window._pgGetTok():'')},
                   body: JSON.stringify({ job: inserted }),
                 }).catch(()=>{});
               }
