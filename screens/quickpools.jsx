@@ -644,7 +644,7 @@ function QuickPoolsScreen({ ctx }) {
       </div>
 
     </div>
-    <JobSheet/>
+    <JobPage/>
     <PostJobSheet open={postOpen} onClose={()=>setPostOpen(false)} lang={lang} user={user} darkMode={darkMode}
       onPosted={j=>{ loadJobs(); }}/>
     </div>
