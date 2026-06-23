@@ -161,7 +161,7 @@ function App() {
   const [tab, setTab] = React.useState(() => {
     try {
       const hash = window.location.hash.replace(/^#\/?/, '');
-      const base = hash.split('/')[0];
+      const base = hash.split(/[/?]/)[0];
       const VALID = ['home','market','quick','work','profile'];
       if (VALID.includes(base)) return base;
       return new URLSearchParams(window.location.search).get('listing') ? 'market' : 'home';
@@ -172,9 +172,9 @@ function App() {
   React.useEffect(() => {
     try {
       const cur = window.location.hash.replace(/^#\/?/, '');
-      const curBase = cur.split('/')[0];
-      // If already on this tab and has a sub-segment, preserve it
-      if (curBase === tab && cur.includes('/')) return;
+      const curBase = cur.split(/[/?]/)[0];
+      // If already on this tab and has a sub-segment or query params, preserve it
+      if (curBase === tab && (cur.includes('/') || cur.includes('?'))) return;
       window.history.replaceState(null, '', '#' + tab);
     } catch(e) {}
   }, [tab]);

@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   const dayLabel = DAY_LABELS[job.day_of_week] || job.day_of_week;
   const title = `💧 Piscina em ${job.city}`;
   const body  = `${dayLabel} · ${job.pools_count ?? 1} piscina${(job.pools_count??1)>1?'s':''} · ${job.price_per_pool ? `$${job.price_per_pool}/piscina` : 'Negociável'}`;
-  const url   = `/#quick`;
+  const url   = `/#quick?job=${job.id}`;
 
   // ── 1. Send push notifications ──────────────────────────────────
   let sent = 0;

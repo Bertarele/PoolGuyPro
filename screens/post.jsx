@@ -178,15 +178,6 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
                 ))}
               </div>
 
-              <button onClick={addPool} className="pg-press" style={{
-                width:'100%', padding:'14px 16px', borderRadius:14,
-                background:'var(--pg-blue-50)', border:'1.5px dashed var(--pg-blue-500)',
-                color:'var(--pg-blue-700)', fontSize:14, fontWeight:700, cursor:'pointer',
-                display:'inline-flex', alignItems:'center', justifyContent:'center', gap:8,
-                fontFamily:'inherit', letterSpacing:'-0.005em',
-              }}>
-                {Icon.plus(16, 'var(--pg-blue-700)')} {lbl.addPool}
-              </button>
             </>
           )}
 

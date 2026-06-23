@@ -64,20 +64,21 @@ function QuickPoolsScreen({ ctx }) {
 
   React.useEffect(() => { loadJobs(); }, [loadJobs]);
 
-  // Handle deep link from push notification: /#express-pools?job=<id>
+  // Capture deep-link job ID from URL on first render, before hash is overwritten by tab sync
+  const deepLinkJobId = React.useMemo(() => {
+    try {
+      const hash = window.location.hash;
+      const qs = hash.includes('?') ? hash.split('?')[1] : '';
+      return new URLSearchParams(qs).get('job') || null;
+    } catch { return null; }
+  }, []);
+
+  // Open deep-linked job once jobs list is loaded
   React.useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash.includes('express-pools')) return;
-    const params = new URLSearchParams(hash.split('?')[1] || '');
-    const jobId = params.get('job');
-    if (!jobId) return;
-    const find = () => {
-      const j = jobs.find(x => String(x.id) === String(jobId));
-      if (j) { setSelected(j); window.location.hash = 'express-pools'; }
-    };
-    if (jobs.length > 0) find();
-    else setTimeout(find, 1200);
-  }, [jobs]);
+    if (!deepLinkJobId || !jobs.length) return;
+    const j = jobs.find(x => String(x.id) === String(deepLinkJobId));
+    if (j) setSelected(j);
+  }, [jobs, deepLinkJobId]);
 
   React.useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 900);
