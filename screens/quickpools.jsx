@@ -315,7 +315,7 @@ function QuickPoolsScreen({ ctx }) {
   // ── Sheet (mobile + desktop share the same) ───────────────────
   const JobPage = () => selected ? (
     <div style={{
-      position:'absolute', inset:0, zIndex:50,
+      position:'fixed', inset:0, zIndex:1200,
       background:'var(--pg-bg)', overflowY:'auto',
       display:'flex', flexDirection:'column',
     }}>
