@@ -876,7 +876,7 @@ function App() {
     clearDeepLink: () => setDeepLinkListingId(null),
     openListingById: (id) => {
       if (typeof id === 'string' && id.startsWith('qp_')) {
-        sessionStorage.setItem('pg_open_quick_job', id.slice(3));
+        window.dispatchEvent(new CustomEvent('pg_open_quick_job', { detail: { jobId: id.slice(3) } }));
         switchTab('quick');
       } else {
         setDeepLinkListingId(id);

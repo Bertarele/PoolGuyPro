@@ -80,15 +80,18 @@ function QuickPoolsScreen({ ctx }) {
     if (j) setSelected(j);
   }, [jobs, deepLinkJobId]);
 
-  // Open job requested via chat listing-card click (stored in sessionStorage by app.jsx)
+  // Open job requested via chat listing-card click (dispatched event from app.jsx)
+  const [pendingQuickJobId, setPendingQuickJobId] = React.useState(null);
   React.useEffect(() => {
-    if (!jobs.length) return;
-    const pending = sessionStorage.getItem('pg_open_quick_job');
-    if (!pending) return;
-    sessionStorage.removeItem('pg_open_quick_job');
-    const j = jobs.find(x => String(x.id) === String(pending));
-    if (j) setSelected(j);
-  }, [jobs]);
+    const handler = (e) => setPendingQuickJobId(String(e.detail.jobId));
+    window.addEventListener('pg_open_quick_job', handler);
+    return () => window.removeEventListener('pg_open_quick_job', handler);
+  }, []);
+  React.useEffect(() => {
+    if (!pendingQuickJobId || !jobs.length) return;
+    const j = jobs.find(x => String(x.id) === String(pendingQuickJobId));
+    if (j) { setSelected(j); setPendingQuickJobId(null); }
+  }, [pendingQuickJobId, jobs]);
 
   React.useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 900);
