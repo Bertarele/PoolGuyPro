@@ -453,6 +453,7 @@ function App() {
   // Overlays
   const [chatOpen,         setChatOpen]        = React.useState(false);
   const [chatConvoTarget,  setChatConvoTarget]  = React.useState(null); // string | { id, name }
+  const [pendingQuickJobId, setPendingQuickJobId] = React.useState(null);
   const [notifOpen,      setNotifOpen]      = React.useState(false);
   // Unread badges — derived from real Supabase data
   const [hasUnreadChat,  setHasUnreadChat]  = React.useState(false);
@@ -876,13 +877,15 @@ function App() {
     clearDeepLink: () => setDeepLinkListingId(null),
     openListingById: (id) => {
       if (typeof id === 'string' && id.startsWith('qp_')) {
-        window.dispatchEvent(new CustomEvent('pg_open_quick_job', { detail: { jobId: id.slice(3) } }));
+        setPendingQuickJobId(id.slice(3));
         switchTab('quick');
       } else {
         setDeepLinkListingId(id);
         switchTab('market');
       }
     },
+    pendingQuickJobId,
+    clearPendingQuickJob: () => setPendingQuickJobId(null),
     goTab:              switchTab,
     openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },
