@@ -80,6 +80,16 @@ function QuickPoolsScreen({ ctx }) {
     if (j) setSelected(j);
   }, [jobs, deepLinkJobId]);
 
+  // Open job requested via chat listing-card click (stored in sessionStorage by app.jsx)
+  React.useEffect(() => {
+    if (!jobs.length) return;
+    const pending = sessionStorage.getItem('pg_open_quick_job');
+    if (!pending) return;
+    sessionStorage.removeItem('pg_open_quick_job');
+    const j = jobs.find(x => String(x.id) === String(pending));
+    if (j) setSelected(j);
+  }, [jobs]);
+
   React.useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 900);
     window.addEventListener('resize', h);
@@ -743,6 +753,7 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
       border: fullHeight ? 'none' : '0.5px solid var(--pg-ink-200)',
       borderRadius: fullHeight ? 0 : 14,
       background:'var(--pg-ink-100)',
+      isolation: 'isolate',
     }}>
       <div ref={containerRef} style={{ height:'100%', width:'100%' }}/>
     </div>
@@ -1071,7 +1082,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
             )}
 
             <div style={{display:'flex', gap:8}}>
-              <button onClick={()=>onChat(job.poster_id ? { id: job.poster_id, name: job.poster, listingContext: { name: tr(job.title, lang) + ' · ' + job.loc, price: job.price !== 'neg' ? job.price : null, priceMode: job.price === 'neg' ? 'neg' : 'fixed', type: 'quick_pool' } } : job.poster)} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
+              <button onClick={()=>onChat(job.poster_id ? { id: job.poster_id, name: job.poster, listingId: 'qp_' + job.id, listingContext: { name: tr(job.title, lang) + ' · ' + job.loc, price: job.price !== 'neg' ? job.price : null, priceMode: job.price === 'neg' ? 'neg' : 'fixed', type: 'quick_pool' } } : job.poster)} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
                 {Icon.msg(16, 'var(--pg-blue-700)')} {t.contact}
               </button>
               {job.status === 'filled' ? (
