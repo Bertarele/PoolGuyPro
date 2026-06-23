@@ -890,6 +890,7 @@ function App() {
     openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },
     hasUnreadChat, hasUnreadNotif: hasUnreadNotif || pendingRatings.length > 0,
+    registerPush:       _registerPush,
     openPaywall:        () => setPayOpen(true),
     openPostMenu:       () => setPostMenuOpen(true),
     openPost:           () => setPostQPOpen(true),

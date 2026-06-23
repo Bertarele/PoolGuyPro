@@ -32,6 +32,16 @@ function QuickPoolsScreen({ ctx }) {
   // Post job sheet
   const [postOpen, setPostOpen] = React.useState(false);
 
+  // Push notification permission
+  const [notifPerm, setNotifPerm] = React.useState(() => {
+    if (typeof Notification === 'undefined') return 'unsupported';
+    return Notification.permission;
+  });
+  const activatePush = React.useCallback(async () => {
+    if (ctx.registerPush) await ctx.registerPush();
+    if (typeof Notification !== 'undefined') setNotifPerm(Notification.permission);
+  }, [ctx.registerPush]);
+
   const loadJobs = React.useCallback(async () => {
     if (!window.sb) return;
     setJobsLoading(true);
@@ -480,6 +490,44 @@ function QuickPoolsScreen({ ctx }) {
 
           {/* Right: job list */}
           <div style={{padding:'28px 32px 60px', background:'var(--pg-ink-50)'}}>
+
+            {/* Push notification banner — only when not granted */}
+            {notifPerm !== 'granted' && notifPerm !== 'unsupported' && (
+              <div style={{
+                marginBottom:20, padding:'12px 16px', borderRadius:13,
+                background:'#FEFCE8', border:'1px solid #FDE68A',
+                display:'flex', alignItems:'center', gap:10,
+              }}>
+                <div style={{fontSize:18, flexShrink:0}}>🔔</div>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13, fontWeight:700, color:'#92400E', marginBottom:2}}>
+                    {lang==='pt' ? 'Ative as notificações para receber vagas em tempo real' : lang==='es' ? 'Activa las notificaciones para recibir trabajos en tiempo real' : 'Enable notifications to receive real-time job alerts'}
+                  </div>
+                  <div style={{fontSize:12, color:'#A16207', lineHeight:1.4}}>
+                    {lang==='pt'
+                      ? 'Sem notificações ativas você pode perder vagas urgentes.'
+                      : lang==='es'
+                      ? 'Sin notificaciones activas puedes perder trabajos urgentes.'
+                      : 'Without notifications enabled you may miss urgent jobs.'}
+                  </div>
+                </div>
+                {notifPerm === 'denied' ? (
+                  <div style={{fontSize:11, fontWeight:600, color:'#DC2626', flexShrink:0, maxWidth:100, textAlign:'center', lineHeight:1.3}}>
+                    {lang==='pt' ? 'Bloqueado — habilite nas configurações do navegador' : 'Blocked — enable in browser settings'}
+                  </div>
+                ) : (
+                  <button onClick={activatePush} style={{
+                    flexShrink:0, height:36, padding:'0 18px', borderRadius:9,
+                    border:'none', cursor:'pointer', fontSize:13, fontWeight:700, fontFamily:'inherit',
+                    background:'#D97706', color:'#fff',
+                    boxShadow:'0 2px 8px rgba(217,119,6,0.3)',
+                  }}>
+                    {lang==='pt' ? 'Ativar notificações' : lang==='es' ? 'Activar notificaciones' : 'Enable notifications'}
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Header */}
             <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20}}>
               <div>
@@ -611,6 +659,46 @@ function QuickPoolsScreen({ ctx }) {
           </div>
         );
       })()}
+
+      {/* Push notification banner — only when not granted */}
+      {notifPerm !== 'granted' && notifPerm !== 'unsupported' && (
+        <div style={{padding:'12px 18px 0'}}>
+          <div style={{
+            padding:'12px 14px', borderRadius:13,
+            background: darkMode ? 'rgba(234,179,8,0.14)' : '#FEFCE8',
+            border: `1px solid ${darkMode ? 'rgba(234,179,8,0.35)' : '#FDE68A'}`,
+            display:'flex', alignItems:'center', gap:10,
+          }}>
+            <div style={{fontSize:18, flexShrink:0}}>🔔</div>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:13, fontWeight:700, color: darkMode ? '#FDE68A' : '#92400E', marginBottom:2}}>
+                {lang==='pt' ? 'Ative as notificações' : lang==='es' ? 'Activa las notificaciones' : 'Enable notifications'}
+              </div>
+              <div style={{fontSize:11.5, color: darkMode ? 'rgba(253,230,138,0.75)' : '#A16207', lineHeight:1.4}}>
+                {lang==='pt'
+                  ? 'Você só receberá vagas em tempo real se as notificações estiverem ativas.'
+                  : lang==='es'
+                  ? 'Solo recibirás trabajos en tiempo real si las notificaciones están activas.'
+                  : 'You\'ll only receive real-time job alerts if notifications are enabled.'}
+              </div>
+            </div>
+            {notifPerm === 'denied' ? (
+              <div style={{fontSize:10, fontWeight:600, color: darkMode ? '#FCA5A5' : '#DC2626', flexShrink:0, maxWidth:80, textAlign:'center', lineHeight:1.3}}>
+                {lang==='pt' ? 'Bloqueado nas config. do app' : 'Blocked in browser settings'}
+              </div>
+            ) : (
+              <button onClick={activatePush} style={{
+                flexShrink:0, height:34, padding:'0 14px', borderRadius:9,
+                border:'none', cursor:'pointer', fontSize:12, fontWeight:700, fontFamily:'inherit',
+                background: darkMode ? '#CA8A04' : '#D97706', color:'#fff',
+                boxShadow:'0 2px 8px rgba(217,119,6,0.35)',
+              }}>
+                {lang==='pt' ? 'Ativar' : lang==='es' ? 'Activar' : 'Enable'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Map */}
       <div style={{padding:'14px 18px 0'}}>
