@@ -543,7 +543,7 @@ function App() {
         if (Array.isArray(cities) && cities.includes(region)) return c;
       }
     }
-    const allCities = Object.values(regionsByDay).flat().filter(Boolean);
+    const allCities = [].concat.apply([], Object.values(regionsByDay)).filter(Boolean);
     for (const city of allCities) {
       for (const [c, cities] of Object.entries(FL)) {
         if (Array.isArray(cities) && cities.includes(city)) return c;
