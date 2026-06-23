@@ -42,7 +42,7 @@ function QuickPoolsScreen({ ctx }) {
         // Normalize live data to match card format
         setJobs(data.map(j => ({
           id: j.id, _live: true,
-          title: { en: j.description || `Pool job in ${j.city}`, pt: j.description || `Vaga em ${j.city}`, es: j.description || `Vaga en ${j.city}` },
+          title: { en: j.title || `Pool job in ${j.city}`, pt: j.title || `Vaga em ${j.city}`, es: j.title || `Vaga en ${j.city}` },
           loc: j.city, dist: { en:'', pt:'', es:'' },
           price: j.price_negotiable ? 'neg' : j.price_per_pool,
           type: j.pool_type || 'residential',
@@ -894,6 +894,36 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           <span className="pg-chip pg-chip-aqua" style={{fontSize:11}}>{Icon.shield(11, 'var(--pg-aqua-700)')} {t.verified}</span>
         </div>
 
+        {/* Phone + address — visible to poster OR accepted applicant */}
+        {(isOwn || myApp?.status === 'accepted') && (job.poster_phone || job.pool_address) && (
+          <div className="pg-card" style={{padding:'12px 14px', marginTop:12, display:'flex', flexDirection:'column', gap:10}}>
+            {job.poster_phone && (
+              <div style={{display:'flex', alignItems:'center', gap:10}}>
+                {Icon.phone ? Icon.phone(14,'var(--pg-blue-700)') : null}
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:10, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:2}}>
+                    {lang==='pt'?'Telefone':lang==='es'?'Teléfono':'Phone'}
+                  </div>
+                  <a href={`tel:${job.poster_phone}`} style={{fontSize:14, fontWeight:600, color:'var(--pg-blue-600)', textDecoration:'none'}}>
+                    {job.poster_phone}
+                  </a>
+                </div>
+              </div>
+            )}
+            {job.pool_address && (
+              <div style={{display:'flex', alignItems:'flex-start', gap:10}}>
+                {Icon.pin(14,'var(--pg-blue-700)')}
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:10, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:2}}>
+                    {lang==='pt'?'Endereço':lang==='es'?'Dirección':'Address'}
+                  </div>
+                  <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-900)'}}>{job.pool_address}</div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {locked && (
           <div style={{
             marginTop:14, padding:16, borderRadius:14, color:'#fff',
@@ -1136,6 +1166,7 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
   const DAY_LABELS_EN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   const dayLabels = lang==='pt' ? DAY_LABELS_PT : DAY_LABELS_EN;
 
+  const [title,     setTitle]     = React.useState('');
   const [city,      setCity]      = React.useState('');
   const [day,       setDay]       = React.useState('');
   const [desc,      setDesc]      = React.useState('');
@@ -1153,12 +1184,12 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
   const [cityQ, setCityQ] = React.useState('');
   const filteredCities = cityQ ? allCities.filter(c=>c.toLowerCase().includes(cityQ.toLowerCase())) : allCities;
 
-  const reset = () => { setCity(''); setDay(''); setDesc(''); setPrice(''); setNeg(false); setShowPhone(false); setPhone(user?.phone||''); setAddress(''); setErr(''); setCityQ(''); };
+  const reset = () => { setTitle(''); setCity(''); setDay(''); setDesc(''); setPrice(''); setNeg(false); setShowPhone(false); setPhone(user?.phone||''); setAddress(''); setErr(''); setCityQ(''); };
 
   const submit = async () => {
+    if (!title.trim()) return setErr(lang==='pt'?'Adicione um título':'Add a title');
     if (!city) return setErr(lang==='pt'?'Escolha a cidade':'Choose city');
     if (!day)  return setErr(lang==='pt'?'Escolha o dia':'Choose day');
-    if (!desc.trim()) return setErr(lang==='pt'?'Descreva o serviço':'Describe the job');
     if (!window.sb || !user?.uid) return setErr('Login required');
     setSaving(true);
     const job = {
@@ -1166,7 +1197,7 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
       poster_phone: showPhone ? (phone||null) : null, pool_address: address.trim()||null, city, day_of_week: day,
       when_label: dayLabels[DAY_KEYS.indexOf(day)],
       pools_count: 1, price_per_pool: neg ? null : (parseFloat(price)||null),
-      price_negotiable: neg, description: desc.trim(), pool_type:'residential', status:'open',
+      price_negotiable: neg, title: title.trim(), description: desc.trim()||null, pool_type:'residential', status:'open',
     };
     const { data, error } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
     if (error) { setSaving(false); return setErr(error.message); }
@@ -1190,7 +1221,7 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
   const inkText  = dm ? '#fff' : 'var(--pg-ink-900)';
   const inkSub   = dm ? 'rgba(255,255,255,0.45)' : 'var(--pg-ink-500)';
   const cardBg   = dm ? 'rgba(255,255,255,0.05)' : 'var(--pg-white)';
-  const inp = { width:'100%', height:44, borderRadius:10, border:`1px solid ${inkBdr}`, background:inkBg, padding:'0 12px', fontSize:16, fontFamily:'inherit', color:inkText, outline:'none', boxSizing:'border-box' };
+  const inp = { width:'100%', height:44, borderRadius:10, border:`1.5px solid ${dm ? 'rgba(255,255,255,0.25)' : 'var(--pg-ink-200)'}`, background: dm ? 'rgba(255,255,255,0.14)' : 'var(--pg-ink-50)', padding:'0 12px', fontSize:16, fontFamily:'inherit', color:inkText, outline:'none', boxSizing:'border-box' };
 
   return (
     <Sheet open={open} onClose={()=>{ reset(); onClose(); }} height="92%">
@@ -1212,6 +1243,16 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
 
         {/* Body */}
         <div style={{flex:1,overflow:'auto',padding:'16px 18px',display:'flex',flexDirection:'column',gap:14}}>
+
+          {/* Title */}
+          <div>
+            <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+              {lang==='pt'?'Título':'Title'}
+            </label>
+            <input value={title} onChange={e=>setTitle(e.target.value)}
+              placeholder={lang==='pt'?'Ex: Limpeza em Davie':'E.g. Pool cleaning in Davie'}
+              style={inp}/>
+          </div>
 
           {/* City */}
           <div>

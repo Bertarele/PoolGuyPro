@@ -21,6 +21,9 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
     pools: [newPool(1)],
     priceMode:'fixed', price:'45',
     date: lang==='pt'?'Agora':lang==='es'?'Ahora':'Now',
+    showPhone: false,
+    phone: '',
+    pool_address: '',
   });
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updPool = (id, patch) => setForm(f => ({
@@ -187,6 +190,52 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
                 ))}
               </div>
 
+              {/* Phone toggle */}
+              <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', overflow:'hidden'}}>
+                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', cursor:'pointer'}}
+                  onClick={()=>upd('showPhone', !form.showPhone)}>
+                  <div>
+                    <div style={{fontSize:13, fontWeight:700, marginBottom:2}}>
+                      {lang==='pt'?'Mostrar telefone ao candidato aceito?':lang==='es'?'¿Mostrar teléfono al candidato aceptado?':'Show phone to accepted candidate?'}
+                    </div>
+                    <div style={{fontSize:11, color:'var(--pg-ink-500)'}}>
+                      {lang==='pt'?'Apenas quem você aceitar terá seu número.':lang==='es'?'Solo el candidato aceptado verá su número.':'Only the accepted candidate will see your number.'}
+                    </div>
+                  </div>
+                  <div style={{
+                    width:44, height:26, borderRadius:999, flexShrink:0, marginLeft:12,
+                    background: form.showPhone ? 'var(--pg-blue-500)' : 'var(--pg-ink-300)',
+                    position:'relative', transition:'background .2s',
+                  }}>
+                    <div style={{
+                      position:'absolute', top:3, left: form.showPhone ? 18 : 3, width:20, height:20,
+                      borderRadius:'50%', background:'#fff', transition:'left .2s',
+                      boxShadow:'0 1px 4px rgba(0,0,0,0.2)',
+                    }}/>
+                  </div>
+                </div>
+                {form.showPhone && (
+                  <div style={{padding:'0 16px 14px', borderTop:'0.5px solid var(--pg-ink-200)'}}>
+                    <label style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.04em', textTransform:'uppercase', display:'block', margin:'12px 0 6px'}}>
+                      {lang==='pt'?'Seu telefone':lang==='es'?'Tu teléfono':'Your phone'}
+                    </label>
+                    <input className="pg-field" value={form.phone} onChange={e=>upd('phone',e.target.value)}
+                      type="tel" placeholder="(954) 000-0000"/>
+                  </div>
+                )}
+              </div>
+
+              {/* Pool address */}
+              <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'14px 16px'}}>
+                <div style={{fontSize:13, fontWeight:700, marginBottom:2}}>
+                  {lang==='pt'?'Endereço da piscina':lang==='es'?'Dirección de la piscina':'Pool address'}
+                </div>
+                <div style={{fontSize:11, color:'var(--pg-ink-500)', marginBottom:10}}>
+                  {lang==='pt'?'Visível apenas para o candidato aceito. Opcional.':lang==='es'?'Visible solo al candidato aceptado. Opcional.':'Visible only to the accepted candidate. Optional.'}
+                </div>
+                <input className="pg-field" value={form.pool_address} onChange={e=>upd('pool_address',e.target.value)}
+                  placeholder={lang==='pt'?'Ex: 123 Palm Ave, Davie, FL 33325':'E.g. 123 Palm Ave, Davie, FL 33325'}/>
+              </div>
             </>
           )}
 

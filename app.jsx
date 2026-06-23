@@ -1032,14 +1032,16 @@ function App() {
               const firstPool = formData.pools?.[0] || {};
               const job = {
                 poster_id: user.uid, poster_name: user.name || user.email || 'Pool Guy',
-                poster_phone: user.phone || null,
+                poster_phone: formData.showPhone ? (formData.phone || user.phone || null) : null,
+                pool_address: formData.pool_address?.trim() || null,
                 city: firstPool.location || 'Florida',
                 day_of_week: scheduledFor ? ['sun','mon','tue','wed','thu','fri','sat'][new Date(formData.scheduled_for).getDay()] : 'mon',
                 when_label: scheduledFor ? new Date(scheduledFor).toLocaleDateString(lang==='pt'?'pt-BR':lang==='es'?'es':'en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : (lang==='pt'?'Agora':'Now'),
                 pools_count: formData.pools?.length || 1,
                 price_per_pool: formData.priceMode==='fixed' ? parseFloat(formData.price||0)||null : null,
                 price_negotiable: formData.priceMode==='neg',
-                description: [formData.title, formData.notes].filter(Boolean).join(' — '),
+                title: formData.title?.trim() || null,
+                description: formData.notes?.trim() || null,
                 status: 'open',
                 notify_at: notifyAt,
               };
