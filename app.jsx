@@ -390,10 +390,6 @@ function App() {
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
       setRegionsByDay(profile.regions_by_day);
     }
-    // Show region picker if user has no region set (new Google users, or users who skipped it)
-    if (!profile?.region) {
-      setNeedsRegion(true);
-    }
   }, []);
 
   // authReady gates the data fetch — ensures profile is loaded before querying DB
@@ -446,7 +442,6 @@ function App() {
     if (!window.sb || !user?.uid) return;
     try { await window.sb.from('profiles').update({ regions_by_day: rbd }).eq('id', user.uid); } catch {}
   }, [user?.uid]);
-  const [needsRegion, setNeedsRegion] = React.useState(false);
   const county = React.useMemo(() => {
     const FL = window.FL_COUNTIES || {};
     const lookup = (city) => {
@@ -465,6 +460,10 @@ function App() {
     }
     return 'Broward';
   }, [user.region, regionsByDay]);
+
+  // Show region picker when logged-in user has no region set (new Google users, etc.)
+  // Derived — no extra state needed; becomes false automatically when user.region is saved
+  const needsRegion = isLoggedIn && !!user.uid && !user.region;
 
   // ── Real unread chat count from Supabase ─────────────────────
   const recheckUnread = React.useCallback(async () => {
@@ -1753,7 +1752,7 @@ function App() {
         {/* Region onboarding for new users */}
         {isLoggedIn && needsRegion && (
           <RegionOnboardingOverlay lang={lang} uid={user.uid}
-            onSave={region => { setUser(u => ({...u, region})); setNeedsRegion(false); }}/>
+            onSave={region => { setUser(u => ({...u, region})); }}/>
         )}
 
         {/* Tweaks panel */}
@@ -1901,7 +1900,7 @@ function App() {
       {/* Region onboarding for new users */}
       {isLoggedIn && needsRegion && (
         <RegionOnboardingOverlay lang={lang} uid={user.uid}
-          onSave={region => { setUser(u => ({...u, region})); setNeedsRegion(false); }}/>
+          onSave={region => { setUser(u => ({...u, region})); }}/>
       )}
 
       {/* Tweaks */}
