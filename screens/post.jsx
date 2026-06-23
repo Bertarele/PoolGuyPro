@@ -43,16 +43,25 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
 
   const lbl = {
     poolN: lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool',
-    addPool: lang==='pt'?'Adicionar outra piscina':lang==='es'?'Agregar otra piscina':'Add another pool',
-    remove: lang==='pt'?'Remover':lang==='es'?'Quitar':'Remove',
-    eachIndependent: lang==='pt'
-      ? 'Cada piscina pode estar em uma cidade e ter tipo diferentes (casa ou condomínio).'
-      : lang==='es'
-        ? 'Cada piscina puede estar en una ciudad y tipo diferentes (casa o condominio).'
-        : 'Each pool can be in a different city and type (house or condo).',
-    pickLocation: lang==='pt'?'Cidade desta piscina':lang==='es'?'Ciudad de esta piscina':'City of this pool',
+    step2Title: lang==='pt'?'Onde fica a piscina?':lang==='es'?'¿Dónde está la piscina?':'Where is the pool?',
+    step2Sub: lang==='pt'?'Informe a cidade e o tipo para notificar os piscineiros certos.':lang==='es'?'Indica la ciudad y el tipo para notificar a los técnicos correctos.':'Enter the city and type to notify the right pool guys.',
+    pickLocation: lang==='pt'?'Cidade da piscina':lang==='es'?'Ciudad de la piscina':'Pool city',
     pickType: lang==='pt'?'Tipo':lang==='es'?'Tipo':'Type',
   };
+
+  const [matchCount, setMatchCount] = React.useState(null);
+  React.useEffect(() => {
+    if (step !== 3) return;
+    const city = form.pools[0]?.location;
+    if (!city || !window.sb) { setMatchCount(null); return; }
+    const dayIdx = isCustom && customDT ? new Date(customDT).getDay() : new Date().getDay();
+    const dayKey = ['sun','mon','tue','wed','thu','fri','sat'][dayIdx];
+    setMatchCount(null);
+    window.sb.from('profiles').select('regions_by_day').then(({ data }) => {
+      const c = (data || []).filter(p => (p.regions_by_day?.[dayKey] || []).includes(city)).length;
+      setMatchCount(c);
+    });
+  }, [step, form.pools, isCustom, customDT]);
 
   const canContinue = () => {
     if (step === 1) return form.title.trim().length > 0;
@@ -74,12 +83,12 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
       <div style={{padding:'0 18px'}}>
         <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em'}}>
           {step===1 && t.pqStep1Title}
-          {step===2 && (lang==='pt'?'Cada piscina, seus dados':lang==='es'?'Cada piscina, sus datos':'Each pool, its own details')}
+          {step===2 && lbl.step2Title}
           {step===3 && t.pqStep3Title}
         </h2>
         <div style={{fontSize:13, color:'var(--pg-ink-500)', marginTop:4}}>
           {step===1 && t.pqStep1Sub}
-          {step===2 && lbl.eachIndependent}
+          {step===2 && lbl.step2Sub}
           {step===3 && t.pqStep3Sub}
         </div>
 
@@ -204,7 +213,6 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
               <div className="pg-card" style={{padding:14, background:'var(--pg-blue-50)', border:'none'}}>
                 <div style={{fontSize:11, color:'var(--pg-blue-700)', fontWeight:700, letterSpacing:'0.05em', marginBottom:8}}>{t.summary}</div>
                 <SummaryRow label={t.sumTitle}  value={form.title || '—'}/>
-                <SummaryRow label={t.sumPools}  value={String(form.pools.length)}/>
                 <SummaryRow label={t.sumWhen}   value={form.date}/>
                 <SummaryRow label={t.sumPrice}  value={form.priceMode==='fixed' ? `$${form.price}/${lang==='en'?'pool':'piscina'}` : t.negotiable}/>
 
@@ -255,7 +263,9 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
               <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background:'var(--pg-aqua-100)', borderRadius:12}}>
                 {Icon.shield(16, 'var(--pg-aqua-700)')}
                 <div style={{fontSize:12, color:'var(--pg-aqua-700)', lineHeight:1.4}}>
-                  <b>34</b> {t.matchNotice}
+                  {matchCount === null
+                    ? (lang==='pt'?'Calculando…':'Calculating…')
+                    : <><b>{matchCount}</b> {t.matchNotice}</>}
                 </div>
               </div>
             </>

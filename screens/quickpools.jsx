@@ -1071,7 +1071,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
             )}
 
             <div style={{display:'flex', gap:8}}>
-              <button onClick={()=>onChat(job.poster_id ? { id: job.poster_id, name: job.poster } : job.poster)} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
+              <button onClick={()=>onChat(job.poster_id ? { id: job.poster_id, name: job.poster, listingContext: { name: tr(job.title, lang) + ' · ' + job.loc, price: job.price !== 'neg' ? job.price : null, priceMode: job.price === 'neg' ? 'neg' : 'fixed', type: 'quick_pool' } } : job.poster)} disabled={locked} className="pg-btn pg-btn-ghost" style={{flex:1, opacity:locked?0.5:1, borderRadius:999}}>
                 {Icon.msg(16, 'var(--pg-blue-700)')} {t.contact}
               </button>
               {job.status === 'filled' ? (
