@@ -313,27 +313,30 @@ function QuickPoolsScreen({ ctx }) {
   };
 
   // ── Sheet (mobile + desktop share the same) ───────────────────
-  const JobSheet = () => (
-    <Sheet open={!!selected} onClose={()=>setSelected(null)} height="86%">
-      {selected && (
-        <JobDetailBoundary onClose={()=>setSelected(null)}>
-          <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
-            applied={!!applied[selected.id]}
-            onApply={(sharePhone)=>applyToJob(selected.id, sharePhone)}
-            onUnlock={openPaywall}
-            onChat={openChat}
-            onClose={()=>setSelected(null)}
-            onDelete={deleteJob}
-            onComplete={finalizeJob}
-            onStatusChange={(status) => {
-              setJobs(prev => prev.map(j => String(j.id)===String(selected.id) ? {...j, status} : j));
-              setSelected(prev => prev ? {...prev, status} : prev);
-            }}
-          />
-        </JobDetailBoundary>
-      )}
-    </Sheet>
-  );
+  const JobPage = () => selected ? (
+    <div style={{
+      position:'absolute', inset:0, zIndex:50,
+      background:'var(--pg-bg)', overflowY:'auto',
+      display:'flex', flexDirection:'column',
+    }}>
+      <JobDetailBoundary onClose={()=>setSelected(null)}>
+        <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
+          applied={!!applied[selected.id]}
+          onApply={(sharePhone)=>applyToJob(selected.id, sharePhone)}
+          onUnlock={openPaywall}
+          onChat={openChat}
+          onClose={()=>setSelected(null)}
+          onDelete={deleteJob}
+          onComplete={finalizeJob}
+          lang={lang}
+          onStatusChange={(status) => {
+            setJobs(prev => prev.map(j => String(j.id)===String(selected.id) ? {...j, status} : j));
+            setSelected(prev => prev ? {...prev, status} : prev);
+          }}
+        />
+      </JobDetailBoundary>
+    </div>
+  ) : null;
 
   // ══════════════════════════════════════════════════════════════
   // ── DESKTOP LAYOUT ────────────────────────────────────────────
@@ -502,7 +505,7 @@ function QuickPoolsScreen({ ctx }) {
           </div>
         </div>
       </div>
-      <JobSheet/>
+      <JobPage/>
       <PostJobSheet open={postOpen} onClose={()=>setPostOpen(false)} lang={lang} user={user} darkMode={darkMode}
         onPosted={j=>{ loadJobs(); }}/>
       </div>
@@ -790,25 +793,38 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
   };
 
   return (
-    <div style={{padding:'8px 0 100px'}}>
-      <div style={{padding:'4px 18px 0', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-        {isOwn ? (
+    <div style={{display:'flex', flexDirection:'column', minHeight:'100%'}}>
+      {/* Sticky top bar with back arrow */}
+      <div style={{
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding:'calc(env(safe-area-inset-top, 0px) + 12px) 18px 12px',
+        borderBottom:'0.5px solid var(--pg-ink-200)',
+        position:'sticky', top:0, background:'var(--pg-bg)', zIndex:10,
+      }}>
+        <button onClick={onClose} style={{
+          display:'flex', alignItems:'center', gap:4,
+          border:'none', background:'transparent', cursor:'pointer',
+          color:'var(--pg-blue-500)', fontSize:14, fontWeight:600, padding:0, fontFamily:'inherit',
+        }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
+        </button>
+        {isOwn && (
           <button onClick={()=>{ onDelete && onDelete(job.id); onClose(); }} style={{
-            display:'flex', alignItems:'center', gap:6, height:32, padding:'0 12px', borderRadius:9,
+            display:'flex', alignItems:'center', gap:5, height:32, padding:'0 12px', borderRadius:9,
             border:'1px solid #FECACA', background:'#FEF2F2', cursor:'pointer', fontSize:12, fontWeight:600, color:'#DC2626',
           }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
             </svg>
-            {lang==='pt'?'Excluir vaga':lang==='es'?'Eliminar':'Delete post'}
+            {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
           </button>
-        ) : <div/>}
-        <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
-          {Icon.x(16, 'var(--pg-ink-700)')}
-        </button>
+        )}
       </div>
 
-      <div style={{padding:'4px 18px 0'}}>
+      <div style={{padding:'16px 18px 100px', flex:1}}>
         <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em', lineHeight:1.2}}>{tr(job.title, lang)}</h2>
         <div style={{display:'flex', alignItems:'center', gap:6, marginTop:8, fontSize:13, color:'var(--pg-ink-700)'}}>
           {Icon.pin(14)} {job.loc} · {tr(job.dist, lang)}
