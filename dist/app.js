@@ -255,6 +255,250 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "density": "regular",
   "showDevControls": true
 } /*EDITMODE-END*/;
+function RegionOnboardingOverlay({
+  lang,
+  uid,
+  onSave
+}) {
+  const [search, setSearch] = React.useState('');
+  const [dropOpen, setDropOpen] = React.useState(false);
+  const [region, setRegion] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const regionItems = React.useMemo(() => {
+    const FL = window.FL_COUNTIES || {};
+    const items = [];
+    Object.entries(FL).forEach(([county, cities]) => {
+      items.push({
+        label: county + ' County',
+        value: county + ' County',
+        isCounty: true
+      });
+      cities.forEach(city => items.push({
+        label: city + ', ' + county,
+        value: city,
+        isCounty: false
+      }));
+    });
+    return items;
+  }, []);
+  const filtered = search.length > 1 ? regionItems.filter(r => r.label.toLowerCase().includes(search.toLowerCase())).slice(0, 12) : [];
+  const handleSave = async () => {
+    if (!region || loading) return;
+    setLoading(true);
+    try {
+      if (window.sb && uid) {
+        await window.sb.from('profiles').update({
+          region
+        }).eq('id', uid);
+      }
+      onSave(region);
+    } catch (e) {}
+    setLoading(false);
+  };
+  const title = lang === 'pt' ? 'Qual é a sua região?' : lang === 'es' ? '¿Cuál es tu región?' : 'What is your region?';
+  const sub = lang === 'pt' ? 'Selecione a cidade ou condado onde você trabalha' : lang === 'es' ? 'Selecciona la ciudad o condado donde trabajas' : 'Select the city or county where you work';
+  const ph = lang === 'pt' ? 'Buscar cidade ou condado…' : lang === 'es' ? 'Buscar ciudad o condado…' : 'Search city or county…';
+  const btnLbl = lang === 'pt' ? 'Confirmar →' : lang === 'es' ? 'Confirmar →' : 'Confirm →';
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 3000,
+      background: 'rgba(10,40,64,0.72)',
+      backdropFilter: 'blur(6px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'var(--pg-white)',
+      borderRadius: 24,
+      boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+      width: '100%',
+      maxWidth: 420,
+      padding: '32px 28px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      background: 'linear-gradient(135deg,#1565E8,#00C2D4)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 16px'
+    }
+  }, Icon.pin(24, '#fff')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: 800,
+      color: 'var(--pg-ink-900)',
+      fontFamily: 'var(--pg-font-display)',
+      letterSpacing: '-0.02em',
+      marginBottom: 6
+    }
+  }, title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: 'var(--pg-ink-500)',
+      lineHeight: 1.5
+    }
+  }, sub)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "15",
+    height: "15",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "var(--pg-ink-400)",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    style: {
+      position: 'absolute',
+      left: 13,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      pointerEvents: 'none',
+      zIndex: 1
+    }
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "11",
+    cy: "11",
+    r: "8"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "m21 21-4.35-4.35"
+  })), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: search,
+    onChange: e => {
+      setSearch(e.target.value);
+      setDropOpen(true);
+    },
+    onFocus: () => setDropOpen(true),
+    placeholder: ph,
+    style: {
+      width: '100%',
+      height: 48,
+      borderRadius: 12,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-50)',
+      paddingLeft: 38,
+      paddingRight: 12,
+      fontSize: 15,
+      fontFamily: 'inherit',
+      color: 'var(--pg-ink-900)',
+      outline: 'none',
+      boxSizing: 'border-box'
+    }
+  }), dropOpen && filtered.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 'calc(100% + 6px)',
+      left: 0,
+      right: 0,
+      background: 'var(--pg-white)',
+      border: '1.5px solid var(--pg-ink-200)',
+      borderRadius: 14,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+      zIndex: 50,
+      overflow: 'hidden',
+      maxHeight: 240,
+      overflowY: 'auto'
+    }
+  }, filtered.map(r => /*#__PURE__*/React.createElement("div", {
+    key: r.value,
+    onClick: () => {
+      setRegion(r.value);
+      setSearch(r.label);
+      setDropOpen(false);
+    },
+    style: {
+      padding: '11px 14px',
+      cursor: 'pointer',
+      fontSize: 13.5,
+      fontWeight: r.isCounty ? 700 : 400,
+      color: r.isCounty ? 'var(--pg-blue-700)' : 'var(--pg-ink-800)',
+      background: 'transparent',
+      borderBottom: '1px solid var(--pg-ink-100)'
+    },
+    onMouseEnter: e => e.currentTarget.style.background = 'var(--pg-ink-50)',
+    onMouseLeave: e => e.currentTarget.style.background = 'transparent'
+  }, r.label)))), region && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      background: '#EEF4FF',
+      border: '1.5px solid #93c5fd',
+      borderRadius: 999,
+      padding: '7px 14px',
+      alignSelf: 'flex-start'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: '#1e40af'
+    }
+  }, search), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setRegion('');
+      setSearch('');
+    },
+    style: {
+      border: 'none',
+      background: 'transparent',
+      cursor: 'pointer',
+      color: '#93c5fd',
+      padding: 0,
+      display: 'flex',
+      alignItems: 'center',
+      lineHeight: 1
+    }
+  }, "\u2715")), /*#__PURE__*/React.createElement("button", {
+    onClick: handleSave,
+    disabled: !region || loading,
+    style: {
+      height: 52,
+      borderRadius: 14,
+      border: 'none',
+      cursor: region ? 'pointer' : 'default',
+      fontFamily: 'inherit',
+      fontSize: 15,
+      fontWeight: 700,
+      background: region ? 'linear-gradient(90deg,#1565E8,#00C2D4)' : 'var(--pg-ink-200)',
+      color: region ? '#fff' : 'var(--pg-ink-400)',
+      boxShadow: region ? '0 8px 28px rgba(21,101,232,0.35)' : 'none',
+      transition: 'all .2s',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8
+    }
+  }, loading && /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 15,
+      height: 15,
+      borderRadius: '50%',
+      border: '2.5px solid rgba(255,255,255,0.3)',
+      borderTopColor: '#fff',
+      animation: 'pgSpin .7s linear infinite',
+      display: 'inline-block'
+    }
+  }), btnLbl)));
+}
 function App() {
   const _savedTier = typeof localStorage !== 'undefined' && localStorage.getItem('pg_tier') || null;
   const [t, setTweak] = useTweaks({
@@ -268,7 +512,7 @@ function App() {
   const [tab, setTab] = React.useState(() => {
     try {
       const hash = window.location.hash.replace(/^#\/?/, '');
-      const base = hash.split('/')[0];
+      const base = hash.split(/[/?]/)[0];
       const VALID = ['home', 'market', 'quick', 'work', 'profile'];
       if (VALID.includes(base)) return base;
       return new URLSearchParams(window.location.search).get('listing') ? 'market' : 'home';
@@ -281,9 +525,9 @@ function App() {
   React.useEffect(() => {
     try {
       const cur = window.location.hash.replace(/^#\/?/, '');
-      const curBase = cur.split('/')[0];
-      // If already on this tab and has a sub-segment, preserve it
-      if (curBase === tab && cur.includes('/')) return;
+      const curBase = cur.split(/[/?]/)[0];
+      // If already on this tab and has a sub-segment or query params, preserve it
+      if (curBase === tab && (cur.includes('/') || cur.includes('?'))) return;
       window.history.replaceState(null, '', '#' + tab);
     } catch (e) {}
   }, [tab]);
@@ -454,6 +698,10 @@ function App() {
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
       setRegionsByDay(profile.regions_by_day);
     }
+    // Show region picker if user has no region set (new Google users, or users who skipped it)
+    if (!profile?.region) {
+      setNeedsRegion(true);
+    }
   }, []);
 
   // authReady gates the data fetch — ensures profile is loaded before querying DB
@@ -533,7 +781,25 @@ function App() {
       }).eq('id', user.uid);
     } catch {}
   }, [user?.uid]);
-  const [county] = React.useState('Broward');
+  const [needsRegion, setNeedsRegion] = React.useState(false);
+  const county = React.useMemo(() => {
+    const FL = window.FL_COUNTIES || {};
+    const lookup = city => {
+      if (!city) return null;
+      for (const [c, cities] of Object.entries(FL)) {
+        if (city === c || city === c + ' County') return c;
+        if (cities.includes(city)) return c;
+      }
+      return null;
+    };
+    if (user.region) return lookup(user.region) || user.region.replace(/ County$/, '') || 'Broward';
+    const allCities = Object.values(regionsByDay).flat().filter(Boolean);
+    for (const city of allCities) {
+      const c = lookup(city);
+      if (c) return c;
+    }
+    return 'Broward';
+  }, [user.region, regionsByDay]);
 
   // ── Real unread chat count from Supabase ─────────────────────
   const recheckUnread = React.useCallback(async () => {
@@ -599,13 +865,7 @@ function App() {
       });
     } catch (e) {}
   };
-  const [pushLog, setPushLog] = React.useState(() => {
-    try {
-      return localStorage.getItem('pg_push_log') || '';
-    } catch {
-      return '';
-    }
-  });
+  const [pushLog, setPushLog] = React.useState('');
   const _setPushLog = msg => {
     setPushLog(msg);
     try {
@@ -669,6 +929,7 @@ function App() {
   // Overlays
   const [chatOpen, setChatOpen] = React.useState(false);
   const [chatConvoTarget, setChatConvoTarget] = React.useState(null); // string | { id, name }
+  const [pendingQuickJobId, setPendingQuickJobId] = React.useState(null);
   const [notifOpen, setNotifOpen] = React.useState(false);
   // Unread badges — derived from real Supabase data
   const [hasUnreadChat, setHasUnreadChat] = React.useState(false);
@@ -1238,9 +1499,16 @@ function App() {
     deepLinkListingId,
     clearDeepLink: () => setDeepLinkListingId(null),
     openListingById: id => {
-      setDeepLinkListingId(id);
-      switchTab('market');
+      if (typeof id === 'string' && id.startsWith('qp_')) {
+        setPendingQuickJobId(id.slice(3));
+        switchTab('quick');
+      } else {
+        setDeepLinkListingId(id);
+        switchTab('market');
+      }
     },
+    pendingQuickJobId,
+    clearPendingQuickJob: () => setPendingQuickJobId(null),
     goTab: switchTab,
     openChat: (target = null) => {
       setChatConvoTarget(target);
@@ -1252,6 +1520,7 @@ function App() {
     },
     hasUnreadChat,
     hasUnreadNotif: hasUnreadNotif || pendingRatings.length > 0,
+    registerPush: _registerPush,
     openPaywall: () => setPayOpen(true),
     openPostMenu: () => setPostMenuOpen(true),
     openPost: () => setPostQPOpen(true),
@@ -1425,6 +1694,8 @@ function App() {
       setNotifOpen(false);
       if (type === 'warning') {
         setTimeout(() => switchTab('profile'), 280);
+      } else if (type === 'quick_pool_new') {
+        setTimeout(() => switchTab('quick'), 280);
       } else if (type === 'job_new_application' || type === 'job_accepted' || type === 'job_rejected') {
         setTimeout(() => switchTab('work'), 280);
       } else if (linkId) {
@@ -1469,7 +1740,8 @@ function App() {
         const job = {
           poster_id: user.uid,
           poster_name: user.name || user.email || 'Pool Guy',
-          poster_phone: user.phone || null,
+          poster_phone: formData.showPhone ? formData.phone || user.phone || null : null,
+          pool_address: formData.pool_address?.trim() || null,
           city: firstPool.location || 'Florida',
           day_of_week: scheduledFor ? ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date(formData.scheduled_for).getDay()] : 'mon',
           when_label: scheduledFor ? new Date(scheduledFor).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es' : 'en-US', {
@@ -1482,7 +1754,8 @@ function App() {
           pools_count: formData.pools?.length || 1,
           price_per_pool: formData.priceMode === 'fixed' ? parseFloat(formData.price || 0) || null : null,
           price_negotiable: formData.priceMode === 'neg',
-          description: [formData.title, formData.notes].filter(Boolean).join(' — '),
+          title: formData.title?.trim() || null,
+          description: formData.notes?.trim() || null,
           status: 'open',
           notify_at: notifyAt
         };
@@ -1494,7 +1767,8 @@ function App() {
           fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + (window._pgGetTok ? window._pgGetTok() : '')
             },
             body: JSON.stringify({
               job: inserted
@@ -2722,7 +2996,17 @@ function App() {
       ctx: ctx
     }), tab === 'profile' && /*#__PURE__*/React.createElement(ProfileScreen, {
       ctx: ctx
-    })))), OverlayBundle(), /*#__PURE__*/React.createElement(TweaksPanel, null, /*#__PURE__*/React.createElement(TweakSection, {
+    })))), OverlayBundle(), isLoggedIn && needsRegion && /*#__PURE__*/React.createElement(RegionOnboardingOverlay, {
+      lang: lang,
+      uid: user.uid,
+      onSave: region => {
+        setUser(u => ({
+          ...u,
+          region
+        }));
+        setNeedsRegion(false);
+      }
+    }), /*#__PURE__*/React.createElement(TweaksPanel, null, /*#__PURE__*/React.createElement(TweakSection, {
       label: "Subscription tier"
     }), /*#__PURE__*/React.createElement(TweakRadio, {
       value: t.tier,
@@ -2941,7 +3225,17 @@ function App() {
       cursor: 'pointer',
       boxShadow: '0 6px 20px rgba(14,186,199,0.45), 0 2px 8px rgba(0,0,0,0.18)'
     }
-  }, Icon.plus(24, '#fff'))), OverlayBundle(), /*#__PURE__*/React.createElement(TweaksPanel, null, /*#__PURE__*/React.createElement(TweakSection, {
+  }, Icon.plus(24, '#fff'))), OverlayBundle(), isLoggedIn && needsRegion && /*#__PURE__*/React.createElement(RegionOnboardingOverlay, {
+    lang: lang,
+    uid: user.uid,
+    onSave: region => {
+      setUser(u => ({
+        ...u,
+        region
+      }));
+      setNeedsRegion(false);
+    }
+  }), /*#__PURE__*/React.createElement(TweaksPanel, null, /*#__PURE__*/React.createElement(TweakSection, {
     label: "Subscription tier"
   }), /*#__PURE__*/React.createElement(TweakRadio, {
     value: t.tier,

@@ -3804,6 +3804,7 @@ function NotificationsSheet({
     if (type === 'job_new_application') return Icon.briefcase(17, '#fff');
     if (type === 'job_accepted') return Icon.check(17, '#fff');
     if (type === 'job_rejected') return Icon.x(17, '#fff');
+    if (type === 'quick_pool_new') return Icon.bolt(17, '#fff');
     return Icon.bolt(17, '#fff');
   };
   const colorFor = type => {
@@ -3816,6 +3817,7 @@ function NotificationsSheet({
     if (type === 'job_new_application') return '#0077B6';
     if (type === 'job_accepted') return '#22C55E';
     if (type === 'job_rejected') return '#EF4444';
+    if (type === 'quick_pool_new') return '#0EBAC7';
     return '#3B82F6';
   };
   const fmtTime = d => {

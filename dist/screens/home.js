@@ -20,7 +20,8 @@ function HomeScreen({
     openListingById,
     openMarketPost,
     darkMode = false,
-    isDesktop = false
+    isDesktop = false,
+    county = 'Broward'
   } = ctx;
   // Desktop detection via CSS (.pg-mobile-only / .pg-desktop-only) — no JS needed
   const t = STRINGS[lang];
@@ -106,8 +107,7 @@ function HomeScreen({
     };
     return (map[cat] || {})[lang] || cat;
   };
-  const hour = new Date().getHours();
-  const greetWord = hour < 12 ? lang === 'pt' ? 'Bom dia' : lang === 'es' ? 'Buenos días' : 'Good morning' : hour < 18 ? lang === 'pt' ? 'Boa tarde' : lang === 'es' ? 'Buenas tardes' : 'Good afternoon' : lang === 'pt' ? 'Boa noite' : lang === 'es' ? 'Buenas noches' : 'Good evening';
+  const greetWord = lang === 'pt' ? 'Bem-vindo' : lang === 'es' ? 'Bienvenido' : 'Welcome';
 
   // Type label
   const typeLabel = m => {
@@ -207,7 +207,7 @@ function HomeScreen({
           color: H.faint,
           fontWeight: 500
         }
-      }, "Broward County, FL"), /*#__PURE__*/React.createElement("span", {
+      }, county, " County, FL"), /*#__PURE__*/React.createElement("span", {
         style: {
           color: H.faint,
           fontSize: 11,
@@ -432,7 +432,7 @@ function HomeScreen({
         color: H.faint,
         fontWeight: 500
       }
-    }, "Broward County, FL"))), /*#__PURE__*/React.createElement("div", {
+    }, county, " County, FL"))), /*#__PURE__*/React.createElement("div", {
       style: {
         background: H.activeBg,
         border: H.activeBdr,

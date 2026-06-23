@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false, county='Broward' } = ctx;
   // Desktop detection via CSS (.pg-mobile-only / .pg-desktop-only) — no JS needed
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
@@ -69,12 +69,7 @@ function HomeScreen({ ctx }) {
     return (map[cat] || {})[lang] || cat;
   };
 
-  const hour = new Date().getHours();
-  const greetWord = hour < 12
-    ? (lang==='pt'?'Bom dia':lang==='es'?'Buenos días':'Good morning')
-    : hour < 18
-      ? (lang==='pt'?'Boa tarde':lang==='es'?'Buenas tardes':'Good afternoon')
-      : (lang==='pt'?'Boa noite':lang==='es'?'Buenas noches':'Good evening');
+  const greetWord = lang==='pt' ? 'Bem-vindo' : lang==='es' ? 'Bienvenido' : 'Welcome';
 
   // Type label
   const typeLabel = (m) => {
@@ -130,7 +125,7 @@ function HomeScreen({ ctx }) {
                   </div>
                   <div style={{display:'flex', alignItems:'center', gap:5, marginTop:4}}>
                     {Icon.pin(10, darkMode ? 'var(--pg-aqua-400)' : '#0077B6')}
-                    <span style={{fontSize:11.5, color:H.faint, fontWeight:500}}>Broward County, FL</span>
+                    <span style={{fontSize:11.5, color:H.faint, fontWeight:500}}>{county} County, FL</span>
                     <span style={{color:H.faint, fontSize:11, margin:'0 3px'}}>·</span>
                     <span style={{fontSize:11, color:H.faint, fontWeight:400}}>{subtitle}</span>
                   </div>
@@ -228,7 +223,7 @@ function HomeScreen({ ctx }) {
                 </div>
                 <div style={{display:'flex', alignItems:'center', gap:5, marginTop:2}}>
                   {Icon.pin(10,'var(--pg-aqua-400)')}
-                  <span style={{fontSize:11, color:H.faint, fontWeight:500}}>Broward County, FL</span>
+                  <span style={{fontSize:11, color:H.faint, fontWeight:500}}>{county} County, FL</span>
                 </div>
               </div>
               <div style={{

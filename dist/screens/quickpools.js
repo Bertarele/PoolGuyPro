@@ -79,6 +79,43 @@ function QuickPoolsScreen({
 
   // Post job sheet
   const [postOpen, setPostOpen] = React.useState(false);
+
+  // Push notification status: 'checking' | 'needed' | 'active' | 'denied' | 'unsupported'
+  const [notifStatus, setNotifStatus] = React.useState('checking');
+  const checkNotifStatus = React.useCallback(async () => {
+    if (typeof Notification === 'undefined' || !('PushManager' in window)) {
+      setNotifStatus('unsupported');
+      return;
+    }
+    const perm = Notification.permission;
+    if (perm === 'denied') {
+      setNotifStatus('denied');
+      return;
+    }
+    if (perm === 'default') {
+      setNotifStatus('needed');
+      return;
+    }
+    // Permission granted — verify an actual push subscription exists
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        setNotifStatus(sub ? 'active' : 'needed');
+      } else {
+        setNotifStatus('active');
+      }
+    } catch {
+      setNotifStatus('active');
+    }
+  }, []);
+  React.useEffect(() => {
+    checkNotifStatus();
+  }, [checkNotifStatus]);
+  const activatePush = React.useCallback(async () => {
+    if (ctx.registerPush) await ctx.registerPush();
+    await checkNotifStatus();
+  }, [ctx.registerPush, checkNotifStatus]);
   const loadJobs = React.useCallback(async () => {
     if (!window.sb) return;
     setJobsLoading(true);
@@ -94,9 +131,9 @@ function QuickPoolsScreen({
           id: j.id,
           _live: true,
           title: {
-            en: j.description || `Pool job in ${j.city}`,
-            pt: j.description || `Vaga em ${j.city}`,
-            es: j.description || `Vaga en ${j.city}`
+            en: j.title || `Pool job in ${j.city}`,
+            pt: j.title || `Vaga em ${j.city}`,
+            es: j.title || `Vaga en ${j.city}`
           },
           loc: j.city,
           dist: {
@@ -133,22 +170,34 @@ function QuickPoolsScreen({
     loadJobs();
   }, [loadJobs]);
 
-  // Handle deep link from push notification: /#express-pools?job=<id>
+  // Capture deep-link job ID from URL on first render, before hash is overwritten by tab sync
+  const deepLinkJobId = React.useMemo(() => {
+    try {
+      const hash = window.location.hash;
+      const qs = hash.includes('?') ? hash.split('?')[1] : '';
+      return new URLSearchParams(qs).get('job') || null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Open deep-linked job once jobs list is loaded
   React.useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash.includes('express-pools')) return;
-    const params = new URLSearchParams(hash.split('?')[1] || '');
-    const jobId = params.get('job');
-    if (!jobId) return;
-    const find = () => {
-      const j = jobs.find(x => String(x.id) === String(jobId));
-      if (j) {
-        setSelected(j);
-        window.location.hash = 'express-pools';
-      }
-    };
-    if (jobs.length > 0) find();else setTimeout(find, 1200);
-  }, [jobs]);
+    if (!deepLinkJobId || !jobs.length) return;
+    const j = jobs.find(x => String(x.id) === String(deepLinkJobId));
+    if (j) setSelected(j);
+  }, [jobs, deepLinkJobId]);
+
+  // Open job requested via chat listing-card click (ctx.pendingQuickJobId set by app.jsx)
+  React.useEffect(() => {
+    const id = ctx.pendingQuickJobId;
+    if (!id || !jobs.length) return;
+    const j = jobs.find(x => String(x.id) === String(id));
+    if (j) {
+      setSelected(j);
+      ctx.clearPendingQuickJob();
+    }
+  }, [ctx.pendingQuickJobId, jobs]);
   React.useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 900);
     window.addEventListener('resize', h);
@@ -522,11 +571,17 @@ function QuickPoolsScreen({
   };
 
   // ── Sheet (mobile + desktop share the same) ───────────────────
-  const JobSheet = () => /*#__PURE__*/React.createElement(Sheet, {
-    open: !!selected,
-    onClose: () => setSelected(null),
-    height: "86%"
-  }, selected && /*#__PURE__*/React.createElement(JobDetailBoundary, {
+  const JobPage = () => selected ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 500,
+      background: 'var(--pg-bg)',
+      overflowY: 'auto',
+      display: 'flex',
+      flexDirection: 'column'
+    }
+  }, /*#__PURE__*/React.createElement(JobDetailBoundary, {
     onClose: () => setSelected(null)
   }, /*#__PURE__*/React.createElement(QuickPoolDetails, {
     job: selected,
@@ -550,7 +605,7 @@ function QuickPoolsScreen({
         status
       } : prev);
     }
-  })));
+  }))) : null;
 
   // ══════════════════════════════════════════════════════════════
   // ── DESKTOP LAYOUT ────────────────────────────────────────────
@@ -796,6 +851,43 @@ function QuickPoolsScreen({
           flexShrink: 0
         }
       }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => setPostOpen(true),
+        style: {
+          height: 38,
+          padding: '0 16px',
+          borderRadius: 11,
+          border: 'none',
+          background: 'linear-gradient(135deg,#0077B6,#023E8A)',
+          color: '#fff',
+          fontFamily: 'inherit',
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          boxShadow: '0 3px 10px rgba(0,119,182,0.35)',
+          transition: 'all .15s'
+        }
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "13",
+        height: "13",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "#fff",
+        strokeWidth: "2.5",
+        strokeLinecap: "round"
+      }, /*#__PURE__*/React.createElement("line", {
+        x1: "12",
+        y1: "5",
+        x2: "12",
+        y2: "19"
+      }), /*#__PURE__*/React.createElement("line", {
+        x1: "5",
+        y1: "12",
+        x2: "19",
+        y2: "12"
+      })), lang === 'pt' ? 'Publicar' : lang === 'es' ? 'Publicar' : 'Post'), /*#__PURE__*/React.createElement("button", {
         onClick: openRegionEditor,
         style: {
           height: 38,
@@ -915,7 +1007,67 @@ function QuickPoolsScreen({
         padding: '28px 32px 60px',
         background: 'var(--pg-ink-50)'
       }
+    }, (notifStatus === 'needed' || notifStatus === 'denied') && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 20,
+        padding: '12px 16px',
+        borderRadius: 13,
+        background: '#FEFCE8',
+        border: '1px solid #FDE68A',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10
+      }
     }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 18,
+        flexShrink: 0
+      }
+    }, "\uD83D\uDD14"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: '#92400E',
+        marginBottom: 2
+      }
+    }, lang === 'pt' ? 'Ative as notificações para receber vagas em tempo real' : lang === 'es' ? 'Activa las notificaciones para recibir trabajos en tiempo real' : 'Enable notifications to receive real-time job alerts'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: '#A16207',
+        lineHeight: 1.4
+      }
+    }, lang === 'pt' ? 'Sem notificações ativas você pode perder vagas urgentes.' : lang === 'es' ? 'Sin notificaciones activas puedes perder trabajos urgentes.' : 'Without notifications enabled you may miss urgent jobs.')), notifStatus === 'denied' ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 600,
+        color: '#DC2626',
+        flexShrink: 0,
+        maxWidth: 100,
+        textAlign: 'center',
+        lineHeight: 1.3
+      }
+    }, lang === 'pt' ? 'Bloqueado — habilite nas configurações do navegador' : 'Blocked — enable in browser settings') : /*#__PURE__*/React.createElement("button", {
+      onClick: activatePush,
+      style: {
+        flexShrink: 0,
+        height: 36,
+        padding: '0 18px',
+        borderRadius: 9,
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: 13,
+        fontWeight: 700,
+        fontFamily: 'inherit',
+        background: '#D97706',
+        color: '#fff',
+        boxShadow: '0 2px 8px rgba(217,119,6,0.3)'
+      }
+    }, lang === 'pt' ? 'Ativar notificações' : lang === 'es' ? 'Activar notificaciones' : 'Enable notifications')), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -962,7 +1114,7 @@ function QuickPoolsScreen({
     }, jobs.map(j => /*#__PURE__*/React.createElement(JobCard, {
       key: j.id,
       j: j
-    })))))), /*#__PURE__*/React.createElement(JobSheet, null), /*#__PURE__*/React.createElement(PostJobSheet, {
+    })))))), /*#__PURE__*/React.createElement(JobPage, null), /*#__PURE__*/React.createElement(PostJobSheet, {
       open: postOpen,
       onClose: () => setPostOpen(false),
       lang: lang,
@@ -1244,7 +1396,70 @@ function QuickPoolsScreen({
         gap: 4
       }
     }, Icon.cal(12, _sub), " ", lang === 'pt' ? 'Editar' : lang === 'es' ? 'Editar' : 'Edit')));
-  })(), /*#__PURE__*/React.createElement("div", {
+  })(), (notifStatus === 'needed' || notifStatus === 'denied') && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 18px 0'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 14px',
+      borderRadius: 13,
+      background: darkMode ? 'rgba(234,179,8,0.14)' : '#FEFCE8',
+      border: `1px solid ${darkMode ? 'rgba(234,179,8,0.35)' : '#FDE68A'}`,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      flexShrink: 0
+    }
+  }, "\uD83D\uDD14"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: darkMode ? '#FDE68A' : '#92400E',
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Ative as notificações' : lang === 'es' ? 'Activa las notificaciones' : 'Enable notifications'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: darkMode ? 'rgba(253,230,138,0.75)' : '#A16207',
+      lineHeight: 1.4
+    }
+  }, lang === 'pt' ? 'Você só receberá vagas em tempo real se as notificações estiverem ativas.' : lang === 'es' ? 'Solo recibirás trabajos en tiempo real si las notificaciones están activas.' : 'You\'ll only receive real-time job alerts if notifications are enabled.')), notifStatus === 'denied' ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 600,
+      color: darkMode ? '#FCA5A5' : '#DC2626',
+      flexShrink: 0,
+      maxWidth: 80,
+      textAlign: 'center',
+      lineHeight: 1.3
+    }
+  }, lang === 'pt' ? 'Bloqueado nas config. do navegador' : 'Blocked in browser settings') : /*#__PURE__*/React.createElement("button", {
+    onClick: activatePush,
+    style: {
+      flexShrink: 0,
+      height: 34,
+      padding: '0 14px',
+      borderRadius: 9,
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: 12,
+      fontWeight: 700,
+      fontFamily: 'inherit',
+      background: darkMode ? '#CA8A04' : '#D97706',
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(217,119,6,0.35)'
+    }
+  }, lang === 'pt' ? 'Ativar' : lang === 'es' ? 'Activar' : 'Enable'))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '14px 18px 0'
     }
@@ -1312,7 +1527,7 @@ function QuickPoolsScreen({
     key: j.id,
     j: j,
     compact: true
-  })))), /*#__PURE__*/React.createElement(JobSheet, null), /*#__PURE__*/React.createElement(PostJobSheet, {
+  })))), /*#__PURE__*/React.createElement(JobPage, null), /*#__PURE__*/React.createElement(PostJobSheet, {
     open: postOpen,
     onClose: () => setPostOpen(false),
     lang: lang,
@@ -1431,7 +1646,8 @@ function LeafletMapBlock({
       padding: 0,
       border: fullHeight ? 'none' : '0.5px solid var(--pg-ink-200)',
       borderRadius: fullHeight ? 0 : 14,
-      background: 'var(--pg-ink-100)'
+      background: 'var(--pg-ink-100)',
+      isolation: 'isolate'
     }
   }, /*#__PURE__*/React.createElement("div", {
     ref: containerRef,
@@ -1508,16 +1724,49 @@ function QuickPoolDetails({
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '8px 0 100px'
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100%'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '4px 18px 0',
       display: 'flex',
+      alignItems: 'center',
       justifyContent: 'space-between',
-      alignItems: 'center'
+      padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 18px 12px',
+      borderBottom: '0.5px solid var(--pg-ink-200)',
+      position: 'sticky',
+      top: 0,
+      background: 'var(--pg-bg)',
+      zIndex: 10
     }
-  }, isOwn ? /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 4,
+      border: 'none',
+      background: 'transparent',
+      cursor: 'pointer',
+      color: 'var(--pg-blue-500)',
+      fontSize: 14,
+      fontWeight: 600,
+      padding: 0,
+      fontFamily: 'inherit'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "22",
+    height: "22",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "15 18 9 12 15 6"
+  })), lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'), isOwn && /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       onDelete && onDelete(job.id);
       onClose();
@@ -1525,7 +1774,7 @@ function QuickPoolDetails({
     style: {
       display: 'flex',
       alignItems: 'center',
-      gap: 6,
+      gap: 5,
       height: 32,
       padding: '0 12px',
       borderRadius: 9,
@@ -1555,22 +1804,10 @@ function QuickPoolDetails({
     d: "M14 11v6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M9 6V4h6v2"
-  })), lang === 'pt' ? 'Excluir vaga' : lang === 'es' ? 'Eliminar' : 'Delete post') : /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("button", {
-    onClick: onClose,
+  })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete')), /*#__PURE__*/React.createElement("div", {
     style: {
-      border: 'none',
-      background: 'var(--pg-ink-100)',
-      width: 30,
-      height: 30,
-      borderRadius: '50%',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, Icon.x(16, 'var(--pg-ink-700)'))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '4px 18px 0'
+      padding: '16px 18px 100px',
+      flex: 1
     }
   }, /*#__PURE__*/React.createElement("h2", {
     style: {
@@ -1761,7 +1998,68 @@ function QuickPoolDetails({
     style: {
       fontSize: 11
     }
-  }, Icon.shield(11, 'var(--pg-aqua-700)'), " ", t.verified)), locked && /*#__PURE__*/React.createElement("div", {
+  }, Icon.shield(11, 'var(--pg-aqua-700)'), " ", t.verified)), (isOwn || myApp?.status === 'accepted') && (job.poster_phone || job.pool_address) && /*#__PURE__*/React.createElement("div", {
+    className: "pg-card",
+    style: {
+      padding: '12px 14px',
+      marginTop: 12,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10
+    }
+  }, job.poster_phone && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10
+    }
+  }, Icon.phone ? Icon.phone(14, 'var(--pg-blue-700)') : null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)',
+      letterSpacing: '0.05em',
+      textTransform: 'uppercase',
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Telefone' : lang === 'es' ? 'Teléfono' : 'Phone'), /*#__PURE__*/React.createElement("a", {
+    href: `tel:${job.poster_phone}`,
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      color: 'var(--pg-blue-600)',
+      textDecoration: 'none'
+    }
+  }, job.poster_phone))), job.pool_address && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 10
+    }
+  }, Icon.pin(14, 'var(--pg-blue-700)'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)',
+      letterSpacing: '0.05em',
+      textTransform: 'uppercase',
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Endereço' : lang === 'es' ? 'Dirección' : 'Address'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      color: 'var(--pg-ink-900)'
+    }
+  }, job.pool_address)))), locked && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14,
       padding: 16,
@@ -2137,7 +2435,14 @@ function QuickPoolDetails({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => onChat(job.poster_id ? {
       id: job.poster_id,
-      name: job.poster
+      name: job.poster,
+      listingId: 'qp_' + job.id,
+      listingContext: {
+        name: tr(job.title, lang) + ' · ' + job.loc,
+        price: job.price !== 'neg' ? job.price : null,
+        priceMode: job.price === 'neg' ? 'neg' : 'fixed',
+        type: 'quick_pool'
+      }
     } : job.poster),
     disabled: locked,
     className: "pg-btn pg-btn-ghost",
@@ -2224,6 +2529,7 @@ function PostJobSheet({
   const DAY_LABELS_PT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
   const DAY_LABELS_EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const dayLabels = lang === 'pt' ? DAY_LABELS_PT : DAY_LABELS_EN;
+  const [title, setTitle] = React.useState('');
   const [city, setCity] = React.useState('');
   const [day, setDay] = React.useState('');
   const [desc, setDesc] = React.useState('');
@@ -2240,6 +2546,7 @@ function PostJobSheet({
   const [cityQ, setCityQ] = React.useState('');
   const filteredCities = cityQ ? allCities.filter(c => c.toLowerCase().includes(cityQ.toLowerCase())) : allCities;
   const reset = () => {
+    setTitle('');
     setCity('');
     setDay('');
     setDesc('');
@@ -2252,9 +2559,9 @@ function PostJobSheet({
     setCityQ('');
   };
   const submit = async () => {
+    if (!title.trim()) return setErr(lang === 'pt' ? 'Adicione um título' : 'Add a title');
     if (!city) return setErr(lang === 'pt' ? 'Escolha a cidade' : 'Choose city');
     if (!day) return setErr(lang === 'pt' ? 'Escolha o dia' : 'Choose day');
-    if (!desc.trim()) return setErr(lang === 'pt' ? 'Descreva o serviço' : 'Describe the job');
     if (!window.sb || !user?.uid) return setErr('Login required');
     setSaving(true);
     const job = {
@@ -2268,7 +2575,8 @@ function PostJobSheet({
       pools_count: 1,
       price_per_pool: neg ? null : parseFloat(price) || null,
       price_negotiable: neg,
-      description: desc.trim(),
+      title: title.trim(),
+      description: desc.trim() || null,
       pool_type: 'residential',
       status: 'open'
     };
@@ -2308,8 +2616,8 @@ function PostJobSheet({
     width: '100%',
     height: 44,
     borderRadius: 10,
-    border: `1px solid ${inkBdr}`,
-    background: inkBg,
+    border: `1.5px solid ${dm ? 'rgba(255,255,255,0.25)' : 'var(--pg-ink-200)'}`,
+    background: dm ? 'rgba(255,255,255,0.14)' : 'var(--pg-ink-50)',
     padding: '0 12px',
     fontSize: 16,
     fontFamily: 'inherit',
@@ -2383,6 +2691,21 @@ function PostJobSheet({
       gap: 14
     }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: inkSub,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      display: 'block',
+      marginBottom: 6
+    }
+  }, lang === 'pt' ? 'Título' : 'Title'), /*#__PURE__*/React.createElement("input", {
+    value: title,
+    onChange: e => setTitle(e.target.value),
+    placeholder: lang === 'pt' ? 'Ex: Limpeza em Davie' : 'E.g. Pool cleaning in Davie',
+    style: inp
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     style: {
       fontSize: 12,
       fontWeight: 700,

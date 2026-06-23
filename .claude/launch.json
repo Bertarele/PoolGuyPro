@@ -4,7 +4,7 @@
     {
       "name": "PoolGuyPro",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "3000"],
+      "runtimeArgs": ["-m", "http.server", "3000", "--directory", "dist"],
       "port": 3000
     }
   ]

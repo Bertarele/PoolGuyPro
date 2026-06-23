@@ -1133,7 +1133,7 @@ function ProfileScreen({
       lineHeight: 1.3,
       color: pushLog.startsWith('✅') ? '#16A34A' : pushLog.startsWith('❌') ? '#DC2626' : 'var(--pg-ink-400)'
     }
-  }, pushLog || (lang === 'pt' ? 'Toque para ativar notificações push' : 'Tap to enable push notifications')), !pushLog.startsWith('✅') && /*#__PURE__*/React.createElement("button", {
+  }, pushLog || (lang === 'pt' ? 'Toque para ativar notificações push' : 'Tap to enable push notifications')), /*#__PURE__*/React.createElement("button", {
     onClick: retryPush,
     style: {
       fontSize: 11,
@@ -1146,7 +1146,7 @@ function ProfileScreen({
       whiteSpace: 'nowrap',
       flexShrink: 0
     }
-  }, lang === 'pt' ? 'Ativar' : 'Enable'))), /*#__PURE__*/React.createElement(SettingRow, {
+  }, pushLog.startsWith('✅') ? lang === 'pt' ? 'Re-testar' : 'Re-test' : lang === 'pt' ? 'Ativar' : 'Enable'))), /*#__PURE__*/React.createElement(SettingRow, {
     icon: Icon.globe(18, 'var(--pg-blue-500)'),
     label: t.languageLbl,
     detail: {

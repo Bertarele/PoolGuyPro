@@ -31,3 +31,4 @@ __pycache__/
 icone_b64.txt
 icone_b64_str.txt
 supabase/.temp/
+.claude/settings.local.json

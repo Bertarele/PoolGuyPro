@@ -23,7 +23,10 @@ function PostQuickPool({
     pools: [newPool(1)],
     priceMode: 'fixed',
     price: '45',
-    date: lang === 'pt' ? 'Agora' : lang === 'es' ? 'Ahora' : 'Now'
+    date: lang === 'pt' ? 'Agora' : lang === 'es' ? 'Ahora' : 'Now',
+    showPhone: false,
+    phone: '',
+    pool_address: ''
   });
   const upd = (k, v) => setForm(f => ({
     ...f,
@@ -50,12 +53,29 @@ function PostQuickPool({
   const isCustom = form.date === t.custom;
   const lbl = {
     poolN: lang === 'pt' ? 'Piscina' : lang === 'es' ? 'Piscina' : 'Pool',
-    addPool: lang === 'pt' ? 'Adicionar outra piscina' : lang === 'es' ? 'Agregar otra piscina' : 'Add another pool',
-    remove: lang === 'pt' ? 'Remover' : lang === 'es' ? 'Quitar' : 'Remove',
-    eachIndependent: lang === 'pt' ? 'Cada piscina pode estar em uma cidade e ter tipo diferentes (casa ou condomínio).' : lang === 'es' ? 'Cada piscina puede estar en una ciudad y tipo diferentes (casa o condominio).' : 'Each pool can be in a different city and type (house or condo).',
-    pickLocation: lang === 'pt' ? 'Cidade desta piscina' : lang === 'es' ? 'Ciudad de esta piscina' : 'City of this pool',
+    step2Title: lang === 'pt' ? 'Onde fica a piscina?' : lang === 'es' ? '¿Dónde está la piscina?' : 'Where is the pool?',
+    step2Sub: lang === 'pt' ? 'Informe a cidade e o tipo para notificar os piscineiros certos.' : lang === 'es' ? 'Indica la ciudad y el tipo para notificar a los técnicos correctos.' : 'Enter the city and type to notify the right pool guys.',
+    pickLocation: lang === 'pt' ? 'Cidade da piscina' : lang === 'es' ? 'Ciudad de la piscina' : 'Pool city',
     pickType: lang === 'pt' ? 'Tipo' : lang === 'es' ? 'Tipo' : 'Type'
   };
+  const [matchCount, setMatchCount] = React.useState(null);
+  React.useEffect(() => {
+    if (step !== 3) return;
+    const city = form.pools[0]?.location;
+    if (!city || !window.sb) {
+      setMatchCount(null);
+      return;
+    }
+    const dayIdx = isCustom && customDT ? new Date(customDT).getDay() : new Date().getDay();
+    const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dayIdx];
+    setMatchCount(null);
+    window.sb.from('profiles').select('regions_by_day').then(({
+      data
+    }) => {
+      const c = (data || []).filter(p => (p.regions_by_day?.[dayKey] || []).includes(city)).length;
+      setMatchCount(c);
+    });
+  }, [step, form.pools, isCustom, customDT]);
   const canContinue = () => {
     if (step === 1) return form.title.trim().length > 0;
     if (step === 2) return form.pools.every(p => p.location.trim().length > 0);
@@ -105,13 +125,13 @@ function PostQuickPool({
       fontWeight: 700,
       letterSpacing: '-0.02em'
     }
-  }, step === 1 && t.pqStep1Title, step === 2 && (lang === 'pt' ? 'Cada piscina, seus dados' : lang === 'es' ? 'Cada piscina, sus datos' : 'Each pool, its own details'), step === 3 && t.pqStep3Title), /*#__PURE__*/React.createElement("div", {
+  }, step === 1 && t.pqStep1Title, step === 2 && lbl.step2Title, step === 3 && t.pqStep3Title), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: 'var(--pg-ink-500)',
       marginTop: 4
     }
-  }, step === 1 && t.pqStep1Sub, step === 2 && lbl.eachIndependent, step === 3 && t.pqStep3Sub), /*#__PURE__*/React.createElement("div", {
+  }, step === 1 && t.pqStep1Sub, step === 2 && lbl.step2Sub, step === 3 && t.pqStep3Sub), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 6,
@@ -223,27 +243,100 @@ function PostQuickPool({
     lbl: lbl,
     t: t,
     lang: lang
-  }))), /*#__PURE__*/React.createElement("button", {
-    onClick: addPool,
-    className: "pg-press",
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      width: '100%',
-      padding: '14px 16px',
       borderRadius: 14,
-      background: 'var(--pg-blue-50)',
-      border: '1.5px dashed var(--pg-blue-500)',
-      color: 'var(--pg-blue-700)',
-      fontSize: 14,
-      fontWeight: 700,
-      cursor: 'pointer',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      fontFamily: 'inherit',
-      letterSpacing: '-0.005em'
+      border: '1px solid var(--pg-ink-200)',
+      overflow: 'hidden'
     }
-  }, Icon.plus(16, 'var(--pg-blue-700)'), " ", lbl.addPool)), step === 3 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Field, {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '14px 16px',
+      cursor: 'pointer'
+    },
+    onClick: () => upd('showPhone', !form.showPhone)
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Mostrar telefone ao candidato aceito?' : lang === 'es' ? '¿Mostrar teléfono al candidato aceptado?' : 'Show phone to accepted candidate?'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)'
+    }
+  }, lang === 'pt' ? 'Apenas quem você aceitar terá seu número.' : lang === 'es' ? 'Solo el candidato aceptado verá su número.' : 'Only the accepted candidate will see your number.')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 44,
+      height: 26,
+      borderRadius: 999,
+      flexShrink: 0,
+      marginLeft: 12,
+      background: form.showPhone ? 'var(--pg-blue-500)' : 'var(--pg-ink-300)',
+      position: 'relative',
+      transition: 'background .2s'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 3,
+      left: form.showPhone ? 18 : 3,
+      width: 20,
+      height: 20,
+      borderRadius: '50%',
+      background: '#fff',
+      transition: 'left .2s',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+    }
+  }))), form.showPhone && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '0 16px 14px',
+      borderTop: '0.5px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)',
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      display: 'block',
+      margin: '12px 0 6px'
+    }
+  }, lang === 'pt' ? 'Seu telefone' : lang === 'es' ? 'Tu teléfono' : 'Your phone'), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: form.phone,
+    onChange: e => upd('phone', e.target.value),
+    type: "tel",
+    placeholder: "(954) 000-0000"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      padding: '14px 16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Endereço da piscina' : lang === 'es' ? 'Dirección de la piscina' : 'Pool address'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      marginBottom: 10
+    }
+  }, lang === 'pt' ? 'Visível apenas para o candidato aceito. Opcional.' : lang === 'es' ? 'Visible solo al candidato aceptado. Opcional.' : 'Visible only to the accepted candidate. Optional.'), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: form.pool_address,
+    onChange: e => upd('pool_address', e.target.value),
+    placeholder: lang === 'pt' ? 'Ex: 123 Palm Ave, Davie, FL 33325' : 'E.g. 123 Palm Ave, Davie, FL 33325'
+  }))), step === 3 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Field, {
     label: t.priceQ
   }, /*#__PURE__*/React.createElement("div", {
     className: "pg-seg"
@@ -310,9 +403,6 @@ function PostQuickPool({
   }, t.summary), /*#__PURE__*/React.createElement(SummaryRow, {
     label: t.sumTitle,
     value: form.title || '—'
-  }), /*#__PURE__*/React.createElement(SummaryRow, {
-    label: t.sumPools,
-    value: String(form.pools.length)
   }), /*#__PURE__*/React.createElement(SummaryRow, {
     label: t.sumWhen,
     value: form.date
@@ -427,7 +517,7 @@ function PostQuickPool({
       color: 'var(--pg-aqua-700)',
       lineHeight: 1.4
     }
-  }, /*#__PURE__*/React.createElement("b", null, "34"), " ", t.matchNotice))))), /*#__PURE__*/React.createElement("div", {
+  }, matchCount === null ? lang === 'pt' ? 'Calculando…' : 'Calculating…' : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, matchCount), " ", t.matchNotice)))))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '18px 18px 8px',
       position: 'sticky',
