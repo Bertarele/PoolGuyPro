@@ -411,7 +411,7 @@ function App() {
     } catch(e) {}
   };
 
-  const [pushLog, setPushLog] = React.useState(() => { try { return localStorage.getItem('pg_push_log')||''; } catch{ return ''; } });
+  const [pushLog, setPushLog] = React.useState('');
   const _setPushLog = (msg) => { setPushLog(msg); try { localStorage.setItem('pg_push_log', msg); } catch{} };
 
   const _registerPush = React.useCallback(async () => {

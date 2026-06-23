@@ -488,11 +488,9 @@ function ProfileScreen({ ctx }) {
                   color: pushLog.startsWith('✅') ? '#16A34A' : pushLog.startsWith('❌') ? '#DC2626' : 'var(--pg-ink-400)'}}>
                   {pushLog || (lang==='pt'?'Toque para ativar notificações push':'Tap to enable push notifications')}
                 </span>
-                {!pushLog.startsWith('✅') && (
-                  <button onClick={retryPush} style={{fontSize:11,fontWeight:700,color:'var(--pg-blue-500)',border:'none',background:'transparent',cursor:'pointer',padding:'4px 8px',whiteSpace:'nowrap',flexShrink:0}}>
-                    {lang==='pt'?'Ativar':'Enable'}
-                  </button>
-                )}
+                <button onClick={retryPush} style={{fontSize:11,fontWeight:700,color:'var(--pg-blue-500)',border:'none',background:'transparent',cursor:'pointer',padding:'4px 8px',whiteSpace:'nowrap',flexShrink:0}}>
+                  {pushLog.startsWith('✅') ? (lang==='pt'?'Re-testar':'Re-test') : (lang==='pt'?'Ativar':'Enable')}
+                </button>
               </div>
             </div>
             <SettingRow icon={Icon.globe(18,'var(--pg-blue-500)')} label={t.languageLbl}
