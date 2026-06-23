@@ -328,7 +328,6 @@ function QuickPoolsScreen({ ctx }) {
           onClose={()=>setSelected(null)}
           onDelete={deleteJob}
           onComplete={finalizeJob}
-          lang={lang}
           onStatusChange={(status) => {
             setJobs(prev => prev.map(j => String(j.id)===String(selected.id) ? {...j, status} : j));
             setSelected(prev => prev ? {...prev, status} : prev);
