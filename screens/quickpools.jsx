@@ -32,15 +32,32 @@ function QuickPoolsScreen({ ctx }) {
   // Post job sheet
   const [postOpen, setPostOpen] = React.useState(false);
 
-  // Push notification permission
-  const [notifPerm, setNotifPerm] = React.useState(() => {
-    if (typeof Notification === 'undefined') return 'unsupported';
-    return Notification.permission;
-  });
+  // Push notification status: 'checking' | 'needed' | 'active' | 'denied' | 'unsupported'
+  const [notifStatus, setNotifStatus] = React.useState('checking');
+
+  const checkNotifStatus = React.useCallback(async () => {
+    if (typeof Notification === 'undefined' || !('PushManager' in window)) {
+      setNotifStatus('unsupported'); return;
+    }
+    const perm = Notification.permission;
+    if (perm === 'denied') { setNotifStatus('denied'); return; }
+    if (perm === 'default') { setNotifStatus('needed'); return; }
+    // Permission granted — verify an actual push subscription exists
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        setNotifStatus(sub ? 'active' : 'needed');
+      } else { setNotifStatus('active'); }
+    } catch { setNotifStatus('active'); }
+  }, []);
+
+  React.useEffect(() => { checkNotifStatus(); }, [checkNotifStatus]);
+
   const activatePush = React.useCallback(async () => {
     if (ctx.registerPush) await ctx.registerPush();
-    if (typeof Notification !== 'undefined') setNotifPerm(Notification.permission);
-  }, [ctx.registerPush]);
+    await checkNotifStatus();
+  }, [ctx.registerPush, checkNotifStatus]);
 
   const loadJobs = React.useCallback(async () => {
     if (!window.sb) return;
@@ -491,8 +508,8 @@ function QuickPoolsScreen({ ctx }) {
           {/* Right: job list */}
           <div style={{padding:'28px 32px 60px', background:'var(--pg-ink-50)'}}>
 
-            {/* Push notification banner — only when not granted */}
-            {notifPerm !== 'granted' && notifPerm !== 'unsupported' && (
+            {/* Push notification banner — only when not active */}
+            {(notifStatus === 'needed' || notifStatus === 'denied') && (
               <div style={{
                 marginBottom:20, padding:'12px 16px', borderRadius:13,
                 background:'#FEFCE8', border:'1px solid #FDE68A',
@@ -511,7 +528,7 @@ function QuickPoolsScreen({ ctx }) {
                       : 'Without notifications enabled you may miss urgent jobs.'}
                   </div>
                 </div>
-                {notifPerm === 'denied' ? (
+                {notifStatus === 'denied' ? (
                   <div style={{fontSize:11, fontWeight:600, color:'#DC2626', flexShrink:0, maxWidth:100, textAlign:'center', lineHeight:1.3}}>
                     {lang==='pt' ? 'Bloqueado — habilite nas configurações do navegador' : 'Blocked — enable in browser settings'}
                   </div>
@@ -660,8 +677,8 @@ function QuickPoolsScreen({ ctx }) {
         );
       })()}
 
-      {/* Push notification banner — only when not granted */}
-      {notifPerm !== 'granted' && notifPerm !== 'unsupported' && (
+      {/* Push notification banner — only when not active */}
+      {(notifStatus === 'needed' || notifStatus === 'denied') && (
         <div style={{padding:'12px 18px 0'}}>
           <div style={{
             padding:'12px 14px', borderRadius:13,
@@ -682,9 +699,9 @@ function QuickPoolsScreen({ ctx }) {
                   : 'You\'ll only receive real-time job alerts if notifications are enabled.'}
               </div>
             </div>
-            {notifPerm === 'denied' ? (
+            {notifStatus === 'denied' ? (
               <div style={{fontSize:10, fontWeight:600, color: darkMode ? '#FCA5A5' : '#DC2626', flexShrink:0, maxWidth:80, textAlign:'center', lineHeight:1.3}}>
-                {lang==='pt' ? 'Bloqueado nas config. do app' : 'Blocked in browser settings'}
+                {lang==='pt' ? 'Bloqueado nas config. do navegador' : 'Blocked in browser settings'}
               </div>
             ) : (
               <button onClick={activatePush} style={{
