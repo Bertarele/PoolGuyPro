@@ -54,6 +54,11 @@ function QuickPoolsScreen({ ctx }) {
 
   React.useEffect(() => { checkNotifStatus(); }, [checkNotifStatus]);
 
+  const activatePush = React.useCallback(async () => {
+    if (ctx.registerPush) await ctx.registerPush();
+    await checkNotifStatus();
+  }, [ctx.registerPush, checkNotifStatus]);
+
   // Auto-prompt when tab opens and permission not yet decided
   const autoPromptedRef = React.useRef(false);
   React.useEffect(() => {
@@ -62,11 +67,6 @@ function QuickPoolsScreen({ ctx }) {
       setTimeout(() => activatePush(), 700);
     }
   }, [notifStatus, activatePush]);
-
-  const activatePush = React.useCallback(async () => {
-    if (ctx.registerPush) await ctx.registerPush();
-    await checkNotifStatus();
-  }, [ctx.registerPush, checkNotifStatus]);
 
   const loadJobs = React.useCallback(async () => {
     if (!window.sb) return;
