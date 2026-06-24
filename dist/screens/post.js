@@ -393,7 +393,9 @@ function PostQuickPool({
   }, "$"), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
     value: form.price,
-    onChange: e => upd('price', e.target.value),
+    onChange: e => upd('price', e.target.value.replace(/[^0-9]/g, '')),
+    inputMode: "numeric",
+    pattern: "[0-9]*",
     style: {
       height: 64,
       paddingLeft: 36,
