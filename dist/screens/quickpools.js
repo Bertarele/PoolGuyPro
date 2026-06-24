@@ -459,15 +459,7 @@ function QuickPoolsScreen({
         border: '1px solid var(--pg-ink-100)',
         minWidth: 72
       }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        fontWeight: 600,
-        color: 'var(--pg-ink-400)',
-        letterSpacing: '0.04em',
-        marginBottom: 2
-      }
-    }, j.pools, " ", j.pools > 1 ? t.poolsWord : lang === 'pt' ? 'piscina' : 'pool'), j.price === 'neg' ? /*#__PURE__*/React.createElement("div", {
+    }, j.price === 'neg' ? /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 700,
@@ -1929,25 +1921,6 @@ function QuickPoolDetails({
       letterSpacing: '0.05em',
       fontWeight: 600
     }
-  }, t.pools), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 26,
-      fontWeight: 700,
-      letterSpacing: '-0.02em',
-      marginTop: 2
-    }
-  }, job.pools)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: 'right'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: 'var(--pg-ink-500)',
-      letterSpacing: '0.05em',
-      fontWeight: 600
-    }
   }, t.whenLabel), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
@@ -3137,7 +3110,7 @@ function PostJobSheet({
     key: 'salt',
     state: saltwater,
     set: setSaltwater,
-    label: lang === 'pt' ? 'Água salgada' : 'Saltwater'
+    label: lang === 'pt' ? 'Piscina de sal' : lang === 'es' ? 'Piscina de sal' : 'Salt pool'
   }].map(item => /*#__PURE__*/React.createElement("label", {
     key: item.key,
     style: {

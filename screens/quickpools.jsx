@@ -305,9 +305,6 @@ function QuickPoolsScreen({ ctx }) {
               borderRadius:12, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-100)',
               minWidth:72,
             }}>
-              <div style={{fontSize:10, fontWeight:600, color:'var(--pg-ink-400)', letterSpacing:'0.04em', marginBottom:2}}>
-                {j.pools} {j.pools>1?t.poolsWord:(lang==='pt'?'piscina':'pool')}
-              </div>
               {j.price === 'neg' ? (
                 <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-700)'}}>{t.negotiable}</div>
               ) : (
@@ -1029,10 +1026,6 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
             )}
           </div>
           <div style={{textAlign:'right'}}>
-            <div style={{fontSize:11, color:'var(--pg-ink-500)', letterSpacing:'0.05em', fontWeight:600}}>{t.pools}</div>
-            <div style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:700, letterSpacing:'-0.02em', marginTop:2}}>{job.pools}</div>
-          </div>
-          <div style={{textAlign:'right'}}>
             <div style={{fontSize:11, color:'var(--pg-ink-500)', letterSpacing:'0.05em', fontWeight:600}}>{t.whenLabel}</div>
             <div style={{fontSize:13, fontWeight:600, marginTop:2, maxWidth:90}}>{tr(job.when, lang)}</div>
           </div>
@@ -1624,7 +1617,7 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
               {[
                 { key:'doorman', state:hasDoorman, set:setHasDoorman, label:lang==='pt'?'Tem porteiro':'Has doorman' },
                 { key:'dog',     state:hasDog,     set:setHasDog,     label:lang==='pt'?'Tem cachorro':'Has dog'     },
-                { key:'salt',    state:saltwater,  set:setSaltwater,  label:lang==='pt'?'Água salgada':'Saltwater'   },
+                { key:'salt',    state:saltwater,  set:setSaltwater,  label:lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool'   },
               ].map(item=>(
                 <label key={item.key} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:13,color:inkText,fontWeight:500}}>
                   <input type="checkbox" checked={item.state} onChange={e=>item.set(e.target.checked)} style={{width:16,height:16,accentColor:'var(--pg-blue-500)'}}/>
