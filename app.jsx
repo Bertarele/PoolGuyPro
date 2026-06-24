@@ -1052,6 +1052,7 @@ function App() {
                 notifyAt = d.toISOString();
               }
               const firstPool = formData.pools?.[0] || {};
+              const isCondo = firstPool.poolType === 'condo';
               const job = {
                 poster_id: user.uid, poster_name: user.name || user.email || 'Pool Guy',
                 poster_phone: formData.showPhone ? (formData.phone || user.phone || null) : null,
@@ -1059,11 +1060,15 @@ function App() {
                 city: firstPool.location || 'Florida',
                 day_of_week: scheduledFor ? ['sun','mon','tue','wed','thu','fri','sat'][new Date(formData.scheduled_for).getDay()] : 'mon',
                 when_label: scheduledFor ? new Date(scheduledFor).toLocaleDateString(lang==='pt'?'pt-BR':lang==='es'?'es':'en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : (lang==='pt'?'Agora':'Now'),
-                pools_count: formData.pools?.length || 1,
+                pools_count: 1,
                 price_per_pool: formData.priceMode==='fixed' ? parseFloat(formData.price||0)||null : null,
                 price_negotiable: formData.priceMode==='neg',
                 title: formData.title?.trim() || null,
                 description: formData.notes?.trim() || null,
+                pool_type: isCondo ? 'condo' : 'residential',
+                extras: isCondo
+                  ? { gate_code: firstPool.gateCodeVal||null, doorman: firstPool.doorman||false, dog: firstPool.dog||false }
+                  : (firstPool.dog ? { dog: true } : null),
                 status: 'open',
                 notify_at: notifyAt,
               };
