@@ -1686,6 +1686,15 @@ function QuickPoolDetails({
   const [applicants, setApplicants] = React.useState([]);
   const [loadingApps, setLoadingApps] = React.useState(false);
   const [showApplicants, setShowApplicants] = React.useState(false);
+  const applicantsPanelRef = React.useRef(null);
+  React.useEffect(() => {
+    if (showApplicants && applicantsPanelRef.current) {
+      setTimeout(() => applicantsPanelRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      }), 50);
+    }
+  }, [showApplicants]);
   const [myApp, setMyApp] = React.useState(null);
   const [showConsent, setShowConsent] = React.useState(false);
   const [sharePhone, setSharePhone] = React.useState(false);
@@ -2122,6 +2131,7 @@ function QuickPoolDetails({
       borderRadius: 999
     }
   }, t.unlockPrice)))), isOwn && showApplicants && /*#__PURE__*/React.createElement("div", {
+    ref: applicantsPanelRef,
     style: {
       margin: '0 18px 16px',
       borderRadius: 14,

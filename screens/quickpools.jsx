@@ -897,6 +897,12 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
   const [applicants,     setApplicants]     = React.useState([]);
   const [loadingApps,    setLoadingApps]    = React.useState(false);
   const [showApplicants, setShowApplicants] = React.useState(false);
+  const applicantsPanelRef = React.useRef(null);
+  React.useEffect(() => {
+    if (showApplicants && applicantsPanelRef.current) {
+      setTimeout(() => applicantsPanelRef.current?.scrollIntoView({ behavior:'smooth', block:'nearest' }), 50);
+    }
+  }, [showApplicants]);
   const [myApp,          setMyApp]          = React.useState(null);
   const [showConsent,    setShowConsent]    = React.useState(false);
   const [sharePhone,     setSharePhone]     = React.useState(false);
@@ -1119,7 +1125,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
 
       {/* Applicants panel — visible to owner */}
       {isOwn && showApplicants && (
-        <div style={{margin:'0 18px 16px', borderRadius:14, border:'1px solid var(--pg-ink-200)', overflow:'hidden'}}>
+        <div ref={applicantsPanelRef} style={{margin:'0 18px 16px', borderRadius:14, border:'1px solid var(--pg-ink-200)', overflow:'hidden'}}>
           <div style={{padding:'12px 14px 8px', fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.06em', textTransform:'uppercase', background:'var(--pg-ink-50)'}}>
             {lang==='pt'?'Candidatos':lang==='es'?'Candidatos':'Applicants'} ({applicants.length})
           </div>
