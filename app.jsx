@@ -1796,7 +1796,6 @@ function App() {
 
       {/* Overlays — called as function (not component) to avoid remount on re-render */}
       {OverlayBundle()}
-      {RegionPickerOverlay()}
 
       {/* Tweaks */}
       <TweaksPanel>

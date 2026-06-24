@@ -2966,7 +2966,7 @@ function App() {
       cursor: 'pointer',
       boxShadow: '0 6px 20px rgba(14,186,199,0.45), 0 2px 8px rgba(0,0,0,0.18)'
     }
-  }, Icon.plus(24, '#fff'))), OverlayBundle(), RegionPickerOverlay(), /*#__PURE__*/React.createElement(TweaksPanel, null, /*#__PURE__*/React.createElement(TweakSection, {
+  }, Icon.plus(24, '#fff'))), OverlayBundle(), /*#__PURE__*/React.createElement(TweaksPanel, null, /*#__PURE__*/React.createElement(TweakSection, {
     label: "Subscription tier"
   }), /*#__PURE__*/React.createElement(TweakRadio, {
     value: t.tier,
