@@ -1544,7 +1544,7 @@ function QuickPoolsScreen({
     key: j.id,
     j: j,
     compact: true
-  })))), /*#__PURE__*/React.createElement(JobPage, null));
+  })))), jobDetailPanel);
 }
 
 // ── Real interactive map with Leaflet ────────────────────────

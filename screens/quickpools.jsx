@@ -786,7 +786,7 @@ function QuickPoolsScreen({ ctx }) {
       </div>
 
     </div>
-    <JobPage/>
+    {jobDetailPanel}
     </div>
   );
 }
