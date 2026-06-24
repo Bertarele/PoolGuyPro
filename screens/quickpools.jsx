@@ -29,8 +29,7 @@ function QuickPoolsScreen({ ctx }) {
   const [jobs, setJobs] = React.useState(QUICK_POOLS);
   const [jobsLoading, setJobsLoading] = React.useState(false);
 
-  // Post job sheet
-  const { openPost } = ctx;
+
 
   // Push notification status: 'checking' | 'needed' | 'active' | 'denied' | 'unsupported'
   const [notifStatus, setNotifStatus] = React.useState('checking');

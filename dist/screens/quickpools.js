@@ -77,9 +77,6 @@ function QuickPoolsScreen({
   const [jobs, setJobs] = React.useState(QUICK_POOLS);
   const [jobsLoading, setJobsLoading] = React.useState(false);
 
-  // Post job sheet
-  const [postOpen, setPostOpen] = React.useState(false);
-
   // Push notification status: 'checking' | 'needed' | 'active' | 'denied' | 'unsupported'
   const [notifStatus, setNotifStatus] = React.useState('checking');
   const checkNotifStatus = React.useCallback(async () => {
@@ -874,7 +871,7 @@ function QuickPoolsScreen({
           flexShrink: 0
         }
       }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => setPostOpen(true),
+        onClick: () => openPost(),
         style: {
           height: 38,
           padding: '0 16px',
@@ -1137,16 +1134,7 @@ function QuickPoolsScreen({
     }, jobs.map(j => /*#__PURE__*/React.createElement(JobCard, {
       key: j.id,
       j: j
-    })))))), /*#__PURE__*/React.createElement(JobPage, null), /*#__PURE__*/React.createElement(PostJobSheet, {
-      open: postOpen,
-      onClose: () => setPostOpen(false),
-      lang: lang,
-      user: user,
-      darkMode: darkMode,
-      onPosted: j => {
-        loadJobs();
-      }
-    }));
+    })))))), /*#__PURE__*/React.createElement(JobPage, null));
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -1516,16 +1504,7 @@ function QuickPoolsScreen({
     key: j.id,
     j: j,
     compact: true
-  })))), /*#__PURE__*/React.createElement(JobPage, null), /*#__PURE__*/React.createElement(PostJobSheet, {
-    open: postOpen,
-    onClose: () => setPostOpen(false),
-    lang: lang,
-    user: user,
-    darkMode: darkMode,
-    onPosted: j => {
-      loadJobs();
-    }
-  }));
+  })))), /*#__PURE__*/React.createElement(JobPage, null));
 }
 
 // ── Real interactive map with Leaflet ────────────────────────
