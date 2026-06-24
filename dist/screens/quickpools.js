@@ -208,15 +208,63 @@ function QuickPoolsScreen({
     if (j) setSelected(j);
   }, [jobs, deepLinkJobId]);
 
-  // Open job requested via chat listing-card click (ctx.pendingQuickJobId set by app.jsx)
+  // Open job from pendingQuickJobId (set by notification deep link or chat card click)
   React.useEffect(() => {
     const id = ctx.pendingQuickJobId;
-    if (!id || !jobs.length) return;
+    if (!id) return;
+    // Try the already-loaded list first
     const j = jobs.find(x => String(x.id) === String(id));
     if (j) {
       setSelected(j);
       ctx.clearPendingQuickJob();
+      return;
     }
+    // Not in list yet — fetch directly from Supabase (handles timing + expired jobs)
+    if (!window.sb) return;
+    window.sb.from('quick_pool_jobs').select('*').eq('id', id).single().then(({
+      data
+    }) => {
+      if (!data) return;
+      setSelected({
+        id: data.id,
+        _live: true,
+        title: {
+          en: data.title || `Pool job in ${data.city}`,
+          pt: data.title || `Vaga em ${data.city}`,
+          es: data.title || `Vaga en ${data.city}`
+        },
+        loc: data.city,
+        dist: {
+          en: '',
+          pt: '',
+          es: ''
+        },
+        price: data.price_negotiable ? 'neg' : data.price_per_pool,
+        type: data.pool_type || 'residential',
+        urgency: 'new',
+        poster: data.poster_name,
+        poster_phone: data.poster_phone,
+        pool_address: data.pool_address,
+        poster_id: data.poster_id,
+        when: {
+          en: data.when_label || '',
+          pt: data.when_label || '',
+          es: data.when_label || ''
+        },
+        pools: data.pools_count || 1,
+        day_of_week: data.day_of_week,
+        time_slot: data.time_slot || '',
+        extras: data.extras || null,
+        body: {
+          en: data.description || '',
+          pt: data.description || '',
+          es: data.description || ''
+        },
+        created_at: data.created_at,
+        status: data.status
+      });
+      ctx.clearPendingQuickJob();
+    });
   }, [ctx.pendingQuickJobId, jobs]);
   React.useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 900);

@@ -471,7 +471,13 @@ function App() {
   // Overlays
   const [chatOpen,         setChatOpen]        = React.useState(false);
   const [chatConvoTarget,  setChatConvoTarget]  = React.useState(null); // string | { id, name }
-  const [pendingQuickJobId, setPendingQuickJobId] = React.useState(null);
+  const [pendingQuickJobId, setPendingQuickJobId] = React.useState(() => {
+    try {
+      const hash = window.location.hash; // e.g. "#quick?job=uuid"
+      const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+      return new URLSearchParams(qs).get('job') || null;
+    } catch { return null; }
+  });
   const [notifOpen,      setNotifOpen]      = React.useState(false);
   // Unread badges — derived from real Supabase data
   const [hasUnreadChat,  setHasUnreadChat]  = React.useState(false);
@@ -527,6 +533,7 @@ function App() {
   const [deepLinkListingId, setDeepLinkListingId] = React.useState(() => {
     try { return new URLSearchParams(window.location.search).get('listing') || null; } catch(e) { return null; }
   });
+
 
   // ── Dark mode ─────────────────────────────────────────────────
   const [darkMode, setDarkModeState] = React.useState(() => {
