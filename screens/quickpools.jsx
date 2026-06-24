@@ -388,7 +388,7 @@ function QuickPoolsScreen({ ctx }) {
   };
 
   // ── Sheet (mobile + desktop share the same) ───────────────────
-  const JobPage = () => selected ? (
+  const jobDetailPanel = selected ? (
     <div style={{
       position:'fixed', inset:0, zIndex:500,
       background:'var(--pg-bg)', overflowY:'auto',
@@ -617,7 +617,7 @@ function QuickPoolsScreen({ ctx }) {
           </div>
         </div>
       </div>
-      <JobPage/>
+      {jobDetailPanel}
       </div>
     );
   }
@@ -1259,11 +1259,16 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           <>
             {/* Address + Phone: only shown to accepted applicant */}
             {job._live && job.pool_address && myApp?.status === 'accepted' && (
-              <div style={{
-                display:'flex', alignItems:'flex-start', gap:10,
-                padding:'12px 14px', borderRadius:12,
-                background:'#F0FDF4', border:'1px solid #86EFAC',
-              }}>
+              <a href={/iP(hone|od|ad)/.test(navigator.userAgent)
+                  ? `maps://maps.apple.com/?q=${encodeURIComponent(job.pool_address)}`
+                  : `https://maps.google.com/?q=${encodeURIComponent(job.pool_address)}`}
+                target="_blank" rel="noreferrer"
+                style={{
+                  display:'flex', alignItems:'flex-start', gap:10,
+                  padding:'12px 14px', borderRadius:12,
+                  background:'#F0FDF4', border:'1px solid #86EFAC',
+                  textDecoration:'none', cursor:'pointer',
+                }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}>
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                 </svg>
@@ -1272,12 +1277,11 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                     {lang==='pt'?'Endereço da piscina':lang==='es'?'Dirección':'Pool address'}
                   </div>
                   <div style={{fontSize:14, fontWeight:600, color:'#14532D'}}>{job.pool_address}</div>
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(job.pool_address)}`} target="_blank" rel="noreferrer"
-                    style={{fontSize:11, color:'#16A34A', fontWeight:600, textDecoration:'none', marginTop:2, display:'inline-block'}}>
+                  <div style={{fontSize:11, color:'#16A34A', fontWeight:600, marginTop:2}}>
                     {lang==='pt'?'Ver no mapa →':lang==='es'?'Ver en mapa →':'Open in Maps →'}
-                  </a>
+                  </div>
                 </div>
-              </div>
+              </a>
             )}
             {job._live && job.poster_phone && myApp?.status === 'accepted' && (
               <a href={`tel:${job.poster_phone}`} style={{

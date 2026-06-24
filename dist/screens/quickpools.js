@@ -631,7 +631,7 @@ function QuickPoolsScreen({
   };
 
   // ── Sheet (mobile + desktop share the same) ───────────────────
-  const JobPage = () => selected ? /*#__PURE__*/React.createElement("div", {
+  const jobDetailPanel = selected ? /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
       inset: 0,
@@ -1174,7 +1174,7 @@ function QuickPoolsScreen({
     }, jobs.map(j => /*#__PURE__*/React.createElement(JobCard, {
       key: j.id,
       j: j
-    })))))), /*#__PURE__*/React.createElement(JobPage, null));
+    })))))), jobDetailPanel);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -2412,7 +2412,10 @@ function QuickPoolDetails({
   })), lang === 'pt' ? `${showApplicants ? 'Fechar' : 'Ver'} candidatos${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}` : `${showApplicants ? 'Close' : 'View'} applicants${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}`)) :
   /*#__PURE__*/
   /* Non-owner actions */
-  React.createElement(React.Fragment, null, job._live && job.pool_address && myApp?.status === 'accepted' && /*#__PURE__*/React.createElement("div", {
+  React.createElement(React.Fragment, null, job._live && job.pool_address && myApp?.status === 'accepted' && /*#__PURE__*/React.createElement("a", {
+    href: /iP(hone|od|ad)/.test(navigator.userAgent) ? `maps://maps.apple.com/?q=${encodeURIComponent(job.pool_address)}` : `https://maps.google.com/?q=${encodeURIComponent(job.pool_address)}`,
+    target: "_blank",
+    rel: "noreferrer",
     style: {
       display: 'flex',
       alignItems: 'flex-start',
@@ -2420,7 +2423,9 @@ function QuickPoolDetails({
       padding: '12px 14px',
       borderRadius: 12,
       background: '#F0FDF4',
-      border: '1px solid #86EFAC'
+      border: '1px solid #86EFAC',
+      textDecoration: 'none',
+      cursor: 'pointer'
     }
   }, /*#__PURE__*/React.createElement("svg", {
     width: "18",
@@ -2456,17 +2461,12 @@ function QuickPoolDetails({
       fontWeight: 600,
       color: '#14532D'
     }
-  }, job.pool_address), /*#__PURE__*/React.createElement("a", {
-    href: `https://maps.google.com/?q=${encodeURIComponent(job.pool_address)}`,
-    target: "_blank",
-    rel: "noreferrer",
+  }, job.pool_address), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: '#16A34A',
       fontWeight: 600,
-      textDecoration: 'none',
-      marginTop: 2,
-      display: 'inline-block'
+      marginTop: 2
     }
   }, lang === 'pt' ? 'Ver no mapa →' : lang === 'es' ? 'Ver en mapa →' : 'Open in Maps →'))), job._live && job.poster_phone && myApp?.status === 'accepted' && /*#__PURE__*/React.createElement("a", {
     href: `tel:${job.poster_phone}`,
