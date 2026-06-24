@@ -124,9 +124,6 @@ function HomeScreen({ ctx }) {
                     {greetWord}, {firstName}! 👋
                   </div>
                   <div style={{display:'flex', alignItems:'center', gap:5, marginTop:4}}>
-                    {Icon.pin(10, darkMode ? 'var(--pg-aqua-400)' : '#0077B6')}
-                    <span style={{fontSize:11.5, color:H.faint, fontWeight:500}}>{county} County, FL</span>
-                    <span style={{color:H.faint, fontSize:11, margin:'0 3px'}}>·</span>
                     <span style={{fontSize:11, color:H.faint, fontWeight:400}}>{subtitle}</span>
                   </div>
                 </div>
@@ -220,10 +217,6 @@ function HomeScreen({ ctx }) {
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
                   {greetWord}, {firstName}! 👋
-                </div>
-                <div style={{display:'flex', alignItems:'center', gap:5, marginTop:2}}>
-                  {Icon.pin(10,'var(--pg-aqua-400)')}
-                  <span style={{fontSize:11, color:H.faint, fontWeight:500}}>{county} County, FL</span>
                 </div>
               </div>
               <div style={{

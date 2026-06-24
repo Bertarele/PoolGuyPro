@@ -201,19 +201,7 @@ function HomeScreen({
           gap: 5,
           marginTop: 4
         }
-      }, Icon.pin(10, darkMode ? 'var(--pg-aqua-400)' : '#0077B6'), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 11.5,
-          color: H.faint,
-          fontWeight: 500
-        }
-      }, county, " County, FL"), /*#__PURE__*/React.createElement("span", {
-        style: {
-          color: H.faint,
-          fontSize: 11,
-          margin: '0 3px'
-        }
-      }, "\xB7"), /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
           color: H.faint,
@@ -419,20 +407,7 @@ function HomeScreen({
         color: H.mid,
         letterSpacing: '-0.01em'
       }
-    }, greetWord, ", ", firstName, "! \uD83D\uDC4B"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 5,
-        marginTop: 2
-      }
-    }, Icon.pin(10, 'var(--pg-aqua-400)'), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        color: H.faint,
-        fontWeight: 500
-      }
-    }, county, " County, FL"))), /*#__PURE__*/React.createElement("div", {
+    }, greetWord, ", ", firstName, "! \uD83D\uDC4B")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: H.activeBg,
         border: H.activeBdr,

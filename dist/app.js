@@ -551,9 +551,6 @@ function App() {
     }
     return 'Broward';
   })();
-  const [regionPickerSearch, setRegionPickerSearch] = React.useState('');
-  const [regionPickerDropOpen, setRegionPickerDropOpen] = React.useState(false);
-  const showRegionPicker = isLoggedIn && !!user.uid && !user.region;
 
   // ── Real unread chat count from Supabase ─────────────────────
   const recheckUnread = React.useCallback(async () => {
@@ -1425,183 +1422,6 @@ function App() {
   const desktopTabLabel = desktopNavItems.find(n => n.id === tab);
 
   // ── Shared overlays (used in both mobile and desktop) ─────────
-  const RegionPickerOverlay = () => {
-    if (!showRegionPicker) return null;
-    const FL = window.FL_COUNTIES || {};
-    const allItems = [];
-    Object.entries(FL).forEach(([c, cities]) => {
-      allItems.push({
-        label: c + ' County',
-        value: c + ' County',
-        isCounty: true
-      });
-      if (Array.isArray(cities)) cities.forEach(city => allItems.push({
-        label: city + ', ' + c,
-        value: city,
-        isCounty: false
-      }));
-    });
-    const filtered = regionPickerSearch.length > 1 ? allItems.filter(r => r.label.toLowerCase().includes(regionPickerSearch.toLowerCase())).slice(0, 12) : [];
-    const match = allItems.find(r => r.label === regionPickerSearch);
-    const selVal = match ? match.value : '';
-    const saveRegion = async () => {
-      if (!selVal) return;
-      try {
-        if (window.sb && user.uid) await window.sb.from('profiles').update({
-          region: selVal
-        }).eq('id', user.uid);
-      } catch (e) {}
-      setUser(u => ({
-        ...u,
-        region: selVal
-      }));
-      setRegionPickerSearch('');
-      setRegionPickerDropOpen(false);
-    };
-    const title = lang === 'pt' ? 'Qual é a sua região?' : lang === 'es' ? '¿Cuál es tu región?' : 'What is your region?';
-    const sub = lang === 'pt' ? 'Selecione a cidade ou condado onde você trabalha' : lang === 'es' ? 'Selecciona la ciudad o condado donde trabajas' : 'Select the city or county where you work';
-    const ph = lang === 'pt' ? 'Buscar cidade ou condado…' : lang === 'es' ? 'Buscar ciudad o condado…' : 'Search city or county…';
-    const btnLbl = lang === 'pt' ? 'Confirmar →' : lang === 'es' ? 'Confirmar →' : 'Confirm →';
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'fixed',
-        inset: 0,
-        zIndex: 3000,
-        background: 'rgba(10,40,64,0.72)',
-        backdropFilter: 'blur(6px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: 'var(--pg-white)',
-        borderRadius: 24,
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-        width: '100%',
-        maxWidth: 420,
-        padding: '32px 28px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 20
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: 'center'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 22,
-        fontWeight: 800,
-        color: 'var(--pg-ink-900)',
-        fontFamily: 'var(--pg-font-display)',
-        letterSpacing: '-0.02em',
-        marginBottom: 6
-      }
-    }, title), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        color: 'var(--pg-ink-500)',
-        lineHeight: 1.5
-      }
-    }, sub)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'relative'
-      }
-    }, /*#__PURE__*/React.createElement("svg", {
-      width: "15",
-      height: "15",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "var(--pg-ink-400)",
-      strokeWidth: "2",
-      strokeLinecap: "round",
-      style: {
-        position: 'absolute',
-        left: 13,
-        top: '50%',
-        transform: 'translateY(-50%)',
-        pointerEvents: 'none',
-        zIndex: 1
-      }
-    }, /*#__PURE__*/React.createElement("circle", {
-      cx: "11",
-      cy: "11",
-      r: "8"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "m21 21-4.35-4.35"
-    })), /*#__PURE__*/React.createElement("input", {
-      type: "text",
-      value: regionPickerSearch,
-      onChange: e => {
-        setRegionPickerSearch(e.target.value);
-        setRegionPickerDropOpen(true);
-      },
-      onFocus: () => setRegionPickerDropOpen(true),
-      placeholder: ph,
-      style: {
-        width: '100%',
-        height: 48,
-        borderRadius: 12,
-        border: '1.5px solid var(--pg-ink-200)',
-        background: 'var(--pg-ink-50)',
-        paddingLeft: 38,
-        paddingRight: 12,
-        fontSize: 15,
-        fontFamily: 'inherit',
-        color: 'var(--pg-ink-900)',
-        outline: 'none',
-        boxSizing: 'border-box'
-      }
-    }), regionPickerDropOpen && filtered.length > 0 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        top: 'calc(100% + 6px)',
-        left: 0,
-        right: 0,
-        background: 'var(--pg-white)',
-        border: '1.5px solid var(--pg-ink-200)',
-        borderRadius: 14,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-        zIndex: 50,
-        overflow: 'hidden',
-        maxHeight: 240,
-        overflowY: 'auto'
-      }
-    }, filtered.map(r => /*#__PURE__*/React.createElement("div", {
-      key: r.value,
-      onClick: () => {
-        setRegionPickerSearch(r.label);
-        setRegionPickerDropOpen(false);
-      },
-      style: {
-        padding: '11px 14px',
-        cursor: 'pointer',
-        fontSize: 13.5,
-        fontWeight: r.isCounty ? 700 : 400,
-        color: r.isCounty ? 'var(--pg-blue-700)' : 'var(--pg-ink-800)',
-        background: 'transparent',
-        borderBottom: '1px solid var(--pg-ink-100)'
-      }
-    }, r.label)))), /*#__PURE__*/React.createElement("button", {
-      onClick: saveRegion,
-      disabled: !selVal,
-      style: {
-        height: 52,
-        borderRadius: 14,
-        border: 'none',
-        cursor: selVal ? 'pointer' : 'default',
-        fontFamily: 'inherit',
-        fontSize: 15,
-        fontWeight: 700,
-        background: selVal ? 'linear-gradient(90deg,#1565E8,#00C2D4)' : 'var(--pg-ink-200)',
-        color: selVal ? '#fff' : 'var(--pg-ink-400)',
-        boxShadow: selVal ? '0 8px 28px rgba(21,101,232,0.35)' : 'none',
-        transition: 'all .2s'
-      }
-    }, btnLbl)));
-  };
   const OverlayBundle = () => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ChatSheet, {
     open: chatOpen,
     onClose: () => {
@@ -2927,7 +2747,7 @@ function App() {
       ctx: ctx
     }), tab === 'profile' && /*#__PURE__*/React.createElement(ProfileScreen, {
       ctx: ctx
-    })))), OverlayBundle(), RegionPickerOverlay(), /*#__PURE__*/React.createElement(TweaksPanel, null, /*#__PURE__*/React.createElement(TweakSection, {
+    })))), OverlayBundle(), /*#__PURE__*/React.createElement(TweaksPanel, null, /*#__PURE__*/React.createElement(TweakSection, {
       label: "Subscription tier"
     }), /*#__PURE__*/React.createElement(TweakRadio, {
       value: t.tier,
