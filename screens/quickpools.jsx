@@ -1121,26 +1121,25 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
             </div>
           </div>
         )}
-      </div>
 
-      {/* Applicants panel — visible to owner */}
-      {isOwn && showApplicants && (
-        <div ref={applicantsPanelRef} style={{margin:'0 18px 16px', borderRadius:14, border:'1px solid var(--pg-ink-200)', overflow:'hidden'}}>
-          <div style={{padding:'12px 14px 8px', fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.06em', textTransform:'uppercase', background:'var(--pg-ink-50)'}}>
-            {lang==='pt'?'Candidatos':lang==='es'?'Candidatos':'Applicants'} ({applicants.length})
-          </div>
-          {loadingApps && <div style={{padding:'14px', fontSize:13, color:'var(--pg-ink-400)', textAlign:'center'}}>...</div>}
-          {!loadingApps && applicants.length === 0 && (
-            <div style={{padding:'14px 14px', fontSize:13, color:'var(--pg-ink-400)'}}>
-              {lang==='pt'?'Nenhuma candidatura ainda.':lang==='es'?'Ninguna candidatura aún.':'No applicants yet.'}
+        {/* Applicants panel — visible to owner, inside scroll content */}
+        {isOwn && showApplicants && (
+          <div ref={applicantsPanelRef} style={{marginTop:16, borderRadius:14, border:'1px solid var(--pg-ink-200)', overflow:'hidden'}}>
+            <div style={{padding:'12px 14px 8px', fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.06em', textTransform:'uppercase', background:'var(--pg-ink-50)'}}>
+              {lang==='pt'?'Candidatos':lang==='es'?'Candidatos':'Applicants'} ({applicants.length})
             </div>
-          )}
-          {applicants.map(a => (
-            <div key={a.id} style={{
-              display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
-              borderTop:'0.5px solid var(--pg-ink-100)',
-              background: a.status==='accepted' ? '#F0FDF4' : a.status==='rejected' ? '#FFF1F1' : '#fff',
-            }}>
+            {loadingApps && <div style={{padding:'14px', fontSize:13, color:'var(--pg-ink-400)', textAlign:'center'}}>...</div>}
+            {!loadingApps && applicants.length === 0 && (
+              <div style={{padding:'14px 14px', fontSize:13, color:'var(--pg-ink-400)'}}>
+                {lang==='pt'?'Nenhuma candidatura ainda.':lang==='es'?'Ninguna candidatura aún.':'No applicants yet.'}
+              </div>
+            )}
+            {applicants.map(a => (
+              <div key={a.id} style={{
+                display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
+                borderTop:'0.5px solid var(--pg-ink-100)',
+                background: a.status==='accepted' ? 'var(--pg-green-50,#F0FDF4)' : a.status==='rejected' ? 'var(--pg-red-50,#FFF1F1)' : 'var(--pg-ink-50)',
+              }}>
               <Avatar name={a.applicant_name} size={34}/>
               <div style={{flex:1, minWidth:0}}>
                 <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>{a.applicant_name}</div>
@@ -1170,6 +1169,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           ))}
         </div>
       )}
+      </div>{/* end content div */}
 
       {/* Rating modal — shown to owner when marking complete */}
       {showRating && (

@@ -2130,10 +2130,10 @@ function QuickPoolDetails({
       marginTop: 10,
       borderRadius: 999
     }
-  }, t.unlockPrice)))), isOwn && showApplicants && /*#__PURE__*/React.createElement("div", {
+  }, t.unlockPrice))), isOwn && showApplicants && /*#__PURE__*/React.createElement("div", {
     ref: applicantsPanelRef,
     style: {
-      margin: '0 18px 16px',
+      marginTop: 16,
       borderRadius: 14,
       border: '1px solid var(--pg-ink-200)',
       overflow: 'hidden'
@@ -2169,7 +2169,7 @@ function QuickPoolDetails({
       gap: 10,
       padding: '10px 14px',
       borderTop: '0.5px solid var(--pg-ink-100)',
-      background: a.status === 'accepted' ? '#F0FDF4' : a.status === 'rejected' ? '#FFF1F1' : '#fff'
+      background: a.status === 'accepted' ? 'var(--pg-green-50,#F0FDF4)' : a.status === 'rejected' ? 'var(--pg-red-50,#FFF1F1)' : 'var(--pg-ink-50)'
     }
   }, /*#__PURE__*/React.createElement(Avatar, {
     name: a.applicant_name,
@@ -2224,7 +2224,7 @@ function QuickPoolDetails({
       fontSize: 12,
       fontWeight: 700
     }
-  }, lang === 'pt' ? 'Aceitar' : lang === 'es' ? 'Aceptar' : 'Accept')))), showRating && /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Aceitar' : lang === 'es' ? 'Aceptar' : 'Accept'))))), showRating && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
       inset: 0,
