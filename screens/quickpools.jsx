@@ -30,7 +30,7 @@ function QuickPoolsScreen({ ctx }) {
   const [jobsLoading, setJobsLoading] = React.useState(false);
 
   // Post job sheet
-  const [postOpen, setPostOpen] = React.useState(false);
+  const { openPost } = ctx;
 
   // Push notification status: 'checking' | 'needed' | 'active' | 'denied' | 'unsupported'
   const [notifStatus, setNotifStatus] = React.useState('checking');
@@ -476,7 +476,7 @@ function QuickPoolsScreen({ ctx }) {
 
                 {/* Actions */}
                 <div style={{display:'flex', alignItems:'center', gap:8, flexShrink:0}}>
-                  <button onClick={()=>setPostOpen(true)} style={{height:38,padding:'0 16px',borderRadius:11,border:'none',background:'linear-gradient(135deg,#0077B6,#023E8A)',color:'#fff',fontFamily:'inherit',fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,boxShadow:'0 3px 10px rgba(0,119,182,0.35)',transition:'all .15s'}}>
+                  <button onClick={()=>openPost()} style={{height:38,padding:'0 16px',borderRadius:11,border:'none',background:'linear-gradient(135deg,#0077B6,#023E8A)',color:'#fff',fontFamily:'inherit',fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,boxShadow:'0 3px 10px rgba(0,119,182,0.35)',transition:'all .15s'}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
                   </button>
@@ -599,8 +599,6 @@ function QuickPoolsScreen({ ctx }) {
         </div>
       </div>
       <JobPage/>
-      <PostJobSheet open={postOpen} onClose={()=>setPostOpen(false)} lang={lang} user={user} darkMode={darkMode}
-        onPosted={j=>{ loadJobs(); }}/>
       </div>
     );
   }
@@ -770,8 +768,6 @@ function QuickPoolsScreen({ ctx }) {
 
     </div>
     <JobPage/>
-    <PostJobSheet open={postOpen} onClose={()=>setPostOpen(false)} lang={lang} user={user} darkMode={darkMode}
-      onPosted={j=>{ loadJobs(); }}/>
     </div>
   );
 }

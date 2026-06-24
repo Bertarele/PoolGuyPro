@@ -569,49 +569,24 @@ function PoolItemCard({
     style: {
       display: 'flex',
       alignItems: 'center',
-      gap: 10,
+      gap: 8,
       marginBottom: 12
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 32,
-      height: 32,
-      borderRadius: 9,
-      background: 'var(--pg-blue-500)',
-      color: '#fff',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 15,
-      fontWeight: 700,
-      letterSpacing: '-0.01em'
+      fontSize: 20
     }
-  }, index), /*#__PURE__*/React.createElement("h3", {
+  }, "\uD83C\uDFCA"), /*#__PURE__*/React.createElement("h3", {
     style: {
       margin: 0,
       flex: 1,
       fontFamily: 'var(--pg-font-display)',
       fontSize: 15,
       fontWeight: 700,
-      letterSpacing: '-0.01em'
+      letterSpacing: '-0.01em',
+      color: 'var(--pg-ink-900)'
     }
-  }, lbl.poolN, " ", index), onRemove && /*#__PURE__*/React.createElement("button", {
-    onClick: onRemove,
-    style: {
-      border: 'none',
-      background: 'transparent',
-      color: 'var(--pg-danger)',
-      fontSize: 12,
-      fontWeight: 600,
-      cursor: 'pointer',
-      padding: '4px 8px',
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 4,
-      fontFamily: 'inherit'
-    }
-  }, Icon.x(12, 'var(--pg-danger)'), " ", lbl.remove)), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Detalhes da piscina' : lang === 'es' ? 'Detalles de la piscina' : 'Pool details')), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 12
     }

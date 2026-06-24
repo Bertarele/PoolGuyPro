@@ -343,25 +343,11 @@ function PoolItemCard({ index, pool, onChange, onRemove, lbl, t, lang }) {
   return (
     <div className="pg-card" style={{padding:'14px 14px 12px', border:'0.5px solid var(--pg-ink-200)'}}>
       {/* Header */}
-      <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:12}}>
-        <div style={{
-          width:32, height:32, borderRadius:9,
-          background:'var(--pg-blue-500)', color:'#fff',
-          display:'flex', alignItems:'center', justifyContent:'center',
-          fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.01em',
-        }}>{index}</div>
-        <h3 style={{margin:0, flex:1, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.01em'}}>
-          {lbl.poolN} {index}
+      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:12}}>
+        <div style={{fontSize:20}}>🏊</div>
+        <h3 style={{margin:0, flex:1, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.01em', color:'var(--pg-ink-900)'}}>
+          {lang==='pt' ? 'Detalhes da piscina' : lang==='es' ? 'Detalles de la piscina' : 'Pool details'}
         </h3>
-        {onRemove && (
-          <button onClick={onRemove} style={{
-            border:'none', background:'transparent', color:'var(--pg-danger)',
-            fontSize:12, fontWeight:600, cursor:'pointer', padding:'4px 8px',
-            display:'inline-flex', alignItems:'center', gap:4, fontFamily:'inherit',
-          }}>
-            {Icon.x(12, 'var(--pg-danger)')} {lbl.remove}
-          </button>
-        )}
       </div>
 
       {/* Location */}
