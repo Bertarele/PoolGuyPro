@@ -1937,7 +1937,7 @@ function QuickPoolDetails({
       marginTop: 2,
       maxWidth: 90
     }
-  }, tr(job.when, lang)))), job.type === 'condo' && job.extras && /*#__PURE__*/React.createElement("div", {
+  }, tr(job.when, lang)))), job.extras && /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
     style: {
       padding: '12px 14px',
@@ -1957,11 +1957,11 @@ function QuickPoolDetails({
       gridTemplateColumns: '1fr 1fr',
       gap: 10
     }
-  }, job.extras.gate_code && /*#__PURE__*/React.createElement(DetailPill, {
+  }, job.type === 'condo' && job.extras.gate_code && /*#__PURE__*/React.createElement(DetailPill, {
     icon: Icon.key(14, 'var(--pg-blue-700)'),
     label: t.gateCode,
     value: locked ? '••••' : job.extras.gate_code
-  }), /*#__PURE__*/React.createElement(DetailPill, {
+  }), job.type === 'condo' && /*#__PURE__*/React.createElement(DetailPill, {
     icon: Icon.user(14, 'var(--pg-blue-700)'),
     label: t.doorman,
     value: job.extras.doorman ? t.yes : t.no
@@ -2807,7 +2807,10 @@ function PostJobSheet({
         doorman: hasDoorman,
         dog: hasDog,
         saltwater
-      } : null,
+      } : {
+        dog: hasDog,
+        saltwater
+      },
       status: 'open'
     };
     const {
@@ -3106,7 +3109,7 @@ function PostJobSheet({
         fontFamily: 'inherit'
       }
     }, lbl);
-  }))), poolType === 'condo' && /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       border: `1px solid ${inkBdr}`,
@@ -3125,7 +3128,56 @@ function PostJobSheet({
       textTransform: 'uppercase',
       marginBottom: 2
     }
-  }, lang === 'pt' ? 'Detalhes do condomínio' : 'Condo details'), /*#__PURE__*/React.createElement("input", {
+  }, lang === 'pt' ? 'Detalhes da piscina' : lang === 'es' ? 'Detalles de la piscina' : 'Pool details'), [{
+    key: 'dog',
+    state: hasDog,
+    set: setHasDog,
+    label: lang === 'pt' ? 'Tem cachorro' : lang === 'es' ? 'Tiene perro' : 'Has dog'
+  }, {
+    key: 'salt',
+    state: saltwater,
+    set: setSaltwater,
+    label: lang === 'pt' ? 'Piscina de sal' : lang === 'es' ? 'Piscina de sal' : 'Salt pool'
+  }].map(item => /*#__PURE__*/React.createElement("label", {
+    key: item.key,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      cursor: 'pointer',
+      fontSize: 13,
+      color: inkText,
+      fontWeight: 500
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: item.state,
+    onChange: e => item.set(e.target.checked),
+    style: {
+      width: 16,
+      height: 16,
+      accentColor: 'var(--pg-blue-500)'
+    }
+  }), item.label))), poolType === 'condo' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 12,
+      border: `1px solid ${inkBdr}`,
+      padding: '12px 14px',
+      background: inkBg,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: inkSub,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Detalhes do condomínio' : lang === 'es' ? 'Detalles del condominio' : 'Condo details'), /*#__PURE__*/React.createElement("input", {
     value: gateCode,
     onChange: e => setGateCode(e.target.value),
     placeholder: lang === 'pt' ? 'Código do portão (opcional)' : 'Gate code (optional)',
@@ -3138,17 +3190,7 @@ function PostJobSheet({
     key: 'doorman',
     state: hasDoorman,
     set: setHasDoorman,
-    label: lang === 'pt' ? 'Tem porteiro' : 'Has doorman'
-  }, {
-    key: 'dog',
-    state: hasDog,
-    set: setHasDog,
-    label: lang === 'pt' ? 'Tem cachorro' : 'Has dog'
-  }, {
-    key: 'salt',
-    state: saltwater,
-    set: setSaltwater,
-    label: lang === 'pt' ? 'Piscina de sal' : lang === 'es' ? 'Piscina de sal' : 'Salt pool'
+    label: lang === 'pt' ? 'Tem porteiro' : lang === 'es' ? 'Tiene portero' : 'Has doorman'
   }].map(item => /*#__PURE__*/React.createElement("label", {
     key: item.key,
     style: {

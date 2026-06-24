@@ -1037,16 +1037,18 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           </div>
         </div>
 
-        {/* Condo extras (only if condo) */}
-        {job.type === 'condo' && job.extras && (
+        {/* Access / pool details */}
+        {job.extras && (
           <div className="pg-card" style={{padding:'12px 14px', marginTop:14}}>
             <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, letterSpacing:'0.05em', marginBottom:8}}>{t.accessDetails}</div>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
-              {job.extras.gate_code && (
+              {job.type === 'condo' && job.extras.gate_code && (
                 <DetailPill icon={Icon.key(14, 'var(--pg-blue-700)')} label={t.gateCode}
                   value={locked ? '••••' : job.extras.gate_code}/>
               )}
-              <DetailPill icon={Icon.user(14, 'var(--pg-blue-700)')} label={t.doorman} value={job.extras.doorman ? t.yes : t.no}/>
+              {job.type === 'condo' && (
+                <DetailPill icon={Icon.user(14, 'var(--pg-blue-700)')} label={t.doorman} value={job.extras.doorman ? t.yes : t.no}/>
+              )}
               <DetailPill icon={Icon.dog(14, 'var(--pg-blue-700)')} label={t.dogLbl} value={job.extras.dog ? t.yes : t.no}/>
               <DetailPill icon={Icon.pool(14, 'var(--pg-blue-700)')} label={t.saltwater} value={job.extras.saltwater ? t.yes : t.no}/>
             </div>
@@ -1485,7 +1487,9 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
       pools_count: 1, price_per_pool: neg ? null : (parseFloat(price)||null),
       price_negotiable: neg, title: title.trim(), description: desc.trim()||null,
       pool_type: poolType,
-      extras: poolType==='condo' ? { gate_code: gateCode.trim()||null, doorman: hasDoorman, dog: hasDog, saltwater } : null,
+      extras: poolType==='condo'
+        ? { gate_code: gateCode.trim()||null, doorman: hasDoorman, dog: hasDog, saltwater }
+        : { dog: hasDog, saltwater },
       status:'open',
     };
     const { data, error } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
@@ -1626,19 +1630,33 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
             </div>
           </div>
 
+          {/* Pool extras — always visible */}
+          <div style={{borderRadius:12,border:`1px solid ${inkBdr}`,padding:'12px 14px',background:inkBg,display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{fontSize:11,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',marginBottom:2}}>
+              {lang==='pt'?'Detalhes da piscina':lang==='es'?'Detalles de la piscina':'Pool details'}
+            </div>
+            {[
+              { key:'dog',  state:hasDog,    set:setHasDog,    label:lang==='pt'?'Tem cachorro':lang==='es'?'Tiene perro':'Has dog'   },
+              { key:'salt', state:saltwater, set:setSaltwater, label:lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool' },
+            ].map(item=>(
+              <label key={item.key} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:13,color:inkText,fontWeight:500}}>
+                <input type="checkbox" checked={item.state} onChange={e=>item.set(e.target.checked)} style={{width:16,height:16,accentColor:'var(--pg-blue-500)'}}/>
+                {item.label}
+              </label>
+            ))}
+          </div>
+
           {/* Condo extras */}
           {poolType==='condo' && (
             <div style={{borderRadius:12,border:`1px solid ${inkBdr}`,padding:'12px 14px',background:inkBg,display:'flex',flexDirection:'column',gap:10}}>
               <div style={{fontSize:11,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',marginBottom:2}}>
-                {lang==='pt'?'Detalhes do condomínio':'Condo details'}
+                {lang==='pt'?'Detalhes do condomínio':lang==='es'?'Detalles del condominio':'Condo details'}
               </div>
               <input value={gateCode} onChange={e=>setGateCode(e.target.value)}
                 placeholder={lang==='pt'?'Código do portão (opcional)':'Gate code (optional)'}
                 style={{...inp,height:40,fontSize:13}}/>
               {[
-                { key:'doorman', state:hasDoorman, set:setHasDoorman, label:lang==='pt'?'Tem porteiro':'Has doorman' },
-                { key:'dog',     state:hasDog,     set:setHasDog,     label:lang==='pt'?'Tem cachorro':'Has dog'     },
-                { key:'salt',    state:saltwater,  set:setSaltwater,  label:lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool'   },
+                { key:'doorman', state:hasDoorman, set:setHasDoorman, label:lang==='pt'?'Tem porteiro':lang==='es'?'Tiene portero':'Has doorman' },
               ].map(item=>(
                 <label key={item.key} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:13,color:inkText,fontWeight:500}}>
                   <input type="checkbox" checked={item.state} onChange={e=>item.set(e.target.checked)} style={{width:16,height:16,accentColor:'var(--pg-blue-500)'}}/>
