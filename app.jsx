@@ -475,7 +475,10 @@ function App() {
     try {
       const hash = window.location.hash; // e.g. "#quick?job=uuid"
       const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-      return new URLSearchParams(qs).get('job') || null;
+      const jobId = new URLSearchParams(qs).get('job') || null;
+      // Strip ?job= from URL so refresh doesn't re-open the job
+      if (jobId) window.history.replaceState(null, '', '#quick');
+      return jobId;
     } catch { return null; }
   });
   const [notifOpen,      setNotifOpen]      = React.useState(false);
@@ -1080,8 +1083,8 @@ function App() {
                 description: formData.notes?.trim() || null,
                 pool_type: isCondo ? 'condo' : 'residential',
                 extras: isCondo
-                  ? { gate_code: firstPool.gateCodeVal||null, doorman: firstPool.doorman||false, dog: firstPool.dog||false }
-                  : (firstPool.dog ? { dog: true } : null),
+                  ? { gate_code: firstPool.gateCodeVal||null, doorman: firstPool.doorman||false, dog: firstPool.dog||false, saltwater: firstPool.saltwater||false }
+                  : { dog: firstPool.dog||false, saltwater: firstPool.saltwater||false },
                 status: 'open',
                 notify_at: notifyAt,
               };

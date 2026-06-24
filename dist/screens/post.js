@@ -15,7 +15,8 @@ function PostQuickPool({
     gateCode: false,
     gateCodeVal: '',
     doorman: false,
-    dog: false
+    dog: false,
+    saltwater: false
   });
   const [form, setForm] = React.useState({
     title: '',
@@ -707,6 +708,13 @@ function PoolItemCard({
     setOn: v => onChange({
       dog: v
     })
+  }), /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.pool(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Piscina de sal' : lang === 'es' ? 'Piscina de sal' : 'Salt pool',
+    on: pool.saltwater,
+    setOn: v => onChange({
+      saltwater: v
+    })
   })), pool.poolType === 'condo' && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 2,
@@ -755,6 +763,13 @@ function PoolItemCard({
     on: pool.dog,
     setOn: v => onChange({
       dog: v
+    })
+  }), /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.pool(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Piscina de sal' : lang === 'es' ? 'Piscina de sal' : 'Salt pool',
+    on: pool.saltwater,
+    setOn: v => onChange({
+      saltwater: v
     })
   })));
 }

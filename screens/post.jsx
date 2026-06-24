@@ -13,6 +13,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
     gateCodeVal: '',
     doorman: false,
     dog: false,
+    saltwater: false,
   });
 
   const [form, setForm] = React.useState({
@@ -401,7 +402,7 @@ function PoolItemCard({ index, pool, onChange, onRemove, lbl, t, lang }) {
         </div>
       </div>
 
-      {/* Street / house — dog only */}
+      {/* Street / house */}
       {pool.poolType === 'street' && (
         <div style={{
           marginTop:2, padding:'4px 12px 8px', borderRadius:11,
@@ -412,6 +413,8 @@ function PoolItemCard({ index, pool, onChange, onRemove, lbl, t, lang }) {
           </div>
           <ToggleRow icon={Icon.dog(15, 'var(--pg-ink-700)')} label={t.hasDog}
             on={pool.dog} setOn={v=>onChange({dog: v})}/>
+          <ToggleRow icon={Icon.pool(15, 'var(--pg-ink-700)')} label={lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool'}
+            on={pool.saltwater} setOn={v=>onChange({saltwater: v})}/>
         </div>
       )}
 
@@ -435,6 +438,8 @@ function PoolItemCard({ index, pool, onChange, onRemove, lbl, t, lang }) {
             on={pool.doorman} setOn={v=>onChange({doorman: v})}/>
           <ToggleRow icon={Icon.dog(15, 'var(--pg-ink-700)')} label={t.hasDog}
             on={pool.dog} setOn={v=>onChange({dog: v})}/>
+          <ToggleRow icon={Icon.pool(15, 'var(--pg-ink-700)')} label={lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool'}
+            on={pool.saltwater} setOn={v=>onChange({saltwater: v})}/>
         </div>
       )}
     </div>
