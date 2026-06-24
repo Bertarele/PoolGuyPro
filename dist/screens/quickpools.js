@@ -122,12 +122,24 @@ function QuickPoolsScreen({
     try {
       const {
         data
-      } = await window.sb.from('quick_pool_jobs').select('*').eq('status', 'open').order('created_at', {
+      } = await window.sb.from('quick_pool_jobs').select('*').in('status', ['open', 'filled']).order('created_at', {
         ascending: false
       }).limit(50);
       if (data && data.length > 0) {
-        // Normalize live data to match card format
-        setJobs(data.map(j => ({
+        // Expire jobs older than 24h
+        const now = Date.now();
+        const expiredIds = [];
+        const active = data.filter(j => {
+          if (j.status === 'open' && now - new Date(j.created_at).getTime() > 24 * 60 * 60 * 1000) {
+            expiredIds.push(j.id);
+            return false;
+          }
+          return true;
+        });
+        if (expiredIds.length > 0) window.sb.from('quick_pool_jobs').update({
+          status: 'expired'
+        }).in('id', expiredIds).then(() => {});
+        setJobs(active.map(j => ({
           id: j.id,
           _live: true,
           title: {
@@ -155,6 +167,8 @@ function QuickPoolsScreen({
           },
           pools: j.pools_count || 1,
           day_of_week: j.day_of_week,
+          time_slot: j.time_slot || '',
+          extras: j.extras || null,
           body: {
             en: j.description || '',
             pt: j.description || '',
@@ -1644,9 +1658,13 @@ function QuickPoolDetails({
   const [applicants, setApplicants] = React.useState([]);
   const [loadingApps, setLoadingApps] = React.useState(false);
   const [showApplicants, setShowApplicants] = React.useState(false);
-  const [myApp, setMyApp] = React.useState(null); // own application record
+  const [myApp, setMyApp] = React.useState(null);
   const [showConsent, setShowConsent] = React.useState(false);
   const [sharePhone, setSharePhone] = React.useState(false);
+  const [showRating, setShowRating] = React.useState(false);
+  const [ratingStars, setRatingStars] = React.useState(0);
+  const [ratingComment, setRatingComment] = React.useState('');
+  const [ratingSubmitting, setRatingSubmitting] = React.useState(false);
 
   // Load all applicants (owner) or own application (others)
   React.useEffect(() => {
@@ -1662,7 +1680,7 @@ function QuickPoolDetails({
         setLoadingApps(false);
       });
     } else if (user?.uid) {
-      window.sb.from('quick_pool_applications').select('status,applicant_phone').eq('job_id', job.id).eq('applicant_id', user.uid).limit(1).then(({
+      window.sb.from('quick_pool_applications').select('id,status,applicant_phone').eq('job_id', job.id).eq('applicant_id', user.uid).limit(1).then(({
         data
       }) => {
         setMyApp(data && data[0] || null);
@@ -1680,6 +1698,11 @@ function QuickPoolDetails({
     await window.sb.from('quick_pool_jobs').update({
       status: 'filled'
     }).eq('id', job.id);
+    // Notify rejected applicants
+    applicants.forEach(a => {
+      if (a.id === appId) return;
+      window.sendPush && window.sendPush(a.applicant_id, lang === 'pt' ? '❌ Candidatura não selecionada' : '❌ Application not selected', lang === 'pt' ? `Outra pessoa foi escolhida para "${tr(job.title, lang)}". Continue tentando!` : `Someone else was chosen for "${tr(job.title, lang)}". Keep trying!`, '/#express-pools');
+    });
     setApplicants(prev => prev.map(a => ({
       ...a,
       status: a.id === appId ? 'accepted' : 'rejected'
@@ -1687,6 +1710,32 @@ function QuickPoolDetails({
     onStatusChange && onStatusChange('filled');
     // Notify accepted applicant
     window.sendPush && window.sendPush(applicantId, lang === 'pt' ? '🎉 Candidatura aceita!' : '🎉 Application accepted!', lang === 'pt' ? `Sua candidatura para "${tr(job.title, lang)}" foi aceita.` : `Your application for "${tr(job.title, lang)}" was accepted.`, '/#express-pools');
+  };
+  const withdrawApp = async () => {
+    if (!window.sb || !myApp) return;
+    await window.sb.from('quick_pool_applications').update({
+      status: 'withdrawn'
+    }).eq('id', myApp.id);
+    setMyApp(null);
+  };
+  const acceptedApp = applicants.find(a => a.status === 'accepted');
+  const submitRatingAndFinalize = async () => {
+    setRatingSubmitting(true);
+    if (ratingStars > 0 && acceptedApp && window.sb) {
+      await window.sb.from('ratings').insert({
+        listing_id: job.id,
+        listing_name: tr(job.title, lang),
+        from_id: user.uid,
+        to_id: acceptedApp.applicant_id,
+        from_name: user.name || user.email || 'Pool Owner',
+        stars: ratingStars,
+        comment: ratingComment.trim() || null,
+        pending: false
+      }).then(() => {});
+    }
+    setRatingSubmitting(false);
+    setShowRating(false);
+    onComplete && onComplete(job.id);
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1870,7 +1919,7 @@ function QuickPoolDetails({
       marginTop: 2,
       maxWidth: 90
     }
-  }, tr(job.when, lang)))), job.type === 'condo' && /*#__PURE__*/React.createElement("div", {
+  }, tr(job.when, lang)))), job.type === 'condo' && job.extras && /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
     style: {
       padding: '12px 14px',
@@ -1890,22 +1939,22 @@ function QuickPoolDetails({
       gridTemplateColumns: '1fr 1fr',
       gap: 10
     }
-  }, /*#__PURE__*/React.createElement(DetailPill, {
+  }, job.extras.gate_code && /*#__PURE__*/React.createElement(DetailPill, {
     icon: Icon.key(14, 'var(--pg-blue-700)'),
     label: t.gateCode,
-    value: locked ? '••••' : '8472*'
+    value: locked ? '••••' : job.extras.gate_code
   }), /*#__PURE__*/React.createElement(DetailPill, {
     icon: Icon.user(14, 'var(--pg-blue-700)'),
     label: t.doorman,
-    value: job.doorman ? t.yes : t.no
+    value: job.extras.doorman ? t.yes : t.no
   }), /*#__PURE__*/React.createElement(DetailPill, {
     icon: Icon.dog(14, 'var(--pg-blue-700)'),
     label: t.dogLbl,
-    value: job.dog ? t.yes : t.no
+    value: job.extras.dog ? t.yes : t.no
   }), /*#__PURE__*/React.createElement(DetailPill, {
     icon: Icon.pool(14, 'var(--pg-blue-700)'),
     label: t.saltwater,
-    value: t.yes
+    value: job.extras.saltwater ? t.yes : t.no
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14
@@ -2156,7 +2205,119 @@ function QuickPoolDetails({
       fontSize: 12,
       fontWeight: 700
     }
-  }, lang === 'pt' ? 'Aceitar' : lang === 'es' ? 'Aceptar' : 'Accept')))), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Aceitar' : lang === 'es' ? 'Aceptar' : 'Accept')))), showRating && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 9999,
+      background: 'rgba(0,0,0,0.55)',
+      display: 'flex',
+      alignItems: 'flex-end'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '100%',
+      maxWidth: 520,
+      margin: '0 auto',
+      background: 'var(--pg-white)',
+      borderRadius: '20px 20px 0 0',
+      padding: '20px 18px 32px',
+      boxShadow: '0 -8px 32px rgba(0,0,0,0.18)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 4,
+      borderRadius: 4,
+      background: 'var(--pg-ink-200)',
+      margin: '0 auto 18px'
+    }
+  }), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      margin: '0 0 4px',
+      fontSize: 17,
+      fontWeight: 700,
+      textAlign: 'center'
+    }
+  }, lang === 'pt' ? 'Como foi o serviço?' : 'How was the service?'), acceptedApp && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      fontSize: 13,
+      color: 'var(--pg-ink-500)',
+      marginBottom: 16
+    }
+  }, acceptedApp.applicant_name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'center',
+      gap: 10,
+      marginBottom: 14
+    }
+  }, [1, 2, 3, 4, 5].map(s => /*#__PURE__*/React.createElement("button", {
+    key: s,
+    onClick: () => setRatingStars(s),
+    style: {
+      fontSize: 32,
+      background: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      opacity: s <= ratingStars ? 1 : 0.25,
+      transform: s <= ratingStars ? 'scale(1.1)' : 'scale(1)',
+      transition: 'all 0.15s'
+    }
+  }, "\u2605"))), /*#__PURE__*/React.createElement("textarea", {
+    value: ratingComment,
+    onChange: e => setRatingComment(e.target.value),
+    placeholder: lang === 'pt' ? 'Comentário opcional...' : 'Optional comment...',
+    style: {
+      width: '100%',
+      minHeight: 64,
+      borderRadius: 10,
+      border: '1px solid var(--pg-ink-200)',
+      padding: '10px 12px',
+      fontSize: 14,
+      fontFamily: 'inherit',
+      resize: 'none',
+      outline: 'none',
+      boxSizing: 'border-box',
+      marginBottom: 12
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setShowRating(false);
+      onComplete && onComplete(job.id);
+    },
+    style: {
+      flex: 1,
+      height: 46,
+      borderRadius: 12,
+      border: '1px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-50)',
+      color: 'var(--pg-ink-600)',
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: 'pointer'
+    }
+  }, lang === 'pt' ? 'Pular' : 'Skip'), /*#__PURE__*/React.createElement("button", {
+    onClick: submitRatingAndFinalize,
+    disabled: ratingStars === 0 || ratingSubmitting,
+    style: {
+      flex: 2,
+      height: 46,
+      borderRadius: 12,
+      border: 'none',
+      cursor: ratingStars === 0 ? 'default' : 'pointer',
+      background: ratingStars > 0 ? 'linear-gradient(135deg,#16A34A,#22C55E)' : 'var(--pg-ink-200)',
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: 700
+    }
+  }, ratingSubmitting ? '...' : lang === 'pt' ? 'Avaliar e finalizar' : 'Rate & complete')))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'sticky',
       bottom: 0,
@@ -2177,9 +2338,7 @@ function QuickPoolDetails({
       gap: 8
     }
   }, job.status === 'filled' ? /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      onComplete && onComplete(job.id);
-    },
+    onClick: () => setShowRating(true),
     style: {
       height: 50,
       borderRadius: 14,
@@ -2417,7 +2576,22 @@ function QuickPoolDetails({
       opacity: locked ? 0.5 : 1,
       borderRadius: 999
     }
-  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.contact), job.status === 'filled' ? /*#__PURE__*/React.createElement("div", {
+  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.contact), job.status === 'filled' ? myApp && (myApp.status === 'accepted' || myApp.status === 'rejected') ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 2,
+      height: 46,
+      borderRadius: 999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      background: myApp.status === 'accepted' ? '#F0FDF4' : '#FEF2F2',
+      border: myApp.status === 'accepted' ? '1px solid #86EFAC' : '1px solid #FECACA',
+      color: myApp.status === 'accepted' ? '#15803D' : '#DC2626',
+      fontSize: 14,
+      fontWeight: 700
+    }
+  }, myApp.status === 'accepted' ? lang === 'pt' ? '✓ Aceito' : '✓ Accepted' : lang === 'pt' ? 'Não selecionado' : 'Not selected') : /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 2,
       height: 46,
@@ -2432,9 +2606,22 @@ function QuickPoolDetails({
       fontSize: 14,
       fontWeight: 700
     }
-  }, "\u23F3 ", lang === 'pt' ? 'Em curso' : lang === 'es' ? 'En curso' : 'In progress') : job._live ? /*#__PURE__*/React.createElement("button", {
+  }, "\u23F3 ", lang === 'pt' ? 'Em curso' : lang === 'es' ? 'En curso' : 'In progress') : job._live ? myApp && myApp.status === 'pending' ? /*#__PURE__*/React.createElement("button", {
+    onClick: withdrawApp,
+    style: {
+      flex: 2,
+      height: 46,
+      borderRadius: 999,
+      border: '1px solid #FECACA',
+      background: '#FEF2F2',
+      color: '#DC2626',
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: 'pointer'
+    }
+  }, lang === 'pt' ? 'Retirar candidatura' : 'Withdraw') : /*#__PURE__*/React.createElement("button", {
     onClick: locked ? onUnlock : applied ? undefined : () => setShowConsent(v => !v),
-    disabled: applied,
+    disabled: applied && !locked,
     className: `pg-btn ${applied ? 'pg-btn-ghost' : 'pg-btn-primary'}`,
     style: {
       flex: 2,
@@ -2495,9 +2682,26 @@ function PostJobSheet({
   const DAY_LABELS_PT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
   const DAY_LABELS_EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const dayLabels = lang === 'pt' ? DAY_LABELS_PT : DAY_LABELS_EN;
+  const TIME_SLOTS = [{
+    key: 'morning',
+    label: lang === 'pt' ? 'Manhã' : 'Morning'
+  }, {
+    key: 'afternoon',
+    label: lang === 'pt' ? 'Tarde' : 'Afternoon'
+  }, {
+    key: 'evening',
+    label: lang === 'pt' ? 'Noite' : 'Evening'
+  }];
   const [title, setTitle] = React.useState('');
   const [city, setCity] = React.useState('');
   const [day, setDay] = React.useState('');
+  const [timeSlot, setTimeSlot] = React.useState('');
+  const [pools, setPools] = React.useState(1);
+  const [poolType, setPoolType] = React.useState('residential');
+  const [gateCode, setGateCode] = React.useState('');
+  const [hasDoorman, setHasDoorman] = React.useState(false);
+  const [hasDog, setHasDog] = React.useState(false);
+  const [saltwater, setSaltwater] = React.useState(false);
   const [desc, setDesc] = React.useState('');
   const [price, setPrice] = React.useState('');
   const [neg, setNeg] = React.useState(false);
@@ -2507,7 +2711,7 @@ function PostJobSheet({
   const [saving, setSaving] = React.useState(false);
   const [err, setErr] = React.useState('');
   const allCities = React.useMemo(() => {
-    return Object.values(FL_COUNTIES).flat().filter((c, i, a) => a.indexOf(c) === i).sort();
+    return [].concat.apply([], Object.values(window.FL_COUNTIES || {})).filter((c, i, a) => a.indexOf(c) === i).sort();
   }, []);
   const [cityQ, setCityQ] = React.useState('');
   const filteredCities = cityQ ? allCities.filter(c => c.toLowerCase().includes(cityQ.toLowerCase())) : allCities;
@@ -2515,6 +2719,13 @@ function PostJobSheet({
     setTitle('');
     setCity('');
     setDay('');
+    setTimeSlot('');
+    setPools(1);
+    setPoolType('residential');
+    setGateCode('');
+    setHasDoorman(false);
+    setHasDog(false);
+    setSaltwater(false);
     setDesc('');
     setPrice('');
     setNeg(false);
@@ -2530,6 +2741,7 @@ function PostJobSheet({
     if (!day) return setErr(lang === 'pt' ? 'Escolha o dia' : 'Choose day');
     if (!window.sb || !user?.uid) return setErr('Login required');
     setSaving(true);
+    const timeLabel = timeSlot ? ' · ' + (TIME_SLOTS.find(t => t.key === timeSlot) || {}).label || '' : '';
     const job = {
       poster_id: user.uid,
       poster_name: user.name || user.email || 'Pool Guy',
@@ -2537,13 +2749,20 @@ function PostJobSheet({
       pool_address: address.trim() || null,
       city,
       day_of_week: day,
-      when_label: dayLabels[DAY_KEYS.indexOf(day)],
-      pools_count: 1,
+      when_label: dayLabels[DAY_KEYS.indexOf(day)] + timeLabel,
+      time_slot: timeSlot || null,
+      pools_count: pools,
       price_per_pool: neg ? null : parseFloat(price) || null,
       price_negotiable: neg,
       title: title.trim(),
       description: desc.trim() || null,
-      pool_type: 'residential',
+      pool_type: poolType,
+      extras: poolType === 'condo' ? {
+        gate_code: gateCode.trim() || null,
+        doorman: hasDoorman,
+        dog: hasDog,
+        saltwater
+      } : null,
       status: 'open'
     };
     const {
@@ -2776,6 +2995,194 @@ function PostJobSheet({
       }
     }, dayLabels[i].slice(0, 3));
   }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: inkSub,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      display: 'block',
+      marginBottom: 6
+    }
+  }, lang === 'pt' ? 'Horário' : 'Time'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3,1fr)',
+      gap: 6
+    }
+  }, TIME_SLOTS.map(ts => {
+    const on = ts.key === timeSlot;
+    return /*#__PURE__*/React.createElement("button", {
+      key: ts.key,
+      onClick: () => setTimeSlot(on ? '' : ts.key),
+      style: {
+        padding: '9px 4px',
+        borderRadius: 9,
+        border: '1px solid ' + (on ? 'var(--pg-blue-500)' : inkBdr),
+        background: on ? 'var(--pg-blue-500)' : inkBg,
+        color: on ? '#fff' : inkText,
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: 'pointer',
+        fontFamily: 'inherit'
+      }
+    }, ts.label);
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: inkSub,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      display: 'block',
+      marginBottom: 6
+    }
+  }, lang === 'pt' ? 'Tipo' : 'Type'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6
+    }
+  }, ['residential', 'condo'].map(pt => {
+    const on = poolType === pt;
+    const lbl = pt === 'residential' ? lang === 'pt' ? 'Residencial' : 'Residential' : lang === 'pt' ? 'Condomínio' : 'Condo';
+    return /*#__PURE__*/React.createElement("button", {
+      key: pt,
+      onClick: () => setPoolType(pt),
+      style: {
+        flex: 1,
+        padding: '9px 4px',
+        borderRadius: 9,
+        border: '1px solid ' + (on ? 'var(--pg-blue-500)' : inkBdr),
+        background: on ? 'var(--pg-blue-500)' : inkBg,
+        color: on ? '#fff' : inkText,
+        fontSize: 11,
+        fontWeight: 700,
+        cursor: 'pointer',
+        fontFamily: 'inherit'
+      }
+    }, lbl);
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: inkSub,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      display: 'block',
+      marginBottom: 6
+    }
+  }, lang === 'pt' ? 'Nº piscinas' : '# Pools'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 0,
+      border: `1.5px solid ${inkBdr}`,
+      borderRadius: 10,
+      overflow: 'hidden',
+      height: 44
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPools(p => Math.max(1, p - 1)),
+    style: {
+      width: 44,
+      height: '100%',
+      border: 'none',
+      background: inkBg,
+      color: inkText,
+      fontSize: 20,
+      cursor: 'pointer',
+      flexShrink: 0
+    }
+  }, "\u2212"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      textAlign: 'center',
+      fontSize: 16,
+      fontWeight: 700,
+      color: inkText
+    }
+  }, pools), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPools(p => Math.min(20, p + 1)),
+    style: {
+      width: 44,
+      height: '100%',
+      border: 'none',
+      background: inkBg,
+      color: inkText,
+      fontSize: 20,
+      cursor: 'pointer',
+      flexShrink: 0
+    }
+  }, "+")))), poolType === 'condo' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 12,
+      border: `1px solid ${inkBdr}`,
+      padding: '12px 14px',
+      background: inkBg,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: inkSub,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Detalhes do condomínio' : 'Condo details'), /*#__PURE__*/React.createElement("input", {
+    value: gateCode,
+    onChange: e => setGateCode(e.target.value),
+    placeholder: lang === 'pt' ? 'Código do portão (opcional)' : 'Gate code (optional)',
+    style: {
+      ...inp,
+      height: 40,
+      fontSize: 13
+    }
+  }), [{
+    key: 'doorman',
+    state: hasDoorman,
+    set: setHasDoorman,
+    label: lang === 'pt' ? 'Tem porteiro' : 'Has doorman'
+  }, {
+    key: 'dog',
+    state: hasDog,
+    set: setHasDog,
+    label: lang === 'pt' ? 'Tem cachorro' : 'Has dog'
+  }, {
+    key: 'salt',
+    state: saltwater,
+    set: setSaltwater,
+    label: lang === 'pt' ? 'Água salgada' : 'Saltwater'
+  }].map(item => /*#__PURE__*/React.createElement("label", {
+    key: item.key,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      cursor: 'pointer',
+      fontSize: 13,
+      color: inkText,
+      fontWeight: 500
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: item.state,
+    onChange: e => item.set(e.target.checked),
+    style: {
+      width: 16,
+      height: 16,
+      accentColor: 'var(--pg-blue-500)'
+    }
+  }), item.label))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     style: {
       fontSize: 12,
       fontWeight: 700,

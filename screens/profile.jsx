@@ -392,6 +392,9 @@ function ProfileScreen({ ctx }) {
         {/* Purchases history */}
         <PurchasesSection user={user} lang={lang}/>
 
+        {/* Quick pool applications history */}
+        <QuickPoolAppHistory user={user} lang={lang}/>
+
         {/* Regions */}
         <Section title={t.workRegions} action={t.edit} onAction={openRegionEditor}>
           <div className="pg-card" style={{padding:'12px 14px'}}>
@@ -1160,6 +1163,100 @@ function PurchasesSection({ user, lang }) {
       </div>
       <div className="pg-card" style={{padding: items && items.length > 0 ? 0 : '16px 14px', overflow:'hidden'}}>
         {_historyList({ items, expanded, setExpanded, emptyMsg, fmtDate, fmtType, badge:'BOUGHT', lang })}
+      </div>
+    </section>
+  );
+}
+
+// ── Quick Pool Application History ───────────────────────────────
+function QuickPoolAppHistory({ user, lang }) {
+  const [apps,     setApps]     = React.useState(null);
+  const [expanded, setExpanded] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb) { setApps([]); return; }
+    window.sb.from('quick_pool_applications')
+      .select('id, created_at, status, job_id, job_company, job_role, job_loc, job_author_id, applicant_name, note')
+      .eq('applicant_id', user.uid)
+      .order('created_at', { ascending: false })
+      .limit(30)
+      .then(({ data }) => setApps(data || []));
+  }, [user?.uid]);
+
+  const title    = lang==='pt' ? 'PISCINAS RÁPIDAS' : lang==='es' ? 'PISCINAS RÁPIDAS' : 'EXPRESS POOLS';
+  const emptyMsg = lang==='pt' ? 'Nenhuma candidatura ainda' : lang==='es' ? 'Sin candidaturas aún' : 'No applications yet';
+
+  const fmtDate = (iso) => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString(lang==='pt'?'pt-BR':lang==='es'?'es-MX':'en-US', { month:'short', day:'numeric' });
+  };
+
+  const statusBadge = (status) => {
+    if (status==='accepted')  return { label: lang==='pt'?'Aceito':'Accepted',  bg:'#DCFCE7', color:'#15803D' };
+    if (status==='rejected')  return { label: lang==='pt'?'Recusado':'Rejected', bg:'#FEE2E2', color:'#DC2626' };
+    if (status==='withdrawn') return { label: lang==='pt'?'Retirado':'Withdrawn', bg:'#F3F4F6', color:'#6B7280' };
+    return { label: lang==='pt'?'Pendente':'Pending', bg:'#FEF3C7', color:'#92400E' };
+  };
+
+  const visible = apps && (expanded ? apps : apps.slice(0, 3));
+
+  if (!apps || apps.length === 0) return null;
+
+  return (
+    <section>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
+        <h3 style={{margin:0, fontWeight:700, color:'var(--pg-ink-700)', letterSpacing:'-0.01em', textTransform:'uppercase', fontSize:11}}>
+          {title}
+        </h3>
+        {apps.length > 0 && (
+          <span style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-500)'}}>{apps.length}</span>
+        )}
+      </div>
+      <div className="pg-card" style={{padding:0, overflow:'hidden'}}>
+        {apps.length === 0 ? (
+          <div style={{padding:'16px 14px', fontSize:13, color:'var(--pg-ink-400)'}}>{emptyMsg}</div>
+        ) : (
+          <>
+            {visible.map((a, idx) => {
+              const badge = statusBadge(a.status);
+              return (
+                <div key={a.id} style={{
+                  display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
+                  borderBottom: idx < visible.length-1 ? '0.5px solid var(--pg-ink-100)' : 'none',
+                }}>
+                  <div style={{
+                    width:40, height:40, borderRadius:10, background:'var(--pg-blue-100)',
+                    display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:18,
+                  }}>🏊</div>
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                      {a.job_role || a.job_company || (lang==='pt'?'Vaga de piscina':'Pool job')}
+                    </div>
+                    <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>
+                      {a.job_loc || ''}{a.job_loc ? ' · ' : ''}{fmtDate(a.created_at)}
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:8, flexShrink:0,
+                    background:badge.bg, color:badge.color, letterSpacing:'0.03em',
+                  }}>
+                    {badge.label.toUpperCase()}
+                  </span>
+                </div>
+              );
+            })}
+            {apps.length > 3 && (
+              <button onClick={()=>setExpanded(v=>!v)} style={{
+                width:'100%', padding:'10px 14px', border:'none', borderTop:'0.5px solid var(--pg-ink-100)',
+                background:'transparent', cursor:'pointer', fontSize:13, fontWeight:600, color:'var(--pg-blue-500)', textAlign:'center',
+              }}>
+                {expanded
+                  ? (lang==='pt'?'Ver menos':'Show less')
+                  : (lang==='pt'?`Ver todas (${apps.length})`:`View all (${apps.length})`)}
+              </button>
+            )}
+          </>
+        )}
       </div>
     </section>
   );

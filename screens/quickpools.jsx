@@ -64,10 +64,20 @@ function QuickPoolsScreen({ ctx }) {
     setJobsLoading(true);
     try {
       const { data } = await window.sb.from('quick_pool_jobs')
-        .select('*').eq('status','open').order('created_at',{ ascending:false }).limit(50);
+        .select('*').in('status',['open','filled']).order('created_at',{ ascending:false }).limit(50);
       if (data && data.length > 0) {
-        // Normalize live data to match card format
-        setJobs(data.map(j => ({
+        // Expire jobs older than 24h
+        const now = Date.now();
+        const expiredIds = [];
+        const active = data.filter(j => {
+          if (j.status === 'open' && (now - new Date(j.created_at).getTime()) > 24*60*60*1000) {
+            expiredIds.push(j.id); return false;
+          }
+          return true;
+        });
+        if (expiredIds.length > 0)
+          window.sb.from('quick_pool_jobs').update({ status:'expired' }).in('id', expiredIds).then(()=>{});
+        setJobs(active.map(j => ({
           id: j.id, _live: true,
           title: { en: j.title || `Pool job in ${j.city}`, pt: j.title || `Vaga em ${j.city}`, es: j.title || `Vaga en ${j.city}` },
           loc: j.city, dist: { en:'', pt:'', es:'' },
@@ -81,6 +91,8 @@ function QuickPoolsScreen({ ctx }) {
           when: { en: j.when_label||'', pt: j.when_label||'', es: j.when_label||'' },
           pools: j.pools_count || 1,
           day_of_week: j.day_of_week,
+          time_slot: j.time_slot || '',
+          extras: j.extras || null,
           body: { en: j.description||'', pt: j.description||'', es: j.description||'' },
           created_at: j.created_at,
         })));
@@ -861,9 +873,13 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
   const [applicants,     setApplicants]     = React.useState([]);
   const [loadingApps,    setLoadingApps]    = React.useState(false);
   const [showApplicants, setShowApplicants] = React.useState(false);
-  const [myApp,          setMyApp]          = React.useState(null); // own application record
+  const [myApp,          setMyApp]          = React.useState(null);
   const [showConsent,    setShowConsent]    = React.useState(false);
   const [sharePhone,     setSharePhone]     = React.useState(false);
+  const [showRating,     setShowRating]     = React.useState(false);
+  const [ratingStars,    setRatingStars]    = React.useState(0);
+  const [ratingComment,  setRatingComment]  = React.useState('');
+  const [ratingSubmitting, setRatingSubmitting] = React.useState(false);
 
   // Load all applicants (owner) or own application (others)
   React.useEffect(() => {
@@ -875,7 +891,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         .then(({ data }) => { setApplicants(data || []); setLoadingApps(false); });
     } else if (user?.uid) {
       window.sb.from('quick_pool_applications')
-        .select('status,applicant_phone').eq('job_id', job.id).eq('applicant_id', user.uid)
+        .select('id,status,applicant_phone').eq('job_id', job.id).eq('applicant_id', user.uid)
         .limit(1)
         .then(({ data }) => { setMyApp((data && data[0]) || null); });
     }
@@ -886,6 +902,15 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     await window.sb.from('quick_pool_applications').update({ status: 'accepted' }).eq('id', appId);
     await window.sb.from('quick_pool_applications').update({ status: 'rejected' }).neq('id', appId).eq('job_id', job.id);
     await window.sb.from('quick_pool_jobs').update({ status: 'filled' }).eq('id', job.id);
+    // Notify rejected applicants
+    applicants.forEach(a => {
+      if (a.id === appId) return;
+      window.sendPush && window.sendPush(a.applicant_id,
+        lang==='pt' ? '❌ Candidatura não selecionada' : '❌ Application not selected',
+        lang==='pt' ? `Outra pessoa foi escolhida para "${tr(job.title,lang)}". Continue tentando!` : `Someone else was chosen for "${tr(job.title,lang)}". Keep trying!`,
+        '/#express-pools'
+      );
+    });
     setApplicants(prev => prev.map(a => ({ ...a, status: a.id === appId ? 'accepted' : 'rejected' })));
     onStatusChange && onStatusChange('filled');
     // Notify accepted applicant
@@ -894,6 +919,33 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
       lang==='pt' ? `Sua candidatura para "${tr(job.title,lang)}" foi aceita.` : `Your application for "${tr(job.title,lang)}" was accepted.`,
       '/#express-pools'
     );
+  };
+
+  const withdrawApp = async () => {
+    if (!window.sb || !myApp) return;
+    await window.sb.from('quick_pool_applications').update({ status: 'withdrawn' }).eq('id', myApp.id);
+    setMyApp(null);
+  };
+
+  const acceptedApp = applicants.find(a => a.status === 'accepted');
+
+  const submitRatingAndFinalize = async () => {
+    setRatingSubmitting(true);
+    if (ratingStars > 0 && acceptedApp && window.sb) {
+      await window.sb.from('ratings').insert({
+        listing_id: job.id,
+        listing_name: tr(job.title, lang),
+        from_id: user.uid,
+        to_id: acceptedApp.applicant_id,
+        from_name: user.name || user.email || 'Pool Owner',
+        stars: ratingStars,
+        comment: ratingComment.trim() || null,
+        pending: false,
+      }).then(()=>{});
+    }
+    setRatingSubmitting(false);
+    setShowRating(false);
+    onComplete && onComplete(job.id);
   };
 
   return (
@@ -960,14 +1012,17 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         </div>
 
         {/* Condo extras (only if condo) */}
-        {job.type === 'condo' && (
+        {job.type === 'condo' && job.extras && (
           <div className="pg-card" style={{padding:'12px 14px', marginTop:14}}>
             <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, letterSpacing:'0.05em', marginBottom:8}}>{t.accessDetails}</div>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
-              <DetailPill icon={Icon.key(14, 'var(--pg-blue-700)')} label={t.gateCode} value={locked ? '••••' : '8472*'}/>
-              <DetailPill icon={Icon.user(14, 'var(--pg-blue-700)')} label={t.doorman} value={job.doorman ? t.yes : t.no}/>
-              <DetailPill icon={Icon.dog(14, 'var(--pg-blue-700)')} label={t.dogLbl} value={job.dog ? t.yes : t.no}/>
-              <DetailPill icon={Icon.pool(14, 'var(--pg-blue-700)')} label={t.saltwater} value={t.yes}/>
+              {job.extras.gate_code && (
+                <DetailPill icon={Icon.key(14, 'var(--pg-blue-700)')} label={t.gateCode}
+                  value={locked ? '••••' : job.extras.gate_code}/>
+              )}
+              <DetailPill icon={Icon.user(14, 'var(--pg-blue-700)')} label={t.doorman} value={job.extras.doorman ? t.yes : t.no}/>
+              <DetailPill icon={Icon.dog(14, 'var(--pg-blue-700)')} label={t.dogLbl} value={job.extras.dog ? t.yes : t.no}/>
+              <DetailPill icon={Icon.pool(14, 'var(--pg-blue-700)')} label={t.saltwater} value={job.extras.saltwater ? t.yes : t.no}/>
             </div>
           </div>
         )}
@@ -1086,6 +1141,57 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         </div>
       )}
 
+      {/* Rating modal — shown to owner when marking complete */}
+      {showRating && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:9999,
+          background:'rgba(0,0,0,0.55)', display:'flex', alignItems:'flex-end',
+        }}>
+          <div style={{
+            width:'100%', maxWidth:520, margin:'0 auto',
+            background:'var(--pg-white)', borderRadius:'20px 20px 0 0',
+            padding:'20px 18px 32px', boxShadow:'0 -8px 32px rgba(0,0,0,0.18)',
+          }}>
+            <div style={{width:40, height:4, borderRadius:4, background:'var(--pg-ink-200)', margin:'0 auto 18px'}}/>
+            <h3 style={{margin:'0 0 4px', fontSize:17, fontWeight:700, textAlign:'center'}}>
+              {lang==='pt'?'Como foi o serviço?':'How was the service?'}
+            </h3>
+            {acceptedApp && (
+              <div style={{textAlign:'center', fontSize:13, color:'var(--pg-ink-500)', marginBottom:16}}>
+                {acceptedApp.applicant_name}
+              </div>
+            )}
+            <div style={{display:'flex', justifyContent:'center', gap:10, marginBottom:14}}>
+              {[1,2,3,4,5].map(s=>(
+                <button key={s} onClick={()=>setRatingStars(s)} style={{
+                  fontSize:32, background:'transparent', border:'none', cursor:'pointer',
+                  opacity: s<=ratingStars ? 1 : 0.25, transform: s<=ratingStars ? 'scale(1.1)' : 'scale(1)',
+                  transition:'all 0.15s',
+                }}>★</button>
+              ))}
+            </div>
+            <textarea value={ratingComment} onChange={e=>setRatingComment(e.target.value)}
+              placeholder={lang==='pt'?'Comentário opcional...':'Optional comment...'}
+              style={{width:'100%',minHeight:64,borderRadius:10,border:'1px solid var(--pg-ink-200)',padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'none',outline:'none',boxSizing:'border-box',marginBottom:12}}/>
+            <div style={{display:'flex', gap:8}}>
+              <button onClick={()=>{ setShowRating(false); onComplete && onComplete(job.id); }} style={{
+                flex:1, height:46, borderRadius:12, border:'1px solid var(--pg-ink-200)',
+                background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', fontSize:13, fontWeight:600, cursor:'pointer',
+              }}>
+                {lang==='pt'?'Pular':'Skip'}
+              </button>
+              <button onClick={submitRatingAndFinalize} disabled={ratingStars===0||ratingSubmitting} style={{
+                flex:2, height:46, borderRadius:12, border:'none', cursor:ratingStars===0?'default':'pointer',
+                background: ratingStars>0 ? 'linear-gradient(135deg,#16A34A,#22C55E)' : 'var(--pg-ink-200)',
+                color:'#fff', fontSize:14, fontWeight:700,
+              }}>
+                {ratingSubmitting ? '...' : (lang==='pt'?'Avaliar e finalizar':'Rate & complete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{
         position:'sticky', bottom:0, padding:'12px 18px 16px',
         background:'linear-gradient(180deg, transparent, var(--pg-white) 25%)',
@@ -1095,7 +1201,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           /* Owner actions */
           <div style={{display:'flex', flexDirection:'column', gap:8}}>
             {job.status === 'filled' ? (
-              <button onClick={()=>{ onComplete && onComplete(job.id); }} style={{
+              <button onClick={()=>setShowRating(true)} style={{
                 height:50, borderRadius:14, border:'none', cursor:'pointer',
                 background:'linear-gradient(135deg,#16A34A,#22C55E)',
                 color:'#fff', fontSize:15, fontWeight:700,
@@ -1210,23 +1316,46 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                 {Icon.msg(16, 'var(--pg-blue-700)')} {t.contact}
               </button>
               {job.status === 'filled' ? (
-                <div style={{
-                  flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                  background:'#FEF3C7', border:'1px solid #FCD34D', color:'#92400E', fontSize:14, fontWeight:700,
-                }}>
-                  ⏳ {lang==='pt'?'Em curso':lang==='es'?'En curso':'In progress'}
-                </div>
+                myApp && (myApp.status === 'accepted' || myApp.status === 'rejected') ? (
+                  <div style={{
+                    flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                    background: myApp.status==='accepted' ? '#F0FDF4' : '#FEF2F2',
+                    border: myApp.status==='accepted' ? '1px solid #86EFAC' : '1px solid #FECACA',
+                    color: myApp.status==='accepted' ? '#15803D' : '#DC2626',
+                    fontSize:14, fontWeight:700,
+                  }}>
+                    {myApp.status==='accepted'
+                      ? (lang==='pt'?'✓ Aceito':'✓ Accepted')
+                      : (lang==='pt'?'Não selecionado':'Not selected')}
+                  </div>
+                ) : (
+                  <div style={{
+                    flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                    background:'#FEF3C7', border:'1px solid #FCD34D', color:'#92400E', fontSize:14, fontWeight:700,
+                  }}>
+                    ⏳ {lang==='pt'?'Em curso':lang==='es'?'En curso':'In progress'}
+                  </div>
+                )
               ) : job._live ? (
-                <button
-                  onClick={locked ? onUnlock : (applied ? undefined : ()=>setShowConsent(v=>!v))}
-                  disabled={applied}
-                  className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`}
-                  style={{flex:2, borderRadius:999, opacity: applied?0.7:1}}
-                >
-                  {locked ? <>{Icon.lock(14,'#fff')} {t.unlockApply}</> :
-                   applied ? <>{Icon.check(15,'var(--pg-blue-700)')} {lang==='pt'?'Candidatado':t.applied}</> :
-                   <>{lang==='pt'?'Candidatar':t.apply}</>}
-                </button>
+                myApp && myApp.status === 'pending' ? (
+                  <button onClick={withdrawApp} style={{
+                    flex:2, height:46, borderRadius:999, border:'1px solid #FECACA',
+                    background:'#FEF2F2', color:'#DC2626', fontSize:13, fontWeight:700, cursor:'pointer',
+                  }}>
+                    {lang==='pt'?'Retirar candidatura':'Withdraw'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={locked ? onUnlock : (applied ? undefined : ()=>setShowConsent(v=>!v))}
+                    disabled={applied && !locked}
+                    className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`}
+                    style={{flex:2, borderRadius:999, opacity: applied?0.7:1}}
+                  >
+                    {locked ? <>{Icon.lock(14,'#fff')} {t.unlockApply}</> :
+                     applied ? <>{Icon.check(15,'var(--pg-blue-700)')} {lang==='pt'?'Candidatado':t.applied}</> :
+                     <>{lang==='pt'?'Candidatar':t.apply}</>}
+                  </button>
+                )
               ) : (
                 <button onClick={locked ? onUnlock : ()=>setShowConsent(v=>!v)} className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`} style={{flex:2, borderRadius:999}}>
                   {locked ? <>{Icon.lock(14, '#fff')} {t.unlockApply}</> :
@@ -1259,26 +1388,43 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
   const DAY_LABELS_PT = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
   const DAY_LABELS_EN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   const dayLabels = lang==='pt' ? DAY_LABELS_PT : DAY_LABELS_EN;
+  const TIME_SLOTS = [
+    { key:'morning',   label: lang==='pt'?'Manhã':'Morning'   },
+    { key:'afternoon', label: lang==='pt'?'Tarde':'Afternoon' },
+    { key:'evening',   label: lang==='pt'?'Noite':'Evening'   },
+  ];
 
-  const [title,     setTitle]     = React.useState('');
-  const [city,      setCity]      = React.useState('');
-  const [day,       setDay]       = React.useState('');
-  const [desc,      setDesc]      = React.useState('');
-  const [price,     setPrice]     = React.useState('');
-  const [neg,       setNeg]       = React.useState(false);
-  const [showPhone,   setShowPhone]   = React.useState(false);
-  const [phone,       setPhone]       = React.useState(user?.phone || '');
-  const [address,     setAddress]     = React.useState('');
-  const [saving,    setSaving]    = React.useState(false);
-  const [err,       setErr]       = React.useState('');
+  const [title,      setTitle]      = React.useState('');
+  const [city,       setCity]       = React.useState('');
+  const [day,        setDay]        = React.useState('');
+  const [timeSlot,   setTimeSlot]   = React.useState('');
+  const [pools,      setPools]      = React.useState(1);
+  const [poolType,   setPoolType]   = React.useState('residential');
+  const [gateCode,   setGateCode]   = React.useState('');
+  const [hasDoorman, setHasDoorman] = React.useState(false);
+  const [hasDog,     setHasDog]     = React.useState(false);
+  const [saltwater,  setSaltwater]  = React.useState(false);
+  const [desc,       setDesc]       = React.useState('');
+  const [price,      setPrice]      = React.useState('');
+  const [neg,        setNeg]        = React.useState(false);
+  const [showPhone,  setShowPhone]  = React.useState(false);
+  const [phone,      setPhone]      = React.useState(user?.phone || '');
+  const [address,    setAddress]    = React.useState('');
+  const [saving,     setSaving]     = React.useState(false);
+  const [err,        setErr]        = React.useState('');
 
   const allCities = React.useMemo(() => {
-    return Object.values(FL_COUNTIES).flat().filter((c,i,a)=>a.indexOf(c)===i).sort();
+    return [].concat.apply([], Object.values(window.FL_COUNTIES||{})).filter((c,i,a)=>a.indexOf(c)===i).sort();
   }, []);
   const [cityQ, setCityQ] = React.useState('');
   const filteredCities = cityQ ? allCities.filter(c=>c.toLowerCase().includes(cityQ.toLowerCase())) : allCities;
 
-  const reset = () => { setTitle(''); setCity(''); setDay(''); setDesc(''); setPrice(''); setNeg(false); setShowPhone(false); setPhone(user?.phone||''); setAddress(''); setErr(''); setCityQ(''); };
+  const reset = () => {
+    setTitle(''); setCity(''); setDay(''); setTimeSlot(''); setPools(1); setPoolType('residential');
+    setGateCode(''); setHasDoorman(false); setHasDog(false); setSaltwater(false);
+    setDesc(''); setPrice(''); setNeg(false); setShowPhone(false); setPhone(user?.phone||'');
+    setAddress(''); setErr(''); setCityQ('');
+  };
 
   const submit = async () => {
     if (!title.trim()) return setErr(lang==='pt'?'Adicione um título':'Add a title');
@@ -1286,12 +1432,17 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
     if (!day)  return setErr(lang==='pt'?'Escolha o dia':'Choose day');
     if (!window.sb || !user?.uid) return setErr('Login required');
     setSaving(true);
+    const timeLabel = timeSlot ? (' · ' + (TIME_SLOTS.find(t=>t.key===timeSlot)||{}).label||'') : '';
     const job = {
       poster_id: user.uid, poster_name: user.name || user.email || 'Pool Guy',
       poster_phone: showPhone ? (phone||null) : null, pool_address: address.trim()||null, city, day_of_week: day,
-      when_label: dayLabels[DAY_KEYS.indexOf(day)],
-      pools_count: 1, price_per_pool: neg ? null : (parseFloat(price)||null),
-      price_negotiable: neg, title: title.trim(), description: desc.trim()||null, pool_type:'residential', status:'open',
+      when_label: dayLabels[DAY_KEYS.indexOf(day)] + timeLabel,
+      time_slot: timeSlot || null,
+      pools_count: pools, price_per_pool: neg ? null : (parseFloat(price)||null),
+      price_negotiable: neg, title: title.trim(), description: desc.trim()||null,
+      pool_type: poolType,
+      extras: poolType==='condo' ? { gate_code: gateCode.trim()||null, doorman: hasDoorman, dog: hasDog, saltwater } : null,
+      status:'open',
     };
     const { data, error } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
     if (error) { setSaving(false); return setErr(error.message); }
@@ -1390,6 +1541,80 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
               })}
             </div>
           </div>
+
+          {/* Time slot */}
+          <div>
+            <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+              {lang==='pt'?'Horário':'Time'}
+            </label>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
+              {TIME_SLOTS.map(ts=>{
+                const on = ts.key===timeSlot;
+                return (
+                  <button key={ts.key} onClick={()=>setTimeSlot(on?'':ts.key)} style={{
+                    padding:'9px 4px',borderRadius:9,border:'1px solid '+(on?'var(--pg-blue-500)':inkBdr),
+                    background:on?'var(--pg-blue-500)':inkBg,
+                    color:on?'#fff':inkText,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
+                  }}>{ts.label}</button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Pool type + count */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+                {lang==='pt'?'Tipo':'Type'}
+              </label>
+              <div style={{display:'flex',gap:6}}>
+                {['residential','condo'].map(pt=>{
+                  const on = poolType===pt;
+                  const lbl = pt==='residential'?(lang==='pt'?'Residencial':'Residential'):(lang==='pt'?'Condomínio':'Condo');
+                  return (
+                    <button key={pt} onClick={()=>setPoolType(pt)} style={{
+                      flex:1,padding:'9px 4px',borderRadius:9,
+                      border:'1px solid '+(on?'var(--pg-blue-500)':inkBdr),
+                      background:on?'var(--pg-blue-500)':inkBg,
+                      color:on?'#fff':inkText,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
+                    }}>{lbl}</button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+                {lang==='pt'?'Nº piscinas':'# Pools'}
+              </label>
+              <div style={{display:'flex',alignItems:'center',gap:0,border:`1.5px solid ${inkBdr}`,borderRadius:10,overflow:'hidden',height:44}}>
+                <button onClick={()=>setPools(p=>Math.max(1,p-1))} style={{width:44,height:'100%',border:'none',background:inkBg,color:inkText,fontSize:20,cursor:'pointer',flexShrink:0}}>−</button>
+                <div style={{flex:1,textAlign:'center',fontSize:16,fontWeight:700,color:inkText}}>{pools}</div>
+                <button onClick={()=>setPools(p=>Math.min(20,p+1))} style={{width:44,height:'100%',border:'none',background:inkBg,color:inkText,fontSize:20,cursor:'pointer',flexShrink:0}}>+</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Condo extras */}
+          {poolType==='condo' && (
+            <div style={{borderRadius:12,border:`1px solid ${inkBdr}`,padding:'12px 14px',background:inkBg,display:'flex',flexDirection:'column',gap:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',marginBottom:2}}>
+                {lang==='pt'?'Detalhes do condomínio':'Condo details'}
+              </div>
+              <input value={gateCode} onChange={e=>setGateCode(e.target.value)}
+                placeholder={lang==='pt'?'Código do portão (opcional)':'Gate code (optional)'}
+                style={{...inp,height:40,fontSize:13}}/>
+              {[
+                { key:'doorman', state:hasDoorman, set:setHasDoorman, label:lang==='pt'?'Tem porteiro':'Has doorman' },
+                { key:'dog',     state:hasDog,     set:setHasDog,     label:lang==='pt'?'Tem cachorro':'Has dog'     },
+                { key:'salt',    state:saltwater,  set:setSaltwater,  label:lang==='pt'?'Água salgada':'Saltwater'   },
+              ].map(item=>(
+                <label key={item.key} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:13,color:inkText,fontWeight:500}}>
+                  <input type="checkbox" checked={item.state} onChange={e=>item.set(e.target.checked)} style={{width:16,height:16,accentColor:'var(--pg-blue-500)'}}/>
+                  {item.label}
+                </label>
+              ))}
+            </div>
+          )}
 
           {/* Description */}
           <div>
