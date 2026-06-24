@@ -2638,16 +2638,44 @@ function QuickPoolDetails({
       fontWeight: 700,
       cursor: 'pointer'
     }
-  }, lang === 'pt' ? 'Retirar candidatura' : 'Withdraw') : /*#__PURE__*/React.createElement("button", {
-    onClick: locked ? onUnlock : applied ? undefined : () => setShowConsent(v => !v),
-    disabled: applied && !locked,
-    className: `pg-btn ${applied ? 'pg-btn-ghost' : 'pg-btn-primary'}`,
+  }, lang === 'pt' ? 'Retirar candidatura' : 'Withdraw') : myApp && myApp.status === 'accepted' ? /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 2,
+      height: 46,
       borderRadius: 999,
-      opacity: applied ? 0.7 : 1
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      background: '#F0FDF4',
+      border: '1px solid #86EFAC',
+      color: '#15803D',
+      fontSize: 14,
+      fontWeight: 700
     }
-  }, locked ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.lock(14, '#fff'), " ", t.unlockApply) : applied ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.check(15, 'var(--pg-blue-700)'), " ", lang === 'pt' ? 'Candidatado' : t.applied) : /*#__PURE__*/React.createElement(React.Fragment, null, lang === 'pt' ? 'Candidatar' : t.apply)) : /*#__PURE__*/React.createElement("button", {
+  }, "\u2713 ", lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted') : myApp && myApp.status === 'rejected' ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 2,
+      height: 46,
+      borderRadius: 999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      background: '#FEF2F2',
+      border: '1px solid #FECACA',
+      color: '#DC2626',
+      fontSize: 14,
+      fontWeight: 700
+    }
+  }, lang === 'pt' ? 'Não selecionado' : lang === 'es' ? 'No seleccionado' : 'Not selected') : /*#__PURE__*/React.createElement("button", {
+    onClick: locked ? onUnlock : () => setShowConsent(v => !v),
+    className: "pg-btn pg-btn-primary",
+    style: {
+      flex: 2,
+      borderRadius: 999
+    }
+  }, locked ? /*#__PURE__*/React.createElement(React.Fragment, null, Icon.lock(14, '#fff'), " ", t.unlockApply) : /*#__PURE__*/React.createElement(React.Fragment, null, lang === 'pt' ? 'Candidatar' : t.apply)) : /*#__PURE__*/React.createElement("button", {
     onClick: locked ? onUnlock : () => setShowConsent(v => !v),
     className: `pg-btn ${applied ? 'pg-btn-ghost' : 'pg-btn-primary'}`,
     style: {

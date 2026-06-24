@@ -1378,16 +1378,27 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                   }}>
                     {lang==='pt'?'Retirar candidatura':'Withdraw'}
                   </button>
+                ) : myApp && myApp.status === 'accepted' ? (
+                  <div style={{
+                    flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                    background:'#F0FDF4', border:'1px solid #86EFAC', color:'#15803D', fontSize:14, fontWeight:700,
+                  }}>
+                    ✓ {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
+                  </div>
+                ) : myApp && myApp.status === 'rejected' ? (
+                  <div style={{
+                    flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                    background:'#FEF2F2', border:'1px solid #FECACA', color:'#DC2626', fontSize:14, fontWeight:700,
+                  }}>
+                    {lang==='pt'?'Não selecionado':lang==='es'?'No seleccionado':'Not selected'}
+                  </div>
                 ) : (
                   <button
-                    onClick={locked ? onUnlock : (applied ? undefined : ()=>setShowConsent(v=>!v))}
-                    disabled={applied && !locked}
-                    className={`pg-btn ${applied?'pg-btn-ghost':'pg-btn-primary'}`}
-                    style={{flex:2, borderRadius:999, opacity: applied?0.7:1}}
+                    onClick={locked ? onUnlock : ()=>setShowConsent(v=>!v)}
+                    className="pg-btn pg-btn-primary"
+                    style={{flex:2, borderRadius:999}}
                   >
-                    {locked ? <>{Icon.lock(14,'#fff')} {t.unlockApply}</> :
-                     applied ? <>{Icon.check(15,'var(--pg-blue-700)')} {lang==='pt'?'Candidatado':t.applied}</> :
-                     <>{lang==='pt'?'Candidatar':t.apply}</>}
+                    {locked ? <>{Icon.lock(14,'#fff')} {t.unlockApply}</> : <>{lang==='pt'?'Candidatar':t.apply}</>}
                   </button>
                 )
               ) : (
