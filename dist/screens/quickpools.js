@@ -1251,41 +1251,7 @@ function QuickPoolsScreen({
         display: 'flex',
         gap: 6
       }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setPostOpen(true),
-      style: {
-        height: 36,
-        padding: '0 12px',
-        borderRadius: 11,
-        background: _btnBg,
-        border: `0.5px solid ${_btnBd}`,
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 5,
-        color: _btnC,
-        fontSize: 12,
-        fontWeight: 700
-      }
-    }, /*#__PURE__*/React.createElement("svg", {
-      width: "13",
-      height: "13",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: _btnC,
-      strokeWidth: "2.5",
-      strokeLinecap: "round"
-    }, /*#__PURE__*/React.createElement("line", {
-      x1: "12",
-      y1: "5",
-      x2: "12",
-      y2: "19"
-    }), /*#__PURE__*/React.createElement("line", {
-      x1: "5",
-      y1: "12",
-      x2: "19",
-      y2: "12"
-    })), lang === 'pt' ? 'Publicar' : lang === 'es' ? 'Publicar' : 'Post'), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'relative'
       }
