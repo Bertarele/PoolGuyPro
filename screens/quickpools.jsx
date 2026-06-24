@@ -1398,7 +1398,6 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
   const [city,       setCity]       = React.useState('');
   const [day,        setDay]        = React.useState('');
   const [timeSlot,   setTimeSlot]   = React.useState('');
-  const [pools,      setPools]      = React.useState(1);
   const [poolType,   setPoolType]   = React.useState('residential');
   const [gateCode,   setGateCode]   = React.useState('');
   const [hasDoorman, setHasDoorman] = React.useState(false);
@@ -1420,7 +1419,7 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
   const filteredCities = cityQ ? allCities.filter(c=>c.toLowerCase().includes(cityQ.toLowerCase())) : allCities;
 
   const reset = () => {
-    setTitle(''); setCity(''); setDay(''); setTimeSlot(''); setPools(1); setPoolType('residential');
+    setTitle(''); setCity(''); setDay(''); setTimeSlot(''); setPoolType('residential');
     setGateCode(''); setHasDoorman(false); setHasDog(false); setSaltwater(false);
     setDesc(''); setPrice(''); setNeg(false); setShowPhone(false); setPhone(user?.phone||'');
     setAddress(''); setErr(''); setCityQ('');
@@ -1438,7 +1437,7 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
       poster_phone: showPhone ? (phone||null) : null, pool_address: address.trim()||null, city, day_of_week: day,
       when_label: dayLabels[DAY_KEYS.indexOf(day)] + timeLabel,
       time_slot: timeSlot || null,
-      pools_count: pools, price_per_pool: neg ? null : (parseFloat(price)||null),
+      pools_count: 1, price_per_pool: neg ? null : (parseFloat(price)||null),
       price_negotiable: neg, title: title.trim(), description: desc.trim()||null,
       pool_type: poolType,
       extras: poolType==='condo' ? { gate_code: gateCode.trim()||null, doorman: hasDoorman, dog: hasDog, saltwater } : null,
@@ -1561,36 +1560,24 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
             </div>
           </div>
 
-          {/* Pool type + count */}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
-                {lang==='pt'?'Tipo':'Type'}
-              </label>
-              <div style={{display:'flex',gap:6}}>
-                {['residential','condo'].map(pt=>{
-                  const on = poolType===pt;
-                  const lbl = pt==='residential'?(lang==='pt'?'Residencial':'Residential'):(lang==='pt'?'Condomínio':'Condo');
-                  return (
-                    <button key={pt} onClick={()=>setPoolType(pt)} style={{
-                      flex:1,padding:'9px 4px',borderRadius:9,
-                      border:'1px solid '+(on?'var(--pg-blue-500)':inkBdr),
-                      background:on?'var(--pg-blue-500)':inkBg,
-                      color:on?'#fff':inkText,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
-                    }}>{lbl}</button>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
-                {lang==='pt'?'Nº piscinas':'# Pools'}
-              </label>
-              <div style={{display:'flex',alignItems:'center',gap:0,border:`1.5px solid ${inkBdr}`,borderRadius:10,overflow:'hidden',height:44}}>
-                <button onClick={()=>setPools(p=>Math.max(1,p-1))} style={{width:44,height:'100%',border:'none',background:inkBg,color:inkText,fontSize:20,cursor:'pointer',flexShrink:0}}>−</button>
-                <div style={{flex:1,textAlign:'center',fontSize:16,fontWeight:700,color:inkText}}>{pools}</div>
-                <button onClick={()=>setPools(p=>Math.min(20,p+1))} style={{width:44,height:'100%',border:'none',background:inkBg,color:inkText,fontSize:20,cursor:'pointer',flexShrink:0}}>+</button>
-              </div>
+          {/* Pool type */}
+          <div>
+            <label style={{fontSize:12,fontWeight:700,color:inkSub,letterSpacing:'0.04em',textTransform:'uppercase',display:'block',marginBottom:6}}>
+              {lang==='pt'?'Tipo':'Type'}
+            </label>
+            <div style={{display:'flex',gap:6}}>
+              {['residential','condo'].map(pt=>{
+                const on = poolType===pt;
+                const lbl = pt==='residential'?(lang==='pt'?'Residencial':'Residential'):(lang==='pt'?'Condomínio':'Condo');
+                return (
+                  <button key={pt} onClick={()=>setPoolType(pt)} style={{
+                    flex:1,padding:'10px 4px',borderRadius:9,
+                    border:'1px solid '+(on?'var(--pg-blue-500)':inkBdr),
+                    background:on?'var(--pg-blue-500)':inkBg,
+                    color:on?'#fff':inkText,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',
+                  }}>{lbl}</button>
+                );
+              })}
             </div>
           </div>
 

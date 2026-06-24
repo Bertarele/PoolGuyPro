@@ -2696,7 +2696,6 @@ function PostJobSheet({
   const [city, setCity] = React.useState('');
   const [day, setDay] = React.useState('');
   const [timeSlot, setTimeSlot] = React.useState('');
-  const [pools, setPools] = React.useState(1);
   const [poolType, setPoolType] = React.useState('residential');
   const [gateCode, setGateCode] = React.useState('');
   const [hasDoorman, setHasDoorman] = React.useState(false);
@@ -2720,7 +2719,6 @@ function PostJobSheet({
     setCity('');
     setDay('');
     setTimeSlot('');
-    setPools(1);
     setPoolType('residential');
     setGateCode('');
     setHasDoorman(false);
@@ -2751,7 +2749,7 @@ function PostJobSheet({
       day_of_week: day,
       when_label: dayLabels[DAY_KEYS.indexOf(day)] + timeLabel,
       time_slot: timeSlot || null,
-      pools_count: pools,
+      pools_count: 1,
       price_per_pool: neg ? null : parseFloat(price) || null,
       price_negotiable: neg,
       title: title.trim(),
@@ -3027,13 +3025,7 @@ function PostJobSheet({
         fontFamily: 'inherit'
       }
     }, ts.label);
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     style: {
       fontSize: 12,
       fontWeight: 700,
@@ -3056,70 +3048,18 @@ function PostJobSheet({
       onClick: () => setPoolType(pt),
       style: {
         flex: 1,
-        padding: '9px 4px',
+        padding: '10px 4px',
         borderRadius: 9,
         border: '1px solid ' + (on ? 'var(--pg-blue-500)' : inkBdr),
         background: on ? 'var(--pg-blue-500)' : inkBg,
         color: on ? '#fff' : inkText,
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: 700,
         cursor: 'pointer',
         fontFamily: 'inherit'
       }
     }, lbl);
-  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: inkSub,
-      letterSpacing: '0.04em',
-      textTransform: 'uppercase',
-      display: 'block',
-      marginBottom: 6
-    }
-  }, lang === 'pt' ? 'Nº piscinas' : '# Pools'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 0,
-      border: `1.5px solid ${inkBdr}`,
-      borderRadius: 10,
-      overflow: 'hidden',
-      height: 44
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setPools(p => Math.max(1, p - 1)),
-    style: {
-      width: 44,
-      height: '100%',
-      border: 'none',
-      background: inkBg,
-      color: inkText,
-      fontSize: 20,
-      cursor: 'pointer',
-      flexShrink: 0
-    }
-  }, "\u2212"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      textAlign: 'center',
-      fontSize: 16,
-      fontWeight: 700,
-      color: inkText
-    }
-  }, pools), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setPools(p => Math.min(20, p + 1)),
-    style: {
-      width: 44,
-      height: '100%',
-      border: 'none',
-      background: inkBg,
-      color: inkText,
-      fontSize: 20,
-      cursor: 'pointer',
-      flexShrink: 0
-    }
-  }, "+")))), poolType === 'condo' && /*#__PURE__*/React.createElement("div", {
+  }))), poolType === 'condo' && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       border: `1px solid ${inkBdr}`,
