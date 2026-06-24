@@ -24,7 +24,15 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
     showPhone: false,
     phone: '',
     pool_address: '',
+    pool_zip: '',
   });
+
+  const fmtPhone = (val) => {
+    const d = val.replace(/\D/g,'').slice(0,10);
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `(${d.slice(0,3)}) ${d.slice(3)}`;
+    return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  };
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updPool = (id, patch) => setForm(f => ({
     ...f,
@@ -219,8 +227,9 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
                     <label style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.04em', textTransform:'uppercase', display:'block', margin:'12px 0 6px'}}>
                       {lang==='pt'?'Seu telefone':lang==='es'?'Tu teléfono':'Your phone'}
                     </label>
-                    <input className="pg-field" value={form.phone} onChange={e=>upd('phone',e.target.value)}
-                      type="tel" placeholder="(954) 000-0000"/>
+                    <input className="pg-field" value={form.phone}
+                      onChange={e=>upd('phone', fmtPhone(e.target.value))}
+                      type="tel" placeholder="(954) 000-0000" inputMode="numeric"/>
                   </div>
                 )}
               </div>
@@ -233,8 +242,15 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
                 <div style={{fontSize:11, color:'var(--pg-ink-500)', marginBottom:10}}>
                   {lang==='pt'?'Visível apenas para o candidato aceito. Opcional.':lang==='es'?'Visible solo al candidato aceptado. Opcional.':'Visible only to the accepted candidate. Optional.'}
                 </div>
-                <input className="pg-field" value={form.pool_address} onChange={e=>upd('pool_address',e.target.value)}
-                  placeholder={lang==='pt'?'Ex: 123 Palm Ave, Davie, FL 33325':'E.g. 123 Palm Ave, Davie, FL 33325'}/>
+                <div style={{display:'flex', gap:8}}>
+                  <input className="pg-field" value={form.pool_zip}
+                    onChange={e=>upd('pool_zip', e.target.value.replace(/\D/g,'').slice(0,5))}
+                    placeholder="ZIP" inputMode="numeric"
+                    style={{width:90, flexShrink:0}}/>
+                  <input className="pg-field" value={form.pool_address} onChange={e=>upd('pool_address',e.target.value)}
+                    placeholder={lang==='pt'?'Ex: 123 Palm Ave, Davie':'E.g. 123 Palm Ave, Davie'}
+                    style={{flex:1}}/>
+                </div>
               </div>
             </>
           )}

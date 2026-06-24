@@ -1031,10 +1031,14 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           </div>
         )}
 
-        <div style={{marginTop:14}}>
-          <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, letterSpacing:'0.05em', marginBottom:6}}>{t.description}</div>
-          <p style={{margin:0, fontSize:14, lineHeight:1.5, color:'var(--pg-ink-700)'}}>{tr(job.body, lang)}</p>
-        </div>
+        {tr(job.body, lang) ? (
+          <div style={{marginTop:14}}>
+            <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, letterSpacing:'0.05em', marginBottom:6}}>
+              {lang==='pt'?'NOTAS PARA CANDIDATOS':lang==='es'?'NOTAS PARA CANDIDATOS':'NOTES FOR APPLICANTS'}
+            </div>
+            <p style={{margin:0, fontSize:14, lineHeight:1.5, color:'var(--pg-ink-700)'}}>{tr(job.body, lang)}</p>
+          </div>
+        ) : null}
 
         <div className="pg-card" style={{padding:14, marginTop:14, display:'flex', alignItems:'center', gap:12}}>
           <Avatar name={job.poster} size={48}/>

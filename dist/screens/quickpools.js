@@ -1943,7 +1943,7 @@ function QuickPoolDetails({
     icon: Icon.pool(14, 'var(--pg-blue-700)'),
     label: t.saltwater,
     value: job.extras.saltwater ? t.yes : t.no
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), tr(job.body, lang) ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14
     }
@@ -1955,14 +1955,14 @@ function QuickPoolDetails({
       letterSpacing: '0.05em',
       marginBottom: 6
     }
-  }, t.description), /*#__PURE__*/React.createElement("p", {
+  }, lang === 'pt' ? 'NOTAS PARA CANDIDATOS' : lang === 'es' ? 'NOTAS PARA CANDIDATOS' : 'NOTES FOR APPLICANTS'), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: 0,
       fontSize: 14,
       lineHeight: 1.5,
       color: 'var(--pg-ink-700)'
     }
-  }, tr(job.body, lang))), /*#__PURE__*/React.createElement("div", {
+  }, tr(job.body, lang))) : null, /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
     style: {
       padding: 14,
