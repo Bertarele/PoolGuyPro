@@ -112,6 +112,15 @@ function QuickPoolsScreen({
   React.useEffect(() => {
     checkNotifStatus();
   }, [checkNotifStatus]);
+
+  // Auto-prompt when tab opens and permission not yet decided
+  const autoPromptedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (notifStatus === 'needed' && !autoPromptedRef.current) {
+      autoPromptedRef.current = true;
+      setTimeout(() => activatePush(), 700);
+    }
+  }, [notifStatus, activatePush]);
   const activatePush = React.useCallback(async () => {
     if (ctx.registerPush) await ctx.registerPush();
     await checkNotifStatus();
