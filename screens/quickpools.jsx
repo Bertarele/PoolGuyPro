@@ -1,5 +1,45 @@
 // quickpools.jsx — Express Pools live feed + posting + push notifications
 
+function ConfirmModal({ message, subMessage, confirmLabel, onConfirm, onCancel, lang='pt' }) {
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:10000,
+      background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-end', justifyContent:'center',
+    }}>
+      <div style={{
+        width:'100%', maxWidth:520, background:'var(--pg-white)',
+        borderRadius:'20px 20px 0 0', padding:'24px 20px 36px',
+        boxShadow:'0 -8px 32px rgba(0,0,0,0.2)',
+      }}>
+        <div style={{width:40, height:4, borderRadius:4, background:'var(--pg-ink-200)', margin:'0 auto 20px'}}/>
+        <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', textAlign:'center', marginBottom:subMessage ? 8 : 20}}>
+          {message}
+        </div>
+        {subMessage && (
+          <div style={{fontSize:14, color:'var(--pg-ink-500)', textAlign:'center', marginBottom:20, lineHeight:1.4}}>
+            {subMessage}
+          </div>
+        )}
+        <div style={{display:'flex', gap:10}}>
+          <button onClick={onCancel} style={{
+            flex:1, height:48, borderRadius:14, border:'1px solid var(--pg-ink-200)',
+            background:'var(--pg-ink-50)', color:'var(--pg-ink-700)', fontSize:15, fontWeight:600, cursor:'pointer',
+          }}>
+            {lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}
+          </button>
+          <button onClick={onConfirm} style={{
+            flex:1, height:48, borderRadius:14, border:'none',
+            background:'linear-gradient(135deg,#DC2626,#EF4444)', color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer',
+            boxShadow:'0 4px 12px rgba(220,38,38,0.35)',
+          }}>
+            {confirmLabel || (lang==='pt'?'Confirmar':lang==='es'?'Confirmar':'Confirm')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 class JobDetailBoundary extends React.Component {
   constructor(props) { super(props); this.state = { err: null }; }
   static getDerivedStateFromError(e) { return { err: e }; }
@@ -25,6 +65,7 @@ function QuickPoolsScreen({ ctx }) {
   const [applied,     setApplied]     = React.useState({});
   const [isDesktop,   setIsDesktop]   = React.useState(() => window.innerWidth >= 900);
   const [myAcceptedJobIds, setMyAcceptedJobIds] = React.useState(new Set());
+  const [confirmDialog, setConfirmDialog] = React.useState(null); // { message, subMessage, confirmLabel, onConfirm }
 
   // Live jobs from Supabase
   const [jobs, setJobs] = React.useState(QUICK_POOLS);
@@ -232,10 +273,11 @@ function QuickPoolsScreen({ ctx }) {
   // ── Shared job card (used on mobile + desktop) ────────────────
   const JobCard = ({ j, compact=false }) => {
     const isApplied    = !!applied[j.id];
-    const isAccepted   = myAcceptedJobIds.has(String(j.id));
-    const isHighlighted = highlighted === j.id;
     const locked       = user.tier === 'free';
     const isOwn        = j._live && user?.uid && j.poster_id === user.uid;
+    // Candidate: green when their application was accepted. Owner: green when job is filled (accepted someone).
+    const isAccepted   = isOwn ? j.status === 'filled' : myAcceptedJobIds.has(String(j.id));
+    const isHighlighted = highlighted === j.id;
 
     return (
       <article key={j.id}
@@ -370,7 +412,12 @@ function QuickPoolsScreen({ ctx }) {
             </div>
 
             {isOwn ? (
-              <button onClick={(e)=>deleteJob(j.id, e)} style={{
+              <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
+                message: lang==='pt'?'Remover publicação?':lang==='es'?'¿Eliminar publicación?':'Remove posting?',
+                subMessage: lang==='pt'?'Essa vaga será removida e os candidatos não poderão mais se candidatar.':'This job will be removed and applicants will no longer be able to apply.',
+                confirmLabel: lang==='pt'?'Sim, remover':lang==='es'?'Sí, eliminar':'Yes, remove',
+                onConfirm: () => { deleteJob(j.id); setConfirmDialog(null); },
+              }); }} style={{
                 width:36, height:36, borderRadius:10, border:'1px solid #FECACA',
                 background:'#FEF2F2', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
               }}>
@@ -831,6 +878,16 @@ function QuickPoolsScreen({ ctx }) {
 
     </div>
     {jobDetailPanel}
+    {confirmDialog && (
+      <ConfirmModal
+        message={confirmDialog.message}
+        subMessage={confirmDialog.subMessage}
+        confirmLabel={confirmDialog.confirmLabel}
+        lang={lang}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={()=>setConfirmDialog(null)}
+      />
+    )}
     </div>
   );
 }
@@ -938,6 +995,7 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
 function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, onStatusChange, onMyJobAccepted }) {
   const locked  = user.tier === 'free';
   const isOwn   = job._live && user?.uid && job.poster_id === user.uid;
+  const [confirmDialog,  setConfirmDialog]  = React.useState(null);
   const [applicants,     setApplicants]     = React.useState([]);
   const [loadingApps,    setLoadingApps]    = React.useState(false);
   const [showApplicants, setShowApplicants] = React.useState(false);
@@ -1113,6 +1171,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
   };
 
   return (
+    <>
     <div style={{display:'flex', flexDirection:'column', minHeight:'100%'}}>
       {/* Sticky top bar with back arrow */}
       <div style={{
@@ -1132,7 +1191,12 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
         </button>
         {isOwn && (
-          <button onClick={()=>{ onDelete && onDelete(job.id); onClose(); }} style={{
+          <button onClick={()=>setConfirmDialog({
+            message: lang==='pt'?'Excluir publicação?':lang==='es'?'¿Eliminar publicación?':'Delete posting?',
+            subMessage: lang==='pt'?'Essa vaga será removida permanentemente.':lang==='es'?'Esta vacante será eliminada permanentemente.':'This job will be permanently removed.',
+            confirmLabel: lang==='pt'?'Sim, excluir':lang==='es'?'Sí, eliminar':'Yes, delete',
+            onConfirm: ()=>{ onDelete && onDelete(job.id); onClose(); setConfirmDialog(null); },
+          })} style={{
             display:'flex', alignItems:'center', gap:5, height:32, padding:'0 12px', borderRadius:9,
             border:'1px solid #FECACA', background:'#FEF2F2', cursor:'pointer', fontSize:12, fontWeight:600, color:'#DC2626',
           }}>
@@ -1682,7 +1746,12 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                 )
               ) : job._live ? (
                 myApp && myApp.status === 'pending' ? (
-                  <button onClick={withdrawApp} style={{
+                  <button onClick={()=>setConfirmDialog({
+                    message: lang==='pt'?'Retirar candidatura?':lang==='es'?'¿Retirar postulación?':'Withdraw application?',
+                    subMessage: lang==='pt'?'Sua candidatura será cancelada.':lang==='es'?'Tu postulación será cancelada.':'Your application will be cancelled.',
+                    confirmLabel: lang==='pt'?'Sim, retirar':lang==='es'?'Sí, retirar':'Yes, withdraw',
+                    onConfirm: ()=>{ withdrawApp(); setConfirmDialog(null); },
+                  })} style={{
                     flex:2, height:46, borderRadius:999, border:'1px solid #FECACA',
                     background:'#FEF2F2', color:'#DC2626', fontSize:13, fontWeight:700, cursor:'pointer',
                   }}>
@@ -1745,6 +1814,17 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         )}
       </div>
     </div>
+    {confirmDialog && (
+      <ConfirmModal
+        message={confirmDialog.message}
+        subMessage={confirmDialog.subMessage}
+        confirmLabel={confirmDialog.confirmLabel}
+        lang={lang}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={()=>setConfirmDialog(null)}
+      />
+    )}
+    </>
   );
 }
 
