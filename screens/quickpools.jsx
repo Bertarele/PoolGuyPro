@@ -1359,13 +1359,13 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
               </div>
             )}
             {applicants.map(a => (
-              <div key={a.id} style={{borderTop:'0.5px solid var(--pg-ink-100)', background: a.status==='accepted' ? 'var(--pg-green-50,#F0FDF4)' : a.status==='rejected' ? 'var(--pg-red-50,#FFF1F1)' : 'var(--pg-ink-50)'}}>
+              <div key={a.id} style={{borderTop:'0.5px solid var(--pg-ink-100)', background: a.status==='accepted' ? '#F0FDF4' : a.status==='rejected' ? '#FFF1F1' : 'var(--pg-ink-50)'}}>
                 <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px'}}>
                   <Avatar name={a.applicant_name} size={34}/>
                   <div style={{flex:1, minWidth:0}}>
-                    <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>{a.applicant_name}</div>
+                    <div style={{fontSize:13, fontWeight:600, color: a.status==='accepted' ? '#14532D' : a.status==='rejected' ? '#7F1D1D' : 'var(--pg-ink-900)'}}>{a.applicant_name}</div>
                     {a.applicant_phone && (
-                      <a href={`tel:${a.applicant_phone}`} style={{fontSize:11, color:'var(--pg-blue-600)', fontWeight:500, textDecoration:'none'}}>
+                      <a href={`tel:${a.applicant_phone}`} style={{fontSize:11, color: a.status==='accepted' ? '#15803D' : 'var(--pg-blue-600)', fontWeight:500, textDecoration:'none'}}>
                         {a.applicant_phone}
                       </a>
                     )}
@@ -1591,7 +1591,12 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           /* Owner actions */
           <div style={{display:'flex', flexDirection:'column', gap:8}}>
             {job.status === 'filled' ? (
-              <button onClick={()=>setShowRating(true)} style={{
+              <button onClick={()=>setConfirmDialog({
+                message: lang==='pt'?'Finalizar e remover vaga?':lang==='es'?'¿Finalizar y eliminar?':'Mark complete & remove?',
+                subMessage: lang==='pt'?'A vaga será removida da lista. Você poderá avaliar o pool guy.':'The job will be removed from the list. You can rate the pool guy.',
+                confirmLabel: lang==='pt'?'Sim, finalizar':lang==='es'?'Sí, finalizar':'Yes, finalize',
+                onConfirm: ()=>{ setConfirmDialog(null); setShowRating(true); },
+              })} style={{
                 height:50, borderRadius:14, border:'none', cursor:'pointer',
                 background:'linear-gradient(135deg,#16A34A,#22C55E)',
                 color:'#fff', fontSize:15, fontWeight:700,
