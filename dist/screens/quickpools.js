@@ -158,6 +158,9 @@ function QuickPoolsScreen({
   const [applied, setApplied] = React.useState({});
   const [isDesktop, setIsDesktop] = React.useState(() => window.innerWidth >= 900);
   const [myAcceptedJobIds, setMyAcceptedJobIds] = React.useState(new Set());
+  const [myDoneJobIds, setMyDoneJobIds] = React.useState(new Map()); // jobId -> doneAt Date
+  const [historyJobs, setHistoryJobs] = React.useState([]);
+  const [showHistory, setShowHistory] = React.useState(false);
   const [confirmDialog, setConfirmDialog] = React.useState(null); // { message, subMessage, confirmLabel, onConfirm }
 
   // Live jobs from Supabase
@@ -281,12 +284,30 @@ function QuickPoolsScreen({
   // Load accepted applications for current user so we can highlight them
   React.useEffect(() => {
     if (!window.sb || !user?.uid) return;
-    window.sb.from('quick_pool_applications').select('job_id').eq('applicant_id', user.uid).eq('status', 'accepted').then(({
+    window.sb.from('quick_pool_applications').select('job_id,pool_guy_done,pool_guy_done_at').eq('applicant_id', user.uid).eq('status', 'accepted').then(({
       data
     }) => {
-      if (data && data.length > 0) {
-        setMyAcceptedJobIds(new Set(data.map(r => String(r.job_id))));
-      }
+      if (!data || data.length === 0) return;
+      const accepted = new Set();
+      const done = new Map();
+      data.forEach(r => {
+        accepted.add(String(r.job_id));
+        if (r.pool_guy_done) done.set(String(r.job_id), r.pool_guy_done_at ? new Date(r.pool_guy_done_at) : new Date(0));
+      });
+      setMyAcceptedJobIds(accepted);
+      setMyDoneJobIds(done);
+    });
+    // Load history: accepted apps where pool_guy_done=true, fetch job details
+    window.sb.from('quick_pool_applications').select('job_id,pool_guy_done_at,quick_pool_jobs!inner(id,title,city,price_per_pool,price_negotiable,poster_name,status,created_at)').eq('applicant_id', user.uid).eq('status', 'accepted').eq('pool_guy_done', true).order('pool_guy_done_at', {
+      ascending: false
+    }).limit(20).then(({
+      data
+    }) => {
+      if (!data || data.length === 0) return;
+      setHistoryJobs(data.map(r => ({
+        ...r.quick_pool_jobs,
+        pool_guy_done_at: r.pool_guy_done_at
+      })));
     });
   }, [user?.uid]);
 
@@ -438,6 +459,7 @@ function QuickPoolsScreen({
     const isOwn = j._live && user?.uid && j.poster_id === user.uid;
     // Candidate: green when their application was accepted. Owner: green when job is filled (accepted someone).
     const isAccepted = isOwn ? j.status === 'filled' : myAcceptedJobIds.has(String(j.id));
+    const isDone = !isOwn && myDoneJobIds.has(String(j.id));
     const isHighlighted = highlighted === j.id;
     return /*#__PURE__*/React.createElement("article", {
       key: j.id,
@@ -446,19 +468,20 @@ function QuickPoolsScreen({
       },
       onClick: () => setSelected(j),
       style: {
-        background: isAccepted ? 'var(--pg-white)' : 'var(--pg-white)',
+        background: isDone ? 'var(--pg-ink-100,#F1F5F9)' : 'var(--pg-white)',
         borderRadius: 16,
         cursor: 'pointer',
-        border: isAccepted ? '2px solid #22C55E' : isHighlighted ? '1.5px solid var(--pg-blue-400)' : '1px solid var(--pg-ink-200)',
-        boxShadow: isAccepted ? '0 0 0 4px rgba(34,197,94,0.12), 0 6px 20px rgba(34,197,94,0.18)' : isHighlighted ? '0 0 0 3px rgba(0,119,182,0.12), 0 6px 20px rgba(0,119,182,0.15)' : '0 2px 8px rgba(0,0,0,0.05)',
+        opacity: isDone ? 0.7 : 1,
+        border: isDone ? '1px solid var(--pg-ink-300,#CBD5E1)' : isAccepted ? '2px solid #22C55E' : isHighlighted ? '1.5px solid var(--pg-blue-400)' : '1px solid var(--pg-ink-200)',
+        boxShadow: isDone ? 'none' : isAccepted ? '0 0 0 4px rgba(34,197,94,0.12), 0 6px 20px rgba(34,197,94,0.18)' : isHighlighted ? '0 0 0 3px rgba(0,119,182,0.12), 0 6px 20px rgba(0,119,182,0.15)' : '0 2px 8px rgba(0,0,0,0.05)',
         transition: 'all .2s ease',
         overflow: 'hidden'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        height: isAccepted ? 4 : 3,
+        height: isAccepted && !isDone ? 4 : 3,
         width: '100%',
-        background: isAccepted ? 'linear-gradient(90deg,#16A34A,#22C55E,#4ADE80)' : j.status === 'filled' ? 'linear-gradient(90deg,#D97706,#F59E0B)' : isApplied ? 'linear-gradient(90deg,#16A34A,#22C55E)' : locked ? 'linear-gradient(90deg,#6B7280,#9CA3AF)' : 'linear-gradient(90deg,#0077B6,#38BDF8)'
+        background: isDone ? 'linear-gradient(90deg,#94A3B8,#CBD5E1)' : isAccepted ? 'linear-gradient(90deg,#16A34A,#22C55E,#4ADE80)' : j.status === 'filled' ? 'linear-gradient(90deg,#D97706,#F59E0B)' : isApplied ? 'linear-gradient(90deg,#16A34A,#22C55E)' : locked ? 'linear-gradient(90deg,#6B7280,#9CA3AF)' : 'linear-gradient(90deg,#0077B6,#38BDF8)'
       }
     }), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -494,7 +517,7 @@ function QuickPoolsScreen({
         fontWeight: 600,
         color: 'var(--pg-ink-500)'
       }
-    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), isAccepted && /*#__PURE__*/React.createElement("span", {
+    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), isAccepted && !isDone && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -508,7 +531,21 @@ function QuickPoolsScreen({
         gap: 4,
         border: '1px solid #86EFAC'
       }
-    }, Icon.check(11, '#15803D'), " ", lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted'), !isAccepted && j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
+    }, Icon.check(11, '#15803D'), " ", lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted'), isDone && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 800,
+        padding: '3px 10px',
+        borderRadius: 999,
+        background: '#F1F5F9',
+        color: '#64748B',
+        letterSpacing: '0.03em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        border: '1px solid #CBD5E1'
+      }
+    }, "\u2713 ", lang === 'pt' ? 'Concluído' : lang === 'es' ? 'Completado' : 'Completed'), !isAccepted && j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         fontWeight: 700,
@@ -1316,15 +1353,113 @@ function QuickPoolsScreen({
         flexDirection: 'column',
         gap: 12
       }
-    }, [...jobs].sort((a, b) => {
-      const aAcc = myAcceptedJobIds.has(String(a.id)) ? 1 : 0;
-      const bAcc = myAcceptedJobIds.has(String(b.id)) ? 1 : 0;
-      return bAcc - aAcc;
-    }).map(j => /*#__PURE__*/React.createElement(JobCard, {
+    }, sortedJobs.map(j => /*#__PURE__*/React.createElement(JobCard, {
       key: j.id,
       j: j
-    })))))), jobDetailPanel);
+    }))), /*#__PURE__*/React.createElement(HistorySection, null)))), jobDetailPanel);
   }
+
+  // ── Job list helpers ───────────────────────────────────────────
+  const now24 = Date.now();
+  const sortedJobs = [...jobs].filter(j => {
+    // For pool guys: hide done jobs older than 24h (they go to history)
+    const doneAt = myDoneJobIds.get(String(j.id));
+    if (doneAt && now24 - doneAt.getTime() > 24 * 60 * 60 * 1000) return false;
+    return true;
+  }).sort((a, b) => {
+    const aDone = myDoneJobIds.has(String(a.id)) ? 1 : 0;
+    const bDone = myDoneJobIds.has(String(b.id)) ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone; // done jobs go to bottom
+    const aAcc = myAcceptedJobIds.has(String(a.id)) ? 1 : 0;
+    const bAcc = myAcceptedJobIds.has(String(b.id)) ? 1 : 0;
+    return bAcc - aAcc; // accepted (non-done) go to top
+  });
+  const HistorySection = () => historyJobs.length === 0 ? null : /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '16px 18px 8px'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowHistory(v => !v),
+    style: {
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '8px 0'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: 'var(--pg-ink-600)'
+    }
+  }, "\uD83D\uDCCB ", lang === 'pt' ? 'Histórico' : lang === 'es' ? 'Historial' : 'History', " (", historyJobs.length, ")"), /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "var(--pg-ink-400)",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      transform: showHistory ? 'rotate(180deg)' : 'rotate(0deg)',
+      transition: 'transform .2s'
+    }
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "6 9 12 15 18 9"
+  }))), showHistory && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      marginTop: 8
+    }
+  }, historyJobs.map(j => /*#__PURE__*/React.createElement("div", {
+    key: j.id,
+    style: {
+      borderRadius: 12,
+      border: '1px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-50)',
+      opacity: 0.8,
+      padding: '12px 14px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: 'var(--pg-ink-700)',
+      marginBottom: 2
+    }
+  }, j.title || j.city), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-400)'
+    }
+  }, j.city, " \xB7 ", j.price_negotiable ? lang === 'pt' ? 'Negociável' : 'Negotiable' : `$${j.price_per_pool}`)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      padding: '3px 10px',
+      borderRadius: 999,
+      background: '#F1F5F9',
+      color: '#64748B',
+      border: '1px solid #CBD5E1',
+      whiteSpace: 'nowrap'
+    }
+  }, "\u2713 ", lang === 'pt' ? 'Concluído' : 'Done')))));
 
   // ══════════════════════════════════════════════════════════════
   // ── MOBILE LAYOUT ─────────────────────────────────────────────
@@ -1689,15 +1824,11 @@ function QuickPoolsScreen({
       flexDirection: 'column',
       gap: 10
     }
-  }, [...jobs].sort((a, b) => {
-    const aAcc = myAcceptedJobIds.has(String(a.id)) ? 1 : 0;
-    const bAcc = myAcceptedJobIds.has(String(b.id)) ? 1 : 0;
-    return bAcc - aAcc;
-  }).map(j => /*#__PURE__*/React.createElement(JobCard, {
+  }, sortedJobs.map(j => /*#__PURE__*/React.createElement(JobCard, {
     key: j.id,
     j: j,
     compact: true
-  })))), jobDetailPanel, confirmDialog && /*#__PURE__*/React.createElement(ConfirmModal, {
+  }))), /*#__PURE__*/React.createElement(HistorySection, null)), jobDetailPanel, confirmDialog && /*#__PURE__*/React.createElement(ConfirmModal, {
     message: confirmDialog.message,
     subMessage: confirmDialog.subMessage,
     confirmLabel: confirmDialog.confirmLabel,
@@ -1950,10 +2081,11 @@ function QuickPoolDetails({
         pending: false
       }).then(() => {});
     }
-    // Mark pool_guy_done
+    // Mark pool_guy_done with timestamp
     if (myApp && window.sb) {
       await window.sb.from('quick_pool_applications').update({
-        pool_guy_done: true
+        pool_guy_done: true,
+        pool_guy_done_at: new Date().toISOString()
       }).eq('id', myApp.id);
     }
     // Notify owner
