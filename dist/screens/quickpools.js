@@ -2027,36 +2027,42 @@ function QuickPoolDetails({
       [photoKey]: {
         file,
         url: URL.createObjectURL(file),
-        uploading: true
+        uploading: true,
+        error: null
       }
     }));
-    try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `${job.id}/${user?.uid || 'anon'}_${photoKey}_${Date.now()}.${ext}`;
-      await window.sb.storage.from('job-photos').upload(path, file, {
-        upsert: true,
-        contentType: file.type
-      });
-      const {
-        data: pub
-      } = window.sb.storage.from('job-photos').getPublicUrl(path);
-      setUploadedPhotos(prev => ({
-        ...prev,
-        [photoKey]: {
-          file,
-          url: pub.publicUrl,
-          uploading: false
-        }
-      }));
-    } catch {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${job.id}/${user?.uid || 'anon'}_${photoKey}_${Date.now()}.${ext}`;
+    const {
+      error: uploadErr
+    } = await window.sb.storage.from('job-photos').upload(path, file, {
+      upsert: true,
+      contentType: file.type
+    });
+    if (uploadErr) {
+      console.error('Photo upload error:', uploadErr);
       setUploadedPhotos(prev => ({
         ...prev,
         [photoKey]: {
           ...prev[photoKey],
-          uploading: false
+          uploading: false,
+          error: uploadErr.message
         }
       }));
+      return;
     }
+    const {
+      data: pub
+    } = window.sb.storage.from('job-photos').getPublicUrl(path);
+    setUploadedPhotos(prev => ({
+      ...prev,
+      [photoKey]: {
+        file,
+        url: pub.publicUrl,
+        uploading: false,
+        error: null
+      }
+    }));
   };
   const allPhotosUploaded = requiredPhotos.length > 0 && requiredPhotos.every(p => uploadedPhotos[p] && !uploadedPhotos[p].uploading);
   const submitPhotos = async () => {
