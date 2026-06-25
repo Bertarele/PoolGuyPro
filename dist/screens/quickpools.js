@@ -849,6 +849,107 @@ function QuickPoolsScreen({
     }
   }))) : null;
 
+  // ── Job list helpers (used by both desktop and mobile) ────────
+  const now24 = Date.now();
+  const sortedJobs = [...jobs].filter(j => {
+    const doneAt = myDoneJobIds.get(String(j.id));
+    if (doneAt && now24 - doneAt.getTime() > 24 * 60 * 60 * 1000) return false;
+    return true;
+  }).sort((a, b) => {
+    const aDone = myDoneJobIds.has(String(a.id)) ? 1 : 0;
+    const bDone = myDoneJobIds.has(String(b.id)) ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    const aAcc = myAcceptedJobIds.has(String(a.id)) ? 1 : 0;
+    const bAcc = myAcceptedJobIds.has(String(b.id)) ? 1 : 0;
+    return bAcc - aAcc;
+  });
+  const HistorySection = () => historyJobs.length === 0 ? null : /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '16px 18px 8px'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowHistory(v => !v),
+    style: {
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '8px 0'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: 'var(--pg-ink-600)'
+    }
+  }, "\uD83D\uDCCB ", lang === 'pt' ? 'Histórico' : lang === 'es' ? 'Historial' : 'History', " (", historyJobs.length, ")"), /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "var(--pg-ink-400)",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      transform: showHistory ? 'rotate(180deg)' : 'rotate(0deg)',
+      transition: 'transform .2s'
+    }
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "6 9 12 15 18 9"
+  }))), showHistory && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      marginTop: 8
+    }
+  }, historyJobs.map(j => /*#__PURE__*/React.createElement("div", {
+    key: j.id,
+    style: {
+      borderRadius: 12,
+      border: '1px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-50)',
+      opacity: 0.8,
+      padding: '12px 14px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: 'var(--pg-ink-700)',
+      marginBottom: 2
+    }
+  }, j.title || j.city), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-400)'
+    }
+  }, j.city, " \xB7 ", j.price_negotiable ? lang === 'pt' ? 'Negociável' : 'Negotiable' : `$${j.price_per_pool}`)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      padding: '3px 10px',
+      borderRadius: 999,
+      background: '#F1F5F9',
+      color: '#64748B',
+      border: '1px solid #CBD5E1',
+      whiteSpace: 'nowrap'
+    }
+  }, "\u2713 ", lang === 'pt' ? 'Concluído' : 'Done')))));
+
   // ══════════════════════════════════════════════════════════════
   // ── DESKTOP LAYOUT ────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════
@@ -1356,110 +1457,15 @@ function QuickPoolsScreen({
     }, sortedJobs.map(j => /*#__PURE__*/React.createElement(JobCard, {
       key: j.id,
       j: j
-    }))), /*#__PURE__*/React.createElement(HistorySection, null)))), jobDetailPanel);
+    }))), /*#__PURE__*/React.createElement(HistorySection, null)))), jobDetailPanel, confirmDialog && /*#__PURE__*/React.createElement(ConfirmModal, {
+      message: confirmDialog.message,
+      subMessage: confirmDialog.subMessage,
+      confirmLabel: confirmDialog.confirmLabel,
+      lang: lang,
+      onConfirm: confirmDialog.onConfirm,
+      onCancel: () => setConfirmDialog(null)
+    }));
   }
-
-  // ── Job list helpers ───────────────────────────────────────────
-  const now24 = Date.now();
-  const sortedJobs = [...jobs].filter(j => {
-    // For pool guys: hide done jobs older than 24h (they go to history)
-    const doneAt = myDoneJobIds.get(String(j.id));
-    if (doneAt && now24 - doneAt.getTime() > 24 * 60 * 60 * 1000) return false;
-    return true;
-  }).sort((a, b) => {
-    const aDone = myDoneJobIds.has(String(a.id)) ? 1 : 0;
-    const bDone = myDoneJobIds.has(String(b.id)) ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone; // done jobs go to bottom
-    const aAcc = myAcceptedJobIds.has(String(a.id)) ? 1 : 0;
-    const bAcc = myAcceptedJobIds.has(String(b.id)) ? 1 : 0;
-    return bAcc - aAcc; // accepted (non-done) go to top
-  });
-  const HistorySection = () => historyJobs.length === 0 ? null : /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '16px 18px 8px'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setShowHistory(v => !v),
-    style: {
-      width: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      padding: '8px 0'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14,
-      fontWeight: 700,
-      color: 'var(--pg-ink-600)'
-    }
-  }, "\uD83D\uDCCB ", lang === 'pt' ? 'Histórico' : lang === 'es' ? 'Historial' : 'History', " (", historyJobs.length, ")"), /*#__PURE__*/React.createElement("svg", {
-    width: "18",
-    height: "18",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "var(--pg-ink-400)",
-    strokeWidth: "2.2",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    style: {
-      transform: showHistory ? 'rotate(180deg)' : 'rotate(0deg)',
-      transition: 'transform .2s'
-    }
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "6 9 12 15 18 9"
-  }))), showHistory && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 8,
-      marginTop: 8
-    }
-  }, historyJobs.map(j => /*#__PURE__*/React.createElement("div", {
-    key: j.id,
-    style: {
-      borderRadius: 12,
-      border: '1px solid var(--pg-ink-200)',
-      background: 'var(--pg-ink-50)',
-      opacity: 0.8,
-      padding: '12px 14px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700,
-      color: 'var(--pg-ink-700)',
-      marginBottom: 2
-    }
-  }, j.title || j.city), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: 'var(--pg-ink-400)'
-    }
-  }, j.city, " \xB7 ", j.price_negotiable ? lang === 'pt' ? 'Negociável' : 'Negotiable' : `$${j.price_per_pool}`)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      padding: '3px 10px',
-      borderRadius: 999,
-      background: '#F1F5F9',
-      color: '#64748B',
-      border: '1px solid #CBD5E1',
-      whiteSpace: 'nowrap'
-    }
-  }, "\u2713 ", lang === 'pt' ? 'Concluído' : 'Done')))));
 
   // ══════════════════════════════════════════════════════════════
   // ── MOBILE LAYOUT ─────────────────────────────────────────────
@@ -3161,7 +3167,7 @@ function QuickPoolDetails({
       flexDirection: 'column',
       gap: 8
     }
-  }, job.status === 'filled' ? /*#__PURE__*/React.createElement("button", {
+  }, job.status === 'filled' && acceptedApp?.pool_guy_done ? /*#__PURE__*/React.createElement("button", {
     onClick: () => setConfirmDialog({
       message: lang === 'pt' ? 'Finalizar e remover vaga?' : lang === 'es' ? '¿Finalizar y eliminar?' : 'Mark complete & remove?',
       subMessage: lang === 'pt' ? 'A vaga será removida da lista. Você poderá avaliar o pool guy.' : 'The job will be removed from the list. You can rate the pool guy.',
@@ -3197,7 +3203,21 @@ function QuickPoolDetails({
     strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("polyline", {
     points: "20 6 9 17 4 12"
-  })), lang === 'pt' ? 'Finalizar e remover vaga' : lang === 'es' ? 'Finalizar y eliminar' : 'Mark complete & remove') : /*#__PURE__*/React.createElement("button", {
+  })), lang === 'pt' ? 'Finalizar e remover vaga' : lang === 'es' ? 'Finalizar y eliminar' : 'Mark complete & remove') : job.status === 'filled' ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 50,
+      borderRadius: 14,
+      border: '1.5px solid #FCD34D',
+      background: '#FFFBEB',
+      color: '#92400E',
+      fontSize: 14,
+      fontWeight: 700,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8
+    }
+  }, "\u23F3 ", lang === 'pt' ? 'Em andamento — aguardando pool guy' : 'In progress — waiting for pool guy') : /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowApplicants(v => !v),
     style: {
       height: 50,

@@ -421,9 +421,11 @@ function App() {
   // Global helper: fire-and-forget push to another user via Edge Function
   window.sendPush = async function(userId, title, body, url) {
     try {
+      const { data: { session } } = await window.sb.auth.getSession();
+      const token = session?.access_token || '';
       await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/send-push', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ user_id: userId, title, body, url }),
       });
     } catch(e) {}
