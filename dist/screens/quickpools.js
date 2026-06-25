@@ -517,21 +517,21 @@ function QuickPoolsScreen({
         fontWeight: 600,
         color: 'var(--pg-ink-500)'
       }
-    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), isAccepted && !isDone && /*#__PURE__*/React.createElement("span", {
+    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), isDone && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 800,
         padding: '3px 10px',
         borderRadius: 999,
-        background: '#DCFCE7',
-        color: '#15803D',
+        background: '#F1F5F9',
+        color: '#64748B',
         letterSpacing: '0.03em',
         display: 'inline-flex',
         alignItems: 'center',
         gap: 4,
-        border: '1px solid #86EFAC'
+        border: '1px solid #CBD5E1'
       }
-    }, Icon.check(11, '#15803D'), " ", lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted'), isDone && /*#__PURE__*/React.createElement("span", {
+    }, "\u2713 ", lang === 'pt' ? 'Concluído' : lang === 'es' ? 'Completado' : 'Completed'), isDone && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 800,
