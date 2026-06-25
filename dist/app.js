@@ -1535,6 +1535,7 @@ function App() {
             dog: firstPool.dog || false,
             saltwater: firstPool.saltwater || false
           },
+          required_photos: formData.requiredPhotos || [],
           status: 'open',
           notify_at: notifyAt
         };

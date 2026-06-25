@@ -101,6 +101,7 @@ function QuickPoolsScreen({ ctx }) {
           day_of_week: j.day_of_week,
           time_slot: j.time_slot || '',
           extras: j.extras || null,
+          required_photos: j.required_photos || [],
           body: { en: j.description||'', pt: j.description||'', es: j.description||'' },
           created_at: j.created_at,
         })));
@@ -151,6 +152,7 @@ function QuickPoolsScreen({ ctx }) {
           when: { en: data.when_label||'', pt: data.when_label||'', es: data.when_label||'' },
           pools: data.pools_count || 1, day_of_week: data.day_of_week,
           time_slot: data.time_slot || '', extras: data.extras || null,
+          required_photos: data.required_photos || [],
           body: { en: data.description||'', pt: data.description||'', es: data.description||'' },
           created_at: data.created_at, status: data.status,
         });
@@ -911,6 +913,50 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
   const [ratingComment,  setRatingComment]  = React.useState('');
   const [ratingSubmitting, setRatingSubmitting] = React.useState(false);
 
+  // Photo upload state (pool guy)
+  const [showPhotoUpload,   setShowPhotoUpload]   = React.useState(false);
+  const [uploadedPhotos,    setUploadedPhotos]    = React.useState({}); // { photoKey: { file, url, uploading } }
+  const [photosSubmitting,  setPhotosSubmitting]  = React.useState(false);
+  const [photosSubmitted,   setPhotosSubmitted]   = React.useState(!!(myApp && myApp.submitted_photos && myApp.submitted_photos.length > 0));
+
+  React.useEffect(() => {
+    setPhotosSubmitted(!!(myApp && myApp.submitted_photos && myApp.submitted_photos.length > 0));
+  }, [myApp]);
+
+  const requiredPhotos = job.required_photos || [];
+
+  const photoLabel = (p) => p.startsWith('custom:') ? p.slice(7)
+    : p==='before'   ? (lang==='pt'?'Foto antes':'Before photo')
+    : p==='after'    ? (lang==='pt'?'Foto depois':'After photo')
+    : p==='vacuum'   ? (lang==='pt'?'Foto vacum':'Vacuum photo')
+    : p==='chemical' ? (lang==='pt'?'Foto químico':'Chemical photo') : p;
+
+  const handlePhotoSelect = async (photoKey, file) => {
+    if (!file) return;
+    setUploadedPhotos(prev => ({ ...prev, [photoKey]: { file, url: URL.createObjectURL(file), uploading: true } }));
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${job.id}/${(user?.uid||'anon')}_${photoKey}_${Date.now()}.${ext}`;
+      const { data } = await window.sb.storage.from('job-photos').upload(path, file, { upsert: true, contentType: file.type });
+      const { data: pub } = window.sb.storage.from('job-photos').getPublicUrl(path);
+      setUploadedPhotos(prev => ({ ...prev, [photoKey]: { file, url: pub.publicUrl, uploading: false } }));
+    } catch {
+      setUploadedPhotos(prev => ({ ...prev, [photoKey]: { ...prev[photoKey], uploading: false } }));
+    }
+  };
+
+  const allPhotosUploaded = requiredPhotos.length > 0 && requiredPhotos.every(p => uploadedPhotos[p] && !uploadedPhotos[p].uploading);
+
+  const submitPhotos = async () => {
+    if (!allPhotosUploaded || !myApp || !window.sb) return;
+    setPhotosSubmitting(true);
+    const photoList = requiredPhotos.map(p => ({ type: p, url: uploadedPhotos[p].url }));
+    await window.sb.from('quick_pool_applications').update({ submitted_photos: photoList }).eq('id', myApp.id);
+    setPhotosSubmitting(false);
+    setShowPhotoUpload(false);
+    setPhotosSubmitted(true);
+  };
+
   // Load all applicants (owner) or own application (others)
   React.useEffect(() => {
     if (!window.sb || !job._live) return;
@@ -1055,6 +1101,30 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           </div>
         )}
 
+        {/* Required photos list */}
+        {job.required_photos && job.required_photos.length > 0 && (
+          <div style={{marginTop:14, padding:'12px 14px', borderRadius:12, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-200)'}}>
+            <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:8}}>
+              {lang==='pt'?'📸 FOTOS OBRIGATÓRIAS':lang==='es'?'📸 FOTOS OBLIGATORIAS':'📸 REQUIRED PHOTOS'}
+            </div>
+            <div style={{display:'flex', flexDirection:'column', gap:6}}>
+              {job.required_photos.map((p,i) => {
+                const label = p.startsWith('custom:') ? p.slice(7)
+                  : p==='before' ? (lang==='pt'?'Foto antes':'Before photo')
+                  : p==='after'  ? (lang==='pt'?'Foto depois':'After photo')
+                  : p==='vacuum' ? (lang==='pt'?'Foto vacum':'Vacuum photo')
+                  : p==='chemical' ? (lang==='pt'?'Foto químico':'Chemical photo') : p;
+                return (
+                  <div key={i} style={{display:'flex', alignItems:'center', gap:8, fontSize:13, color:'var(--pg-ink-700)'}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/><circle cx="12" cy="12" r="3" fill="var(--pg-blue-500)" stroke="none"/></svg>
+                    {label}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {tr(job.body, lang) ? (
           <div style={{marginTop:14}}>
             <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, letterSpacing:'0.05em', marginBottom:6}}>
@@ -1137,38 +1207,51 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
               </div>
             )}
             {applicants.map(a => (
-              <div key={a.id} style={{
-                display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
-                borderTop:'0.5px solid var(--pg-ink-100)',
-                background: a.status==='accepted' ? 'var(--pg-green-50,#F0FDF4)' : a.status==='rejected' ? 'var(--pg-red-50,#FFF1F1)' : 'var(--pg-ink-50)',
-              }}>
-              <Avatar name={a.applicant_name} size={34}/>
-              <div style={{flex:1, minWidth:0}}>
-                <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>{a.applicant_name}</div>
-                {a.applicant_phone && (
-                  <a href={`tel:${a.applicant_phone}`} style={{fontSize:11, color:'var(--pg-blue-600)', fontWeight:500, textDecoration:'none'}}>
-                    {a.applicant_phone}
-                  </a>
+              <div key={a.id} style={{borderTop:'0.5px solid var(--pg-ink-100)', background: a.status==='accepted' ? 'var(--pg-green-50,#F0FDF4)' : a.status==='rejected' ? 'var(--pg-red-50,#FFF1F1)' : 'var(--pg-ink-50)'}}>
+                <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px'}}>
+                  <Avatar name={a.applicant_name} size={34}/>
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-900)'}}>{a.applicant_name}</div>
+                    {a.applicant_phone && (
+                      <a href={`tel:${a.applicant_phone}`} style={{fontSize:11, color:'var(--pg-blue-600)', fontWeight:500, textDecoration:'none'}}>
+                        {a.applicant_phone}
+                      </a>
+                    )}
+                  </div>
+                  {a.status === 'accepted' ? (
+                    <span style={{fontSize:11, fontWeight:700, color:'#16A34A', background:'#DCFCE7', padding:'3px 8px', borderRadius:8}}>
+                      {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
+                    </span>
+                  ) : a.status === 'rejected' ? (
+                    <span style={{fontSize:11, fontWeight:700, color:'#DC2626', background:'#FEE2E2', padding:'3px 8px', borderRadius:8}}>
+                      {lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected'}
+                    </span>
+                  ) : (
+                    <button onClick={()=>acceptApplicant(a.id, a.applicant_id)} style={{
+                      height:30, padding:'0 12px', borderRadius:8, border:'none', cursor:'pointer',
+                      background:'linear-gradient(135deg,#16A34A,#22C55E)', color:'#fff', fontSize:12, fontWeight:700,
+                    }}>
+                      {lang==='pt'?'Aceitar':lang==='es'?'Aceptar':'Accept'}
+                    </button>
+                  )}
+                </div>
+                {/* Submitted photos (visible to owner for accepted applicant) */}
+                {a.status === 'accepted' && a.submitted_photos && a.submitted_photos.length > 0 && (
+                  <div style={{padding:'0 14px 12px'}}>
+                    <div style={{fontSize:11, fontWeight:700, color:'var(--pg-ink-500)', marginBottom:6}}>
+                      📸 {lang==='pt'?'Fotos enviadas':'Submitted photos'} ({a.submitted_photos.length})
+                    </div>
+                    <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+                      {a.submitted_photos.map((p, i) => (
+                        <a key={i} href={p.url} target="_blank" rel="noreferrer" style={{display:'block',borderRadius:8,overflow:'hidden',flexShrink:0}}>
+                          <img src={p.url} alt={photoLabel(p.type)} style={{width:60,height:60,objectFit:'cover',display:'block'}}/>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-              {a.status === 'accepted' ? (
-                <span style={{fontSize:11, fontWeight:700, color:'#16A34A', background:'#DCFCE7', padding:'3px 8px', borderRadius:8}}>
-                  {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
-                </span>
-              ) : a.status === 'rejected' ? (
-                <span style={{fontSize:11, fontWeight:700, color:'#DC2626', background:'#FEE2E2', padding:'3px 8px', borderRadius:8}}>
-                  {lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected'}
-                </span>
-              ) : (
-                <button onClick={()=>acceptApplicant(a.id, a.applicant_id)} style={{
-                  height:30, padding:'0 12px', borderRadius:8, border:'none', cursor:'pointer',
-                  background:'linear-gradient(135deg,#16A34A,#22C55E)', color:'#fff', fontSize:12, fontWeight:700,
-                }}>
-                  {lang==='pt'?'Aceitar':lang==='es'?'Aceptar':'Accept'}
-                </button>
-              )}
-            </div>
-          ))}
+            ))}
         </div>
       )}
       </div>{/* end content div */}
@@ -1218,6 +1301,73 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                 color:'#fff', fontSize:14, fontWeight:700,
               }}>
                 {ratingSubmitting ? '...' : (lang==='pt'?'Avaliar e finalizar':'Rate & complete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo upload modal — for accepted pool guy */}
+      {showPhotoUpload && (
+        <div style={{position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-end'}}>
+          <div style={{width:'100%', maxWidth:520, margin:'0 auto', background:'var(--pg-white)', borderRadius:'20px 20px 0 0', padding:'20px 18px 32px', boxShadow:'0 -8px 32px rgba(0,0,0,0.18)', maxHeight:'85vh', overflowY:'auto'}}>
+            <div style={{width:40, height:4, borderRadius:4, background:'var(--pg-ink-200)', margin:'0 auto 16px'}}/>
+            <h3 style={{margin:'0 0 4px', fontSize:17, fontWeight:700, textAlign:'center'}}>
+              📸 {lang==='pt'?'Fotos obrigatórias':lang==='es'?'Fotos obligatorias':'Required photos'}
+            </h3>
+            <p style={{margin:'0 0 20px', fontSize:13, color:'var(--pg-ink-500)', textAlign:'center', lineHeight:1.4}}>
+              {lang==='pt'?'Tire ou selecione cada foto abaixo antes de finalizar.':'Take or select each photo below before completing.'}
+            </p>
+            <div style={{display:'flex', flexDirection:'column', gap:12}}>
+              {requiredPhotos.map(photoKey => {
+                const state = uploadedPhotos[photoKey];
+                return (
+                  <div key={photoKey} style={{borderRadius:12, border: state ? '1.5px solid var(--pg-blue-400)' : '1px solid var(--pg-ink-200)', overflow:'hidden'}}>
+                    <div style={{display:'flex', alignItems:'center', gap:10, padding:'12px 14px', background: state ? 'var(--pg-blue-50)' : 'transparent'}}>
+                      <div style={{
+                        width:36, height:36, borderRadius:10, flexShrink:0, overflow:'hidden',
+                        background: state ? 'transparent' : 'var(--pg-ink-100)',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                      }}>
+                        {state?.url ? <img src={state.url} alt="" style={{width:36,height:36,objectFit:'cover'}}/> : <span style={{fontSize:18}}>📷</span>}
+                      </div>
+                      <div style={{flex:1, minWidth:0}}>
+                        <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)'}}>{photoLabel(photoKey)}</div>
+                        {state?.uploading && <div style={{fontSize:11, color:'var(--pg-blue-500)'}}>Enviando...</div>}
+                        {state && !state.uploading && <div style={{fontSize:11, color:'#16A34A', fontWeight:600}}>✓ {lang==='pt'?'Foto adicionada':'Photo added'}</div>}
+                      </div>
+                      <label style={{cursor:'pointer', flexShrink:0}}>
+                        <input type="file" accept="image/*" capture="environment" style={{display:'none'}}
+                          onChange={e=>handlePhotoSelect(photoKey, e.target.files[0])}/>
+                        <span style={{
+                          display:'inline-flex', alignItems:'center', gap:4, height:34, padding:'0 12px',
+                          borderRadius:999, fontSize:12, fontWeight:700, cursor:'pointer',
+                          background: state ? 'var(--pg-blue-100)' : 'var(--pg-blue-500)',
+                          color: state ? 'var(--pg-blue-700)' : '#fff',
+                          border:'none',
+                        }}>
+                          {state ? (lang==='pt'?'Trocar':'Retake') : (lang==='pt'?'Tirar foto':'Take photo')}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{display:'flex', gap:8, marginTop:20}}>
+              <button onClick={()=>setShowPhotoUpload(false)} style={{
+                flex:1, height:46, borderRadius:12, border:'1px solid var(--pg-ink-200)',
+                background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', fontSize:13, fontWeight:600, cursor:'pointer',
+              }}>
+                {lang==='pt'?'Cancelar':'Cancel'}
+              </button>
+              <button onClick={submitPhotos} disabled={!allPhotosUploaded||photosSubmitting} style={{
+                flex:2, height:46, borderRadius:12, border:'none',
+                cursor: allPhotosUploaded&&!photosSubmitting ? 'pointer' : 'default',
+                background: allPhotosUploaded ? 'linear-gradient(135deg,#16A34A,#22C55E)' : 'var(--pg-ink-200)',
+                color:'#fff', fontSize:14, fontWeight:700,
+              }}>
+                {photosSubmitting ? '...' : (lang==='pt'?'Enviar fotos':'Submit photos')}
               </button>
             </div>
           </div>
@@ -1381,12 +1531,23 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                     {lang==='pt'?'Retirar candidatura':'Withdraw'}
                   </button>
                 ) : myApp && myApp.status === 'accepted' ? (
-                  <div style={{
-                    flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                    background:'#F0FDF4', border:'1px solid #86EFAC', color:'#15803D', fontSize:14, fontWeight:700,
-                  }}>
-                    ✓ {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
-                  </div>
+                  requiredPhotos.length > 0 && !photosSubmitted ? (
+                    <button onClick={()=>setShowPhotoUpload(true)} style={{
+                      flex:2, height:46, borderRadius:999, border:'none', cursor:'pointer',
+                      background:'linear-gradient(135deg,#0077B6,#00B4D8)',
+                      color:'#fff', fontSize:13, fontWeight:700,
+                      display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                    }}>
+                      📸 {lang==='pt'?'Enviar fotos':lang==='es'?'Enviar fotos':'Send photos'}
+                    </button>
+                  ) : (
+                    <div style={{
+                      flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                      background:'#F0FDF4', border:'1px solid #86EFAC', color:'#15803D', fontSize:14, fontWeight:700,
+                    }}>
+                      ✓ {photosSubmitted && requiredPhotos.length > 0 ? (lang==='pt'?'Fotos enviadas':'Photos sent') : (lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted')}
+                    </div>
+                  )
                 ) : myApp && myApp.status === 'rejected' ? (
                   <div style={{
                     flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,

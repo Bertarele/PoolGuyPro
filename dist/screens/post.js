@@ -28,8 +28,38 @@ function PostQuickPool({
     showPhone: false,
     phone: '',
     pool_address: '',
-    pool_zip: ''
+    pool_zip: '',
+    requiredPhotos: [],
+    customPhotoText: ''
   });
+  const PHOTO_OPTS = [{
+    key: 'before',
+    pt: 'Foto antes',
+    en: 'Before photo'
+  }, {
+    key: 'after',
+    pt: 'Foto depois',
+    en: 'After photo'
+  }, {
+    key: 'vacuum',
+    pt: 'Foto vacum',
+    en: 'Vacuum photo'
+  }, {
+    key: 'chemical',
+    pt: 'Foto químico',
+    en: 'Chemical photo'
+  }];
+  const togglePhoto = key => {
+    const cur = form.requiredPhotos;
+    upd('requiredPhotos', cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key]);
+  };
+  const addCustomPhoto = () => {
+    const txt = (form.customPhotoText || '').trim();
+    if (!txt) return;
+    const key = 'custom:' + txt;
+    if (!form.requiredPhotos.includes(key)) upd('requiredPhotos', [...form.requiredPhotos, key]);
+    upd('customPhotoText', '');
+  };
   const fmtPhone = val => {
     const d = val.replace(/\D/g, '').slice(0, 10);
     if (d.length <= 3) return d;
@@ -363,7 +393,160 @@ function PostQuickPool({
     style: {
       flex: 1
     }
-  })))), step === 3 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Field, {
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      padding: '14px 16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Fotos obrigatórias' : lang === 'es' ? 'Fotos obligatorias' : 'Required photos'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      marginBottom: 12
+    }
+  }, lang === 'pt' ? 'O pool guy deverá tirar essas fotos antes de finalizar.' : lang === 'es' ? 'El pool guy deberá tomar estas fotos antes de finalizar.' : 'The pool guy must take these photos before completing the job.'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
+    }
+  }, PHOTO_OPTS.map(opt => {
+    const sel = form.requiredPhotos.includes(opt.key);
+    return /*#__PURE__*/React.createElement("button", {
+      key: opt.key,
+      onClick: () => togglePhoto(opt.key),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px 12px',
+        borderRadius: 10,
+        border: sel ? '1.5px solid var(--pg-blue-500)' : '1px solid var(--pg-ink-200)',
+        background: sel ? 'var(--pg-blue-50)' : 'transparent',
+        cursor: 'pointer',
+        textAlign: 'left'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        flexShrink: 0,
+        border: sel ? 'none' : '1.5px solid var(--pg-ink-300)',
+        background: sel ? 'var(--pg-blue-500)' : 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, sel && /*#__PURE__*/React.createElement("svg", {
+      width: "12",
+      height: "12",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "3",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "20 6 9 17 4 12"
+    }))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 500,
+        color: sel ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)'
+      }
+    }, lang === 'pt' ? opt.pt : opt.en));
+  }), form.requiredPhotos.filter(k => k.startsWith('custom:')).map(k => /*#__PURE__*/React.createElement("div", {
+    key: k,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '10px 12px',
+      borderRadius: 10,
+      border: '1.5px solid var(--pg-blue-500)',
+      background: 'var(--pg-blue-50)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 20,
+      height: 20,
+      borderRadius: 6,
+      background: 'var(--pg-blue-500)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "12",
+    height: "12",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "3",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "20 6 9 17 4 12"
+  }))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 500,
+      color: 'var(--pg-blue-700)',
+      flex: 1
+    }
+  }, k.slice(7)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => upd('requiredPhotos', form.requiredPhotos.filter(x => x !== k)),
+    style: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: 2,
+      color: 'var(--pg-ink-400)',
+      fontSize: 16,
+      lineHeight: 1
+    }
+  }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      marginTop: 2
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: form.customPhotoText,
+    onChange: e => upd('customPhotoText', e.target.value),
+    onKeyDown: e => e.key === 'Enter' && addCustomPhoto(),
+    placeholder: lang === 'pt' ? 'Outro (ex: foto do filtro)' : lang === 'es' ? 'Otro (ej: foto del filtro)' : 'Other (e.g. filter photo)',
+    style: {
+      flex: 1,
+      height: 38,
+      fontSize: 13
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: addCustomPhoto,
+    disabled: !form.customPhotoText.trim(),
+    style: {
+      height: 38,
+      padding: '0 14px',
+      borderRadius: 10,
+      border: 'none',
+      cursor: 'pointer',
+      background: 'var(--pg-blue-500)',
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: 700,
+      opacity: form.customPhotoText.trim() ? 1 : 0.4
+    }
+  }, "+"))))), step === 3 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Field, {
     label: t.priceQ
   }, /*#__PURE__*/React.createElement("div", {
     className: "pg-seg"
