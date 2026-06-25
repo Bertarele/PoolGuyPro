@@ -481,6 +481,28 @@ function App() {
       return jobId;
     } catch { return null; }
   });
+  // Listen for service worker postMessage (notification click while app is open)
+  React.useEffect(() => {
+    if (!navigator.serviceWorker) return;
+    const handler = (event) => {
+      if (event.data?.type !== 'OPEN_JOB') return;
+      const url = event.data.url || '';
+      const hashIdx = url.indexOf('#');
+      const hash = hashIdx >= 0 ? url.slice(hashIdx) : '';
+      if (hash.startsWith('#quick')) {
+        const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+        const jobId = new URLSearchParams(qs).get('job') || null;
+        if (jobId) {
+          window.history.replaceState(null, '', '#quick');
+          setPendingQuickJobId(jobId);
+          setTab('quick');
+        }
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', handler);
+    return () => navigator.serviceWorker.removeEventListener('message', handler);
+  }, []);
+
   const [notifOpen,      setNotifOpen]      = React.useState(false);
   // Unread badges — derived from real Supabase data
   const [hasUnreadChat,  setHasUnreadChat]  = React.useState(false);

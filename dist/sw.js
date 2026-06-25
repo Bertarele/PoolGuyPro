@@ -19,18 +19,19 @@ self.addEventListener('push', e => {
   );
 });
 
-// ── Tap notification → open/focus the app ──────────────────────
+// ── Tap notification → open/focus the app and deep-link ───────
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = e.notification.data?.url || '/';
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      for (const c of list) {
-        if (c.url.startsWith(self.location.origin) && 'focus' in c) {
-          c.navigate && c.navigate(url);
-          return c.focus();
-        }
+      const existing = list.find(c => c.url.startsWith(self.location.origin));
+      if (existing) {
+        // App is open: send message so it handles the deep link in-place
+        existing.postMessage({ type: 'OPEN_JOB', url });
+        return existing.focus();
       }
+      // App is closed: open it with the full URL so hash is read on boot
       return clients.openWindow(url);
     })
   );
