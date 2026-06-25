@@ -1074,7 +1074,7 @@ function App() {
                   return addr || zip;
                 })(),
                 city: firstPool.location || 'Florida',
-                day_of_week: scheduledFor ? ['sun','mon','tue','wed','thu','fri','sat'][new Date(formData.scheduled_for).getDay()] : 'mon',
+                day_of_week: ['sun','mon','tue','wed','thu','fri','sat'][(scheduledFor ? new Date(formData.scheduled_for) : new Date()).getDay()],
                 when_label: scheduledFor ? new Date(scheduledFor).toLocaleDateString(lang==='pt'?'pt-BR':lang==='es'?'es':'en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : (lang==='pt'?'Agora':'Now'),
                 pools_count: 1,
                 price_per_pool: formData.priceMode==='fixed' ? parseFloat(formData.price||0)||null : null,

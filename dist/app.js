@@ -1512,7 +1512,7 @@ function App() {
             return addr || zip;
           })(),
           city: firstPool.location || 'Florida',
-          day_of_week: scheduledFor ? ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date(formData.scheduled_for).getDay()] : 'mon',
+          day_of_week: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][(scheduledFor ? new Date(formData.scheduled_for) : new Date()).getDay()],
           when_label: scheduledFor ? new Date(scheduledFor).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es' : 'en-US', {
             weekday: 'short',
             month: 'short',
