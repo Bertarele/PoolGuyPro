@@ -1485,13 +1485,10 @@ function App() {
     onClose: () => setPostQPOpen(false),
     onSubmit: async formData => {
       setPostQPOpen(false);
-      showToast(STRINGS[lang].toastPosted);
       setTab('quick');
-      // Persist to Supabase and trigger notifications
       if (!window.sb || !user?.uid) return;
       try {
         const scheduledFor = formData.scheduled_for ? new Date(formData.scheduled_for).toISOString() : null;
-        // Build notify_at: 7 AM on scheduled day (or null for "now")
         let notifyAt = null;
         if (scheduledFor) {
           const d = new Date(formData.scheduled_for);
@@ -1542,20 +1539,36 @@ function App() {
         const {
           data: inserted
         } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
-        // Only notify immediately if "Agora" (no scheduled date)
+        let notifyCount = 0;
         if (inserted && !scheduledFor) {
-          fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + (window._pgGetTok ? window._pgGetTok() : '')
-            },
-            body: JSON.stringify({
-              job: inserted
-            })
-          }).catch(() => {});
+          try {
+            const {
+              data: {
+                session
+              }
+            } = await window.sb.auth.getSession();
+            const token = session?.access_token || '';
+            const res = await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({
+                job: inserted
+              })
+            });
+            if (res.ok) {
+              const result = await res.json().catch(() => ({}));
+              notifyCount = result?.sent ?? result?.matched ?? 0;
+            }
+          } catch {}
         }
-      } catch {}
+        const toastMsg = lang === 'pt' ? `Piscina Rápida publicada — ${notifyCount} piscineiros notificados` : lang === 'es' ? `Piscina Rápida publicada — ${notifyCount} técnicos notificados` : `Quick Pool posted — ${notifyCount} pool guys notified`;
+        showToast(toastMsg);
+      } catch {
+        showToast(lang === 'pt' ? '❌ Erro ao publicar' : '❌ Error posting');
+      }
     }
   })), /*#__PURE__*/React.createElement(Toast, {
     message: toast
