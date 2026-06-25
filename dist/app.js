@@ -1567,6 +1567,9 @@ function App() {
         const {
           data: inserted
         } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
+        if (inserted) window.dispatchEvent(new CustomEvent('pgQuickPoolPosted', {
+          detail: inserted
+        }));
         let notifyCount = 0;
         if (inserted && !scheduledFor) {
           try {

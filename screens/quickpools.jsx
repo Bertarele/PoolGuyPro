@@ -157,6 +157,13 @@ function QuickPoolsScreen({ ctx }) {
 
   React.useEffect(() => { loadJobs(); }, [loadJobs]);
 
+  // Reload jobs when a new one is posted from the PostQuickPool sheet
+  React.useEffect(() => {
+    const handler = () => loadJobs();
+    window.addEventListener('pgQuickPoolPosted', handler);
+    return () => window.removeEventListener('pgQuickPoolPosted', handler);
+  }, [loadJobs]);
+
   // Load accepted applications for current user so we can highlight them
   React.useEffect(() => {
     if (!window.sb || !user?.uid) return;
@@ -1204,11 +1211,9 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     setPoolGuyDone(true);
   };
 
-  // Load all applicants (owner) or own application (others)
-  React.useEffect(() => {
+  const loadApplicants = React.useCallback(() => {
     if (!window.sb || !job._live) return;
     if (isOwn) {
-      setLoadingApps(true);
       window.sb.from('quick_pool_applications')
         .select('*').eq('job_id', job.id).order('created_at', { ascending: true })
         .then(({ data }) => { setApplicants(data || []); setLoadingApps(false); });
@@ -1222,7 +1227,21 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           if (app?.status === 'accepted') onMyJobAccepted && onMyJobAccepted(job.id);
         });
     }
-  }, [isOwn, job.id, user?.uid]);
+  }, [isOwn, job.id, job._live, user?.uid]);
+
+  // Load on mount
+  React.useEffect(() => {
+    if (isOwn) setLoadingApps(true);
+    loadApplicants();
+  }, [loadApplicants]);
+
+  // Poll every 8s when owner is waiting for pool guy to finish (no pool_guy_done yet)
+  const acceptedApp = applicants.find(a => a.status === 'accepted');
+  React.useEffect(() => {
+    if (!isOwn || job.status !== 'filled' || acceptedApp?.pool_guy_done) return;
+    const interval = setInterval(loadApplicants, 8000);
+    return () => clearInterval(interval);
+  }, [isOwn, job.status, acceptedApp?.pool_guy_done, loadApplicants]);
 
   const acceptApplicant = async (appId, applicantId) => {
     if (!window.sb) return;
@@ -1254,7 +1273,6 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     setMyApp(null);
   };
 
-  const acceptedApp = applicants.find(a => a.status === 'accepted');
 
   const submitRatingAndFinalize = async () => {
     setRatingSubmitting(true);
