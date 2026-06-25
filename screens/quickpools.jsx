@@ -915,12 +915,20 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
 
   // Photo upload state (pool guy)
   const [showPhotoUpload,   setShowPhotoUpload]   = React.useState(false);
-  const [uploadedPhotos,    setUploadedPhotos]    = React.useState({}); // { photoKey: { file, url, uploading } }
+  const [uploadedPhotos,    setUploadedPhotos]    = React.useState({});
   const [photosSubmitting,  setPhotosSubmitting]  = React.useState(false);
   const [photosSubmitted,   setPhotosSubmitted]   = React.useState(!!(myApp && myApp.submitted_photos && myApp.submitted_photos.length > 0));
+  const [poolGuyDone,       setPoolGuyDone]       = React.useState(!!(myApp && myApp.pool_guy_done));
+
+  // Pool guy rates owner
+  const [showOwnerRating,      setShowOwnerRating]      = React.useState(false);
+  const [ownerRatingStars,     setOwnerRatingStars]     = React.useState(0);
+  const [ownerRatingComment,   setOwnerRatingComment]   = React.useState('');
+  const [ownerRatingSubmitting,setOwnerRatingSubmitting]= React.useState(false);
 
   React.useEffect(() => {
     setPhotosSubmitted(!!(myApp && myApp.submitted_photos && myApp.submitted_photos.length > 0));
+    setPoolGuyDone(!!(myApp && myApp.pool_guy_done));
   }, [myApp]);
 
   const requiredPhotos = job.required_photos || [];
@@ -937,7 +945,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     try {
       const ext = file.name.split('.').pop() || 'jpg';
       const path = `${job.id}/${(user?.uid||'anon')}_${photoKey}_${Date.now()}.${ext}`;
-      const { data } = await window.sb.storage.from('job-photos').upload(path, file, { upsert: true, contentType: file.type });
+      await window.sb.storage.from('job-photos').upload(path, file, { upsert: true, contentType: file.type });
       const { data: pub } = window.sb.storage.from('job-photos').getPublicUrl(path);
       setUploadedPhotos(prev => ({ ...prev, [photoKey]: { file, url: pub.publicUrl, uploading: false } }));
     } catch {
@@ -957,6 +965,40 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     setPhotosSubmitted(true);
   };
 
+  const submitOwnerRatingAndFinishPoolGuy = async () => {
+    setOwnerRatingSubmitting(true);
+    if (ownerRatingStars > 0 && window.sb) {
+      await window.sb.from('ratings').insert({
+        listing_id: job.id,
+        listing_name: tr(job.title, lang),
+        from_id: user.uid,
+        to_id: job.poster_id,
+        from_name: user.name || user.email || 'Pool Guy',
+        stars: ownerRatingStars,
+        comment: ownerRatingComment.trim() || null,
+        pending: false,
+      }).then(()=>{});
+    }
+    // Mark pool_guy_done
+    if (myApp && window.sb) {
+      await window.sb.from('quick_pool_applications').update({ pool_guy_done: true }).eq('id', myApp.id);
+    }
+    // Notify owner
+    if (job.poster_id) {
+      window.sendPush && window.sendPush(
+        job.poster_id,
+        lang==='pt' ? '✅ Serviço concluído!' : '✅ Job completed!',
+        lang==='pt'
+          ? `${user.name||'Pool guy'} finalizou a piscina "${tr(job.title,lang)}". Confira as fotos e avalie!`
+          : `${user.name||'Pool guy'} completed "${tr(job.title,lang)}". Check the photos and leave a review!`,
+        `/#quick?job=${job.id}`
+      );
+    }
+    setOwnerRatingSubmitting(false);
+    setShowOwnerRating(false);
+    setPoolGuyDone(true);
+  };
+
   // Load all applicants (owner) or own application (others)
   React.useEffect(() => {
     if (!window.sb || !job._live) return;
@@ -967,7 +1009,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         .then(({ data }) => { setApplicants(data || []); setLoadingApps(false); });
     } else if (user?.uid) {
       window.sb.from('quick_pool_applications')
-        .select('id,status,applicant_phone').eq('job_id', job.id).eq('applicant_id', user.uid)
+        .select('id,status,applicant_phone,submitted_photos,pool_guy_done').eq('job_id', job.id).eq('applicant_id', user.uid)
         .limit(1)
         .then(({ data }) => { setMyApp((data && data[0]) || null); });
     }
@@ -1235,6 +1277,12 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                     </button>
                   )}
                 </div>
+                {/* Pool guy done badge */}
+                {a.status === 'accepted' && a.pool_guy_done && (
+                  <div style={{margin:'0 14px 8px', padding:'8px 12px', borderRadius:10, background:'#F0FDF4', border:'1px solid #86EFAC', fontSize:12, fontWeight:700, color:'#15803D'}}>
+                    ✅ {lang==='pt'?'Pool guy finalizou o serviço — confira as fotos e avalie!':'Pool guy completed the job — check photos and leave a review!'}
+                  </div>
+                )}
                 {/* Submitted photos (visible to owner for accepted applicant) */}
                 {a.status === 'accepted' && a.submitted_photos && a.submitted_photos.length > 0 && (
                   <div style={{padding:'0 14px 12px'}}>
@@ -1368,6 +1416,56 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                 color:'#fff', fontSize:14, fontWeight:700,
               }}>
                 {photosSubmitting ? '...' : (lang==='pt'?'Enviar fotos':'Submit photos')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pool guy rates owner modal */}
+      {showOwnerRating && (
+        <div style={{position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.55)', display:'flex', alignItems:'flex-end'}}>
+          <div style={{width:'100%', maxWidth:520, margin:'0 auto', background:'var(--pg-white)', borderRadius:'20px 20px 0 0', padding:'20px 18px 32px', boxShadow:'0 -8px 32px rgba(0,0,0,0.18)'}}>
+            <div style={{width:40, height:4, borderRadius:4, background:'var(--pg-ink-200)', margin:'0 auto 18px'}}/>
+            <h3 style={{margin:'0 0 4px', fontSize:17, fontWeight:700, textAlign:'center'}}>
+              {lang==='pt'?'Avaliar o dono':'Rate the owner'}
+            </h3>
+            <p style={{margin:'0 0 16px', fontSize:13, color:'var(--pg-ink-500)', textAlign:'center', lineHeight:1.4}}>
+              {lang==='pt'
+                ? 'Como foi sua experiência com esse cliente?'
+                : 'How was your experience with this client?'}
+            </p>
+            <div style={{display:'flex', justifyContent:'center', gap:10, marginBottom:16}}>
+              {[1,2,3,4,5].map(s => (
+                <button key={s} onClick={()=>setOwnerRatingStars(s)} style={{
+                  background:'none', border:'none', cursor:'pointer', fontSize:30, padding:4,
+                  opacity: s<=ownerRatingStars ? 1 : 0.25, transform: s<=ownerRatingStars ? 'scale(1.1)' : 'scale(1)',
+                  transition:'all .15s',
+                }}>★</button>
+              ))}
+            </div>
+            <textarea value={ownerRatingComment} onChange={e=>setOwnerRatingComment(e.target.value)}
+              placeholder={lang==='pt'?'Comentário opcional...':'Optional comment...'}
+              style={{width:'100%',minHeight:64,borderRadius:10,border:'1px solid var(--pg-ink-200)',padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'none',outline:'none',boxSizing:'border-box',marginBottom:12}}/>
+            <p style={{margin:'0 0 14px', fontSize:12, color:'var(--pg-ink-400)', textAlign:'center', lineHeight:1.4}}>
+              {lang==='pt'
+                ? 'O dono receberá uma notificação para conferir as fotos e avaliar você.'
+                : 'The owner will receive a notification to check the photos and rate you.'}
+            </p>
+            <div style={{display:'flex', gap:8}}>
+              <button onClick={()=>{ submitOwnerRatingAndFinishPoolGuy(); }} style={{
+                flex:1, height:46, borderRadius:12, border:'1px solid var(--pg-ink-200)',
+                background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', fontSize:13, fontWeight:600, cursor:'pointer',
+              }}>
+                {lang==='pt'?'Pular avaliação':'Skip rating'}
+              </button>
+              <button onClick={submitOwnerRatingAndFinishPoolGuy} disabled={ownerRatingStars===0||ownerRatingSubmitting} style={{
+                flex:2, height:46, borderRadius:12, border:'none',
+                cursor: ownerRatingStars>0&&!ownerRatingSubmitting ? 'pointer' : 'default',
+                background: ownerRatingStars>0 ? 'linear-gradient(135deg,#16A34A,#22C55E)' : 'var(--pg-ink-200)',
+                color:'#fff', fontSize:14, fontWeight:700,
+              }}>
+                {ownerRatingSubmitting ? '...' : (lang==='pt'?'Finalizar e avaliar':'Finish & rate')}
               </button>
             </div>
           </div>
@@ -1531,7 +1629,14 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                     {lang==='pt'?'Retirar candidatura':'Withdraw'}
                   </button>
                 ) : myApp && myApp.status === 'accepted' ? (
-                  requiredPhotos.length > 0 && !photosSubmitted ? (
+                  poolGuyDone ? (
+                    <div style={{
+                      flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                      background:'#F0FDF4', border:'1px solid #86EFAC', color:'#15803D', fontSize:14, fontWeight:700,
+                    }}>
+                      ✓ {lang==='pt'?'Finalizado':lang==='es'?'Finalizado':'Done'}
+                    </div>
+                  ) : requiredPhotos.length > 0 && !photosSubmitted ? (
                     <button onClick={()=>setShowPhotoUpload(true)} style={{
                       flex:2, height:46, borderRadius:999, border:'none', cursor:'pointer',
                       background:'linear-gradient(135deg,#0077B6,#00B4D8)',
@@ -1541,12 +1646,16 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                       📸 {lang==='pt'?'Enviar fotos':lang==='es'?'Enviar fotos':'Send photos'}
                     </button>
                   ) : (
-                    <div style={{
-                      flex:2, height:46, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                      background:'#F0FDF4', border:'1px solid #86EFAC', color:'#15803D', fontSize:14, fontWeight:700,
+                    <button onClick={()=>setShowOwnerRating(true)} style={{
+                      flex:2, height:46, borderRadius:999, border:'none', cursor:'pointer',
+                      background:'linear-gradient(135deg,#16A34A,#22C55E)',
+                      color:'#fff', fontSize:14, fontWeight:700,
+                      display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                      boxShadow:'0 4px 14px rgba(22,163,74,0.35)',
                     }}>
-                      ✓ {photosSubmitted && requiredPhotos.length > 0 ? (lang==='pt'?'Fotos enviadas':'Photos sent') : (lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted')}
-                    </div>
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      {lang==='pt'?'Finalizar':lang==='es'?'Finalizar':'Finalize'}
+                    </button>
                   )
                 ) : myApp && myApp.status === 'rejected' ? (
                   <div style={{
