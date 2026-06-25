@@ -3068,6 +3068,23 @@ function QuickPoolDetails({
     onClick: () => {
       onApply(sharePhone);
       setShowConsent(false);
+      // Optimistic update so button switches immediately
+      setMyApp(prev => prev || {
+        status: 'pending',
+        id: null,
+        submitted_photos: [],
+        pool_guy_done: false
+      });
+      // Reload from DB to get real ID
+      if (window.sb && user?.uid) {
+        setTimeout(() => {
+          window.sb.from('quick_pool_applications').select('id,status,applicant_phone,submitted_photos,pool_guy_done').eq('job_id', job.id).eq('applicant_id', user.uid).limit(1).then(({
+            data
+          }) => {
+            if (data?.[0]) setMyApp(data[0]);
+          });
+        }, 1200);
+      }
     },
     className: "pg-btn pg-btn-primary",
     style: {

@@ -1589,7 +1589,21 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                     ? 'Seu número só fica visível para o dono se você escolher compartilhar.'
                     : 'Your number is only visible to the owner if you choose to share.'}
                 </p>
-                <button onClick={()=>{ onApply(sharePhone); setShowConsent(false); }} className="pg-btn pg-btn-primary" style={{width:'100%', height:42, borderRadius:11, fontSize:14}}>
+                <button onClick={()=>{
+                  onApply(sharePhone);
+                  setShowConsent(false);
+                  // Optimistic update so button switches immediately
+                  setMyApp(prev => prev || { status:'pending', id:null, submitted_photos:[], pool_guy_done:false });
+                  // Reload from DB to get real ID
+                  if (window.sb && user?.uid) {
+                    setTimeout(() => {
+                      window.sb.from('quick_pool_applications')
+                        .select('id,status,applicant_phone,submitted_photos,pool_guy_done')
+                        .eq('job_id', job.id).eq('applicant_id', user.uid).limit(1)
+                        .then(({ data }) => { if (data?.[0]) setMyApp(data[0]); });
+                    }, 1200);
+                  }
+                }} className="pg-btn pg-btn-primary" style={{width:'100%', height:42, borderRadius:11, fontSize:14}}>
                   {lang==='pt'?'Confirmar candidatura':lang==='es'?'Confirmar':'Confirm application'}
                 </button>
               </div>
