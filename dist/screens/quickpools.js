@@ -708,7 +708,21 @@ function QuickPoolsScreen({
         gap: 6,
         boxShadow: '0 3px 10px rgba(0,119,182,0.35)'
       }
-    }, Icon.lock(12, '#fff'), " ", t.unlock) : j.status === 'filled' && !isOwn ? /*#__PURE__*/React.createElement("div", {
+    }, Icon.lock(12, '#fff'), " ", t.unlock) : isAccepted && !isOwn ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 36,
+        padding: '0 16px',
+        borderRadius: 999,
+        background: '#DCFCE7',
+        border: '1px solid #86EFAC',
+        color: '#15803D',
+        fontSize: 12,
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, Icon.check(13, '#15803D'), " ", lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted') : j.status === 'filled' && !isOwn ? /*#__PURE__*/React.createElement("div", {
       style: {
         height: 36,
         padding: '0 16px',

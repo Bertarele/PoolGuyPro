@@ -435,6 +435,15 @@ function QuickPoolsScreen({ ctx }) {
               }}>
                 {Icon.lock(12,'#fff')} {t.unlock}
               </button>
+            ) : isAccepted && !isOwn ? (
+              <div style={{
+                height:36, padding:'0 16px', borderRadius:999,
+                background:'#DCFCE7', border:'1px solid #86EFAC',
+                color:'#15803D', fontSize:12, fontWeight:700,
+                display:'flex', alignItems:'center', gap:6,
+              }}>
+                {Icon.check(13,'#15803D')} {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
+              </div>
             ) : j.status==='filled' && !isOwn ? (
               <div style={{
                 height:36, padding:'0 16px', borderRadius:999,
