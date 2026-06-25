@@ -271,7 +271,8 @@ function QuickPoolsScreen({
             pt: j.description || '',
             es: j.description || ''
           },
-          created_at: j.created_at
+          created_at: j.created_at,
+          status: j.status
         })));
       }
     } catch {}
@@ -2486,8 +2487,13 @@ function QuickPoolDetails({
       marginTop: 14,
       display: 'flex',
       alignItems: 'center',
-      gap: 12
-    }
+      gap: 12,
+      cursor: job.poster_id ? 'pointer' : 'default'
+    },
+    onClick: () => job.poster_id && window.ctx?.openPublicProfile({
+      uid: job.poster_id,
+      name: job.poster
+    })
   }, /*#__PURE__*/React.createElement(Avatar, {
     name: job.poster,
     size: 48
@@ -2661,6 +2667,19 @@ function QuickPoolDetails({
       gap: 10,
       padding: '10px 14px'
     }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: () => a.applicant_id && window.ctx?.openPublicProfile({
+      uid: a.applicant_id,
+      name: a.applicant_name
+    }),
+    style: {
+      cursor: a.applicant_id ? 'pointer' : 'default',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      flex: 1,
+      minWidth: 0
+    }
   }, /*#__PURE__*/React.createElement(Avatar, {
     name: a.applicant_name,
     size: 34
@@ -2677,13 +2696,14 @@ function QuickPoolDetails({
     }
   }, a.applicant_name), a.applicant_phone && /*#__PURE__*/React.createElement("a", {
     href: `tel:${a.applicant_phone}`,
+    onClick: e => e.stopPropagation(),
     style: {
       fontSize: 11,
       color: a.status === 'accepted' ? '#15803D' : 'var(--pg-blue-600)',
       fontWeight: 500,
       textDecoration: 'none'
     }
-  }, a.applicant_phone)), a.status === 'accepted' ? /*#__PURE__*/React.createElement("span", {
+  }, a.applicant_phone))), a.status === 'accepted' ? /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       fontWeight: 700,

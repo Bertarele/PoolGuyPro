@@ -149,6 +149,7 @@ function QuickPoolsScreen({ ctx }) {
           required_photos: j.required_photos || [],
           body: { en: j.description||'', pt: j.description||'', es: j.description||'' },
           created_at: j.created_at,
+          status: j.status,
         })));
       }
     } catch {}
@@ -1409,7 +1410,9 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           </div>
         ) : null}
 
-        <div className="pg-card" style={{padding:14, marginTop:14, display:'flex', alignItems:'center', gap:12}}>
+        <div className="pg-card" style={{padding:14, marginTop:14, display:'flex', alignItems:'center', gap:12,
+          cursor: job.poster_id ? 'pointer' : 'default'}}
+          onClick={()=>job.poster_id && window.ctx?.openPublicProfile({ uid: job.poster_id, name: job.poster })}>
           <Avatar name={job.poster} size={48}/>
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontSize:15, fontWeight:600}}>{job.poster}</div>
@@ -1484,14 +1487,17 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
             {applicants.map(a => (
               <div key={a.id} style={{borderTop:'0.5px solid var(--pg-ink-100)', background: a.status==='accepted' ? '#F0FDF4' : a.status==='rejected' ? '#FFF1F1' : 'var(--pg-ink-50)'}}>
                 <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px'}}>
+                  <div onClick={()=>a.applicant_id && window.ctx?.openPublicProfile({ uid: a.applicant_id, name: a.applicant_name })}
+                    style={{cursor: a.applicant_id ? 'pointer' : 'default', display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0}}>
                   <Avatar name={a.applicant_name} size={34}/>
                   <div style={{flex:1, minWidth:0}}>
                     <div style={{fontSize:13, fontWeight:600, color: a.status==='accepted' ? '#14532D' : a.status==='rejected' ? '#7F1D1D' : 'var(--pg-ink-900)'}}>{a.applicant_name}</div>
                     {a.applicant_phone && (
-                      <a href={`tel:${a.applicant_phone}`} style={{fontSize:11, color: a.status==='accepted' ? '#15803D' : 'var(--pg-blue-600)', fontWeight:500, textDecoration:'none'}}>
+                      <a href={`tel:${a.applicant_phone}`} onClick={e=>e.stopPropagation()} style={{fontSize:11, color: a.status==='accepted' ? '#15803D' : 'var(--pg-blue-600)', fontWeight:500, textDecoration:'none'}}>
                         {a.applicant_phone}
                       </a>
                     )}
+                  </div>
                   </div>
                   {a.status === 'accepted' ? (
                     <span style={{fontSize:11, fontWeight:700, color:'#16A34A', background:'#DCFCE7', padding:'3px 8px', borderRadius:8}}>
