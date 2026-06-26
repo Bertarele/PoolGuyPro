@@ -362,16 +362,6 @@ function QuickPoolsScreen({ ctx }) {
                 }}>
                   {Icon.clock(11,'var(--pg-ink-400)')} {tr(j.when,lang)}
                 </span>
-                {isDone && (
-                  <span style={{
-                    fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:999,
-                    background:'#F1F5F9', color:'#64748B', letterSpacing:'0.03em',
-                    display:'inline-flex', alignItems:'center', gap:4,
-                    border:'1px solid #CBD5E1',
-                  }}>
-                    ✓ {lang==='pt'?'Concluído':lang==='es'?'Completado':'Completed'}
-                  </span>
-                )}
                 {!isAccepted && j.status==='filled' && !isOwn && (
                   <span style={{
                     fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:999,

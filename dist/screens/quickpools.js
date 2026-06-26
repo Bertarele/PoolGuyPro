@@ -525,21 +525,7 @@ function QuickPoolsScreen({
         fontWeight: 600,
         color: 'var(--pg-ink-500)'
       }
-    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), isDone && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        fontWeight: 800,
-        padding: '3px 10px',
-        borderRadius: 999,
-        background: '#F1F5F9',
-        color: '#64748B',
-        letterSpacing: '0.03em',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        border: '1px solid #CBD5E1'
-      }
-    }, "\u2713 ", lang === 'pt' ? 'Concluído' : lang === 'es' ? 'Completado' : 'Completed'), !isAccepted && j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
+    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), !isAccepted && j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         fontWeight: 700,
