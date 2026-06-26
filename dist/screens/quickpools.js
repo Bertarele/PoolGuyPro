@@ -1897,33 +1897,6 @@ function LeafletMapBlock({
       position: 'bottomleft',
       prefix: false
     }).addAttribution('© <a href="https://carto.com">CartoDB</a> © <a href="https://www.openstreetmap.org/copyright">OSM</a>').addTo(map);
-
-    // Your-location pulse dot
-    L.circleMarker([26.15, -80.22], {
-      radius: 9,
-      fillColor: '#4285F4',
-      color: '#fff',
-      weight: 2.5,
-      fillOpacity: 1
-    }).addTo(map);
-
-    // Job price pins
-    jobs.forEach(job => {
-      const coords = COORDS[job.loc];
-      if (!coords) return;
-      const isNeg = job.price === 'neg';
-      const lbl = isNeg ? 'NEG' : `$${job.price}`;
-      const bg = isNeg ? '#f59e0b' : '#2563eb';
-      const icon = L.divIcon({
-        html: `<div style="background:${bg};color:#fff;font-size:11px;font-weight:700;padding:5px 9px;border-radius:14px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,0.28);border:2.5px solid rgba(255,255,255,0.95);font-family:Inter,system-ui,sans-serif;line-height:1;">${lbl}</div>`,
-        className: '',
-        iconAnchor: [22, 14]
-      });
-      const marker = L.marker(coords, {
-        icon
-      }).addTo(map).on('click', () => onPinClick(job));
-      markersRef.current[job.id] = marker;
-    });
     mapRef.current = map;
 
     // Prevent Leaflet's map container from stealing focus and triggering scroll-into-view
@@ -1943,6 +1916,31 @@ function LeafletMapBlock({
       markersRef.current = {};
     };
   }, []);
+
+  // Update markers whenever jobs list changes
+  React.useEffect(() => {
+    if (!mapRef.current || typeof L === 'undefined') return;
+    // Remove all existing markers
+    Object.values(markersRef.current).forEach(m => m.remove());
+    markersRef.current = {};
+    // Add a marker for each job that has known coordinates
+    jobs.forEach(job => {
+      const coords = COORDS[job.loc];
+      if (!coords) return;
+      const isNeg = job.price === 'neg';
+      const lbl = isNeg ? 'NEG' : `$${job.price}`;
+      const bg = isNeg ? '#f59e0b' : '#2563eb';
+      const icon = L.divIcon({
+        html: `<div style="background:${bg};color:#fff;font-size:11px;font-weight:700;padding:5px 9px;border-radius:14px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,0.28);border:2.5px solid rgba(255,255,255,0.95);font-family:Inter,system-ui,sans-serif;line-height:1;">${lbl}</div>`,
+        className: '',
+        iconAnchor: [22, 14]
+      });
+      const marker = L.marker(coords, {
+        icon
+      }).addTo(mapRef.current).on('click', () => onPinClick(job));
+      markersRef.current[job.id] = marker;
+    });
+  }, [jobs]);
 
   // Pan to highlighted job
   React.useEffect(() => {
@@ -3488,7 +3486,7 @@ function QuickPoolDetails({
       opacity: locked ? 0.5 : 1,
       borderRadius: 999
     }
-  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.contact), job.status === 'filled' ? myApp && (myApp.status === 'accepted' || myApp.status === 'rejected') ? /*#__PURE__*/React.createElement("div", {
+  }, Icon.msg(16, 'var(--pg-blue-700)'), " ", t.contact), job.status === 'filled' && myApp?.status === 'accepted' ? poolGuyDone ? /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 2,
       height: 46,
@@ -3497,13 +3495,74 @@ function QuickPoolDetails({
       alignItems: 'center',
       justifyContent: 'center',
       gap: 6,
-      background: myApp.status === 'accepted' ? '#F0FDF4' : '#FEF2F2',
-      border: myApp.status === 'accepted' ? '1px solid #86EFAC' : '1px solid #FECACA',
-      color: myApp.status === 'accepted' ? '#15803D' : '#DC2626',
+      background: '#F0FDF4',
+      border: '1px solid #86EFAC',
+      color: '#15803D',
       fontSize: 14,
       fontWeight: 700
     }
-  }, myApp.status === 'accepted' ? lang === 'pt' ? '✓ Aceito' : '✓ Accepted' : lang === 'pt' ? 'Não selecionado' : 'Not selected') : /*#__PURE__*/React.createElement("div", {
+  }, "\u2713 ", lang === 'pt' ? 'Finalizado' : lang === 'es' ? 'Finalizado' : 'Done') : requiredPhotos.length > 0 && !photosSubmitted ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowPhotoUpload(true),
+    style: {
+      flex: 2,
+      height: 46,
+      borderRadius: 999,
+      border: 'none',
+      cursor: 'pointer',
+      background: 'linear-gradient(135deg,#0077B6,#00B4D8)',
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: 700,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6
+    }
+  }, "\uD83D\uDCF8 ", lang === 'pt' ? 'Enviar fotos' : lang === 'es' ? 'Enviar fotos' : 'Send photos') : /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowOwnerRating(true),
+    style: {
+      flex: 2,
+      height: 46,
+      borderRadius: 999,
+      border: 'none',
+      cursor: 'pointer',
+      background: 'linear-gradient(135deg,#16A34A,#22C55E)',
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: 700,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      boxShadow: '0 4px 14px rgba(22,163,74,0.35)'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "17",
+    height: "17",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "2.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "20 6 9 17 4 12"
+  })), lang === 'pt' ? 'Finalizar' : lang === 'es' ? 'Finalizar' : 'Finalize') : job.status === 'filled' ? myApp?.status === 'rejected' ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 2,
+      height: 46,
+      borderRadius: 999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      background: '#FEF2F2',
+      border: '1px solid #FECACA',
+      color: '#DC2626',
+      fontSize: 14,
+      fontWeight: 700
+    }
+  }, lang === 'pt' ? 'Não selecionado' : lang === 'es' ? 'No seleccionado' : 'Not selected') : /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 2,
       height: 46,
