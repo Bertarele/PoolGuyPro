@@ -58,7 +58,7 @@ class JobDetailBoundary extends React.Component {
 }
 
 function QuickPoolsScreen({ ctx }) {
-  const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false } = ctx;
+  const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, openPublicProfile } = ctx;
   const t = STRINGS[lang];
   const [selected,    setSelected]    = React.useState(null);
   const [highlighted, setHighlighted] = React.useState(null);
@@ -434,7 +434,7 @@ function QuickPoolsScreen({ ctx }) {
 
           {/* Row 2: poster + action */}
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:10}}>
-            <div onClick={(e)=>{ e.stopPropagation(); j.poster_id && window.ctx?.openPublicProfile({ uid: j.poster_id, name: j.poster }); }}
+            <div onClick={(e)=>{ e.stopPropagation(); j.poster_id && openPublicProfile({ uid: j.poster_id, name: j.poster }); }}
               style={{display:'flex', alignItems:'center', gap:10, minWidth:0, cursor: j.poster_id ? 'pointer' : 'default'}}>
               <Avatar name={j.poster} size={32}/>
               <div>
@@ -545,6 +545,7 @@ function QuickPoolsScreen({ ctx }) {
           onClose={()=>setSelected(null)}
           onDelete={deleteJob}
           onComplete={finalizeJob}
+          openPublicProfile={openPublicProfile}
           onStatusChange={(status) => {
             setJobs(prev => prev.map(j => String(j.id)===String(selected.id) ? {...j, status} : j));
             setSelected(prev => prev ? {...prev, status} : prev);
@@ -1104,7 +1105,7 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
 }
 
 // ── Detail view ──────────────────────────────────────────────
-function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, onStatusChange, onMyJobAccepted }) {
+function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, openPublicProfile, onStatusChange, onMyJobAccepted }) {
   const locked  = user.tier === 'free';
   const isOwn   = job._live && user?.uid && job.poster_id === user.uid;
   const [confirmDialog,  setConfirmDialog]  = React.useState(null);
@@ -1412,7 +1413,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
 
         <div className="pg-card" style={{padding:14, marginTop:14, display:'flex', alignItems:'center', gap:12,
           cursor: job.poster_id ? 'pointer' : 'default'}}
-          onClick={()=>job.poster_id && window.ctx?.openPublicProfile({ uid: job.poster_id, name: job.poster })}>
+          onClick={()=>job.poster_id && openPublicProfile({ uid: job.poster_id, name: job.poster })}>
           <Avatar name={job.poster} size={48}/>
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontSize:15, fontWeight:600}}>{job.poster}</div>
@@ -1487,7 +1488,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
             {applicants.map(a => (
               <div key={a.id} style={{borderTop:'0.5px solid var(--pg-ink-100)', background: a.status==='accepted' ? '#F0FDF4' : a.status==='rejected' ? '#FFF1F1' : 'var(--pg-ink-50)'}}>
                 <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px'}}>
-                  <div onClick={()=>a.applicant_id && window.ctx?.openPublicProfile({ uid: a.applicant_id, name: a.applicant_name })}
+                  <div onClick={()=>a.applicant_id && openPublicProfile({ uid: a.applicant_id, name: a.applicant_name })}
                     style={{cursor: a.applicant_id ? 'pointer' : 'default', display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0}}>
                   <Avatar name={a.applicant_name} size={34}/>
                   <div style={{flex:1, minWidth:0}}>

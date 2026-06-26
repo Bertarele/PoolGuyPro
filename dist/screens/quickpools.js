@@ -150,7 +150,8 @@ function QuickPoolsScreen({
     hasUnreadChat,
     openNotifications,
     hasUnreadNotif,
-    darkMode = false
+    darkMode = false,
+    openPublicProfile
   } = ctx;
   const t = STRINGS[lang];
   const [selected, setSelected] = React.useState(null);
@@ -633,7 +634,7 @@ function QuickPoolsScreen({
     }, /*#__PURE__*/React.createElement("div", {
       onClick: e => {
         e.stopPropagation();
-        j.poster_id && window.ctx?.openPublicProfile({
+        j.poster_id && openPublicProfile({
           uid: j.poster_id,
           name: j.poster
         });
@@ -852,6 +853,7 @@ function QuickPoolsScreen({
     onClose: () => setSelected(null),
     onDelete: deleteJob,
     onComplete: finalizeJob,
+    openPublicProfile: openPublicProfile,
     onStatusChange: status => {
       setJobs(prev => prev.map(j => String(j.id) === String(selected.id) ? {
         ...j,
@@ -1983,6 +1985,7 @@ function QuickPoolDetails({
   onClose,
   onDelete,
   onComplete,
+  openPublicProfile,
   onStatusChange,
   onMyJobAccepted
 }) {
@@ -2489,7 +2492,7 @@ function QuickPoolDetails({
       gap: 12,
       cursor: job.poster_id ? 'pointer' : 'default'
     },
-    onClick: () => job.poster_id && window.ctx?.openPublicProfile({
+    onClick: () => job.poster_id && openPublicProfile({
       uid: job.poster_id,
       name: job.poster
     })
@@ -2667,7 +2670,7 @@ function QuickPoolDetails({
       padding: '10px 14px'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    onClick: () => a.applicant_id && window.ctx?.openPublicProfile({
+    onClick: () => a.applicant_id && openPublicProfile({
       uid: a.applicant_id,
       name: a.applicant_name
     }),
