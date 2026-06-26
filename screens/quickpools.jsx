@@ -304,8 +304,10 @@ function QuickPoolsScreen({ ctx }) {
     const isApplied    = !!applied[j.id];
     const locked       = user.tier === 'free';
     const isOwn        = j._live && user?.uid && j.poster_id === user.uid;
-    // Candidate: green when their application was accepted. Owner: green when job is filled (accepted someone).
-    const isAccepted   = isOwn ? j.status === 'filled' : myAcceptedJobIds.has(String(j.id));
+    // Green only for the candidate whose application was accepted
+    const isAccepted   = !isOwn && myAcceptedJobIds.has(String(j.id));
+    // Amber for the owner when someone has been accepted (job filled, pending finalization)
+    const isOwnFilled  = isOwn && j.status === 'filled';
     const isDone       = !isOwn && myDoneJobIds.has(String(j.id));
     const isHighlighted = highlighted === j.id;
 
@@ -318,13 +320,17 @@ function QuickPoolsScreen({ ctx }) {
           borderRadius:16, cursor:'pointer', opacity: isDone ? 0.7 : 1,
           border: isDone
             ? '1px solid var(--pg-ink-300,#CBD5E1)'
-            : isAccepted
-              ? '2px solid #22C55E'
-              : isHighlighted
-                ? '1.5px solid var(--pg-blue-400)'
-                : '1px solid var(--pg-ink-200)',
+            : isOwnFilled
+              ? '2px solid #F59E0B'
+              : isAccepted
+                ? '2px solid #22C55E'
+                : isHighlighted
+                  ? '1.5px solid var(--pg-blue-400)'
+                  : '1px solid var(--pg-ink-200)',
           boxShadow: isDone
             ? 'none'
+            : isOwnFilled
+            ? '0 0 0 4px rgba(245,158,11,0.10), 0 6px 20px rgba(245,158,11,0.15)'
             : isAccepted
             ? '0 0 0 4px rgba(34,197,94,0.12), 0 6px 20px rgba(34,197,94,0.18)'
             : isHighlighted
@@ -339,15 +345,17 @@ function QuickPoolsScreen({ ctx }) {
           height: (isAccepted && !isDone) ? 4 : 3, width:'100%',
           background: isDone
             ? 'linear-gradient(90deg,#94A3B8,#CBD5E1)'
-            : isAccepted
-              ? 'linear-gradient(90deg,#16A34A,#22C55E,#4ADE80)'
-              : j.status==='filled'
-                ? 'linear-gradient(90deg,#D97706,#F59E0B)'
-                : isApplied
-                  ? 'linear-gradient(90deg,#16A34A,#22C55E)'
-                  : locked
-                    ? 'linear-gradient(90deg,#6B7280,#9CA3AF)'
-                    : 'linear-gradient(90deg,#0077B6,#38BDF8)',
+            : isOwnFilled
+              ? 'linear-gradient(90deg,#D97706,#F59E0B)'
+              : isAccepted
+                ? 'linear-gradient(90deg,#16A34A,#22C55E,#4ADE80)'
+                : j.status==='filled'
+                  ? 'linear-gradient(90deg,#D97706,#F59E0B)'
+                  : isApplied
+                    ? 'linear-gradient(90deg,#16A34A,#22C55E)'
+                    : locked
+                      ? 'linear-gradient(90deg,#6B7280,#9CA3AF)'
+                      : 'linear-gradient(90deg,#0077B6,#38BDF8)',
         }}/>
 
         <div style={{padding: compact ? '14px 16px' : '16px 18px'}}>
@@ -438,7 +446,16 @@ function QuickPoolsScreen({ ctx }) {
               </div>
             </div>
 
-            {isOwn ? (
+            {isOwnFilled ? (
+              <div style={{
+                height:36, padding:'0 14px', borderRadius:999,
+                background:'#FFFBEB', border:'1px solid #FCD34D',
+                color:'#92400E', fontSize:12, fontWeight:700,
+                display:'flex', alignItems:'center', gap:6,
+              }}>
+                ⏳ {lang==='pt'?'Em andamento':lang==='es'?'En curso':'In progress'}
+              </div>
+            ) : isOwn ? (
               <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
                 message: lang==='pt'?'Remover publicação?':lang==='es'?'¿Eliminar publicación?':'Remove posting?',
                 subMessage: lang==='pt'?'Essa vaga será removida e os candidatos não poderão mais se candidatar.':'This job will be removed and applicants will no longer be able to apply.',
