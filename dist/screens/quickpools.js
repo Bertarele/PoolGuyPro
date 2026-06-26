@@ -1873,17 +1873,8 @@ function LeafletMapBlock({
   const mapRef = React.useRef(null);
   const markersRef = React.useRef({});
 
-  // Real Broward County / South Florida geocoordinates
-  const COORDS = {
-    'Boca Raton': [26.3683, -80.1289],
-    'Coral Springs': [26.2712, -80.2706],
-    'Davie': [26.0765, -80.2521],
-    'Plantation': [26.1276, -80.2331],
-    'Weston': [26.1003, -80.3997],
-    'Fort Lauderdale': [26.1224, -80.1373],
-    'Pompano Beach': [26.2379, -80.1248],
-    'Hollywood': [26.0112, -80.1495]
-  };
+  // Use the full South Florida geocoordinates already defined in brand.jsx
+  const COORDS = window.FL_CITY_COORDS || {};
   React.useEffect(() => {
     if (!containerRef.current || typeof L === 'undefined') return;
     const map = L.map(containerRef.current, {
