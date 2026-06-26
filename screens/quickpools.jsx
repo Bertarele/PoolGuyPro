@@ -372,16 +372,6 @@ function QuickPoolsScreen({ ctx }) {
                     ✓ {lang==='pt'?'Concluído':lang==='es'?'Completado':'Completed'}
                   </span>
                 )}
-                {isDone && (
-                  <span style={{
-                    fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:999,
-                    background:'#F1F5F9', color:'#64748B', letterSpacing:'0.03em',
-                    display:'inline-flex', alignItems:'center', gap:4,
-                    border:'1px solid #CBD5E1',
-                  }}>
-                    ✓ {lang==='pt'?'Concluído':lang==='es'?'Completado':'Completed'}
-                  </span>
-                )}
                 {!isAccepted && j.status==='filled' && !isOwn && (
                   <span style={{
                     fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:999,
@@ -446,7 +436,8 @@ function QuickPoolsScreen({ ctx }) {
 
           {/* Row 2: poster + action */}
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:10}}>
-            <div style={{display:'flex', alignItems:'center', gap:10, minWidth:0}}>
+            <div onClick={(e)=>{ e.stopPropagation(); j.poster_id && window.ctx?.openPublicProfile({ uid: j.poster_id, name: j.poster }); }}
+              style={{display:'flex', alignItems:'center', gap:10, minWidth:0, cursor: j.poster_id ? 'pointer' : 'default'}}>
               <Avatar name={j.poster} size={32}/>
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)', lineHeight:1.2}}>{j.poster}</div>
@@ -481,6 +472,15 @@ function QuickPoolsScreen({ ctx }) {
               }}>
                 {Icon.lock(12,'#fff')} {t.unlock}
               </button>
+            ) : isDone ? (
+              <div style={{
+                height:36, padding:'0 16px', borderRadius:999,
+                background:'#F1F5F9', border:'1px solid #CBD5E1',
+                color:'#64748B', fontSize:12, fontWeight:700,
+                display:'flex', alignItems:'center', gap:6,
+              }}>
+                {Icon.check(13,'#64748B')} {lang==='pt'?'Concluído':lang==='es'?'Completado':'Completed'}
+              </div>
             ) : isAccepted && !isOwn ? (
               <div style={{
                 height:36, padding:'0 16px', borderRadius:999,

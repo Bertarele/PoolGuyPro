@@ -539,20 +539,6 @@ function QuickPoolsScreen({
         gap: 4,
         border: '1px solid #CBD5E1'
       }
-    }, "\u2713 ", lang === 'pt' ? 'Concluído' : lang === 'es' ? 'Completado' : 'Completed'), isDone && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        fontWeight: 800,
-        padding: '3px 10px',
-        borderRadius: 999,
-        background: '#F1F5F9',
-        color: '#64748B',
-        letterSpacing: '0.03em',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        border: '1px solid #CBD5E1'
-      }
     }, "\u2713 ", lang === 'pt' ? 'Concluído' : lang === 'es' ? 'Completado' : 'Completed'), !isAccepted && j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
@@ -657,11 +643,19 @@ function QuickPoolsScreen({
         gap: 10
       }
     }, /*#__PURE__*/React.createElement("div", {
+      onClick: e => {
+        e.stopPropagation();
+        j.poster_id && window.ctx?.openPublicProfile({
+          uid: j.poster_id,
+          name: j.poster
+        });
+      },
       style: {
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        minWidth: 0
+        minWidth: 0,
+        cursor: j.poster_id ? 'pointer' : 'default'
       }
     }, /*#__PURE__*/React.createElement(Avatar, {
       name: j.poster,
@@ -753,7 +747,21 @@ function QuickPoolsScreen({
         gap: 6,
         boxShadow: '0 3px 10px rgba(0,119,182,0.35)'
       }
-    }, Icon.lock(12, '#fff'), " ", t.unlock) : isAccepted && !isOwn ? /*#__PURE__*/React.createElement("div", {
+    }, Icon.lock(12, '#fff'), " ", t.unlock) : isDone ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 36,
+        padding: '0 16px',
+        borderRadius: 999,
+        background: '#F1F5F9',
+        border: '1px solid #CBD5E1',
+        color: '#64748B',
+        fontSize: 12,
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, Icon.check(13, '#64748B'), " ", lang === 'pt' ? 'Concluído' : lang === 'es' ? 'Completado' : 'Completed') : isAccepted && !isOwn ? /*#__PURE__*/React.createElement("div", {
       style: {
         height: 36,
         padding: '0 16px',
