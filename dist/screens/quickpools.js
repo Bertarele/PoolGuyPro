@@ -306,17 +306,56 @@ function QuickPoolsScreen({
       setMyAcceptedJobIds(accepted);
       setMyDoneJobIds(done);
     });
-    // Load history: accepted apps where pool_guy_done=true, fetch job details
-    window.sb.from('quick_pool_applications').select('job_id,pool_guy_done_at,quick_pool_jobs!inner(id,title,city,price_per_pool,price_negotiable,poster_name,status,created_at)').eq('applicant_id', user.uid).eq('status', 'accepted').eq('pool_guy_done', true).order('pool_guy_done_at', {
+    // Load history: accepted apps where pool_guy_done=true, fetch full job details
+    window.sb.from('quick_pool_applications').select('job_id,pool_guy_done_at,submitted_photos,quick_pool_jobs!inner(id,title,city,price_per_pool,price_negotiable,poster_name,poster_id,poster_phone,pool_address,status,created_at,day_of_week,time_slot,when_label,pools_count,pool_type,extras,required_photos,description)').eq('applicant_id', user.uid).eq('status', 'accepted').eq('pool_guy_done', true).order('pool_guy_done_at', {
       ascending: false
     }).limit(20).then(({
       data
     }) => {
       if (!data || data.length === 0) return;
-      setHistoryJobs(data.map(r => ({
-        ...r.quick_pool_jobs,
-        pool_guy_done_at: r.pool_guy_done_at
-      })));
+      setHistoryJobs(data.map(r => {
+        const j = r.quick_pool_jobs;
+        return {
+          id: j.id,
+          _live: true,
+          title: {
+            en: j.title || `Pool job in ${j.city}`,
+            pt: j.title || `Vaga em ${j.city}`,
+            es: j.title || `Vaga en ${j.city}`
+          },
+          loc: j.city,
+          dist: {
+            en: '',
+            pt: '',
+            es: ''
+          },
+          price: j.price_negotiable ? 'neg' : j.price_per_pool,
+          type: j.pool_type || 'residential',
+          poster: j.poster_name,
+          poster_id: j.poster_id,
+          poster_phone: j.poster_phone,
+          pool_address: j.pool_address,
+          when: {
+            en: j.when_label || '',
+            pt: j.when_label || '',
+            es: j.when_label || ''
+          },
+          pools: j.pools_count || 1,
+          day_of_week: j.day_of_week,
+          time_slot: j.time_slot || '',
+          extras: j.extras || null,
+          required_photos: j.required_photos || [],
+          body: {
+            en: j.description || '',
+            pt: j.description || '',
+            es: j.description || ''
+          },
+          created_at: j.created_at,
+          status: j.status,
+          pool_guy_done_at: r.pool_guy_done_at,
+          submitted_photos: r.submitted_photos || []
+        };
+      }));
     });
   }, [user?.uid]);
 
@@ -929,17 +968,22 @@ function QuickPoolsScreen({
     }
   }, historyJobs.map(j => /*#__PURE__*/React.createElement("div", {
     key: j.id,
+    onClick: () => setSelected(j),
     style: {
       borderRadius: 12,
       border: '1px solid var(--pg-ink-200)',
       background: 'var(--pg-ink-50)',
-      opacity: 0.8,
+      opacity: 0.85,
       padding: '12px 14px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: 10
-    }
+      gap: 10,
+      cursor: 'pointer',
+      transition: 'opacity .15s'
+    },
+    onMouseEnter: e => e.currentTarget.style.opacity = '1',
+    onMouseLeave: e => e.currentTarget.style.opacity = '0.85'
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
@@ -952,12 +996,18 @@ function QuickPoolsScreen({
       color: 'var(--pg-ink-700)',
       marginBottom: 2
     }
-  }, j.title || j.city), /*#__PURE__*/React.createElement("div", {
+  }, typeof j.title === 'object' ? j.title[lang] || j.title.pt || j.title.en : j.title || j.loc), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: 'var(--pg-ink-400)'
     }
-  }, j.city, " \xB7 ", j.price_negotiable ? lang === 'pt' ? 'Negociável' : 'Negotiable' : `$${j.price_per_pool}`)), /*#__PURE__*/React.createElement("span", {
+  }, j.loc, " \xB7 ", j.price === 'neg' ? lang === 'pt' ? 'Negociável' : 'Negotiable' : `$${j.price}`)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -968,7 +1018,18 @@ function QuickPoolsScreen({
       border: '1px solid #CBD5E1',
       whiteSpace: 'nowrap'
     }
-  }, "\u2713 ", lang === 'pt' ? 'Concluído' : 'Done')))));
+  }, "\u2713 ", lang === 'pt' ? 'Concluído' : 'Done'), /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "var(--pg-ink-300)",
+    strokeWidth: "2.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "9 18 15 12 9 6"
+  })))))));
 
   // ══════════════════════════════════════════════════════════════
   // ── DESKTOP LAYOUT ────────────────────────────────────────────
