@@ -276,7 +276,7 @@ button { font-family: inherit; }
 }
 
 /* Subtle scrollbar hide */
-.pg-scroll-x { overflow-x: auto; scrollbar-width: none; touch-action: pan-x; }
+.pg-scroll-x { overflow-x: auto; scrollbar-width: none; touch-action: pan-x pan-y; }
 .pg-scroll-x::-webkit-scrollbar { display: none; }
 
 /* Home screen logo */
