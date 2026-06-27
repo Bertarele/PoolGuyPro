@@ -5,7 +5,8 @@ function ProfileScreen({ ctx }) {
           openLanguagePicker, openApplicants, openVerification, openPushNotif, openFeedback,
           openEditProfile, onLogout, openHelp, openPrivacy,
           darkMode, toggleDark, openChat, hasUnreadChat, openNotifications, hasUnreadNotif, requestVerification,
-          openWallet, isDesktop=false, retryPush, pushLog='' } = ctx;
+          openWallet, isDesktop=false, retryPush, pushLog='',
+          notifPrefs, saveNotifPrefs } = ctx;
   const t = STRINGS[lang];
 
   const typeIcon = (type) => {
@@ -495,6 +496,54 @@ function ProfileScreen({ ctx }) {
                   {pushLog.startsWith('✅') ? (lang==='pt'?'Re-testar':'Re-test') : (lang==='pt'?'Ativar':'Enable')}
                 </button>
               </div>
+              {/* Notification type preferences — only shown when push is active */}
+              {pushLog.startsWith('✅') && notifPrefs && (() => {
+                const prefs = notifPrefs;
+                const toggle = (key) => {
+                  const next = { ...prefs, [key]: !prefs[key] };
+                  saveNotifPrefs && saveNotifPrefs(next);
+                };
+                const Switch = ({ on }) => (
+                  <div onClick={null} style={{
+                    width:40, height:22, borderRadius:11, flexShrink:0,
+                    background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)',
+                    position:'relative', transition:'background .2s',
+                    cursor:'pointer',
+                  }}>
+                    <div style={{
+                      position:'absolute', top:2, left: on ? 20 : 2,
+                      width:18, height:18, borderRadius:'50%',
+                      background:'#fff', transition:'left .2s',
+                      boxShadow:'0 1px 4px rgba(0,0,0,0.25)',
+                    }}/>
+                  </div>
+                );
+                const rows = [
+                  { key:'chat',   icon:'💬', label: lang==='pt'?'Chat':'Chat' },
+                  { key:'quick',  icon:'⚡', label: lang==='pt'?'Piscinas Rápidas':'Express Pools' },
+                  { key:'market', icon:'🛒', label: lang==='pt'?'Marketplace':'Marketplace' },
+                  { key:'work',   icon:'💼', label: lang==='pt'?'Vagas de Trabalho':'Job Listings' },
+                ];
+                return (
+                  <div style={{margin:'0 12px 10px', borderRadius:10, overflow:'hidden', border:'1px solid var(--pg-ink-100)'}}>
+                    <div style={{padding:'8px 14px 6px', fontSize:11, fontWeight:600, color:'var(--pg-ink-400)', letterSpacing:.4, textTransform:'uppercase'}}>
+                      {lang==='pt' ? 'Receber notificações de' : 'Receive notifications for'}
+                    </div>
+                    {rows.map(({ key, icon, label }, i) => (
+                      <div key={key} onClick={() => toggle(key)}
+                        style={{display:'flex', alignItems:'center', justifyContent:'space-between',
+                          padding:'10px 14px', cursor:'pointer',
+                          borderTop: i > 0 ? '0.5px solid var(--pg-ink-100)' : 'none',
+                          background:'var(--pg-white)'}}>
+                        <span style={{display:'flex', alignItems:'center', gap:8, fontSize:14, color:'var(--pg-ink-900)'}}>
+                          <span style={{fontSize:16}}>{icon}</span>{label}
+                        </span>
+                        <Switch on={prefs[key] !== false}/>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
             <SettingRow icon={Icon.globe(18,'var(--pg-blue-500)')} label={t.languageLbl}
               detail={({en:t.english, pt:t.portuguese, es:t.spanish})[lang]} chev

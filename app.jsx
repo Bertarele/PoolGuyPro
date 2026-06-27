@@ -308,6 +308,7 @@ function App() {
       verificationRequested:profile?.verification_requested || false,
       phoneVerified:        profile?.phone_verified        || false,
       banned:               profile?.banned                || false,
+      notifPrefs:           profile?.notif_prefs || { chat: true, quick: true, market: true, work: true },
     }));
     // Load regionsByDay from profile if saved
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
@@ -433,15 +434,30 @@ function App() {
   }
 
   // Global helper: fire-and-forget push to another user via Edge Function
-  window.sendPush = async function(userId, title, body, url) {
+  window.sendPush = async function(userId, title, body, url, notifType) {
     try {
       const { data: { session } } = await window.sb.auth.getSession();
       const token = session?.access_token || '';
       await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/send-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ user_id: userId, title, body, url }),
+        body: JSON.stringify({ user_id: userId, title, body, url, notif_type: notifType }),
       });
+    } catch(e) {}
+  };
+
+  // Play a short notification beep using Web Audio API (in-app only)
+  window.playNotifSound = function() {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.type = 'sine'; o.frequency.value = 880;
+      g.gain.setValueAtTime(0, ac.currentTime);
+      g.gain.linearRampToValueAtTime(0.25, ac.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.25);
+      o.start(ac.currentTime); o.stop(ac.currentTime + 0.25);
     } catch(e) {}
   };
 
@@ -528,6 +544,7 @@ function App() {
     if (!navigator.serviceWorker) return;
     const handler = (event) => {
       if (event.data?.type !== 'OPEN_JOB') return;
+      window.playNotifSound && window.playNotifSound();
       const url = event.data.url || '';
       const hashIdx = url.indexOf('#');
       const hash = hashIdx >= 0 ? url.slice(hashIdx) : '';
@@ -1033,6 +1050,12 @@ function App() {
     openPublicProfile:  (u)   => setPublicProfileUser(u),
     openHelp:           ()    => setHelpOpen(true),
     openPrivacy:        ()    => setPrivacyOpen(true),
+    notifPrefs: user.notifPrefs || { chat: true, quick: true, market: true, work: true },
+    saveNotifPrefs: async (prefs) => {
+      if (!window.sb || !user.uid) return;
+      await window.sb.from('profiles').update({ notif_prefs: prefs }).eq('id', user.uid);
+      setUser(u => ({ ...u, notifPrefs: prefs }));
+    },
     pendingRatings,
     openRating: (r) => setActiveRating(r),
     loadPendingRatings,

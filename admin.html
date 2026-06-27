@@ -1309,6 +1309,7 @@ function AdminApp({ adminUser, onLogout }) {
             title: '🎉 Seu anúncio foi aprovado!',
             body:  `"${row.name||row.type||'Anúncio'}" já está visível no marketplace.`,
             url:   '/#market',
+            notif_type: 'market',
           }),
         });
       } catch(e) {}

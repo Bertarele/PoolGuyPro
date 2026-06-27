@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
     headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' }
   });
 
-  const { user_id, title, body, url } = await req.json();
+  const { user_id, title, body, url, notif_type } = await req.json();
   if (!user_id || !title) return new Response('missing fields', { status: 400 });
 
   const headers = {
@@ -20,6 +20,21 @@ Deno.serve(async (req) => {
     'Authorization': `Bearer ${SB_SRK}`,
     'Content-Type': 'application/json',
   };
+
+  // Check user notification preferences before sending
+  if (notif_type) {
+    const prefRes = await fetch(
+      `${SB_URL}/rest/v1/profiles?select=notif_prefs&id=eq.${user_id}&limit=1`,
+      { headers }
+    );
+    const [prof] = await prefRes.json();
+    const prefs = prof?.notif_prefs;
+    if (prefs && prefs[notif_type] === false) {
+      return new Response(JSON.stringify({ sent: 0, reason: 'disabled by user' }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+  }
 
   const subRes = await fetch(
     `${SB_URL}/rest/v1/push_subscriptions?select=endpoint,p256dh,auth&user_id=eq.${user_id}`,

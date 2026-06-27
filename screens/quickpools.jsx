@@ -1269,7 +1269,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
       const pushBody  = lang==='pt'
         ? `${user.name||'Pool guy'} finalizou "${tr(job.title,lang)}". Confira as fotos e avalie!`
         : `${user.name||'Pool guy'} completed "${tr(job.title,lang)}". Check the photos and rate!`;
-      window.sendPush && window.sendPush(job.poster_id, pushTitle, pushBody, `/#quick?job=${job.id}`);
+      window.sendPush && window.sendPush(job.poster_id, pushTitle, pushBody, `/#quick?job=${job.id}`, 'quick');
       // In-app notification so owner sees it even without push
       window.sb.from('notifications').insert({
         user_id: job.poster_id,
@@ -1327,7 +1327,8 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
       window.sendPush && window.sendPush(a.applicant_id,
         lang==='pt' ? '❌ Candidatura não selecionada' : '❌ Application not selected',
         lang==='pt' ? `Outra pessoa foi escolhida para "${tr(job.title,lang)}". Continue tentando!` : `Someone else was chosen for "${tr(job.title,lang)}". Keep trying!`,
-        '/#express-pools'
+        '/#express-pools',
+        'quick'
       );
     });
     setApplicants(prev => prev.map(a => ({ ...a, status: a.id === appId ? 'accepted' : 'rejected' })));
@@ -1336,7 +1337,8 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     window.sendPush && window.sendPush(applicantId,
       lang==='pt' ? '🎉 Candidatura aceita!' : '🎉 Application accepted!',
       lang==='pt' ? `Sua candidatura para "${tr(job.title,lang)}" foi aceita.` : `Your application for "${tr(job.title,lang)}" was accepted.`,
-      `/#quick?job=${job.id}`
+      `/#quick?job=${job.id}`,
+      'quick'
     );
   };
 

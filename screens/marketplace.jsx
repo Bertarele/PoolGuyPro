@@ -307,7 +307,8 @@ function MarkSoldSheet({ item, lang, currentUser, onClose, onSold, showToast }) 
           lang==='pt'
             ? `O vendedor confirmou a venda de "${item.name||''}"`
             : `The seller confirmed the sale of "${item.name||''}"`,
-          '/#market'
+          '/#market',
+          'market'
         );
       }
 
@@ -702,7 +703,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     // Push notification (extract readable text from multilingual object)
     const pushTitle = typeof title === 'object' ? (title.pt || title.en || '') : title;
     const pushBody  = typeof body  === 'object' ? (body.pt  || body.en  || '') : body;
-    window.sendPush && window.sendPush(userId, pushTitle, pushBody, '/#market');
+    window.sendPush && window.sendPush(userId, pushTitle, pushBody, '/#market', 'market');
   };
 
   const handleRequestRental = async () => {

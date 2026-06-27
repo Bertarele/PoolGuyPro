@@ -267,7 +267,8 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
           convo.receiverId,
           myName,
           text.length > 120 ? text.slice(0, 120) + '…' : text,
-          `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(myName)}`
+          `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(myName)}`,
+          'chat'
         );
       }
       // Store listing context in the conversation row so seller also sees it
@@ -2823,7 +2824,8 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
           : lang==='es'
           ? `${user.name || 'Alguien'} se postuló para "${jobRole || jobCompany}".`
           : `${user.name || 'Someone'} applied for "${jobRole || jobCompany}".`,
-        '/#work'
+        '/#work',
+        'work'
       );
     }
     setSubmitted(true);
