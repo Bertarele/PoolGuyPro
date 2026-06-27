@@ -213,7 +213,7 @@ function HomeScreen({ ctx }) {
             </div>
 
             {/* Bottom row: greeting + active */}
-            <div style={{padding:'0px 18px 8px', marginTop:-28, display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:1}}>
+            <div style={{padding:'0px 18px 8px 26px', marginTop:-28, display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:1}}>
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:H.mid, letterSpacing:'-0.01em'}}>
                   {greetWord}, {firstName}! 👋
