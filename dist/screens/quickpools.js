@@ -2183,7 +2183,9 @@ function QuickPoolDetails({
       }
     }));
   };
-  const allPhotosUploaded = requiredPhotos.length > 0 && requiredPhotos.every(p => uploadedPhotos[p] && !uploadedPhotos[p].uploading);
+
+  // Only allow submit when all photos are uploaded AND have a valid public URL (not blob:)
+  const allPhotosUploaded = requiredPhotos.length > 0 && requiredPhotos.every(p => uploadedPhotos[p] && !uploadedPhotos[p].uploading && !uploadedPhotos[p].error && uploadedPhotos[p].url && !uploadedPhotos[p].url.startsWith('blob:'));
   const submitPhotos = async () => {
     if (!allPhotosUploaded || !myApp || !window.sb) return;
     setPhotosSubmitting(true);
@@ -2191,10 +2193,20 @@ function QuickPoolDetails({
       type: p,
       url: uploadedPhotos[p].url
     }));
-    await window.sb.from('quick_pool_applications').update({
+    const {
+      error
+    } = await window.sb.from('quick_pool_applications').update({
       submitted_photos: photoList
     }).eq('id', myApp.id);
     setPhotosSubmitting(false);
+    if (error) {
+      console.error('submitPhotos error:', error);
+      return;
+    }
+    setMyApp(prev => prev ? {
+      ...prev,
+      submitted_photos: photoList
+    } : prev);
     setShowPhotoUpload(false);
     setPhotosSubmitted(true);
   };
@@ -2212,16 +2224,35 @@ function QuickPoolDetails({
         pending: false
       }).then(() => {});
     }
-    // Mark pool_guy_done with timestamp
+    // Mark pool_guy_done; also re-save submitted_photos atomically (in case first save failed)
     if (myApp && window.sb) {
-      await window.sb.from('quick_pool_applications').update({
+      const patch = {
         pool_guy_done: true,
         pool_guy_done_at: new Date().toISOString()
-      }).eq('id', myApp.id);
+      };
+      // Include photos from local state as safety net (uploaded but possibly not persisted yet)
+      const localPhotos = requiredPhotos.length > 0 ? requiredPhotos.filter(p => uploadedPhotos[p]?.url && !uploadedPhotos[p].url.startsWith('blob:')).map(p => ({
+        type: p,
+        url: uploadedPhotos[p].url
+      })) : null;
+      // Prefer myApp.submitted_photos (already persisted) over local state
+      const photosToSave = myApp.submitted_photos && myApp.submitted_photos.length > 0 ? myApp.submitted_photos : localPhotos && localPhotos.length > 0 ? localPhotos : null;
+      if (photosToSave) patch.submitted_photos = photosToSave;
+      await window.sb.from('quick_pool_applications').update(patch).eq('id', myApp.id);
     }
-    // Notify owner
-    if (job.poster_id) {
-      window.sendPush && window.sendPush(job.poster_id, lang === 'pt' ? '✅ Serviço concluído!' : '✅ Job completed!', lang === 'pt' ? `${user.name || 'Pool guy'} finalizou a piscina "${tr(job.title, lang)}". Confira as fotos e avalie!` : `${user.name || 'Pool guy'} completed "${tr(job.title, lang)}". Check the photos and leave a review!`, `/#quick?job=${job.id}`);
+    // Notify owner — push + in-app notification
+    if (job.poster_id && window.sb) {
+      const pushTitle = lang === 'pt' ? '✅ Serviço concluído!' : '✅ Job completed!';
+      const pushBody = lang === 'pt' ? `${user.name || 'Pool guy'} finalizou "${tr(job.title, lang)}". Confira as fotos e avalie!` : `${user.name || 'Pool guy'} completed "${tr(job.title, lang)}". Check the photos and rate!`;
+      window.sendPush && window.sendPush(job.poster_id, pushTitle, pushBody, `/#quick?job=${job.id}`);
+      // In-app notification so owner sees it even without push
+      window.sb.from('notifications').insert({
+        user_id: job.poster_id,
+        type: 'quick_pool_done',
+        title: pushTitle,
+        body: pushBody,
+        link_id: String(job.id)
+      }).catch(() => {});
     }
     setOwnerRatingSubmitting(false);
     setShowOwnerRating(false);
