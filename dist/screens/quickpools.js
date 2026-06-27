@@ -449,13 +449,12 @@ function QuickPoolsScreen({
   const activeDayCount = React.useMemo(() => Object.values(regionsByDay || {}).filter(arr => (arr || []).length > 0).length, [regionsByDay]);
   const cardRefs = React.useRef({});
   const scrollToJob = id => {
-    setHighlighted(id);
+    setHighlighted(prev => prev === id ? null : id);
     const el = cardRefs.current[id];
     if (el) el.scrollIntoView({
       behavior: 'smooth',
       block: 'center'
     });
-    setTimeout(() => setHighlighted(null), 1800);
   };
 
   // ── Delete a live job ─────────────────────────────────────────
@@ -522,8 +521,8 @@ function QuickPoolsScreen({
         borderRadius: 16,
         cursor: 'pointer',
         opacity: isDone ? 0.7 : 1,
-        border: isDone ? '1px solid var(--pg-ink-300,#CBD5E1)' : isOwnFilled ? '2px solid #F59E0B' : isAccepted ? '2px solid #22C55E' : isHighlighted ? '1.5px solid var(--pg-blue-400)' : '1px solid var(--pg-ink-200)',
-        boxShadow: isDone ? 'none' : isOwnFilled ? '0 0 0 4px rgba(245,158,11,0.10), 0 6px 20px rgba(245,158,11,0.15)' : isAccepted ? '0 0 0 4px rgba(34,197,94,0.12), 0 6px 20px rgba(34,197,94,0.18)' : isHighlighted ? '0 0 0 3px rgba(0,119,182,0.12), 0 6px 20px rgba(0,119,182,0.15)' : '0 2px 8px rgba(0,0,0,0.05)',
+        border: isDone ? '1px solid var(--pg-ink-300,#CBD5E1)' : isOwnFilled ? '2px solid #F59E0B' : isAccepted ? '2px solid #22C55E' : isHighlighted ? '2px solid #00B4D8' : '1px solid var(--pg-ink-200)',
+        boxShadow: isDone ? 'none' : isOwnFilled ? '0 0 0 4px rgba(245,158,11,0.10), 0 6px 20px rgba(245,158,11,0.15)' : isAccepted ? '0 0 0 4px rgba(34,197,94,0.12), 0 6px 20px rgba(34,197,94,0.18)' : isHighlighted ? '0 0 0 4px rgba(0,180,216,0.18), 0 6px 20px rgba(0,180,216,0.22)' : '0 2px 8px rgba(0,0,0,0.05)',
         transition: 'all .2s ease',
         overflow: 'hidden'
       }

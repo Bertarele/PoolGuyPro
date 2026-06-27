@@ -278,10 +278,9 @@ function QuickPoolsScreen({ ctx }) {
   const cardRefs = React.useRef({});
 
   const scrollToJob = (id) => {
-    setHighlighted(id);
+    setHighlighted(prev => prev === id ? null : id);
     const el = cardRefs.current[id];
     if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
-    setTimeout(()=>setHighlighted(null), 1800);
   };
 
   // ── Delete a live job ─────────────────────────────────────────
@@ -341,7 +340,7 @@ function QuickPoolsScreen({ ctx }) {
               : isAccepted
                 ? '2px solid #22C55E'
                 : isHighlighted
-                  ? '1.5px solid var(--pg-blue-400)'
+                  ? '2px solid #00B4D8'
                   : '1px solid var(--pg-ink-200)',
           boxShadow: isDone
             ? 'none'
@@ -350,7 +349,7 @@ function QuickPoolsScreen({ ctx }) {
             : isAccepted
             ? '0 0 0 4px rgba(34,197,94,0.12), 0 6px 20px rgba(34,197,94,0.18)'
             : isHighlighted
-              ? '0 0 0 3px rgba(0,119,182,0.12), 0 6px 20px rgba(0,119,182,0.15)'
+              ? '0 0 0 4px rgba(0,180,216,0.18), 0 6px 20px rgba(0,180,216,0.22)'
               : '0 2px 8px rgba(0,0,0,0.05)',
           transition:'all .2s ease',
           overflow:'hidden',
