@@ -56,6 +56,16 @@ function HomeScreen({ ctx }) {
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob,      setSelectedJob]      = React.useState(null);
 
+  // Track whether the app is currently in the foreground
+  const [isAppVisible, setIsAppVisible] = React.useState(
+    () => document.visibilityState === 'visible'
+  );
+  React.useEffect(() => {
+    const update = () => setIsAppVisible(document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', update);
+    return () => document.removeEventListener('visibilitychange', update);
+  }, []);
+
   // Quick pool jobs posted today (live from Supabase)
   const [todayQuick, setTodayQuick] = React.useState([]);
   React.useEffect(() => {
@@ -285,13 +295,17 @@ function HomeScreen({ ctx }) {
                   {greetWord}, {firstName}! 👋
                 </div>
               </div>
-              <div style={{
-                background:H.activeBg, border:H.activeBdr,
-                borderRadius:999, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
-              }}>
-                <div style={{width:7, height:7, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/>
-                <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.03em'}}>ACTIVE</span>
-              </div>
+              {isAppVisible && (
+                <div style={{
+                  background:H.activeBg, border:H.activeBdr,
+                  borderRadius:999, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
+                }}>
+                  <div style={{width:7, height:7, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/>
+                  <span style={{fontSize:10.5, fontWeight:700, color:H.activeTxt, letterSpacing:'0.03em'}}>
+                    {lang==='pt' ? 'ATIVO' : lang==='es' ? 'ACTIVO' : 'ACTIVE'}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Wave accent */}
