@@ -213,16 +213,28 @@ function App() {
   const PULL_THRESHOLD = 64;
 
   const onPTRTouchStart = React.useCallback((e) => {
-    if (screenRef.current && screenRef.current.scrollTop === 0) {
-      pullStartY.current = e.touches[0].clientY;
+    if (!screenRef.current || screenRef.current.scrollTop !== 0) return;
+    // Don't arm PTR if the touch is inside a nested scrollable that still has content above
+    let el = e.target;
+    while (el && el !== screenRef.current) {
+      if (el.scrollTop > 0) return;
+      el = el.parentElement;
     }
+    pullStartY.current = e.touches[0].clientY;
   }, []);
 
   const onPTRTouchMove = React.useCallback((e) => {
     if (pullStartY.current === null) return;
     const dy = e.touches[0].clientY - pullStartY.current;
-    if (dy > 0) setPullDist(Math.min(dy * 0.55, 80));
-    else { pullStartY.current = null; setPullDist(0); }
+    if (dy > 0) {
+      // Cancel if outer container scrolled (nested element took over)
+      if (screenRef.current && screenRef.current.scrollTop > 0) {
+        pullStartY.current = null; setPullDist(0); return;
+      }
+      setPullDist(Math.min(dy * 0.55, 80));
+    } else {
+      pullStartY.current = null; setPullDist(0);
+    }
   }, []);
 
   const onPTRTouchEnd = React.useCallback(() => {
