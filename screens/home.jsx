@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false, county='Broward' } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], liveVacations=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false, county='Broward' } = ctx;
   // Desktop detection via CSS (.pg-mobile-only / .pg-desktop-only) — no JS needed
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
@@ -55,6 +55,71 @@ function HomeScreen({ ctx }) {
 
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob,      setSelectedJob]      = React.useState(null);
+
+  // Quick pool jobs posted today (live from Supabase)
+  const [todayQuick, setTodayQuick] = React.useState([]);
+  React.useEffect(() => {
+    if (!window.sb) return;
+    const cutoff = Date.now() - 24*60*60*1000;
+    window.sb.from('quick_pool_jobs').select('*').eq('status','open')
+      .order('created_at', { ascending: false }).limit(30)
+      .then(({ data }) => {
+        if (!data) return;
+        setTodayQuick(data.filter(j => new Date(j.created_at).getTime() > cutoff));
+      });
+  }, []);
+
+  // Vacation listings that have today as an available (unbooked) day
+  const todayItems = React.useMemo(() => {
+    const now = new Date();
+    const todayDay = now.getDate();
+    const todayMonth = now.getMonth(); // 0-indexed
+    const todayYear = now.getFullYear();
+    const todayDow = now.getDay(); // 0=Sun
+
+    const quick = todayQuick.map(j => ({
+      id: j.id, _type: 'quick',
+      title: { en: j.title, pt: j.title, es: j.title },
+      loc: j.city,
+      dist: { en:'', pt:'', es:'' },
+      price: j.price_negotiable ? 'neg' : j.price_per_pool,
+      urgency: 'new',
+      pools: j.pools_count || 1,
+      when: { en: j.when_label||'Today', pt: j.when_label||'Hoje', es: j.when_label||'Hoy' },
+      body: { en: j.description||'', pt: j.description||'', es: j.description||'' },
+      type: j.pool_type || '',
+    }));
+
+    const vacas = liveVacations
+      .filter(v =>
+        v.monthIdx === todayMonth &&
+        v.year === todayYear &&
+        (v.days||[]).includes(todayDay) &&
+        !(v.bookedDays||[]).includes(todayDay)
+      )
+      .map(v => {
+        const pools = (v.poolsByWeekday||{})[todayDow] ||
+          (Object.values(v.poolsByWeekday||{}).find(n=>n>0)) || '?';
+        return {
+          id: v._id, _type: 'vacation',
+          title: {
+            en: `Vacation cover — ${v.region}`,
+            pt: `Cobertura de férias — ${v.region}`,
+            es: `Cobertura de vacaciones — ${v.region}`,
+          },
+          loc: v.region,
+          dist: { en:'', pt:'', es:'' },
+          price: v.price,
+          urgency: 'urgent',
+          pools,
+          when: { en:'Today', pt:'Hoje', es:'Hoy' },
+          body: { en: v.note||'', pt: v.note||'', es: v.note||'' },
+          type: 'vacation',
+        };
+      });
+
+    return [...vacas, ...quick].slice(0, 5);
+  }, [todayQuick, liveVacations]);
 
   const catLabel = (cat) => {
     const map = {
@@ -635,7 +700,19 @@ function HomeScreen({ ctx }) {
           )}
 
           <div style={{display:'flex', flexDirection:'column', gap:8}}>
-            {QUICK_POOLS.slice(0,3).map(j => (
+            {todayItems.length === 0 ? (
+              <div style={{
+                textAlign:'center', padding:'24px 16px',
+                color:'var(--pg-ink-400)', fontSize:13,
+              }}>
+                <div style={{fontSize:28, marginBottom:8}}>🏊</div>
+                {lang==='pt'
+                  ? 'Nenhuma piscina disponível para hoje'
+                  : lang==='es'
+                    ? 'No hay piscinas disponibles para hoy'
+                    : 'No pools available for today'}
+              </div>
+            ) : todayItems.map(j => (
               <button key={j.id}
                 onClick={()=> isPremium ? setSelectedJob(j) : openPaywall()}
                 className="pg-card pg-card-tap" style={{
@@ -647,19 +724,22 @@ function HomeScreen({ ctx }) {
                   width:44, height:44, borderRadius:12, flexShrink:0, position:'relative',
                   background: !isPremium
                     ? 'var(--pg-ink-100)'
-                    : j.urgency==='urgent' ? 'oklch(0.95 0.05 25)' : 'var(--pg-aqua-100)',
+                    : j._type==='vacation' ? 'oklch(0.95 0.05 25)' : 'var(--pg-aqua-100)',
                   display:'flex', alignItems:'center', justifyContent:'center',
                 }}>
                   {!isPremium
                     ? Icon.lock(18, 'var(--pg-ink-500)')
-                    : Icon.bolt(20, j.urgency==='urgent'?'var(--pg-danger)':'var(--pg-aqua-700)')}
+                    : j._type==='vacation'
+                      ? <span style={{fontSize:20}}>🌴</span>
+                      : Icon.bolt(20, 'var(--pg-aqua-700)')}
                 </div>
                 <div style={{flex:1, minWidth:0}}>
                   <div style={{fontSize:13.5, fontWeight:600, letterSpacing:'-0.01em', lineHeight:1.25,
                     display:'-webkit-box', WebkitLineClamp:1, WebkitBoxOrient:'vertical', overflow:'hidden',
                     color: isPremium ? 'var(--pg-ink-900)' : 'var(--pg-ink-700)'}}>{tr(j.title, lang)}</div>
                   <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:3, display:'flex', alignItems:'center', gap:4, flexWrap:'wrap'}}>
-                    {Icon.pin(11, 'var(--pg-ink-500)')} {j.loc} · {tr(j.dist, lang)}
+                    {Icon.pin(11, 'var(--pg-ink-500)')} {j.loc}
+                    {j.pools ? <><span style={{color:'var(--pg-ink-300)'}}>·</span> {j.pools} {lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'}</> : null}
                     <span style={{color:'var(--pg-ink-300)'}}>·</span>
                     {Icon.clock(11, 'var(--pg-ink-500)')} {tr(j.when, lang)}
                   </div>
@@ -673,12 +753,12 @@ function HomeScreen({ ctx }) {
                     }}>Premium</div>
                   ) : j.price === 'neg' ? (
                     <div style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-700)'}}>{t.negotiable}</div>
-                  ) : (
+                  ) : j.price ? (
                     <>
                       <div style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>${j.price}</div>
                       <div style={{fontSize:9.5, color:'var(--pg-ink-500)', marginTop:2}}>{t.perPool}</div>
                     </>
-                  )}
+                  ) : null}
                 </div>
               </button>
             ))}
