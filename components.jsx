@@ -389,53 +389,85 @@ function TabBar({ tab, setTab, lang='en' }) {
 // ── Language selector pill ────────────────────────────────────
 function LangPill({ lang, setLang, onDark=false }) {
   const [open, setOpen] = React.useState(false);
-  const ref = React.useRef(null);
-  const labels = { en:'EN', pt:'PT', es:'ES' };
-  const names  = { en:'English', pt:'Português', es:'Español' };
+  const [pos,  setPos]  = React.useState({ top:0, right:0 });
+  const btnRef = React.useRef(null);
+
+  const LANGS = [
+    { code:'en', label:'EN', flag:'🇺🇸', name:'English' },
+    { code:'pt', label:'PT', flag:'🇧🇷', name:'Português' },
+    { code:'es', label:'ES', flag:'🇪🇸', name:'Español'  },
+  ];
+  const current = LANGS.find(l => l.code === lang) || LANGS[0];
+
+  const toggle = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+    }
+    setOpen(o => !o);
+  };
 
   React.useEffect(() => {
     if (!open) return;
-    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const close = (e) => { if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', close);
     document.addEventListener('touchstart', close);
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close); };
   }, [open]);
 
   return (
-    <div ref={ref} style={{position:'relative'}}>
-      <button className="pg-press" onClick={()=>setOpen(o=>!o)} style={{
-        display:'inline-flex', alignItems:'center', gap:6,
-        height:32, padding:'0 10px 0 8px', borderRadius:10,
+    <>
+      <button ref={btnRef} className="pg-press" onClick={toggle} style={{
+        display:'inline-flex', alignItems:'center', gap:5,
+        height:32, padding:'0 9px 0 7px', borderRadius:10,
         background: onDark ? 'rgba(255,255,255,0.14)' : 'rgba(10,40,64,0.09)',
         border: onDark ? '0.5px solid rgba(255,255,255,0.18)' : '0.5px solid rgba(10,40,64,0.18)',
         color: onDark ? '#fff' : '#0A2840',
         fontSize:12, fontWeight:600, cursor:'pointer',
       }}>
-        {Icon.globe(14, onDark ? 'rgba(255,255,255,0.85)' : 'rgba(10,40,64,0.60)')}
-        <span style={{letterSpacing:'0.04em'}}>{labels[lang]}</span>
+        <span style={{fontSize:15, lineHeight:1}}>{current.flag}</span>
+        <span style={{letterSpacing:'0.04em'}}>{current.label}</span>
       </button>
+
       {open && (
         <div style={{
-          position:'absolute', top:'calc(100% + 6px)', right:0, zIndex:9999,
-          background:'var(--pg-white)', borderRadius:10, overflow:'hidden',
-          boxShadow:'0 4px 20px rgba(0,0,0,0.15)', border:'0.5px solid var(--pg-ink-200)',
-          minWidth:130,
+          position:'fixed', top: pos.top, right: pos.right, zIndex:99999,
+          background:'rgba(255,255,255,0.82)',
+          WebkitBackdropFilter:'blur(24px) saturate(180%)',
+          backdropFilter:'blur(24px) saturate(180%)',
+          borderRadius:16, overflow:'hidden',
+          boxShadow:'0 8px 32px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.6) inset',
+          border:'0.5px solid rgba(255,255,255,0.5)',
+          minWidth:160,
+          animation:'pg-lang-in .15s ease',
         }}>
-          {['en','pt','es'].map(l => (
-            <button key={l} onClick={()=>{ setLang(l); setOpen(false); }} style={{
-              display:'flex', alignItems:'center', justifyContent:'space-between',
-              width:'100%', padding:'10px 14px', border:'none', background:'transparent',
-              cursor:'pointer', fontSize:13, fontWeight: l===lang ? 700 : 400,
-              color: l===lang ? 'var(--pg-blue-500)' : 'var(--pg-ink-900)',
-              borderBottom: l!=='es' ? '0.5px solid var(--pg-ink-100)' : 'none',
-            }}>
-              <span>{names[l]}</span>
-              {l===lang && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
-            </button>
-          ))}
+          <style>{`@keyframes pg-lang-in{from{opacity:0;transform:scale(0.92) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}`}</style>
+          {LANGS.map((l, i) => {
+            const active = l.code === lang;
+            return (
+              <button key={l.code} onClick={()=>{ setLang(l.code); setOpen(false); }} style={{
+                display:'flex', alignItems:'center', gap:11,
+                width:'100%', padding:'12px 16px', border:'none', cursor:'pointer',
+                borderBottom: i < LANGS.length-1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
+                background: active
+                  ? 'linear-gradient(90deg, rgba(14,186,199,0.12) 0%, rgba(13,114,128,0.06) 100%)'
+                  : 'transparent',
+              }}>
+                <span style={{fontSize:22, lineHeight:1}}>{l.flag}</span>
+                <span style={{flex:1, textAlign:'left', fontSize:14, fontWeight: active ? 700 : 500,
+                  color: active ? 'var(--pg-blue-500)' : 'var(--pg-ink-800)'}}>{l.name}</span>
+                {active && (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
-    </div>
+    </>
   );
 }
 
