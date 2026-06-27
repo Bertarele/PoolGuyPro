@@ -858,6 +858,30 @@ function App() {
     };
   }, [authReady]); // runs once authReady flips true — guaranteed after token refresh + loadProfile
 
+  // ── Online presence heartbeat ────────────────────────────────
+  React.useEffect(() => {
+    if (!authReady || !user?.uid || !window.sb) return;
+    const uid = user.uid;
+    const setOnline = (online) =>
+      window.sb.from('profiles')
+        .update({ is_online: online, last_seen: new Date().toISOString() })
+        .eq('id', uid).then(() => {});
+    setOnline(true);
+    const heartbeat = setInterval(() => {
+      if (document.visibilityState === 'visible') setOnline(true);
+    }, 25000);
+    const onVis = () => setOnline(document.visibilityState === 'visible');
+    const onUnload = () => setOnline(false);
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('beforeunload', onUnload);
+    return () => {
+      clearInterval(heartbeat);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('beforeunload', onUnload);
+      setOnline(false);
+    };
+  }, [authReady, user?.uid]);
+
   // Notifications unread badge — fetch count + real-time
   React.useEffect(() => {
     if (!authReady || !user?.uid || !window.sb) return;

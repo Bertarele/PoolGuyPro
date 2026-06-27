@@ -184,17 +184,29 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
 
   const [messages,      setMessages]      = React.useState([]);
   const [draft,         setDraft]         = React.useState('');
-  const [sending,       setSending]       = React.useState(false);
-  const [deleteConfirm, setDeleteConfirm] = React.useState(null);
-  const [receiverPhoto, setReceiverPhoto] = React.useState(null);
+  const [sending,        setSending]        = React.useState(false);
+  const [deleteConfirm,  setDeleteConfirm]  = React.useState(null);
+  const [receiverPhoto,  setReceiverPhoto]  = React.useState(null);
+  const [receiverOnline, setReceiverOnline] = React.useState(false);
   const scroller = React.useRef(null);
   const pollRef  = React.useRef(null);
   const lastCount = React.useRef(0);
 
   React.useEffect(() => {
     if (!convo.receiverId || !window.sb) return;
-    window.sb.from('profiles').select('photo_url').eq('id', convo.receiverId).single()
-      .then(({ data }) => { if (data?.photo_url) setReceiverPhoto(data.photo_url); });
+    const check = () => {
+      window.sb.from('profiles').select('photo_url,is_online,last_seen').eq('id', convo.receiverId).single()
+        .then(({ data }) => {
+          if (!data) return;
+          if (data.photo_url) setReceiverPhoto(data.photo_url);
+          const recentlySeen = data.last_seen &&
+            (Date.now() - new Date(data.last_seen).getTime()) < 60000;
+          setReceiverOnline(!!(data.is_online && recentlySeen));
+        });
+    };
+    check();
+    const timer = setInterval(check, 20000);
+    return () => clearInterval(timer);
   }, [convo.receiverId]);
 
   const fmtMsg = React.useCallback((m) => ({
@@ -323,7 +335,7 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
               </button>
             : <div style={{fontSize:14, fontWeight:600}}>{convo.name}</div>
           }
-          {isLive && (
+          {receiverOnline && (
             <div style={{fontSize:11, color:'var(--pg-aqua-700)', display:'flex', alignItems:'center', gap:4}}>
               <span style={{width:6, height:6, borderRadius:'50%', background:'var(--pg-aqua-500)'}}/> Live
             </div>
