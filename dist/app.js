@@ -289,10 +289,27 @@ function App() {
   }, [tab]);
 
   // Sync tab when user navigates with browser back/forward buttons
+  // Also handles deep links from notification clicks on iOS (openWindow triggers hashchange)
   React.useEffect(() => {
     const onHash = () => {
-      const hash = window.location.hash.replace(/^#\/?/, '');
-      const base = hash.split('/')[0];
+      const raw = window.location.hash; // e.g. '#chat?user=UID&name=Name'
+      const hash = raw.replace(/^#\/?/, '');
+      const base = hash.split(/[/?]/)[0];
+      if (base === 'chat') {
+        const qs = raw.includes('?') ? raw.slice(raw.indexOf('?') + 1) : '';
+        const params = new URLSearchParams(qs);
+        const userId = params.get('user') || null;
+        const userName = params.get('name') || null;
+        if (userId) {
+          window.history.replaceState(null, '', '#home');
+          setChatConvoTarget({
+            id: userId,
+            name: userName || undefined
+          });
+          setChatOpen(true);
+        }
+        return;
+      }
       const VALID = ['home', 'market', 'quick', 'work', 'profile'];
       if (VALID.includes(base)) setTab(base);
     };
@@ -3112,7 +3129,7 @@ function App() {
     style: {
       position: 'absolute',
       inset: 0,
-      paddingBottom: 68,
+      paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
       overflow: 'auto',
       overscrollBehaviorY: 'none'
     }

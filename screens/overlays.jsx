@@ -473,7 +473,7 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
       })()}
 
       {/* Input */}
-      <div style={{padding:'10px 12px 14px', borderTop:'0.5px solid var(--pg-ink-200)', display:'flex', gap:8, alignItems:'flex-end', flexShrink:0}}>
+      <div style={{padding:'10px 12px', paddingBottom:'calc(14px + env(safe-area-inset-bottom, 0px))', borderTop:'0.5px solid var(--pg-ink-200)', display:'flex', gap:8, alignItems:'flex-end', flexShrink:0}}>
         <div style={{flex:1, background:'var(--pg-ink-100)', borderRadius:18, padding:'10px 14px', display:'flex', alignItems:'center'}}>
           <input value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()}
             placeholder={t.messagePh || 'Type a message…'}

@@ -911,7 +911,8 @@ function ChatConversation({
     }, cancelLbl)));
   })(), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '10px 12px 14px',
+      padding: '10px 12px',
+      paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))',
       borderTop: '0.5px solid var(--pg-ink-200)',
       display: 'flex',
       gap: 8,
