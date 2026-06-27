@@ -163,6 +163,7 @@ const IC = {
   close:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   refresh:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
   flag:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
+  sponsor:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2l1 3 2-5 1 3h2"/></svg>,
 };
 
 // ── Card de estatística ───────────────────────────────────────
@@ -1226,6 +1227,10 @@ function AdminApp({ adminUser, onLogout }) {
   const [editRow,    setEditRow]    = React.useState(null);
   const [viewRow,    setViewRow]    = React.useState(null);
   const [rlsOpen,    setRlsOpen]    = React.useState(false);
+  const [sponsors,   setSponsors]   = React.useState([]);
+  const [sponsorForm, setSponsorForm] = React.useState({ company_name:'', headline:'', subtext:'', link_url:'', logo_text:'', bg_color:'#001f4d', expires_at:'' });
+  const [sponsorSaving, setSponsorSaving] = React.useState(false);
+  const [sponsorEdit, setSponsorEdit] = React.useState(null); // id being edited
 
   const showToast = (msg, ok=true) => { setToast({msg,ok}); setTimeout(()=>setToast(null), 2800); };
 
@@ -1247,6 +1252,8 @@ function AdminApp({ adminUser, onLogout }) {
     if(v.data) setVacs(v.data);
     if(d.data) setDisputes(d.data);
     if(w.data) setWarnings(w.data);
+    const sp = await window.sb.from('sponsored_cards').select('*').order('created_at',{ascending:false});
+    if(sp.data) setSponsors(sp.data);
     const hiringsCount = j.data?.filter(x=>x.hired_at)?.length??0;
     setStats({ users:u.data?.length??0, jobs:j.data?.length??0, techs:tc.data?.length??0, market:m.data?.length??0, vacs:v.data?.length??0, disputes:d.data?.filter(x=>x.status==='pending')?.length??0, hirings:hiringsCount });
     setLoading(false);
@@ -1367,7 +1374,8 @@ function AdminApp({ adminUser, onLogout }) {
     { id:'techs',      label:'Técnicos',      icon:IC.techs,  badge:0 },
     { id:'market',     label:'Marketplace',   icon:IC.market, badge:pendingCount },
     { id:'vacations',  label:'Férias',        icon:IC.vac,    badge:0 },
-    { id:'disputes',   label:'Reclamações',   icon:IC.flag,   badge:disputeCount },
+    { id:'disputes',   label:'Reclamações',   icon:IC.flag,    badge:disputeCount },
+    { id:'sponsors',   label:'Patrocinadores', icon:IC.sponsor, badge:0 },
   ];
 
   const sectionLabel = navItems.find(n=>n.id===section)?.label || '';
@@ -1926,6 +1934,147 @@ function AdminApp({ adminUser, onLogout }) {
               </div>
             );
           })()}
+
+          {/* ── Patrocinadores ── */}
+          {section==='sponsors' && (
+            <div>
+              <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>Patrocinadores</h1>
+              <p style={{fontSize:13,color:'#64748b',marginBottom:24}}>Crie cards patrocinados que aparecem na tela inicial do app para todos os usuários.</p>
+
+              {/* Form criar/editar */}
+              <div style={{background:'#1a1f2e',borderRadius:16,padding:'20px 22px',border:'1px solid #1e293b',marginBottom:28}}>
+                <div style={{fontWeight:700,fontSize:15,color:'#f1f5f9',marginBottom:16}}>
+                  {sponsorEdit ? '✏️ Editar Card' : '➕ Novo Card Patrocinado'}
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>Nome da Empresa *</div>
+                    <input value={sponsorForm.company_name} onChange={e=>setSponsorForm(p=>({...p,company_name:e.target.value}))}
+                      placeholder="Ex: SCP Pool Corp"
+                      style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>Texto do Logo (sigla)</div>
+                    <input value={sponsorForm.logo_text} onChange={e=>setSponsorForm(p=>({...p,logo_text:e.target.value}))}
+                      placeholder="Ex: SCP"
+                      style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+                  </div>
+                </div>
+                <div style={{marginBottom:12}}>
+                  <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>Título do Card *</div>
+                  <input value={sponsorForm.headline} onChange={e=>setSponsorForm(p=>({...p,headline:e.target.value}))}
+                    placeholder="Ex: 20% off em bombas Pentair esta semana"
+                    style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+                </div>
+                <div style={{marginBottom:12}}>
+                  <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>Subtexto</div>
+                  <input value={sponsorForm.subtext} onChange={e=>setSponsorForm(p=>({...p,subtext:e.target.value}))}
+                    placeholder="Ex: Apenas para pool guys de Broward · Até 30/jun"
+                    style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:16}}>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>Link (URL)</div>
+                    <input value={sponsorForm.link_url} onChange={e=>setSponsorForm(p=>({...p,link_url:e.target.value}))}
+                      placeholder="https://..."
+                      style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>Cor de Fundo</div>
+                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                      <input type="color" value={sponsorForm.bg_color} onChange={e=>setSponsorForm(p=>({...p,bg_color:e.target.value}))}
+                        style={{width:40,height:38,border:'1px solid #1e293b',borderRadius:8,background:'#0f1117',cursor:'pointer',padding:2}}/>
+                      <input value={sponsorForm.bg_color} onChange={e=>setSponsorForm(p=>({...p,bg_color:e.target.value}))}
+                        style={{flex:1,background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 10px',color:'#e2e8f0',fontSize:12,fontFamily:'inherit',outline:'none'}}/>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>Expira em</div>
+                    <input type="date" value={sponsorForm.expires_at} onChange={e=>setSponsorForm(p=>({...p,expires_at:e.target.value}))}
+                      style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none',colorScheme:'dark'}}/>
+                  </div>
+                </div>
+
+                {/* Preview */}
+                {(sponsorForm.company_name||sponsorForm.headline) && (
+                  <div style={{marginBottom:16}}>
+                    <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em'}}>Preview no App</div>
+                    <div style={{background:sponsorForm.bg_color||'#001f4d',borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'center',gap:10,border:'1px solid rgba(0,119,182,0.4)',maxWidth:380}}>
+                      {sponsorForm.logo_text && (
+                        <div style={{background:'#fff',borderRadius:6,padding:'4px 8px',fontWeight:900,fontSize:11,color:sponsorForm.bg_color||'#003d7a',flexShrink:0,whiteSpace:'nowrap'}}>{sponsorForm.logo_text}</div>
+                      )}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginBottom:2,fontWeight:600,letterSpacing:'.06em'}}>PATROCINADO</div>
+                        <div style={{fontSize:12,color:'#fff',fontWeight:700,lineHeight:1.3}}>{sponsorForm.headline||'Título do card'}</div>
+                        {sponsorForm.subtext && <div style={{fontSize:10,color:'rgba(255,255,255,0.55)',marginTop:2}}>{sponsorForm.subtext}</div>}
+                      </div>
+                      <div style={{fontSize:16,color:'rgba(255,255,255,0.5)',flexShrink:0}}>→</div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{display:'flex',gap:10}}>
+                  <button disabled={sponsorSaving||!sponsorForm.company_name||!sponsorForm.headline}
+                    onClick={async()=>{
+                      setSponsorSaving(true);
+                      const payload={company_name:sponsorForm.company_name.trim(),headline:sponsorForm.headline.trim(),subtext:sponsorForm.subtext.trim()||null,link_url:sponsorForm.link_url.trim()||null,logo_text:sponsorForm.logo_text.trim()||null,bg_color:sponsorForm.bg_color||'#001f4d',expires_at:sponsorForm.expires_at||null,active:true};
+                      let err;
+                      if(sponsorEdit){({error:err}=await window.sb.from('sponsored_cards').update(payload).eq('id',sponsorEdit));}
+                      else{({error:err}=await window.sb.from('sponsored_cards').insert(payload));}
+                      setSponsorSaving(false);
+                      if(err){showToast('❌ '+err.message,false);return;}
+                      showToast(sponsorEdit?'✓ Card atualizado!':'✓ Card criado com sucesso!');
+                      setSponsorEdit(null);
+                      setSponsorForm({company_name:'',headline:'',subtext:'',link_url:'',logo_text:'',bg_color:'#001f4d',expires_at:''});
+                      const{data}=await window.sb.from('sponsored_cards').select('*').order('created_at',{ascending:false});
+                      if(data)setSponsors(data);
+                    }}
+                    style={{padding:'10px 22px',borderRadius:10,border:'none',background:'#0EBAC7',color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',opacity:(!sponsorForm.company_name||!sponsorForm.headline)?0.45:1}}>
+                    {sponsorSaving?'Salvando…':(sponsorEdit?'Salvar Alterações':'Criar Card')}
+                  </button>
+                  {sponsorEdit && (
+                    <button onClick={()=>{setSponsorEdit(null);setSponsorForm({company_name:'',headline:'',subtext:'',link_url:'',logo_text:'',bg_color:'#001f4d',expires_at:''});}}
+                      style={{padding:'10px 18px',borderRadius:10,border:'1px solid #1e293b',background:'transparent',color:'#94a3b8',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                      Cancelar
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Lista de cards */}
+              <div style={{fontWeight:700,fontSize:14,color:'#f1f5f9',marginBottom:12}}>Cards Cadastrados ({sponsors.length})</div>
+              {sponsors.length===0 && <div style={{color:'#64748b',fontSize:13,padding:'24px 0'}}>Nenhum card criado ainda.</div>}
+              <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                {sponsors.map(s=>{
+                  const expired=s.expires_at&&new Date(s.expires_at)<new Date();
+                  return(
+                    <div key={s.id} style={{background:'#1a1f2e',borderRadius:14,padding:'14px 16px',border:`1px solid ${s.active&&!expired?'#0EBAC740':'#1e293b'}`,display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                      <div style={{background:s.bg_color||'#001f4d',borderRadius:8,padding:'8px 10px',flexShrink:0,minWidth:120,maxWidth:160}}>
+                        {s.logo_text&&<div style={{background:'#fff',borderRadius:4,padding:'2px 6px',fontWeight:900,fontSize:9,color:s.bg_color||'#003d7a',display:'inline-block',marginBottom:4}}>{s.logo_text}</div>}
+                        <div style={{fontSize:10,color:'#fff',fontWeight:700,lineHeight:1.3}}>{s.headline}</div>
+                        {s.subtext&&<div style={{fontSize:9,color:'rgba(255,255,255,0.5)',marginTop:2}}>{s.subtext}</div>}
+                      </div>
+                      <div style={{flex:1,minWidth:160}}>
+                        <div style={{fontWeight:700,fontSize:13,color:'#e2e8f0'}}>{s.company_name}</div>
+                        <div style={{fontSize:11,color:'#64748b',marginTop:2}}>
+                          {s.link_url?<span style={{color:'#0EBAC7'}}>{s.link_url.slice(0,40)}{s.link_url.length>40?'…':''}</span>:<span>Sem link</span>}
+                          {s.expires_at&&<span style={{marginLeft:8,color:expired?'#ef4444':'#64748b'}}>· Expira: {new Date(s.expires_at).toLocaleDateString('pt-BR')}</span>}
+                        </div>
+                      </div>
+                      <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+                        <span style={{fontSize:10,fontWeight:700,padding:'3px 9px',borderRadius:999,background:expired?'#ef444420':s.active?'#22c55e20':'#64748b20',color:expired?'#ef4444':s.active?'#22c55e':'#64748b'}}>
+                          {expired?'Expirado':s.active?'Ativo':'Inativo'}
+                        </span>
+                        <button onClick={async()=>{await window.sb.from('sponsored_cards').update({active:!s.active}).eq('id',s.id);setSponsors(p=>p.map(x=>x.id===s.id?{...x,active:!x.active}:x));showToast(s.active?'Card desativado.':'Card ativado!');}} className="act-btn act-btn-warn">{s.active?'Desativar':'Ativar'}</button>
+                        <button onClick={()=>{setSponsorEdit(s.id);setSponsorForm({company_name:s.company_name,headline:s.headline,subtext:s.subtext||'',link_url:s.link_url||'',logo_text:s.logo_text||'',bg_color:s.bg_color||'#001f4d',expires_at:s.expires_at?s.expires_at.slice(0,10):''});window.scrollTo({top:0,behavior:'smooth'});}} className="act-btn act-btn-view">Editar</button>
+                        <button onClick={async()=>{if(!confirm(`Excluir o card de "${s.company_name}"?`))return;await window.sb.from('sponsored_cards').delete().eq('id',s.id);setSponsors(p=>p.filter(x=>x.id!==s.id));showToast('Card excluído.');}} className="act-btn act-btn-red">{IC.trash}</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
         </div>{/* fim padding */}
       </div>{/* fim admin-main */}

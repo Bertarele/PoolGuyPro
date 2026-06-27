@@ -66,6 +66,16 @@ function HomeScreen({ ctx }) {
     return () => document.removeEventListener('visibilitychange', update);
   }, []);
 
+  // Sponsored card — active, not expired
+  const [sponsoredCard, setSponsoredCard] = React.useState(null);
+  React.useEffect(() => {
+    if (!window.sb) return;
+    window.sb.from('sponsored_cards').select('*').eq('active', true)
+      .or('expires_at.is.null,expires_at.gte.' + new Date().toISOString())
+      .order('created_at', { ascending: false }).limit(1)
+      .then(({ data }) => { if (data && data.length > 0) setSponsoredCard(data[0]); });
+  }, []);
+
   // Quick pool jobs posted today (live from Supabase)
   const [todayQuick, setTodayQuick] = React.useState([]);
   React.useEffect(() => {
@@ -649,6 +659,45 @@ function HomeScreen({ ctx }) {
             })}
           </div>
         </section>
+
+        {/* Sponsored card */}
+        {sponsoredCard && (
+          <div onClick={() => { if (sponsoredCard.link_url) window.open(sponsoredCard.link_url, '_blank'); }}
+            style={{
+              background: sponsoredCard.bg_color || '#001f4d',
+              borderRadius: 14,
+              padding: '13px 15px',
+              display: 'flex', alignItems: 'center', gap: 12,
+              border: '1px solid rgba(0,119,182,0.35)',
+              cursor: sponsoredCard.link_url ? 'pointer' : 'default',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
+              transition: 'opacity .15s',
+            }}
+            onTouchStart={e => { if (sponsoredCard.link_url) e.currentTarget.style.opacity = '0.82'; }}
+            onTouchEnd={e => { e.currentTarget.style.opacity = '1'; }}>
+            {sponsoredCard.logo_text && (
+              <div style={{
+                background: '#fff', borderRadius: 7, padding: '4px 9px',
+                fontWeight: 900, fontSize: 11, color: sponsoredCard.bg_color || '#003d7a',
+                flexShrink: 0, whiteSpace: 'nowrap', letterSpacing: '0.02em',
+              }}>{sponsoredCard.logo_text}</div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 2, fontWeight: 700, letterSpacing: '0.07em' }}>
+                {lang === 'pt' ? 'PATROCINADO' : lang === 'es' ? 'PATROCINADO' : 'SPONSORED'}
+              </div>
+              <div style={{ fontSize: 13, color: '#fff', fontWeight: 700, lineHeight: 1.3 }}>{sponsoredCard.headline}</div>
+              {sponsoredCard.subtext && (
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 3, lineHeight: 1.3 }}>{sponsoredCard.subtext}</div>
+              )}
+            </div>
+            {sponsoredCard.link_url && (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            )}
+          </div>
+        )}
 
         {/* Today's pool jobs */}
         <section>
