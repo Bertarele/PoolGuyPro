@@ -393,16 +393,16 @@ function LangPill({ lang, setLang, onDark=false }) {
   const btnRef = React.useRef(null);
 
   const LANGS = [
-    { code:'en', label:'EN', flag:'🇺🇸', name:'English' },
+    { code:'en', label:'EN', flag:'🇺🇸', name:'English'   },
     { code:'pt', label:'PT', flag:'🇧🇷', name:'Português' },
-    { code:'es', label:'ES', flag:'🇪🇸', name:'Español'  },
+    { code:'es', label:'ES', flag:'🇪🇸', name:'Español'   },
   ];
   const current = LANGS.find(l => l.code === lang) || LANGS[0];
 
   const toggle = () => {
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+      setPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
     }
     setOpen(o => !o);
   };
@@ -414,6 +414,45 @@ function LangPill({ lang, setLang, onDark=false }) {
     document.addEventListener('touchstart', close);
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close); };
   }, [open]);
+
+  const dropdown = open ? ReactDOM.createPortal(
+    <div style={{
+      position:'fixed', top: pos.top, right: pos.right, zIndex:999999,
+      background:'rgba(30,32,38,0.72)',
+      WebkitBackdropFilter:'blur(20px) saturate(160%)',
+      backdropFilter:'blur(20px) saturate(160%)',
+      borderRadius:14, overflow:'hidden',
+      boxShadow:'0 8px 28px rgba(0,0,0,0.32), 0 1px 0 rgba(255,255,255,0.08) inset',
+      border:'0.5px solid rgba(255,255,255,0.13)',
+      minWidth:148,
+      transformOrigin:'top right',
+      animation:'_lpIn .18s cubic-bezier(0.34,1.56,0.64,1)',
+    }}>
+      <style>{`@keyframes _lpIn{from{opacity:0;transform:scale(0.88)}to{opacity:1;transform:scale(1)}}`}</style>
+      {LANGS.map((l, i) => {
+        const active = l.code === lang;
+        return (
+          <button key={l.code} onClick={()=>{ setLang(l.code); setOpen(false); }} style={{
+            display:'flex', alignItems:'center', gap:9,
+            width:'100%', padding:'10px 13px', border:'none', cursor:'pointer',
+            borderBottom: i < LANGS.length-1 ? '0.5px solid rgba(255,255,255,0.07)' : 'none',
+            background: active ? 'rgba(14,186,199,0.15)' : 'transparent',
+          }}>
+            <span style={{fontSize:18, lineHeight:1}}>{l.flag}</span>
+            <span style={{flex:1, textAlign:'left', fontSize:13, fontWeight: active ? 700 : 400,
+              color: active ? '#0EBAC7' : 'rgba(255,255,255,0.85)'}}>{l.name}</span>
+            {active && (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="#0EBAC7" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            )}
+          </button>
+        );
+      })}
+    </div>,
+    document.body
+  ) : null;
 
   return (
     <>
@@ -428,45 +467,7 @@ function LangPill({ lang, setLang, onDark=false }) {
         <span style={{fontSize:15, lineHeight:1}}>{current.flag}</span>
         <span style={{letterSpacing:'0.04em'}}>{current.label}</span>
       </button>
-
-      {open && (
-        <div style={{
-          position:'fixed', top: pos.top, right: pos.right, zIndex:99999,
-          background:'rgba(255,255,255,0.82)',
-          WebkitBackdropFilter:'blur(24px) saturate(180%)',
-          backdropFilter:'blur(24px) saturate(180%)',
-          borderRadius:16, overflow:'hidden',
-          boxShadow:'0 8px 32px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.6) inset',
-          border:'0.5px solid rgba(255,255,255,0.5)',
-          minWidth:160,
-          animation:'pg-lang-in .15s ease',
-        }}>
-          <style>{`@keyframes pg-lang-in{from{opacity:0;transform:scale(0.92) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}`}</style>
-          {LANGS.map((l, i) => {
-            const active = l.code === lang;
-            return (
-              <button key={l.code} onClick={()=>{ setLang(l.code); setOpen(false); }} style={{
-                display:'flex', alignItems:'center', gap:11,
-                width:'100%', padding:'12px 16px', border:'none', cursor:'pointer',
-                borderBottom: i < LANGS.length-1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
-                background: active
-                  ? 'linear-gradient(90deg, rgba(14,186,199,0.12) 0%, rgba(13,114,128,0.06) 100%)'
-                  : 'transparent',
-              }}>
-                <span style={{fontSize:22, lineHeight:1}}>{l.flag}</span>
-                <span style={{flex:1, textAlign:'left', fontSize:14, fontWeight: active ? 700 : 500,
-                  color: active ? 'var(--pg-blue-500)' : 'var(--pg-ink-800)'}}>{l.name}</span>
-                {active && (
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {dropdown}
     </>
   );
 }
