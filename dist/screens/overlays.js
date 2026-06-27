@@ -457,7 +457,7 @@ function ChatConversation({
       });
       // Push notification to recipient — deep link opens chat with sender
       if (convo.receiverId && window.sendPush) {
-        window.sendPush(convo.receiverId, myName, text.length > 120 ? text.slice(0, 120) + '…' : text, `/#chat?user=${currentUser.uid}`);
+        window.sendPush(convo.receiverId, myName, text.length > 120 ? text.slice(0, 120) + '…' : text, `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(myName)}`);
       }
       // Store listing context in the conversation row so seller also sees it
       if (convo.listingId || convo.listingContext?.name) {

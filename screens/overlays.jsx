@@ -267,7 +267,7 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
           convo.receiverId,
           myName,
           text.length > 120 ? text.slice(0, 120) + '…' : text,
-          `/#chat?user=${currentUser.uid}`
+          `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(myName)}`
         );
       }
       // Store listing context in the conversation row so seller also sees it

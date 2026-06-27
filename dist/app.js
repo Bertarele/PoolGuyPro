@@ -704,12 +704,15 @@ function App() {
       const hash = window.location.hash;
       if (hash.startsWith('#chat')) {
         const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-        const userId = new URLSearchParams(qs).get('user') || null;
+        const params = new URLSearchParams(qs);
+        const userId = params.get('user') || null;
+        const userName = params.get('name') || null;
         if (userId) {
           window.history.replaceState(null, '', '#home');
           return {
             type: 'chat',
-            userId
+            userId,
+            userName
           };
         }
       } else if (hash.startsWith('#market')) {
@@ -727,7 +730,8 @@ function App() {
     setPendingDeepLink(null);
     if (pendingDeepLink.type === 'chat') {
       setChatConvoTarget({
-        id: pendingDeepLink.userId
+        id: pendingDeepLink.userId,
+        name: pendingDeepLink.userName || undefined
       });
       setChatOpen(true);
     } else if (pendingDeepLink.type === 'tab') {
@@ -744,10 +748,13 @@ function App() {
       const hash = hashIdx >= 0 ? url.slice(hashIdx) : '';
       if (hash.startsWith('#chat')) {
         const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-        const userId = new URLSearchParams(qs).get('user') || null;
+        const params = new URLSearchParams(qs);
+        const userId = params.get('user') || null;
+        const userName = params.get('name') || null;
         if (userId) {
           setChatConvoTarget({
-            id: userId
+            id: userId,
+            name: userName || undefined
           });
           setChatOpen(true);
         }
