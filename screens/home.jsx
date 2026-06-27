@@ -677,8 +677,7 @@ function HomeScreen({ ctx }) {
             onTouchEnd={e => { e.currentTarget.style.opacity = '1'; }}>
             {sponsoredCard.logo_url
               ? <img src={sponsoredCard.logo_url} alt={sponsoredCard.company_name}
-                  style={{width:44, height:44, objectFit:'contain', borderRadius:9,
-                    background:'rgba(255,255,255,0.12)', padding:4, flexShrink:0}}/>
+                  style={{width:44, height:44, objectFit:'contain', borderRadius:9, flexShrink:0}}/>
               : sponsoredCard.logo_text
                 ? <div style={{
                     background: '#fff', borderRadius: 7, padding: '4px 9px',
