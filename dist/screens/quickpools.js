@@ -144,6 +144,7 @@ function QuickPoolsScreen({
     openPaywall,
     openChat,
     openPost,
+    openEditPost,
     openRegionEditor,
     regionsByDay,
     county,
@@ -724,7 +725,53 @@ function QuickPoolsScreen({
         alignItems: 'center',
         gap: 6
       }
-    }, "\u23F3 ", lang === 'pt' ? 'Em andamento' : lang === 'es' ? 'En curso' : 'In progress') : isOwn ? /*#__PURE__*/React.createElement("button", {
+    }, "\u23F3 ", lang === 'pt' ? 'Em andamento' : lang === 'es' ? 'En curso' : 'In progress') : isOwn ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        openEditPost && openEditPost({
+          id: j.id,
+          title: typeof j.title === 'object' ? j.title[lang] || j.title.pt || j.title.en : j.title,
+          description: typeof j.body === 'object' ? j.body[lang] || j.body.pt || j.body.en : '',
+          city: j.loc,
+          pool_type: j.type,
+          extras: j.extras,
+          price_negotiable: j.price === 'neg',
+          price_per_pool: j.price === 'neg' ? null : j.price,
+          poster_phone: j.poster_phone,
+          pool_address: j.pool_address,
+          required_photos: j.required_photos || []
+        });
+      },
+      style: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        border: '1px solid var(--pg-ink-300)',
+        background: 'var(--pg-ink-100)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "14",
+      height: "14",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "var(--pg-ink-600)",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+    }))), /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         setConfirmDialog({
@@ -767,7 +814,7 @@ function QuickPoolsScreen({
       d: "M14 11v6"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M9 6V4h6v2"
-    }))) : locked ? /*#__PURE__*/React.createElement("button", {
+    })))) : locked ? /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         openPaywall();
@@ -892,6 +939,7 @@ function QuickPoolsScreen({
     onDelete: deleteJob,
     onComplete: finalizeJob,
     openPublicProfile: openPublicProfile,
+    openEditPost: openEditPost,
     onStatusChange: status => {
       setJobs(prev => prev.map(j => String(j.id) === String(selected.id) ? {
         ...j,
@@ -2046,6 +2094,7 @@ function QuickPoolDetails({
   onDelete,
   onComplete,
   openPublicProfile,
+  openEditPost,
   onStatusChange,
   onMyJobAccepted
 }) {
@@ -3322,7 +3371,54 @@ function QuickPoolDetails({
       justifyContent: 'center',
       gap: 8
     }
-  }, "\u23F3 ", lang === 'pt' ? 'Em andamento — aguardando pool guy' : 'In progress — waiting for pool guy') : /*#__PURE__*/React.createElement("button", {
+  }, "\u23F3 ", lang === 'pt' ? 'Em andamento — aguardando pool guy' : 'In progress — waiting for pool guy') : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
+    }
+  }, job.status === 'open' && openEditPost && /*#__PURE__*/React.createElement("button", {
+    onClick: () => openEditPost({
+      id: job.id,
+      title: typeof job.title === 'object' ? job.title[lang] || job.title.pt || job.title.en : job.title,
+      description: typeof job.body === 'object' ? job.body[lang] || job.body.pt || job.body.en : '',
+      city: job.loc,
+      pool_type: job.type,
+      extras: job.extras,
+      price_negotiable: job.price === 'neg',
+      price_per_pool: job.price === 'neg' ? null : job.price,
+      poster_phone: job.poster_phone,
+      pool_address: job.pool_address,
+      required_photos: job.required_photos || []
+    }),
+    style: {
+      height: 46,
+      borderRadius: 14,
+      border: '1.5px solid var(--pg-ink-300)',
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)',
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+  })), lang === 'pt' ? 'Editar publicação' : lang === 'es' ? 'Editar publicación' : 'Edit posting'), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowApplicants(v => !v),
     style: {
       height: 50,
@@ -3357,7 +3453,7 @@ function QuickPoolDetails({
     d: "M23 21v-2a4 4 0 0 0-3-3.87"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M16 3.13a4 4 0 0 1 0 7.75"
-  })), lang === 'pt' ? `${showApplicants ? 'Fechar' : 'Ver'} candidatos${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}` : `${showApplicants ? 'Close' : 'View'} applicants${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}`)) :
+  })), lang === 'pt' ? `${showApplicants ? 'Fechar' : 'Ver'} candidatos${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}` : `${showApplicants ? 'Close' : 'View'} applicants${applicants.length > 0 ? ' (' + applicants.length + ')' : ''}`))) :
   /*#__PURE__*/
   /* Non-owner actions */
   React.createElement(React.Fragment, null, job._live && job.pool_address && myApp?.status === 'accepted' && /*#__PURE__*/React.createElement("a", {

@@ -727,6 +727,7 @@ function App() {
   const [payOpen, setPayOpen] = React.useState(false);
   const [postMenuOpen, setPostMenuOpen] = React.useState(false);
   const [postQPOpen, setPostQPOpen] = React.useState(false);
+  const [editQPJob, setEditQPJob] = React.useState(null);
   const [regionOpen, setRegionOpen] = React.useState(false);
   const [langPickerOpen, setLangPickerOpen] = React.useState(false);
   const [applicantsPost, setApplicantsPost] = React.useState(null);
@@ -1314,6 +1315,7 @@ function App() {
     openPaywall: () => setPayOpen(true),
     openPostMenu: () => setPostMenuOpen(true),
     openPost: () => setPostQPOpen(true),
+    openEditPost: job => setEditQPJob(job),
     openMarketPost: () => {
       switchTab('market');
       setMarketPostOpen(true);
@@ -1599,6 +1601,58 @@ function App() {
         showToast(toastMsg);
       } catch {
         showToast(lang === 'pt' ? '❌ Erro ao publicar' : '❌ Error posting');
+      }
+    }
+  })), /*#__PURE__*/React.createElement(Sheet, {
+    open: !!editQPJob,
+    onClose: () => setEditQPJob(null),
+    height: "92%"
+  }, editQPJob && /*#__PURE__*/React.createElement(PostQuickPool, {
+    lang: lang,
+    initialData: editQPJob,
+    onClose: () => setEditQPJob(null),
+    onSubmit: async formData => {
+      const jobId = editQPJob.id;
+      setEditQPJob(null);
+      if (!window.sb || !user?.uid) return;
+      try {
+        const firstPool = formData.pools?.[0] || {};
+        const isCondo = firstPool.poolType === 'condo';
+        const patch = {
+          poster_phone: formData.showPhone ? formData.phone || user.phone || null : null,
+          pool_address: (() => {
+            const addr = formData.pool_address?.trim() || '';
+            const zip = formData.pool_zip?.trim() || '';
+            if (!addr && !zip) return null;
+            if (zip && addr) return `${addr}, FL ${zip}`;
+            return addr || zip;
+          })(),
+          city: firstPool.location || 'Florida',
+          price_per_pool: formData.priceMode === 'fixed' ? parseFloat(formData.price || 0) || null : null,
+          price_negotiable: formData.priceMode === 'neg',
+          title: formData.title?.trim() || null,
+          description: formData.notes?.trim() || null,
+          pool_type: isCondo ? 'condo' : 'residential',
+          extras: isCondo ? {
+            gate_code: firstPool.gateCodeVal || null,
+            doorman: firstPool.doorman || false,
+            dog: firstPool.dog || false,
+            saltwater: firstPool.saltwater || false
+          } : {
+            dog: firstPool.dog || false,
+            saltwater: firstPool.saltwater || false
+          },
+          required_photos: formData.requiredPhotos || []
+        };
+        const {
+          data: updated
+        } = await window.sb.from('quick_pool_jobs').update(patch).eq('id', jobId).select().single();
+        if (updated) window.dispatchEvent(new CustomEvent('pgQuickPoolPosted', {
+          detail: updated
+        }));
+        showToast(lang === 'pt' ? '✅ Vaga atualizada' : lang === 'es' ? '✅ Vaga actualizada' : '✅ Job updated');
+      } catch {
+        showToast(lang === 'pt' ? '❌ Erro ao salvar' : '❌ Error saving');
       }
     }
   })), /*#__PURE__*/React.createElement(Toast, {

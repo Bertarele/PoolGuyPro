@@ -1,8 +1,9 @@
 // post.jsx — Quick Pool creation form (3 steps)
 // Each pool is its own entry with its own location, type, and access details.
 
-function PostQuickPool({ onClose, onSubmit, lang='en' }) {
+function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
   const t = STRINGS[lang];
+  const isEdit = !!initialData;
   const [step, setStep] = React.useState(1);
 
   const newPool = (id) => ({
@@ -16,18 +17,45 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
     saltwater: false,
   });
 
-  const [form, setForm] = React.useState({
-    title:'',
-    notes:'',
-    pools: [newPool(1)],
-    priceMode:'fixed', price:'45',
-    date: lang==='pt'?'Agora':lang==='es'?'Ahora':'Now',
-    showPhone: false,
-    phone: '',
-    pool_address: '',
-    pool_zip: '',
-    requiredPhotos: [],
-    customPhotoText: '',
+  const [form, setForm] = React.useState(() => {
+    if (initialData) {
+      return {
+        title: initialData.title || '',
+        notes: initialData.description || '',
+        pools: [{
+          id: 1,
+          location: initialData.city || '',
+          poolType: initialData.pool_type || 'street',
+          gateCode: !!(initialData.extras?.gate_code),
+          gateCodeVal: initialData.extras?.gate_code || '',
+          doorman: initialData.extras?.doorman || false,
+          dog: initialData.extras?.dog || false,
+          saltwater: initialData.extras?.saltwater || false,
+        }],
+        priceMode: initialData.price_negotiable ? 'neg' : 'fixed',
+        price: initialData.price_per_pool ? String(initialData.price_per_pool) : '45',
+        date: lang==='pt'?'Agora':lang==='es'?'Ahora':'Now',
+        showPhone: !!initialData.poster_phone,
+        phone: initialData.poster_phone || '',
+        pool_address: initialData.pool_address || '',
+        pool_zip: '',
+        requiredPhotos: initialData.required_photos || [],
+        customPhotoText: '',
+      };
+    }
+    return {
+      title:'',
+      notes:'',
+      pools: [newPool(1)],
+      priceMode:'fixed', price:'45',
+      date: lang==='pt'?'Agora':lang==='es'?'Ahora':'Now',
+      showPhone: false,
+      phone: '',
+      pool_address: '',
+      pool_zip: '',
+      requiredPhotos: [],
+      customPhotoText: '',
+    };
   });
 
   const PHOTO_OPTS = [
@@ -431,7 +459,10 @@ function PostQuickPool({ onClose, onSubmit, lang='en' }) {
           </button>
         ) : (
           <button onClick={()=>onSubmit({ ...form, scheduled_for: isCustom && customDT ? customDT : null })} className="pg-btn pg-btn-aqua" style={{width:'100%', height:52, fontSize:16}}>
-            {Icon.bolt(18, 'var(--pg-blue-900)')} {t.postQuickBtn}
+            {isEdit
+              ? <>{Icon.check(18, 'var(--pg-blue-900)')} {lang==='pt'?'Salvar alterações':lang==='es'?'Guardar cambios':'Save changes'}</>
+              : <>{Icon.bolt(18, 'var(--pg-blue-900)')} {t.postQuickBtn}</>
+            }
           </button>
         )}
       </div>

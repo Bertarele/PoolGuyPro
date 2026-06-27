@@ -58,7 +58,7 @@ class JobDetailBoundary extends React.Component {
 }
 
 function QuickPoolsScreen({ ctx }) {
-  const { lang, user, openPaywall, openChat, openPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, openPublicProfile } = ctx;
+  const { lang, user, openPaywall, openChat, openPost, openEditPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, openPublicProfile } = ctx;
   const t = STRINGS[lang];
   const [selected,    setSelected]    = React.useState(null);
   const [highlighted, setHighlighted] = React.useState(null);
@@ -471,19 +471,36 @@ function QuickPoolsScreen({ ctx }) {
                 ⏳ {lang==='pt'?'Em andamento':lang==='es'?'En curso':'In progress'}
               </div>
             ) : isOwn ? (
-              <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
-                message: lang==='pt'?'Remover publicação?':lang==='es'?'¿Eliminar publicación?':'Remove posting?',
-                subMessage: lang==='pt'?'Essa vaga será removida e os candidatos não poderão mais se candidatar.':'This job will be removed and applicants will no longer be able to apply.',
-                confirmLabel: lang==='pt'?'Sim, remover':lang==='es'?'Sí, eliminar':'Yes, remove',
-                onConfirm: () => { deleteJob(j.id); setConfirmDialog(null); },
-              }); }} style={{
-                width:36, height:36, borderRadius:10, border:'1px solid #FECACA',
-                background:'#FEF2F2', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-              }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                </svg>
-              </button>
+              <div style={{display:'flex', gap:6}}>
+                <button onClick={(e)=>{ e.stopPropagation(); openEditPost && openEditPost({
+                  id: j.id, title: typeof j.title==='object' ? (j.title[lang]||j.title.pt||j.title.en) : j.title,
+                  description: typeof j.body==='object' ? (j.body[lang]||j.body.pt||j.body.en) : '',
+                  city: j.loc, pool_type: j.type, extras: j.extras,
+                  price_negotiable: j.price==='neg', price_per_pool: j.price==='neg' ? null : j.price,
+                  poster_phone: j.poster_phone, pool_address: j.pool_address,
+                  required_photos: j.required_photos || [],
+                }); }} style={{
+                  width:36, height:36, borderRadius:10, border:'1px solid var(--pg-ink-300)',
+                  background:'var(--pg-ink-100)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
+                  message: lang==='pt'?'Remover publicação?':lang==='es'?'¿Eliminar publicación?':'Remove posting?',
+                  subMessage: lang==='pt'?'Essa vaga será removida e os candidatos não poderão mais se candidatar.':'This job will be removed and applicants will no longer be able to apply.',
+                  confirmLabel: lang==='pt'?'Sim, remover':lang==='es'?'Sí, eliminar':'Yes, remove',
+                  onConfirm: () => { deleteJob(j.id); setConfirmDialog(null); },
+                }); }} style={{
+                  width:36, height:36, borderRadius:10, border:'1px solid #FECACA',
+                  background:'#FEF2F2', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                  </svg>
+                </button>
+              </div>
             ) : locked ? (
               <button onClick={(e)=>{e.stopPropagation();openPaywall();}} style={{
                 height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
@@ -561,6 +578,7 @@ function QuickPoolsScreen({ ctx }) {
           onDelete={deleteJob}
           onComplete={finalizeJob}
           openPublicProfile={openPublicProfile}
+          openEditPost={openEditPost}
           onStatusChange={(status) => {
             setJobs(prev => prev.map(j => String(j.id)===String(selected.id) ? {...j, status} : j));
             setSelected(prev => prev ? {...prev, status} : prev);
@@ -1133,7 +1151,7 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
 }
 
 // ── Detail view ──────────────────────────────────────────────
-function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, openPublicProfile, onStatusChange, onMyJobAccepted }) {
+function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, openPublicProfile, openEditPost, onStatusChange, onMyJobAccepted }) {
   const isOwn   = job._live && user?.uid && job.poster_id === user.uid;
   const locked  = !isOwn && user.tier === 'free';
   const [confirmDialog,  setConfirmDialog]  = React.useState(null);
@@ -1775,20 +1793,42 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                 ⏳ {lang==='pt'?'Em andamento — aguardando pool guy':'In progress — waiting for pool guy'}
               </div>
             ) : (
-              <button onClick={()=>setShowApplicants(v=>!v)} style={{
-                height:50, borderRadius:14, border:'1.5px solid var(--pg-blue-400)',
-                background: showApplicants ? 'var(--pg-blue-500)' : '#fff',
-                color: showApplicants ? '#fff' : 'var(--pg-blue-600)',
-                fontSize:15, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                {lang==='pt'
-                  ? `${showApplicants?'Fechar':'Ver'} candidatos${applicants.length>0?' ('+applicants.length+')':''}`
-                  : `${showApplicants?'Close':'View'} applicants${applicants.length>0?' ('+applicants.length+')':''}`}
-              </button>
+              <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                {job.status === 'open' && openEditPost && (
+                  <button onClick={()=>openEditPost({
+                    id: job.id,
+                    title: typeof job.title==='object' ? (job.title[lang]||job.title.pt||job.title.en) : job.title,
+                    description: typeof job.body==='object' ? (job.body[lang]||job.body.pt||job.body.en) : '',
+                    city: job.loc, pool_type: job.type, extras: job.extras,
+                    price_negotiable: job.price==='neg', price_per_pool: job.price==='neg' ? null : job.price,
+                    poster_phone: job.poster_phone, pool_address: job.pool_address,
+                    required_photos: job.required_photos || [],
+                  })} style={{
+                    height:46, borderRadius:14, border:'1.5px solid var(--pg-ink-300)',
+                    background:'var(--pg-ink-100)', color:'var(--pg-ink-700)',
+                    fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    {lang==='pt'?'Editar publicação':lang==='es'?'Editar publicación':'Edit posting'}
+                  </button>
+                )}
+                <button onClick={()=>setShowApplicants(v=>!v)} style={{
+                  height:50, borderRadius:14, border:'1.5px solid var(--pg-blue-400)',
+                  background: showApplicants ? 'var(--pg-blue-500)' : '#fff',
+                  color: showApplicants ? '#fff' : 'var(--pg-blue-600)',
+                  fontSize:15, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  {lang==='pt'
+                    ? `${showApplicants?'Fechar':'Ver'} candidatos${applicants.length>0?' ('+applicants.length+')':''}`
+                    : `${showApplicants?'Close':'View'} applicants${applicants.length>0?' ('+applicants.length+')':''}`}
+                </button>
+              </div>
             )}
           </div>
         ) : (
