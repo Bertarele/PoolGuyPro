@@ -187,7 +187,7 @@ function HomeScreen({ ctx }) {
 
             {/* Top row: logo + buttons */}
             <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0px 18px 0', position:'relative', zIndex:1, marginTop:-18}}>
-              <div style={{height:118, overflow:'hidden', transform:'translateY(-23px) translateX(-14px)', width:'calc(100vw - 160px)', flexShrink:1, minWidth:0}}>
+              <div style={{height:118, overflow:'hidden', transform:'translateY(-14px) translateX(-22px)', width:'calc(100vw - 160px)', flexShrink:1, minWidth:0}}>
                 <img
                   src={darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png'}
                   alt="PoolGuyX"
