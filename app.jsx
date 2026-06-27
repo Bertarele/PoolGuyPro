@@ -1932,7 +1932,7 @@ function App() {
               onClick={tab === 'market' ? ()=>setMarketPostOpen(true) : ()=>setPostQPOpen(true)}
               className="pg-press"
               style={{
-                position:'absolute', bottom:86, right:18, zIndex:35,
+                position:'absolute', bottom:'calc(96px + env(safe-area-inset-bottom, 0px))', right:18, zIndex:35,
                 width:56, height:56, borderRadius:'50%', padding:0,
                 display:'inline-flex', alignItems:'center', justifyContent:'center',
                 background:'linear-gradient(135deg, #0EBAC7 0%, #0D7280 100%)',
