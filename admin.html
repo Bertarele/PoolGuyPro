@@ -1963,14 +1963,20 @@ function AdminApp({ adminUser, onLogout }) {
                           const file = e.target.files?.[0];
                           if(!file) return;
                           setSponsorLogoUploading(true);
-                          const ext = file.name.split('.').pop();
-                          const path = `logos/${Date.now()}.${ext}`;
-                          const { error } = await window.sb.storage.from('sponsor-logos').upload(path, file, { upsert:true, contentType: file.type });
-                          if(error){ showToast('❌ Erro no upload: '+error.message, false); setSponsorLogoUploading(false); return; }
-                          const { data } = window.sb.storage.from('sponsor-logos').getPublicUrl(path);
-                          setSponsorForm(p=>({...p, logo_url: data.publicUrl, logo_text:''}));
-                          setSponsorLogoUploading(false);
-                          showToast('✓ Logo enviado!');
+                          try {
+                            const ext = file.name.split('.').pop();
+                            const path = `logos/${Date.now()}.${ext}`;
+                            const { error } = await window.sb.storage.from('sponsor-logos').upload(path, file, { upsert:true, contentType: file.type });
+                            if(error){ showToast('❌ Erro no upload: '+error.message, false); return; }
+                            const { data } = window.sb.storage.from('sponsor-logos').getPublicUrl(path);
+                            setSponsorForm(p=>({...p, logo_url: data.publicUrl, logo_text:''}));
+                            showToast('✓ Logo enviado!');
+                          } catch(ex) {
+                            console.error('Logo upload error:', ex);
+                            showToast('❌ Erro: '+ex.message, false);
+                          } finally {
+                            setSponsorLogoUploading(false);
+                          }
                         }}/>
                         <div style={{width:44,height:44,borderRadius:10,border:'1.5px dashed #334155',background:'#0f1117',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:2,transition:'border-color .15s',cursor:'pointer'}}
                           onMouseEnter={e=>e.currentTarget.style.borderColor='#0EBAC7'}
