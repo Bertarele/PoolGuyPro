@@ -2364,7 +2364,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                   <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
                     <button onClick={()=>openPublicProfile && openPublicProfile({ name:vac.author })}
                       style={{display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left'}} className="pg-press">
-                      <Avatar name={vac.author} size={30}/>
+                      <AvatarFetch uid={vac.author_id} name={vac.author} size={30}/>
                       <div style={{flex:1, minWidth:0}}>
                         <span style={{fontSize:13, fontWeight:600}}>{vac.author}</span>
                       </div>

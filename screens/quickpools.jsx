@@ -451,7 +451,7 @@ function QuickPoolsScreen({ ctx }) {
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:10}}>
             <div onClick={(e)=>{ e.stopPropagation(); j.poster_id && openPublicProfile({ uid: j.poster_id, name: j.poster }); }}
               style={{display:'flex', alignItems:'center', gap:10, minWidth:0, cursor: j.poster_id ? 'pointer' : 'default'}}>
-              <Avatar name={j.poster} size={32}/>
+              <AvatarFetch uid={j.poster_id} name={j.poster} size={32}/>
               <div>
                 <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)', lineHeight:1.2}}>{j.poster}</div>
                 <div style={{display:'flex', alignItems:'center', gap:4, marginTop:2}}>
@@ -1487,7 +1487,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         <div className="pg-card" style={{padding:14, marginTop:14, display:'flex', alignItems:'center', gap:12,
           cursor: job.poster_id ? 'pointer' : 'default'}}
           onClick={()=>job.poster_id && openPublicProfile({ uid: job.poster_id, name: job.poster })}>
-          <Avatar name={job.poster} size={48}/>
+          <AvatarFetch uid={job.poster_id} name={job.poster} size={48}/>
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontSize:15, fontWeight:600}}>{job.poster}</div>
             <div style={{display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--pg-ink-500)', marginTop:2}}>
@@ -1563,7 +1563,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                 <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px'}}>
                   <div onClick={()=>a.applicant_id && openPublicProfile({ uid: a.applicant_id, name: a.applicant_name })}
                     style={{cursor: a.applicant_id ? 'pointer' : 'default', display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0}}>
-                  <Avatar name={a.applicant_name} size={34}/>
+                  <AvatarFetch uid={a.applicant_id} name={a.applicant_name} size={34}/>
                   <div style={{flex:1, minWidth:0}}>
                     <div style={{fontSize:13, fontWeight:600, color: a.status==='accepted' ? '#14532D' : a.status==='rejected' ? '#7F1D1D' : 'var(--pg-ink-900)'}}>{a.applicant_name}</div>
                     {a.applicant_phone && (

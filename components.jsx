@@ -154,6 +154,32 @@ const Icon = {
   ),
 };
 
+// ── Module-level photo cache (uid → url) ──────────────────────
+const _pgPhotoCache = new Map();
+
+// ── AvatarFetch — auto-fetches photo by uid, falls back to initials ──
+function AvatarFetch({ uid, name="?", size=40 }) {
+  const [src, setSrc] = React.useState(() => {
+    const cached = uid ? _pgPhotoCache.get(uid) : undefined;
+    return cached || undefined;
+  });
+  React.useEffect(() => {
+    if (!uid || !window.sb) return;
+    if (_pgPhotoCache.has(uid)) {
+      setSrc(_pgPhotoCache.get(uid) || undefined);
+      return;
+    }
+    window.sb.from('profiles').select('photo_url').eq('id', uid).single()
+      .then(({ data }) => {
+        const url = data?.photo_url || '';
+        _pgPhotoCache.set(uid, url);
+        if (url) setSrc(url);
+      })
+      .catch(() => { _pgPhotoCache.set(uid, ''); });
+  }, [uid]);
+  return <Avatar name={name} size={size} src={src} />;
+}
+
 // ── Avatar (deterministic color from initials, or photo) ─────
 function Avatar({ name="?", size=40, src }) {
   const initials = name.split(' ').slice(0,2).map(p => p[0]).join('').toUpperCase();

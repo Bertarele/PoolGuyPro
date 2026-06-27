@@ -142,7 +142,7 @@ function ChatInbox({ lang, t, onSelect, onClose, currentUser }) {
               {c.listingPhoto ? (
                 <img src={c.listingPhoto} alt="" style={{width:44, height:44, borderRadius:10, objectFit:'cover', border:'1px solid var(--pg-ink-200)'}}/>
               ) : (
-                <Avatar name={c.name} size={44}/>
+                <AvatarFetch uid={c.receiverId} name={c.name} size={44}/>
               )}
               {c.unread > 0 && (
                 <span style={{position:'absolute', top:-2, right:-2, minWidth:16, height:16, borderRadius:999,
@@ -1428,7 +1428,7 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
       });
     // Real ratings
     window.sb.from('ratings')
-      .select('id,stars,comment,from_name,created_at')
+      .select('id,stars,comment,from_id,from_name,created_at')
       .eq('to_id', applicant.applicant_id)
       .eq('pending', false)
       .order('created_at', { ascending: false })
@@ -1658,7 +1658,7 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
                 <div key={r.id} className="pg-card" style={{padding:'12px 14px'}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
                     <div style={{display:'flex', alignItems:'center', gap:8}}>
-                      <Avatar name={r.from_name || '?'} size={28}/>
+                      <AvatarFetch uid={r.from_id} name={r.from_name || '?'} size={28}/>
                       <span style={{fontSize:13, fontWeight:600}}>{r.from_name || '?'}</span>
                     </div>
                     <div style={{display:'flex', alignItems:'center', gap:4}}>
@@ -4073,7 +4073,7 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
                 {completedRat.slice(0,8).map(r => (
                   <div key={r.id} style={{padding:'10px 12px', borderRadius:11, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-100)'}}>
                     <div style={{display:'flex', alignItems:'center', gap:8, marginBottom: r.comment ? 6 : 0}}>
-                      <Avatar name={r.from_name || '?'} size={26}/>
+                      <AvatarFetch uid={r.from_id} name={r.from_name || '?'} size={26}/>
                       <span style={{fontSize:12.5, fontWeight:700, color:'var(--pg-ink-800)', flex:1}}>{r.from_name || '?'}</span>
                       <div style={{display:'flex', gap:1}}>
                         {[1,2,3,4,5].map(n => (
