@@ -502,8 +502,8 @@ function QuickPoolsScreen({
     compact = false
   }) => {
     const isApplied = !!applied[j.id];
-    const locked = user.tier === 'free';
     const isOwn = j._live && user?.uid && j.poster_id === user.uid;
+    const locked = !isOwn && user.tier === 'free';
     // Green only for the candidate whose application was accepted
     const isAccepted = !isOwn && myAcceptedJobIds.has(String(j.id));
     // Amber for the owner when someone has been accepted (job filled, pending finalization)
@@ -2049,8 +2049,8 @@ function QuickPoolDetails({
   onStatusChange,
   onMyJobAccepted
 }) {
-  const locked = user.tier === 'free';
   const isOwn = job._live && user?.uid && job.poster_id === user.uid;
+  const locked = !isOwn && user.tier === 'free';
   const [confirmDialog, setConfirmDialog] = React.useState(null);
   const [applicants, setApplicants] = React.useState([]);
   const [loadingApps, setLoadingApps] = React.useState(false);
