@@ -388,20 +388,54 @@ function TabBar({ tab, setTab, lang='en' }) {
 
 // ── Language selector pill ────────────────────────────────────
 function LangPill({ lang, setLang, onDark=false }) {
-  const flags = { en:'EN', pt:'PT', es:'ES' };
-  const next = { en:'pt', pt:'es', es:'en' };
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+  const labels = { en:'EN', pt:'PT', es:'ES' };
+  const names  = { en:'English', pt:'Português', es:'Español' };
+
+  React.useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('touchstart', close);
+    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close); };
+  }, [open]);
+
   return (
-    <button className="pg-press" onClick={()=>setLang(next[lang])} style={{
-      display:'inline-flex', alignItems:'center', gap:6,
-      height:32, padding:'0 10px 0 8px', borderRadius:10,
-      background: onDark ? 'rgba(255,255,255,0.14)' : 'rgba(10,40,64,0.09)',
-      border: onDark ? '0.5px solid rgba(255,255,255,0.18)' : '0.5px solid rgba(10,40,64,0.18)',
-      color: onDark ? '#fff' : '#0A2840',
-      fontSize:12, fontWeight:600, cursor:'pointer',
-    }}>
-      {Icon.globe(14, onDark ? 'rgba(255,255,255,0.85)' : 'rgba(10,40,64,0.60)')}
-      <span style={{letterSpacing:'0.04em'}}>{flags[lang]}</span>
-    </button>
+    <div ref={ref} style={{position:'relative'}}>
+      <button className="pg-press" onClick={()=>setOpen(o=>!o)} style={{
+        display:'inline-flex', alignItems:'center', gap:6,
+        height:32, padding:'0 10px 0 8px', borderRadius:10,
+        background: onDark ? 'rgba(255,255,255,0.14)' : 'rgba(10,40,64,0.09)',
+        border: onDark ? '0.5px solid rgba(255,255,255,0.18)' : '0.5px solid rgba(10,40,64,0.18)',
+        color: onDark ? '#fff' : '#0A2840',
+        fontSize:12, fontWeight:600, cursor:'pointer',
+      }}>
+        {Icon.globe(14, onDark ? 'rgba(255,255,255,0.85)' : 'rgba(10,40,64,0.60)')}
+        <span style={{letterSpacing:'0.04em'}}>{labels[lang]}</span>
+      </button>
+      {open && (
+        <div style={{
+          position:'absolute', top:'calc(100% + 6px)', right:0, zIndex:9999,
+          background:'var(--pg-white)', borderRadius:10, overflow:'hidden',
+          boxShadow:'0 4px 20px rgba(0,0,0,0.15)', border:'0.5px solid var(--pg-ink-200)',
+          minWidth:130,
+        }}>
+          {['en','pt','es'].map(l => (
+            <button key={l} onClick={()=>{ setLang(l); setOpen(false); }} style={{
+              display:'flex', alignItems:'center', justifyContent:'space-between',
+              width:'100%', padding:'10px 14px', border:'none', background:'transparent',
+              cursor:'pointer', fontSize:13, fontWeight: l===lang ? 700 : 400,
+              color: l===lang ? 'var(--pg-blue-500)' : 'var(--pg-ink-900)',
+              borderBottom: l!=='es' ? '0.5px solid var(--pg-ink-100)' : 'none',
+            }}>
+              <span>{names[l]}</span>
+              {l===lang && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
