@@ -556,6 +556,11 @@ function MarkSoldSheet({
       } = await window.sb.from('ratings').select('*').eq('listing_id', item._id).eq('from_id', currentUser.uid).eq('pending', true).limit(1);
       const sellerRating = myRatings?.[0] || null;
       showToast && showToast('✅ ' + (lang === 'pt' ? 'Vendido! Avalie o comprador agora.' : 'Sold! Rate the buyer now.'));
+
+      // Notify buyer that their purchase was confirmed
+      if (selected?.id && window.sendPush) {
+        window.sendPush(selected.id, lang === 'pt' ? '✅ Compra confirmada!' : '✅ Purchase confirmed!', lang === 'pt' ? `O vendedor confirmou a venda de "${item.name || ''}"` : `The seller confirmed the sale of "${item.name || ''}"`, '/');
+      }
       onSold && onSold(sellerRating);
     } catch (e) {
       showToast && showToast('❌ ' + (e.message || 'Error'));
@@ -1106,6 +1111,10 @@ function ViewListingSheet({
     };
     if (linkId) row.link_id = linkId;
     window.sb.from('notifications').insert(row).catch(() => {});
+    // Push notification (extract readable text from multilingual object)
+    const pushTitle = typeof title === 'object' ? title.pt || title.en || '' : title;
+    const pushBody = typeof body === 'object' ? body.pt || body.en || '' : body;
+    window.sendPush && window.sendPush(userId, pushTitle, pushBody, '/');
   };
   const handleRequestRental = async () => {
     // Allow re-request after cancelled or declined — those are terminal but recoverable states
