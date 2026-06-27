@@ -138,6 +138,22 @@
       }
     },
     from:function(table){return makeBuilder(table);},
+    storage:{
+      from:function(bucket){
+        var SRK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
+        return {
+          upload:async function(path,file,opts){
+            var url=BASE+'/storage/v1/object/'+bucket+'/'+path;
+            var r=await fetch(url,{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+SRK,'Content-Type':(opts&&opts.contentType)||file.type,'x-upsert':(opts&&opts.upsert)?'true':'false'},body:file});
+            if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||e.error||'Upload falhou: '+r.status}};}
+            return{data:{path:path},error:null};
+          },
+          getPublicUrl:function(path){
+            return{data:{publicUrl:BASE+'/storage/v1/object/public/'+bucket+'/'+path}};
+          }
+        };
+      }
+    },
   };
 })();
 </script>
