@@ -1308,7 +1308,7 @@ function AdminApp({ adminUser, onLogout }) {
             user_id: row.author_id,
             title: '🎉 Seu anúncio foi aprovado!',
             body:  `"${row.name||row.type||'Anúncio'}" já está visível no marketplace.`,
-            url:   '/',
+            url:   '/#market',
           }),
         });
       } catch(e) {}

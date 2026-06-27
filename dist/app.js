@@ -692,13 +692,48 @@ function App() {
       const hash = window.location.hash; // e.g. "#quick?job=uuid"
       const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
       const jobId = new URLSearchParams(qs).get('job') || null;
-      // Strip ?job= from URL so refresh doesn't re-open the job
       if (jobId) window.history.replaceState(null, '', '#quick');
       return jobId;
     } catch {
       return null;
     }
   });
+  // Parse deep link from URL on startup (e.g. notification click when app was closed)
+  const [pendingDeepLink, setPendingDeepLink] = React.useState(() => {
+    try {
+      const hash = window.location.hash;
+      if (hash.startsWith('#chat')) {
+        const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+        const userId = new URLSearchParams(qs).get('user') || null;
+        if (userId) {
+          window.history.replaceState(null, '', '#home');
+          return {
+            type: 'chat',
+            userId
+          };
+        }
+      } else if (hash.startsWith('#market')) {
+        return {
+          type: 'tab',
+          tab: 'market'
+        };
+      }
+    } catch {}
+    return null;
+  });
+  // Execute pending deep link once user is logged in
+  React.useEffect(() => {
+    if (!pendingDeepLink || !user?.uid) return;
+    setPendingDeepLink(null);
+    if (pendingDeepLink.type === 'chat') {
+      setChatConvoTarget({
+        id: pendingDeepLink.userId
+      });
+      setChatOpen(true);
+    } else if (pendingDeepLink.type === 'tab') {
+      setTab(pendingDeepLink.tab);
+    }
+  }, [pendingDeepLink, user?.uid]);
   // Listen for service worker postMessage (notification click while app is open)
   React.useEffect(() => {
     if (!navigator.serviceWorker) return;
@@ -707,14 +742,29 @@ function App() {
       const url = event.data.url || '';
       const hashIdx = url.indexOf('#');
       const hash = hashIdx >= 0 ? url.slice(hashIdx) : '';
-      if (hash.startsWith('#quick')) {
+      if (hash.startsWith('#chat')) {
+        const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+        const userId = new URLSearchParams(qs).get('user') || null;
+        if (userId) {
+          setChatConvoTarget({
+            id: userId
+          });
+          setChatOpen(true);
+        }
+      } else if (hash.startsWith('#quick')) {
         const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
         const jobId = new URLSearchParams(qs).get('job') || null;
         if (jobId) {
           window.history.replaceState(null, '', '#quick');
           setPendingQuickJobId(jobId);
           setTab('quick');
+        } else {
+          setTab('quick');
         }
+      } else if (hash.startsWith('#market')) {
+        setTab('market');
+      } else if (hash.startsWith('#work')) {
+        setTab('work');
       }
     };
     navigator.serviceWorker.addEventListener('message', handler);

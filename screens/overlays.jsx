@@ -261,13 +261,13 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
         p_my_name:    myName,
         p_other_name: convo.name,
       });
-      // Push notification to recipient
+      // Push notification to recipient — deep link opens chat with sender
       if (convo.receiverId && window.sendPush) {
         window.sendPush(
           convo.receiverId,
           myName,
           text.length > 120 ? text.slice(0, 120) + '…' : text,
-          '/'
+          `/#chat?user=${currentUser.uid}`
         );
       }
       // Store listing context in the conversation row so seller also sees it
