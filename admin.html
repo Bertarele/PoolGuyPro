@@ -1228,9 +1228,10 @@ function AdminApp({ adminUser, onLogout }) {
   const [viewRow,    setViewRow]    = React.useState(null);
   const [rlsOpen,    setRlsOpen]    = React.useState(false);
   const [sponsors,   setSponsors]   = React.useState([]);
-  const [sponsorForm, setSponsorForm] = React.useState({ company_name:'', headline:'', subtext:'', link_url:'', logo_text:'', bg_color:'#001f4d', expires_at:'' });
+  const [sponsorForm, setSponsorForm] = React.useState({ company_name:'', headline:'', subtext:'', link_url:'', logo_text:'', logo_url:'', bg_color:'#001f4d', expires_at:'' });
   const [sponsorSaving, setSponsorSaving] = React.useState(false);
-  const [sponsorEdit, setSponsorEdit] = React.useState(null); // id being edited
+  const [sponsorEdit, setSponsorEdit] = React.useState(null);
+  const [sponsorLogoUploading, setSponsorLogoUploading] = React.useState(false);
 
   const showToast = (msg, ok=true) => { setToast({msg,ok}); setTimeout(()=>setToast(null), 2800); };
 
@@ -1954,10 +1955,48 @@ function AdminApp({ adminUser, onLogout }) {
                       style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
                   </div>
                   <div>
-                    <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>Texto do Logo (sigla)</div>
-                    <input value={sponsorForm.logo_text} onChange={e=>setSponsorForm(p=>({...p,logo_text:e.target.value}))}
-                      placeholder="Ex: SCP"
-                      style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+                    <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>Logo da Empresa</div>
+                    <div style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+                      {/* Image upload */}
+                      <label style={{flexShrink:0,cursor:'pointer'}}>
+                        <input type="file" accept="image/*" style={{display:'none'}} onChange={async e=>{
+                          const file = e.target.files?.[0];
+                          if(!file) return;
+                          setSponsorLogoUploading(true);
+                          const ext = file.name.split('.').pop();
+                          const path = `logos/${Date.now()}.${ext}`;
+                          const { error } = await window.sb.storage.from('sponsor-logos').upload(path, file, { upsert:true, contentType: file.type });
+                          if(error){ showToast('❌ Erro no upload: '+error.message, false); setSponsorLogoUploading(false); return; }
+                          const { data } = window.sb.storage.from('sponsor-logos').getPublicUrl(path);
+                          setSponsorForm(p=>({...p, logo_url: data.publicUrl, logo_text:''}));
+                          setSponsorLogoUploading(false);
+                          showToast('✓ Logo enviado!');
+                        }}/>
+                        <div style={{width:44,height:44,borderRadius:10,border:'1.5px dashed #334155',background:'#0f1117',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:2,transition:'border-color .15s',cursor:'pointer'}}
+                          onMouseEnter={e=>e.currentTarget.style.borderColor='#0EBAC7'}
+                          onMouseLeave={e=>e.currentTarget.style.borderColor='#334155'}>
+                          {sponsorLogoUploading
+                            ? <span style={{width:14,height:14,border:'2px solid #334155',borderTopColor:'#0EBAC7',borderRadius:'50%',animation:'pgSpin .7s linear infinite',display:'inline-block'}}/>
+                            : sponsorForm.logo_url
+                              ? <img src={sponsorForm.logo_url} alt="" style={{width:36,height:36,objectFit:'contain',borderRadius:7}}/>
+                              : <>{IC.sponsor}<span style={{fontSize:8,color:'#475569',marginTop:1}}>Upload</span></>
+                          }
+                        </div>
+                      </label>
+                      {/* Text fallback */}
+                      <div style={{flex:1}}>
+                        <input value={sponsorForm.logo_text} onChange={e=>setSponsorForm(p=>({...p,logo_text:e.target.value,logo_url:''}))}
+                          placeholder={sponsorForm.logo_url ? '— usando imagem —' : 'Sigla: SCP'}
+                          disabled={!!sponsorForm.logo_url}
+                          style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color: sponsorForm.logo_url?'#334155':'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none',opacity: sponsorForm.logo_url?0.5:1}}/>
+                        {sponsorForm.logo_url && (
+                          <button onClick={()=>setSponsorForm(p=>({...p,logo_url:'',logo_text:''}))}
+                            style={{fontSize:10,color:'#ef4444',background:'none',border:'none',cursor:'pointer',padding:'3px 0',fontFamily:'inherit'}}>
+                            ✕ remover imagem
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div style={{marginBottom:12}}>
@@ -2000,9 +2039,12 @@ function AdminApp({ adminUser, onLogout }) {
                   <div style={{marginBottom:16}}>
                     <div style={{fontSize:11,fontWeight:600,color:'#64748b',marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em'}}>Preview no App</div>
                     <div style={{background:sponsorForm.bg_color||'#001f4d',borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'center',gap:10,border:'1px solid rgba(0,119,182,0.4)',maxWidth:380}}>
-                      {sponsorForm.logo_text && (
-                        <div style={{background:'#fff',borderRadius:6,padding:'4px 8px',fontWeight:900,fontSize:11,color:sponsorForm.bg_color||'#003d7a',flexShrink:0,whiteSpace:'nowrap'}}>{sponsorForm.logo_text}</div>
-                      )}
+                      {sponsorForm.logo_url
+                        ? <img src={sponsorForm.logo_url} alt="" style={{width:40,height:40,objectFit:'contain',borderRadius:8,background:'rgba(255,255,255,0.12)',padding:3,flexShrink:0}}/>
+                        : sponsorForm.logo_text
+                          ? <div style={{background:'#fff',borderRadius:6,padding:'4px 8px',fontWeight:900,fontSize:11,color:sponsorForm.bg_color||'#003d7a',flexShrink:0,whiteSpace:'nowrap'}}>{sponsorForm.logo_text}</div>
+                          : null
+                      }
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginBottom:2,fontWeight:600,letterSpacing:'.06em'}}>PATROCINADO</div>
                         <div style={{fontSize:12,color:'#fff',fontWeight:700,lineHeight:1.3}}>{sponsorForm.headline||'Título do card'}</div>
@@ -2017,7 +2059,7 @@ function AdminApp({ adminUser, onLogout }) {
                   <button disabled={sponsorSaving||!sponsorForm.company_name||!sponsorForm.headline}
                     onClick={async()=>{
                       setSponsorSaving(true);
-                      const payload={company_name:sponsorForm.company_name.trim(),headline:sponsorForm.headline.trim(),subtext:sponsorForm.subtext.trim()||null,link_url:sponsorForm.link_url.trim()||null,logo_text:sponsorForm.logo_text.trim()||null,bg_color:sponsorForm.bg_color||'#001f4d',expires_at:sponsorForm.expires_at||null,active:true};
+                      const payload={company_name:sponsorForm.company_name.trim(),headline:sponsorForm.headline.trim(),subtext:sponsorForm.subtext.trim()||null,link_url:sponsorForm.link_url.trim()||null,logo_text:sponsorForm.logo_text.trim()||null,logo_url:sponsorForm.logo_url||null,bg_color:sponsorForm.bg_color||'#001f4d',expires_at:sponsorForm.expires_at||null,active:true};
                       let err;
                       if(sponsorEdit){({error:err}=await window.sb.from('sponsored_cards').update(payload).eq('id',sponsorEdit));}
                       else{({error:err}=await window.sb.from('sponsored_cards').insert(payload));}
@@ -2025,7 +2067,7 @@ function AdminApp({ adminUser, onLogout }) {
                       if(err){showToast('❌ '+err.message,false);return;}
                       showToast(sponsorEdit?'✓ Card atualizado!':'✓ Card criado com sucesso!');
                       setSponsorEdit(null);
-                      setSponsorForm({company_name:'',headline:'',subtext:'',link_url:'',logo_text:'',bg_color:'#001f4d',expires_at:''});
+                      setSponsorForm({company_name:'',headline:'',subtext:'',link_url:'',logo_text:'',logo_url:'',bg_color:'#001f4d',expires_at:''});
                       const{data}=await window.sb.from('sponsored_cards').select('*').order('created_at',{ascending:false});
                       if(data)setSponsors(data);
                     }}
@@ -2033,7 +2075,7 @@ function AdminApp({ adminUser, onLogout }) {
                     {sponsorSaving?'Salvando…':(sponsorEdit?'Salvar Alterações':'Criar Card')}
                   </button>
                   {sponsorEdit && (
-                    <button onClick={()=>{setSponsorEdit(null);setSponsorForm({company_name:'',headline:'',subtext:'',link_url:'',logo_text:'',bg_color:'#001f4d',expires_at:''});}}
+                    <button onClick={()=>{setSponsorEdit(null);setSponsorForm({company_name:'',headline:'',subtext:'',link_url:'',logo_text:'',logo_url:'',bg_color:'#001f4d',expires_at:''});}}
                       style={{padding:'10px 18px',borderRadius:10,border:'1px solid #1e293b',background:'transparent',color:'#94a3b8',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
                       Cancelar
                     </button>
@@ -2049,10 +2091,17 @@ function AdminApp({ adminUser, onLogout }) {
                   const expired=s.expires_at&&new Date(s.expires_at)<new Date();
                   return(
                     <div key={s.id} style={{background:'#1a1f2e',borderRadius:14,padding:'14px 16px',border:`1px solid ${s.active&&!expired?'#0EBAC740':'#1e293b'}`,display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-                      <div style={{background:s.bg_color||'#001f4d',borderRadius:8,padding:'8px 10px',flexShrink:0,minWidth:120,maxWidth:160}}>
-                        {s.logo_text&&<div style={{background:'#fff',borderRadius:4,padding:'2px 6px',fontWeight:900,fontSize:9,color:s.bg_color||'#003d7a',display:'inline-block',marginBottom:4}}>{s.logo_text}</div>}
-                        <div style={{fontSize:10,color:'#fff',fontWeight:700,lineHeight:1.3}}>{s.headline}</div>
-                        {s.subtext&&<div style={{fontSize:9,color:'rgba(255,255,255,0.5)',marginTop:2}}>{s.subtext}</div>}
+                      <div style={{background:s.bg_color||'#001f4d',borderRadius:8,padding:'8px 10px',flexShrink:0,minWidth:120,maxWidth:160,display:'flex',alignItems:'flex-start',gap:7}}>
+                        {s.logo_url
+                          ? <img src={s.logo_url} alt="" style={{width:28,height:28,objectFit:'contain',borderRadius:5,background:'rgba(255,255,255,0.12)',padding:2,flexShrink:0}}/>
+                          : s.logo_text
+                            ? <div style={{background:'#fff',borderRadius:4,padding:'2px 6px',fontWeight:900,fontSize:9,color:s.bg_color||'#003d7a',flexShrink:0,whiteSpace:'nowrap'}}>{s.logo_text}</div>
+                            : null
+                        }
+                        <div>
+                          <div style={{fontSize:10,color:'#fff',fontWeight:700,lineHeight:1.3}}>{s.headline}</div>
+                          {s.subtext&&<div style={{fontSize:9,color:'rgba(255,255,255,0.5)',marginTop:2}}>{s.subtext}</div>}
+                        </div>
                       </div>
                       <div style={{flex:1,minWidth:160}}>
                         <div style={{fontWeight:700,fontSize:13,color:'#e2e8f0'}}>{s.company_name}</div>
@@ -2066,7 +2115,7 @@ function AdminApp({ adminUser, onLogout }) {
                           {expired?'Expirado':s.active?'Ativo':'Inativo'}
                         </span>
                         <button onClick={async()=>{await window.sb.from('sponsored_cards').update({active:!s.active}).eq('id',s.id);setSponsors(p=>p.map(x=>x.id===s.id?{...x,active:!x.active}:x));showToast(s.active?'Card desativado.':'Card ativado!');}} className="act-btn act-btn-warn">{s.active?'Desativar':'Ativar'}</button>
-                        <button onClick={()=>{setSponsorEdit(s.id);setSponsorForm({company_name:s.company_name,headline:s.headline,subtext:s.subtext||'',link_url:s.link_url||'',logo_text:s.logo_text||'',bg_color:s.bg_color||'#001f4d',expires_at:s.expires_at?s.expires_at.slice(0,10):''});window.scrollTo({top:0,behavior:'smooth'});}} className="act-btn act-btn-view">Editar</button>
+                        <button onClick={()=>{setSponsorEdit(s.id);setSponsorForm({company_name:s.company_name,headline:s.headline,subtext:s.subtext||'',link_url:s.link_url||'',logo_text:s.logo_text||'',logo_url:s.logo_url||'',bg_color:s.bg_color||'#001f4d',expires_at:s.expires_at?s.expires_at.slice(0,10):''});window.scrollTo({top:0,behavior:'smooth'});}} className="act-btn act-btn-view">Editar</button>
                         <button onClick={async()=>{if(!confirm(`Excluir o card de "${s.company_name}"?`))return;await window.sb.from('sponsored_cards').delete().eq('id',s.id);setSponsors(p=>p.filter(x=>x.id!==s.id));showToast('Card excluído.');}} className="act-btn act-btn-red">{IC.trash}</button>
                       </div>
                     </div>

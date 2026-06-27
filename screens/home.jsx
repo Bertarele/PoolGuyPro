@@ -675,13 +675,18 @@ function HomeScreen({ ctx }) {
             }}
             onTouchStart={e => { if (sponsoredCard.link_url) e.currentTarget.style.opacity = '0.82'; }}
             onTouchEnd={e => { e.currentTarget.style.opacity = '1'; }}>
-            {sponsoredCard.logo_text && (
-              <div style={{
-                background: '#fff', borderRadius: 7, padding: '4px 9px',
-                fontWeight: 900, fontSize: 11, color: sponsoredCard.bg_color || '#003d7a',
-                flexShrink: 0, whiteSpace: 'nowrap', letterSpacing: '0.02em',
-              }}>{sponsoredCard.logo_text}</div>
-            )}
+            {sponsoredCard.logo_url
+              ? <img src={sponsoredCard.logo_url} alt={sponsoredCard.company_name}
+                  style={{width:44, height:44, objectFit:'contain', borderRadius:9,
+                    background:'rgba(255,255,255,0.12)', padding:4, flexShrink:0}}/>
+              : sponsoredCard.logo_text
+                ? <div style={{
+                    background: '#fff', borderRadius: 7, padding: '4px 9px',
+                    fontWeight: 900, fontSize: 11, color: sponsoredCard.bg_color || '#003d7a',
+                    flexShrink: 0, whiteSpace: 'nowrap', letterSpacing: '0.02em',
+                  }}>{sponsoredCard.logo_text}</div>
+                : null
+            }
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 2, fontWeight: 700, letterSpacing: '0.07em' }}>
                 {lang === 'pt' ? 'PATROCINADO' : lang === 'es' ? 'PATROCINADO' : 'SPONSORED'}
