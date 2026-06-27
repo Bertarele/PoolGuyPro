@@ -390,7 +390,8 @@ function TabBar({ tab, setTab, lang='en' }) {
 function LangPill({ lang, setLang, onDark=false }) {
   const [open, setOpen] = React.useState(false);
   const [pos,  setPos]  = React.useState({ top:0, right:0 });
-  const btnRef = React.useRef(null);
+  const btnRef      = React.useRef(null);
+  const dropdownRef = React.useRef(null);
 
   const LANGS = [
     { code:'en', label:'EN', flag:'🇺🇸', name:'English'   },
@@ -409,7 +410,11 @@ function LangPill({ lang, setLang, onDark=false }) {
 
   React.useEffect(() => {
     if (!open) return;
-    const close = (e) => { if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false); };
+    const close = (e) => {
+      if (btnRef.current && btnRef.current.contains(e.target)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', close);
     document.addEventListener('touchstart', close);
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close); };
@@ -427,7 +432,7 @@ function LangPill({ lang, setLang, onDark=false }) {
       minWidth:148,
       transformOrigin:'top right',
       animation:'_lpIn .18s cubic-bezier(0.34,1.56,0.64,1)',
-    }}>
+    }} ref={dropdownRef}>
       <style>{`@keyframes _lpIn{from{opacity:0;transform:scale(0.88)}to{opacity:1;transform:scale(1)}}`}</style>
       {LANGS.map((l, i) => {
         const active = l.code === lang;
