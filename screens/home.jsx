@@ -102,6 +102,7 @@ function HomeScreen({ ctx }) {
           (Object.values(v.poolsByWeekday||{}).find(n=>n>0)) || '?';
         return {
           id: v._id, _type: 'vacation',
+          _vacRef: v,
           title: {
             en: `Vacation cover — ${v.region}`,
             pt: `Cobertura de férias — ${v.region}`,
@@ -714,7 +715,14 @@ function HomeScreen({ ctx }) {
               </div>
             ) : todayItems.map(j => (
               <button key={j.id}
-                onClick={()=> isPremium ? setSelectedJob(j) : openPaywall()}
+                onClick={() => {
+                  if (!isPremium) { openPaywall(); return; }
+                  if (j._type === 'quick') {
+                    ctx.openQuickJobById ? ctx.openQuickJobById(j.id) : goTab('quick');
+                  } else {
+                    j._vacRef && ctx.openDayPicker ? ctx.openDayPicker(j._vacRef) : goTab('work');
+                  }
+                }}
                 className="pg-card pg-card-tap" style={{
                   padding:'12px 14px', border:'none', cursor:'pointer', textAlign:'left',
                   display:'flex', alignItems:'center', gap:12, background:'var(--pg-white)',

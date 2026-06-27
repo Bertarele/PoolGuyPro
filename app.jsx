@@ -1020,6 +1020,7 @@ function App() {
     },
     pendingQuickJobId,
     clearPendingQuickJob: () => setPendingQuickJobId(null),
+    openQuickJobById: (id) => { setPendingQuickJobId(String(id)); switchTab('quick'); },
     goTab:              switchTab,
     openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },
