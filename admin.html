@@ -1991,124 +1991,261 @@ function AdminApp({ adminUser, onLogout }) {
           )}
 
           {/* ── Aluguéis ── */}
-          {section==='rentals' && (()=>{
+          {section==='rentals' && React.createElement(function RentalsSection({market, rentals, setRentals, setMarket, setViewUserModal, showToast, loading, approveMarket, deleteRow}){
+            const [tab, setTab] = React.useState('listings'); // 'listings' | 'requests'
+            const [listingFilter, setListingFilter] = React.useState('all'); // 'all'|'pending'|'approved'
+            const [reqFilter, setReqFilter] = React.useState('all'); // 'all'|'active'|'completed'|'cancelled'
+
+            const rentalListings = market.filter(m=>m.type==='rent');
+            const pendingListings = rentalListings.filter(m=>!m.status||m.status==='pending');
+            const approvedListings = rentalListings.filter(m=>m.status==='approved');
+            const visibleListings = listingFilter==='pending' ? pendingListings : listingFilter==='approved' ? approvedListings : rentalListings;
+
+            const activeReqs    = rentals.filter(r=>r.status==='pending'||r.status==='active');
+            const completedReqs = rentals.filter(r=>r.status==='completed'||r.status==='resolved');
+            const cancelledReqs = rentals.filter(r=>r.status==='cancelled');
+            const visibleReqs   = reqFilter==='active' ? activeReqs : reqFilter==='completed' ? completedReqs : reqFilter==='cancelled' ? cancelledReqs : rentals;
+
             const stColor = { pending:'#f59e0b', active:'#0EBAC7', completed:'#22c55e', cancelled:'#64748b', resolved:'#6366f1' };
-            const stLabel = { pending:'⏳ Pendente', active:'🔄 Ativo', completed:'✅ Concluído', cancelled:'✕ Cancelado', resolved:'⚖️ Resolvido' };
-            const [rentalTab, setRentalTab] = React.useState('active');
-            const activeRentals    = rentals.filter(r=>r.status==='pending'||r.status==='active');
-            const completedRentals = rentals.filter(r=>r.status==='completed'||r.status==='resolved');
-            const cancelledRentals = rentals.filter(r=>r.status==='cancelled');
-            const visible = rentalTab==='active' ? activeRentals : rentalTab==='completed' ? completedRentals : rentalTab==='cancelled' ? cancelledRentals : rentals;
+            const stLabel = { pending:'Pendente', active:'Ativo', completed:'Concluído', cancelled:'Cancelado', resolved:'Resolvido' };
+            const lsColor = { pending:'#f59e0b', approved:'#22c55e', rejected:'#ef4444', sold:'#6366f1' };
+            const lsLabel = { pending:'Pendente', approved:'Aprovado', rejected:'Rejeitado', sold:'Encerrado' };
 
             const cancelRental = async (r) => {
-              if(!confirm('Cancelar este aluguel? As partes serão desvinculadas.')) return;
+              if(!confirm('Cancelar este pedido? As partes serão desvinculadas.')) return;
               const {error} = await window.sb.from('rental_requests').update({status:'cancelled'}).eq('id',r.id);
               if(error){showToast('❌ '+error.message,false);return;}
               setRentals(p=>p.map(x=>x.id===r.id?{...x,status:'cancelled'}:x));
-              showToast('Aluguel cancelado.');
+              showToast('Pedido cancelado.');
             };
+
+            const deleteListing = async (row) => {
+              if(!confirm('Remover este anúncio de aluguel?')) return;
+              const {error} = await window.sb.from('marketplace').delete().eq('id',row.id);
+              if(error){showToast('❌ '+error.message,false);return;}
+              setMarket(p=>p.filter(m=>m.id!==row.id));
+              showToast('Anúncio removido.');
+            };
+
+            const inp = {padding:'6px 12px',borderRadius:8,border:'1px solid #1e293b',background:'#0f1117',color:'#94a3b8',fontSize:12,fontFamily:'inherit',cursor:'pointer',fontWeight:600,transition:'all .15s'};
 
             return (
               <div>
-                <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>
-                  Aluguéis <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({rentals.length})</span>
-                </h1>
-                <p style={{fontSize:13,color:'#64748b',marginBottom:16}}>Todos os pedidos de aluguel entre usuários. Cancele aluguéis travados.</p>
+                <div style={{display:'flex',alignItems:'baseline',gap:12,marginBottom:4,flexWrap:'wrap'}}>
+                  <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9'}}>Aluguéis</h1>
+                  {pendingListings.length>0 && <span style={{background:'#f59e0b',color:'#000',fontSize:11,fontWeight:800,padding:'2px 9px',borderRadius:999}}>{pendingListings.length} pendente{pendingListings.length>1?'s':''}</span>}
+                </div>
+                <p style={{fontSize:13,color:'#64748b',marginBottom:18}}>Anúncios de aluguel postados e pedidos de locação entre usuários.</p>
 
-                {/* Tabs */}
-                <div style={{display:'flex',gap:6,marginBottom:20,flexWrap:'wrap'}}>
+                {/* Main tabs */}
+                <div style={{display:'flex',gap:2,marginBottom:20,background:'#1a1f2e',borderRadius:12,padding:4,width:'fit-content',border:'1px solid #1e293b'}}>
                   {[
-                    {id:'active',    label:'Em andamento', count:activeRentals.length,    color:'#f59e0b'},
-                    {id:'completed', label:'Concluídos',   count:completedRentals.length, color:'#22c55e'},
-                    {id:'cancelled', label:'Cancelados',   count:cancelledRentals.length, color:'#64748b'},
-                    {id:'all',       label:'Todos',        count:rentals.length,          color:'#0EBAC7'},
-                  ].map(tab=>(
-                    <button key={tab.id} onClick={()=>setRentalTab(tab.id)} style={{
-                      padding:'7px 14px',borderRadius:10,border:'none',cursor:'pointer',fontFamily:'inherit',
-                      fontSize:12.5,fontWeight:600,transition:'all .15s',display:'flex',alignItems:'center',gap:6,
-                      background:rentalTab===tab.id?tab.color+'22':'#1a1f2e',
-                      color:rentalTab===tab.id?tab.color:'#64748b',
-                      outline:rentalTab===tab.id?`1.5px solid ${tab.color}55`:'1.5px solid #1e293b',
-                    }}>
-                      {tab.label}
-                      <span style={{fontSize:11,fontWeight:800,padding:'1px 7px',borderRadius:999,
-                        background:rentalTab===tab.id?tab.color+'33':'#0f1117',
-                        color:rentalTab===tab.id?tab.color:'#475569'}}>{tab.count}</span>
-                    </button>
+                    {id:'listings', label:`Anúncios (${rentalListings.length})`},
+                    {id:'requests', label:`Pedidos (${rentals.length})`},
+                  ].map(t=>(
+                    <button key={t.id} onClick={()=>setTab(t.id)} style={{
+                      padding:'7px 16px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',
+                      fontSize:13,fontWeight:600,transition:'all .15s',
+                      background:tab===t.id?'#0EBAC7':'transparent',
+                      color:tab===t.id?'#000':'#64748b',
+                    }}>{t.label}</button>
                   ))}
                 </div>
 
-                {visible.length===0&&!loading ? (
-                  <div style={{padding:'48px 24px',textAlign:'center',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
-                    <div style={{fontSize:32,marginBottom:8}}>📦</div>
-                    <div style={{fontWeight:600,color:'#64748b'}}>Nenhum aluguel nessa categoria.</div>
-                  </div>
-                ) : (
-                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
-                    {visible.map(r=>{
-                      const st = r.status||'pending';
-                      const color = stColor[st]||'#64748b';
-                      return (
-                        <div key={r.id} style={{background:'#1a1f2e',borderRadius:14,border:`1px solid ${color}30`,overflow:'hidden'}}>
-                          <div style={{height:3,background:color}}/>
-                          <div style={{padding:'14px 16px'}}>
-                            <div style={{display:'flex',alignItems:'flex-start',gap:10,flexWrap:'wrap'}}>
-                              <div style={{flex:1,minWidth:180}}>
-                                <div style={{fontSize:14,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>
-                                  {r.listing_name||r.item_name||r.route_name||'Aluguel #'+r.id?.slice(0,8)}
-                                </div>
-                                <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:8}}>
-                                  <span style={{fontSize:11,fontWeight:700,padding:'2px 9px',borderRadius:999,
-                                    background:color+'20',color,border:`1px solid ${color}40`}}>
-                                    {stLabel[st]||st}
-                                  </span>
-                                  {r.created_at&&<span style={{fontSize:11,color:'#475569'}}>{fmtDate(r.created_at)}</span>}
-                                </div>
-                                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-                                  {(r.requester_name||r.requester_id) && (
-                                    <div style={{padding:'7px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
-                                      <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:2}}>Solicitante (renter)</div>
-                                      <button onClick={()=>r.requester_id&&setViewUserModal({userId:r.requester_id,userName:r.requester_name})}
-                                        style={{background:'none',border:'none',cursor:r.requester_id?'pointer':'default',fontFamily:'inherit',fontSize:12,fontWeight:600,color:r.requester_id?'#0EBAC7':'#94a3b8',padding:0,textAlign:'left'}}>
-                                        {r.requester_name||r.requester_id?.slice(0,12)||'—'}
-                                      </button>
-                                    </div>
+                {/* ── ANÚNCIOS ── */}
+                {tab==='listings' && (
+                  <div>
+                    {/* Filter row */}
+                    <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
+                      {[
+                        {id:'all',      label:`Todos (${rentalListings.length})`,     color:'#0EBAC7'},
+                        {id:'pending',  label:`Pendentes (${pendingListings.length})`, color:'#f59e0b'},
+                        {id:'approved', label:`Aprovados (${approvedListings.length})`,color:'#22c55e'},
+                      ].map(f=>(
+                        <button key={f.id} onClick={()=>setListingFilter(f.id)} style={{
+                          ...inp,
+                          background:listingFilter===f.id?f.color+'22':'#1a1f2e',
+                          color:listingFilter===f.id?f.color:'#64748b',
+                          outline:listingFilter===f.id?`1.5px solid ${f.color}55`:'1.5px solid #1e293b',
+                        }}>{f.label}</button>
+                      ))}
+                    </div>
+
+                    {visibleListings.length===0 ? (
+                      <div style={{padding:'48px 24px',textAlign:'center',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
+                        <div style={{fontSize:32,marginBottom:8}}>🔍</div>
+                        <div style={{fontWeight:600,color:'#64748b'}}>Nenhum anúncio nessa categoria.</div>
+                      </div>
+                    ) : (
+                      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                        {visibleListings.map(row=>{
+                          const st = row.status||'pending';
+                          const color = lsColor[st]||'#64748b';
+                          const priceStr = row.rentPrices && typeof row.rentPrices==='object'
+                            ? Object.entries(row.rentPrices).filter(([,v])=>v>0).map(([k,v])=>`$${v}/${k}`).join(' · ')
+                            : row.price ? `$${row.price}` : '—';
+                          return (
+                            <div key={row.id} style={{background:'#1a1f2e',borderRadius:14,border:`1px solid ${color}30`,overflow:'hidden'}}>
+                              <div style={{height:3,background:color}}/>
+                              <div style={{padding:'14px 16px'}}>
+                                <div style={{display:'flex',alignItems:'flex-start',gap:12,flexWrap:'wrap'}}>
+                                  {/* Photo */}
+                                  {row.photos?.[0] && (
+                                    <img src={row.photos[0]} alt="" style={{width:64,height:64,objectFit:'cover',borderRadius:10,flexShrink:0,border:'1px solid #1e293b'}}/>
                                   )}
-                                  {(r.owner_name||r.owner_id||r.lister_name||r.lister_id) && (
-                                    <div style={{padding:'7px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
-                                      <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:2}}>Proprietário</div>
-                                      <button onClick={()=>{const uid=r.owner_id||r.lister_id;const uname=r.owner_name||r.lister_name;if(uid)setViewUserModal({userId:uid,userName:uname});}}
-                                        style={{background:'none',border:'none',cursor:(r.owner_id||r.lister_id)?'pointer':'default',fontFamily:'inherit',fontSize:12,fontWeight:600,color:(r.owner_id||r.lister_id)?'#0EBAC7':'#94a3b8',padding:0,textAlign:'left'}}>
-                                        {r.owner_name||r.lister_name||(r.owner_id||r.lister_id)?.slice(0,12)||'—'}
-                                      </button>
+                                  <div style={{flex:1,minWidth:200}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6,flexWrap:'wrap'}}>
+                                      <span style={{fontSize:14,fontWeight:700,color:'#f1f5f9'}}>{row.title||row.name||'Anúncio #'+row.id?.slice(0,8)}</span>
+                                      <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:999,background:color+'20',color,border:`1px solid ${color}40`}}>{lsLabel[st]||st}</span>
                                     </div>
-                                  )}
-                                  {r.price&&<div style={{padding:'7px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
-                                    <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:2}}>Valor</div>
-                                    <div style={{fontSize:12,fontWeight:600,color:'#0EBAC7'}}>${r.price}</div>
-                                  </div>}
-                                  {r.message&&<div style={{padding:'7px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b',gridColumn:'1/-1'}}>
-                                    <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:2}}>Mensagem</div>
-                                    <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.4}}>{r.message.slice(0,120)}{r.message.length>120?'…':''}</div>
-                                  </div>}
+                                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:6,marginBottom:8}}>
+                                      {row.user_name&&(
+                                        <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                          <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Anunciante</div>
+                                          <button onClick={()=>row.user_id&&setViewUserModal({userId:row.user_id,userName:row.user_name})}
+                                            style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:600,color:'#0EBAC7',padding:0,textAlign:'left'}}>
+                                            {row.user_name}
+                                          </button>
+                                        </div>
+                                      )}
+                                      <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                        <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Preço</div>
+                                        <div style={{fontSize:12,fontWeight:700,color:'#22c55e'}}>{priceStr}</div>
+                                      </div>
+                                      {row.county&&(
+                                        <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                          <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Região</div>
+                                          <div style={{fontSize:12,color:'#94a3b8'}}>{row.county}</div>
+                                        </div>
+                                      )}
+                                      {row.created_at&&(
+                                        <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                          <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Publicado</div>
+                                          <div style={{fontSize:12,color:'#94a3b8'}}>{fmtDate(row.created_at)}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                    {row.description&&<div style={{fontSize:12,color:'#64748b',lineHeight:1.4}}>{row.description.slice(0,120)}{row.description.length>120?'…':''}</div>}
+                                  </div>
+                                  <div style={{display:'flex',flexDirection:'column',gap:6,flexShrink:0}}>
+                                    {(st==='pending') && (
+                                      <button onClick={()=>approveMarket(row)}
+                                        style={{padding:'6px 12px',borderRadius:8,border:'none',background:'#22c55e20',color:'#22c55e',fontWeight:700,fontSize:11.5,cursor:'pointer',fontFamily:'inherit'}}>
+                                        ✓ Aprovar
+                                      </button>
+                                    )}
+                                    <button onClick={()=>deleteListing(row)}
+                                      style={{padding:'6px 12px',borderRadius:8,border:'1px solid #ef444430',background:'#ef444408',color:'#ef4444',fontWeight:700,fontSize:11.5,cursor:'pointer',fontFamily:'inherit'}}>
+                                      ✕ Remover
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                              {(st==='pending'||st==='active') && (
-                                <button onClick={()=>cancelRental(r)}
-                                  style={{height:36,padding:'0 14px',borderRadius:9,border:'1px solid #ef444440',background:'#ef444410',color:'#ef4444',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',flexShrink:0,alignSelf:'flex-start'}}>
-                                  ✕ Cancelar
-                                </button>
-                              )}
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── PEDIDOS ── */}
+                {tab==='requests' && (
+                  <div>
+                    <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
+                      {[
+                        {id:'all',       label:`Todos (${rentals.length})`,         color:'#0EBAC7'},
+                        {id:'active',    label:`Em andamento (${activeReqs.length})`, color:'#f59e0b'},
+                        {id:'completed', label:`Concluídos (${completedReqs.length})`,color:'#22c55e'},
+                        {id:'cancelled', label:`Cancelados (${cancelledReqs.length})`,color:'#64748b'},
+                      ].map(f=>(
+                        <button key={f.id} onClick={()=>setReqFilter(f.id)} style={{
+                          ...inp,
+                          background:reqFilter===f.id?f.color+'22':'#1a1f2e',
+                          color:reqFilter===f.id?f.color:'#64748b',
+                          outline:reqFilter===f.id?`1.5px solid ${f.color}55`:'1.5px solid #1e293b',
+                        }}>{f.label}</button>
+                      ))}
+                    </div>
+
+                    {visibleReqs.length===0 ? (
+                      <div style={{padding:'48px 24px',textAlign:'center',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
+                        <div style={{fontSize:32,marginBottom:8}}>📦</div>
+                        <div style={{fontWeight:600,color:'#64748b'}}>Nenhum pedido nessa categoria.</div>
+                      </div>
+                    ) : (
+                      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                        {visibleReqs.map(r=>{
+                          const st = r.status||'pending';
+                          const color = stColor[st]||'#64748b';
+                          return (
+                            <div key={r.id} style={{background:'#1a1f2e',borderRadius:14,border:`1px solid ${color}30`,overflow:'hidden'}}>
+                              <div style={{height:3,background:color}}/>
+                              <div style={{padding:'14px 16px'}}>
+                                <div style={{display:'flex',alignItems:'flex-start',gap:10,flexWrap:'wrap'}}>
+                                  <div style={{flex:1,minWidth:180}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                                      <span style={{fontSize:14,fontWeight:700,color:'#f1f5f9'}}>{r.listing_name||r.item_name||'Pedido #'+r.id?.slice(0,8)}</span>
+                                      <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:999,background:color+'20',color,border:`1px solid ${color}40`}}>{stLabel[st]||st}</span>
+                                      {r.created_at&&<span style={{fontSize:11,color:'#475569'}}>{fmtDate(r.created_at)}</span>}
+                                    </div>
+                                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:6}}>
+                                      {r.requester_name&&(
+                                        <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                          <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Locatário</div>
+                                          <button onClick={()=>r.requester_id&&setViewUserModal({userId:r.requester_id,userName:r.requester_name})}
+                                            style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:600,color:'#0EBAC7',padding:0,textAlign:'left'}}>
+                                            {r.requester_name}
+                                          </button>
+                                        </div>
+                                      )}
+                                      {(r.owner_name||r.lister_name)&&(
+                                        <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                          <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Proprietário</div>
+                                          <button onClick={()=>{const uid=r.owner_id||r.lister_id;const uname=r.owner_name||r.lister_name;if(uid)setViewUserModal({userId:uid,userName:uname});}}
+                                            style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:600,color:'#0EBAC7',padding:0,textAlign:'left'}}>
+                                            {r.owner_name||r.lister_name}
+                                          </button>
+                                        </div>
+                                      )}
+                                      {(r.total_price||r.price)&&(
+                                        <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                          <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Valor</div>
+                                          <div style={{fontSize:12,fontWeight:700,color:'#22c55e'}}>${r.total_price||r.price}</div>
+                                        </div>
+                                      )}
+                                      {r.period&&(
+                                        <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                          <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Período</div>
+                                          <div style={{fontSize:12,color:'#94a3b8'}}>{r.period}</div>
+                                        </div>
+                                      )}
+                                      {r.message&&(
+                                        <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b',gridColumn:'1/-1'}}>
+                                          <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Mensagem</div>
+                                          <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.4}}>{r.message.slice(0,120)}{r.message.length>120?'…':''}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {(st==='pending'||st==='active')&&(
+                                    <button onClick={()=>cancelRental(r)}
+                                      style={{padding:'6px 12px',borderRadius:8,border:'1px solid #ef444440',background:'#ef444410',color:'#ef4444',fontWeight:700,fontSize:11.5,cursor:'pointer',fontFamily:'inherit',flexShrink:0,alignSelf:'flex-start'}}>
+                                      ✕ Cancelar
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             );
-          })()}
+          }, {market, rentals, setRentals, setMarket, setViewUserModal, showToast, loading, approveMarket, deleteRow})}
 
           {/* ── Reclamações ── */}
           {section==='disputes' && (()=>{
