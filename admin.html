@@ -2008,44 +2008,46 @@ function AdminApp({ adminUser, onLogout }) {
                   {/* Upload de imagem */}
                   <div>
                     <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Logo (imagem)</div>
-                    <label style={{cursor:'pointer',display:'block'}}>
-                      <input type="file" accept="image/*" style={{display:'none'}} onChange={async e=>{
-                        const file = e.target.files?.[0];
-                        if(!file) return;
-                        setSponsorLogoUploading(true);
-                        try {
-                          const ext = file.name.split('.').pop();
-                          const path = `logos/${Date.now()}.${ext}`;
-                          const { error } = await window.sb.storage.from('sponsor-logos').upload(path, file, { upsert:true, contentType: file.type });
-                          if(error){ showToast('❌ Erro no upload: '+error.message, false); return; }
-                          const { data } = window.sb.storage.from('sponsor-logos').getPublicUrl(path);
-                          setSponsorForm(p=>({...p, logo_url: data.publicUrl}));
-                          showToast('✓ Logo enviado!');
-                        } catch(ex) {
-                          console.error('Logo upload error:', ex);
-                          showToast('❌ Erro: '+ex.message, false);
-                        } finally {
-                          setSponsorLogoUploading(false);
-                        }
-                      }}/>
-                      <div style={{height:44,borderRadius:10,border:'1.5px dashed #334155',background:'#0f1117',display:'flex',alignItems:'center',gap:10,padding:'0 12px',cursor:'pointer',transition:'border-color .15s'}}
-                        onMouseEnter={e=>e.currentTarget.style.borderColor='#0EBAC7'}
-                        onMouseLeave={e=>e.currentTarget.style.borderColor=sponsorForm.logo_url?'#0EBAC750':'#334155'}>
-                        {sponsorLogoUploading
-                          ? <span style={{width:18,height:18,border:'2px solid #334155',borderTopColor:'#0EBAC7',borderRadius:'50%',animation:'pgSpin .7s linear infinite',display:'inline-block',flexShrink:0}}/>
-                          : sponsorForm.logo_url
-                            ? <img src={sponsorForm.logo_url} alt="" style={{width:28,height:28,objectFit:'contain',borderRadius:6,flexShrink:0}}/>
-                            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        }
-                        <span style={{fontSize:12,color:sponsorForm.logo_url?'#0EBAC7':'#475569',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                          {sponsorLogoUploading ? 'Enviando…' : sponsorForm.logo_url ? 'Imagem carregada ✓' : 'Clique para enviar'}
-                        </span>
-                        {sponsorForm.logo_url && (
-                          <button onClick={e=>{e.preventDefault();setSponsorForm(p=>({...p,logo_url:''}));}}
-                            style={{background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:14,padding:'2px 4px',flexShrink:0,lineHeight:1}}>✕</button>
-                        )}
-                      </div>
-                    </label>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+                      <label style={{cursor:'pointer',display:'block',width:'100%'}}>
+                        <input type="file" accept="image/*" style={{display:'none'}} onChange={async e=>{
+                          const file = e.target.files?.[0];
+                          if(!file) return;
+                          setSponsorLogoUploading(true);
+                          try {
+                            const ext = file.name.split('.').pop();
+                            const path = `logos/${Date.now()}.${ext}`;
+                            const { error } = await window.sb.storage.from('sponsor-logos').upload(path, file, { upsert:true, contentType: file.type });
+                            if(error){ showToast('❌ Erro no upload: '+error.message, false); return; }
+                            const { data } = window.sb.storage.from('sponsor-logos').getPublicUrl(path);
+                            setSponsorForm(p=>({...p, logo_url: data.publicUrl}));
+                            showToast('✓ Logo enviado!');
+                          } catch(ex) {
+                            console.error('Logo upload error:', ex);
+                            showToast('❌ Erro: '+ex.message, false);
+                          } finally {
+                            setSponsorLogoUploading(false);
+                          }
+                        }}/>
+                        <div style={{width:'100%',aspectRatio:'1/1',borderRadius:12,border:`1.5px dashed ${sponsorForm.logo_url?'#0EBAC750':'#334155'}`,background:'#0f1117',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,cursor:'pointer',transition:'border-color .15s',position:'relative'}}
+                          onMouseEnter={e=>e.currentTarget.style.borderColor='#0EBAC7'}
+                          onMouseLeave={e=>e.currentTarget.style.borderColor=sponsorForm.logo_url?'#0EBAC750':'#334155'}>
+                          {sponsorLogoUploading
+                            ? <span style={{width:24,height:24,border:'2.5px solid #334155',borderTopColor:'#0EBAC7',borderRadius:'50%',animation:'pgSpin .7s linear infinite',display:'inline-block'}}/>
+                            : sponsorForm.logo_url
+                              ? <img src={sponsorForm.logo_url} alt="" style={{width:'70%',height:'70%',objectFit:'contain',borderRadius:8}}/>
+                              : <>
+                                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                  <span style={{fontSize:10,color:'#475569',fontWeight:600}}>Upload</span>
+                                </>
+                          }
+                        </div>
+                      </label>
+                      {sponsorForm.logo_url && (
+                        <button onClick={e=>{e.preventDefault();setSponsorForm(p=>({...p,logo_url:''}));}}
+                          style={{background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:11,padding:0,fontFamily:'inherit',fontWeight:600}}>✕ remover</button>
+                      )}
+                    </div>
                   </div>
                   {/* Sigla de texto */}
                   <div>
