@@ -259,7 +259,8 @@ function App() {
       if (screenRef.current) screenRef.current.scrollTop = 0;
     });
   }, []);
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [isLoggedIn,    setIsLoggedIn]    = React.useState(false);
+  const [sessionExpired, setSessionExpired] = React.useState(false);
   const [user, setUser] = React.useState({
     name:'', email:'', uid:'', role:'user', tier: t.tier, rating: 4.9, reviews: 128,
     regions:['Broward','Weston','Plantation'],
@@ -347,9 +348,27 @@ function App() {
     // Force logout hook — called by Supabase client when token refresh fails (deleted account)
     window.__pgForceLogout = () => {
       setIsLoggedIn(false);
+      setSessionExpired(true);
       setTab('home');
       setUser(u => ({ ...u, name:'', email:'', uid:'', role:'user' }));
     };
+
+    // Check token expiry every 2 minutes; show re-login modal if expired mid-session
+    const _checkTokenExpiry = () => {
+      try {
+        const s = JSON.parse(localStorage.getItem('pg_s') || 'null');
+        if (!s?.t) return;
+        const payload = JSON.parse(atob(s.t.split('.')[1]));
+        const expiresAt = payload.exp * 1000;
+        if (Date.now() > expiresAt) {
+          setIsLoggedIn(false);
+          setSessionExpired(true);
+          localStorage.removeItem('pg_s');
+        }
+      } catch(e) {}
+    };
+    const _expiryTimer = setInterval(_checkTokenExpiry, 120_000);
+    return () => clearInterval(_expiryTimer);
     if (!window.sb) { setAuthReady(true); return; }
     (async () => {
       try {
@@ -1910,7 +1929,30 @@ function App() {
       {/* ── Login screen ── */}
       {!isLoggedIn && (
         <div style={{position:'absolute', inset:0, overflow:'auto'}}>
-          <LoginScreen onLogin={handleAuthLogin} lang={lang} setLang={setLang}/>
+          <LoginScreen onLogin={(u)=>{ setSessionExpired(false); handleAuthLogin(u); }} lang={lang} setLang={setLang}/>
+        </div>
+      )}
+
+      {/* ── Session expired overlay ── */}
+      {sessionExpired && !isLoggedIn && (
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.7)',zIndex:5000,
+          display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+          <div style={{background:'var(--pg-white)',borderRadius:20,padding:'28px 24px',
+            width:'100%',maxWidth:340,textAlign:'center',boxShadow:'0 24px 64px rgba(0,0,0,0.4)'}}>
+            <div style={{fontSize:36,marginBottom:12}}>🔒</div>
+            <div style={{fontSize:17,fontWeight:700,color:'var(--pg-ink-900)',marginBottom:8}}>
+              {lang==='pt'?'Sessão expirada':lang==='es'?'Sesión expirada':'Session expired'}
+            </div>
+            <div style={{fontSize:13,color:'var(--pg-ink-400)',lineHeight:1.6,marginBottom:20}}>
+              {lang==='pt'?'Por segurança, faça login novamente para continuar.':lang==='es'?'Por seguridad, inicia sesión nuevamente para continuar.':'For security, please sign in again to continue.'}
+            </div>
+            <button onClick={()=>setSessionExpired(false)}
+              style={{width:'100%',padding:'13px',borderRadius:14,border:'none',
+                background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+                color:'#fff',fontWeight:700,fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>
+              {lang==='pt'?'Entrar novamente':lang==='es'?'Iniciar sesión':'Sign in again'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -2056,4 +2098,34 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+// ── Error Boundary ────────────────────────────────────────────
+class AppErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  componentDidCatch(e, info) { console.error('[AppErrorBoundary]', e, info); }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+        height:'100dvh',padding:'32px 20px',background:'var(--pg-bg)',textAlign:'center',gap:16}}>
+        <div style={{fontSize:40}}>⚠️</div>
+        <div style={{fontSize:17,fontWeight:700,color:'var(--pg-ink-900)',maxWidth:300}}>
+          Algo deu errado
+        </div>
+        <div style={{fontSize:13,color:'var(--pg-ink-400)',maxWidth:280,lineHeight:1.6}}>
+          {this.state.error?.message || 'Erro inesperado no aplicativo.'}
+        </div>
+        <button onClick={()=>{ this.setState({error:null}); window.location.reload(); }}
+          style={{marginTop:8,padding:'12px 28px',borderRadius:14,border:'none',
+            background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+            color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>
+          Recarregar
+        </button>
+      </div>
+    );
+  }
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <AppErrorBoundary><App/></AppErrorBoundary>
+);

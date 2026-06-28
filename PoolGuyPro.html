@@ -113,8 +113,70 @@
         }
       },
       from:function(table){return makeBuilder(table);},
-      channel:function(){ return{on:function(){return this;},subscribe:function(cb){setTimeout(function(){if(cb)cb('SUBSCRIBED');},100);return this;}};},
-      removeChannel:function(){}
+      channel:function(name){
+        var listeners=[], ws=null, wsRef=0, joinRef='', hbTimer=null, reconTimer=null, dead=false;
+        function getUrl(){ return 'wss://xiszfqghizqzlwyrfjol.supabase.co/realtime/v1/websocket?vsn=1.0.0&apikey='+KEY+(_tok?'&token='+_tok:''); }
+        function buildJoin(){
+          var pc=listeners.filter(function(l){return l.type==='postgres_changes';}).map(function(l){
+            var o={event:l.opts.event||'*',schema:l.opts.schema||'public',table:l.opts.table};
+            if(l.opts.filter) o.filter=l.opts.filter;
+            return o;
+          });
+          return {config:{broadcast:{self:false},presence:{key:''},postgres_changes:pc}};
+        }
+        function connect(){
+          if(dead) return;
+          try{ if(ws) ws.close(); }catch(e){}
+          ws=new WebSocket(getUrl());
+          ws.onopen=function(){
+            clearInterval(hbTimer);
+            joinRef=String(++wsRef);
+            ws.send(JSON.stringify({topic:'realtime:'+name,event:'phx_join',payload:buildJoin(),ref:joinRef,join_ref:joinRef}));
+            hbTimer=setInterval(function(){
+              if(ws&&ws.readyState===1) ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++wsRef)}));
+            },25000);
+          };
+          ws.onmessage=function(ev){
+            try{
+              var msg=JSON.parse(ev.data);
+              if(msg.event==='postgres_changes'&&msg.payload&&msg.payload.data){
+                var d=msg.payload.data;
+                listeners.forEach(function(l){
+                  if(l.type!=='postgres_changes') return;
+                  var evMatch=!l.opts.event||l.opts.event==='*'||l.opts.event===d.type;
+                  var tblMatch=!l.opts.table||l.opts.table===d.table;
+                  if(evMatch&&tblMatch) l.cb({eventType:d.type,new:d.record||{},old:d.old_record||{}});
+                });
+              }
+              if(msg.event==='broadcast'&&msg.payload&&msg.payload.event){
+                var bev=msg.payload.event, bpay=msg.payload.payload||{};
+                listeners.forEach(function(l){
+                  if(l.type==='broadcast'&&(!l.opts.event||l.opts.event===bev)) l.cb({event:bev,payload:bpay});
+                });
+              }
+            }catch(ex){}
+          };
+          ws.onclose=function(){ clearInterval(hbTimer); if(!dead) reconTimer=setTimeout(connect,3500); };
+          ws.onerror=function(){ try{ws.close();}catch(e){} };
+        }
+        var ch={
+          on:function(type,opts,cb){listeners.push({type:type,opts:opts,cb:cb});return ch;},
+          subscribe:function(cb){
+            if(listeners.length>0) connect();
+            setTimeout(function(){if(cb)cb('SUBSCRIBED');},listeners.length>0?1200:50);
+            return ch;
+          },
+          send:function(payload){
+            if(ws&&ws.readyState===1){
+              ws.send(JSON.stringify({topic:'realtime:'+name,event:'broadcast',payload:payload,ref:String(++wsRef),join_ref:joinRef}));
+            }
+            return Promise.resolve();
+          },
+          unsubscribe:function(){ dead=true; clearTimeout(reconTimer); clearInterval(hbTimer); try{if(ws)ws.close();}catch(e){} }
+        };
+        return ch;
+      },
+      removeChannel:function(ch){ if(ch&&ch.unsubscribe) ch.unsubscribe(); }
     };
     // Storage API
     window.sb.storage = {

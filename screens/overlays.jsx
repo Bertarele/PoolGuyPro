@@ -182,15 +182,18 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
   const isLive  = !!(currentUser?.uid && convo.receiverId);
   const convoId = isLive ? makeConvoId(currentUser.uid, convo.receiverId, convo.listingId || null) : null;
 
-  const [messages,      setMessages]      = React.useState([]);
-  const [draft,         setDraft]         = React.useState('');
+  const [messages,       setMessages]       = React.useState([]);
+  const [draft,          setDraft]          = React.useState('');
   const [sending,        setSending]        = React.useState(false);
   const [deleteConfirm,  setDeleteConfirm]  = React.useState(null);
   const [receiverPhoto,  setReceiverPhoto]  = React.useState(null);
   const [receiverOnline, setReceiverOnline] = React.useState(false);
-  const scroller = React.useRef(null);
-  const pollRef  = React.useRef(null);
-  const lastCount = React.useRef(0);
+  const [theyTyping,     setTheyTyping]     = React.useState(false);
+  const scroller    = React.useRef(null);
+  const pollRef     = React.useRef(null);
+  const lastCount   = React.useRef(0);
+  const typingTimer = React.useRef(null);
+  const myTypingRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!convo.receiverId || !window.sb) return;
@@ -236,15 +239,30 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
     }
   }, [convoId, isLive, fmtMsg]);
 
-  // On open: load messages, mark as read, set up polling
+  // On open: load messages, mark as read, set up polling + typing channel
   React.useEffect(() => {
     if (!isLive) return;
     loadMessages();
-    // Mark conversation as read
     window.sb.rpc('mark_chat_read', { p_convo_id: convoId }).catch(()=>{});
     if (onUnreadChange) setTimeout(onUnreadChange, 500);
     pollRef.current = setInterval(loadMessages, 2500);
-    return () => clearInterval(pollRef.current);
+
+    // Typing broadcast channel — one channel per conversation pair
+    const typingCh = window.sb.channel('typing-' + convoId)
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.uid === currentUser?.uid) return; // ignore own events
+        setTheyTyping(true);
+        clearTimeout(typingTimer.current);
+        typingTimer.current = setTimeout(() => setTheyTyping(false), 3000);
+      })
+      .subscribe();
+    myTypingRef.current = typingCh;
+
+    return () => {
+      clearInterval(pollRef.current);
+      clearTimeout(typingTimer.current);
+      window.sb.removeChannel(typingCh);
+    };
   }, [convoId]); // eslint-disable-line
 
   // Initial scroll to bottom
@@ -485,10 +503,23 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
         );
       })()}
 
+      {/* Typing indicator */}
+      {theyTyping && (
+        <div style={{padding:'4px 16px 2px', display:'flex', alignItems:'center', gap:8, flexShrink:0}}>
+          <div style={{display:'flex', alignItems:'center', gap:4, padding:'7px 12px', background:'var(--pg-ink-100)', borderRadius:18, maxWidth:72}}>
+            {[0,1,2].map(i => (
+              <span key={i} style={{width:6, height:6, borderRadius:'50%', background:'var(--pg-ink-400)',
+                display:'inline-block', animation:`pgTypeDot 1.2s ${i*0.2}s infinite ease-in-out`}}/>
+            ))}
+          </div>
+          <style>{`@keyframes pgTypeDot{0%,80%,100%{transform:scale(0.6);opacity:.4}40%{transform:scale(1);opacity:1}}`}</style>
+        </div>
+      )}
+
       {/* Input */}
       <div style={{padding:'10px 12px', paddingBottom:'calc(14px + env(safe-area-inset-bottom, 0px))', borderTop:'0.5px solid var(--pg-ink-200)', display:'flex', gap:8, alignItems:'flex-end', flexShrink:0}}>
         <div style={{flex:1, background:'var(--pg-ink-100)', borderRadius:18, padding:'10px 14px', display:'flex', alignItems:'center'}}>
-          <input value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()}
+          <input value={draft} onChange={e=>{ setDraft(e.target.value); if(myTypingRef.current&&e.target.value) myTypingRef.current.send({type:'broadcast',event:'typing',payload:{uid:currentUser?.uid}}); }} onKeyDown={e=>e.key==='Enter'&&send()}
             placeholder={t.messagePh || 'Type a message…'}
             style={{flex:1, border:'none', background:'transparent', outline:'none', fontSize:14, fontFamily:'inherit'}}/>
         </div>
@@ -1896,20 +1927,49 @@ function PushNotifSheet({ open, onClose, lang='en', onEnabled }) {
 
 // ── Notifications ─────────────────────────────────────────────
 function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, onNavigate }) {
-  const [notifs,  setNotifs]  = React.useState(null); // null = loading
-  const [marking, setMarking] = React.useState(false);
+  const [notifs,   setNotifs]   = React.useState(null); // null = loading
+  const [marking,  setMarking]  = React.useState(false);
+  const [page,     setPage]     = React.useState(1);
+  const [hasMore,  setHasMore]  = React.useState(false);
+  const PAGE_SIZE = 30;
 
-  // Fetch on open
+  // Fetch on open (first page)
   React.useEffect(() => {
     if (!open || !user?.uid || !window.sb) return;
+    setPage(1);
     window.sb.from('notifications')
       .select('*').eq('user_id', user.uid)
-      .order('created_at', { ascending: false }).limit(60)
+      .order('created_at', { ascending: false }).limit(PAGE_SIZE + 1)
       .then(({ data }) => {
-        setNotifs(data || []);
-        if (onUnreadChange) onUnreadChange((data||[]).filter(n=>!n.read).length);
+        const rows = data || [];
+        setHasMore(rows.length > PAGE_SIZE);
+        setNotifs(rows.slice(0, PAGE_SIZE));
+        if (onUnreadChange) onUnreadChange(rows.filter(n=>!n.read).length);
       });
   }, [open, user?.uid]);
+
+  const loadMore = () => {
+    if (!window.sb || !user?.uid || !hasMore) return;
+    const nextPage = page + 1;
+    const offset   = (nextPage - 1) * PAGE_SIZE;
+    window.sb.from('notifications')
+      .select('*').eq('user_id', user.uid)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        const rows  = data || [];
+        const slice = rows.slice(offset, offset + PAGE_SIZE);
+        setHasMore(rows.length > offset + PAGE_SIZE);
+        setNotifs(prev => [...(prev || []), ...slice]);
+        setPage(nextPage);
+      });
+  };
+
+  const deleteNotif = (id) => {
+    if (!window.sb) return;
+    setNotifs(prev => (prev || []).filter(n => n.id !== id));
+    window.sb.from('notifications').delete().eq('id', id).catch(() => {});
+    if (onUnreadChange) onUnreadChange(c => Math.max(0, (c||1) - 1));
+  };
 
   // Real-time new notifications
   React.useEffect(() => {
@@ -2015,21 +2075,27 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
     if (type==='dispute_resolved')    return Icon.shield(16,'#fff');
     if (type==='job_new_application') return Icon.briefcase(17,'#fff');
     if (type==='job_accepted')        return Icon.check(17,'#fff');
-    if (type==='job_rejected')        return Icon.x(17,'#fff');
-    if (type==='quick_pool_new')      return Icon.bolt(17,'#fff');
+    if (type==='job_rejected')           return Icon.x(17,'#fff');
+    if (type==='quick_pool_new')         return Icon.bolt(17,'#fff');
+    if (type==='quick_pool_done')        return Icon.check(17,'#fff');
+    if (type==='market')                 return Icon.briefcase(17,'#fff');
+    if (type==='verification_approved')  return <span style={{fontSize:16}}>✅</span>;
     return Icon.bolt(17,'#fff');
   };
   const colorFor = (type) => {
-    if (type==='rental_request')      return '#0EBAC7';
-    if (type==='rental_approved')     return '#22C55E';
+    if (type==='rental_request')          return '#0EBAC7';
+    if (type==='rental_approved')         return '#22C55E';
     if (type==='rental_declined'||type==='rental_cancelled') return '#EF4444';
-    if (type==='rental_completed')    return '#16A34A';
-    if (type==='warning')             return '#F59E0B';
-    if (type==='dispute_resolved')    return '#6366F1';
-    if (type==='job_new_application') return '#0077B6';
-    if (type==='job_accepted')        return '#22C55E';
-    if (type==='job_rejected')        return '#EF4444';
-    if (type==='quick_pool_new')      return '#0EBAC7';
+    if (type==='rental_completed')        return '#16A34A';
+    if (type==='warning')                 return '#F59E0B';
+    if (type==='dispute_resolved')        return '#6366F1';
+    if (type==='job_new_application')     return '#0077B6';
+    if (type==='job_accepted')            return '#22C55E';
+    if (type==='job_rejected')            return '#EF4444';
+    if (type==='quick_pool_new')          return '#0EBAC7';
+    if (type==='quick_pool_done')         return '#16A34A';
+    if (type==='market')                  return '#6366F1';
+    if (type==='verification_approved')   return '#22C55E';
     return '#3B82F6';
   };
   const fmtTime = (d) => {
@@ -2090,42 +2156,66 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
             {notifs.map(n => {
               const navigable = isNavigable(n);
               return (
-                <div key={n.id}
-                  onClick={navigable ? ()=>onNavigate(n.type, n.link_id) : undefined}
-                  style={{display:'flex', gap:12, padding:'12px 8px', borderRadius:10,
-                    background:n.read?'transparent':'var(--pg-blue-50)',
-                    cursor: navigable ? 'pointer' : 'default',
-                    transition:'background 0.12s',
-                    position:'relative'}}>
-                  <div style={{width:40, height:40, borderRadius:'50%', flexShrink:0,
-                    background:colorFor(n.type),
-                    display:'flex', alignItems:'center', justifyContent:'center', color:'#fff'}}>
-                    {iconFor(n.type)}
-                  </div>
-                  <div style={{flex:1, minWidth:0}}>
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8}}>
-                      <div style={{fontSize:13, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3}}>
-                        {renderTitle(n)}
-                      </div>
-                      <div style={{display:'flex', alignItems:'center', gap:5, flexShrink:0}}>
-                        <div style={{fontSize:11, color:'var(--pg-ink-400)', whiteSpace:'nowrap'}}>{fmtTime(n.created_at)}</div>
-                        {!n.read && <span style={{width:8, height:8, borderRadius:'50%', background:'var(--pg-blue-500)', flexShrink:0}}/>}
-                      </div>
+                <div key={n.id} style={{position:'relative', borderRadius:10,
+                  background:n.read?'transparent':'var(--pg-blue-50)',
+                  transition:'background 0.12s'}}>
+                  <div
+                    onClick={navigable ? ()=>onNavigate(n.type, n.link_id) : undefined}
+                    style={{display:'flex', gap:12, padding:'12px 8px', paddingRight:36,
+                      cursor: navigable ? 'pointer' : 'default'}}>
+                    <div style={{width:40, height:40, borderRadius:'50%', flexShrink:0,
+                      background:colorFor(n.type),
+                      display:'flex', alignItems:'center', justifyContent:'center', color:'#fff'}}>
+                      {iconFor(n.type)}
                     </div>
-                    {n.body && (
-                      <div style={{fontSize:12.5, color:'var(--pg-ink-600)', marginTop:3, lineHeight:1.45}}>
-                        {renderBody(n)}
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8}}>
+                        <div style={{fontSize:13, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3}}>
+                          {renderTitle(n)}
+                        </div>
+                        <div style={{display:'flex', alignItems:'center', gap:5, flexShrink:0}}>
+                          <div style={{fontSize:11, color:'var(--pg-ink-400)', whiteSpace:'nowrap'}}>{fmtTime(n.created_at)}</div>
+                          {!n.read && <span style={{width:8, height:8, borderRadius:'50%', background:'var(--pg-blue-500)', flexShrink:0}}/>}
+                        </div>
                       </div>
-                    )}
-                    {navigable && (
-                      <div style={{fontSize:11, color:'var(--pg-blue-500)', fontWeight:600, marginTop:4}}>
-                        {lang==='pt'?'Toque para ver →':lang==='es'?'Toca para ver →':'Tap to view →'}
-                      </div>
-                    )}
+                      {n.body && (
+                        <div style={{fontSize:12.5, color:'var(--pg-ink-600)', marginTop:3, lineHeight:1.45}}>
+                          {renderBody(n)}
+                        </div>
+                      )}
+                      {navigable && (
+                        <div style={{fontSize:11, color:'var(--pg-blue-500)', fontWeight:600, marginTop:4}}>
+                          {lang==='pt'?'Toque para ver →':lang==='es'?'Toca para ver →':'Tap to view →'}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  {/* Delete button */}
+                  <button
+                    onClick={e=>{ e.stopPropagation(); deleteNotif(n.id); }}
+                    style={{position:'absolute', top:8, right:4, width:26, height:26,
+                      borderRadius:'50%', border:'none', background:'transparent',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      cursor:'pointer', color:'var(--pg-ink-300)',
+                      transition:'color 0.15s, background 0.15s'}}
+                    onMouseEnter={e=>{ e.currentTarget.style.background='var(--pg-ink-100)'; e.currentTarget.style.color='var(--pg-ink-600)'; }}
+                    onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--pg-ink-300)'; }}
+                    aria-label="Apagar notificação">
+                    {Icon.x(13)}
+                  </button>
                 </div>
               );
             })}
+
+            {/* Load more */}
+            {hasMore && (
+              <button onClick={loadMore}
+                style={{margin:'8px 0 4px', padding:'10px', borderRadius:10, border:'1px solid var(--pg-ink-200)',
+                  background:'transparent', color:'var(--pg-blue-500)', fontWeight:600, fontSize:13,
+                  cursor:'pointer', fontFamily:'inherit', width:'100%'}}>
+                {lang==='pt'?'Carregar mais notificações':lang==='es'?'Cargar más notificaciones':'Load more notifications'}
+              </button>
+            )}
           </div>
         )}
       </div>

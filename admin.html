@@ -1502,6 +1502,16 @@ function AdminApp({ adminUser, onLogout }) {
       .eq('id', row.id);
     if(error){ showToast('❌ '+error.message, false); return; }
     setUsers(p => p.map(u => u.id===row.id ? {...u, verified:newVal, verification_requested:false} : u));
+    // Notify user of decision
+    window.sb.from('notifications').insert({
+      user_id: row.id,
+      type: newVal ? 'verification_approved' : 'warning',
+      title: newVal ? '✅ Identidade verificada!' : 'Verificação removida',
+      body: newVal
+        ? 'Seu perfil agora exibe o badge verde de identidade verificada. Parabéns!'
+        : 'Seu badge de verificação foi removido pelo administrador.',
+      read: false,
+    }).catch(()=>{});
     showToast(newVal ? '✓ Usuário verificado — badge verde ativado.' : 'Verificação removida.');
   };
 
