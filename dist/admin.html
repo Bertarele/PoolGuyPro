@@ -195,6 +195,7 @@ const IC = {
   refresh:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
   flag:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
   sponsor:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2l1 3 2-5 1 3h2"/></svg>,
+  bolt:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
 };
 
 // ── Card de estatística ───────────────────────────────────────
@@ -1366,12 +1367,15 @@ function AdminApp({ adminUser, onLogout }) {
   const [sponsorSaving, setSponsorSaving] = React.useState(false);
   const [sponsorEdit, setSponsorEdit] = React.useState(null);
   const [sponsorLogoUploading, setSponsorLogoUploading] = React.useState(false);
+  const [quickPools,    setQuickPools]    = React.useState([]);
+  const [qpFilter,      setQpFilter]      = React.useState('active'); // 'active'|'all'
+  const [editQP,        setEditQP]        = React.useState(null); // job being edited
 
   const showToast = (msg, ok=true) => { setToast({msg,ok}); setTimeout(()=>setToast(null), 2800); };
 
   const fetchAll = async () => {
     setLoading(true);
-    const [u,j,tc,m,v,d,w,r,sp] = await Promise.all([
+    const [u,j,tc,m,v,d,w,r,sp,qp] = await Promise.all([
       window.sb.from('profiles').select('*').order('created_at',{ascending:false}),
       window.sb.from('jobs').select('*').order('created_at',{ascending:false}),
       window.sb.from('techs').select('*').order('created_at',{ascending:false}),
@@ -1381,6 +1385,7 @@ function AdminApp({ adminUser, onLogout }) {
       window.sb.from('user_warnings').select('*').order('created_at',{ascending:false}),
       window.sb.from('rental_requests').select('*').order('created_at',{ascending:false}),
       window.sb.from('sponsored_cards').select('*').order('created_at',{ascending:false}),
+      window.sb.from('quick_pool_jobs').select('*').order('created_at',{ascending:false}).limit(200),
     ]);
     if(u.data) setUsers(u.data);
     if(j.data) setJobs(j.data);
@@ -1391,6 +1396,7 @@ function AdminApp({ adminUser, onLogout }) {
     if(w.data) setWarnings(w.data);
     if(r.data) setRentals(r.data);
     if(sp.data) setSponsors(sp.data);
+    if(qp.data) setQuickPools(qp.data);
     const hiringsCount = j.data?.filter(x=>x.hired_at)?.length??0;
     const pendingRentals = r.data?.filter(x=>x.status==='pending'||x.status==='active')?.length??0;
     setStats({ users:u.data?.length??0, jobs:j.data?.length??0, techs:tc.data?.length??0, market:m.data?.length??0, vacs:v.data?.length??0, disputes:d.data?.filter(x=>x.status==='pending')?.length??0, hirings:hiringsCount, rentals:r.data?.length??0, pendingRentals });
@@ -1531,6 +1537,8 @@ function AdminApp({ adminUser, onLogout }) {
     showToast('✓ Nota salva.');
   };
 
+  const openQPCount = quickPools.filter(j=>j.status==='open'||j.status==='filled').length;
+
   const navItems = [
     { id:'dashboard',  label:'Painel',        icon:IC.dash,   badge:0 },
     { id:'users',      label:'Usuários',      icon:IC.users,  badge:verifyCount },
@@ -1541,6 +1549,7 @@ function AdminApp({ adminUser, onLogout }) {
     { id:'vacations',  label:'Férias',        icon:IC.vac,    badge:0 },
     { id:'rentals',    label:'Aluguéis',      icon:IC.market, badge:stats.pendingRentals||0 },
     { id:'disputes',   label:'Reclamações',   icon:IC.flag,   badge:disputeCount },
+    { id:'quickpools', label:'Quick Pools',   icon:IC.bolt,   badge:openQPCount },
     { id:'sponsors',   label:'Patrocinadores', icon:IC.sponsor, badge:0 },
   ];
 
@@ -2468,8 +2477,227 @@ function AdminApp({ adminUser, onLogout }) {
             </div>
           )}
 
+          {/* ── Quick Pools ── */}
+          {section==='quickpools' && (()=>{
+            const stColor = { open:'#0EBAC7', filled:'#F59E0B', expired:'#64748b', cancelled:'#EF4444', completed:'#22c55e' };
+            const stLabel = { open:'🟢 Aberto', filled:'⏳ Em andamento', expired:'💤 Expirado', cancelled:'✕ Cancelado', completed:'✓ Concluído' };
+            const visible = qpFilter==='active'
+              ? quickPools.filter(j=>j.status==='open'||j.status==='filled')
+              : quickPools;
+
+            const deleteQP = async (qp) => {
+              if(!confirm(`Cancelar/excluir a vaga "${qp.title||qp.city}"?\n\nIsso marcará como cancelado e ela sumirá do app.`)) return;
+              const {error} = await window.sb.from('quick_pool_jobs').update({status:'cancelled'}).eq('id',qp.id);
+              if(error){ showToast('❌ '+error.message, false); return; }
+              setQuickPools(p=>p.map(x=>x.id===qp.id?{...x,status:'cancelled'}:x));
+              showToast('✓ Vaga cancelada.');
+            };
+
+            return (
+              <div>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,marginBottom:4}}>
+                  <div>
+                    <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:2}}>⚡ Quick Pools</h1>
+                    <p style={{fontSize:13,color:'#64748b'}}>Vagas emergenciais de piscina. Edite ou cancele qualquer publicação.</p>
+                  </div>
+                  <div style={{display:'flex',gap:6}}>
+                    {[{id:'active',label:'Ativas'},{ id:'all',label:'Todas'}].map(t=>(
+                      <button key={t.id} onClick={()=>setQpFilter(t.id)}
+                        style={{padding:'6px 14px',borderRadius:8,border:'1px solid',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',
+                          background:qpFilter===t.id?'#0EBAC722':'#1a1f2e',
+                          borderColor:qpFilter===t.id?'#0EBAC760':'#1e293b',
+                          color:qpFilter===t.id?'#0EBAC7':'#64748b'}}>
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stats row */}
+                <div style={{display:'flex',gap:10,marginBottom:18,flexWrap:'wrap'}}>
+                  {[
+                    {label:'Abertas',    val:quickPools.filter(x=>x.status==='open').length,      color:'#0EBAC7'},
+                    {label:'Em andamento',val:quickPools.filter(x=>x.status==='filled').length,    color:'#F59E0B'},
+                    {label:'Concluídas', val:quickPools.filter(x=>x.status==='completed').length,  color:'#22c55e'},
+                    {label:'Canceladas', val:quickPools.filter(x=>x.status==='cancelled'||x.status==='expired').length, color:'#64748b'},
+                  ].map(s=>(
+                    <div key={s.label} style={{background:'#1a1f2e',borderRadius:10,border:`1px solid ${s.color}25`,padding:'10px 16px',display:'flex',alignItems:'center',gap:10,flex:'1 1 120px'}}>
+                      <span style={{fontSize:22,fontWeight:800,color:s.color,lineHeight:1}}>{s.val}</span>
+                      <span style={{fontSize:11,color:'#64748b',fontWeight:600}}>{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {visible.length===0 ? (
+                  <div style={{padding:'48px 24px',textAlign:'center',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:32,marginBottom:8}}>⚡</div>
+                    <div style={{fontWeight:600,color:'#64748b'}}>Nenhuma vaga {qpFilter==='active'?'ativa':'encontrada'}.</div>
+                  </div>
+                ) : (
+                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                    {visible.map(qp=>{
+                      const st = qp.status||'open';
+                      const col = stColor[st]||'#64748b';
+                      const isActive = st==='open'||st==='filled';
+                      return (
+                        <div key={qp.id} style={{background:'#1a1f2e',borderRadius:14,border:`1px solid ${col}30`,overflow:'hidden'}}>
+                          <div style={{height:3,background:col}}/>
+                          <div style={{padding:'14px 16px'}}>
+                            <div style={{display:'flex',alignItems:'flex-start',gap:12,flexWrap:'wrap'}}>
+                              {/* Info */}
+                              <div style={{flex:1,minWidth:200}}>
+                                <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:6}}>
+                                  <span style={{fontSize:11,fontWeight:700,padding:'2px 9px',borderRadius:999,
+                                    background:col+'22',color:col,border:`1px solid ${col}40`}}>
+                                    {stLabel[st]||st}
+                                  </span>
+                                  <span style={{fontSize:11,color:'#475569'}}>{qp.city}</span>
+                                  {qp.pool_type&&<span style={{fontSize:11,color:'#475569',textTransform:'capitalize'}}>{qp.pool_type}</span>}
+                                  <span style={{fontSize:11,color:'#334155',marginLeft:'auto'}}>{fmtDate(qp.created_at)}</span>
+                                </div>
+                                <div style={{fontSize:15,fontWeight:700,color:'#f1f5f9',marginBottom:6}}>
+                                  {qp.title||`Quick Pool — ${qp.city}`}
+                                </div>
+                                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                                  {/* Price */}
+                                  <div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                    <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:1}}>Preço</div>
+                                    <div style={{fontSize:13,fontWeight:700,color:'#0EBAC7'}}>
+                                      {qp.price_negotiable?'Negociável':'$'+qp.price_per_pool}
+                                    </div>
+                                  </div>
+                                  {/* Pools count */}
+                                  {qp.pools_count&&<div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                    <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:1}}>Piscinas</div>
+                                    <div style={{fontSize:13,fontWeight:700,color:'#cbd5e1'}}>{qp.pools_count}</div>
+                                  </div>}
+                                  {/* Poster */}
+                                  {qp.poster_name&&<div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b'}}>
+                                    <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:1}}>Publicado por</div>
+                                    <button onClick={()=>qp.poster_id&&setViewUserModal({userId:qp.poster_id,userName:qp.poster_name})}
+                                      style={{background:'none',border:'none',cursor:qp.poster_id?'pointer':'default',fontFamily:'inherit',
+                                        fontSize:12,fontWeight:600,color:qp.poster_id?'#0EBAC7':'#94a3b8',padding:0}}>
+                                      {qp.poster_name}
+                                    </button>
+                                  </div>}
+                                  {/* Description */}
+                                  {qp.description&&<div style={{padding:'6px 10px',background:'#0f1117',borderRadius:8,border:'1px solid #1e293b',flex:'1 1 180px'}}>
+                                    <div style={{fontSize:9,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:1}}>Descrição</div>
+                                    <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.4}}>{(qp.description||'').slice(0,100)}{(qp.description||'').length>100?'…':''}</div>
+                                  </div>}
+                                </div>
+                              </div>
+                              {/* Actions */}
+                              <div style={{display:'flex',gap:6,flexShrink:0,alignSelf:'flex-start',paddingTop:2}}>
+                                {isActive&&(
+                                  <button onClick={()=>setEditQP({...qp})}
+                                    className="aib aib-purple" title="Editar">
+                                    {AIco.edit}
+                                  </button>
+                                )}
+                                {(isActive||st==='expired')&&(
+                                  <button onClick={()=>deleteQP(qp)}
+                                    className="aib aib-red" title="Cancelar/Excluir">
+                                    {AIco.trash}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
         </div>{/* fim padding */}
       </div>{/* fim admin-main */}
+
+      {editQP && React.createElement(function EditQPModal({qp, onClose, onSaved, showToast}){
+        const [form, setForm] = React.useState({
+          title: qp.title||'',
+          description: qp.description||'',
+          city: qp.city||'',
+          pool_type: qp.pool_type||'residential',
+          price_negotiable: qp.price_negotiable||false,
+          price_per_pool: qp.price_per_pool||'',
+          pools_count: qp.pools_count||1,
+          when_label: qp.when_label||'',
+          status: qp.status||'open',
+        });
+        const [saving, setSaving] = React.useState(false);
+        const save = async () => {
+          setSaving(true);
+          const payload = {
+            title: form.title||null,
+            description: form.description||null,
+            city: form.city,
+            pool_type: form.pool_type,
+            price_negotiable: form.price_negotiable,
+            price_per_pool: form.price_negotiable ? null : (parseFloat(form.price_per_pool)||null),
+            pools_count: parseInt(form.pools_count)||1,
+            when_label: form.when_label||null,
+            status: form.status,
+          };
+          const {error} = await window.sb.from('quick_pool_jobs').update(payload).eq('id',qp.id);
+          setSaving(false);
+          if(error){ showToast('❌ '+error.message,false); return; }
+          onSaved({...qp,...payload});
+          showToast('✓ Quick Pool atualizado!');
+        };
+        const inp = {width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none'};
+        const lbl = {fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em',display:'block'};
+        return (
+          <div style={{position:'fixed',inset:0,zIndex:9000,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+            <div style={{background:'#13161f',borderRadius:18,padding:'24px 22px',width:'100%',maxWidth:520,border:'1px solid #1e293b',maxHeight:'90vh',overflowY:'auto'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+                <div style={{fontWeight:800,fontSize:17,color:'#f1f5f9'}}>⚡ Editar Quick Pool</div>
+                <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',padding:4}}>{IC.close}</button>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                <div><label style={lbl}>Título</label><input value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="Ex: Pool guy needed in Weston" style={inp}/></div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                  <div><label style={lbl}>Cidade</label><input value={form.city} onChange={e=>setForm(p=>({...p,city:e.target.value}))} style={inp}/></div>
+                  <div><label style={lbl}>Tipo</label>
+                    <select value={form.pool_type} onChange={e=>setForm(p=>({...p,pool_type:e.target.value}))} style={{...inp,height:42}}>
+                      {['residential','commercial','hoa','condo'].map(t=><option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                  <div><label style={lbl}>Piscinas</label><input type="number" min="1" value={form.pools_count} onChange={e=>setForm(p=>({...p,pools_count:e.target.value}))} style={inp}/></div>
+                  <div><label style={lbl}>Quando</label><input value={form.when_label} onChange={e=>setForm(p=>({...p,when_label:e.target.value}))} placeholder="Ex: Today 2pm" style={inp}/></div>
+                </div>
+                <div>
+                  <label style={lbl}>Preço</label>
+                  <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                    <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:13,color:'#94a3b8'}}>
+                      <input type="checkbox" checked={form.price_negotiable} onChange={e=>setForm(p=>({...p,price_negotiable:e.target.checked}))}/>
+                      Preço negociável
+                    </label>
+                  </div>
+                  {!form.price_negotiable&&<input type="number" value={form.price_per_pool} onChange={e=>setForm(p=>({...p,price_per_pool:e.target.value}))} placeholder="Preço por piscina ($)" style={inp}/>}
+                </div>
+                <div><label style={lbl}>Status</label>
+                  <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} style={{...inp,height:42}}>
+                    {['open','filled','expired','cancelled','completed'].map(s=><option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div><label style={lbl}>Descrição</label><textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} rows={3} style={{...inp,resize:'vertical'}}/></div>
+              </div>
+              <div style={{display:'flex',gap:10,marginTop:20}}>
+                <button onClick={onClose} style={{flex:1,height:44,borderRadius:11,border:'1px solid #1e293b',background:'#1a1f2e',color:'#94a3b8',fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                <button onClick={save} disabled={saving} style={{flex:2,height:44,borderRadius:11,border:'none',background:'linear-gradient(135deg,#0EBAC7,#0077B6)',color:'#fff',fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving?.6:1}}>
+                  {saving?'Salvando…':'✓ Salvar alterações'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }, {qp:editQP, onClose:()=>setEditQP(null), onSaved:updated=>{setQuickPools(p=>p.map(x=>x.id===updated.id?updated:x));setEditQP(null);}, showToast})}
 
       {editJob && <EditJobModal row={editJob} onClose={()=>setEditJob(null)} onSave={updated=>{setJobs(p=>p.map(j=>j.id===updated.id?updated:j));setEditJob(null);showToast('Vaga atualizada!');}}/>}
       {viewJob && <QuickViewModal title="Detalhes da Vaga" row={viewJob} onClose={()=>setViewJob(null)}
