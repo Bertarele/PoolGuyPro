@@ -9,212 +9,66 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #0b1117;
-      color: #e8edf2;
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-    }
+    body { font-family: 'Poppins', sans-serif; background: #0b1117; color: #e8edf2; min-height: 100vh; -webkit-font-smoothing: antialiased; }
 
-    /* ── Header ── */
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-    }
-    .back-btn {
-      display: flex; align-items: center; gap: 6px;
-      color: rgba(255,255,255,0.55); font-size: 14px; font-weight: 500;
-      background: none; border: none; cursor: pointer; padding: 4px 0;
-      text-decoration: none;
-    }
-    .back-btn svg { flex-shrink: 0; }
-    .lang-switcher {
-      display: flex; gap: 4px;
-    }
-    .lang-btn {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 6px;
-      color: rgba(255,255,255,0.5);
-      font-size: 11px; font-weight: 600;
-      padding: 3px 8px; cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .lang-btn.active {
-      background: rgba(0,119,182,0.35);
-      border-color: #0077B6;
-      color: #60c5f0;
-    }
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .back-btn { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.55); font-size: 14px; font-weight: 500; background: none; border: none; cursor: pointer; padding: 4px 0; text-decoration: none; }
+    .lang-switcher { display: flex; gap: 4px; }
+    .lang-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; padding: 3px 8px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .lang-btn.active { background: rgba(0,119,182,0.35); border-color: #0077B6; color: #60c5f0; }
 
-    /* ── Hero ── */
-    .hero {
-      background: linear-gradient(160deg, #0c3d5a 0%, #0077B6 55%, #00a8e8 100%);
-      padding: 32px 24px 28px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 70% 20%, rgba(255,255,255,0.08) 0%, transparent 60%);
-    }
-    .plan-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 999px;
-      padding: 4px 14px;
-      font-size: 12px; font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 14px;
-      position: relative;
-    }
-    .plan-name {
-      font-size: 28px; font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      margin-bottom: 8px;
-      position: relative;
-    }
-    .plan-tagline {
-      font-size: 13.5px; font-weight: 400;
-      color: rgba(255,255,255,0.8);
-      line-height: 1.5;
-      max-width: 280px;
-      margin: 0 auto 20px;
-      position: relative;
-    }
-    .price-block {
-      position: relative;
-      display: inline-flex; align-items: flex-start; gap: 2px;
-    }
+    /* ── Billing toggle ── */
+    .billing-toggle-wrap { display: flex; justify-content: center; padding: 18px 20px 0; }
+    .billing-toggle { display: flex; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 3px; gap: 2px; position: relative; }
+    .billing-btn { border: none; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 600; padding: 7px 20px; cursor: pointer; transition: all 0.2s; background: transparent; color: rgba(255,255,255,0.45); }
+    .billing-btn.active { background: linear-gradient(135deg,#0c4a6e,#0077B6); color: #fff; box-shadow: 0 2px 10px rgba(0,119,182,0.4); }
+    .save-badge { display: inline-block; background: linear-gradient(90deg,#f59e0b,#fbbf24); color: #1a0a00; font-size: 9.5px; font-weight: 800; border-radius: 999px; padding: 2px 7px; margin-left: 5px; letter-spacing: 0.05em; vertical-align: middle; }
+
+    .hero { background: linear-gradient(160deg, #0c3d5a 0%, #0077B6 55%, #00a8e8 100%); padding: 24px 24px 28px; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 20%, rgba(255,255,255,0.08) 0%, transparent 60%); }
+    .plan-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 999px; padding: 4px 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; position: relative; }
+    .plan-name { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 8px; position: relative; }
+    .plan-tagline { font-size: 13.5px; font-weight: 400; color: rgba(255,255,255,0.8); line-height: 1.5; max-width: 280px; margin: 0 auto 20px; position: relative; }
+
+    .price-block { position: relative; display: inline-flex; align-items: flex-start; gap: 2px; }
     .price-dollar { font-size: 22px; font-weight: 700; margin-top: 4px; }
     .price-amount { font-size: 52px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+    .price-cents { font-size: 26px; font-weight: 700; align-self: flex-start; margin-top: 8px; }
     .price-period { font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.7); align-self: flex-end; margin-bottom: 6px; }
+    .price-sub { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 6px; position: relative; min-height: 18px; }
 
-    /* ── Features ── */
-    .features-section {
-      padding: 24px 20px 8px;
-    }
-    .section-title {
-      font-size: 11px; font-weight: 700;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.35);
-      margin-bottom: 14px;
-    }
-    .feature-row {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
+    .features-section { padding: 24px 20px 8px; }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 14px; }
+    .feature-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
     .feature-row:last-child { border-bottom: none; }
-    .feature-icon {
-      width: 32px; height: 32px; border-radius: 9px;
-      background: rgba(0,119,182,0.2);
-      border: 1px solid rgba(0,119,182,0.3);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
+    .feature-icon { width: 32px; height: 32px; border-radius: 9px; background: rgba(0,119,182,0.2); border: 1px solid rgba(0,119,182,0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .feature-icon svg { color: #60c5f0; }
-    .feature-text { flex: 1; }
     .feature-label { font-size: 14px; font-weight: 600; color: #e8edf2; line-height: 1.3; }
     .feature-desc { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.45); margin-top: 2px; line-height: 1.4; }
 
-    /* ── Compare free ── */
-    .compare-section {
-      margin: 8px 20px 0;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 14px;
-      padding: 14px 16px;
-    }
-    .compare-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 7px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      font-size: 12.5px;
-    }
+    .compare-section { margin: 8px 20px 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 14px 16px; }
+    .compare-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12.5px; }
     .compare-row:last-child { border-bottom: none; }
     .compare-label { color: rgba(255,255,255,0.6); font-weight: 400; }
     .compare-cols { display: flex; gap: 16px; }
     .compare-val { font-weight: 600; font-size: 12px; text-align: center; width: 44px; }
-    .compare-header {
-      display: flex; align-items: center; justify-content: flex-end;
-      gap: 16px; padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      margin-bottom: 2px;
-    }
+    .compare-header { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 2px; }
     .compare-col-head { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-align: center; width: 44px; }
     .col-free { color: rgba(255,255,255,0.35); }
     .col-pro { color: #60c5f0; }
     .check { color: #34d399; font-size: 15px; }
     .cross { color: rgba(255,255,255,0.2); font-size: 13px; }
 
-    /* ── CTA ── */
-    .cta-section {
-      padding: 24px 20px 40px;
-    }
-    .cta-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #0c4a6e, #0077B6);
-      color: #fff;
-      border: none; border-radius: 14px;
-      font-family: inherit;
-      font-size: 16px; font-weight: 700;
-      padding: 16px;
-      cursor: pointer;
-      letter-spacing: 0.01em;
-      box-shadow: 0 4px 20px rgba(0,119,182,0.45);
-      transition: opacity 0.15s, transform 0.1s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
+    .cta-section { padding: 24px 20px 40px; }
+    .cta-btn { width: 100%; background: linear-gradient(135deg, #0c4a6e, #0077B6); color: #fff; border: none; border-radius: 14px; font-family: inherit; font-size: 16px; font-weight: 700; padding: 16px; cursor: pointer; letter-spacing: 0.01em; box-shadow: 0 4px 20px rgba(0,119,182,0.45); transition: opacity 0.15s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
     .cta-btn:active { opacity: 0.85; transform: scale(0.985); }
-    .cta-note {
-      text-align: center;
-      font-size: 11.5px;
-      color: rgba(255,255,255,0.3);
-      margin-top: 10px;
-      line-height: 1.5;
-    }
+    .cta-note { text-align: center; font-size: 11.5px; color: rgba(255,255,255,0.3); margin-top: 10px; line-height: 1.5; }
     .cta-note a { color: rgba(255,255,255,0.45); }
-    .trial-badge {
-      display: inline-block;
-      background: rgba(52,211,153,0.15);
-      border: 1px solid rgba(52,211,153,0.3);
-      color: #34d399;
-      font-size: 11px; font-weight: 700;
-      border-radius: 999px;
-      padding: 3px 10px;
-      margin-bottom: 14px;
-      letter-spacing: 0.04em;
-    }
+    .trial-badge { display: inline-block; background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: #34d399; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 3px 10px; margin-bottom: 14px; letter-spacing: 0.04em; }
     .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0 20px; }
 
-    /* ── Premium upsell ── */
-    .upsell {
-      margin: 0 20px 28px;
-      background: linear-gradient(135deg, rgba(59,7,100,0.5), rgba(124,58,237,0.2));
-      border: 1px solid rgba(124,58,237,0.3);
-      border-radius: 14px;
-      padding: 14px 16px;
-      display: flex; align-items: center; gap: 12px;
-      text-decoration: none;
-    }
-    .upsell-icon {
-      width: 38px; height: 38px; border-radius: 10px;
-      background: rgba(124,58,237,0.25);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .upsell-text { flex: 1; }
+    .upsell { margin: 0 20px 28px; background: linear-gradient(135deg, rgba(59,7,100,0.5), rgba(124,58,237,0.2)); border: 1px solid rgba(124,58,237,0.3); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .upsell-icon { width: 38px; height: 38px; border-radius: 10px; background: rgba(124,58,237,0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .upsell-label { font-size: 12px; font-weight: 700; color: #c4b5fd; }
     .upsell-desc { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 1px; }
     .upsell-arrow { color: rgba(255,255,255,0.3); font-size: 16px; }
@@ -222,12 +76,9 @@
 </head>
 <body>
 
-<!-- Header -->
 <div class="header">
   <a href="/" class="back-btn">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="15 18 9 12 15 6"/>
-    </svg>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     <span data-t="back">Back to app</span>
   </a>
   <div class="lang-switcher">
@@ -237,59 +88,68 @@
   </div>
 </div>
 
-<!-- Hero -->
+<!-- Billing toggle -->
+<div class="billing-toggle-wrap">
+  <div class="billing-toggle">
+    <button class="billing-btn active" id="btn-monthly" onclick="setBilling('monthly')" data-t="monthly">Monthly</button>
+    <button class="billing-btn" id="btn-annual" onclick="setBilling('annual')">
+      <span data-t="annual">Annual</span>
+      <span class="save-badge" data-t="save-pct">SAVE 17%</span>
+    </button>
+  </div>
+</div>
+
 <div class="hero">
   <div class="plan-badge">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
     Pool Guy PRO
   </div>
-  <div class="plan-name">Grow your business</div>
+  <div class="plan-name" data-t="plan-name">Grow your business</div>
   <div class="plan-tagline" data-t="tagline">Reach more clients and manage more jobs with powerful tools.</div>
-  <div class="price-block">
+
+  <!-- Monthly price -->
+  <div id="price-monthly" class="price-block">
     <span class="price-dollar">$</span>
     <span class="price-amount">14</span>
-    <span class="price-period">.99<span data-t="per-month">/mo</span></span>
+    <span class="price-cents">.99</span>
+    <span class="price-period" data-t="per-month">/mo</span>
+  </div>
+  <!-- Annual price -->
+  <div id="price-annual" class="price-block" style="display:none; flex-direction:column; align-items:center; gap:0;">
+    <div style="display:inline-flex; align-items:flex-start; gap:2px;">
+      <span class="price-dollar">$</span>
+      <span class="price-amount">149</span>
+      <span class="price-period" data-t="per-year">/yr</span>
+    </div>
+    <div class="price-sub" data-t="annual-sub">$12.42/mo · billed annually</div>
   </div>
 </div>
 
-<!-- Features -->
 <div class="features-section">
   <div class="section-title" data-t="whats-included">What's included</div>
-
   <div class="feature-row">
-    <div class="feature-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-    </div>
+    <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
     <div class="feature-text">
       <div class="feature-label" data-t="f1-title">5 active listings</div>
       <div class="feature-desc" data-t="f1-desc">Post up to 5 simultaneous ads in the marketplace.</div>
     </div>
   </div>
-
   <div class="feature-row">
-    <div class="feature-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
-    </div>
+    <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
     <div class="feature-text">
       <div class="feature-label" data-t="f2-title">Routes tab in marketplace</div>
       <div class="feature-desc" data-t="f2-desc">See pool routes for sale posted by other pool guys in your area.</div>
     </div>
   </div>
-
   <div class="feature-row">
-    <div class="feature-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    </div>
+    <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
     <div class="feature-text">
       <div class="feature-label" data-t="f3-title">Full vacation coverage</div>
       <div class="feature-desc" data-t="f3-desc">Apply for vacation coverage jobs, see contact info, and chat with employers.</div>
     </div>
   </div>
-
   <div class="feature-row">
-    <div class="feature-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    </div>
+    <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
     <div class="feature-text">
       <div class="feature-label" data-t="f4-title">Direct messaging</div>
       <div class="feature-desc" data-t="f4-desc">Chat directly with clients and contractors within the app.</div>
@@ -297,8 +157,7 @@
   </div>
 </div>
 
-<!-- Compare table -->
-<div class="features-section" style="padding-top:4px; padding-bottom:0">
+<div class="features-section" style="padding-top:4px;padding-bottom:0">
   <div class="section-title" data-t="compare-title">Free vs PRO</div>
 </div>
 <div class="compare-section">
@@ -306,45 +165,19 @@
     <span class="compare-col-head col-free" data-t="col-free">FREE</span>
     <span class="compare-col-head col-pro">PRO</span>
   </div>
-  <div class="compare-row">
-    <span class="compare-label" data-t="c1">Active listings</span>
-    <div class="compare-cols">
-      <span class="compare-val col-free">2</span>
-      <span class="compare-val col-pro">5</span>
-    </div>
-  </div>
-  <div class="compare-row">
-    <span class="compare-label" data-t="c2">Routes tab</span>
-    <div class="compare-cols">
-      <span class="compare-val cross">✕</span>
-      <span class="compare-val check">✓</span>
-    </div>
-  </div>
-  <div class="compare-row">
-    <span class="compare-label" data-t="c3">Vacation coverage</span>
-    <div class="compare-cols">
-      <span class="compare-val cross">✕</span>
-      <span class="compare-val check">✓</span>
-    </div>
-  </div>
-  <div class="compare-row">
-    <span class="compare-label" data-t="c4">Post routes for sale</span>
-    <div class="compare-cols">
-      <span class="compare-val check">✓</span>
-      <span class="compare-val check">✓</span>
-    </div>
-  </div>
+  <div class="compare-row"><span class="compare-label" data-t="c1">Active listings</span><div class="compare-cols"><span class="compare-val col-free">2</span><span class="compare-val col-pro">5</span></div></div>
+  <div class="compare-row"><span class="compare-label" data-t="c2">Routes tab</span><div class="compare-cols"><span class="compare-val cross">✕</span><span class="compare-val check">✓</span></div></div>
+  <div class="compare-row"><span class="compare-label" data-t="c3">Vacation coverage</span><div class="compare-cols"><span class="compare-val cross">✕</span><span class="compare-val check">✓</span></div></div>
+  <div class="compare-row"><span class="compare-label" data-t="c4">Post routes for sale</span><div class="compare-cols"><span class="compare-val check">✓</span><span class="compare-val check">✓</span></div></div>
 </div>
 
-<!-- CTA -->
 <div class="cta-section">
-  <div style="text-align:center; margin-bottom:16px;">
-    <div class="trial-badge" data-t="trial-badge">Cancel anytime</div>
+  <div style="text-align:center;margin-bottom:16px;">
+    <div class="trial-badge" data-t="cancel-badge">Cancel anytime</div>
   </div>
-  <!-- STRIPE LINK: replace href with your Stripe payment link -->
-  <a href="#" id="cta-btn" class="cta-btn" onclick="handleSubscribe(event)">
+  <a href="#" class="cta-btn" onclick="handleSubscribe(event)">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-    <span data-t="cta">Subscribe – $14.99/mo</span>
+    <span id="cta-text">Subscribe – $14.99/mo</span>
   </a>
   <div class="cta-note">
     <span data-t="cta-note">Billed monthly · Secure payment · </span><a href="/" data-t="cta-link">Back to app</a>
@@ -353,15 +186,12 @@
 
 <div class="divider"></div>
 
-<!-- PREMIUM upsell -->
-<div style="padding: 20px 0 0;">
-  <div class="features-section" style="padding-bottom:10px; padding-top:8px;">
+<div style="padding:20px 0 0;">
+  <div class="features-section" style="padding-bottom:10px;padding-top:8px;">
     <div class="section-title" data-t="upsell-title">Want even more?</div>
   </div>
   <a href="/upgrade/premium" class="upsell">
-    <div class="upsell-icon">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="#c4b5fd"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-    </div>
+    <div class="upsell-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="#c4b5fd"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg></div>
     <div class="upsell-text">
       <div class="upsell-label">Pool Guy PREMIUM – $24.99/mo</div>
       <div class="upsell-desc" data-t="upsell-desc">Quick Pools, 10 listings, featured spots & Premium badge.</div>
@@ -369,100 +199,78 @@
     <span class="upsell-arrow">›</span>
   </a>
 </div>
-
-<div style="height: 40px;"></div>
+<div style="height:40px;"></div>
 
 <script>
-  // ── Translations ──────────────────────────────────────────────
+  // ── Stripe links — fill in when ready ────────────────────────
+  const STRIPE = {
+    monthly: '',  // e.g. 'https://buy.stripe.com/pro_monthly'
+    annual:  '',  // e.g. 'https://buy.stripe.com/pro_annual'
+  };
+
   const T = {
     en: {
-      back: 'Back to app',
-      tagline: 'Reach more clients and manage more jobs with powerful tools.',
-      'per-month': '/mo',
-      'whats-included': "What's included",
-      'f1-title': '5 active listings',
-      'f1-desc': 'Post up to 5 simultaneous ads in the marketplace.',
-      'f2-title': 'Routes tab in marketplace',
-      'f2-desc': 'See pool routes for sale posted by other pool guys in your area.',
-      'f3-title': 'Full vacation coverage',
-      'f3-desc': 'Apply for vacation coverage jobs, see contact info, and chat with employers.',
-      'f4-title': 'Direct messaging',
-      'f4-desc': 'Chat directly with clients and contractors within the app.',
-      'compare-title': 'Free vs PRO',
-      'col-free': 'FREE',
-      c1: 'Active listings',
-      c2: 'Routes tab',
-      c3: 'Vacation coverage',
-      c4: 'Post routes for sale',
-      'trial-badge': 'Cancel anytime',
-      cta: 'Subscribe – $14.99/mo',
-      'cta-note': 'Billed monthly · Secure payment · ',
-      'cta-link': 'Back to app',
-      'upsell-title': 'Want even more?',
-      'upsell-desc': 'Quick Pools, 10 listings, featured spots & Premium badge.',
-      'coming-soon': 'Payment link coming soon — check back shortly!',
+      back:'Back to app', monthly:'Monthly', annual:'Annual', 'save-pct':'SAVE 17%',
+      'plan-name':'Grow your business',
+      tagline:'Reach more clients and manage more jobs with powerful tools.',
+      'per-month':'/mo', 'per-year':'/yr',
+      'annual-sub':'$12.42/mo · billed annually',
+      'whats-included':"What's included",
+      'f1-title':'5 active listings','f1-desc':'Post up to 5 simultaneous ads in the marketplace.',
+      'f2-title':'Routes tab in marketplace','f2-desc':'See pool routes for sale posted by other pool guys in your area.',
+      'f3-title':'Full vacation coverage','f3-desc':'Apply for vacation coverage jobs, see contact info, and chat with employers.',
+      'f4-title':'Direct messaging','f4-desc':'Chat directly with clients and contractors within the app.',
+      'compare-title':'Free vs PRO','col-free':'FREE',
+      c1:'Active listings',c2:'Routes tab',c3:'Vacation coverage',c4:'Post routes for sale',
+      'cancel-badge':'Cancel anytime',
+      'cta-monthly':'Subscribe – $14.99/mo','cta-annual':'Subscribe – $149/yr',
+      'cta-note':'Billed monthly · Secure payment · ','cta-link':'Back to app',
+      'upsell-title':'Want even more?','upsell-desc':'Quick Pools, 10 listings, featured spots & Premium badge.',
+      'coming-soon':'Payment link coming soon — check back shortly!',
     },
     pt: {
-      back: 'Voltar ao app',
-      tagline: 'Alcance mais clientes e gerencie mais trabalhos com ferramentas poderosas.',
-      'per-month': '/mês',
-      'whats-included': 'O que está incluído',
-      'f1-title': '5 anúncios ativos',
-      'f1-desc': 'Publique até 5 anúncios simultâneos no marketplace.',
-      'f2-title': 'Aba de Rotas no marketplace',
-      'f2-desc': 'Veja rotas de piscinas à venda publicadas por outros pool guys na sua área.',
-      'f3-title': 'Cobertura de férias completa',
-      'f3-desc': 'Aplique para coberturas de férias, veja contatos e converse com empregadores.',
-      'f4-title': 'Mensagens diretas',
-      'f4-desc': 'Converse diretamente com clientes e contratantes dentro do app.',
-      'compare-title': 'Free vs PRO',
-      'col-free': 'GRÁTIS',
-      c1: 'Anúncios ativos',
-      c2: 'Aba de Rotas',
-      c3: 'Cobertura de férias',
-      c4: 'Publicar rotas à venda',
-      'trial-badge': 'Cancele quando quiser',
-      cta: 'Assinar – $14,99/mês',
-      'cta-note': 'Cobrado mensalmente · Pagamento seguro · ',
-      'cta-link': 'Voltar ao app',
-      'upsell-title': 'Quer ainda mais?',
-      'upsell-desc': 'Quick Pools, 10 anúncios, destaque & badge Premium.',
-      'coming-soon': 'Link de pagamento em breve — volte em alguns dias!',
+      back:'Voltar ao app', monthly:'Mensal', annual:'Anual', 'save-pct':'POUPE 17%',
+      'plan-name':'Cresça seu negócio',
+      tagline:'Alcance mais clientes e gerencie mais trabalhos com ferramentas poderosas.',
+      'per-month':'/mês', 'per-year':'/ano',
+      'annual-sub':'$12,42/mês · cobrado anualmente',
+      'whats-included':'O que está incluído',
+      'f1-title':'5 anúncios ativos','f1-desc':'Publique até 5 anúncios simultâneos no marketplace.',
+      'f2-title':'Aba de Rotas no marketplace','f2-desc':'Veja rotas de piscinas à venda na sua área.',
+      'f3-title':'Cobertura de férias completa','f3-desc':'Aplique para coberturas, veja contatos e converse com empregadores.',
+      'f4-title':'Mensagens diretas','f4-desc':'Converse diretamente com clientes e contratantes no app.',
+      'compare-title':'Free vs PRO','col-free':'GRÁTIS',
+      c1:'Anúncios ativos',c2:'Aba de Rotas',c3:'Cobertura de férias',c4:'Publicar rotas à venda',
+      'cancel-badge':'Cancele quando quiser',
+      'cta-monthly':'Assinar – $14,99/mês','cta-annual':'Assinar – $149/ano',
+      'cta-note':'Cobrado mensalmente · Pagamento seguro · ','cta-link':'Voltar ao app',
+      'upsell-title':'Quer ainda mais?','upsell-desc':'Quick Pools, 10 anúncios, destaque & badge Premium.',
+      'coming-soon':'Link de pagamento em breve!',
     },
     es: {
-      back: 'Volver a la app',
-      tagline: 'Llega a más clientes y gestiona más trabajos con herramientas poderosas.',
-      'per-month': '/mes',
-      'whats-included': 'Qué está incluido',
-      'f1-title': '5 anuncios activos',
-      'f1-desc': 'Publica hasta 5 anuncios simultáneos en el marketplace.',
-      'f2-title': 'Pestaña de Rutas en marketplace',
-      'f2-desc': 'Ve rutas de piscinas en venta publicadas por otros pool guys en tu área.',
-      'f3-title': 'Cobertura de vacaciones completa',
-      'f3-desc': 'Aplica a coberturas de vacaciones, ve contactos y chatea con empleadores.',
-      'f4-title': 'Mensajes directos',
-      'f4-desc': 'Chatea directamente con clientes y contratistas dentro de la app.',
-      'compare-title': 'Free vs PRO',
-      'col-free': 'GRATIS',
-      c1: 'Anuncios activos',
-      c2: 'Pestaña de Rutas',
-      c3: 'Cobertura de vacaciones',
-      c4: 'Publicar rutas en venta',
-      'trial-badge': 'Cancela cuando quieras',
-      cta: 'Suscribirse – $14.99/mes',
-      'cta-note': 'Cobrado mensualmente · Pago seguro · ',
-      'cta-link': 'Volver a la app',
-      'upsell-title': '¿Quieres aún más?',
-      'upsell-desc': 'Quick Pools, 10 anuncios, destacados & badge Premium.',
-      'coming-soon': '¡Enlace de pago próximamente — vuelve pronto!',
+      back:'Volver a la app', monthly:'Mensual', annual:'Anual', 'save-pct':'AHORRA 17%',
+      'plan-name':'Haz crecer tu negocio',
+      tagline:'Llega a más clientes y gestiona más trabajos con herramientas poderosas.',
+      'per-month':'/mes', 'per-year':'/año',
+      'annual-sub':'$12.42/mes · facturado anualmente',
+      'whats-included':'Qué está incluido',
+      'f1-title':'5 anuncios activos','f1-desc':'Publica hasta 5 anuncios simultáneos en el marketplace.',
+      'f2-title':'Pestaña de Rutas','f2-desc':'Ve rutas de piscinas en venta en tu área.',
+      'f3-title':'Cobertura de vacaciones completa','f3-desc':'Aplica a coberturas, ve contactos y chatea con empleadores.',
+      'f4-title':'Mensajes directos','f4-desc':'Chatea con clientes y contratistas dentro de la app.',
+      'compare-title':'Free vs PRO','col-free':'GRATIS',
+      c1:'Anuncios activos',c2:'Pestaña de Rutas',c3:'Cobertura de vacaciones',c4:'Publicar rutas en venta',
+      'cancel-badge':'Cancela cuando quieras',
+      'cta-monthly':'Suscribirse – $14.99/mes','cta-annual':'Suscribirse – $149/año',
+      'cta-note':'Cobrado mensualmente · Pago seguro · ','cta-link':'Volver a la app',
+      'upsell-title':'¿Quieres aún más?','upsell-desc':'Quick Pools, 10 anuncios, destacados & badge Premium.',
+      'coming-soon':'¡Enlace de pago próximamente!',
     }
   };
 
-  // ── STRIPE LINK — set this when ready ────────────────────────
-  const STRIPE_URL = ''; // e.g. 'https://buy.stripe.com/...'
-
   let currentLang = localStorage.getItem('pg_lang') || 'en';
   if (!['en','pt','es'].includes(currentLang)) currentLang = 'en';
+  let currentBilling = 'monthly';
 
   function applyTranslations() {
     const t = T[currentLang];
@@ -473,21 +281,30 @@
     document.querySelectorAll('.lang-btn').forEach(btn => {
       btn.classList.toggle('active', btn.textContent.trim().toLowerCase() === currentLang);
     });
+    updateCtaText();
   }
 
-  function setLang(l) {
-    currentLang = l;
-    localStorage.setItem('pg_lang', l);
-    applyTranslations();
+  function updateCtaText() {
+    const t = T[currentLang];
+    document.getElementById('cta-text').textContent = currentBilling === 'annual' ? t['cta-annual'] : t['cta-monthly'];
+  }
+
+  function setLang(l) { currentLang = l; localStorage.setItem('pg_lang', l); applyTranslations(); }
+
+  function setBilling(b) {
+    currentBilling = b;
+    document.getElementById('btn-monthly').classList.toggle('active', b === 'monthly');
+    document.getElementById('btn-annual').classList.toggle('active', b === 'annual');
+    document.getElementById('price-monthly').style.display = b === 'monthly' ? 'inline-flex' : 'none';
+    document.getElementById('price-annual').style.display = b === 'annual' ? 'flex' : 'none';
+    updateCtaText();
   }
 
   function handleSubscribe(e) {
     e.preventDefault();
-    if (STRIPE_URL) {
-      window.location.href = STRIPE_URL;
-    } else {
-      alert(T[currentLang]['coming-soon']);
-    }
+    const url = currentBilling === 'annual' ? STRIPE.annual : STRIPE.monthly;
+    if (url) { window.location.href = url; }
+    else { alert(T[currentLang]['coming-soon']); }
   }
 
   applyTranslations();
