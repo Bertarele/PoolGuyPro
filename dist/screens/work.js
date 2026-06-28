@@ -244,7 +244,7 @@ function WorkScreen({
     className: "pg-press",
     style: {
       position: 'fixed',
-      bottom: 86,
+      bottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
       right: 18,
       zIndex: 35,
       width: 56,
@@ -530,7 +530,7 @@ function WorkScreen({
           zIndex: 0
         }
       }, /*#__PURE__*/React.createElement("img", {
-        src: "icone.png",
+        src: "icone-watermark.png",
         alt: "",
         style: {
           position: 'absolute',
@@ -1436,6 +1436,7 @@ function WorkScreen({
       onChat: openChat,
       onCreate: openVacSheet,
       onEditVac: openEditVacSheet,
+      onUnlockVac: () => ctx.openPaywall && ctx.openPaywall('vac'),
       onViewApplicants: openApplicants,
       openDayPicker: openDayPicker,
       openSchedule: openSchedule,
@@ -2320,6 +2321,7 @@ function WorkScreen({
     onChat: openChat,
     onCreate: openVacSheet,
     onEditVac: openEditVacSheet,
+    onUnlockVac: () => ctx.openPaywall && ctx.openPaywall('vac'),
     onViewApplicants: openApplicants,
     openDayPicker: openDayPicker,
     openSchedule: openSchedule,
@@ -4983,7 +4985,8 @@ function VacationPanel({
   liveVacations = [],
   user,
   showToast,
-  onDeleteVac
+  onDeleteVac,
+  onUnlockVac
 }) {
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const today = React.useMemo(() => {
@@ -5237,38 +5240,44 @@ function VacationPanel({
         gap: 8,
         marginBottom: 10
       }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => openPublicProfile && openPublicProfile({
-        name: vac.author
-      }),
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        flex: 1,
-        minWidth: 0,
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: 0,
-        fontFamily: 'inherit',
-        textAlign: 'left'
-      },
-      className: "pg-press"
-    }, /*#__PURE__*/React.createElement(Avatar, {
-      name: vac.author,
-      size: 30
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 13,
-        fontWeight: 600
-      }
-    }, vac.author))), liveAvailDays.length > 0 && /*#__PURE__*/React.createElement("span", {
+    }, (() => {
+      const freeBlur = !isOwner && user?.tier === 'free';
+      return /*#__PURE__*/React.createElement("button", {
+        onClick: freeBlur ? () => onUnlockVac && onUnlockVac() : () => openPublicProfile && openPublicProfile({
+          name: vac.author
+        }),
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          flex: 1,
+          minWidth: 0,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 0,
+          fontFamily: 'inherit',
+          textAlign: 'left',
+          filter: freeBlur ? 'blur(5px)' : undefined,
+          userSelect: freeBlur ? 'none' : undefined
+        },
+        className: "pg-press"
+      }, /*#__PURE__*/React.createElement(AvatarFetch, {
+        uid: vac.author_id,
+        name: vac.author,
+        size: 30
+      }), /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          minWidth: 0
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 13,
+          fontWeight: 600
+        }
+      }, vac.author)));
+    })(), liveAvailDays.length > 0 && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -5393,7 +5402,24 @@ function VacationPanel({
       style: {
         fontSize: 11
       }
-    }, lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable')), !isOwner && /*#__PURE__*/React.createElement("button", {
+    }, lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable')), !isOwner && (user.tier === 'free' ? /*#__PURE__*/React.createElement("button", {
+      onClick: () => onUnlockVac && onUnlockVac(),
+      style: {
+        height: 38,
+        padding: '0 16px',
+        fontSize: 12.5,
+        borderRadius: 999,
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontWeight: 700,
+        background: 'linear-gradient(135deg,#0c4a6e,#0077B6)',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, Icon.lock(13, '#fff'), lang === 'pt' ? 'PRO para aplicar' : lang === 'es' ? 'PRO para aplicar' : 'PRO to apply') : /*#__PURE__*/React.createElement("button", {
       onClick: () => openDayPicker && openDayPicker(vac),
       className: "pg-btn pg-btn-primary",
       style: {
@@ -5403,7 +5429,7 @@ function VacationPanel({
         borderRadius: 999,
         gap: 5
       }
-    }, pickDaysLabel, " \u2192"), isOwner && user?.role !== 'admin' && /*#__PURE__*/React.createElement("div", {
+    }, pickDaysLabel, " \u2192")), isOwner && user?.role !== 'admin' && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 6
@@ -5533,6 +5559,7 @@ function VacationPanel({
   }, sortedStaticVac.map(v => {
     // Only count future available days
     const availDays = v.days.filter(d => !v.bookedDays.includes(d) && new Date(v.yearMonth?.year, v.yearMonth?.month, d) >= today);
+    const isStaticOwner = !!(user?.uid && user.uid === v.ownerId);
     const maxEarnings = availDays.length * v.poolsPerDay * v.pricePerPool;
     return /*#__PURE__*/React.createElement("article", {
       key: v.id,
@@ -5603,48 +5630,53 @@ function VacationPanel({
         gap: 8,
         marginBottom: 10
       }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => openPublicProfile && openPublicProfile({
+    }, (() => {
+      const freeBlur = !isStaticOwner && user?.tier === 'free';
+      return /*#__PURE__*/React.createElement("button", {
+        onClick: freeBlur ? () => onUnlockVac && onUnlockVac() : () => openPublicProfile && openPublicProfile({
+          name: v.owner,
+          rating: v.ownerRating,
+          reviews: v.ownerJobs,
+          jobs: v.ownerJobs,
+          loc: v.region
+        }),
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          flex: 1,
+          minWidth: 0,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 0,
+          fontFamily: 'inherit',
+          textAlign: 'left',
+          filter: freeBlur ? 'blur(5px)' : undefined,
+          userSelect: freeBlur ? 'none' : undefined
+        },
+        className: "pg-press"
+      }, /*#__PURE__*/React.createElement(Avatar, {
         name: v.owner,
-        rating: v.ownerRating,
-        reviews: v.ownerJobs,
-        jobs: v.ownerJobs,
-        loc: v.region
-      }),
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        flex: 1,
-        minWidth: 0,
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: 0,
-        fontFamily: 'inherit',
-        textAlign: 'left'
-      },
-      className: "pg-press"
-    }, /*#__PURE__*/React.createElement(Avatar, {
-      name: v.owner,
-      size: 30
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 13,
-        fontWeight: 600
-      }
-    }, v.owner), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        color: 'var(--pg-ink-400)',
-        marginLeft: 5
-      }
-    }, "\u2605 ", v.ownerRating, " \xB7 ", v.ownerJobs, " jobs"))), availDays.length > 0 && /*#__PURE__*/React.createElement("span", {
+        size: 30
+      }), /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          minWidth: 0
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 13,
+          fontWeight: 600
+        }
+      }, v.owner), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 11,
+          color: 'var(--pg-ink-400)',
+          marginLeft: 5
+        }
+      }, "\u2605 ", v.ownerRating, " \xB7 ", v.ownerJobs, " jobs")));
+    })(), availDays.length > 0 && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -5769,7 +5801,24 @@ function VacationPanel({
         letterSpacing: '-0.02em',
         lineHeight: 1.1
       }
-    }, "$", maxEarnings.toLocaleString())), /*#__PURE__*/React.createElement("button", {
+    }, "$", maxEarnings.toLocaleString())), user?.tier === 'free' ? /*#__PURE__*/React.createElement("button", {
+      onClick: () => onUnlockVac && onUnlockVac(),
+      style: {
+        height: 38,
+        padding: '0 16px',
+        fontSize: 12.5,
+        borderRadius: 999,
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontWeight: 700,
+        background: 'linear-gradient(135deg,#0c4a6e,#0077B6)',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, Icon.lock(13, '#fff'), lang === 'pt' ? 'PRO para aplicar' : lang === 'es' ? 'PRO para aplicar' : 'PRO to apply') : /*#__PURE__*/React.createElement("button", {
       onClick: () => openDayPicker && openDayPicker(v),
       className: "pg-btn pg-btn-primary",
       style: {

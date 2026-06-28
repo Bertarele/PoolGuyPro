@@ -2362,13 +2362,15 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
 
                   {/* Owner row */}
                   <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
-                    <button onClick={()=>openPublicProfile && openPublicProfile({ name:vac.author })}
-                      style={{display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left'}} className="pg-press">
+                    {(() => { const freeBlur = !isOwner && user?.tier === 'free'; return (
+                    <button onClick={freeBlur ? ()=>onUnlockVac&&onUnlockVac() : ()=>openPublicProfile&&openPublicProfile({ name:vac.author })}
+                      style={{display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', filter:freeBlur?'blur(5px)':undefined, userSelect:freeBlur?'none':undefined}} className="pg-press">
                       <AvatarFetch uid={vac.author_id} name={vac.author} size={30}/>
                       <div style={{flex:1, minWidth:0}}>
                         <span style={{fontSize:13, fontWeight:600}}>{vac.author}</span>
                       </div>
                     </button>
+                    ); })()}
                     {liveAvailDays.length > 0 && (
                       <span style={{fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999,
                         background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0}}>
@@ -2543,6 +2545,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
             {sortedStaticVac.map(v => {
               // Only count future available days
               const availDays = v.days.filter(d => !v.bookedDays.includes(d) && new Date(v.yearMonth?.year, v.yearMonth?.month, d) >= today);
+              const isStaticOwner = !!(user?.uid && user.uid === v.ownerId);
               const maxEarnings = availDays.length * v.poolsPerDay * v.pricePerPool;
               return (
               <article key={v.id} className="pg-card" style={{padding:0, overflow:'hidden'}}>
@@ -2579,8 +2582,9 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                 <div style={{padding:'11px 14px 14px'}}>
                   {/* Owner row */}
                   <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
-                    <button onClick={()=>openPublicProfile && openPublicProfile({ name:v.owner, rating:v.ownerRating, reviews:v.ownerJobs, jobs:v.ownerJobs, loc:v.region })}
-                      style={{display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left'}} className="pg-press">
+                    {(() => { const freeBlur = !isStaticOwner && user?.tier === 'free'; return (
+                    <button onClick={freeBlur ? ()=>onUnlockVac&&onUnlockVac() : ()=>openPublicProfile&&openPublicProfile({ name:v.owner, rating:v.ownerRating, reviews:v.ownerJobs, jobs:v.ownerJobs, loc:v.region })}
+                      style={{display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', filter:freeBlur?'blur(5px)':undefined, userSelect:freeBlur?'none':undefined}} className="pg-press">
                       <Avatar name={v.owner} size={30}/>
                       <div style={{flex:1, minWidth:0}}>
                         <span style={{fontSize:13, fontWeight:600}}>{v.owner}</span>
@@ -2589,6 +2593,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                         </span>
                       </div>
                     </button>
+                    ); })()}
                     {availDays.length > 0 && (
                       <span style={{fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999,
                         background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0}}>
