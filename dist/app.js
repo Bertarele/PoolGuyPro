@@ -324,14 +324,27 @@ function App() {
   const [refreshing, setRefreshing] = React.useState(false);
   const PULL_THRESHOLD = 64;
   const onPTRTouchStart = React.useCallback(e => {
-    if (screenRef.current && screenRef.current.scrollTop === 0) {
-      pullStartY.current = e.touches[0].clientY;
+    if (!screenRef.current || screenRef.current.scrollTop !== 0) return;
+    // Don't arm PTR if the touch is inside a nested scrollable that still has content above
+    let el = e.target;
+    while (el && el !== screenRef.current) {
+      if (el.scrollTop > 0) return;
+      el = el.parentElement;
     }
+    pullStartY.current = e.touches[0].clientY;
   }, []);
   const onPTRTouchMove = React.useCallback(e => {
     if (pullStartY.current === null) return;
     const dy = e.touches[0].clientY - pullStartY.current;
-    if (dy > 0) setPullDist(Math.min(dy * 0.55, 80));else {
+    if (dy > 0) {
+      // Cancel if outer container scrolled (nested element took over)
+      if (screenRef.current && screenRef.current.scrollTop > 0) {
+        pullStartY.current = null;
+        setPullDist(0);
+        return;
+      }
+      setPullDist(Math.min(dy * 0.55, 80));
+    } else {
       pullStartY.current = null;
       setPullDist(0);
     }
@@ -361,6 +374,7 @@ function App() {
     });
   }, []);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [sessionExpired, setSessionExpired] = React.useState(false);
   const [user, setUser] = React.useState({
     name: '',
     email: '',
@@ -465,7 +479,13 @@ function App() {
       verified: profile?.verified || false,
       verificationRequested: profile?.verification_requested || false,
       phoneVerified: profile?.phone_verified || false,
-      banned: profile?.banned || false
+      banned: profile?.banned || false,
+      notifPrefs: profile?.notif_prefs || {
+        chat: true,
+        quick: true,
+        market: true,
+        work: true
+      }
     }));
     // Load regionsByDay from profile if saved
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
@@ -491,6 +511,7 @@ function App() {
     // Force logout hook — called by Supabase client when token refresh fails (deleted account)
     window.__pgForceLogout = () => {
       setIsLoggedIn(false);
+      setSessionExpired(true);
       setTab('home');
       setUser(u => ({
         ...u,
@@ -500,9 +521,25 @@ function App() {
         role: 'user'
       }));
     };
+
+    // Check token expiry every 2 minutes; show re-login modal if expired mid-session
+    const _checkTokenExpiry = () => {
+      try {
+        const s = JSON.parse(localStorage.getItem('pg_s') || 'null');
+        if (!s?.t) return;
+        const payload = JSON.parse(atob(s.t.split('.')[1]));
+        const expiresAt = payload.exp * 1000;
+        if (Date.now() > expiresAt) {
+          setIsLoggedIn(false);
+          setSessionExpired(true);
+          localStorage.removeItem('pg_s');
+        }
+      } catch (e) {}
+    };
+    const _expiryTimer = setInterval(_checkTokenExpiry, 120_000);
     if (!window.sb) {
       setAuthReady(true);
-      return;
+      return () => clearInterval(_expiryTimer);
     }
     (async () => {
       try {
@@ -523,6 +560,7 @@ function App() {
         setAuthReady(true); // ungate data fetch immediately — public tables need no auth
       }
     })();
+    return () => clearInterval(_expiryTimer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [lang, setLangState] = React.useState(() => {
@@ -617,7 +655,7 @@ function App() {
   }
 
   // Global helper: fire-and-forget push to another user via Edge Function
-  window.sendPush = async function (userId, title, body, url) {
+  window.sendPush = async function (userId, title, body, url, notifType) {
     try {
       const {
         data: {
@@ -635,9 +673,28 @@ function App() {
           user_id: userId,
           title,
           body,
-          url
+          url,
+          notif_type: notifType
         })
       });
+    } catch (e) {}
+  };
+
+  // Play a short notification beep using Web Audio API (in-app only)
+  window.playNotifSound = function () {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.connect(g);
+      g.connect(ac.destination);
+      o.type = 'sine';
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0, ac.currentTime);
+      g.gain.linearRampToValueAtTime(0.25, ac.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.25);
+      o.start(ac.currentTime);
+      o.stop(ac.currentTime + 0.25);
     } catch (e) {}
   };
   const [pushLog, setPushLog] = React.useState('');
@@ -760,6 +817,7 @@ function App() {
     if (!navigator.serviceWorker) return;
     const handler = event => {
       if (event.data?.type !== 'OPEN_JOB') return;
+      window.playNotifSound && window.playNotifSound();
       const url = event.data.url || '';
       const hashIdx = url.indexOf('#');
       const hash = hashIdx >= 0 ? url.slice(hashIdx) : '';
@@ -799,6 +857,7 @@ function App() {
   const [hasUnreadChat, setHasUnreadChat] = React.useState(false);
   const [hasUnreadNotif, setHasUnreadNotif] = React.useState(false);
   const [payOpen, setPayOpen] = React.useState(false);
+  const [payContext, setPayContext] = React.useState(null);
   const [postMenuOpen, setPostMenuOpen] = React.useState(false);
   const [postQPOpen, setPostQPOpen] = React.useState(false);
   const [editQPJob, setEditQPJob] = React.useState(null);
@@ -1161,6 +1220,30 @@ function App() {
     };
   }, [authReady]); // runs once authReady flips true — guaranteed after token refresh + loadProfile
 
+  // ── Online presence heartbeat ────────────────────────────────
+  React.useEffect(() => {
+    if (!authReady || !user?.uid || !window.sb) return;
+    const uid = user.uid;
+    const setOnline = online => window.sb.from('profiles').update({
+      is_online: online,
+      last_seen: new Date().toISOString()
+    }).eq('id', uid).then(() => {});
+    setOnline(true);
+    const heartbeat = setInterval(() => {
+      if (document.visibilityState === 'visible') setOnline(true);
+    }, 25000);
+    const onVis = () => setOnline(document.visibilityState === 'visible');
+    const onUnload = () => setOnline(false);
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('beforeunload', onUnload);
+    return () => {
+      clearInterval(heartbeat);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('beforeunload', onUnload);
+      setOnline(false);
+    };
+  }, [authReady, user?.uid]);
+
   // Notifications unread badge — fetch count + real-time
   React.useEffect(() => {
     if (!authReady || !user?.uid || !window.sb) return;
@@ -1374,6 +1457,10 @@ function App() {
     },
     pendingQuickJobId,
     clearPendingQuickJob: () => setPendingQuickJobId(null),
+    openQuickJobById: id => {
+      setPendingQuickJobId(String(id));
+      switchTab('quick');
+    },
     goTab: switchTab,
     openChat: (target = null) => {
       setChatConvoTarget(target);
@@ -1386,11 +1473,32 @@ function App() {
     hasUnreadChat,
     hasUnreadNotif: hasUnreadNotif || pendingRatings.length > 0,
     registerPush: _registerPush,
-    openPaywall: () => setPayOpen(true),
+    openPaywall: (ctx = '') => {
+      setPayContext(ctx || null);
+      setPayOpen(true);
+    },
     openPostMenu: () => setPostMenuOpen(true),
     openPost: () => setPostQPOpen(true),
     openEditPost: job => setEditQPJob(job),
-    openMarketPost: () => {
+    openMarketPost: async () => {
+      // Count active listings vs tier limit before opening post form
+      const limits = {
+        free: 2,
+        pro: 5,
+        premium: 10
+      };
+      const limit = limits[user.tier] || 2;
+      try {
+        const {
+          data
+        } = await window.sb.from('marketplace').select('id').eq('author_id', user.uid);
+        const count = (data || []).length;
+        if (count >= limit) {
+          setPayContext('listings');
+          setPayOpen(true);
+          return;
+        }
+      } catch (e) {}
       switchTab('market');
       setMarketPostOpen(true);
     },
@@ -1442,6 +1550,22 @@ function App() {
     openPublicProfile: u => setPublicProfileUser(u),
     openHelp: () => setHelpOpen(true),
     openPrivacy: () => setPrivacyOpen(true),
+    notifPrefs: user.notifPrefs || {
+      chat: true,
+      quick: true,
+      market: true,
+      work: true
+    },
+    saveNotifPrefs: async prefs => {
+      if (!window.sb || !user.uid) return;
+      await window.sb.from('profiles').update({
+        notif_prefs: prefs
+      }).eq('id', user.uid);
+      setUser(u => ({
+        ...u,
+        notifPrefs: prefs
+      }));
+    },
     pendingRatings,
     openRating: r => setActiveRating(r),
     loadPendingRatings,
@@ -1558,23 +1682,31 @@ function App() {
     onUnreadChange: c => setHasUnreadNotif(c > 0),
     onNavigate: (type, linkId) => {
       setNotifOpen(false);
-      if (type === 'warning') {
-        setTimeout(() => switchTab('profile'), 280);
-      } else if (type === 'quick_pool_new') {
-        setTimeout(() => switchTab('quick'), 280);
-      } else if (type === 'job_new_application' || type === 'job_accepted' || type === 'job_rejected') {
-        setTimeout(() => switchTab('work'), 280);
-      } else if (linkId) {
-        setTimeout(() => ctx.openListingById(linkId), 280);
-      } else {
-        setTimeout(() => switchTab('market'), 280);
-      }
+      setTimeout(() => {
+        if (type === 'warning') {
+          switchTab('profile');
+        } else if (type === 'quick_pool_new' || type === 'quick_pool_done') {
+          // Open the specific quick pool job if we have an ID, else just go to tab
+          if (linkId) ctx.openQuickJobById(linkId);else switchTab('quick');
+        } else if (type === 'job_new_application' || type === 'job_accepted' || type === 'job_rejected') {
+          switchTab('work');
+        } else if (type === 'rental_request' || type === 'rental_approved' || type === 'rental_declined' || type === 'rental_cancelled' || type === 'rental_completed' || type === 'rental_resolved') {
+          if (linkId) ctx.openListingById(linkId);else switchTab('market');
+        } else if (type === 'market') {
+          if (linkId) ctx.openListingById(linkId);else switchTab('market');
+        } else if (linkId) {
+          ctx.openListingById(linkId);
+        } else {
+          switchTab('market');
+        }
+      }, 280);
     }
   }), /*#__PURE__*/React.createElement(PaywallSheet, {
     open: payOpen,
     onClose: () => setPayOpen(false),
     setUser: ctx.setUser,
-    lang: lang
+    lang: lang,
+    context: payContext
   }), /*#__PURE__*/React.createElement(PostMenuSheet, {
     open: postMenuOpen,
     onClose: () => setPostMenuOpen(false),
@@ -2991,10 +3123,67 @@ function App() {
       overflow: 'auto'
     }
   }, /*#__PURE__*/React.createElement(LoginScreen, {
-    onLogin: handleAuthLogin,
+    onLogin: u => {
+      setSessionExpired(false);
+      handleAuthLogin(u);
+    },
     lang: lang,
     setLang: setLang
-  })), isLoggedIn && user.banned && /*#__PURE__*/React.createElement("div", {
+  })), sessionExpired && !isLoggedIn && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      inset: 0,
+      background: 'rgba(0,0,0,0.7)',
+      zIndex: 5000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'var(--pg-white)',
+      borderRadius: 20,
+      padding: '28px 24px',
+      width: '100%',
+      maxWidth: 340,
+      textAlign: 'center',
+      boxShadow: '0 24px 64px rgba(0,0,0,0.4)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 36,
+      marginBottom: 12
+    }
+  }, "\uD83D\uDD12"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 17,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)',
+      marginBottom: 8
+    }
+  }, lang === 'pt' ? 'Sessão expirada' : lang === 'es' ? 'Sesión expirada' : 'Session expired'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: 'var(--pg-ink-400)',
+      lineHeight: 1.6,
+      marginBottom: 20
+    }
+  }, lang === 'pt' ? 'Por segurança, faça login novamente para continuar.' : lang === 'es' ? 'Por seguridad, inicia sesión nuevamente para continuar.' : 'For security, please sign in again to continue.'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSessionExpired(false),
+    style: {
+      width: '100%',
+      padding: '13px',
+      borderRadius: 14,
+      border: 'none',
+      background: 'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+      color: '#fff',
+      fontWeight: 700,
+      fontSize: 15,
+      cursor: 'pointer',
+      fontFamily: 'inherit'
+    }
+  }, lang === 'pt' ? 'Entrar novamente' : lang === 'es' ? 'Iniciar sesión' : 'Sign in again'))), isLoggedIn && user.banned && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       inset: 0,
@@ -3152,7 +3341,7 @@ function App() {
     className: "pg-press",
     style: {
       position: 'absolute',
-      bottom: 86,
+      bottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
       right: 18,
       zIndex: 35,
       width: 56,
@@ -3220,4 +3409,75 @@ function App() {
     onClick: () => setReviewApp(MY_APPLICATIONS[3])
   }, "Open review sheet")));
 }
-ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(App, null));
+
+// ── Error Boundary ────────────────────────────────────────────
+class AppErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      error: null
+    };
+  }
+  static getDerivedStateFromError(e) {
+    return {
+      error: e
+    };
+  }
+  componentDidCatch(e, info) {
+    console.error('[AppErrorBoundary]', e, info);
+  }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100dvh',
+        padding: '32px 20px',
+        background: 'var(--pg-bg)',
+        textAlign: 'center',
+        gap: 16
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 40
+      }
+    }, "\u26A0\uFE0F"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 17,
+        fontWeight: 700,
+        color: 'var(--pg-ink-900)',
+        maxWidth: 300
+      }
+    }, "Algo deu errado"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: 'var(--pg-ink-400)',
+        maxWidth: 280,
+        lineHeight: 1.6
+      }
+    }, this.state.error?.message || 'Erro inesperado no aplicativo.'), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        this.setState({
+          error: null
+        });
+        window.location.reload();
+      },
+      style: {
+        marginTop: 8,
+        padding: '12px 28px',
+        borderRadius: 14,
+        border: 'none',
+        background: 'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: 14,
+        cursor: 'pointer',
+        fontFamily: 'inherit'
+      }
+    }, "Recarregar"));
+  }
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(AppErrorBoundary, null, /*#__PURE__*/React.createElement(App, null)));

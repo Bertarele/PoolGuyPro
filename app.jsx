@@ -368,8 +368,7 @@ function App() {
       } catch(e) {}
     };
     const _expiryTimer = setInterval(_checkTokenExpiry, 120_000);
-    return () => clearInterval(_expiryTimer);
-    if (!window.sb) { setAuthReady(true); return; }
+    if (!window.sb) { setAuthReady(true); return () => clearInterval(_expiryTimer); }
     (async () => {
       try {
         const { data: { session } } = await window.sb.auth.getSession();
@@ -385,6 +384,7 @@ function App() {
         setAuthReady(true); // ungate data fetch immediately — public tables need no auth
       }
     })();
+    return () => clearInterval(_expiryTimer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [lang, setLangState] = React.useState(() => {
