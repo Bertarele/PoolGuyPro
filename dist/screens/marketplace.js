@@ -559,7 +559,7 @@ function MarkSoldSheet({
 
       // Notify buyer that their purchase was confirmed
       if (selected?.id && window.sendPush) {
-        window.sendPush(selected.id, lang === 'pt' ? '✅ Compra confirmada!' : '✅ Purchase confirmed!', lang === 'pt' ? `O vendedor confirmou a venda de "${item.name || ''}"` : `The seller confirmed the sale of "${item.name || ''}"`, '/#market');
+        window.sendPush(selected.id, lang === 'pt' ? '✅ Compra confirmada!' : '✅ Purchase confirmed!', lang === 'pt' ? `O vendedor confirmou a venda de "${item.name || ''}"` : `The seller confirmed the sale of "${item.name || ''}"`, '/#market', 'market');
       }
       onSold && onSold(sellerRating);
     } catch (e) {
@@ -1114,7 +1114,7 @@ function ViewListingSheet({
     // Push notification (extract readable text from multilingual object)
     const pushTitle = typeof title === 'object' ? title.pt || title.en || '' : title;
     const pushBody = typeof body === 'object' ? body.pt || body.en || '' : body;
-    window.sendPush && window.sendPush(userId, pushTitle, pushBody, '/#market');
+    window.sendPush && window.sendPush(userId, pushTitle, pushBody, '/#market', 'market');
   };
   const handleRequestRental = async () => {
     // Allow re-request after cancelled or declined — those are terminal but recoverable states
@@ -7389,7 +7389,7 @@ function MarketplaceScreen({
           zIndex: 0
         }
       }, /*#__PURE__*/React.createElement("img", {
-        src: "icone.png",
+        src: "icone-watermark.png",
         alt: "",
         style: {
           position: 'absolute',
@@ -8126,7 +8126,56 @@ function MarketplaceScreen({
       style: {
         paddingTop: 8
       }
+    }, user.tier === 'free' && /*#__PURE__*/React.createElement("div", {
+      style: {
+        borderRadius: 20,
+        padding: '32px 24px',
+        textAlign: 'center',
+        background: 'linear-gradient(135deg,#0c4a6e 0%,#0077B6 100%)',
+        color: '#fff',
+        marginBottom: 20
+      }
     }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 52,
+        height: 52,
+        borderRadius: 15,
+        background: 'rgba(255,255,255,0.12)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '0 auto 14px'
+      }
+    }, Icon.lock(22, '#fff')), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 17,
+        fontWeight: 800,
+        letterSpacing: '-0.02em',
+        marginBottom: 8
+      }
+    }, lang === 'pt' ? 'Rotas disponíveis com PRO' : lang === 'es' ? 'Rutas disponibles con PRO' : 'Routes available with PRO'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        opacity: .8,
+        lineHeight: 1.5,
+        maxWidth: 280,
+        margin: '0 auto 18px'
+      }
+    }, lang === 'pt' ? 'Faça upgrade para Pool Guy PRO e veja todas as rotas e piscinas disponíveis na sua região.' : lang === 'es' ? 'Actualiza a Pool Guy PRO para ver todas las rutas y piscinas disponibles en tu área.' : 'Upgrade to Pool Guy PRO to see all available routes and pools in your area.'), /*#__PURE__*/React.createElement("button", {
+      onClick: () => ctx.openPaywall && ctx.openPaywall('routes'),
+      style: {
+        height: 44,
+        padding: '0 28px',
+        borderRadius: 12,
+        border: 'none',
+        cursor: 'pointer',
+        background: '#fff',
+        color: '#0077B6',
+        fontWeight: 800,
+        fontSize: 14,
+        fontFamily: 'inherit'
+      }
+    }, lang === 'pt' ? 'Ver planos — a partir de $14.99/mês' : lang === 'es' ? 'Ver planes — desde $14.99/mes' : 'See plans — from $14.99/mo')), user.tier !== 'free' && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 10,
@@ -8155,7 +8204,7 @@ function MarketplaceScreen({
         boxShadow: routeSub === s.id ? '0 4px 12px rgba(0,119,182,0.25)' : 'none',
         transition: 'all .15s'
       }
-    }, s.label))), /*#__PURE__*/React.createElement("div", {
+    }, s.label))), user.tier === 'free' ? null : /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(360px,1fr))',
@@ -9563,7 +9612,57 @@ function MarketplaceScreen({
       color: 'var(--pg-ink-500)',
       fontWeight: 500
     }
-  }, sellerFor(e)))))))), view === 'routes' && /*#__PURE__*/React.createElement("div", {
+  }, sellerFor(e)))))))), view === 'routes' && user.tier === 'free' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 18,
+      padding: '28px 20px',
+      textAlign: 'center',
+      background: 'linear-gradient(135deg,#0c4a6e 0%,#0077B6 100%)',
+      color: '#fff'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      background: 'rgba(255,255,255,0.14)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 12px'
+    }
+  }, Icon.lock(20, '#fff')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 800,
+      marginBottom: 6
+    }
+  }, lang === 'pt' ? 'Disponível no PRO' : lang === 'es' ? 'Disponible en PRO' : 'Available with PRO'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      opacity: .8,
+      lineHeight: 1.5,
+      marginBottom: 16
+    }
+  }, lang === 'pt' ? 'Veja todas as rotas e piscinas disponíveis na sua região.' : lang === 'es' ? 'Ve todas las rutas y piscinas disponibles en tu área.' : 'See all available routes and pools in your area.'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => ctx.openPaywall && ctx.openPaywall('routes'),
+    style: {
+      height: 42,
+      padding: '0 24px',
+      borderRadius: 10,
+      border: 'none',
+      cursor: 'pointer',
+      background: '#fff',
+      color: '#0077B6',
+      fontWeight: 800,
+      fontSize: 13,
+      fontFamily: 'inherit'
+    }
+  }, lang === 'pt' ? 'Ver planos' : 'See plans', " \u2014 $14.99", lang === 'pt' ? '/mês' : '/mo'))), view === 'routes' && user.tier !== 'free' && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14,
       display: 'flex',

@@ -269,7 +269,8 @@ function ChatInbox({
       objectFit: 'cover',
       border: '1px solid var(--pg-ink-200)'
     }
-  }) : /*#__PURE__*/React.createElement(Avatar, {
+  }) : /*#__PURE__*/React.createElement(AvatarFetch, {
+    uid: c.receiverId,
     name: c.name,
     size: 44
   }), c.unread > 0 && /*#__PURE__*/React.createElement("span", {
@@ -372,16 +373,28 @@ function ChatConversation({
   const [sending, setSending] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState(null);
   const [receiverPhoto, setReceiverPhoto] = React.useState(null);
+  const [receiverOnline, setReceiverOnline] = React.useState(false);
+  const [theyTyping, setTheyTyping] = React.useState(false);
   const scroller = React.useRef(null);
   const pollRef = React.useRef(null);
   const lastCount = React.useRef(0);
+  const typingTimer = React.useRef(null);
+  const myTypingRef = React.useRef(null);
   React.useEffect(() => {
     if (!convo.receiverId || !window.sb) return;
-    window.sb.from('profiles').select('photo_url').eq('id', convo.receiverId).single().then(({
-      data
-    }) => {
-      if (data?.photo_url) setReceiverPhoto(data.photo_url);
-    });
+    const check = () => {
+      window.sb.from('profiles').select('photo_url,is_online,last_seen').eq('id', convo.receiverId).single().then(({
+        data
+      }) => {
+        if (!data) return;
+        if (data.photo_url) setReceiverPhoto(data.photo_url);
+        const recentlySeen = data.last_seen && Date.now() - new Date(data.last_seen).getTime() < 60000;
+        setReceiverOnline(!!(data.is_online && recentlySeen));
+      });
+    };
+    check();
+    const timer = setInterval(check, 20000);
+    return () => clearInterval(timer);
   }, [convo.receiverId]);
   const fmtMsg = React.useCallback(m => ({
     id: m.id,
@@ -410,17 +423,33 @@ function ChatConversation({
     }
   }, [convoId, isLive, fmtMsg]);
 
-  // On open: load messages, mark as read, set up polling
+  // On open: load messages, mark as read, set up polling + typing channel
   React.useEffect(() => {
     if (!isLive) return;
     loadMessages();
-    // Mark conversation as read
     window.sb.rpc('mark_chat_read', {
       p_convo_id: convoId
     }).catch(() => {});
     if (onUnreadChange) setTimeout(onUnreadChange, 500);
     pollRef.current = setInterval(loadMessages, 2500);
-    return () => clearInterval(pollRef.current);
+
+    // Typing broadcast channel — one channel per conversation pair
+    const typingCh = window.sb.channel('typing-' + convoId).on('broadcast', {
+      event: 'typing'
+    }, ({
+      payload
+    }) => {
+      if (payload?.uid === currentUser?.uid) return; // ignore own events
+      setTheyTyping(true);
+      clearTimeout(typingTimer.current);
+      typingTimer.current = setTimeout(() => setTheyTyping(false), 3000);
+    }).subscribe();
+    myTypingRef.current = typingCh;
+    return () => {
+      clearInterval(pollRef.current);
+      clearTimeout(typingTimer.current);
+      window.sb.removeChannel(typingCh);
+    };
   }, [convoId]); // eslint-disable-line
 
   // Initial scroll to bottom
@@ -457,7 +486,7 @@ function ChatConversation({
       });
       // Push notification to recipient — deep link opens chat with sender
       if (convo.receiverId && window.sendPush) {
-        window.sendPush(convo.receiverId, myName, text.length > 120 ? text.slice(0, 120) + '…' : text, `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(myName)}`);
+        window.sendPush(convo.receiverId, myName, text.length > 120 ? text.slice(0, 120) + '…' : text, `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(myName)}`, 'chat');
       }
       // Store listing context in the conversation row so seller also sees it
       if (convo.listingId || convo.listingContext?.name) {
@@ -568,7 +597,7 @@ function ChatConversation({
       fontSize: 14,
       fontWeight: 600
     }
-  }, convo.name), isLive && /*#__PURE__*/React.createElement("div", {
+  }, convo.name), receiverOnline && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: 'var(--pg-aqua-700)',
@@ -909,7 +938,35 @@ function ChatConversation({
         color: 'var(--pg-ink-700)'
       }
     }, cancelLbl)));
-  })(), /*#__PURE__*/React.createElement("div", {
+  })(), theyTyping && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '4px 16px 2px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 4,
+      padding: '7px 12px',
+      background: 'var(--pg-ink-100)',
+      borderRadius: 18,
+      maxWidth: 72
+    }
+  }, [0, 1, 2].map(i => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    style: {
+      width: 6,
+      height: 6,
+      borderRadius: '50%',
+      background: 'var(--pg-ink-400)',
+      display: 'inline-block',
+      animation: `pgTypeDot 1.2s ${i * 0.2}s infinite ease-in-out`
+    }
+  }))), /*#__PURE__*/React.createElement("style", null, `@keyframes pgTypeDot{0%,80%,100%{transform:scale(0.6);opacity:.4}40%{transform:scale(1);opacity:1}}`)), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '10px 12px',
       paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))',
@@ -930,7 +987,16 @@ function ChatConversation({
     }
   }, /*#__PURE__*/React.createElement("input", {
     value: draft,
-    onChange: e => setDraft(e.target.value),
+    onChange: e => {
+      setDraft(e.target.value);
+      if (myTypingRef.current && e.target.value) myTypingRef.current.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: {
+          uid: currentUser?.uid
+        }
+      });
+    },
     onKeyDown: e => e.key === 'Enter' && send(),
     placeholder: t.messagePh || 'Type a message…',
     style: {
@@ -2652,7 +2718,7 @@ function ApplicantProfileSheet({
       if (row?.photo_url) setLivePhoto(row.photo_url);
     });
     // Real ratings
-    window.sb.from('ratings').select('id,stars,comment,from_name,created_at').eq('to_id', applicant.applicant_id).eq('pending', false).order('created_at', {
+    window.sb.from('ratings').select('id,stars,comment,from_id,from_name,created_at').eq('to_id', applicant.applicant_id).eq('pending', false).order('created_at', {
       ascending: false
     }).limit(20).then(({
       data
@@ -3133,7 +3199,8 @@ function ApplicantProfileSheet({
       alignItems: 'center',
       gap: 8
     }
-  }, /*#__PURE__*/React.createElement(Avatar, {
+  }, /*#__PURE__*/React.createElement(AvatarFetch, {
+    uid: r.from_id,
     name: r.from_name || '?',
     size: 28
   }), /*#__PURE__*/React.createElement("span", {
@@ -3647,19 +3714,47 @@ function NotificationsSheet({
 }) {
   const [notifs, setNotifs] = React.useState(null); // null = loading
   const [marking, setMarking] = React.useState(false);
+  const [page, setPage] = React.useState(1);
+  const [hasMore, setHasMore] = React.useState(false);
+  const PAGE_SIZE = 30;
 
-  // Fetch on open
+  // Fetch on open (first page)
   React.useEffect(() => {
     if (!open || !user?.uid || !window.sb) return;
+    setPage(1);
     window.sb.from('notifications').select('*').eq('user_id', user.uid).order('created_at', {
       ascending: false
-    }).limit(60).then(({
+    }).limit(PAGE_SIZE + 1).then(({
       data
     }) => {
-      setNotifs(data || []);
-      if (onUnreadChange) onUnreadChange((data || []).filter(n => !n.read).length);
+      const rows = data || [];
+      setHasMore(rows.length > PAGE_SIZE);
+      setNotifs(rows.slice(0, PAGE_SIZE));
+      if (onUnreadChange) onUnreadChange(rows.filter(n => !n.read).length);
     });
   }, [open, user?.uid]);
+  const loadMore = () => {
+    if (!window.sb || !user?.uid || !hasMore) return;
+    const nextPage = page + 1;
+    const offset = (nextPage - 1) * PAGE_SIZE;
+    window.sb.from('notifications').select('*').eq('user_id', user.uid).order('created_at', {
+      ascending: false
+    }).then(({
+      data
+    }) => {
+      const rows = data || [];
+      const slice = rows.slice(offset, offset + PAGE_SIZE);
+      setHasMore(rows.length > offset + PAGE_SIZE);
+      setNotifs(prev => [...(prev || []), ...slice]);
+      setPage(nextPage);
+    });
+  };
+  const deleteNotif = id => {
+    if (!window.sb) return;
+    setNotifs(prev => (prev || []).filter(n => n.id !== id));
+    window.sb.from('notifications').delete().eq('id', id).catch(() => {});
+    if (onUnreadChange) onUnreadChange(c => Math.max(0, (c || 1) - 1));
+  };
 
   // Real-time new notifications
   React.useEffect(() => {
@@ -3810,6 +3905,13 @@ function NotificationsSheet({
     if (type === 'job_accepted') return Icon.check(17, '#fff');
     if (type === 'job_rejected') return Icon.x(17, '#fff');
     if (type === 'quick_pool_new') return Icon.bolt(17, '#fff');
+    if (type === 'quick_pool_done') return Icon.check(17, '#fff');
+    if (type === 'market') return Icon.briefcase(17, '#fff');
+    if (type === 'verification_approved') return /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 16
+      }
+    }, "\u2705");
     return Icon.bolt(17, '#fff');
   };
   const colorFor = type => {
@@ -3823,6 +3925,9 @@ function NotificationsSheet({
     if (type === 'job_accepted') return '#22C55E';
     if (type === 'job_rejected') return '#EF4444';
     if (type === 'quick_pool_new') return '#0EBAC7';
+    if (type === 'quick_pool_done') return '#16A34A';
+    if (type === 'market') return '#6366F1';
+    if (type === 'verification_approved') return '#22C55E';
     return '#3B82F6';
   };
   const fmtTime = d => {
@@ -3910,16 +4015,20 @@ function NotificationsSheet({
     const navigable = isNavigable(n);
     return /*#__PURE__*/React.createElement("div", {
       key: n.id,
+      style: {
+        position: 'relative',
+        borderRadius: 10,
+        background: n.read ? 'transparent' : 'var(--pg-blue-50)',
+        transition: 'background 0.12s'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
       onClick: navigable ? () => onNavigate(n.type, n.link_id) : undefined,
       style: {
         display: 'flex',
         gap: 12,
         padding: '12px 8px',
-        borderRadius: 10,
-        background: n.read ? 'transparent' : 'var(--pg-blue-50)',
-        cursor: navigable ? 'pointer' : 'default',
-        transition: 'background 0.12s',
-        position: 'relative'
+        paddingRight: 36,
+        cursor: navigable ? 'pointer' : 'default'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -3987,8 +4096,53 @@ function NotificationsSheet({
         fontWeight: 600,
         marginTop: 4
       }
-    }, lang === 'pt' ? 'Toque para ver →' : lang === 'es' ? 'Toca para ver →' : 'Tap to view →')));
-  }))));
+    }, lang === 'pt' ? 'Toque para ver →' : lang === 'es' ? 'Toca para ver →' : 'Tap to view →'))), /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        deleteNotif(n.id);
+      },
+      style: {
+        position: 'absolute',
+        top: 8,
+        right: 4,
+        width: 26,
+        height: 26,
+        borderRadius: '50%',
+        border: 'none',
+        background: 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        color: 'var(--pg-ink-300)',
+        transition: 'color 0.15s, background 0.15s'
+      },
+      onMouseEnter: e => {
+        e.currentTarget.style.background = 'var(--pg-ink-100)';
+        e.currentTarget.style.color = 'var(--pg-ink-600)';
+      },
+      onMouseLeave: e => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.color = 'var(--pg-ink-300)';
+      },
+      "aria-label": "Apagar notifica\xE7\xE3o"
+    }, Icon.x(13)));
+  }), hasMore && /*#__PURE__*/React.createElement("button", {
+    onClick: loadMore,
+    style: {
+      margin: '8px 0 4px',
+      padding: '10px',
+      borderRadius: 10,
+      border: '1px solid var(--pg-ink-200)',
+      background: 'transparent',
+      color: 'var(--pg-blue-500)',
+      fontWeight: 600,
+      fontSize: 13,
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      width: '100%'
+    }
+  }, lang === 'pt' ? 'Carregar mais notificações' : lang === 'es' ? 'Cargar más notificaciones' : 'Load more notifications'))));
 }
 
 // ── Paywall ───────────────────────────────────────────────────
@@ -3996,53 +4150,106 @@ function PaywallSheet({
   open,
   onClose,
   setUser,
-  lang = 'en'
+  lang = 'en',
+  context = null
 }) {
-  const t = STRINGS[lang];
-  const [tier, setTier] = React.useState('premium');
-  const features = [{
-    f: t.payF1,
-    free: false,
-    prem: true,
-    pro: true
+  // Auto-select best plan based on context (quick pools / featured = premium)
+  const [plan, setPlan] = React.useState('pro');
+  React.useEffect(() => {
+    if (!open) return;
+    setPlan(context === 'quickpools' || context === 'featured' ? 'premium' : 'pro');
+  }, [open, context]);
+  const mo = lang === 'pt' ? '/mês' : lang === 'es' ? '/mes' : '/mo';
+  const plans = {
+    pro: {
+      name: 'Pool Guy PRO',
+      tagline: lang === 'pt' ? 'Expanda seu negócio e alcance mais clientes' : lang === 'es' ? 'Expande tu negocio y llega a más clientes' : 'Grow your business and reach more clients',
+      price: '14.99',
+      badge: null,
+      gradient: 'linear-gradient(135deg,#0c4a6e,#0077B6)',
+      accent: '#0EBAC7',
+      url: 'https://usapoolmarket.com/upgrade/pro'
+    },
+    premium: {
+      name: 'Pool Guy PREMIUM',
+      tagline: lang === 'pt' ? 'Receba jobs instantaneamente e nunca perca uma oportunidade' : lang === 'es' ? 'Recibe trabajos al instante y nunca pierdas una oportunidad' : 'Get jobs instantly near you and never miss an opportunity again',
+      price: '24.99',
+      badge: lang === 'pt' ? 'MELHOR VALOR' : lang === 'es' ? 'MEJOR VALOR' : 'BEST VALUE',
+      gradient: 'linear-gradient(135deg,#3b0764,#7c3aed)',
+      accent: '#a78bfa',
+      url: 'https://usapoolmarket.com/upgrade/premium'
+    }
+  };
+  const ROWS = [{
+    label: lang === 'pt' ? 'Anúncios simultâneos' : lang === 'es' ? 'Anuncios simultáneos' : 'Simultaneous listings',
+    free: '2',
+    pro: '5',
+    premium: '10',
+    type: 'count'
   }, {
-    f: t.payF2,
-    free: false,
-    prem: true,
-    pro: true
+    label: lang === 'pt' ? 'Aplicar a vagas' : lang === 'es' ? 'Postularte a empleos' : 'Apply to jobs',
+    free: true,
+    pro: true,
+    premium: true
   }, {
-    f: t.payF3,
-    free: false,
-    prem: false,
-    pro: true
+    label: lang === 'pt' ? 'Publicar vagas (contratar)' : lang === 'es' ? 'Publicar empleos (contratar)' : 'Post job listings (hire)',
+    free: true,
+    pro: true,
+    premium: true
   }, {
-    f: t.payF4,
-    free: false,
-    prem: true,
-    pro: true
+    label: lang === 'pt' ? 'Marketplace completo' : lang === 'es' ? 'Marketplace completo' : 'Full marketplace access',
+    free: true,
+    pro: true,
+    premium: true
   }, {
-    f: t.payF5,
+    label: lang === 'pt' ? 'Ver anúncios de rotas/piscinas' : lang === 'es' ? 'Ver anuncios de rutas/piscinas' : 'See routes & pools listings',
     free: false,
-    prem: false,
-    pro: true
+    pro: true,
+    premium: true
   }, {
-    f: t.payF6,
+    label: lang === 'pt' ? 'Rotas de férias (ver + publicar)' : lang === 'es' ? 'Rutas de vacaciones (ver + publicar)' : 'Vacation routes — full access',
     free: false,
-    prem: false,
-    pro: true
+    pro: true,
+    premium: true
+  }, {
+    label: lang === 'pt' ? 'Piscinas Rápidas (Quick Pools)' : lang === 'es' ? 'Piscinas Rápidas (Quick Pools)' : 'Quick Pools — instant jobs',
+    free: false,
+    pro: false,
+    premium: true
+  }, {
+    label: lang === 'pt' ? '2 anúncios em destaque/mês' : lang === 'es' ? '2 anuncios destacados/mes' : '2 featured listings/month',
+    free: false,
+    pro: false,
+    premium: true
+  }, {
+    label: lang === 'pt' ? 'Badge verificado Premium' : lang === 'es' ? 'Badge verificado Premium' : 'Premium verified badge',
+    free: false,
+    pro: false,
+    premium: true
   }];
-  const month = lang === 'pt' ? '/mês' : lang === 'es' ? '/mes' : '/month';
+  const p = plans[plan];
+  const handleSubscribe = () => {
+    // Open external Stripe checkout — no Apple cut
+    window.open(p.url, '_blank', 'noopener');
+    // NOTE: In production, remove the line below. Tier is set server-side via webhook.
+    // Kept here for demo/testing purposes only.
+    setUser(u => ({
+      ...u,
+      tier: plan
+    }));
+    onClose();
+  };
   return /*#__PURE__*/React.createElement(Sheet, {
     open: open,
     onClose: onClose,
-    height: "88%"
+    height: "92%"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 18px 30px'
+      padding: '0 0 32px'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '4px 0 14px',
+      padding: '6px 16px 0',
       display: 'flex',
       justifyContent: 'flex-end'
     }
@@ -4061,6 +4268,7 @@ function PaywallSheet({
     }
   }, Icon.x(16, 'var(--pg-ink-700)'))), /*#__PURE__*/React.createElement("div", {
     style: {
+      padding: '4px 20px 16px',
       textAlign: 'center'
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -4068,151 +4276,237 @@ function PaywallSheet({
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      width: 64,
-      height: 64,
-      borderRadius: 18,
-      marginBottom: 14,
-      background: 'linear-gradient(155deg,var(--pg-aqua-400),var(--pg-blue-500))'
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      marginBottom: 12,
+      background: p.gradient
     }
-  }, Icon.crown(28, '#fff')), /*#__PURE__*/React.createElement("h2", {
+  }, Icon.crown(24, '#fff')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: '.1em',
+      color: 'var(--pg-ink-400)',
+      marginBottom: 6
+    }
+  }, lang === 'pt' ? 'DESBLOQUEIE MAIS' : lang === 'es' ? 'DESBLOQUEA MÁS' : 'UNLOCK MORE'), /*#__PURE__*/React.createElement("h2", {
     style: {
       margin: 0,
-      fontSize: 26,
-      fontWeight: 700,
+      fontSize: 22,
+      fontWeight: 800,
       letterSpacing: '-0.025em',
-      lineHeight: 1.1,
-      whiteSpace: 'pre-line'
+      lineHeight: 1.15
     }
-  }, t.payTitle), /*#__PURE__*/React.createElement("p", {
+  }, p.name), /*#__PURE__*/React.createElement("p", {
     style: {
-      margin: '8px 16px 0',
-      fontSize: 14,
+      margin: '6px 8px 0',
+      fontSize: 13,
       color: 'var(--pg-ink-500)',
-      lineHeight: 1.45
+      lineHeight: 1.5
     }
-  }, t.paySub)), /*#__PURE__*/React.createElement("div", {
-    className: "pg-seg",
+  }, p.tagline)), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 18
+      padding: '0 16px 14px',
+      display: 'flex',
+      gap: 8
     }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: `pg-seg-btn ${tier === 'premium' ? 'on' : ''}`,
-    onClick: () => setTier('premium')
-  }, t.premium), /*#__PURE__*/React.createElement("button", {
-    className: `pg-seg-btn ${tier === 'pro' ? 'on' : ''}`,
-    onClick: () => setTier('pro')
-  }, t.poolguyPro)), /*#__PURE__*/React.createElement("div", {
-    className: "pg-card",
+  }, ['pro', 'premium'].map(id => {
+    const pl = plans[id];
+    const active = plan === id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: id,
+      onClick: () => setPlan(id),
+      style: {
+        flex: 1,
+        padding: '12px 10px',
+        borderRadius: 14,
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        position: 'relative',
+        background: active ? pl.gradient : 'var(--pg-ink-100)',
+        color: active ? '#fff' : 'var(--pg-ink-600)',
+        transition: 'all .18s',
+        boxShadow: active ? '0 6px 18px rgba(0,0,0,0.22)' : 'none'
+      }
+    }, pl.badge && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        top: -8,
+        right: 8,
+        fontSize: 9,
+        fontWeight: 800,
+        padding: '2px 7px',
+        borderRadius: 999,
+        background: '#fbbf24',
+        color: '#1c1917',
+        letterSpacing: '.06em',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+      }
+    }, pl.badge), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '.07em',
+        opacity: .8,
+        marginBottom: 4
+      }
+    }, pl.name.toUpperCase()), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: 2
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 22,
+        fontWeight: 800,
+        letterSpacing: '-0.03em'
+      }
+    }, "$", pl.price), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        opacity: .7
+      }
+    }, mo)));
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: 18,
-      marginTop: 14,
-      background: tier === 'pro' ? 'linear-gradient(135deg,var(--pg-blue-900),var(--pg-blue-700))' : 'var(--pg-white)',
-      color: tier === 'pro' ? '#fff' : 'inherit',
-      border: tier === 'pro' ? 'none' : '0.5px solid var(--pg-aqua-400)'
+      padding: '0 16px'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'flex-end'
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      letterSpacing: '0.06em',
-      opacity: 0.8
-    }
-  }, tier === 'pro' ? 'POOLGUY PRO' : t.premium.toUpperCase()), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'baseline',
+      display: 'grid',
+      gridTemplateColumns: '1fr 52px 52px 52px',
       gap: 4,
-      marginTop: 6
+      padding: '6px 0 8px',
+      borderBottom: '1.5px solid var(--pg-ink-200)'
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null), ['free', 'pro', 'premium'].map(col => /*#__PURE__*/React.createElement("div", {
+    key: col,
     style: {
-      fontSize: 36,
-      fontWeight: 700,
-      letterSpacing: '-0.03em'
+      textAlign: 'center',
+      fontSize: 9,
+      fontWeight: 800,
+      letterSpacing: '.07em',
+      color: col === 'free' ? 'var(--pg-ink-400)' : col === 'pro' ? '#0077B6' : '#7c3aed'
     }
-  }, "$", tier === 'pro' ? '19.99' : '9.99'), /*#__PURE__*/React.createElement("span", {
+  }, col === 'free' ? 'FREE' : col === 'pro' ? 'PRO' : 'PREM'))), ROWS.map((row, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
     style: {
-      fontSize: 14,
-      opacity: 0.7
+      display: 'grid',
+      gridTemplateColumns: '1fr 52px 52px 52px',
+      gap: 4,
+      padding: '9px 0',
+      borderBottom: '0.5px solid var(--pg-ink-100)',
+      alignItems: 'center'
     }
-  }, month)), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 12,
-      opacity: 0.7,
-      marginTop: 2
+      fontSize: 12.5,
+      color: 'var(--pg-ink-700)',
+      lineHeight: 1.35,
+      paddingRight: 6
     }
-  }, tier === 'pro' ? t.paySave : t.payTrial)), tier === 'pro' && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      padding: '4px 8px',
-      borderRadius: 6,
-      background: 'var(--pg-aqua-500)',
-      color: 'var(--pg-blue-900)',
-      fontWeight: 700,
-      letterSpacing: '0.05em'
-    }
-  }, t.payBest))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 14
-    }
-  }, features.map((f, i) => {
-    const has = tier === 'pro' ? f.pro : f.prem;
+  }, row.label), ['free', 'pro', 'premium'].map(col => {
+    const val = row[col];
+    const isActive = col === plan;
     return /*#__PURE__*/React.createElement("div", {
-      key: i,
+      key: col,
       style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '9px 0',
-        borderBottom: '0.5px solid var(--pg-ink-200)'
+        textAlign: 'center',
+        background: isActive ? col === 'pro' ? 'rgba(0,119,182,0.08)' : 'rgba(124,58,237,0.08)' : 'transparent',
+        borderRadius: 8,
+        padding: '3px 0'
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, row.type === 'count' ? /*#__PURE__*/React.createElement("span", {
       style: {
-        width: 22,
-        height: 22,
-        borderRadius: '50%',
-        background: has ? 'var(--pg-aqua-100)' : 'var(--pg-ink-100)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }
-    }, has ? Icon.check(13, 'var(--pg-aqua-700)') : Icon.x(11, 'var(--pg-ink-400)')), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
         fontSize: 13,
-        color: has ? 'var(--pg-ink-900)' : 'var(--pg-ink-500)'
+        fontWeight: 700,
+        color: col === 'free' ? 'var(--pg-ink-400)' : col === 'pro' ? '#0077B6' : '#7c3aed'
       }
-    }, f.f));
-  })), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setUser(u => ({
-        ...u,
-        tier
-      }));
-      onClose();
-    },
-    className: "pg-btn pg-btn-primary",
+    }, val) : val ? /*#__PURE__*/React.createElement("svg", {
+      width: "16",
+      height: "16",
+      viewBox: "0 0 20 20",
+      fill: "none"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "10",
+      cy: "10",
+      r: "10",
+      fill: col === 'free' ? '#e2e8f0' : col === 'pro' ? '#0077B6' : '#7c3aed'
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M6 10l3 3 5-5",
+      stroke: "#fff",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    })) : /*#__PURE__*/React.createElement("svg", {
+      width: "14",
+      height: "14",
+      viewBox: "0 0 14 14",
+      fill: "none"
+    }, /*#__PURE__*/React.createElement("line", {
+      x1: "3",
+      y1: "7",
+      x2: "11",
+      y2: "7",
+      stroke: "var(--pg-ink-300)",
+      strokeWidth: "1.8",
+      strokeLinecap: "round"
+    })));
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '18px 16px 0'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: handleSubscribe,
     style: {
       width: '100%',
-      height: 54,
+      height: 52,
+      borderRadius: 14,
+      border: 'none',
+      background: p.gradient,
+      color: '#fff',
+      fontWeight: 800,
       fontSize: 16,
-      marginTop: 18
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      letterSpacing: '-0.01em',
+      boxShadow: `0 6px 20px rgba(0,0,0,0.28)`
     }
-  }, t.startTrial, " \u2014 $", tier === 'pro' ? '19.99' : '9.99', month), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? `Assinar ${p.name} — $${p.price}${mo}` : lang === 'es' ? `Suscribirse a ${p.name} — $${p.price}${mo}` : `Subscribe to ${p.name} — $${p.price}${mo}`), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      justifyContent: 'center',
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "12",
+    height: "12",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "var(--pg-ink-400)",
+    strokeWidth: "2"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "11",
+    width: "18",
+    height: "11",
+    rx: "2"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M7 11V7a5 5 0 0 1 10 0v4"
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: 'var(--pg-ink-500)',
+      color: 'var(--pg-ink-400)',
       textAlign: 'center',
-      marginTop: 8,
       lineHeight: 1.4
     }
-  }, t.cancelAnytime, /*#__PURE__*/React.createElement("br", null), t.restore)));
+  }, lang === 'pt' ? 'Pagamento seguro via site. Cancele quando quiser.' : lang === 'es' ? 'Pago seguro por el sitio web. Cancela cuando quieras.' : 'Secure payment via website. Cancel anytime.')))));
 }
 
 // ── Post Menu ─────────────────────────────────────────────────
@@ -5524,7 +5818,7 @@ function ApplyJobSheet({
         link_id: jobId,
         read: false
       });
-      window.sendPush && window.sendPush(ownerId, lang === 'pt' ? '📬 Nova candidatura' : lang === 'es' ? '📬 Nueva postulación' : '📬 New application', lang === 'pt' ? `${user.name || 'Alguém'} se candidatou para "${jobRole || jobCompany}".` : lang === 'es' ? `${user.name || 'Alguien'} se postuló para "${jobRole || jobCompany}".` : `${user.name || 'Someone'} applied for "${jobRole || jobCompany}".`, '/#work');
+      window.sendPush && window.sendPush(ownerId, lang === 'pt' ? '📬 Nova candidatura' : lang === 'es' ? '📬 Nueva postulación' : '📬 New application', lang === 'pt' ? `${user.name || 'Alguém'} se candidatou para "${jobRole || jobCompany}".` : lang === 'es' ? `${user.name || 'Alguien'} se postuló para "${jobRole || jobCompany}".` : `${user.name || 'Someone'} applied for "${jobRole || jobCompany}".`, '/#work', 'work');
     }
     setSubmitted(true);
     setTimeout(() => onSubmit && onSubmit(), 2000);
@@ -7507,7 +7801,7 @@ function PublicProfileSheet({
   React.useEffect(() => {
     setFetchedProfile(null);
     if (!open || !profile?.uid || !window.sb) return;
-    window.sb.from('profiles').select('id,name,photo_url,role,verified,region').eq('id', profile.uid).single().then(({
+    window.sb.from('profiles').select('id,name,photo_url,role,verified,region,tier').eq('id', profile.uid).single().then(({
       data
     }) => {
       if (data) setFetchedProfile(data);
@@ -7618,13 +7912,44 @@ function PublicProfileSheet({
     }
   }, Icon.check(10, '#fff'))), /*#__PURE__*/React.createElement("div", {
     style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
       fontFamily: 'var(--pg-font-display)',
       fontSize: 20,
       fontWeight: 700,
       color: '#fff',
       letterSpacing: '-0.02em'
     }
-  }, name), /*#__PURE__*/React.createElement("div", {
+  }, name), fetchedProfile?.tier === 'premium' && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 800,
+      padding: '2px 8px',
+      borderRadius: 999,
+      background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+      color: '#fff',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 4,
+      letterSpacing: '.04em'
+    }
+  }, Icon.crown(9, '#fff'), " PREMIUM"), fetchedProfile?.tier === 'pro' && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 800,
+      padding: '2px 8px',
+      borderRadius: 999,
+      background: 'linear-gradient(135deg,#0c4a6e,#0077B6)',
+      color: '#fff',
+      letterSpacing: '.04em'
+    }
+  }, "PRO")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: 'rgba(255,255,255,0.50)',
@@ -7814,7 +8139,8 @@ function PublicProfileSheet({
       gap: 8,
       marginBottom: r.comment ? 6 : 0
     }
-  }, /*#__PURE__*/React.createElement(Avatar, {
+  }, /*#__PURE__*/React.createElement(AvatarFetch, {
+    uid: r.from_id,
     name: r.from_name || '?',
     size: 26
   }), /*#__PURE__*/React.createElement("span", {

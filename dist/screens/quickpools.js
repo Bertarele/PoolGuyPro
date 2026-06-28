@@ -504,7 +504,7 @@ function QuickPoolsScreen({
   }) => {
     const isApplied = !!applied[j.id];
     const isOwn = j._live && user?.uid && j.poster_id === user.uid;
-    const locked = !isOwn && user.tier === 'free';
+    const locked = !isOwn && user.tier !== 'premium';
     // Green only for the candidate whose application was accepted
     const isAccepted = !isOwn && myAcceptedJobIds.has(String(j.id));
     // Amber for the owner when someone has been accepted (job filled, pending finalization)
@@ -685,7 +685,8 @@ function QuickPoolsScreen({
         minWidth: 0,
         cursor: j.poster_id ? 'pointer' : 'default'
       }
-    }, /*#__PURE__*/React.createElement(Avatar, {
+    }, /*#__PURE__*/React.createElement(AvatarFetch, {
+      uid: j.poster_id,
       name: j.poster,
       size: 32
     }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -1142,7 +1143,7 @@ function QuickPoolsScreen({
           zIndex: 0
         }
       }, /*#__PURE__*/React.createElement("img", {
-        src: "icone.png",
+        src: "icone-watermark.png",
         alt: "",
         style: {
           position: 'absolute',
@@ -1560,23 +1561,23 @@ function QuickPoolsScreen({
         color: 'var(--pg-ink-500)',
         marginTop: 4
       }
-    }, lang === 'pt' ? `Broward County · ordenado por proximidade` : `${county} County · sorted by proximity`)), user.tier === 'free' && /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? `Broward County · ordenado por proximidade` : `${county} County · sorted by proximity`)), user.tier !== 'premium' && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
         gap: 6,
         padding: '7px 14px',
         borderRadius: 999,
-        background: 'linear-gradient(135deg,var(--pg-blue-50),#E0F2FE)',
-        border: '1px solid var(--pg-blue-100)'
+        background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)',
+        border: '1px solid #c4b5fd'
       }
-    }, Icon.lock(12, 'var(--pg-blue-600)'), /*#__PURE__*/React.createElement("span", {
+    }, Icon.lock(12, '#7c3aed'), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         fontWeight: 700,
-        color: 'var(--pg-blue-700)'
+        color: '#6d28d9'
       }
-    }, lang === 'pt' ? 'Premium para se candidatar' : 'Premium to apply'))), /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'Exclusivo Premium' : 'Premium only'))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',
@@ -1942,16 +1943,16 @@ function QuickPoolsScreen({
       color: 'var(--pg-ink-900)',
       letterSpacing: '-0.01em'
     }
-  }, lang === 'pt' ? `${jobs.length} vagas disponíveis` : lang === 'es' ? `${jobs.length} trabajos disponibles` : `${jobs.length} jobs available`), user.tier === 'free' && /*#__PURE__*/React.createElement("span", {
+  }, lang === 'pt' ? `${jobs.length} vagas disponíveis` : lang === 'es' ? `${jobs.length} trabajos disponibles` : `${jobs.length} jobs available`), user.tier !== 'premium' && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
-      color: 'var(--pg-blue-600)',
+      color: '#7c3aed',
       display: 'inline-flex',
       alignItems: 'center',
       gap: 4,
       fontWeight: 700
     }
-  }, Icon.lock(11, 'var(--pg-blue-600)'), " Premium")), /*#__PURE__*/React.createElement("div", {
+  }, Icon.lock(11, '#7c3aed'), " Premium only")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '10px 18px 0',
       display: 'flex',
@@ -2099,7 +2100,7 @@ function QuickPoolDetails({
   onMyJobAccepted
 }) {
   const isOwn = job._live && user?.uid && job.poster_id === user.uid;
-  const locked = !isOwn && user.tier === 'free';
+  const locked = !isOwn && user.tier !== 'premium';
   const [confirmDialog, setConfirmDialog] = React.useState(null);
   const [applicants, setApplicants] = React.useState([]);
   const [loadingApps, setLoadingApps] = React.useState(false);
@@ -2244,7 +2245,7 @@ function QuickPoolDetails({
     if (job.poster_id && window.sb) {
       const pushTitle = lang === 'pt' ? '✅ Serviço concluído!' : '✅ Job completed!';
       const pushBody = lang === 'pt' ? `${user.name || 'Pool guy'} finalizou "${tr(job.title, lang)}". Confira as fotos e avalie!` : `${user.name || 'Pool guy'} completed "${tr(job.title, lang)}". Check the photos and rate!`;
-      window.sendPush && window.sendPush(job.poster_id, pushTitle, pushBody, `/#quick?job=${job.id}`);
+      window.sendPush && window.sendPush(job.poster_id, pushTitle, pushBody, `/#quick?job=${job.id}`, 'quick');
       // In-app notification so owner sees it even without push
       window.sb.from('notifications').insert({
         user_id: job.poster_id,
@@ -2307,7 +2308,7 @@ function QuickPoolDetails({
     // Notify rejected applicants
     applicants.forEach(a => {
       if (a.id === appId) return;
-      window.sendPush && window.sendPush(a.applicant_id, lang === 'pt' ? '❌ Candidatura não selecionada' : '❌ Application not selected', lang === 'pt' ? `Outra pessoa foi escolhida para "${tr(job.title, lang)}". Continue tentando!` : `Someone else was chosen for "${tr(job.title, lang)}". Keep trying!`, '/#express-pools');
+      window.sendPush && window.sendPush(a.applicant_id, lang === 'pt' ? '❌ Candidatura não selecionada' : '❌ Application not selected', lang === 'pt' ? `Outra pessoa foi escolhida para "${tr(job.title, lang)}". Continue tentando!` : `Someone else was chosen for "${tr(job.title, lang)}". Keep trying!`, '/#express-pools', 'quick');
     });
     setApplicants(prev => prev.map(a => ({
       ...a,
@@ -2315,7 +2316,7 @@ function QuickPoolDetails({
     })));
     onStatusChange && onStatusChange('filled');
     // Notify accepted applicant with deep link to this job
-    window.sendPush && window.sendPush(applicantId, lang === 'pt' ? '🎉 Candidatura aceita!' : '🎉 Application accepted!', lang === 'pt' ? `Sua candidatura para "${tr(job.title, lang)}" foi aceita.` : `Your application for "${tr(job.title, lang)}" was accepted.`, `/#quick?job=${job.id}`);
+    window.sendPush && window.sendPush(applicantId, lang === 'pt' ? '🎉 Candidatura aceita!' : '🎉 Application accepted!', lang === 'pt' ? `Sua candidatura para "${tr(job.title, lang)}" foi aceita.` : `Your application for "${tr(job.title, lang)}" was accepted.`, `/#quick?job=${job.id}`, 'quick');
   };
   const withdrawApp = async () => {
     if (!window.sb || !myApp) return;
@@ -2636,7 +2637,8 @@ function QuickPoolDetails({
       uid: job.poster_id,
       name: job.poster
     })
-  }, /*#__PURE__*/React.createElement(Avatar, {
+  }, /*#__PURE__*/React.createElement(AvatarFetch, {
+    uid: job.poster_id,
     name: job.poster,
     size: 48
   }), /*#__PURE__*/React.createElement("div", {
@@ -2822,7 +2824,8 @@ function QuickPoolDetails({
       flex: 1,
       minWidth: 0
     }
-  }, /*#__PURE__*/React.createElement(Avatar, {
+  }, /*#__PURE__*/React.createElement(AvatarFetch, {
+    uid: a.applicant_id,
     name: a.applicant_name,
     size: 34
   }), /*#__PURE__*/React.createElement("div", {

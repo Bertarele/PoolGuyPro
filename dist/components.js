@@ -458,6 +458,42 @@ const Icon = {
   }))
 };
 
+// ── Module-level photo cache (uid → url) ──────────────────────
+const _pgPhotoCache = new Map();
+
+// ── AvatarFetch — auto-fetches photo by uid, falls back to initials ──
+function AvatarFetch({
+  uid,
+  name = "?",
+  size = 40
+}) {
+  const [src, setSrc] = React.useState(() => {
+    const cached = uid ? _pgPhotoCache.get(uid) : undefined;
+    return cached || undefined;
+  });
+  React.useEffect(() => {
+    if (!uid || !window.sb) return;
+    if (_pgPhotoCache.has(uid)) {
+      setSrc(_pgPhotoCache.get(uid) || undefined);
+      return;
+    }
+    window.sb.from('profiles').select('photo_url').eq('id', uid).single().then(({
+      data
+    }) => {
+      const url = data?.photo_url || '';
+      _pgPhotoCache.set(uid, url);
+      if (url) setSrc(url);
+    }).catch(() => {
+      _pgPhotoCache.set(uid, '');
+    });
+  }, [uid]);
+  return /*#__PURE__*/React.createElement(Avatar, {
+    name: name,
+    size: size,
+    src: src
+  });
+}
+
 // ── Avatar (deterministic color from initials, or photo) ─────
 function Avatar({
   name = "?",
@@ -857,25 +893,126 @@ function LangPill({
   setLang,
   onDark = false
 }) {
-  const flags = {
-    en: 'EN',
-    pt: 'PT',
-    es: 'ES'
+  const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState({
+    top: 0,
+    right: 0
+  });
+  const btnRef = React.useRef(null);
+  const dropdownRef = React.useRef(null);
+  const LANGS = [{
+    code: 'en',
+    label: 'EN',
+    flag: '🇺🇸',
+    name: 'English'
+  }, {
+    code: 'pt',
+    label: 'PT',
+    flag: '🇧🇷',
+    name: 'Português'
+  }, {
+    code: 'es',
+    label: 'ES',
+    flag: '🇪🇸',
+    name: 'Español'
+  }];
+  const current = LANGS.find(l => l.code === lang) || LANGS[0];
+  const toggle = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({
+        top: r.bottom + 6,
+        right: window.innerWidth - r.right
+      });
+    }
+    setOpen(o => !o);
   };
-  const next = {
-    en: 'pt',
-    pt: 'es',
-    es: 'en'
-  };
-  return /*#__PURE__*/React.createElement("button", {
+  React.useEffect(() => {
+    if (!open) return;
+    const close = e => {
+      if (btnRef.current && btnRef.current.contains(e.target)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('touchstart', close);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('touchstart', close);
+    };
+  }, [open]);
+  const dropdown = open ? ReactDOM.createPortal(/*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      top: pos.top,
+      right: pos.right,
+      zIndex: 999999,
+      background: 'rgba(30,32,38,0.72)',
+      WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+      backdropFilter: 'blur(20px) saturate(160%)',
+      borderRadius: 14,
+      overflow: 'hidden',
+      boxShadow: '0 8px 28px rgba(0,0,0,0.32), 0 1px 0 rgba(255,255,255,0.08) inset',
+      border: '0.5px solid rgba(255,255,255,0.13)',
+      minWidth: 148,
+      transformOrigin: 'top right',
+      animation: '_lpIn .18s cubic-bezier(0.34,1.56,0.64,1)'
+    },
+    ref: dropdownRef
+  }, /*#__PURE__*/React.createElement("style", null, `@keyframes _lpIn{from{opacity:0;transform:scale(0.88)}to{opacity:1;transform:scale(1)}}`), LANGS.map((l, i) => {
+    const active = l.code === lang;
+    return /*#__PURE__*/React.createElement("button", {
+      key: l.code,
+      onClick: () => {
+        setLang(l.code);
+        setOpen(false);
+      },
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 9,
+        width: '100%',
+        padding: '10px 13px',
+        border: 'none',
+        cursor: 'pointer',
+        borderBottom: i < LANGS.length - 1 ? '0.5px solid rgba(255,255,255,0.07)' : 'none',
+        background: active ? 'rgba(14,186,199,0.15)' : 'transparent'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 18,
+        lineHeight: 1
+      }
+    }, l.flag), /*#__PURE__*/React.createElement("span", {
+      style: {
+        flex: 1,
+        textAlign: 'left',
+        fontSize: 13,
+        fontWeight: active ? 700 : 400,
+        color: active ? '#0EBAC7' : 'rgba(255,255,255,0.85)'
+      }
+    }, l.name), active && /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#0EBAC7",
+      strokeWidth: "2.5",
+      strokeLinecap: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "20 6 9 17 4 12"
+    })));
+  })), document.body) : null;
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    ref: btnRef,
     className: "pg-press",
-    onClick: () => setLang(next[lang]),
+    onClick: toggle,
     style: {
       display: 'inline-flex',
       alignItems: 'center',
-      gap: 6,
+      gap: 5,
       height: 32,
-      padding: '0 10px 0 8px',
+      padding: '0 9px 0 7px',
       borderRadius: 10,
       background: onDark ? 'rgba(255,255,255,0.14)' : 'rgba(10,40,64,0.09)',
       border: onDark ? '0.5px solid rgba(255,255,255,0.18)' : '0.5px solid rgba(10,40,64,0.18)',
@@ -884,11 +1021,16 @@ function LangPill({
       fontWeight: 600,
       cursor: 'pointer'
     }
-  }, Icon.globe(14, onDark ? 'rgba(255,255,255,0.85)' : 'rgba(10,40,64,0.60)'), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 15,
+      lineHeight: 1
+    }
+  }, current.flag), /*#__PURE__*/React.createElement("span", {
     style: {
       letterSpacing: '0.04em'
     }
-  }, flags[lang]));
+  }, current.label)), dropdown);
 }
 
 // ── PhotoPicker — camera / gallery + Supabase Storage upload ────────────────

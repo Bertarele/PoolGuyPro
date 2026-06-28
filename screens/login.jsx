@@ -9,6 +9,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   const [passConfirm,   setPassConfirm]  = React.useState('');
   const [loading,       setLoading]      = React.useState(false);
   const [error,         setError]        = React.useState('');
+  const [emailConfirmNeeded, setEmailConfirmNeeded] = React.useState(false);
   const [showPass,      setShowPass]     = React.useState(false);
   const [showPassC,     setShowPassC]    = React.useState(false);
   // Signup fields
@@ -92,12 +93,20 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       if (!window.sb) throw new Error('createClient failed — check console');
       const { data, error: err } = await window.sb.auth.signUp({ email: email.trim(), password: pass });
       if (err) throw err;
-      // Try inserting profile — retry once if no auth token yet (email confirmation flow)
       const userId = data.user?.id || data.id;
+      // If Supabase requires email confirmation, data.session will be null
+      if (!data.session) {
+        // Pre-insert profile so it exists when the user confirms and logs in
+        const insertProfile = () => window.sb.from('profiles').insert({ id: userId, name: name.trim(), region, role: 'user', email: email.trim() }).catch(()=>{});
+        await insertProfile();
+        setLoading(false);
+        setEmailConfirmNeeded(true);
+        return;
+      }
+      // No email confirmation required — insert profile and proceed
       const insertProfile = () => window.sb.from('profiles').insert({ id: userId, name: name.trim(), region, role: 'user', email: email.trim() });
       const { error: insertErr } = await insertProfile();
       if (insertErr) {
-        // Wait briefly for token to settle, then retry
         await new Promise(r => setTimeout(r, 800));
         await insertProfile();
       }
@@ -247,6 +256,34 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
   // ── Shared input style for desktop ─────────────────────────────
   const deskInput = {height:50, fontSize:14, background:'#fff', border:'1.5px solid #e2e8f0', color:'#0A2840', borderRadius:12};
+
+  // ── Email confirmation screen ────────────────────────────────────
+  if (emailConfirmNeeded) {
+    const confirmLabels = {
+      en: { title: 'Check your email', sub: 'We sent a confirmation link to', action: 'Once confirmed, come back and log in.', btn: 'Back to login' },
+      pt: { title: 'Verifique seu email', sub: 'Enviamos um link de confirmação para', action: 'Após confirmar, volte aqui e faça login.', btn: 'Voltar ao login' },
+      es: { title: 'Revisa tu email', sub: 'Enviamos un enlace de confirmación a', action: 'Una vez confirmado, vuelve e inicia sesión.', btn: 'Volver al login' },
+    };
+    const cl = confirmLabels[lang] || confirmLabels.en;
+    return (
+      <div style={{width:'100%', minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(160deg,#0B1F32 0%,#040D18 100%)', padding:24}}>
+        <div style={{maxWidth:360, width:'100%', textAlign:'center'}}>
+          <div style={{width:72, height:72, borderRadius:'50%', background:'rgba(0,119,182,0.15)', border:'1px solid rgba(0,119,182,0.35)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', fontSize:32}}>
+            ✉️
+          </div>
+          <div style={{fontSize:22, fontWeight:800, color:'#e8edf2', marginBottom:10}}>{cl.title}</div>
+          <div style={{fontSize:14, color:'rgba(255,255,255,0.5)', lineHeight:1.65, marginBottom:6}}>{cl.sub}</div>
+          <div style={{fontSize:14, fontWeight:700, color:'#60c5f0', marginBottom:16, wordBreak:'break-all'}}>{email}</div>
+          <div style={{fontSize:13, color:'rgba(255,255,255,0.4)', lineHeight:1.65, marginBottom:28}}>{cl.action}</div>
+          <button onClick={()=>{setEmailConfirmNeeded(false); setMode('login'); setPass(''); setPassConfirm('');}}
+            style={{width:'100%', height:48, borderRadius:12, background:'linear-gradient(135deg,#0c4a6e,#0077B6)', border:'none',
+              color:'#fff', fontFamily:'inherit', fontSize:15, fontWeight:700, cursor:'pointer'}}>
+            {cl.btn}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ── DESKTOP layout — card centralizado sobre foto ───────────────
   if (isDesktop) {

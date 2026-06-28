@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>PoolGuyPro – The App for Florida Pool Professionals</title>
+  <meta name="description" content="Find vacation coverage, buy & sell pool routes, and get emergency jobs — the marketplace built for Broward County pool guys.">
+  <link rel="icon" href="/icone.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #0b1117; color: #e8edf2; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    /* ── Nav ── */
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); position: sticky; top: 0; background: rgba(11,17,23,0.9); backdrop-filter: blur(12px); z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-logo span { font-size: 16px; font-weight: 700; color: #e8edf2; }
+    .nav-cta { background: linear-gradient(135deg,#0c4a6e,#0077B6); color: #fff; border: none; border-radius: 10px; padding: 9px 20px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; }
+
+    /* ── Hero ── */
+    .hero { text-align: center; padding: 60px 24px 48px; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -80px; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(ellipse, rgba(0,119,182,0.18) 0%, transparent 70%); pointer-events: none; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,119,182,0.15); border: 1px solid rgba(0,119,182,0.3); border-radius: 999px; padding: 5px 14px; font-size: 12px; font-weight: 600; color: #60c5f0; margin-bottom: 20px; }
+    .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: #34d399; display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+    h1 { font-size: clamp(28px,7vw,48px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 18px; }
+    h1 em { font-style: normal; background: linear-gradient(90deg,#0077B6,#00c6ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-sub { font-size: clamp(14px,3vw,17px); color: rgba(255,255,255,0.55); line-height: 1.65; max-width: 480px; margin: 0 auto 32px; }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary { background: linear-gradient(135deg,#0c4a6e,#0077B6); color: #fff; border: none; border-radius: 12px; padding: 14px 28px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none; box-shadow: 0 4px 20px rgba(0,119,182,0.4); transition: transform 0.15s, opacity 0.15s; display: inline-block; }
+    .btn-primary:active { transform: scale(0.97); opacity: 0.9; }
+    .btn-ghost { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 14px 28px; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.15s; display: inline-block; }
+    .btn-ghost:hover { background: rgba(255,255,255,0.11); }
+    .hero-note { font-size: 11.5px; color: rgba(255,255,255,0.3); margin-top: 14px; }
+
+    /* ── Stats ── */
+    .stats { display: flex; justify-content: center; gap: 0; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); margin: 0; }
+    .stat { flex: 1; max-width: 160px; text-align: center; padding: 20px 12px; border-right: 1px solid rgba(255,255,255,0.06); }
+    .stat:last-child { border-right: none; }
+    .stat-num { font-size: 22px; font-weight: 800; color: #60c5f0; letter-spacing: -0.02em; }
+    .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; font-weight: 500; }
+
+    /* ── Features ── */
+    .section { padding: 56px 24px; }
+    .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #0077B6; margin-bottom: 10px; text-align: center; }
+    .section-title { font-size: clamp(22px,5vw,30px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.2; text-align: center; margin-bottom: 40px; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; max-width: 860px; margin: 0 auto; }
+    .feature-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 22px 20px; }
+    .feature-card:hover { border-color: rgba(0,119,182,0.3); }
+    .feature-icon { width: 40px; height: 40px; border-radius: 11px; background: rgba(0,119,182,0.15); border: 1px solid rgba(0,119,182,0.25); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+    .feature-icon svg { color: #60c5f0; }
+    .feature-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #e8edf2; }
+    .feature-desc { font-size: 12.5px; color: rgba(255,255,255,0.45); line-height: 1.65; }
+
+    /* ── How it works ── */
+    .how-section { padding: 0 24px 56px; }
+    .steps { display: flex; flex-direction: column; gap: 20px; max-width: 560px; margin: 0 auto; }
+    .step { display: flex; gap: 16px; align-items: flex-start; }
+    .step-num { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#0c4a6e,#0077B6); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; color: #fff; }
+    .step-text { padding-top: 4px; }
+    .step-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+    .step-desc { font-size: 12.5px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+    .step-connector { width: 2px; height: 20px; background: rgba(0,119,182,0.3); margin-left: 17px; }
+
+    /* ── Pricing ── */
+    .pricing-section { padding: 0 24px 56px; background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .pricing-section .section { padding: 48px 0; }
+    .plans { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; max-width: 760px; margin: 0 auto; }
+    .plan-card { flex: 1; min-width: 200px; max-width: 240px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 24px 20px; text-align: center; }
+    .plan-card.featured { border-color: rgba(0,119,182,0.5); background: rgba(0,119,182,0.08); }
+    .plan-card.premium-card { border-color: rgba(124,58,237,0.4); background: rgba(124,58,237,0.07); }
+    .plan-name { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: rgba(255,255,255,0.7); }
+    .plan-price { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px; }
+    .plan-period { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 16px; }
+    .plan-features { list-style: none; text-align: left; margin-bottom: 20px; }
+    .plan-features li { font-size: 12px; color: rgba(255,255,255,0.55); padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 7px; }
+    .plan-features li:last-child { border-bottom: none; }
+    .plan-features .ck { color: #34d399; font-size: 13px; flex-shrink: 0; }
+    .plan-features .cx { color: rgba(255,255,255,0.2); font-size: 11px; flex-shrink: 0; }
+    .plan-btn { width: 100%; border: none; border-radius: 10px; padding: 11px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; display: block; }
+    .plan-btn-free { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+    .plan-btn-pro { background: linear-gradient(135deg,#0c4a6e,#0077B6); color: #fff; box-shadow: 0 3px 14px rgba(0,119,182,0.35); }
+    .plan-btn-premium { background: linear-gradient(135deg,#3b0764,#7c3aed); color: #fff; box-shadow: 0 3px 14px rgba(124,58,237,0.35); }
+
+    /* ── CTA bottom ── */
+    .bottom-cta { padding: 56px 24px; text-align: center; }
+    .bottom-cta h2 { font-size: clamp(22px,5vw,30px); font-weight: 800; letter-spacing: -0.025em; margin-bottom: 14px; }
+    .bottom-cta p { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 28px; }
+
+    /* ── Footer ── */
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px; text-align: center; }
+    .footer-links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .footer-links a { font-size: 12px; color: rgba(255,255,255,0.35); text-decoration: none; }
+    .footer-links a:hover { color: rgba(255,255,255,0.6); }
+    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.2); }
+
+    /* ── Lang switcher ── */
+    .lang-bar { display: flex; justify-content: flex-end; gap: 4px; padding: 8px 24px 0; }
+    .lang-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09); border-radius: 6px; color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 600; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+    .lang-btn.active { background: rgba(0,119,182,0.25); border-color: #0077B6; color: #60c5f0; }
+  </style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <button class="lang-btn active" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" onclick="setLang('pt')">PT</button>
+  <button class="lang-btn" onclick="setLang('es')">ES</button>
+</div>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <img src="/icone.png" alt="PoolGuyPro">
+    <span>PoolGuyPro</span>
+  </a>
+  <a href="/" class="nav-cta" data-t="nav-cta">Open App</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge"><span></span> <span data-t="badge">Florida's #1 Pool Pro Network</span></div>
+  <h1 data-t-html="h1">The app for<br><em>Florida pool guys</em></h1>
+  <p class="hero-sub" data-t="hero-sub">Find vacation coverage, buy & sell pool routes, get emergency jobs instantly. Built for Broward County pool professionals.</p>
+  <div class="hero-actions">
+    <a href="/" class="btn-primary" data-t="hero-cta">Get Started Free</a>
+    <a href="#features" class="btn-ghost" data-t="hero-learn">Learn more</a>
+  </div>
+  <p class="hero-note" data-t="hero-note">Free to join · No credit card required</p>
+</section>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat"><div class="stat-num">100%</div><div class="stat-label" data-t="stat1">Pool pros only</div></div>
+  <div class="stat"><div class="stat-num">3</div><div class="stat-label" data-t="stat2">Languages</div></div>
+  <div class="stat"><div class="stat-num">$0</div><div class="stat-label" data-t="stat3">To get started</div></div>
+  <div class="stat"><div class="stat-num">24/7</div><div class="stat-label" data-t="stat4">Job alerts</div></div>
+</div>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div class="section-label" data-t="features-label">What you can do</div>
+  <h2 class="section-title" data-t="features-title">Everything a pool pro needs</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="feature-title" data-t="f1-title">Vacation Coverage</div>
+      <div class="feature-desc" data-t="f1-desc">Going on vacation? Post your route and find a trusted pool pro to cover it. Apply for others' routes and earn extra income.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+      <div class="feature-title" data-t="f2-title">Buy & Sell Routes</div>
+      <div class="feature-desc" data-t="f2-desc">Browse pool routes for sale in your area. List your own route with pricing, location, and details to find the right buyer.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="feature-title" data-t="f3-title">Quick Pools</div>
+      <div class="feature-desc" data-t="f3-desc">Get real-time alerts for emergency pool jobs near you. Respond in seconds and never miss a last-minute opportunity. (PREMIUM)</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="feature-title" data-t="f4-title">Direct Messaging</div>
+      <div class="feature-desc" data-t="f4-desc">Chat directly with pool pros and clients inside the app. Negotiate, confirm, and coordinate — all in one place.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="feature-title" data-t="f5-title">Verified Profiles</div>
+      <div class="feature-desc" data-t="f5-desc">Ratings, reviews, and verification badges build trust. Know who you're hiring before you commit.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <div class="feature-title" data-t="f6-title">Marketplace Listings</div>
+      <div class="feature-desc" data-t="f6-desc">Post job openings, find pool technicians, and advertise your services — all in one organized marketplace.</div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how-section">
+  <div class="section-label" data-t="how-label">How it works</div>
+  <h2 class="section-title" data-t="how-title">Up and running in minutes</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        <div class="step-title" data-t="s1-title">Create your free account</div>
+        <div class="step-desc" data-t="s1-desc">Sign up in under 2 minutes. No credit card, no commitment.</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        <div class="step-title" data-t="s2-title">Set up your profile</div>
+        <div class="step-desc" data-t="s2-desc">Add your region, experience, and a photo to get noticed.</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        <div class="step-title" data-t="s3-title">Post or browse listings</div>
+        <div class="step-desc" data-t="s3-desc">Find vacation coverage, routes for sale, or job openings in your area.</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        <div class="step-title" data-t="s4-title">Connect and earn</div>
+        <div class="step-desc" data-t="s4-desc">Chat, arrange, and grow your pool service business.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<div class="pricing-section">
+  <div class="section">
+    <div class="section-label" data-t="pricing-label">Simple pricing</div>
+    <h2 class="section-title" data-t="pricing-title">Start free. Upgrade when ready.</h2>
+    <div class="plans">
+      <div class="plan-card">
+        <div class="plan-name" data-t="p0-name">FREE</div>
+        <div class="plan-price">$0</div>
+        <div class="plan-period" data-t="p0-period">forever</div>
+        <ul class="plan-features">
+          <li><span class="ck">✓</span> <span data-t="p0-f1">2 active listings</span></li>
+          <li><span class="ck">✓</span> <span data-t="p0-f2">Post routes for sale</span></li>
+          <li><span class="cx">✕</span> <span data-t="p0-f3">Vacation coverage</span></li>
+          <li><span class="cx">✕</span> <span data-t="p0-f4">Routes tab</span></li>
+        </ul>
+        <a href="/" class="plan-btn plan-btn-free" data-t="p0-btn">Get Started</a>
+      </div>
+      <div class="plan-card featured">
+        <div class="plan-name" style="color:#60c5f0">PRO</div>
+        <div class="plan-price" style="color:#60c5f0">$14<span style="font-size:18px">.99</span></div>
+        <div class="plan-period" data-t="p1-period">/month</div>
+        <ul class="plan-features">
+          <li><span class="ck">✓</span> <span data-t="p1-f1">5 active listings</span></li>
+          <li><span class="ck">✓</span> <span data-t="p1-f2">Vacation coverage</span></li>
+          <li><span class="ck">✓</span> <span data-t="p1-f3">Routes tab</span></li>
+          <li><span class="cx">✕</span> <span data-t="p1-f4">Quick Pools</span></li>
+        </ul>
+        <a href="/upgrade/pro" class="plan-btn plan-btn-pro" data-t="p1-btn">Get PRO</a>
+      </div>
+      <div class="plan-card premium-card">
+        <div class="plan-name" style="color:#c4b5fd">PREMIUM</div>
+        <div class="plan-price" style="color:#c4b5fd">$24<span style="font-size:18px">.99</span></div>
+        <div class="plan-period" data-t="p2-period">/month</div>
+        <ul class="plan-features">
+          <li><span class="ck">✓</span> <span data-t="p2-f1">10 active listings</span></li>
+          <li><span class="ck">✓</span> <span data-t="p2-f2">Quick Pools access</span></li>
+          <li><span class="ck">✓</span> <span data-t="p2-f3">2 featured listings/mo</span></li>
+          <li><span class="ck">✓</span> <span data-t="p2-f4">Premium badge</span></li>
+        </ul>
+        <a href="/upgrade/premium" class="plan-btn plan-btn-premium" data-t="p2-btn">Get PREMIUM</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom CTA -->
+<section class="bottom-cta">
+  <h2 data-t="cta-title">Ready to grow your pool business?</h2>
+  <p data-t="cta-sub">Join pool professionals already using PoolGuyPro in Broward County.</p>
+  <a href="/" class="btn-primary" data-t="cta-btn">Start for Free →</a>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-links">
+    <a href="/" data-t="f-app">Open App</a>
+    <a href="/upgrade/pro" data-t="f-pro">PRO Plan</a>
+    <a href="/upgrade/premium" data-t="f-premium">PREMIUM Plan</a>
+    <a href="/privacy" data-t="f-privacy">Privacy Policy</a>
+    <a href="/terms" data-t="f-terms">Terms of Use</a>
+  </div>
+  <div class="footer-copy">© 2026 PoolGuyPro · usapoolmarket.com · Broward County, FL</div>
+</footer>
+
+<script>
+  const T = {
+    en: {
+      'nav-cta':'Open App','badge':"Florida's #1 Pool Pro Network",
+      'h1':'The app for<br><em>Florida pool guys</em>',
+      'hero-sub':'Find vacation coverage, buy & sell pool routes, get emergency jobs instantly. Built for Broward County pool professionals.',
+      'hero-cta':'Get Started Free','hero-learn':'Learn more','hero-note':'Free to join · No credit card required',
+      'stat1':'Pool pros only','stat2':'Languages','stat3':'To get started','stat4':'Job alerts',
+      'features-label':'What you can do','features-title':'Everything a pool pro needs',
+      'f1-title':'Vacation Coverage','f1-desc':'Going on vacation? Post your route and find a trusted pool pro to cover it. Apply for others\' routes and earn extra income.',
+      'f2-title':'Buy & Sell Routes','f2-desc':'Browse pool routes for sale in your area. List your own route with pricing, location, and details to find the right buyer.',
+      'f3-title':'Quick Pools','f3-desc':'Get real-time alerts for emergency pool jobs near you. Respond in seconds and never miss a last-minute opportunity. (PREMIUM)',
+      'f4-title':'Direct Messaging','f4-desc':'Chat directly with pool pros and clients inside the app. Negotiate, confirm, and coordinate — all in one place.',
+      'f5-title':'Verified Profiles','f5-desc':'Ratings, reviews, and verification badges build trust. Know who you\'re hiring before you commit.',
+      'f6-title':'Marketplace Listings','f6-desc':'Post job openings, find pool technicians, and advertise your services — all in one organized marketplace.',
+      'how-label':'How it works','how-title':'Up and running in minutes',
+      's1-title':'Create your free account','s1-desc':'Sign up in under 2 minutes. No credit card, no commitment.',
+      's2-title':'Set up your profile','s2-desc':'Add your region, experience, and a photo to get noticed.',
+      's3-title':'Post or browse listings','s3-desc':'Find vacation coverage, routes for sale, or job openings in your area.',
+      's4-title':'Connect and earn','s4-desc':'Chat, arrange, and grow your pool service business.',
+      'pricing-label':'Simple pricing','pricing-title':'Start free. Upgrade when ready.',
+      'p0-name':'FREE','p0-period':'forever','p0-f1':'2 active listings','p0-f2':'Post routes for sale','p0-f3':'Vacation coverage','p0-f4':'Routes tab','p0-btn':'Get Started',
+      'p1-period':'/month','p1-f1':'5 active listings','p1-f2':'Vacation coverage','p1-f3':'Routes tab','p1-f4':'Quick Pools','p1-btn':'Get PRO',
+      'p2-period':'/month','p2-f1':'10 active listings','p2-f2':'Quick Pools access','p2-f3':'2 featured listings/mo','p2-f4':'Premium badge','p2-btn':'Get PREMIUM',
+      'cta-title':'Ready to grow your pool business?','cta-sub':'Join pool professionals already using PoolGuyPro in Broward County.','cta-btn':'Start for Free →',
+      'f-app':'Open App','f-pro':'PRO Plan','f-premium':'PREMIUM Plan','f-privacy':'Privacy Policy','f-terms':'Terms of Use',
+    },
+    pt: {
+      'nav-cta':'Abrir App','badge':'A rede #1 de pool guys da Flórida',
+      'h1':'O app para<br><em>pool guys da Flórida</em>',
+      'hero-sub':'Encontre cobertura de férias, compre e venda rotas, receba trabalhos emergenciais. Feito para profissionais de piscinas em Broward County.',
+      'hero-cta':'Começar Grátis','hero-learn':'Saiba mais','hero-note':'Gratuito para entrar · Sem cartão de crédito',
+      'stat1':'Só profissionais','stat2':'Idiomas','stat3':'Para começar','stat4':'Alertas de trabalho',
+      'features-label':'O que você pode fazer','features-title':'Tudo que um pool guy precisa',
+      'f1-title':'Cobertura de Férias','f1-desc':'Indo de férias? Publique sua rota e encontre um profissional de confiança para cobrir. Aplique para coberturas de outros e ganhe extra.',
+      'f2-title':'Comprar e Vender Rotas','f2-desc':'Veja rotas à venda na sua área. Publique a sua com preço, localização e detalhes para encontrar o comprador certo.',
+      'f3-title':'Quick Pools','f3-desc':'Receba alertas em tempo real de trabalhos emergenciais próximos. Responda em segundos e nunca perca uma oportunidade. (PREMIUM)',
+      'f4-title':'Mensagens Diretas','f4-desc':'Converse diretamente com profissionais e clientes dentro do app. Negocie, confirme e organize tudo em um só lugar.',
+      'f5-title':'Perfis Verificados','f5-desc':'Avaliações, reviews e badges de verificação constroem confiança. Saiba com quem você está trabalhando antes de fechar.',
+      'f6-title':'Anúncios no Marketplace','f6-desc':'Publique vagas, encontre técnicos de piscina e anuncie seus serviços — tudo em um marketplace organizado.',
+      'how-label':'Como funciona','how-title':'Pronto em minutos',
+      's1-title':'Crie sua conta grátis','s1-desc':'Cadastre-se em menos de 2 minutos. Sem cartão, sem compromisso.',
+      's2-title':'Configure seu perfil','s2-desc':'Adicione sua região, experiência e foto para ser encontrado.',
+      's3-title':'Publique ou explore anúncios','s3-desc':'Encontre cobertura de férias, rotas à venda ou vagas de emprego na sua área.',
+      's4-title':'Conecte e ganhe','s4-desc':'Converse, combine e faça seu negócio de piscinas crescer.',
+      'pricing-label':'Preços simples','pricing-title':'Comece grátis. Faça upgrade quando quiser.',
+      'p0-name':'GRÁTIS','p0-period':'para sempre','p0-f1':'2 anúncios ativos','p0-f2':'Publicar rotas à venda','p0-f3':'Cobertura de férias','p0-f4':'Aba de Rotas','p0-btn':'Começar',
+      'p1-period':'/mês','p1-f1':'5 anúncios ativos','p1-f2':'Cobertura de férias','p1-f3':'Aba de Rotas','p1-f4':'Quick Pools','p1-btn':'Obter PRO',
+      'p2-period':'/mês','p2-f1':'10 anúncios ativos','p2-f2':'Acesso Quick Pools','p2-f3':'2 destaques/mês','p2-f4':'Badge Premium','p2-btn':'Obter PREMIUM',
+      'cta-title':'Pronto para crescer seu negócio?','cta-sub':'Junte-se aos profissionais de piscinas usando o PoolGuyPro em Broward County.','cta-btn':'Começar Grátis →',
+      'f-app':'Abrir App','f-pro':'Plano PRO','f-premium':'Plano PREMIUM','f-privacy':'Política de Privacidade','f-terms':'Termos de Uso',
+    },
+    es: {
+      'nav-cta':'Abrir App','badge':'La red #1 de pool guys de Florida',
+      'h1':'La app para<br><em>pool guys de Florida</em>',
+      'hero-sub':'Encuentra cobertura de vacaciones, compra y vende rutas, recibe trabajos de emergencia. Hecho para profesionales de piscinas en Broward County.',
+      'hero-cta':'Empezar Gratis','hero-learn':'Saber más','hero-note':'Gratis para unirse · Sin tarjeta de crédito',
+      'stat1':'Solo profesionales','stat2':'Idiomas','stat3':'Para empezar','stat4':'Alertas de trabajo',
+      'features-label':'Qué puedes hacer','features-title':'Todo lo que un pool guy necesita',
+      'f1-title':'Cobertura de Vacaciones','f1-desc':'¿Te vas de vacaciones? Publica tu ruta y encuentra un profesional de confianza. Aplica a coberturas de otros y gana extra.',
+      'f2-title':'Comprar y Vender Rutas','f2-desc':'Explora rutas en venta en tu área. Publica la tuya con precio, ubicación y detalles para encontrar el comprador correcto.',
+      'f3-title':'Quick Pools','f3-desc':'Recibe alertas en tiempo real de trabajos de emergencia cercanos. Responde en segundos. (PREMIUM)',
+      'f4-title':'Mensajes Directos','f4-desc':'Chatea con profesionales y clientes dentro de la app. Negocia, confirma y coordina todo en un solo lugar.',
+      'f5-title':'Perfiles Verificados','f5-desc':'Calificaciones, reseñas y badges de verificación generan confianza. Conoce con quién trabajas antes de comprometerte.',
+      'f6-title':'Anuncios en Marketplace','f6-desc':'Publica vacantes, encuentra técnicos y anuncia tus servicios — todo en un marketplace organizado.',
+      'how-label':'Cómo funciona','how-title':'Listo en minutos',
+      's1-title':'Crea tu cuenta gratis','s1-desc':'Regístrate en menos de 2 minutos. Sin tarjeta, sin compromiso.',
+      's2-title':'Configura tu perfil','s2-desc':'Añade tu región, experiencia y foto para ser encontrado.',
+      's3-title':'Publica o explora anuncios','s3-desc':'Encuentra coberturas de vacaciones, rutas en venta o vacantes de empleo en tu área.',
+      's4-title':'Conecta y gana','s4-desc':'Chatea, coordina y haz crecer tu negocio de piscinas.',
+      'pricing-label':'Precios simples','pricing-title':'Empieza gratis. Mejora cuando quieras.',
+      'p0-name':'GRATIS','p0-period':'para siempre','p0-f1':'2 anuncios activos','p0-f2':'Publicar rutas en venta','p0-f3':'Cobertura de vacaciones','p0-f4':'Pestaña de Rutas','p0-btn':'Empezar',
+      'p1-period':'/mes','p1-f1':'5 anuncios activos','p1-f2':'Cobertura de vacaciones','p1-f3':'Pestaña de Rutas','p1-f4':'Quick Pools','p1-btn':'Obtener PRO',
+      'p2-period':'/mes','p2-f1':'10 anuncios activos','p2-f2':'Acceso Quick Pools','p2-f3':'2 destacados/mes','p2-f4':'Badge Premium','p2-btn':'Obtener PREMIUM',
+      'cta-title':'¿Listo para hacer crecer tu negocio?','cta-sub':'Únete a los profesionales de piscinas que ya usan PoolGuyPro en Broward County.','cta-btn':'Empezar Gratis →',
+      'f-app':'Abrir App','f-pro':'Plan PRO','f-premium':'Plan PREMIUM','f-privacy':'Política de Privacidad','f-terms':'Términos de Uso',
+    }
+  };
+
+  let lang = localStorage.getItem('pg_lang') || 'en';
+  if (!['en','pt','es'].includes(lang)) lang = 'en';
+
+  function applyT() {
+    const t = T[lang];
+    document.querySelectorAll('[data-t]').forEach(el => { if (t[el.dataset.t]) el.textContent = t[el.dataset.t]; });
+    document.querySelectorAll('[data-t-html]').forEach(el => { if (t[el.dataset.tHtml]) el.innerHTML = t[el.dataset.tHtml]; });
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang));
+  }
+  function setLang(l) { lang = l; localStorage.setItem('pg_lang', l); applyT(); }
+  applyT();
+</script>
+</body>
+</html>

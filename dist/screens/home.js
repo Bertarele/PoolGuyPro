@@ -15,6 +15,7 @@ function HomeScreen({
     openPublicProfile,
     liveMarket = [],
     liveJobs = [],
+    liveVacations = [],
     hasUnreadChat,
     hasUnreadNotif,
     openListingById,
@@ -67,6 +68,115 @@ function HomeScreen({
   const myPosts = [...myMarketPosts, ...myOwnJobs];
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob, setSelectedJob] = React.useState(null);
+
+  // Track whether the app is currently in the foreground
+  const [isAppVisible, setIsAppVisible] = React.useState(() => document.visibilityState === 'visible');
+  React.useEffect(() => {
+    const update = () => setIsAppVisible(document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', update);
+    return () => document.removeEventListener('visibilitychange', update);
+  }, []);
+
+  // Sponsored card — active, not expired
+  const [sponsoredCard, setSponsoredCard] = React.useState(null);
+  React.useEffect(() => {
+    if (!window.sb) return;
+    window.sb.from('sponsored_cards').select('*').eq('active', true).or('expires_at.is.null,expires_at.gte.' + new Date().toISOString()).order('created_at', {
+      ascending: false
+    }).limit(1).then(({
+      data
+    }) => {
+      if (data && data.length > 0) setSponsoredCard(data[0]);
+    });
+  }, []);
+
+  // Quick pool jobs posted today (live from Supabase)
+  const [todayQuick, setTodayQuick] = React.useState([]);
+  React.useEffect(() => {
+    if (!window.sb) return;
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    window.sb.from('quick_pool_jobs').select('*').eq('status', 'open').order('created_at', {
+      ascending: false
+    }).limit(30).then(({
+      data
+    }) => {
+      if (!data) return;
+      setTodayQuick(data.filter(j => new Date(j.created_at).getTime() > cutoff));
+    });
+  }, []);
+
+  // Vacation listings that have today as an available (unbooked) day
+  const todayItems = React.useMemo(() => {
+    const now = new Date();
+    const todayDay = now.getDate();
+    const todayMonth = now.getMonth(); // 0-indexed
+    const todayYear = now.getFullYear();
+    const todayDow = now.getDay(); // 0=Sun
+
+    const quick = todayQuick.map(j => ({
+      id: j.id,
+      _type: 'quick',
+      title: {
+        en: j.title,
+        pt: j.title,
+        es: j.title
+      },
+      loc: j.city,
+      dist: {
+        en: '',
+        pt: '',
+        es: ''
+      },
+      price: j.price_negotiable ? 'neg' : j.price_per_pool,
+      urgency: 'new',
+      pools: j.pools_count || 1,
+      when: {
+        en: j.when_label || 'Today',
+        pt: j.when_label || 'Hoje',
+        es: j.when_label || 'Hoy'
+      },
+      body: {
+        en: j.description || '',
+        pt: j.description || '',
+        es: j.description || ''
+      },
+      type: j.pool_type || ''
+    }));
+    const vacas = liveVacations.filter(v => v.monthIdx === todayMonth && v.year === todayYear && (v.days || []).includes(todayDay) && !(v.bookedDays || []).includes(todayDay)).map(v => {
+      const pools = (v.poolsByWeekday || {})[todayDow] || Object.values(v.poolsByWeekday || {}).find(n => n > 0) || '?';
+      return {
+        id: v._id,
+        _type: 'vacation',
+        _vacRef: v,
+        title: {
+          en: `Vacation cover — ${v.region}`,
+          pt: `Cobertura de férias — ${v.region}`,
+          es: `Cobertura de vacaciones — ${v.region}`
+        },
+        loc: v.region,
+        dist: {
+          en: '',
+          pt: '',
+          es: ''
+        },
+        price: v.price,
+        urgency: 'urgent',
+        pools,
+        when: {
+          en: 'Today',
+          pt: 'Hoje',
+          es: 'Hoy'
+        },
+        body: {
+          en: v.note || '',
+          pt: v.note || '',
+          es: v.note || ''
+        },
+        type: 'vacation'
+      };
+    });
+    return [...vacas, ...quick].slice(0, 5);
+  }, [todayQuick, liveVacations]);
   const catLabel = cat => {
     const map = {
       Routes: {
@@ -344,7 +454,7 @@ function HomeScreen({
       style: {
         height: 118,
         overflow: 'hidden',
-        transform: 'translateY(-23px) translateX(-14px)',
+        transform: 'translateY(-14px) translateX(-22px)',
         width: 'calc(100vw - 160px)',
         flexShrink: 1,
         minWidth: 0
@@ -392,7 +502,7 @@ function HomeScreen({
       badge: !!hasUnreadNotif
     }, Icon.bell(20, ic)))), /*#__PURE__*/React.createElement("div", {
       style: {
-        padding: '0px 18px 8px',
+        padding: '0px 18px 8px 23px',
         marginTop: -28,
         display: 'flex',
         alignItems: 'center',
@@ -407,7 +517,7 @@ function HomeScreen({
         color: H.mid,
         letterSpacing: '-0.01em'
       }
-    }, greetWord, ", ", firstName, "! \uD83D\uDC4B")), /*#__PURE__*/React.createElement("div", {
+    }, greetWord, ", ", firstName, "! \uD83D\uDC4B")), isAppVisible && /*#__PURE__*/React.createElement("div", {
       style: {
         background: H.activeBg,
         border: H.activeBdr,
@@ -431,7 +541,7 @@ function HomeScreen({
         color: H.activeTxt,
         letterSpacing: '0.03em'
       }
-    }, "ACTIVE"))), /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'ATIVO' : lang === 'es' ? 'ACTIVO' : 'ACTIVE'))), /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute',
         bottom: 0,
@@ -1076,6 +1186,97 @@ function HomeScreen({
         overflow: 'hidden'
       }
     }, tr(f.sub, lang))));
+  }))), sponsoredCard && /*#__PURE__*/React.createElement("div", {
+    onClick: () => {
+      if (sponsoredCard.link_url) window.open(sponsoredCard.link_url, '_blank');
+    },
+    style: {
+      background: sponsoredCard.bg_color || '#001f4d',
+      borderRadius: 14,
+      padding: '13px 15px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      border: '1px solid rgba(0,119,182,0.35)',
+      cursor: sponsoredCard.link_url ? 'pointer' : 'default',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
+      transition: 'opacity .15s'
+    },
+    onTouchStart: e => {
+      if (sponsoredCard.link_url) e.currentTarget.style.opacity = '0.82';
+    },
+    onTouchEnd: e => {
+      e.currentTarget.style.opacity = '1';
+    }
+  }, (sponsoredCard.logo_url || sponsoredCard.logo_text) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 3,
+      flexShrink: 0
+    }
+  }, sponsoredCard.logo_url && /*#__PURE__*/React.createElement("img", {
+    src: sponsoredCard.logo_url,
+    alt: sponsoredCard.company_name,
+    style: {
+      width: 44,
+      height: 44,
+      objectFit: 'contain',
+      borderRadius: 9
+    }
+  }), sponsoredCard.logo_text && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      borderRadius: 5,
+      padding: '2px 8px',
+      fontWeight: 900,
+      fontSize: 10,
+      color: sponsoredCard.bg_color || '#003d7a',
+      whiteSpace: 'nowrap',
+      letterSpacing: '0.02em'
+    }
+  }, sponsoredCard.logo_text)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: 'rgba(255,255,255,0.38)',
+      marginBottom: 2,
+      fontWeight: 700,
+      letterSpacing: '0.07em'
+    }
+  }, lang === 'pt' ? 'PATROCINADO' : lang === 'es' ? 'PATROCINADO' : 'SPONSORED'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: '#fff',
+      fontWeight: 700,
+      lineHeight: 1.3
+    }
+  }, sponsoredCard.headline), sponsoredCard.subtext && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'rgba(255,255,255,0.55)',
+      marginTop: 3,
+      lineHeight: 1.3
+    }
+  }, sponsoredCard.subtext)), sponsoredCard.link_url && /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "rgba(255,255,255,0.45)",
+    strokeWidth: "2.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "9 18 15 12 9 6"
   }))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -1182,9 +1383,31 @@ function HomeScreen({
       flexDirection: 'column',
       gap: 8
     }
-  }, QUICK_POOLS.slice(0, 3).map(j => /*#__PURE__*/React.createElement("button", {
+  }, todayItems.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '24px 16px',
+      color: 'var(--pg-ink-400)',
+      fontSize: 13
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 28,
+      marginBottom: 8
+    }
+  }, "\uD83C\uDFCA"), lang === 'pt' ? 'Nenhuma piscina disponível para hoje' : lang === 'es' ? 'No hay piscinas disponibles para hoy' : 'No pools available for today') : todayItems.map(j => /*#__PURE__*/React.createElement("button", {
     key: j.id,
-    onClick: () => isPremium ? setSelectedJob(j) : openPaywall(),
+    onClick: () => {
+      if (!isPremium) {
+        openPaywall();
+        return;
+      }
+      if (j._type === 'quick') {
+        ctx.openQuickJobById ? ctx.openQuickJobById(j.id) : goTab('quick');
+      } else {
+        j._vacRef && ctx.openDayPicker ? ctx.openDayPicker(j._vacRef) : goTab('work');
+      }
+    },
     className: "pg-card pg-card-tap",
     style: {
       padding: '12px 14px',
@@ -1205,12 +1428,16 @@ function HomeScreen({
       borderRadius: 12,
       flexShrink: 0,
       position: 'relative',
-      background: !isPremium ? 'var(--pg-ink-100)' : j.urgency === 'urgent' ? 'oklch(0.95 0.05 25)' : 'var(--pg-aqua-100)',
+      background: !isPremium ? 'var(--pg-ink-100)' : j._type === 'vacation' ? 'oklch(0.95 0.05 25)' : 'var(--pg-aqua-100)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
     }
-  }, !isPremium ? Icon.lock(18, 'var(--pg-ink-500)') : Icon.bolt(20, j.urgency === 'urgent' ? 'var(--pg-danger)' : 'var(--pg-aqua-700)')), /*#__PURE__*/React.createElement("div", {
+  }, !isPremium ? Icon.lock(18, 'var(--pg-ink-500)') : j._type === 'vacation' ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 20
+    }
+  }, "\uD83C\uDF34") : Icon.bolt(20, 'var(--pg-aqua-700)')), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0
@@ -1237,7 +1464,11 @@ function HomeScreen({
       gap: 4,
       flexWrap: 'wrap'
     }
-  }, Icon.pin(11, 'var(--pg-ink-500)'), " ", j.loc, " \xB7 ", tr(j.dist, lang), /*#__PURE__*/React.createElement("span", {
+  }, Icon.pin(11, 'var(--pg-ink-500)'), " ", j.loc, j.pools ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--pg-ink-300)'
+    }
+  }, "\xB7"), " ", j.pools, " ", lang === 'pt' ? 'piscinas' : lang === 'es' ? 'piscinas' : 'pools') : null, /*#__PURE__*/React.createElement("span", {
     style: {
       color: 'var(--pg-ink-300)'
     }
@@ -1262,7 +1493,7 @@ function HomeScreen({
       fontWeight: 700,
       color: 'var(--pg-ink-700)'
     }
-  }, t.negotiable) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, t.negotiable) : j.price ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'var(--pg-font-display)',
       fontSize: 18,
@@ -1277,7 +1508,7 @@ function HomeScreen({
       color: 'var(--pg-ink-500)',
       marginTop: 2
     }
-  }, t.perPool))))))))), /*#__PURE__*/React.createElement(Sheet, {
+  }, t.perPool)) : null))))))), /*#__PURE__*/React.createElement(Sheet, {
     open: !!selectedFeatured,
     onClose: () => setSelectedFeatured(null),
     height: "auto"

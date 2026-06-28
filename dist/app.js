@@ -500,9 +500,13 @@ function App() {
   React.useEffect(() => {
     if (authReady && window.__pgHideSplash) window.__pgHideSplash();
   }, [authReady]);
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
   const handleAuthLogin = React.useCallback(async sbUser => {
     setIsLoggedIn(true);
     await loadProfile(sbUser);
+    if (!localStorage.getItem('pg_onboarded')) {
+      setShowOnboarding(true);
+    }
   }, [loadProfile]);
 
   // ── Boot sequence: getSession → refresh token → loadProfile → signal ready ──
@@ -1712,7 +1716,171 @@ function App() {
     setUser: ctx.setUser,
     lang: lang,
     context: payContext
-  }), /*#__PURE__*/React.createElement(PostMenuSheet, {
+  }), showOnboarding && (() => {
+    const slides = {
+      en: [{
+        icon: '🏊',
+        title: 'Welcome to PoolGuyPro',
+        desc: 'The marketplace built for Florida pool professionals. Find jobs, post routes, and connect with other pool guys.'
+      }, {
+        icon: '📅',
+        title: 'Vacation Coverage',
+        desc: 'Going on vacation? Post your route so another pool pro can cover it. Or apply to cover someone else\'s route and earn extra.'
+      }, {
+        icon: '⚡',
+        title: 'Quick Pools & Routes',
+        desc: 'Upgrade to PRO for vacation coverage and Routes tab, or PREMIUM for real-time Quick Pools emergency alerts.'
+      }],
+      pt: [{
+        icon: '🏊',
+        title: 'Bem-vindo ao PoolGuyPro',
+        desc: 'O marketplace feito para profissionais de piscina na Flórida. Encontre trabalhos, publique rotas e conecte-se com outros pool guys.'
+      }, {
+        icon: '📅',
+        title: 'Cobertura de Férias',
+        desc: 'Indo de férias? Publique sua rota para outro profissional cobrir. Ou aplique para cobrir a rota de alguém e ganhar extra.'
+      }, {
+        icon: '⚡',
+        title: 'Quick Pools e Rotas',
+        desc: 'Faça upgrade para PRO para cobertura de férias e aba de rotas, ou PREMIUM para alertas em tempo real de Quick Pools.'
+      }],
+      es: [{
+        icon: '🏊',
+        title: 'Bienvenido a PoolGuyPro',
+        desc: 'El marketplace para profesionales de piscinas en Florida. Encuentra trabajos, publica rutas y conéctate con otros pool guys.'
+      }, {
+        icon: '📅',
+        title: 'Cobertura de Vacaciones',
+        desc: '¿De vacaciones? Publica tu ruta para que otro profesional la cubra. O aplica para cubrir la ruta de alguien y ganar extra.'
+      }, {
+        icon: '⚡',
+        title: 'Quick Pools y Rutas',
+        desc: 'Mejora a PRO para cobertura de vacaciones y pestaña de Rutas, o PREMIUM para alertas en tiempo real de Quick Pools.'
+      }]
+    };
+    const sl = slides[lang] || slides.en;
+    const btnLabel = {
+      en: 'Get Started',
+      pt: 'Começar',
+      es: 'Empezar'
+    }[lang] || 'Get Started';
+    const nextLabel = {
+      en: 'Next',
+      pt: 'Próximo',
+      es: 'Siguiente'
+    }[lang] || 'Next';
+    const skipLabel = {
+      en: 'Skip',
+      pt: 'Pular',
+      es: 'Omitir'
+    }[lang] || 'Skip';
+    const dismiss = () => {
+      localStorage.setItem('pg_onboarded', '1');
+      setShowOnboarding(false);
+    };
+    const OnboardInner = () => {
+      const [slide, setSlide] = React.useState(0);
+      const isLast = slide === sl.length - 1;
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.88)',
+          zIndex: 5000,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          background: '#111827',
+          borderRadius: '24px 24px 0 0',
+          width: '100%',
+          maxWidth: 480,
+          padding: '32px 28px 40px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderBottom: 'none'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 7,
+          marginBottom: 32
+        }
+      }, sl.map((_, i) => /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          width: i === slide ? 24 : 7,
+          height: 7,
+          borderRadius: 99,
+          transition: 'width .3s',
+          background: i === slide ? '#0077B6' : 'rgba(255,255,255,0.2)'
+        }
+      }))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          textAlign: 'center',
+          marginBottom: 32
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 48,
+          marginBottom: 16
+        }
+      }, sl[slide].icon), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 20,
+          fontWeight: 800,
+          color: '#e8edf2',
+          marginBottom: 12,
+          letterSpacing: '-0.02em'
+        }
+      }, sl[slide].title), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 14,
+          color: 'rgba(255,255,255,0.5)',
+          lineHeight: 1.7
+        }
+      }, sl[slide].desc)), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          gap: 10
+        }
+      }, !isLast && /*#__PURE__*/React.createElement("button", {
+        onClick: dismiss,
+        style: {
+          flex: 1,
+          height: 48,
+          borderRadius: 12,
+          border: '1px solid rgba(255,255,255,0.12)',
+          background: 'transparent',
+          color: 'rgba(255,255,255,0.45)',
+          fontFamily: 'inherit',
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: 'pointer'
+        }
+      }, skipLabel), /*#__PURE__*/React.createElement("button", {
+        onClick: isLast ? dismiss : () => setSlide(s => s + 1),
+        style: {
+          flex: 2,
+          height: 48,
+          borderRadius: 12,
+          border: 'none',
+          background: 'linear-gradient(135deg,#0c4a6e,#0077B6)',
+          color: '#fff',
+          fontFamily: 'inherit',
+          fontSize: 15,
+          fontWeight: 700,
+          cursor: 'pointer',
+          boxShadow: '0 4px 16px rgba(0,119,182,0.4)'
+        }
+      }, isLast ? btnLabel : nextLabel))));
+    };
+    return /*#__PURE__*/React.createElement(OnboardInner, {
+      key: "onboard"
+    });
+  })(), /*#__PURE__*/React.createElement(PostMenuSheet, {
     open: postMenuOpen,
     onClose: () => setPostMenuOpen(false),
     onPickQuickPool: () => setPostQPOpen(true),
