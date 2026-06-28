@@ -2224,72 +2224,190 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
 }
 
 // ── Paywall ───────────────────────────────────────────────────
-function PaywallSheet({ open, onClose, setUser, lang='en' }) {
-  const t = STRINGS[lang];
-  const [tier, setTier] = React.useState('premium');
-  const features = [
-    { f:t.payF1, free:false, prem:true,  pro:true },
-    { f:t.payF2, free:false, prem:true,  pro:true },
-    { f:t.payF3, free:false, prem:false, pro:true },
-    { f:t.payF4, free:false, prem:true,  pro:true },
-    { f:t.payF5, free:false, prem:false, pro:true },
-    { f:t.payF6, free:false, prem:false, pro:true },
+function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
+  // Auto-select best plan based on context (quick pools / featured = premium)
+  const [plan, setPlan] = React.useState('pro');
+  React.useEffect(() => {
+    if (!open) return;
+    setPlan(context === 'quickpools' || context === 'featured' ? 'premium' : 'pro');
+  }, [open, context]);
+
+  const mo = lang==='pt'?'/mês':lang==='es'?'/mes':'/mo';
+
+  const plans = {
+    pro: {
+      name:     'Pool Guy PRO',
+      tagline:  lang==='pt' ? 'Expanda seu negócio e alcance mais clientes'
+                : lang==='es' ? 'Expande tu negocio y llega a más clientes'
+                : 'Grow your business and reach more clients',
+      price:    '14.99',
+      badge:    null,
+      gradient: 'linear-gradient(135deg,#0c4a6e,#0077B6)',
+      accent:   '#0EBAC7',
+      url:      'https://usapoolmarket.com/upgrade/pro',
+    },
+    premium: {
+      name:     'Pool Guy PREMIUM',
+      tagline:  lang==='pt' ? 'Receba jobs instantaneamente e nunca perca uma oportunidade'
+                : lang==='es' ? 'Recibe trabajos al instante y nunca pierdas una oportunidad'
+                : 'Get jobs instantly near you and never miss an opportunity again',
+      price:    '24.99',
+      badge:    lang==='pt'?'MELHOR VALOR':lang==='es'?'MEJOR VALOR':'BEST VALUE',
+      gradient: 'linear-gradient(135deg,#3b0764,#7c3aed)',
+      accent:   '#a78bfa',
+      url:      'https://usapoolmarket.com/upgrade/premium',
+    },
+  };
+
+  const ROWS = [
+    { label: lang==='pt'?'Anúncios simultâneos':lang==='es'?'Anuncios simultáneos':'Simultaneous listings',
+      free:'2', pro:'5', premium:'10', type:'count' },
+    { label: lang==='pt'?'Aplicar a vagas':lang==='es'?'Postularte a empleos':'Apply to jobs',
+      free:true, pro:true, premium:true },
+    { label: lang==='pt'?'Publicar vagas (contratar)':lang==='es'?'Publicar empleos (contratar)':'Post job listings (hire)',
+      free:true, pro:true, premium:true },
+    { label: lang==='pt'?'Marketplace completo':lang==='es'?'Marketplace completo':'Full marketplace access',
+      free:true, pro:true, premium:true },
+    { label: lang==='pt'?'Ver anúncios de rotas/piscinas':lang==='es'?'Ver anuncios de rutas/piscinas':'See routes & pools listings',
+      free:false, pro:true, premium:true },
+    { label: lang==='pt'?'Rotas de férias (ver + publicar)':lang==='es'?'Rutas de vacaciones (ver + publicar)':'Vacation routes — full access',
+      free:false, pro:true, premium:true },
+    { label: lang==='pt'?'Piscinas Rápidas (Quick Pools)':lang==='es'?'Piscinas Rápidas (Quick Pools)':'Quick Pools — instant jobs',
+      free:false, pro:false, premium:true },
+    { label: lang==='pt'?'2 anúncios em destaque/mês':lang==='es'?'2 anuncios destacados/mes':'2 featured listings/month',
+      free:false, pro:false, premium:true },
+    { label: lang==='pt'?'Badge verificado Premium':lang==='es'?'Badge verificado Premium':'Premium verified badge',
+      free:false, pro:false, premium:true },
   ];
-  const month = lang==='pt'?'/mês':lang==='es'?'/mes':'/month';
+
+  const p = plans[plan];
+
+  const handleSubscribe = () => {
+    // Open external Stripe checkout — no Apple cut
+    window.open(p.url, '_blank', 'noopener');
+    // NOTE: In production, remove the line below. Tier is set server-side via webhook.
+    // Kept here for demo/testing purposes only.
+    setUser(u => ({...u, tier: plan}));
+    onClose();
+  };
+
   return (
-    <Sheet open={open} onClose={onClose} height="88%">
-      <div style={{padding:'0 18px 30px'}}>
-        <div style={{padding:'4px 0 14px', display:'flex', justifyContent:'flex-end'}}>
+    <Sheet open={open} onClose={onClose} height="92%">
+      <div style={{padding:'0 0 32px'}}>
+        {/* Close */}
+        <div style={{padding:'6px 16px 0', display:'flex', justifyContent:'flex-end'}}>
           <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
             {Icon.x(16,'var(--pg-ink-700)')}
           </button>
         </div>
-        <div style={{textAlign:'center'}}>
-          <div style={{display:'inline-flex', alignItems:'center', justifyContent:'center', width:64, height:64, borderRadius:18, marginBottom:14, background:'linear-gradient(155deg,var(--pg-aqua-400),var(--pg-blue-500))'}}>
-            {Icon.crown(28,'#fff')}
+
+        {/* Header */}
+        <div style={{padding:'4px 20px 16px', textAlign:'center'}}>
+          <div style={{display:'inline-flex', alignItems:'center', justifyContent:'center',
+            width:56, height:56, borderRadius:16, marginBottom:12,
+            background: p.gradient}}>
+            {Icon.crown(24,'#fff')}
           </div>
-          <h2 style={{margin:0, fontSize:26, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, whiteSpace:'pre-line'}}>{t.payTitle}</h2>
-          <p style={{margin:'8px 16px 0', fontSize:14, color:'var(--pg-ink-500)', lineHeight:1.45}}>{t.paySub}</p>
-        </div>
-        <div className="pg-seg" style={{marginTop:18}}>
-          <button className={`pg-seg-btn ${tier==='premium'?'on':''}`} onClick={()=>setTier('premium')}>{t.premium}</button>
-          <button className={`pg-seg-btn ${tier==='pro'?'on':''}`} onClick={()=>setTier('pro')}>{t.poolguyPro}</button>
-        </div>
-        <div className="pg-card" style={{padding:18, marginTop:14,
-          background:tier==='pro'?'linear-gradient(135deg,var(--pg-blue-900),var(--pg-blue-700))':'var(--pg-white)',
-          color:tier==='pro'?'#fff':'inherit', border:tier==='pro'?'none':'0.5px solid var(--pg-aqua-400)'}}>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end'}}>
-            <div>
-              <div style={{fontSize:12, fontWeight:700, letterSpacing:'0.06em', opacity:0.8}}>
-                {tier==='pro'?'POOLGUY PRO':t.premium.toUpperCase()}
-              </div>
-              <div style={{display:'flex', alignItems:'baseline', gap:4, marginTop:6}}>
-                <span style={{fontSize:36, fontWeight:700, letterSpacing:'-0.03em'}}>${tier==='pro'?'19.99':'9.99'}</span>
-                <span style={{fontSize:14, opacity:0.7}}>{month}</span>
-              </div>
-              <div style={{fontSize:12, opacity:0.7, marginTop:2}}>{tier==='pro'?t.paySave:t.payTrial}</div>
-            </div>
-            {tier==='pro' && <span style={{fontSize:10, padding:'4px 8px', borderRadius:6, background:'var(--pg-aqua-500)', color:'var(--pg-blue-900)', fontWeight:700, letterSpacing:'0.05em'}}>{t.payBest}</span>}
+          <div style={{fontSize:11, fontWeight:700, letterSpacing:'.1em', color:'var(--pg-ink-400)', marginBottom:6}}>
+            {lang==='pt'?'DESBLOQUEIE MAIS':lang==='es'?'DESBLOQUEA MÁS':'UNLOCK MORE'}
           </div>
+          <h2 style={{margin:0, fontSize:22, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.15}}>
+            {p.name}
+          </h2>
+          <p style={{margin:'6px 8px 0', fontSize:13, color:'var(--pg-ink-500)', lineHeight:1.5}}>
+            {p.tagline}
+          </p>
         </div>
-        <div style={{marginTop:14}}>
-          {features.map((f,i)=>{
-            const has = tier==='pro'?f.pro:f.prem;
+
+        {/* Plan toggle */}
+        <div style={{padding:'0 16px 14px', display:'flex', gap:8}}>
+          {(['pro','premium']).map(id => {
+            const pl = plans[id];
+            const active = plan === id;
             return (
-              <div key={i} style={{display:'flex', alignItems:'center', gap:10, padding:'9px 0', borderBottom:'0.5px solid var(--pg-ink-200)'}}>
-                <div style={{width:22, height:22, borderRadius:'50%', background:has?'var(--pg-aqua-100)':'var(--pg-ink-100)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                  {has?Icon.check(13,'var(--pg-aqua-700)'):Icon.x(11,'var(--pg-ink-400)')}
+              <button key={id} onClick={()=>setPlan(id)} style={{
+                flex:1, padding:'12px 10px', borderRadius:14, border:'none', cursor:'pointer',
+                fontFamily:'inherit', textAlign:'left', position:'relative',
+                background: active ? pl.gradient : 'var(--pg-ink-100)',
+                color: active ? '#fff' : 'var(--pg-ink-600)',
+                transition:'all .18s',
+                boxShadow: active ? '0 6px 18px rgba(0,0,0,0.22)' : 'none',
+              }}>
+                {pl.badge && (
+                  <div style={{position:'absolute', top:-8, right:8, fontSize:9, fontWeight:800,
+                    padding:'2px 7px', borderRadius:999, background:'#fbbf24', color:'#1c1917',
+                    letterSpacing:'.06em', boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
+                    {pl.badge}
+                  </div>
+                )}
+                <div style={{fontSize:10, fontWeight:700, letterSpacing:'.07em', opacity:.8, marginBottom:4}}>
+                  {pl.name.toUpperCase()}
                 </div>
-                <div style={{flex:1, fontSize:13, color:has?'var(--pg-ink-900)':'var(--pg-ink-500)'}}>{f.f}</div>
-              </div>
+                <div style={{display:'flex', alignItems:'baseline', gap:2}}>
+                  <span style={{fontSize:22, fontWeight:800, letterSpacing:'-0.03em'}}>${pl.price}</span>
+                  <span style={{fontSize:11, opacity:.7}}>{mo}</span>
+                </div>
+              </button>
             );
           })}
         </div>
-        <button onClick={()=>{setUser(u=>({...u,tier})); onClose();}} className="pg-btn pg-btn-primary" style={{width:'100%', height:54, fontSize:16, marginTop:18}}>
-          {t.startTrial} — ${tier==='pro'?'19.99':'9.99'}{month}
-        </button>
-        <div style={{fontSize:11, color:'var(--pg-ink-500)', textAlign:'center', marginTop:8, lineHeight:1.4}}>
-          {t.cancelAnytime}<br/>{t.restore}
+
+        {/* Feature table */}
+        <div style={{padding:'0 16px'}}>
+          {/* Column headers */}
+          <div style={{display:'grid', gridTemplateColumns:'1fr 52px 52px 52px', gap:4,
+            padding:'6px 0 8px', borderBottom:'1.5px solid var(--pg-ink-200)'}}>
+            <div/>
+            {['free','pro','premium'].map(col => (
+              <div key={col} style={{textAlign:'center', fontSize:9, fontWeight:800,
+                letterSpacing:'.07em', color: col==='free'?'var(--pg-ink-400)':col==='pro'?'#0077B6':'#7c3aed'}}>
+                {col==='free'?'FREE':col==='pro'?'PRO':'PREM'}
+              </div>
+            ))}
+          </div>
+          {ROWS.map((row, i) => (
+            <div key={i} style={{display:'grid', gridTemplateColumns:'1fr 52px 52px 52px', gap:4,
+              padding:'9px 0', borderBottom:'0.5px solid var(--pg-ink-100)', alignItems:'center'}}>
+              <div style={{fontSize:12.5, color:'var(--pg-ink-700)', lineHeight:1.35, paddingRight:6}}>
+                {row.label}
+              </div>
+              {['free','pro','premium'].map(col => {
+                const val = row[col];
+                const isActive = col === plan;
+                return (
+                  <div key={col} style={{textAlign:'center',
+                    background: isActive ? (col==='pro'?'rgba(0,119,182,0.08)':'rgba(124,58,237,0.08)') : 'transparent',
+                    borderRadius:8, padding:'3px 0'}}>
+                    {row.type === 'count'
+                      ? <span style={{fontSize:13, fontWeight:700,
+                          color:col==='free'?'var(--pg-ink-400)':col==='pro'?'#0077B6':'#7c3aed'}}>{val}</span>
+                      : val
+                        ? <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill={col==='free'?'#e2e8f0':col==='pro'?'#0077B6':'#7c3aed'}/><path d="M6 10l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        : <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="3" y1="7" x2="11" y2="7" stroke="var(--pg-ink-300)" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                    }
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div style={{padding:'18px 16px 0'}}>
+          <button onClick={handleSubscribe}
+            style={{width:'100%', height:52, borderRadius:14, border:'none',
+              background: p.gradient,
+              color:'#fff', fontWeight:800, fontSize:16, cursor:'pointer',
+              fontFamily:'inherit', letterSpacing:'-0.01em',
+              boxShadow:`0 6px 20px rgba(0,0,0,0.28)`}}>
+            {lang==='pt'?`Assinar ${p.name} — $${p.price}${mo}`:lang==='es'?`Suscribirse a ${p.name} — $${p.price}${mo}`:`Subscribe to ${p.name} — $${p.price}${mo}`}
+          </button>
+          <div style={{display:'flex', alignItems:'center', gap:6, justifyContent:'center', marginTop:10}}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div style={{fontSize:11, color:'var(--pg-ink-400)', textAlign:'center', lineHeight:1.4}}>
+              {lang==='pt'?'Pagamento seguro via site. Cancele quando quiser.':lang==='es'?'Pago seguro por el sitio web. Cancela cuando quieras.':'Secure payment via website. Cancel anytime.'}
+            </div>
+          </div>
         </div>
       </div>
     </Sheet>
@@ -4032,7 +4150,7 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
     setFetchedProfile(null);
     if (!open || !profile?.uid || !window.sb) return;
     window.sb.from('profiles')
-      .select('id,name,photo_url,role,verified,region')
+      .select('id,name,photo_url,role,verified,region,tier')
       .eq('id', profile.uid).single()
       .then(({ data }) => { if (data) setFetchedProfile(data); })
       .catch(() => {});
@@ -4102,7 +4220,23 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
             </div>
           </div>
 
-          <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'#fff', letterSpacing:'-0.02em'}}>{name}</div>
+          <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap:8, flexWrap:'wrap'}}>
+            <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'#fff', letterSpacing:'-0.02em'}}>{name}</div>
+            {fetchedProfile?.tier === 'premium' && (
+              <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999,
+                background:'linear-gradient(135deg,#7c3aed,#a855f7)', color:'#fff',
+                display:'inline-flex', alignItems:'center', gap:4, letterSpacing:'.04em'}}>
+                {Icon.crown(9,'#fff')} PREMIUM
+              </span>
+            )}
+            {fetchedProfile?.tier === 'pro' && (
+              <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999,
+                background:'linear-gradient(135deg,#0c4a6e,#0077B6)', color:'#fff',
+                letterSpacing:'.04em'}}>
+                PRO
+              </span>
+            )}
+          </div>
           <div style={{fontSize:12, color:'rgba(255,255,255,0.50)', marginTop:4, display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
             {Icon.pin(10,'rgba(255,255,255,0.45)')} {loc}
           </div>

@@ -610,6 +610,7 @@ function App() {
   const [hasUnreadChat,  setHasUnreadChat]  = React.useState(false);
   const [hasUnreadNotif, setHasUnreadNotif] = React.useState(false);
   const [payOpen,        setPayOpen]        = React.useState(false);
+  const [payContext,     setPayContext]     = React.useState(null);
   const [postMenuOpen,   setPostMenuOpen]   = React.useState(false);
   const [postQPOpen,     setPostQPOpen]     = React.useState(false);
   const [editQPJob,      setEditQPJob]      = React.useState(null);
@@ -1069,11 +1070,25 @@ function App() {
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },
     hasUnreadChat, hasUnreadNotif: hasUnreadNotif || pendingRatings.length > 0,
     registerPush:       _registerPush,
-    openPaywall:        () => setPayOpen(true),
+    openPaywall:        (ctx='') => { setPayContext(ctx||null); setPayOpen(true); },
     openPostMenu:       () => setPostMenuOpen(true),
     openPost:           () => setPostQPOpen(true),
     openEditPost:       (job) => setEditQPJob(job),
-    openMarketPost:     () => { switchTab('market'); setMarketPostOpen(true); },
+    openMarketPost:     async () => {
+      // Count active listings vs tier limit before opening post form
+      const limits = { free: 2, pro: 5, premium: 10 };
+      const limit = limits[user.tier] || 2;
+      try {
+        const { data } = await window.sb.from('marketplace').select('id').eq('author_id', user.uid);
+        const count = (data || []).length;
+        if (count >= limit) {
+          setPayContext('listings');
+          setPayOpen(true);
+          return;
+        }
+      } catch(e) {}
+      switchTab('market'); setMarketPostOpen(true);
+    },
     closeMarketPost:    () => setMarketPostOpen(false),
     marketPostOpen,
     openRegionEditor:   () => setRegionOpen(true),
@@ -1210,7 +1225,7 @@ function App() {
             }
           }, 280);
         }}/>
-      <PaywallSheet open={payOpen} onClose={()=>setPayOpen(false)} setUser={ctx.setUser} lang={lang}/>
+      <PaywallSheet open={payOpen} onClose={()=>setPayOpen(false)} setUser={ctx.setUser} lang={lang} context={payContext}/>
       <PostMenuSheet open={postMenuOpen} onClose={()=>setPostMenuOpen(false)}
         onPickQuickPool={()=>setPostQPOpen(true)} lang={lang}/>
       <Sheet open={postQPOpen} onClose={()=>setPostQPOpen(false)} height="92%">

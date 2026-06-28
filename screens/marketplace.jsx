@@ -4271,8 +4271,35 @@ function MarketplaceScreen({ ctx }) {
             {/* Routes view for desktop */}
             {view === 'routes' && (
               <div style={{paddingTop:8}}>
-                {/* Sub-tabs */}
-                <div style={{display:'flex', gap:10, marginBottom:24}}>
+                {/* Free-tier gate: can publish routes but can't see others' */}
+                {user.tier === 'free' && (
+                  <div style={{
+                    borderRadius:20, padding:'32px 24px', textAlign:'center',
+                    background:'linear-gradient(135deg,#0c4a6e 0%,#0077B6 100%)',
+                    color:'#fff', marginBottom:20,
+                  }}>
+                    <div style={{width:52, height:52, borderRadius:15, background:'rgba(255,255,255,0.12)',
+                      display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px'}}>
+                      {Icon.lock(22,'#fff')}
+                    </div>
+                    <div style={{fontSize:17, fontWeight:800, letterSpacing:'-0.02em', marginBottom:8}}>
+                      {lang==='pt'?'Rotas disponíveis com PRO':lang==='es'?'Rutas disponibles con PRO':'Routes available with PRO'}
+                    </div>
+                    <div style={{fontSize:13, opacity:.8, lineHeight:1.5, maxWidth:280, margin:'0 auto 18px'}}>
+                      {lang==='pt'?'Faça upgrade para Pool Guy PRO e veja todas as rotas e piscinas disponíveis na sua região.'
+                      :lang==='es'?'Actualiza a Pool Guy PRO para ver todas las rutas y piscinas disponibles en tu área.'
+                      :'Upgrade to Pool Guy PRO to see all available routes and pools in your area.'}
+                    </div>
+                    <button onClick={()=>ctx.openPaywall&&ctx.openPaywall('routes')} style={{
+                      height:44, padding:'0 28px', borderRadius:12, border:'none', cursor:'pointer',
+                      background:'#fff', color:'#0077B6', fontWeight:800, fontSize:14, fontFamily:'inherit',
+                    }}>
+                      {lang==='pt'?'Ver planos — a partir de $14.99/mês':lang==='es'?'Ver planes — desde $14.99/mes':'See plans — from $14.99/mo'}
+                    </button>
+                  </div>
+                )}
+                {/* Sub-tabs — hidden for free users */}
+                {user.tier !== 'free' && <div style={{display:'flex', gap:10, marginBottom:24}}>
                   {[
                     { id:'routes', label: lang==='pt'?'Rotas (5+ piscinas)':'Routes (5+ pools)' },
                     { id:'pools',  label: lang==='pt'?'Piscinas avulsas':'Individual Pools' },
@@ -4287,8 +4314,9 @@ function MarketplaceScreen({ ctx }) {
                       transition:'all .15s',
                     }}>{s.label}</button>
                   ))}
-                </div>
+                </div>}
                 {/* Route cards in 2-column grid on desktop */}
+                {user.tier === 'free' ? null :
                 <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(360px,1fr))', gap:16}}>
                   {list.map(r => (
                     <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ if(m.status==='sold'&&!isMyPost(m)){return;} openListing(m); } } else { setSelected({...r, _type:'route'}); window.history.pushState({pgRoute:r.id},'','?listing=route-'+r.id); } }}
@@ -4350,7 +4378,7 @@ function MarketplaceScreen({ ctx }) {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div>}
               </div>
             )}
           </div>
@@ -4961,7 +4989,36 @@ function MarketplaceScreen({ ctx }) {
         {view === 'routes' && (
           <div style={{marginTop:14, display:'flex', flexDirection:'column', gap:12}}>
 
+            {/* Free-tier gate */}
+            {user.tier === 'free' && (
+              <div style={{
+                borderRadius:18, padding:'28px 20px', textAlign:'center',
+                background:'linear-gradient(135deg,#0c4a6e 0%,#0077B6 100%)',
+                color:'#fff',
+              }}>
+                <div style={{width:48, height:48, borderRadius:14, background:'rgba(255,255,255,0.14)',
+                  display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px'}}>
+                  {Icon.lock(20,'#fff')}
+                </div>
+                <div style={{fontSize:16, fontWeight:800, marginBottom:6}}>
+                  {lang==='pt'?'Disponível no PRO':lang==='es'?'Disponible en PRO':'Available with PRO'}
+                </div>
+                <div style={{fontSize:12.5, opacity:.8, lineHeight:1.5, marginBottom:16}}>
+                  {lang==='pt'?'Veja todas as rotas e piscinas disponíveis na sua região.'
+                  :lang==='es'?'Ve todas las rutas y piscinas disponibles en tu área.'
+                  :'See all available routes and pools in your area.'}
+                </div>
+                <button onClick={()=>ctx.openPaywall&&ctx.openPaywall('routes')} style={{
+                  height:42, padding:'0 24px', borderRadius:10, border:'none', cursor:'pointer',
+                  background:'#fff', color:'#0077B6', fontWeight:800, fontSize:13, fontFamily:'inherit',
+                }}>
+                  {lang==='pt'?'Ver planos':'See plans'} — $14.99{lang==='pt'?'/mês':'/mo'}
+                </button>
+              </div>
+            )}
+
             {/* ── Rotas / Piscinas sub-tab ── */}
+            {user.tier !== 'free' && <React.Fragment>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:6}}>
               {[
                 { id:'routes', icon: Icon.pin,
@@ -5269,6 +5326,7 @@ function MarketplaceScreen({ ctx }) {
               </div>
             ))}
           </div>
+          </React.Fragment>}
         )}
       </div>
 

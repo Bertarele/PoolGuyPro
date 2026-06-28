@@ -671,7 +671,7 @@ function WorkScreen({ ctx }) {
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
               {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
-              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
+              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
             </div>
           </div>
         </div>
@@ -1028,7 +1028,7 @@ function WorkScreen({ ctx }) {
         {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications}/>}
         {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
-                              onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet}
+                              onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')}
                               onViewApplicants={openApplicants}
                               openDayPicker={openDayPicker}
                               openSchedule={openSchedule}
@@ -2183,7 +2183,7 @@ function PoolRouteMap({ pools=[], style={}, doneIndices=null }) {
 }
 
 // ── Vacation panel ────────────────────────────────────────────
-function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac }) {
+function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac, onUnlockVac }) {
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
 
   const today = React.useMemo(() => { const t = new Date(); t.setHours(0,0,0,0); return t; }, []);
@@ -2454,13 +2454,22 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                         </span>
                       )}
                     </div>
-                    {!isOwner && (
+                    {!isOwner && (user.tier === 'free' ? (
+                      <button onClick={()=>onUnlockVac&&onUnlockVac()}
+                        style={{height:38, padding:'0 16px', fontSize:12.5, borderRadius:999,
+                          border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700,
+                          background:'linear-gradient(135deg,#0c4a6e,#0077B6)',
+                          color:'#fff', display:'flex', alignItems:'center', gap:6}}>
+                        {Icon.lock(13,'#fff')}
+                        {lang==='pt'?'PRO para aplicar':lang==='es'?'PRO para aplicar':'PRO to apply'}
+                      </button>
+                    ) : (
                       <button onClick={()=>openDayPicker && openDayPicker(vac)}
                         className="pg-btn pg-btn-primary"
                         style={{height:38, padding:'0 20px', fontSize:13.5, borderRadius:999, gap:5}}>
                         {pickDaysLabel} →
                       </button>
-                    )}
+                    ))}
                     {isOwner && user?.role !== 'admin' && (
                       <div style={{display:'flex', gap:6}}>
                         <button onClick={()=>onEditVac && onEditVac(vac)}
@@ -2667,11 +2676,22 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                         ${maxEarnings.toLocaleString()}
                       </div>
                     </div>
-                    <button onClick={()=>openDayPicker && openDayPicker(v)}
-                      className="pg-btn pg-btn-primary"
-                      style={{height:38, padding:'0 20px', fontSize:13.5, borderRadius:999, gap:5}}>
-                      {pickDaysLabel} →
-                    </button>
+                    {user?.tier === 'free' ? (
+                      <button onClick={()=>onUnlockVac&&onUnlockVac()}
+                        style={{height:38, padding:'0 16px', fontSize:12.5, borderRadius:999,
+                          border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700,
+                          background:'linear-gradient(135deg,#0c4a6e,#0077B6)',
+                          color:'#fff', display:'flex', alignItems:'center', gap:6}}>
+                        {Icon.lock(13,'#fff')}
+                        {lang==='pt'?'PRO para aplicar':lang==='es'?'PRO para aplicar':'PRO to apply'}
+                      </button>
+                    ) : (
+                      <button onClick={()=>openDayPicker && openDayPicker(v)}
+                        className="pg-btn pg-btn-primary"
+                        style={{height:38, padding:'0 20px', fontSize:13.5, borderRadius:999, gap:5}}>
+                        {pickDaysLabel} →
+                      </button>
+                    )}
                   </div>
                 </div>
                 {/* Admin quick-delete for static vacation card */}

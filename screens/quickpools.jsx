@@ -318,7 +318,7 @@ function QuickPoolsScreen({ ctx }) {
   const JobCard = ({ j, compact=false }) => {
     const isApplied    = !!applied[j.id];
     const isOwn        = j._live && user?.uid && j.poster_id === user.uid;
-    const locked       = !isOwn && user.tier === 'free';
+    const locked       = !isOwn && user.tier !== 'premium';
     // Green only for the candidate whose application was accepted
     const isAccepted   = !isOwn && myAcceptedJobIds.has(String(j.id));
     // Amber for the owner when someone has been accepted (job filled, pending finalization)
@@ -841,15 +841,15 @@ function QuickPoolsScreen({ ctx }) {
                   {lang==='pt'?`Broward County · ordenado por proximidade`:`${county} County · sorted by proximity`}
                 </div>
               </div>
-              {user.tier==='free' && (
+              {user.tier !== 'premium' && (
                 <div style={{
                   display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:999,
-                  background:'linear-gradient(135deg,var(--pg-blue-50),#E0F2FE)',
-                  border:'1px solid var(--pg-blue-100)',
+                  background:'linear-gradient(135deg,#f5f3ff,#ede9fe)',
+                  border:'1px solid #c4b5fd',
                 }}>
-                  {Icon.lock(12,'var(--pg-blue-600)')}
-                  <span style={{fontSize:12, fontWeight:700, color:'var(--pg-blue-700)'}}>
-                    {lang==='pt'?'Premium para se candidatar':'Premium to apply'}
+                  {Icon.lock(12,'#7c3aed')}
+                  <span style={{fontSize:12, fontWeight:700, color:'#6d28d9'}}>
+                    {lang==='pt'?'Exclusivo Premium':'Premium only'}
                   </span>
                 </div>
               )}
@@ -1029,9 +1029,9 @@ function QuickPoolsScreen({ ctx }) {
           color:'var(--pg-ink-900)', letterSpacing:'-0.01em'}}>
           {lang==='pt'?`${jobs.length} vagas disponíveis`:lang==='es'?`${jobs.length} trabajos disponibles`:`${jobs.length} jobs available`}
         </div>
-        {user.tier==='free' && (
-          <span style={{fontSize:11, color:'var(--pg-blue-600)', display:'inline-flex', alignItems:'center', gap:4, fontWeight:700}}>
-            {Icon.lock(11,'var(--pg-blue-600)')} Premium
+        {user.tier !== 'premium' && (
+          <span style={{fontSize:11, color:'#7c3aed', display:'inline-flex', alignItems:'center', gap:4, fontWeight:700}}>
+            {Icon.lock(11,'#7c3aed')} Premium only
           </span>
         )}
       </div>
@@ -1153,7 +1153,7 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
 // ── Detail view ──────────────────────────────────────────────
 function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, openPublicProfile, openEditPost, onStatusChange, onMyJobAccepted }) {
   const isOwn   = job._live && user?.uid && job.poster_id === user.uid;
-  const locked  = !isOwn && user.tier === 'free';
+  const locked  = !isOwn && user.tier !== 'premium';
   const [confirmDialog,  setConfirmDialog]  = React.useState(null);
   const [applicants,     setApplicants]     = React.useState([]);
   const [loadingApps,    setLoadingApps]    = React.useState(false);
