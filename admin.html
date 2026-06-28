@@ -2196,6 +2196,7 @@ function AdminApp({ adminUser, onLogout }) {
                           <button onClick={async()=>{if(!confirm(`Excluir card de "${s.company_name}"?`))return;await window.sb.from('sponsored_cards').delete().eq('id',s.id);setSponsors(p=>p.filter(x=>x.id!==s.id));showToast('Card excluído.');}}
                             className="aib aib-red" title="Excluir">{AIco.trash}</button>
                         </div>
+                      </div>
                     </div>
                   );
                 })}
