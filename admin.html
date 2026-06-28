@@ -85,7 +85,7 @@
   function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
 
   function makeBuilder(table){
-    var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null;
+    var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null, _limit=null, _in=null, _inCol=null;
     var run=async function(){
       var url=BASE+'/rest/v1/'+table, h=hdrs();
       if(op==='insert'){
@@ -109,7 +109,9 @@
       }
       var p=['select='+encodeURIComponent(sel)];
       filters.forEach(function(f){p.push(f);});
+      if(_inCol&&_in&&_in.length) p.push(_inCol+'=in.('+_in.map(function(v){return encodeURIComponent(v);}).join(',')+')');
       if(orderCol) p.push('order='+orderCol+(orderAsc?'':'.desc'));
+      if(_limit) p.push('limit='+_limit);
       if(isSingle) h['Accept']='application/vnd.pgrst.object+json';
       var r=await fetch(url+'?'+p.join('&'),{headers:h});
       if(r.status===406||r.status===404) return{data:null,error:null};
@@ -121,8 +123,11 @@
       select:function(c){sel=c||'*';return b;},
       eq:function(c,v){filters.push(c+'=eq.'+encodeURIComponent(v));return b;},
       neq:function(c,v){filters.push(c+'=neq.'+encodeURIComponent(v));return b;},
+      in:function(c,vals){_inCol=c;_in=vals;return b;},
       order:function(c,opts){orderCol=c;orderAsc=opts?opts.ascending!==false:true;return b;},
+      limit:function(n){_limit=n;return b;},
       single:function(){isSingle=true;return b;},
+      maybeSingle:function(){isSingle=true;return b;},
       insert:function(row){op='insert';body=row;return b;},
       update:function(upd){op='update';body=upd;return b;},
       delete:function(){op='delete';return b;},
