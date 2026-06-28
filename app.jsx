@@ -1169,11 +1169,27 @@ function App() {
         onUnreadChange={(c)=>setHasUnreadNotif(c>0)}
         onNavigate={(type, linkId)=>{
           setNotifOpen(false);
-          if (type==='warning') { setTimeout(()=>switchTab('profile'), 280); }
-          else if (type==='quick_pool_new') { setTimeout(()=>switchTab('quick'), 280); }
-          else if (type==='job_new_application' || type==='job_accepted' || type==='job_rejected') { setTimeout(()=>switchTab('work'), 280); }
-          else if (linkId) { setTimeout(()=>ctx.openListingById(linkId), 280); }
-          else { setTimeout(()=>switchTab('market'), 280); }
+          setTimeout(()=>{
+            if (type==='warning') {
+              switchTab('profile');
+            } else if (type==='quick_pool_new' || type==='quick_pool_done') {
+              // Open the specific quick pool job if we have an ID, else just go to tab
+              if (linkId) ctx.openQuickJobById(linkId);
+              else switchTab('quick');
+            } else if (type==='job_new_application' || type==='job_accepted' || type==='job_rejected') {
+              switchTab('work');
+            } else if (type==='rental_request' || type==='rental_approved' || type==='rental_declined' || type==='rental_cancelled' || type==='rental_completed' || type==='rental_resolved') {
+              if (linkId) ctx.openListingById(linkId);
+              else switchTab('market');
+            } else if (type==='market') {
+              if (linkId) ctx.openListingById(linkId);
+              else switchTab('market');
+            } else if (linkId) {
+              ctx.openListingById(linkId);
+            } else {
+              switchTab('market');
+            }
+          }, 280);
         }}/>
       <PaywallSheet open={payOpen} onClose={()=>setPayOpen(false)} setUser={ctx.setUser} lang={lang}/>
       <PostMenuSheet open={postMenuOpen} onClose={()=>setPostMenuOpen(false)}

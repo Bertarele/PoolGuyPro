@@ -1444,17 +1444,26 @@ function AdminApp({ adminUser, onLogout }) {
     if(error){ error.message.includes('RLS')?setRlsOpen(true):showToast('❌ '+error.message,false); return; }
     setMarket(p=>p.map(m=>m.id===row.id?{...m,status:'approved'}:m));
     showToast('✓ Anúncio aprovado e publicado!');
-    // Notify listing owner
+    // Notify listing owner — in-app (bell history) + push
     if (row.author_id) {
+      const notifTitle = '🎉 Seu anúncio foi aprovado!';
+      const notifBody  = `"${row.name||row.type||'Anúncio'}" já está visível no marketplace.`;
+      window.sb.from('notifications').insert({
+        user_id: row.author_id, type: 'market',
+        title: notifTitle,
+        body:  notifBody,
+        link_id: row.id,
+        read: false,
+      }).catch(()=>{});
       try {
         await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/send-push', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SRK}` },
           body: JSON.stringify({
             user_id: row.author_id,
-            title: '🎉 Seu anúncio foi aprovado!',
-            body:  `"${row.name||row.type||'Anúncio'}" já está visível no marketplace.`,
-            url:   '/#market',
+            title: notifTitle,
+            body:  notifBody,
+            url:   `/#market`,
             notif_type: 'market',
           }),
         });

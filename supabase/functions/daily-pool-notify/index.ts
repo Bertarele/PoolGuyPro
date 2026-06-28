@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     const title = `💧 Piscina hoje em ${job.city}`;
     const body  = `${job.pools_count} piscina${job.pools_count>1?'s':''} · ${job.price_per_pool ? `$${job.price_per_pool}/piscina` : 'Negociável'} · ${job.when_label || ''}`;
-    const url   = `/#express-pools?job=${job.id}`;
+    const url   = `/#quick?job=${job.id}`;
 
     await Promise.allSettled(subs.map(async (sub: any) => {
       try {
@@ -59,6 +59,19 @@ Deno.serve(async (req) => {
         totalSent++;
       } catch {}
     }));
+
+    // Create in-app notifications so the bell shows history even without push
+    if (matching.length > 0) {
+      const rows = matching.map((p: any) => ({
+        user_id: p.id, type: 'quick_pool_new', title, body,
+        link_id: String(job.id), read: false,
+      }));
+      await fetch(`${SB_URL}/rest/v1/notifications`, {
+        method: 'POST',
+        headers: { ...headers, 'Prefer': 'return=minimal' },
+        body: JSON.stringify(rows),
+      });
+    }
   }
 
   return new Response(JSON.stringify({ sent: totalSent, jobs: jobs.length }), {

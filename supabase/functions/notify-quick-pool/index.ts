@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
           type:    'quick_pool_new',
           title,
           body,
-          link_id: null,
+          link_id: String(job.id || ''),
           read:    false,
         }),
       })
