@@ -1532,6 +1532,11 @@ function App() {
     openJobDetail: app => setJobDetailApp(app),
     openReview: app => setReviewApp(app),
     openVacSheet: () => {
+      if (user.tier === 'free') {
+        setPayContext('vac');
+        setPayOpen(true);
+        return;
+      }
       setEditingVac(null);
       setVacSheetOpen(true);
     },

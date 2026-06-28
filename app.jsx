@@ -1108,7 +1108,7 @@ function App() {
     openWallet:         () => setWalletOpen(true),
     openJobDetail:      (app) => setJobDetailApp(app),
     openReview:         (app) => setReviewApp(app),
-    openVacSheet:       () => { setEditingVac(null); setVacSheetOpen(true); },
+    openVacSheet:       () => { if (user.tier === 'free') { setPayContext('vac'); setPayOpen(true); return; } setEditingVac(null); setVacSheetOpen(true); },
     openEditVacSheet:   (vac) => { setEditingVac(vac); setVacSheetOpen(true); },
     openHiringSheet:    () => setHiringSheetOpen(true),
     openTechSheet:      () => setTechSheetOpen(true),
