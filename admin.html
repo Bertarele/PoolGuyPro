@@ -2111,12 +2111,12 @@ function AdminApp({ adminUser, onLogout }) {
                   <div style={{marginBottom:16}}>
                     <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em'}}>Preview no App</div>
                     <div style={{background:sponsorForm.bg_color||'#001f4d',borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'center',gap:10,border:'1px solid rgba(255,255,255,0.1)'}}>
-                      {sponsorForm.logo_url
-                        ? <img src={sponsorForm.logo_url} alt="" style={{width:40,height:40,objectFit:'contain',borderRadius:8,flexShrink:0}}/>
-                        : sponsorForm.logo_text
-                          ? <div style={{background:'#fff',borderRadius:6,padding:'4px 9px',fontWeight:900,fontSize:11,color:sponsorForm.bg_color||'#003d7a',flexShrink:0,whiteSpace:'nowrap'}}>{sponsorForm.logo_text}</div>
-                          : null
-                      }
+                      {(sponsorForm.logo_url||sponsorForm.logo_text) && (
+                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,flexShrink:0}}>
+                          {sponsorForm.logo_url && <img src={sponsorForm.logo_url} alt="" style={{width:40,height:40,objectFit:'contain',borderRadius:8}}/>}
+                          {sponsorForm.logo_text && <div style={{background:'#fff',borderRadius:4,padding:'2px 7px',fontWeight:900,fontSize:9,color:sponsorForm.bg_color||'#003d7a',whiteSpace:'nowrap'}}>{sponsorForm.logo_text}</div>}
+                        </div>
+                      )}
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginBottom:2,fontWeight:700,letterSpacing:'.07em'}}>PATROCINADO</div>
                         <div style={{fontSize:13,color:'#fff',fontWeight:700,lineHeight:1.3}}>{sponsorForm.headline||'Título do card'}</div>
@@ -2166,12 +2166,12 @@ function AdminApp({ adminUser, onLogout }) {
                     <div key={s.id} style={{background:'#1a1f2e',borderRadius:14,border:`1px solid ${s.active&&!expired?'#0EBAC730':'#1e293b'}`,overflow:'hidden'}}>
                       {/* Mini preview do card */}
                       <div style={{background:s.bg_color||'#001f4d',padding:'10px 14px',display:'flex',alignItems:'center',gap:10}}>
-                        {s.logo_url
-                          ? <img src={s.logo_url} alt="" style={{width:32,height:32,objectFit:'contain',borderRadius:6,flexShrink:0}}/>
-                          : s.logo_text
-                            ? <div style={{background:'#fff',borderRadius:5,padding:'2px 7px',fontWeight:900,fontSize:10,color:s.bg_color||'#003d7a',flexShrink:0,whiteSpace:'nowrap'}}>{s.logo_text}</div>
-                            : null
-                        }
+                        {(s.logo_url||s.logo_text) && (
+                          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,flexShrink:0}}>
+                            {s.logo_url && <img src={s.logo_url} alt="" style={{width:32,height:32,objectFit:'contain',borderRadius:6}}/>}
+                            {s.logo_text && <div style={{background:'#fff',borderRadius:4,padding:'2px 6px',fontWeight:900,fontSize:9,color:s.bg_color||'#003d7a',whiteSpace:'nowrap'}}>{s.logo_text}</div>}
+                          </div>
+                        )}
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:9,color:'rgba(255,255,255,0.4)',fontWeight:700,letterSpacing:'.06em'}}>PATROCINADO</div>
                           <div style={{fontSize:12,color:'#fff',fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.headline}</div>
