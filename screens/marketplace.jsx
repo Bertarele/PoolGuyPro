@@ -4986,39 +4986,40 @@ function MarketplaceScreen({ ctx }) {
         )}
 
         {/* Routes + Single Pools */}
-        {view === 'routes' && (
+        {/* Free-tier upgrade banner — routes (mobile) */}
+        {view === 'routes' && user.tier === 'free' && (
+          <div style={{marginTop:14}}>
+            <div style={{
+              borderRadius:18, padding:'28px 20px', textAlign:'center',
+              background:'linear-gradient(135deg,#0c4a6e 0%,#0077B6 100%)',
+              color:'#fff',
+            }}>
+              <div style={{width:48, height:48, borderRadius:14, background:'rgba(255,255,255,0.14)',
+                display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px'}}>
+                {Icon.lock(20,'#fff')}
+              </div>
+              <div style={{fontSize:16, fontWeight:800, marginBottom:6}}>
+                {lang==='pt'?'Disponível no PRO':lang==='es'?'Disponible en PRO':'Available with PRO'}
+              </div>
+              <div style={{fontSize:12.5, opacity:.8, lineHeight:1.5, marginBottom:16}}>
+                {lang==='pt'?'Veja todas as rotas e piscinas disponíveis na sua região.'
+                :lang==='es'?'Ve todas las rutas y piscinas disponibles en tu área.'
+                :'See all available routes and pools in your area.'}
+              </div>
+              <button onClick={()=>ctx.openPaywall&&ctx.openPaywall('routes')} style={{
+                height:42, padding:'0 24px', borderRadius:10, border:'none', cursor:'pointer',
+                background:'#fff', color:'#0077B6', fontWeight:800, fontSize:13, fontFamily:'inherit',
+              }}>
+                {lang==='pt'?'Ver planos':'See plans'} — $14.99{lang==='pt'?'/mês':'/mo'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {view === 'routes' && user.tier !== 'free' && (
           <div style={{marginTop:14, display:'flex', flexDirection:'column', gap:12}}>
 
-            {/* Free-tier gate */}
-            {user.tier === 'free' && (
-              <div style={{
-                borderRadius:18, padding:'28px 20px', textAlign:'center',
-                background:'linear-gradient(135deg,#0c4a6e 0%,#0077B6 100%)',
-                color:'#fff',
-              }}>
-                <div style={{width:48, height:48, borderRadius:14, background:'rgba(255,255,255,0.14)',
-                  display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px'}}>
-                  {Icon.lock(20,'#fff')}
-                </div>
-                <div style={{fontSize:16, fontWeight:800, marginBottom:6}}>
-                  {lang==='pt'?'Disponível no PRO':lang==='es'?'Disponible en PRO':'Available with PRO'}
-                </div>
-                <div style={{fontSize:12.5, opacity:.8, lineHeight:1.5, marginBottom:16}}>
-                  {lang==='pt'?'Veja todas as rotas e piscinas disponíveis na sua região.'
-                  :lang==='es'?'Ve todas las rutas y piscinas disponibles en tu área.'
-                  :'See all available routes and pools in your area.'}
-                </div>
-                <button onClick={()=>ctx.openPaywall&&ctx.openPaywall('routes')} style={{
-                  height:42, padding:'0 24px', borderRadius:10, border:'none', cursor:'pointer',
-                  background:'#fff', color:'#0077B6', fontWeight:800, fontSize:13, fontFamily:'inherit',
-                }}>
-                  {lang==='pt'?'Ver planos':'See plans'} — $14.99{lang==='pt'?'/mês':'/mo'}
-                </button>
-              </div>
-            )}
-
             {/* ── Rotas / Piscinas sub-tab ── */}
-            {user.tier !== 'free' && <React.Fragment>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:6}}>
               {[
                 { id:'routes', icon: Icon.pin,
@@ -5326,7 +5327,6 @@ function MarketplaceScreen({ ctx }) {
               </div>
             ))}
           </div>
-          </React.Fragment>}
         )}
       </div>
 
