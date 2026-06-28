@@ -2008,8 +2008,8 @@ function AdminApp({ adminUser, onLogout }) {
                   {/* Upload de imagem */}
                   <div>
                     <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Logo (imagem)</div>
-                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
-                      <label style={{cursor:'pointer',display:'block',width:'100%'}}>
+                    <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+                      <label style={{cursor:'pointer',flexShrink:0}}>
                         <input type="file" accept="image/*" style={{display:'none'}} onChange={async e=>{
                           const file = e.target.files?.[0];
                           if(!file) return;
@@ -2029,24 +2029,29 @@ function AdminApp({ adminUser, onLogout }) {
                             setSponsorLogoUploading(false);
                           }
                         }}/>
-                        <div style={{width:'100%',aspectRatio:'1/1',borderRadius:12,border:`1.5px dashed ${sponsorForm.logo_url?'#0EBAC750':'#334155'}`,background:'#0f1117',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,cursor:'pointer',transition:'border-color .15s',position:'relative'}}
+                        <div style={{width:80,height:80,borderRadius:12,border:`1.5px dashed ${sponsorForm.logo_url?'#0EBAC750':'#334155'}`,background:'#0f1117',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:5,cursor:'pointer',transition:'border-color .15s'}}
                           onMouseEnter={e=>e.currentTarget.style.borderColor='#0EBAC7'}
                           onMouseLeave={e=>e.currentTarget.style.borderColor=sponsorForm.logo_url?'#0EBAC750':'#334155'}>
                           {sponsorLogoUploading
-                            ? <span style={{width:24,height:24,border:'2.5px solid #334155',borderTopColor:'#0EBAC7',borderRadius:'50%',animation:'pgSpin .7s linear infinite',display:'inline-block'}}/>
+                            ? <span style={{width:22,height:22,border:'2.5px solid #334155',borderTopColor:'#0EBAC7',borderRadius:'50%',animation:'pgSpin .7s linear infinite',display:'inline-block'}}/>
                             : sponsorForm.logo_url
-                              ? <img src={sponsorForm.logo_url} alt="" style={{width:'70%',height:'70%',objectFit:'contain',borderRadius:8}}/>
+                              ? <img src={sponsorForm.logo_url} alt="" style={{width:56,height:56,objectFit:'contain',borderRadius:8}}/>
                               : <>
-                                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                  <span style={{fontSize:10,color:'#475569',fontWeight:600}}>Upload</span>
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                  <span style={{fontSize:9,color:'#475569',fontWeight:600}}>Upload</span>
                                 </>
                           }
                         </div>
                       </label>
-                      {sponsorForm.logo_url && (
-                        <button onClick={e=>{e.preventDefault();setSponsorForm(p=>({...p,logo_url:''}));}}
-                          style={{background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:11,padding:0,fontFamily:'inherit',fontWeight:600}}>✕ remover</button>
-                      )}
+                      <div style={{display:'flex',flexDirection:'column',justifyContent:'center',gap:4,paddingTop:4}}>
+                        <span style={{fontSize:11,color:sponsorForm.logo_url?'#0EBAC7':'#64748b'}}>
+                          {sponsorForm.logo_url ? '✓ Imagem carregada' : 'Clique no quadrado\npara enviar'}
+                        </span>
+                        {sponsorForm.logo_url && (
+                          <button onClick={e=>{e.preventDefault();setSponsorForm(p=>({...p,logo_url:''}));}}
+                            style={{background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:11,padding:0,fontFamily:'inherit',fontWeight:600,textAlign:'left'}}>✕ remover</button>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {/* Sigla de texto */}
