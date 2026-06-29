@@ -518,8 +518,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         backgroundRepeat:'no-repeat',
         zIndex:0,
       }}/>
-      {/* Subtle overlay apenas na parte de baixo para legibilidade do form */}
-      <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, transparent 0%, transparent 40%, rgba(0,0,0,0.30) 100%)', zIndex:1}}/>
+      {/* Overlay: escurece topo (tagline) e base (form) mantendo o centro vivo */}
+      <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.10) 38%, rgba(0,0,0,0.08) 52%, rgba(0,0,0,0.48) 100%)', zIndex:1}}/>
 
       {/* ── Language switcher ── */}
       <div style={{position:'absolute', top:18, right:16, display:'flex', gap:5, zIndex:10}}>
@@ -558,18 +558,18 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:0}}>
           <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
           <span style={{
-            fontSize:12, fontWeight:600, color:'#ffffff',
+            fontSize:12, fontWeight:700, color:'#ffffff',
             letterSpacing:'0.06em', textTransform:'uppercase',
-            textShadow:'0 1px 6px rgba(0,0,0,0.40)',
+            textShadow:'0 1px 8px rgba(0,0,0,0.80), 0 2px 16px rgba(0,0,0,0.60)',
           }}>{t.tagline}</span>
           <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
         </div>
 
         {/* Subtitle */}
         <p style={{
-          margin:'0', fontSize:13, color:'#ffffff',
+          margin:'0', fontSize:13, fontWeight:500, color:'#ffffff',
           textAlign:'center', lineHeight:1.5, maxWidth:240, padding:'0 20px',
-          textShadow:'0 1px 4px rgba(0,0,0,0.35)',
+          textShadow:'0 1px 8px rgba(0,0,0,0.80), 0 2px 16px rgba(0,0,0,0.60)',
         }}>{t.loginSub}</p>
       </div>
 

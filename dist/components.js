@@ -687,10 +687,14 @@ function Sheet({
   const [mounted, setMounted] = React.useState(open);
   const [closing, setClosing] = React.useState(false);
   const lockedRef = React.useRef(false);
+  const startY = React.useRef(0);
+  const [dragOffset, setDragOffset] = React.useState(0);
+  const dragging = React.useRef(false);
   React.useEffect(() => {
     if (open) {
       setMounted(true);
       setClosing(false);
+      setDragOffset(0);
       if (!lockedRef.current) {
         lockedRef.current = true;
         _lockScreen();
@@ -709,7 +713,6 @@ function Sheet({
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Safety: unlock if component unmounts while still locked
   React.useEffect(() => {
     return () => {
       if (lockedRef.current) {
@@ -720,9 +723,6 @@ function Sheet({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!mounted) return null;
-
-  // Desktop: constrain width with `left: calc(50% - half)` so CSS slide animations
-  // (which only use translateY) don't conflict with horizontal centering.
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 540;
   const desktopW = isDesktop ? Math.min(520, Math.round(window.innerWidth * 0.96)) : null;
   const desktopStyle = isDesktop ? {
@@ -731,6 +731,25 @@ function Sheet({
     width: desktopW,
     borderRadius: '20px 20px 0 0'
   } : {};
+  const onGrabStart = e => {
+    dragging.current = true;
+    startY.current = e.touches ? e.touches[0].clientY : e.clientY;
+  };
+  const onGrabMove = e => {
+    if (!dragging.current) return;
+    const dy = (e.touches ? e.touches[0].clientY : e.clientY) - startY.current;
+    if (dy > 0) {
+      e.preventDefault();
+      setDragOffset(dy);
+    }
+  };
+  const onGrabEnd = () => {
+    dragging.current = false;
+    if (dragOffset > 80) {
+      setDragOffset(0);
+      onClose();
+    } else setDragOffset(0);
+  };
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: `pg-sheet-backdrop${closing ? ' pg-sheet-backdrop-out' : ''}`,
     onClick: onClose,
@@ -740,11 +759,24 @@ function Sheet({
     className: `pg-sheet${closing ? ' pg-sheet-down' : ''}`,
     style: {
       height,
-      ...desktopStyle
+      ...desktopStyle,
+      transform: dragOffset > 0 ? `translateY(${dragOffset}px)` : undefined,
+      transition: dragOffset > 0 ? 'none' : undefined
     },
     onWheel: e => e.stopPropagation()
   }, /*#__PURE__*/React.createElement("div", {
-    className: "pg-sheet-grabber"
+    className: "pg-sheet-grabber",
+    onTouchStart: onGrabStart,
+    onTouchMove: onGrabMove,
+    onTouchEnd: onGrabEnd,
+    onMouseDown: onGrabStart,
+    onMouseMove: onGrabMove,
+    onMouseUp: onGrabEnd,
+    style: {
+      cursor: 'grab',
+      padding: '12px 0 8px',
+      margin: '-12px 0 -8px'
+    }
   }), children));
 }
 

@@ -1662,7 +1662,7 @@ function LoginScreen({
     style: {
       position: 'absolute',
       inset: 0,
-      background: 'linear-gradient(180deg, transparent 0%, transparent 40%, rgba(0,0,0,0.30) 100%)',
+      background: 'linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.10) 38%, rgba(0,0,0,0.08) 52%, rgba(0,0,0,0.48) 100%)',
       zIndex: 1
     }
   }), /*#__PURE__*/React.createElement("div", {
@@ -1730,11 +1730,11 @@ function LoginScreen({
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 12,
-      fontWeight: 600,
+      fontWeight: 700,
       color: '#ffffff',
       letterSpacing: '0.06em',
       textTransform: 'uppercase',
-      textShadow: '0 1px 6px rgba(0,0,0,0.40)'
+      textShadow: '0 1px 8px rgba(0,0,0,0.80), 0 2px 16px rgba(0,0,0,0.60)'
     }
   }, t.tagline), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1747,12 +1747,13 @@ function LoginScreen({
     style: {
       margin: '0',
       fontSize: 13,
+      fontWeight: 500,
       color: '#ffffff',
       textAlign: 'center',
       lineHeight: 1.5,
       maxWidth: 240,
       padding: '0 20px',
-      textShadow: '0 1px 4px rgba(0,0,0,0.35)'
+      textShadow: '0 1px 8px rgba(0,0,0,0.80), 0 2px 16px rgba(0,0,0,0.60)'
     }
   }, t.loginSub)), /*#__PURE__*/React.createElement("div", {
     style: {
