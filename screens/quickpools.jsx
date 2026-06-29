@@ -78,7 +78,6 @@ function QuickPoolsScreen({ ctx }) {
 
   // Push notification status: 'checking' | 'needed' | 'active' | 'denied' | 'unsupported'
   const [notifStatus, setNotifStatus] = React.useState('checking');
-  const [notifHelpOpen, setNotifHelpOpen] = React.useState(false);
 
   const checkNotifStatus = React.useCallback(async () => {
     if (typeof Notification === 'undefined' || !('PushManager' in window)) {
@@ -102,8 +101,6 @@ function QuickPoolsScreen({ ctx }) {
   const activatePush = React.useCallback(async () => {
     if (ctx.registerPush) await ctx.registerPush();
     await checkNotifStatus();
-    // If still denied after trying, open instructions
-    if (Notification.permission === 'denied') setNotifHelpOpen(true);
   }, [ctx.registerPush, checkNotifStatus]);
 
   // Auto-prompt when tab opens and permission not yet decided
@@ -1046,80 +1043,6 @@ function QuickPoolsScreen({ ctx }) {
       />
     )}
 
-    {/* ── Notification Help Modal ── */}
-    {notifHelpOpen && (() => {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isAndroid = /Android/.test(navigator.userAgent);
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-      const pt = lang === 'pt';
-      const step = (n, text) => (
-        <div style={{display:'flex', gap:12, alignItems:'flex-start', marginBottom:14}}>
-          <div style={{width:26, height:26, borderRadius:8, background:'#0EBAC720', border:'1px solid #0EBAC740',
-            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-            fontWeight:800, fontSize:12, color:'#0EBAC7'}}>{n}</div>
-          <div style={{fontSize:13.5, color:'var(--pg-ink-700)', lineHeight:1.5, paddingTop:3}}>{text}</div>
-        </div>
-      );
-      return (
-        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', zIndex:3000, display:'flex', alignItems:'flex-end', justifyContent:'center'}}
-          onClick={()=>setNotifHelpOpen(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'var(--pg-ink-100)', borderRadius:'22px 22px 0 0',
-            padding:'24px 22px 36px', width:'100%', maxWidth:480,
-            boxShadow:'0 -8px 40px rgba(0,0,0,0.35)'}}>
-            {/* Handle */}
-            <div style={{width:36, height:4, borderRadius:2, background:'var(--pg-ink-300)', margin:'0 auto 20px'}}/>
-            <div style={{fontWeight:800, fontSize:17, color:'var(--pg-ink-900)', marginBottom:4}}>
-              🔔 {pt ? 'Como ativar notificações' : 'How to enable notifications'}
-            </div>
-            <div style={{fontSize:12.5, color:'var(--pg-ink-500)', marginBottom:20, lineHeight:1.5}}>
-              {pt
-                ? 'O acesso às notificações foi bloqueado. Siga os passos abaixo para reativar:'
-                : 'Notification access was blocked. Follow the steps below to re-enable:'}
-            </div>
-
-            {isIOS && isStandalone && (
-              <>
-                {step(1, pt ? <>Abra o app <b>Ajustes</b> do iPhone</> : <>Open iPhone <b>Settings</b></>)}
-                {step(2, pt ? <>Role e toque em <b>PoolGuyX</b> (ou em <b>Safari</b> se não aparecer)</> : <>Scroll and tap <b>PoolGuyX</b> (or <b>Safari</b> if not listed)</>)}
-                {step(3, pt ? <>Toque em <b>Notificações</b> e ative o botão</> : <>Tap <b>Notifications</b> and toggle it ON</>)}
-                {step(4, pt ? <><b>Volte ao app</b> e toque em "Ativar" no banner</> : <><b>Return to the app</b> and tap "Enable" on the banner</>)}
-              </>
-            )}
-            {isIOS && !isStandalone && (
-              <>
-                {step(1, pt ? <>No Safari, toque no ícone <b>⎋ Compartilhar</b> (na barra inferior)</> : <>In Safari, tap the <b>⎋ Share</b> icon (bottom bar)</>)}
-                {step(2, pt ? <>Toque em <b>"Adicionar à Tela de Início"</b></> : <>Tap <b>"Add to Home Screen"</b></>)}
-                {step(3, pt ? <>Abra o app pela <b>tela inicial</b> do iPhone</> : <>Open the app from your iPhone <b>Home Screen</b></>)}
-                {step(4, pt ? <><b>Notificações push só funcionam</b> quando o app está instalado na tela inicial (PWA)</> : <><b>Push notifications only work</b> when the app is installed on the Home Screen (PWA)</>)}
-              </>
-            )}
-            {isAndroid && (
-              <>
-                {step(1, pt ? <>Toque no ícone de <b>cadeado / info</b> na barra de endereço do Chrome</> : <>Tap the <b>lock / info</b> icon in Chrome's address bar</>)}
-                {step(2, pt ? <>Toque em <b>Permissões</b></> : <>Tap <b>Permissions</b></>)}
-                {step(3, pt ? <>Toque em <b>Notificações</b> e selecione <b>Permitir</b></> : <>Tap <b>Notifications</b> and select <b>Allow</b></>)}
-                {step(4, pt ? <><b>Recarregue a página</b> e ative as notificações</> : <><b>Reload the page</b> and enable notifications</>)}
-              </>
-            )}
-            {!isIOS && !isAndroid && (
-              <>
-                {step(1, pt ? <>Clique no ícone de <b>cadeado</b> na barra de endereço</> : <>Click the <b>lock icon</b> in the address bar</>)}
-                {step(2, pt ? <>Vá em <b>Permissões do site → Notificações</b></> : <>Go to <b>Site permissions → Notifications</b></>)}
-                {step(3, pt ? <>Selecione <b>Permitir</b> e recarregue a página</> : <>Select <b>Allow</b> and reload the page</>)}
-              </>
-            )}
-
-            <button onClick={()=>setNotifHelpOpen(false)} style={{
-              width:'100%', height:50, borderRadius:14, border:'none', cursor:'pointer',
-              background:'linear-gradient(135deg,#0EBAC7,#0D7280)', color:'#fff',
-              fontWeight:700, fontSize:15, fontFamily:'inherit', marginTop:4,
-            }}>
-              {pt ? 'Entendido' : 'Got it'}
-            </button>
-          </div>
-        </div>
-      );
-    })()}
 
     </div>
   );
