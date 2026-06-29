@@ -179,8 +179,8 @@ button { font-family: inherit; }
   background: var(--pg-white); border-radius: 26px 26px 0 0;
   z-index: 1001;
   animation: pg-sheet-up 0.34s cubic-bezier(.22, 1, .36, 1);
-  max-height: 88%; overflow: auto;
-  overscroll-behavior: contain;
+  max-height: 88%; overflow: hidden;
+  overscroll-behavior: none;
   box-shadow:
     0 -1px 0 rgba(255,255,255,0.8) inset,
     0 -16px 56px rgba(4, 13, 24, 0.22),
