@@ -1146,10 +1146,15 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
     container.setAttribute('tabindex', '-1');
     container.addEventListener('focus', () => container.blur(), true);
 
+    // Prevent iOS pull-to-refresh while dragging the map
+    const stopPull = (e) => { if (e.touches.length === 1) e.stopPropagation(); };
+    container.addEventListener('touchmove', stopPull, { passive: false });
+
     // Force recalc after layout settles
     setTimeout(() => { if (mapRef.current) mapRef.current.invalidateSize(); }, 120);
 
     return () => {
+      container.removeEventListener('touchmove', stopPull);
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
       markersRef.current = {};
     };
@@ -1193,8 +1198,9 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
       borderRadius: fullHeight ? 0 : 14,
       background:'var(--pg-ink-100)',
       isolation: 'isolate',
+      overscrollBehavior: 'none',
     }}>
-      <div ref={containerRef} style={{ height:'100%', width:'100%' }}/>
+      <div ref={containerRef} style={{ height:'100%', width:'100%', overscrollBehavior:'none' }}/>
     </div>
   );
 }
