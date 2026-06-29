@@ -6014,7 +6014,7 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
             </div>
           </div>
         )}
-        <div style={{flex:1, overflowY:'auto', padding:'16px 18px 24px', display:'flex', flexDirection:'column'}}>
+        <div style={{flex:1, overflowY:'auto', touchAction:'pan-y', padding:'16px 18px 24px', display:'flex', flexDirection:'column'}}>
           {/* Stats row — shown below carousel when photos exist */}
           {routePhotos.length > 0 && (
             <div style={{display:'flex', flexWrap:'wrap', gap:10, paddingBottom:14, marginBottom:4, borderBottom:'0.5px solid var(--pg-ink-100)'}}>
@@ -6101,7 +6101,7 @@ function ListingDetail({ selected, lang, t, catLabels, openChat, onClose, openPu
           </div>
         )
       }
-      <div style={{flex:1, overflowY:'auto', padding:'16px 18px 24px'}}>
+      <div style={{flex:1, overflowY:'auto', touchAction:'pan-y', padding:'16px 18px 24px'}}>
         <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:6}}>
           <span className="pg-badge" style={{background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', fontSize:9}}>
             {selected.type==='condo' ? 'CONDO' : (lang==='pt'?'RESIDENCIAL':lang==='es'?'RESIDENCIAL':'HOUSE')}
@@ -6294,7 +6294,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
       </div>
 
       {/* Form */}
-      <div style={{flex:1, overflow:'auto', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
+      <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
 
         {/* Photos — first field, most impactful */}
         <PhotoPicker
@@ -6560,7 +6560,7 @@ function PostPoolSheet({ lang, t, onClose, onSubmit }) {
         <div style={{width:60}}/>
       </div>
 
-      <div style={{flex:1, overflow:'auto', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
+      <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
 
         {/* Title — required */}
         <div>
@@ -6742,7 +6742,7 @@ function PostRouteSheet({ lang, t, onClose, onSubmit }) {
         <div style={{width:60}}/>
       </div>
 
-      <div style={{flex:1, overflow:'auto', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
+      <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'16px 18px', display:'flex', flexDirection:'column', gap:18}}>
 
         {/* Title — required */}
         <div>

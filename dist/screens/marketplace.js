@@ -11595,6 +11595,7 @@ function ListingDetail({
       style: {
         flex: 1,
         overflowY: 'auto',
+        touchAction: 'pan-y',
         padding: '16px 18px 24px',
         display: 'flex',
         flexDirection: 'column'
@@ -11828,6 +11829,7 @@ function ListingDetail({
       style: {
         flex: 1,
         overflowY: 'auto',
+        touchAction: 'pan-y',
         padding: '16px 18px 24px'
       }
     }, /*#__PURE__*/React.createElement("div", {
@@ -12276,6 +12278,7 @@ function PostEquipmentSheet({
     style: {
       flex: 1,
       overflow: 'auto',
+      touchAction: 'pan-y',
       padding: '16px 18px',
       display: 'flex',
       flexDirection: 'column',
@@ -12711,6 +12714,7 @@ function PostPoolSheet({
     style: {
       flex: 1,
       overflow: 'auto',
+      touchAction: 'pan-y',
       padding: '16px 18px',
       display: 'flex',
       flexDirection: 'column',
@@ -13049,6 +13053,7 @@ function PostRouteSheet({
     style: {
       flex: 1,
       overflow: 'auto',
+      touchAction: 'pan-y',
       padding: '16px 18px',
       display: 'flex',
       flexDirection: 'column',
