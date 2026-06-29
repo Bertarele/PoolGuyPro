@@ -2682,7 +2682,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               <span style={{fontFamily:'var(--pg-font-display)', fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', lineHeight:1}}>
                 {(item.type === 'pool' || item.type === 'route')
                   ? `$${fmtN(item.asking||0, lang)}`
-                  : <>{item.type==='route'?`$${fmtN(item.asking||0, lang)}`:fmtN(item.price, lang)}{periodSfx && item.type !== 'route' && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}</>
+                  : <>{item.type==='route'?`$${fmtN(item.asking||0, lang)}`:`$${fmtN(item.price, lang)}`}{periodSfx && item.type !== 'route' && <span style={{fontSize:13, fontWeight:500, color:'var(--pg-ink-400)', marginLeft:2}}>{periodSfx}</span>}</>
                 }
               </span>
               {item.condition && (

@@ -5105,7 +5105,7 @@ function ViewListingSheet({
       letterSpacing: '-0.02em',
       lineHeight: 1
     }
-  }, item.type === 'pool' || item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : /*#__PURE__*/React.createElement(React.Fragment, null, item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : fmtN(item.price, lang), periodSfx && item.type !== 'route' && /*#__PURE__*/React.createElement("span", {
+  }, item.type === 'pool' || item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : /*#__PURE__*/React.createElement(React.Fragment, null, item.type === 'route' ? `$${fmtN(item.asking || 0, lang)}` : `$${fmtN(item.price, lang)}`, periodSfx && item.type !== 'route' && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 500,
