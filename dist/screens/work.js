@@ -1852,7 +1852,53 @@ function WorkScreen({
         marginTop: 1,
         color: H.text
       }
-    }, lang === 'pt' ? 'aplicadas' : lang === 'es' ? 'aplicadas' : 'applied'))))));
+    }, lang === 'pt' ? 'aplicadas' : lang === 'es' ? 'aplicadas' : 'applied'))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 1,
+        height: 28,
+        background: H.divider
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setWorkLocationFilterOpen(true),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        background: workUserLocation ? 'var(--pg-aqua-100)' : 'rgba(0,178,169,0.10)',
+        border: '1.5px solid var(--pg-aqua-400)',
+        borderRadius: 999,
+        padding: workUserLocation ? '7px 14px' : '7px 12px',
+        boxShadow: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        color: 'inherit',
+        touchAction: 'manipulation'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "19",
+      height: "19",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: workUserLocation ? 'var(--pg-aqua-600)' : 'var(--pg-aqua-500)',
+      strokeWidth: "2.2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z",
+      fill: workUserLocation ? 'var(--pg-aqua-400)' : 'none'
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "9",
+      r: "2.5",
+      fill: workUserLocation ? 'white' : 'none'
+    })), workUserLocation && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        fontWeight: 600,
+        color: 'var(--pg-aqua-700)',
+        whiteSpace: 'nowrap'
+      }
+    }, workLocCity ? `${workLocCity} · ` : '', workRadiusMiles, " mi")))));
   })(), /*#__PURE__*/React.createElement(LocationFilterSheet, {
     open: workLocationFilterOpen,
     onClose: () => setWorkLocationFilterOpen(false),
