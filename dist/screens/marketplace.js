@@ -8489,13 +8489,12 @@ function MarketplaceScreen({
       currentView: view,
       onPick: m => setPostMode(m),
       onClose: () => setPostOpen(false)
-    })), /*#__PURE__*/React.createElement(Sheet, {
+    })), /*#__PURE__*/React.createElement(FullPage, {
       open: postOpen && (postMode === 'sell' || postMode === 'rent'),
       onClose: () => {
         setPostMode(null);
         setPostOpen(false);
-      },
-      height: "86%"
+      }
     }, /*#__PURE__*/React.createElement(PostEquipmentSheet, {
       lang: lang,
       t: t,
@@ -8512,13 +8511,12 @@ function MarketplaceScreen({
           if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Anúncio enviado para revisão' : '✓ Listing sent for review');
         }
       }
-    })), /*#__PURE__*/React.createElement(Sheet, {
+    })), /*#__PURE__*/React.createElement(FullPage, {
       open: postOpen && postMode === 'route',
       onClose: () => {
         setPostMode(null);
         setPostOpen(false);
-      },
-      height: "86%"
+      }
     }, /*#__PURE__*/React.createElement(PostRouteSheet, {
       lang: lang,
       t: t,
@@ -8534,13 +8532,12 @@ function MarketplaceScreen({
           if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Rota enviada para revisão' : '✓ Route sent for review');
         }
       }
-    })), /*#__PURE__*/React.createElement(Sheet, {
+    })), /*#__PURE__*/React.createElement(FullPage, {
       open: postOpen && postMode === 'pool',
       onClose: () => {
         setPostMode(null);
         setPostOpen(false);
-      },
-      height: "90%"
+      }
     }, /*#__PURE__*/React.createElement(PostPoolSheet, {
       lang: lang,
       t: t,
@@ -10483,13 +10480,12 @@ function MarketplaceScreen({
       setPostMode(mode);
     },
     onClose: () => setPostOpen(false)
-  })), /*#__PURE__*/React.createElement(Sheet, {
+  })), /*#__PURE__*/React.createElement(FullPage, {
     open: postOpen && (postMode === 'sell' || postMode === 'rent'),
     onClose: () => {
       setPostMode(null);
       setPostOpen(false);
-    },
-    height: "86%"
+    }
   }, /*#__PURE__*/React.createElement(PostEquipmentSheet, {
     lang: lang,
     t: t,
@@ -10506,13 +10502,12 @@ function MarketplaceScreen({
         if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Anúncio enviado para revisão' : lang === 'es' ? '✓ Anuncio enviado a revisión' : '✓ Listing sent for review');
       }
     }
-  })), /*#__PURE__*/React.createElement(Sheet, {
+  })), /*#__PURE__*/React.createElement(FullPage, {
     open: postOpen && postMode === 'route',
     onClose: () => {
       setPostMode(null);
       setPostOpen(false);
-    },
-    height: "86%"
+    }
   }, /*#__PURE__*/React.createElement(PostRouteSheet, {
     lang: lang,
     t: t,
@@ -10528,13 +10523,12 @@ function MarketplaceScreen({
         if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Rota enviada para revisão' : lang === 'es' ? '✓ Ruta enviada a revisión' : '✓ Route sent for review');
       }
     }
-  })), /*#__PURE__*/React.createElement(Sheet, {
+  })), /*#__PURE__*/React.createElement(FullPage, {
     open: postOpen && postMode === 'pool',
     onClose: () => {
       setPostMode(null);
       setPostOpen(false);
-    },
-    height: "90%"
+    }
   }, /*#__PURE__*/React.createElement(PostPoolSheet, {
     lang: lang,
     t: t,

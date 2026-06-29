@@ -281,6 +281,47 @@ function _unlockScreen() {
   }
 }
 
+// ── Full-screen page (replaces Sheet for tall forms to avoid iOS pull-to-refresh) ──
+function FullPage({ open, onClose, children }) {
+  const [mounted, setMounted] = React.useState(open);
+  const [closing, setClosing] = React.useState(false);
+
+  React.useEffect(() => {
+    if (open) { setMounted(true); setClosing(false); }
+    else if (mounted) {
+      setClosing(true);
+      const t = setTimeout(() => { setMounted(false); setClosing(false); }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  React.useEffect(() => () => {}, []);
+
+  if (!mounted) return null;
+
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 540;
+  const desktopW  = isDesktop ? Math.min(520, Math.round(window.innerWidth * 0.96)) : null;
+  const style = {
+    position: 'fixed',
+    bottom: 0,
+    top: 0,
+    left:  isDesktop ? `calc(50% - ${Math.floor(desktopW / 2)}px)` : 0,
+    right: isDesktop ? 'auto' : 0,
+    width: isDesktop ? desktopW : '100%',
+    zIndex: 1002,
+    background: 'var(--pg-bg)',
+    overflow: 'hidden',
+    overscrollBehavior: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    animation: closing
+      ? 'pg-sheet-down 0.28s cubic-bezier(.36,0,.66,0) forwards'
+      : 'pg-sheet-up 0.34s cubic-bezier(.22,1,.36,1)',
+  };
+
+  return <div style={style}>{children}</div>;
+}
+
 // ── Bottom Sheet ──────────────────────────────────────────────
 function Sheet({ open, onClose, children, height='auto' }) {
   const [mounted, setMounted]   = React.useState(open);
@@ -789,4 +830,4 @@ function Tx({ children, lang, src }) {
   return out;
 }
 
-Object.assign(window, { Icon, Avatar, Stars, ReputationBadge, Sheet, TopBar, IconButton, TabBar, LangPill, Shimmer, Tx, _lockScreen, _unlockScreen });
+Object.assign(window, { Icon, Avatar, Stars, ReputationBadge, Sheet, FullPage, TopBar, IconButton, TabBar, LangPill, Shimmer, Tx, _lockScreen, _unlockScreen });

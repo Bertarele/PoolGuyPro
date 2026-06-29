@@ -4431,18 +4431,18 @@ function MarketplaceScreen({ ctx }) {
       <Sheet open={postOpen&&!postMode} onClose={()=>setPostOpen(false)} height="auto">
         <MarketplaceListingPicker lang={lang} t={t} currentView={view} onPick={(m)=>setPostMode(m)} onClose={()=>setPostOpen(false)}/>
       </Sheet>
-      <Sheet open={postOpen&&(postMode==='sell'||postMode==='rent')} onClose={()=>{setPostMode(null);setPostOpen(false);}} height="86%">
+      <FullPage open={postOpen&&(postMode==='sell'||postMode==='rent')} onClose={()=>{setPostMode(null);setPostOpen(false);}}>
         <PostEquipmentSheet lang={lang} t={t} mode={postMode} onClose={()=>{setPostMode(null);setPostOpen(false);}}
           onSubmit={async(data)=>{ setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false&&showToast)showToast(lang==='pt'?'✓ Anúncio enviado para revisão':'✓ Listing sent for review');}}}/>
-      </Sheet>
-      <Sheet open={postOpen&&postMode==='route'} onClose={()=>{setPostMode(null);setPostOpen(false);}} height="86%">
+      </FullPage>
+      <FullPage open={postOpen&&postMode==='route'} onClose={()=>{setPostMode(null);setPostOpen(false);}}>
         <PostRouteSheet lang={lang} t={t} onClose={()=>{setPostMode(null);setPostOpen(false);}}
           onSubmit={async(data)=>{ setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false&&showToast)showToast(lang==='pt'?'✓ Rota enviada para revisão':'✓ Route sent for review');}}}/>
-      </Sheet>
-      <Sheet open={postOpen&&postMode==='pool'} onClose={()=>{setPostMode(null);setPostOpen(false);}} height="90%">
+      </FullPage>
+      <FullPage open={postOpen&&postMode==='pool'} onClose={()=>{setPostMode(null);setPostOpen(false);}}>
         <PostPoolSheet lang={lang} t={t} onClose={()=>{setPostMode(null);setPostOpen(false);}}
           onSubmit={async(data)=>{ setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false&&showToast)showToast(lang==='pt'?'✓ Piscina enviada para revisão':'✓ Pool sent for review');}}}/>
-      </Sheet>
+      </FullPage>
 
       <LocationFilterSheet open={locationFilterOpen} onClose={()=>setLocationFilterOpen(false)}
         userLocation={userLocation} setUserLocation={setUserLocation}
@@ -5412,8 +5412,8 @@ function MarketplaceScreen({ ctx }) {
           onClose={()=>setPostOpen(false)}/>
       </Sheet>
 
-      {/* Sell / Rent equipment form */}
-      <Sheet open={postOpen && (postMode==='sell'||postMode==='rent')} onClose={()=>{ setPostMode(null); setPostOpen(false); }} height="86%">
+      {/* Sell / Rent equipment form — FullPage to avoid iOS pull-to-refresh on backdrop */}
+      <FullPage open={postOpen && (postMode==='sell'||postMode==='rent')} onClose={()=>{ setPostMode(null); setPostOpen(false); }}>
         <PostEquipmentSheet lang={lang} t={t} mode={postMode}
           onClose={()=>{ setPostMode(null); setPostOpen(false); }}
           onSubmit={async (data)=>{
@@ -5423,10 +5423,10 @@ function MarketplaceScreen({ ctx }) {
               if (ok !== false && showToast) showToast(lang==='pt'?'✓ Anúncio enviado para revisão':lang==='es'?'✓ Anuncio enviado a revisión':'✓ Listing sent for review');
             }
           }}/>
-      </Sheet>
+      </FullPage>
 
       {/* Sell route form */}
-      <Sheet open={postOpen && postMode==='route'} onClose={()=>{ setPostMode(null); setPostOpen(false); }} height="86%">
+      <FullPage open={postOpen && postMode==='route'} onClose={()=>{ setPostMode(null); setPostOpen(false); }}>
         <PostRouteSheet lang={lang} t={t}
           onClose={()=>{ setPostMode(null); setPostOpen(false); }}
           onSubmit={async (data)=>{
@@ -5436,10 +5436,10 @@ function MarketplaceScreen({ ctx }) {
               if (ok !== false && showToast) showToast(lang==='pt'?'✓ Rota enviada para revisão':lang==='es'?'✓ Ruta enviada a revisión':'✓ Route sent for review');
             }
           }}/>
-      </Sheet>
+      </FullPage>
 
       {/* Sell single pool form */}
-      <Sheet open={postOpen && postMode==='pool'} onClose={()=>{ setPostMode(null); setPostOpen(false); }} height="90%">
+      <FullPage open={postOpen && postMode==='pool'} onClose={()=>{ setPostMode(null); setPostOpen(false); }}>
         <PostPoolSheet lang={lang} t={t}
           onClose={()=>{ setPostMode(null); setPostOpen(false); }}
           onSubmit={async (data)=>{
@@ -5449,7 +5449,7 @@ function MarketplaceScreen({ ctx }) {
               if (ok !== false && showToast) showToast(lang==='pt'?'✓ Piscina enviada para revisão':lang==='es'?'✓ Piscina enviada a revisión':'✓ Pool sent for review');
             }
           }}/>
-      </Sheet>
+      </FullPage>
     </div>
   );
 }
