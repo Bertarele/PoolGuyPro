@@ -205,14 +205,18 @@ const IC = {
 };
 
 // ── Card de estatística ───────────────────────────────────────
-function StatCard({ label, value, color, icon }) {
+function StatCard({ label, value, color, icon, onClick }) {
   return (
-    <div style={{background:'#1a1f2e', borderRadius:14, padding:'16px 18px', border:'1px solid #1e293b', display:'flex', alignItems:'center', gap:14}}>
+    <div onClick={onClick} style={{background:'#1a1f2e', borderRadius:14, padding:'16px 18px', border:'1px solid #1e293b', display:'flex', alignItems:'center', gap:14,
+      cursor:onClick?'pointer':'default', transition:'background .15s, border-color .15s',}}
+      onMouseEnter={e=>{ if(onClick){e.currentTarget.style.background='#1e2436'; e.currentTarget.style.borderColor=color+'40'; }}}
+      onMouseLeave={e=>{ if(onClick){e.currentTarget.style.background='#1a1f2e'; e.currentTarget.style.borderColor='#1e293b'; }}}>
       <div style={{width:44, height:44, borderRadius:11, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', color, flexShrink:0}}>{icon}</div>
-      <div>
+      <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:26, fontWeight:700, lineHeight:1, color:'#f1f5f9'}}>{value ?? '—'}</div>
         <div style={{fontSize:12, color:'#64748b', marginTop:3, fontWeight:500}}>{label}</div>
       </div>
+      {onClick && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" opacity="0.5"><polyline points="9 18 15 12 9 6"/></svg>}
     </div>
   );
 }
@@ -1818,24 +1822,36 @@ function AdminApp({ adminUser, onLogout }) {
               )}
 
               <div className="stat-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:12,marginBottom:24}}>
-                <StatCard label="Total de Usuários"  value={stats.users}   color="#0EBAC7" icon={IC.users}/>
-                <StatCard label="Vagas"              value={stats.jobs}    color="#6366f1" icon={IC.jobs}/>
-                <StatCard label="Contratações"       value={stats.hirings} color="#22c55e" icon={IC.jobs}/>
-                <StatCard label="Técnicos"           value={stats.techs}   color="#10b981" icon={IC.techs}/>
-                <StatCard label="Marketplace"        value={stats.market}  color="#f59e0b" icon={IC.market}/>
-                <StatCard label="Rotas de Férias"    value={stats.vacs}    color="#ec4899" icon={IC.vac}/>
-                <StatCard label="Aluguéis"           value={stats.rentals} color="#8b5cf6" icon={IC.market}/>
-                <StatCard label="Reclamações Pend."  value={stats.disputes} color="#ef4444" icon={IC.flag}/>
+                <StatCard label="Total de Usuários"  value={stats.users}    color="#0EBAC7" icon={IC.users}  onClick={()=>goSection('users')}/>
+                <StatCard label="Vagas"              value={stats.jobs}     color="#6366f1" icon={IC.jobs}   onClick={()=>goSection('jobs','work')}/>
+                <StatCard label="Contratações"       value={stats.hirings}  color="#22c55e" icon={IC.jobs}   onClick={()=>goSection('hirings','work')}/>
+                <StatCard label="Técnicos"           value={stats.techs}    color="#10b981" icon={IC.techs}  onClick={()=>goSection('techs','work')}/>
+                <StatCard label="Marketplace"        value={stats.market}   color="#f59e0b" icon={IC.market} onClick={()=>goSection('market','marketplace')}/>
+                <StatCard label="Rotas de Férias"    value={stats.vacs}     color="#ec4899" icon={IC.vac}    onClick={()=>goSection('vacations','work')}/>
+                <StatCard label="Aluguéis"           value={stats.rentals}  color="#8b5cf6" icon={IC.market} onClick={()=>goSection('rentals','marketplace')}/>
+                <StatCard label="Reclamações Pend."  value={stats.disputes} color="#ef4444" icon={IC.flag}   onClick={()=>goSection('disputes')}/>
               </div>
 
               <div style={{background:'#1a1f2e',borderRadius:14,padding:'18px 20px',border:'1px solid #1e293b'}}>
                 <div style={{fontWeight:600,fontSize:14,color:'#f1f5f9',marginBottom:3}}>Usuários Recentes</div>
-                <div style={{fontSize:12,color:'#64748b',marginBottom:14}}>Últimos 5 cadastros</div>
+                <div style={{fontSize:12,color:'#64748b',marginBottom:14}}>Últimos 5 cadastros — clique para ver o perfil</div>
                 {users.slice(0,5).map(u=>(
-                  <div key={u.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 0',borderBottom:'1px solid #1e293b20'}}>
-                    <div style={{minWidth:0,flex:1}}>
-                      <div style={{fontWeight:600,fontSize:13,color:'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.name||'—'}</div>
-                      <div style={{fontSize:11,color:'#64748b'}}>{u.region||'Sem região'} · {fmtDate(u.created_at)}</div>
+                  <div key={u.id} onClick={()=>setViewUserModal({userId:u.id,userName:u.name})}
+                    style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 10px',borderRadius:10,marginBottom:2,
+                      cursor:'pointer',transition:'background .13s'}}
+                    onMouseEnter={e=>e.currentTarget.style.background='#232a3b'}
+                    onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                    <div style={{display:'flex',alignItems:'center',gap:10,minWidth:0,flex:1}}>
+                      {u.photo_url
+                        ? <img src={u.photo_url} alt="" style={{width:36,height:36,borderRadius:10,objectFit:'cover',flexShrink:0,border:'1px solid #334155'}}/>
+                        : <div style={{width:36,height:36,borderRadius:10,background:'#0EBAC715',border:'1px solid #0EBAC730',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:700,color:'#0EBAC7',flexShrink:0}}>
+                            {(u.name||u.email||'?')[0].toUpperCase()}
+                          </div>
+                      }
+                      <div style={{minWidth:0}}>
+                        <div style={{fontWeight:600,fontSize:13,color:'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.name||'—'}</div>
+                        <div style={{fontSize:11,color:'#64748b'}}>{u.email||u.region||'Sem região'} · {fmtDate(u.created_at)}</div>
+                      </div>
                     </div>
                     <span style={{fontSize:11,fontWeight:700,padding:'2px 9px',borderRadius:999,background:u.role==='admin'?'#0EBAC720':'#1e293b',color:u.role==='admin'?'#0EBAC7':'#475569',flexShrink:0,marginLeft:8}}>{u.role}</span>
                   </div>
