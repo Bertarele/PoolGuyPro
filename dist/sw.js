@@ -1,16 +1,15 @@
 // PoolGuyPro Service Worker — Push Notifications + Offline Cache
 
 const APP_ICON  = '/icone.png';
-const CACHE_VER = 'pgp-v4';
+const CACHE_VER = 'pgp-v5';
 
-// Static assets to pre-cache on install
+// Static assets to pre-cache on install (only files that actually exist in dist/)
+// HTML is intentionally excluded so it's always fetched fresh (network-first)
 const PRECACHE = [
-  '/', '/PoolGuyPro.html', '/tokens.css',
-  '/app.jsx', '/components.jsx', '/brand.jsx', '/data.jsx',
-  '/screens/home.jsx', '/screens/login.jsx', '/screens/marketplace.jsx',
-  '/screens/quickpools.jsx', '/screens/post.jsx', '/screens/work.jsx',
-  '/screens/profile.jsx', '/screens/overlays.jsx',
-  '/icone.png', '/icone_orig_rgba.png',
+  '/tokens.css',
+  '/icone.png',
+  '/icone_orig_rgba.png',
+  '/manifest.json',
 ];
 
 self.addEventListener('install', e => {
