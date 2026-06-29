@@ -754,7 +754,8 @@ function HomeScreen({
       scrollSnapType: 'x mandatory',
       WebkitOverflowScrolling: 'touch',
       msOverflowStyle: 'none',
-      scrollbarWidth: 'none'
+      scrollbarWidth: 'none',
+      touchAction: 'pan-x'
     }
   }, myPosts.map(item => {
     const isPending = item.status === 'pending';
@@ -780,6 +781,7 @@ function HomeScreen({
         flexShrink: 0,
         width: 150,
         scrollSnapAlign: 'start',
+        touchAction: 'pan-x',
         border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
         background: isPending ? 'var(--pg-ink-50, #F7F9FB)' : 'var(--pg-blue-50)',
         cursor: 'pointer',

@@ -418,7 +418,7 @@ function HomeScreen({ ctx }) {
 
           {/* User posts list */}
           {myPosts.length > 0 && (
-            <div style={{display:'flex', overflowX:'auto', gap:10, paddingBottom:2, scrollSnapType:'x mandatory', WebkitOverflowScrolling:'touch', msOverflowStyle:'none', scrollbarWidth:'none'}}>
+            <div style={{display:'flex', overflowX:'auto', gap:10, paddingBottom:2, scrollSnapType:'x mandatory', WebkitOverflowScrolling:'touch', msOverflowStyle:'none', scrollbarWidth:'none', touchAction:'pan-x'}}>
               {myPosts.map(item => {
                 const isPending = item.status === 'pending';
                 const isJob = item._isJob === true;
@@ -438,6 +438,7 @@ function HomeScreen({ ctx }) {
                     padding:'11px 11px 11px', borderRadius:14, flexShrink:0,
                     width:150,
                     scrollSnapAlign:'start',
+                    touchAction:'pan-x',
                     border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
                     background: isPending ? 'var(--pg-ink-50, #F7F9FB)' : 'var(--pg-blue-50)',
                     cursor:'pointer', fontFamily:'inherit', textAlign:'left',
