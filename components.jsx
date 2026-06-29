@@ -283,18 +283,15 @@ function _unlockScreen() {
 
 // ── Bottom Sheet ──────────────────────────────────────────────
 function Sheet({ open, onClose, children, height='auto' }) {
-  const [mounted, setMounted]   = React.useState(open);
-  const [closing, setClosing]   = React.useState(false);
-  const lockedRef  = React.useRef(false);
-  const startY     = React.useRef(0);
-  const [dragOffset, setDragOffset] = React.useState(0);
-  const dragging   = React.useRef(false);
+  const [mounted, setMounted] = React.useState(open);
+  const [closing, setClosing] = React.useState(false);
+  const lockedRef = React.useRef(false);
+  const sheetRef  = React.useRef(null);
 
   React.useEffect(() => {
     if (open) {
       setMounted(true);
       setClosing(false);
-      setDragOffset(0);
       if (!lockedRef.current) { lockedRef.current = true; _lockScreen(); }
     } else if (mounted) {
       setClosing(true);
@@ -311,6 +308,52 @@ function Sheet({ open, onClose, children, height='auto' }) {
     return () => { if (lockedRef.current) { lockedRef.current = false; _unlockScreen(); } };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Swipe-to-dismiss on entire sheet — must use imperative addEventListener
+  // so we can pass { passive: false } and call preventDefault on iOS.
+  React.useEffect(() => {
+    const el = sheetRef.current;
+    if (!el) return;
+    let startY = 0, dragging = false, offset = 0;
+
+    const onStart = (e) => {
+      startY = e.touches[0].clientY;
+      dragging = false;
+      offset = 0;
+    };
+    const onMove = (e) => {
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0) { dragging = false; return; }
+      // Don't drag if user is scrolling scrollable content inside the sheet
+      let node = e.target;
+      while (node && node !== el) {
+        if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight) return;
+        node = node.parentElement;
+      }
+      if (!dragging && dy > 10) dragging = true;
+      if (dragging) {
+        e.preventDefault();
+        offset = dy;
+        el.style.transform = `translateY(${dy}px)`;
+        el.style.transition = 'none';
+      }
+    };
+    const onEnd = () => {
+      el.style.transition = '';
+      if (dragging && offset > 80) { el.style.transform = ''; onClose(); }
+      else el.style.transform = '';
+      dragging = false; offset = 0;
+    };
+
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove',  onMove,  { passive: false });
+    el.addEventListener('touchend',   onEnd,   { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove',  onMove);
+      el.removeEventListener('touchend',   onEnd);
+    };
+  }, [mounted, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!mounted) return null;
 
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 540;
@@ -322,21 +365,6 @@ function Sheet({ open, onClose, children, height='auto' }) {
     borderRadius: '20px 20px 0 0',
   } : {};
 
-  const onGrabStart = (e) => {
-    dragging.current = true;
-    startY.current = e.touches ? e.touches[0].clientY : e.clientY;
-  };
-  const onGrabMove = (e) => {
-    if (!dragging.current) return;
-    const dy = (e.touches ? e.touches[0].clientY : e.clientY) - startY.current;
-    if (dy > 0) { e.preventDefault(); setDragOffset(dy); }
-  };
-  const onGrabEnd = () => {
-    dragging.current = false;
-    if (dragOffset > 80) { setDragOffset(0); onClose(); }
-    else setDragOffset(0);
-  };
-
   return (
     <>
       <div
@@ -346,23 +374,12 @@ function Sheet({ open, onClose, children, height='auto' }) {
         onTouchMove={e => e.stopPropagation()}
       />
       <div
+        ref={sheetRef}
         className={`pg-sheet${closing ? ' pg-sheet-down' : ''}`}
-        style={{
-          height, ...desktopStyle,
-          transform: dragOffset > 0 ? `translateY(${dragOffset}px)` : undefined,
-          transition: dragOffset > 0 ? 'none' : undefined,
-        }}
+        style={{height, ...desktopStyle}}
         onWheel={e => e.stopPropagation()}
       >
-        <div
-          onTouchStart={onGrabStart}
-          onTouchMove={onGrabMove}
-          onTouchEnd={onGrabEnd}
-          onMouseDown={onGrabStart}
-          onMouseMove={onGrabMove}
-          onMouseUp={onGrabEnd}
-          style={{padding:'10px 0 6px', cursor:'ns-resize', touchAction:'none'}}
-        >
+        <div style={{padding:'10px 0 6px', cursor:'ns-resize'}}>
           <div className="pg-sheet-grabber" style={{margin:'0 auto'}}/>
         </div>
         {children}
