@@ -346,7 +346,7 @@ function FullPage({ open, onClose, children }) {
       : 'pg-sheet-up 0.34s cubic-bezier(.22,1,.36,1)',
   };
 
-  return <div ref={pageRef} style={style}>{children}</div>;
+  return <div ref={pageRef} data-pg-fullpage style={style}>{children}</div>;
 }
 
 // ── Bottom Sheet ──────────────────────────────────────────────

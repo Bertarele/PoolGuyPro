@@ -752,6 +752,7 @@ function FullPage({
   };
   return /*#__PURE__*/React.createElement("div", {
     ref: pageRef,
+    "data-pg-fullpage": true,
     style: style
   }, children);
 }
