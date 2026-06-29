@@ -1077,7 +1077,7 @@ function HomeScreen({
     const priceStr = f.price_mode === 'neg' ? '🤝 Neg.' : f.price ? '$' + f.price : '—';
     return /*#__PURE__*/React.createElement("div", {
       key: f.id,
-      onClick: () => goTab('market'),
+      onClick: () => openListingById(f.id),
       style: {
         minWidth: 170,
         maxWidth: 170,

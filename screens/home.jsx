@@ -602,7 +602,7 @@ function HomeScreen({ ctx }) {
               const photos = (f.photo_urls&&f.photo_urls.length>0)?f.photo_urls:(f.photo_url?[f.photo_url]:[]);
               const priceStr = f.price_mode==='neg'?'🤝 Neg.':(f.price?'$'+f.price:'—');
               return (
-                <div key={f.id} onClick={()=>goTab('market')}
+                <div key={f.id} onClick={()=>openListingById(f.id)}
                   style={{
                     minWidth:170, maxWidth:170, flexShrink:0, cursor:'pointer',
                     borderRadius:16, overflow:'hidden', background:'var(--pg-white)',
