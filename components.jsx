@@ -333,15 +333,16 @@ function Sheet({ open, onClose, children, height='auto' }) {
     const onMove = (e) => {
       const dy = e.touches[0].clientY - startY;
       if (dy <= 0) { dragging = false; return; }
-      // If user is scrolling scrollable content that isn't at top, don't drag sheet
+      // If touching scrollable content that is scrolled down, let browser scroll normally
       let node = e.target;
       while (node && node !== el) {
         if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight) return;
         node = node.parentElement;
       }
+      // Prevent pull-to-refresh as soon as downward drag is detected (before threshold)
+      e.preventDefault();
       if (!dragging && dy > 10) dragging = true;
       if (dragging) {
-        e.preventDefault();
         offset = dy;
         el.style.transform = `translateY(${dy}px)`;
         el.style.transition = 'none';
