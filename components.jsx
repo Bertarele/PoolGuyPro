@@ -691,4 +691,33 @@ function Shimmer({ w=80, h=10 }) {
   return <div style={{width:w, height:h, borderRadius:4, background:'var(--pg-ink-100)'}}/>;
 }
 
-Object.assign(window, { Icon, Avatar, Stars, ReputationBadge, Sheet, TopBar, IconButton, TabBar, LangPill, Shimmer, _lockScreen, _unlockScreen });
+// ── Tx — auto-translate user-generated text to the viewer's language ──
+// Uses MyMemory free API (no key needed). Results cached in window._txCache.
+// Assumes source content is Portuguese (default for this app/community).
+// Shows original text immediately, replaces with translation asynchronously.
+window._txCache = window._txCache || new Map();
+function Tx({ children, lang, src }) {
+  const srcLang = src || 'pt';
+  const txt = String(children || '').trim();
+  const [out, setOut] = React.useState(txt);
+  React.useEffect(() => {
+    if (!txt || lang === srcLang) { setOut(txt); return; }
+    const key = `${srcLang}|${lang}|${txt}`;
+    if (window._txCache.has(key)) { setOut(window._txCache.get(key)); return; }
+    let live = true;
+    fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(txt.slice(0, 500))}&langpair=${srcLang}|${lang}&de=felipelwo@gmail.com`)
+      .then(r => r.json())
+      .then(d => {
+        if (!live) return;
+        const t = d?.responseData?.translatedText;
+        const res = (t && d.responseStatus === 200) ? t : txt;
+        window._txCache.set(key, res);
+        setOut(res);
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [txt, lang]);
+  return out;
+}
+
+Object.assign(window, { Icon, Avatar, Stars, ReputationBadge, Sheet, TopBar, IconButton, TabBar, LangPill, Shimmer, Tx, _lockScreen, _unlockScreen });

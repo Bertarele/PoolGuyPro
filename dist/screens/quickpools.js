@@ -619,7 +619,9 @@ function QuickPoolsScreen({
         lineHeight: 1.2,
         color: 'var(--pg-ink-900)'
       }
-    }, tr(j.title, lang)), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(Tx, {
+      lang: lang
+    }, tr(j.title, 'pt'))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -2523,7 +2525,9 @@ function QuickPoolDetails({
       letterSpacing: '-0.02em',
       lineHeight: 1.2
     }
-  }, tr(job.title, lang)), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Tx, {
+    lang: lang
+  }, tr(job.title, 'pt'))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -2682,7 +2686,7 @@ function QuickPoolDetails({
       fill: "var(--pg-blue-500)",
       stroke: "none"
     })), label);
-  }))), tr(job.body, lang) ? /*#__PURE__*/React.createElement("div", {
+  }))), tr(job.body, 'pt') ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14
     }
@@ -2701,7 +2705,9 @@ function QuickPoolDetails({
       lineHeight: 1.5,
       color: 'var(--pg-ink-700)'
     }
-  }, tr(job.body, lang))) : null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Tx, {
+    lang: lang
+  }, tr(job.body, 'pt')))) : null, /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
     style: {
       padding: 14,

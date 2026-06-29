@@ -416,7 +416,7 @@ function QuickPoolsScreen({ ctx }) {
                 margin:'0 0 6px', fontFamily:'var(--pg-font-display)',
                 fontSize: compact?15:17, fontWeight:800, letterSpacing:'-0.02em', lineHeight:1.2,
                 color:'var(--pg-ink-900)',
-              }}>{tr(j.title,lang)}</h3>
+              }}><Tx lang={lang}>{tr(j.title,'pt')}</Tx></h3>
               {/* Location */}
               <div style={{display:'flex', alignItems:'center', gap:5, fontSize:12, color:'var(--pg-ink-500)'}}>
                 {Icon.pin(12,'var(--pg-blue-400)')}
@@ -1461,7 +1461,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
       </div>
 
       <div style={{padding:'16px 18px 100px', flex:1}}>
-        <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em', lineHeight:1.2}}>{tr(job.title, lang)}</h2>
+        <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em', lineHeight:1.2}}><Tx lang={lang}>{tr(job.title,'pt')}</Tx></h2>
         <div style={{display:'flex', alignItems:'center', gap:6, marginTop:8, fontSize:13, color:'var(--pg-ink-700)'}}>
           {Icon.pin(14)} {job.loc} · {tr(job.dist, lang)}
         </div>
@@ -1529,12 +1529,12 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           </div>
         )}
 
-        {tr(job.body, lang) ? (
+        {tr(job.body, 'pt') ? (
           <div style={{marginTop:14}}>
             <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, letterSpacing:'0.05em', marginBottom:6}}>
               {lang==='pt'?'NOTAS PARA CANDIDATOS':lang==='es'?'NOTAS PARA CANDIDATOS':'NOTES FOR APPLICANTS'}
             </div>
-            <p style={{margin:0, fontSize:14, lineHeight:1.5, color:'var(--pg-ink-700)'}}>{tr(job.body, lang)}</p>
+            <p style={{margin:0, fontSize:14, lineHeight:1.5, color:'var(--pg-ink-700)'}}><Tx lang={lang}>{tr(job.body,'pt')}</Tx></p>
           </div>
         ) : null}
 

@@ -2336,7 +2336,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                     {lang==='pt'?'DESCRIÇÃO':'DESCRIPTION'}
                   </div>
                   <div style={{fontSize:15, lineHeight:1.7, color:'var(--pg-ink-700)'}}>
-                    {item.description}
+                    <Tx lang={lang}>{item.description}</Tx>
                   </div>
                 </div>
               )}
@@ -2417,7 +2417,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                     margin:'0 0 10px', fontFamily:'var(--pg-font-display)',
                     fontSize:24, fontWeight:800, letterSpacing:'-0.02em',
                     lineHeight:1.2, color:'var(--pg-ink-900)',
-                  }}>{item.name}</h1>
+                  }}><Tx lang={lang}>{item.name}</Tx></h1>
 
                   {/* Price */}
                   <div style={{marginBottom:10}}>
@@ -2667,7 +2667,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
         {/* Title */}
         <h2 style={{margin:'0 0 8px', fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.02em', lineHeight:1.2, color:'var(--pg-ink-900)'}}>
-          {item.name}
+          <Tx lang={lang}>{item.name}</Tx>
         </h2>
 
         {/* Price + condition badge */}
@@ -3820,11 +3820,11 @@ function MarketplaceScreen({ ctx }) {
         <div style={{padding: desktopMode ? '14px 16px 16px' : '12px 13px 14px', display:'flex', flexDirection:'column', flex:1}}>
           <div style={{fontSize: desktopMode?15:14, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3, color:'var(--pg-ink-900)',
             display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
-            {item.name}
+            <Tx lang={lang}>{item.name}</Tx>
           </div>
           <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.4, flex:1,
             display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
-            {item.description||([item.condition,item.loc].filter(Boolean).join(' · ')||'—')}
+            <Tx lang={lang}>{item.description||([item.condition,item.loc].filter(Boolean).join(' · ')||'—')}</Tx>
           </div>
           <div style={{height:1, background:'var(--pg-ink-100)', margin:'10px 0'}}/>
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:4}}>
@@ -4759,7 +4759,7 @@ function MarketplaceScreen({ ctx }) {
                       {/* Title */}
                       <div style={{fontSize:14, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3, color:'var(--pg-ink-900)',
                         display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
-                        {item.name}
+                        <Tx lang={lang}>{item.name}</Tx>
                       </div>
                       {/* Description — show text if available, else condition · location */}
                       <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.4, flex:1,

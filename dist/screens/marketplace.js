@@ -4553,7 +4553,9 @@ function ViewListingSheet({
         lineHeight: 1.7,
         color: 'var(--pg-ink-700)'
       }
-    }, item.description)), (item.type === 'pool' || item.type === 'route') && (() => {
+    }, /*#__PURE__*/React.createElement(Tx, {
+      lang: lang
+    }, item.description))), (item.type === 'pool' || item.type === 'route') && (() => {
       const rows = [];
       if (item.loc) rows.push({
         label: lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City',
@@ -4699,7 +4701,9 @@ function ViewListingSheet({
         lineHeight: 1.2,
         color: 'var(--pg-ink-900)'
       }
-    }, item.name), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(Tx, {
+      lang: lang
+    }, item.name)), /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 10
       }
@@ -5079,7 +5083,9 @@ function ViewListingSheet({
       lineHeight: 1.2,
       color: 'var(--pg-ink-900)'
     }
-  }, item.name), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Tx, {
+    lang: lang
+  }, item.name)), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'baseline',
@@ -7110,7 +7116,9 @@ function MarketplaceScreen({
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden'
       }
-    }, item.name), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(Tx, {
+      lang: lang
+    }, item.name)), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11.5,
         color: 'var(--pg-ink-500)',
@@ -7122,7 +7130,9 @@ function MarketplaceScreen({
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden'
       }
-    }, item.description || [item.condition, item.loc].filter(Boolean).join(' · ') || '—'), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(Tx, {
+      lang: lang
+    }, item.description || [item.condition, item.loc].filter(Boolean).join(' · ') || '—')), /*#__PURE__*/React.createElement("div", {
       style: {
         height: 1,
         background: 'var(--pg-ink-100)',
@@ -9151,7 +9161,9 @@ function MarketplaceScreen({
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden'
       }
-    }, item.name), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(Tx, {
+      lang: lang
+    }, item.name)), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11.5,
         color: 'var(--pg-ink-500)',
