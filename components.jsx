@@ -355,15 +355,16 @@ function Sheet({ open, onClose, children, height='auto' }) {
         onWheel={e => e.stopPropagation()}
       >
         <div
-          className="pg-sheet-grabber"
           onTouchStart={onGrabStart}
           onTouchMove={onGrabMove}
           onTouchEnd={onGrabEnd}
           onMouseDown={onGrabStart}
           onMouseMove={onGrabMove}
           onMouseUp={onGrabEnd}
-          style={{cursor:'grab', padding:'12px 0 8px', margin:'-12px 0 -8px'}}
-        />
+          style={{padding:'10px 0 6px', cursor:'ns-resize', touchAction:'none'}}
+        >
+          <div className="pg-sheet-grabber" style={{margin:'0 auto'}}/>
+        </div>
         {children}
       </div>
     </>

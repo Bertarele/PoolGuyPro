@@ -765,7 +765,6 @@ function Sheet({
     },
     onWheel: e => e.stopPropagation()
   }, /*#__PURE__*/React.createElement("div", {
-    className: "pg-sheet-grabber",
     onTouchStart: onGrabStart,
     onTouchMove: onGrabMove,
     onTouchEnd: onGrabEnd,
@@ -773,11 +772,16 @@ function Sheet({
     onMouseMove: onGrabMove,
     onMouseUp: onGrabEnd,
     style: {
-      cursor: 'grab',
-      padding: '12px 0 8px',
-      margin: '-12px 0 -8px'
+      padding: '10px 0 6px',
+      cursor: 'ns-resize',
+      touchAction: 'none'
     }
-  }), children));
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pg-sheet-grabber",
+    style: {
+      margin: '0 auto'
+    }
+  })), children));
 }
 
 // ── Top App Header (for screens) ──────────────────────────────
