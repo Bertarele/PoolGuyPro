@@ -78,6 +78,7 @@ function QuickPoolsScreen({ ctx }) {
 
   // Push notification status: 'checking' | 'needed' | 'active' | 'denied' | 'unsupported'
   const [notifStatus, setNotifStatus] = React.useState('checking');
+  const [notifHelpOpen, setNotifHelpOpen] = React.useState(false);
 
   const checkNotifStatus = React.useCallback(async () => {
     if (typeof Notification === 'undefined' || !('PushManager' in window)) {
@@ -99,6 +100,8 @@ function QuickPoolsScreen({ ctx }) {
   React.useEffect(() => { checkNotifStatus(); }, [checkNotifStatus]);
 
   const activatePush = React.useCallback(async () => {
+    // If already denied, skip the (no-op) request and go straight to instructions
+    if (Notification.permission === 'denied') { setNotifHelpOpen(true); return; }
     if (ctx.registerPush) await ctx.registerPush();
     await checkNotifStatus();
   }, [ctx.registerPush, checkNotifStatus]);
@@ -1042,6 +1045,62 @@ function QuickPoolsScreen({ ctx }) {
         onCancel={()=>setConfirmDialog(null)}
       />
     )}
+
+    {/* ── Notification Help Modal (shown only when permission was previously denied) ── */}
+    {notifHelpOpen && (() => {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      const pt = lang === 'pt';
+      const step = (n, text) => (
+        <div style={{display:'flex', gap:12, alignItems:'flex-start', marginBottom:16}}>
+          <div style={{width:28, height:28, borderRadius:9, background:'#0EBAC720', border:'1px solid #0EBAC740',
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+            fontWeight:800, fontSize:13, color:'#0EBAC7'}}>{n}</div>
+          <div style={{fontSize:14, color:'var(--pg-ink-700)', lineHeight:1.5, paddingTop:4}}>{text}</div>
+        </div>
+      );
+      return (
+        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', zIndex:3000,
+          display:'flex', alignItems:'flex-end', justifyContent:'center'}}
+          onClick={()=>setNotifHelpOpen(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'var(--pg-ink-100)',
+            borderRadius:'22px 22px 0 0', padding:'20px 22px 40px', width:'100%', maxWidth:480,
+            boxShadow:'0 -8px 40px rgba(0,0,0,0.35)'}}>
+            <div style={{width:36, height:4, borderRadius:2, background:'var(--pg-ink-300)', margin:'0 auto 18px'}}/>
+            <div style={{fontWeight:800, fontSize:17, color:'var(--pg-ink-900)', marginBottom:6}}>
+              🔔 {pt ? 'Como ativar notificações' : 'How to enable notifications'}
+            </div>
+            <div style={{fontSize:13, color:'var(--pg-ink-500)', marginBottom:20, lineHeight:1.5}}>
+              {pt ? 'Você negou a permissão antes. Siga os passos para reativar:' : 'You previously denied permission. Follow these steps to re-enable:'}
+            </div>
+            {isIOS && isStandalone && (<>
+              {step(1, pt ? <>Abra o app <b>Ajustes</b> do iPhone</> : <>Open iPhone <b>Settings</b></>)}
+              {step(2, pt ? <>Role e toque em <b>PoolGuyX</b></> : <>Scroll and tap <b>PoolGuyX</b></>)}
+              {step(3, pt ? <>Toque em <b>Notificações</b> e ative o botão</> : <>Tap <b>Notifications</b> and toggle ON</>)}
+              {step(4, pt ? <><b>Volte ao app</b> e toque em "Ativar" no banner</> : <><b>Return to the app</b> and tap "Enable"</>)}
+            </>)}
+            {isIOS && !isStandalone && (<>
+              {step(1, pt ? <>No Safari, toque em <b>⎋ Compartilhar</b> (barra inferior)</> : <>In Safari, tap <b>⎋ Share</b> (bottom bar)</>)}
+              {step(2, pt ? <>Toque em <b>"Adicionar à Tela de Início"</b></> : <>Tap <b>"Add to Home Screen"</b></>)}
+              {step(3, pt ? <>Abra o app pela <b>tela inicial</b> do iPhone</> : <>Open the app from your <b>Home Screen</b></>)}
+              {step(4, pt ? <>Toque em "Ativar" no banner de notificações</> : <>Tap "Enable" on the notification banner</>)}
+            </>)}
+            {!isIOS && (<>
+              {step(1, pt ? <>Toque no ícone de <b>cadeado</b> na barra de endereço</> : <>Tap the <b>lock icon</b> in the address bar</>)}
+              {step(2, pt ? <>Toque em <b>Permissões → Notificações → Permitir</b></> : <>Tap <b>Permissions → Notifications → Allow</b></>)}
+              {step(3, pt ? <><b>Recarregue a página</b> e toque em "Ativar"</> : <><b>Reload the page</b> and tap "Enable"</>)}
+            </>)}
+            <button onClick={()=>setNotifHelpOpen(false)} style={{
+              width:'100%', height:50, borderRadius:14, border:'none', cursor:'pointer', marginTop:8,
+              background:'linear-gradient(135deg,#0EBAC7,#0D7280)', color:'#fff',
+              fontWeight:700, fontSize:15, fontFamily:'inherit',
+            }}>
+              {pt ? 'Entendido' : 'Got it'}
+            </button>
+          </div>
+        </div>
+      );
+    })()}
 
 
     </div>
