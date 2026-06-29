@@ -3510,9 +3510,9 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
   const isValid = company.trim().length > 0 && role.trim().length > 0 && loc.length > 0 && carReq !== '' && equipReq !== '' && licenseReq !== '';
 
   return (
-    <div style={{padding:'8px 0 24px'}}>
+    <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
       {/* Header */}
-      <div style={{padding:'4px 18px 14px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+      <div style={{padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
         <button onClick={onClose} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:15, fontWeight:600, cursor:'pointer', padding:0}}>
           {t.cancel}
         </button>
@@ -3522,7 +3522,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
         <div style={{width:60}}/>
       </div>
 
-      <div style={{padding:'0 18px', display:'flex', flexDirection:'column', gap:20}}>
+      <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'20px 18px', display:'flex', flexDirection:'column', gap:20}}>
 
         <HiringFormSection label={companyLbl}>
           <input className="pg-field" value={company} onChange={e=>setCompany(e.target.value)} placeholder={companyPh}/>
@@ -3623,7 +3623,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
 
       </div>
 
-      <div style={{padding:'20px 18px 8px', position:'sticky', bottom:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
+      <div style={{padding:'12px 18px', flexShrink:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         {!isValid && (carReq === '' || licenseReq === '' || equipReq === '') && (
           <div style={{fontSize:11.5, color:'var(--pg-ink-400)', textAlign:'center', marginBottom:10}}>
             {lang==='pt'?'Selecione os requisitos de veículo, driver\'s license e equipamento':lang==='es'?'Selecciona los requisitos de vehículo, driver\'s license y equipo':'Select vehicle, driver\'s license and equipment to continue'}

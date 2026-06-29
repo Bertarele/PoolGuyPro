@@ -7204,14 +7204,18 @@ function PostHiringSheet({
   const isValid = company.trim().length > 0 && role.trim().length > 0 && loc.length > 0 && carReq !== '' && equipReq !== '' && licenseReq !== '';
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '8px 0 24px'
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '4px 18px 14px',
+      padding: '14px 18px',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-between'
+      justifyContent: 'space-between',
+      borderBottom: '0.5px solid var(--pg-ink-200)',
+      flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onClose,
@@ -7238,7 +7242,10 @@ function PostHiringSheet({
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 18px',
+      flex: 1,
+      overflow: 'auto',
+      touchAction: 'pan-y',
+      padding: '20px 18px',
       display: 'flex',
       flexDirection: 'column',
       gap: 20
@@ -7459,9 +7466,8 @@ function PostHiringSheet({
     }
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '20px 18px 8px',
-      position: 'sticky',
-      bottom: 0,
+      padding: '12px 18px',
+      flexShrink: 0,
       background: 'var(--pg-white)',
       borderTop: '0.5px solid var(--pg-ink-200)'
     }
