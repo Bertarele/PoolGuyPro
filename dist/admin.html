@@ -2829,30 +2829,50 @@ function AdminApp({ adminUser, onLogout }) {
       </div>{/* fim admin-main */}
 
       {editQP && React.createElement(function EditQPModal({qp, onClose, onSaved, showToast}){
-        const [form, setForm] = React.useState({
-          title: qp.title||'',
-          description: qp.description||'',
-          city: qp.city||'',
-          pool_type: qp.pool_type||'residential',
-          price_negotiable: qp.price_negotiable||false,
-          price_per_pool: qp.price_per_pool||'',
-          pools_count: qp.pools_count||1,
-          when_label: qp.when_label||'',
-          status: qp.status||'open',
-        });
-        const [saving, setSaving] = React.useState(false);
+        const DAY_KEYS   = ['mon','tue','wed','thu','fri','sat','sun'];
+        const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        const TIME_SLOTS = [{key:'morning',label:'Morning'},{key:'afternoon',label:'Afternoon'},{key:'evening',label:'Evening'}];
+        const extrasInit = qp.extras && typeof qp.extras==='object' ? qp.extras : {};
+        const [title,       setTitle]       = React.useState(qp.title||'');
+        const [city,        setCity]        = React.useState(qp.city||'');
+        const [poolType,    setPoolType]    = React.useState(qp.pool_type||'residential');
+        const [day,         setDay]         = React.useState(qp.day_of_week||'');
+        const [timeSlot,    setTimeSlot]    = React.useState(qp.time_slot||'');
+        const [poolsCount,  setPoolsCount]  = React.useState(qp.pools_count||1);
+        const [neg,         setNeg]         = React.useState(qp.price_negotiable||false);
+        const [price,       setPrice]       = React.useState(qp.price_per_pool||'');
+        const [status,      setStatus]      = React.useState(qp.status||'open');
+        const [desc,        setDesc]        = React.useState(qp.description||'');
+        const [gateCode,    setGateCode]    = React.useState(extrasInit.gate_code||'');
+        const [doorman,     setDoorman]     = React.useState(!!extrasInit.doorman);
+        const [dog,         setDog]         = React.useState(!!extrasInit.dog);
+        const [saltwater,   setSaltwater]   = React.useState(!!extrasInit.saltwater);
+        const [saving,      setSaving]      = React.useState(false);
+
+        const buildWhenLabel = () => {
+          if(!day) return qp.when_label||'';
+          const dayLabel = DAY_LABELS[DAY_KEYS.indexOf(day)] || day;
+          const timeLabel = timeSlot ? ' · '+(TIME_SLOTS.find(t=>t.key===timeSlot)||{label:''}).label : '';
+          return dayLabel+timeLabel;
+        };
+
         const save = async () => {
           setSaving(true);
           const payload = {
-            title: form.title||null,
-            description: form.description||null,
-            city: form.city,
-            pool_type: form.pool_type,
-            price_negotiable: form.price_negotiable,
-            price_per_pool: form.price_negotiable ? null : (parseFloat(form.price_per_pool)||null),
-            pools_count: parseInt(form.pools_count)||1,
-            when_label: form.when_label||null,
-            status: form.status,
+            title: title.trim()||null,
+            description: desc.trim()||null,
+            city,
+            pool_type: poolType,
+            day_of_week: day||null,
+            time_slot: timeSlot||null,
+            when_label: buildWhenLabel()||null,
+            pools_count: parseInt(poolsCount)||1,
+            price_negotiable: neg,
+            price_per_pool: neg ? null : (parseFloat(price)||null),
+            status,
+            extras: poolType==='condo'
+              ? {gate_code:gateCode.trim()||null, doorman, dog, saltwater}
+              : {dog, saltwater},
           };
           const {error} = await window.sb.from('quick_pool_jobs').update(payload).eq('id',qp.id);
           setSaving(false);
@@ -2860,49 +2880,132 @@ function AdminApp({ adminUser, onLogout }) {
           onSaved({...qp,...payload});
           showToast('✓ Quick Pool atualizado!');
         };
-        const inp = {width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none'};
-        const lbl = {fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em',display:'block'};
+
+        const inp = {width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'9px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box'};
+        const lbl = {fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:6,textTransform:'uppercase',letterSpacing:'.06em',display:'block'};
+        const pill = (active) => ({padding:'7px 12px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12.5,fontWeight:600,transition:'all .15s',
+          background:active?'#0EBAC722':'#0f1117', color:active?'#0EBAC7':'#475569',
+          outline:active?'1.5px solid #0EBAC755':'1.5px solid #1e293b'});
+        const chk = {display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:13,color:'#94a3b8',userSelect:'none'};
+
         return (
-          <div style={{position:'fixed',inset:0,zIndex:9000,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
-            <div style={{background:'#13161f',borderRadius:18,padding:'24px 22px',width:'100%',maxWidth:520,border:'1px solid #1e293b',maxHeight:'90vh',overflowY:'auto'}}>
+          <div style={{position:'fixed',inset:0,zIndex:9000,background:'rgba(0,0,0,0.78)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+            <div style={{background:'#13161f',borderRadius:18,padding:'24px 22px',width:'100%',maxWidth:540,border:'1px solid #1e293b',maxHeight:'92vh',overflowY:'auto'}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
                 <div style={{fontWeight:800,fontSize:17,color:'#f1f5f9'}}>⚡ Editar Quick Pool</div>
                 <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',padding:4}}>{IC.close}</button>
               </div>
-              <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                <div><label style={lbl}>Título</label><input value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="Ex: Pool guy needed in Weston" style={inp}/></div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                  <div><label style={lbl}>Cidade</label><input value={form.city} onChange={e=>setForm(p=>({...p,city:e.target.value}))} style={inp}/></div>
-                  <div><label style={lbl}>Tipo</label>
-                    <select value={form.pool_type} onChange={e=>setForm(p=>({...p,pool_type:e.target.value}))} style={{...inp,height:42}}>
-                      {['residential','commercial','hoa','condo'].map(t=><option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                  <div><label style={lbl}>Piscinas</label><input type="number" min="1" value={form.pools_count} onChange={e=>setForm(p=>({...p,pools_count:e.target.value}))} style={inp}/></div>
-                  <div><label style={lbl}>Quando</label><input value={form.when_label} onChange={e=>setForm(p=>({...p,when_label:e.target.value}))} placeholder="Ex: Today 2pm" style={inp}/></div>
-                </div>
+              <div style={{display:'flex',flexDirection:'column',gap:16}}>
+
+                {/* Título */}
                 <div>
-                  <label style={lbl}>Preço</label>
-                  <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-                    <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:13,color:'#94a3b8'}}>
-                      <input type="checkbox" checked={form.price_negotiable} onChange={e=>setForm(p=>({...p,price_negotiable:e.target.checked}))}/>
-                      Preço negociável
-                    </label>
+                  <label style={lbl}>Título</label>
+                  <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Ex: Pool guy needed in Weston" style={inp}/>
+                </div>
+
+                {/* Cidade + Tipo */}
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                  <div>
+                    <label style={lbl}>Cidade</label>
+                    <input value={city} onChange={e=>setCity(e.target.value)} style={inp}/>
                   </div>
-                  {!form.price_negotiable&&<input type="number" value={form.price_per_pool} onChange={e=>setForm(p=>({...p,price_per_pool:e.target.value}))} placeholder="Preço por piscina ($)" style={inp}/>}
+                  <div>
+                    <label style={lbl}>Tipo de piscina</label>
+                    <div style={{display:'flex',gap:6}}>
+                      {[{k:'residential',l:'Residential'},{k:'condo',l:'Condo'}].map(t=>(
+                        <button key={t.k} onClick={()=>setPoolType(t.k)} style={{...pill(poolType===t.k),flex:1}}>{t.l}</button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div><label style={lbl}>Status</label>
-                  <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} style={{...inp,height:42}}>
-                    {['open','filled','expired','cancelled','completed'].map(s=><option key={s} value={s}>{s}</option>)}
-                  </select>
+
+                {/* Dia da semana */}
+                <div>
+                  <label style={lbl}>Dia da semana</label>
+                  <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                    {DAY_KEYS.map((dk,i)=>(
+                      <button key={dk} onClick={()=>setDay(day===dk?'':dk)} style={pill(day===dk)}>{DAY_LABELS[i]}</button>
+                    ))}
+                  </div>
                 </div>
-                <div><label style={lbl}>Descrição</label><textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} rows={3} style={{...inp,resize:'vertical'}}/></div>
+
+                {/* Horário */}
+                <div>
+                  <label style={lbl}>Horário</label>
+                  <div style={{display:'flex',gap:6}}>
+                    {TIME_SLOTS.map(ts=>(
+                      <button key={ts.key} onClick={()=>setTimeSlot(timeSlot===ts.key?'':ts.key)} style={{...pill(timeSlot===ts.key),flex:1}}>{ts.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Piscinas + Preço */}
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                  <div>
+                    <label style={lbl}>Nº de piscinas</label>
+                    <input type="number" min="1" value={poolsCount} onChange={e=>setPoolsCount(e.target.value)} style={inp}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>Preço por piscina</label>
+                    <label style={{...chk,marginBottom:6}}>
+                      <input type="checkbox" checked={neg} onChange={e=>setNeg(e.target.checked)}/>
+                      Negociável
+                    </label>
+                    {!neg && <input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="$" style={inp}/>}
+                  </div>
+                </div>
+
+                {/* Extras: saltwater + dog (todos) */}
+                <div>
+                  <label style={lbl}>Extras</label>
+                  <div style={{display:'flex',gap:16,flexWrap:'wrap'}}>
+                    <label style={chk}><input type="checkbox" checked={saltwater} onChange={e=>setSaltwater(e.target.checked)}/> Saltwater</label>
+                    <label style={chk}><input type="checkbox" checked={dog} onChange={e=>setDog(e.target.checked)}/> Dog on property</label>
+                  </div>
+                </div>
+
+                {/* Condo extras */}
+                {poolType==='condo' && (
+                  <div style={{padding:'12px 14px',background:'#0f1117',borderRadius:12,border:'1px solid #1e293b',display:'flex',flexDirection:'column',gap:12}}>
+                    <div style={{fontSize:12,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em'}}>Condo extras</div>
+                    <div>
+                      <label style={lbl}>Gate code</label>
+                      <input value={gateCode} onChange={e=>setGateCode(e.target.value)} placeholder="0000" style={inp}/>
+                    </div>
+                    <label style={chk}><input type="checkbox" checked={doorman} onChange={e=>setDoorman(e.target.checked)}/> Has doorman</label>
+                  </div>
+                )}
+
+                {/* Status */}
+                <div>
+                  <label style={lbl}>Status</label>
+                  <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                    {[{k:'open',l:'Open',c:'#22c55e'},{k:'filled',l:'Filled',c:'#f59e0b'},{k:'expired',l:'Expired',c:'#64748b'},{k:'cancelled',l:'Cancelled',c:'#ef4444'},{k:'completed',l:'Completed',c:'#6366f1'}].map(s=>(
+                      <button key={s.k} onClick={()=>setStatus(s.k)} style={{padding:'6px 12px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:600,transition:'all .15s',
+                        background:status===s.k?s.c+'25':'#0f1117',color:status===s.k?s.c:'#475569',outline:status===s.k?`1.5px solid ${s.c}55`:'1.5px solid #1e293b'}}>
+                        {s.l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Descrição */}
+                <div>
+                  <label style={lbl}>Descrição</label>
+                  <textarea value={desc} onChange={e=>setDesc(e.target.value)} rows={3} style={{...inp,resize:'vertical'}}/>
+                </div>
               </div>
+
+              {/* Preview do when_label */}
+              {(day||timeSlot) && (
+                <div style={{marginTop:14,padding:'8px 12px',background:'#0EBAC710',borderRadius:9,border:'1px solid #0EBAC730',fontSize:12,color:'#0EBAC7'}}>
+                  📅 Quando: <strong>{buildWhenLabel()}</strong>
+                </div>
+              )}
+
               <div style={{display:'flex',gap:10,marginTop:20}}>
                 <button onClick={onClose} style={{flex:1,height:44,borderRadius:11,border:'1px solid #1e293b',background:'#1a1f2e',color:'#94a3b8',fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
-                <button onClick={save} disabled={saving} style={{flex:2,height:44,borderRadius:11,border:'none',background:'linear-gradient(135deg,#0EBAC7,#0077B6)',color:'#fff',fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving?.6:1}}>
+                <button onClick={save} disabled={saving} style={{flex:2,height:44,borderRadius:11,border:'none',background:'linear-gradient(135deg,#0EBAC7,#0077B6)',color:'#fff',fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving?0.6:1}}>
                   {saving?'Salvando…':'✓ Salvar alterações'}
                 </button>
               </div>
