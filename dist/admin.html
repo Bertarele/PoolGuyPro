@@ -719,7 +719,8 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
     const load = async () => {
       setLoading(true);
       const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-      const [profRes, authRes, disputesAsReporter, disputesAsReported, ratingsRes, rentalsRes, photosRes, warningsRes] = await Promise.all([
+      const [profRes, authRes, disputesAsReporter, disputesAsReported, ratingsRes, rentalsRes, photosRes, warningsRes,
+             jobsRes, mktRes, qpRes, vacRes, ratingsGivenRes, appRes] = await Promise.all([
         window.sb.from('profiles').select('*').eq('id', userId).single(),
         fetch(BASE + '/auth/v1/admin/users/' + userId, { headers:{ apikey:SRK, Authorization:'Bearer '+SRK } }).then(r=>r.json()).catch(()=>({})),
         window.sb.from('dispute_reports').select('id,listing_name,severity,status,created_at').eq('reporter_id', userId).order('created_at',{ascending:false}),
@@ -730,9 +731,23 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
           ? window.sb.from('rental_photos').select('type,photo_url').eq('request_id', disputeRequestId)
           : Promise.resolve({ data: [] }),
         window.sb.from('user_warnings').select('*').eq('user_id', userId).order('created_at', {ascending:false}),
+        // Activity
+        window.sb.from('jobs').select('id,status,created_at').eq('user_id', userId),
+        window.sb.from('marketplace').select('id,type,status').eq('user_id', userId),
+        window.sb.from('quick_pool_jobs').select('id,status,created_at').eq('poster_id', userId),
+        window.sb.from('vacations').select('id,status,created_at').eq('user_id', userId),
+        window.sb.from('rental_ratings').select('stars').eq('rater_id', userId),
+        window.sb.from('quick_pool_applications').select('id,status').eq('applicant_id', userId),
       ]);
       const prof = profRes.data || {};
-      setProfile({ ...prof, email: authRes.email || prof.email || '' });
+      const authUser = authRes || {};
+      setProfile({
+        ...prof,
+        email: authUser.email || prof.email || '',
+        created_at: prof.created_at || authUser.created_at,
+        last_sign_in: authUser.last_sign_in_at,
+        phone: prof.phone || authUser.phone || '',
+      });
       setBanned(prof.banned || false);
       setWarnings(warningsRes.data || []);
       const allDisputes = [
@@ -742,12 +757,23 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
       setDisputes(allDisputes);
       const stars = ratingsRes.data?.map(r=>r.stars)||[];
       const avgStars = stars.length ? (stars.reduce((a,b)=>a+b,0)/stars.length).toFixed(1) : null;
+      const starsGiven = ratingsGivenRes.data?.map(r=>r.stars)||[];
+      const avgGiven = starsGiven.length ? (starsGiven.reduce((a,b)=>a+b,0)/starsGiven.length).toFixed(1) : null;
       setStats({
         reportedBy:      (disputesAsReporter.data||[]).length,
         reportedAgainst: (disputesAsReported.data||[]).length,
         rentals:         (rentalsRes.data||[]).length,
         avgRating:       avgStars,
         ratingCount:     stars.length,
+        avgGiven:        avgGiven,
+        ratingsGiven:    starsGiven.length,
+        jobsPosted:      (jobsRes.data||[]).length,
+        mktSell:         (mktRes.data||[]).filter(m=>m.type==='sell').length,
+        mktRent:         (mktRes.data||[]).filter(m=>m.type==='rent').length,
+        qpPosted:        (qpRes.data||[]).length,
+        qpOpen:          (qpRes.data||[]).filter(q=>q.status==='open').length,
+        vacsPosted:      (vacRes.data||[]).length,
+        applications:    (appRes.data||[]).length,
       });
       if (photosRes.data) {
         setPhotos({
@@ -827,81 +853,128 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
           <div style={{padding:'20px',maxHeight:'80vh',overflowY:'auto'}}>
 
             {/* Avatar + name */}
-            <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:20}}>
-              {profile?.photo_url
-                ? <img src={profile.photo_url} alt="" style={{width:72,height:72,borderRadius:'50%',objectFit:'cover',border:'2px solid #334155'}}/>
-                : <div style={{width:72,height:72,borderRadius:'50%',background:'#0EBAC720',border:'2px solid #0EBAC740',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:700,color:'#0EBAC7'}}>
-                    {(profile?.name||userName||'?')[0].toUpperCase()}
-                  </div>
-              }
+            <div style={{display:'flex',alignItems:'flex-start',gap:16,marginBottom:16}}>
+              {/* Photo */}
+              <div style={{flexShrink:0}}>
+                {(profile?.photo_url || (profile?.photo_urls&&profile.photo_urls[0]))
+                  ? <img src={profile.photo_url||profile.photo_urls[0]} alt=""
+                      style={{width:82,height:82,borderRadius:14,objectFit:'cover',border:'2px solid #334155',display:'block'}}/>
+                  : <div style={{width:82,height:82,borderRadius:14,background:'linear-gradient(135deg,#0EBAC730,#0077B630)',border:'2px solid #0EBAC740',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,fontWeight:800,color:'#0EBAC7'}}>
+                      {(profile?.name||userName||'?')[0].toUpperCase()}
+                    </div>
+                }
+              </div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:20,fontWeight:800,color:'#f1f5f9'}}>{profile?.name || userName || '—'}</div>
-                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Membro desde {fmtDate(profile?.created_at)}</div>
+                <div style={{fontSize:19,fontWeight:800,color:'#f1f5f9',marginBottom:2}}>{profile?.name || userName || '—'}</div>
+                {/* Tier badge */}
+                {profile?.tier && (
+                  <span style={{display:'inline-block',fontSize:10,fontWeight:800,padding:'2px 9px',borderRadius:999,marginBottom:4,
+                    background: profile.tier==='premium'?'#f59e0b25':profile.tier==='pro'?'#6366f125':'#33415525',
+                    color: profile.tier==='premium'?'#f59e0b':profile.tier==='pro'?'#818cf8':'#64748b',
+                    border: `1px solid ${profile.tier==='premium'?'#f59e0b50':profile.tier==='pro'?'#6366f150':'#33415550'}`,
+                    textTransform:'uppercase',letterSpacing:'.05em'}}>
+                    {profile.tier==='premium'?'⭐ Premium':profile.tier==='pro'?'🚀 Pro':'Free'}
+                  </span>
+                )}
+                <div style={{fontSize:11,color:'#64748b'}}>Membro desde {fmtDate(profile?.created_at)}</div>
+                {profile?.last_sign_in && <div style={{fontSize:11,color:'#475569',marginTop:1}}>Último acesso: {fmtDate(profile.last_sign_in)}</div>}
                 {stats.avgRating && (
-                  <div style={{fontSize:13,marginTop:4}}>
-                    {'★'.repeat(Math.round(stats.avgRating))}{'☆'.repeat(5-Math.round(stats.avgRating))}
-                    <span style={{color:'#94a3b8',marginLeft:6}}>{stats.avgRating} ({stats.ratingCount} avaliação{stats.ratingCount!==1?'ões':''})</span>
+                  <div style={{fontSize:13,marginTop:4,color:'#f59e0b'}}>
+                    {'★'.repeat(Math.round(parseFloat(stats.avgRating)))}{'☆'.repeat(5-Math.round(parseFloat(stats.avgRating)))}
+                    <span style={{color:'#94a3b8',marginLeft:6,fontSize:11}}>{stats.avgRating} ({stats.ratingCount} aval.)</span>
                   </div>
                 )}
-                <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:6}}>
-                  {warnings.length > 0 && (
-                    <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
-                      background:totalWarnPts>=5?'#ef444430':'#ef444420',
-                      color:'#ef4444',border:`1px solid ${totalWarnPts>=5?'#ef444460':'#ef444440'}`}}>
-                      ⚠️ {totalWarnPts}/5 pontos{totalWarnPts>=5?' · BANIDO':''}
-                    </span>
-                  )}
-                  {banned && (
-                    <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
-                      background:'#ef444430',color:'#ef4444',border:'1px solid #ef444460'}}>
-                      🚫 BANIDO
-                    </span>
-                  )}
-                  {profile?.verified && (
-                    <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,
-                      background:'#22c55e20',color:'#22c55e',border:'1px solid #22c55e40'}}>
-                      ✓ Verificado
-                    </span>
-                  )}
+                <div style={{display:'flex',gap:5,flexWrap:'wrap',marginTop:6}}>
+                  {banned && <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,background:'#ef444430',color:'#ef4444',border:'1px solid #ef444460'}}>🚫 BANIDO</span>}
+                  {!banned && totalWarnPts>0 && <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,background:'#f59e0b20',color:'#f59e0b',border:'1px solid #f59e0b40'}}>⚠️ {totalWarnPts}/5 pts</span>}
+                  {profile?.verified && <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,background:'#22c55e20',color:'#22c55e',border:'1px solid #22c55e40'}}>✓ Verificado</span>}
+                  {profile?.role==='admin' && <span style={{fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:999,background:'#6366f120',color:'#818cf8',border:'1px solid #6366f140'}}>🛡 Admin</span>}
                 </div>
               </div>
             </div>
 
             {/* Bio */}
             {profile?.bio && (
-              <div style={{padding:'10px 13px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',marginBottom:14}}>
-                <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>Bio</div>
+              <div style={{padding:'10px 13px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',marginBottom:12}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>Bio</div>
                 <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6,whiteSpace:'pre-wrap'}}>{profile.bio}</div>
               </div>
             )}
 
             {/* Info grid */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:16}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:14}}>
               <InfoRow label="E-mail" value={profile?.email} highlight="#0EBAC7"/>
               <InfoRow label="Telefone" value={profile?.phone}/>
-              <InfoRow label="Região" value={profile?.region}/>
-              <InfoRow label="Função" value={profile?.role==='admin'?'🛡 Admin':'👤 Usuário'}/>
+              <InfoRow label="Região" value={profile?.region||profile?.county}/>
+              <InfoRow label="Função" value={profile?.role==='admin'?'🛡 Admin':'👤 Pool Guy'}/>
               <InfoRow label="Especialidade" value={profile?.specialty}/>
               <InfoRow label="Empresa" value={profile?.company}/>
               <InfoRow label="Licença" value={profile?.license}/>
               <InfoRow label="Anos de exp." value={profile?.years_exp ? profile.years_exp+' anos' : null}/>
-              <InfoRow label="ID do usuário" value={userId?.slice(0,16)+'…'}/>
+              <InfoRow label="Plano" value={profile?.tier ? (profile.tier==='premium'?'⭐ Premium':profile.tier==='pro'?'🚀 Pro':'Free') : null}/>
               <InfoRow label="Status" value={banned ? '🚫 Banido' : '✅ Ativo'} highlight={banned?'#ef4444':'#22c55e'}/>
+              <div style={{gridColumn:'1/-1',padding:'9px 12px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>ID do usuário</div>
+                <div style={{fontSize:11,fontWeight:500,color:'#475569',wordBreak:'break-all'}}>{userId}</div>
+              </div>
             </div>
 
-            {/* Stats */}
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:7,marginBottom:16}}>
-              {[
-                { label:'Aluguéis', value: stats.rentals||0, color:'#0EBAC7' },
-                { label:'Reports feitos', value: stats.reportedBy||0, color:'#F59E0B' },
-                { label:'Reports recebidos', value: stats.reportedAgainst||0, color:'#EF4444' },
-              ].map(s=>(
-                <div key={s.label} style={{background:'#0f1117',borderRadius:10,padding:'12px',textAlign:'center',border:'1px solid #1e293b'}}>
-                  <div style={{fontSize:24,fontWeight:800,color:s.color}}>{s.value}</div>
-                  <div style={{fontSize:10,color:'#64748b',marginTop:3,fontWeight:600}}>{s.label}</div>
-                </div>
-              ))}
+            {/* Activity stats */}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>Atividade no app</div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:6}}>
+                {[
+                  {label:'Vagas', value:stats.jobsPosted||0, color:'#0EBAC7'},
+                  {label:'Venda', value:stats.mktSell||0, color:'#6366f1'},
+                  {label:'Aluguel', value:stats.mktRent||0, color:'#8b5cf6'},
+                  {label:'Quick Pools', value:stats.qpPosted||0, color:'#f59e0b'},
+                ].map(s=>(
+                  <div key={s.label} style={{background:'#0f1117',borderRadius:9,padding:'10px 8px',textAlign:'center',border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:20,fontWeight:800,color:s.color}}>{s.value}</div>
+                    <div style={{fontSize:9.5,color:'#64748b',marginTop:2,fontWeight:600}}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6}}>
+                {[
+                  {label:'Rotas Férias', value:stats.vacsPosted||0, color:'#22c55e'},
+                  {label:'Candidaturas', value:stats.applications||0, color:'#0EBAC7'},
+                  {label:'Reports feitos', value:stats.reportedBy||0, color:'#f59e0b'},
+                  {label:'Reports recebidos', value:stats.reportedAgainst||0, color:'#ef4444'},
+                ].map(s=>(
+                  <div key={s.label} style={{background:'#0f1117',borderRadius:9,padding:'10px 8px',textAlign:'center',border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:20,fontWeight:800,color:s.color}}>{s.value}</div>
+                    <div style={{fontSize:9.5,color:'#64748b',marginTop:2,fontWeight:600}}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Ratings summary */}
+            {(stats.ratingCount>0 || stats.ratingsGiven>0) && (
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:14}}>
+                {stats.avgRating && (
+                  <div style={{padding:'10px 12px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>Avaliação recebida</div>
+                    <div style={{fontSize:18,fontWeight:800,color:'#f59e0b'}}>{stats.avgRating} ★ <span style={{fontSize:12,color:'#64748b',fontWeight:400}}>({stats.ratingCount})</span></div>
+                  </div>
+                )}
+                {stats.avgGiven && (
+                  <div style={{padding:'10px 12px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>Avaliação dada</div>
+                    <div style={{fontSize:18,fontWeight:800,color:'#f59e0b'}}>{stats.avgGiven} ★ <span style={{fontSize:12,color:'#64748b',fontWeight:400}}>({stats.ratingsGiven})</span></div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Rental history */}
+            {stats.rentals>0 && (
+              <div style={{padding:'9px 12px',background:'#0f1117',borderRadius:9,border:'1px solid #1e293b',marginBottom:14}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:2}}>Aluguéis como locatário</div>
+                <div style={{fontSize:18,fontWeight:800,color:'#0EBAC7'}}>{stats.rentals}</div>
+              </div>
+            )}
 
             {/* Before/after photos from THIS dispute */}
             {(photos.before.length > 0 || photos.after.length > 0) && (
