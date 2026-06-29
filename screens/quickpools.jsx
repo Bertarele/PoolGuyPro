@@ -486,9 +486,7 @@ function QuickPoolsScreen({ ctx }) {
                   width:36, height:36, borderRadius:10, border:'1px solid var(--pg-ink-300)',
                   background:'var(--pg-ink-100)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
                 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
+                  {Icon.edit(14,'var(--pg-ink-600)')}
                 </button>
                 <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
                   message: lang==='pt'?'Remover publicação?':lang==='es'?'¿Eliminar publicación?':'Remove posting?',
@@ -1146,15 +1144,16 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
     container.setAttribute('tabindex', '-1');
     container.addEventListener('focus', () => container.blur(), true);
 
-    // Prevent iOS pull-to-refresh while dragging the map
-    const stopPull = (e) => { if (e.touches.length === 1) e.stopPropagation(); };
-    container.addEventListener('touchmove', stopPull, { passive: false });
+    // Prevent iOS pull-to-refresh while dragging the map.
+    // Must be on document (not container) so Leaflet's own document-level handlers still fire.
+    const stopPull = (e) => { if (container.contains(e.target)) e.preventDefault(); };
+    document.addEventListener('touchmove', stopPull, { passive: false });
 
     // Force recalc after layout settles
     setTimeout(() => { if (mapRef.current) mapRef.current.invalidateSize(); }, 120);
 
     return () => {
-      container.removeEventListener('touchmove', stopPull);
+      document.removeEventListener('touchmove', stopPull);
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
       markersRef.current = {};
     };
@@ -1888,11 +1887,10 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                   })} style={{
                     height:46, borderRadius:14, border:'1.5px solid var(--pg-ink-300)',
                     background:'var(--pg-ink-100)', color:'var(--pg-ink-700)',
-                    fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                    fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:8,
                   }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
+                    {Icon.edit(16,'var(--pg-ink-700)')}
                     {lang==='pt'?'Editar publicação':lang==='es'?'Editar publicación':'Edit posting'}
                   </button>
                 )}
