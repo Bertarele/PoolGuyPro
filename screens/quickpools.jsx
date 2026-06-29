@@ -102,6 +102,8 @@ function QuickPoolsScreen({ ctx }) {
   const activatePush = React.useCallback(async () => {
     if (ctx.registerPush) await ctx.registerPush();
     await checkNotifStatus();
+    // If still denied after trying, open instructions
+    if (Notification.permission === 'denied') setNotifHelpOpen(true);
   }, [ctx.registerPush, checkNotifStatus]);
 
   // Auto-prompt when tab opens and permission not yet decided
@@ -814,24 +816,14 @@ function QuickPoolsScreen({ ctx }) {
                       : 'Without notifications enabled you may miss urgent jobs.'}
                   </div>
                 </div>
-                {notifStatus === 'denied' ? (
-                  <button onClick={()=>setNotifHelpOpen(true)} style={{
-                    flexShrink:0, height:36, padding:'0 14px', borderRadius:9,
-                    border:'1.5px solid #DC262640', cursor:'pointer', fontSize:12, fontWeight:700, fontFamily:'inherit',
-                    background:'#DC262610', color:'#DC2626', whiteSpace:'nowrap',
-                  }}>
-                    {lang==='pt' ? 'Como ativar?' : 'How to enable?'}
-                  </button>
-                ) : (
-                  <button onClick={activatePush} style={{
-                    flexShrink:0, height:36, padding:'0 18px', borderRadius:9,
-                    border:'none', cursor:'pointer', fontSize:13, fontWeight:700, fontFamily:'inherit',
-                    background:'#D97706', color:'#fff',
-                    boxShadow:'0 2px 8px rgba(217,119,6,0.3)',
-                  }}>
-                    {lang==='pt' ? 'Ativar notificações' : lang==='es' ? 'Activar notificaciones' : 'Enable notifications'}
-                  </button>
-                )}
+                <button onClick={activatePush} style={{
+                  flexShrink:0, height:36, padding:'0 18px', borderRadius:9,
+                  border:'none', cursor:'pointer', fontSize:13, fontWeight:700, fontFamily:'inherit',
+                  background:'#D97706', color:'#fff',
+                  boxShadow:'0 2px 8px rgba(217,119,6,0.3)',
+                }}>
+                  {lang==='pt' ? 'Ativar notificações' : lang==='es' ? 'Activar notificaciones' : 'Enable notifications'}
+                </button>
               </div>
             )}
 
@@ -989,24 +981,14 @@ function QuickPoolsScreen({ ctx }) {
                   : 'You\'ll only receive real-time job alerts if notifications are enabled.'}
               </div>
             </div>
-            {notifStatus === 'denied' ? (
-              <button onClick={()=>setNotifHelpOpen(true)} style={{
-                flexShrink:0, height:34, padding:'0 12px', borderRadius:9,
-                border:`1.5px solid ${darkMode?'rgba(252,165,165,0.4)':'#DC262640'}`, cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit',
-                background: darkMode?'rgba(220,38,38,0.12)':'#DC262610', color: darkMode?'#FCA5A5':'#DC2626', whiteSpace:'nowrap',
-              }}>
-                {lang==='pt' ? 'Como ativar?' : 'How to enable?'}
-              </button>
-            ) : (
-              <button onClick={activatePush} style={{
-                flexShrink:0, height:34, padding:'0 14px', borderRadius:9,
-                border:'none', cursor:'pointer', fontSize:12, fontWeight:700, fontFamily:'inherit',
-                background: darkMode ? '#CA8A04' : '#D97706', color:'#fff',
-                boxShadow:'0 2px 8px rgba(217,119,6,0.35)',
-              }}>
-                {lang==='pt' ? 'Ativar' : lang==='es' ? 'Activar' : 'Enable'}
-              </button>
-            )}
+            <button onClick={activatePush} style={{
+              flexShrink:0, height:34, padding:'0 14px', borderRadius:9,
+              border:'none', cursor:'pointer', fontSize:12, fontWeight:700, fontFamily:'inherit',
+              background: darkMode ? '#CA8A04' : '#D97706', color:'#fff',
+              boxShadow:'0 2px 8px rgba(217,119,6,0.35)',
+            }}>
+              {lang==='pt' ? 'Ativar' : lang==='es' ? 'Activar' : 'Enable'}
+            </button>
           </div>
         </div>
       )}

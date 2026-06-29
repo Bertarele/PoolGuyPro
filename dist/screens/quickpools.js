@@ -205,6 +205,8 @@ function QuickPoolsScreen({
   const activatePush = React.useCallback(async () => {
     if (ctx.registerPush) await ctx.registerPush();
     await checkNotifStatus();
+    // If still denied after trying, open instructions
+    if (Notification.permission === 'denied') setNotifHelpOpen(true);
   }, [ctx.registerPush, checkNotifStatus]);
 
   // Auto-prompt when tab opens and permission not yet decided
@@ -1514,23 +1516,7 @@ function QuickPoolsScreen({
         color: '#A16207',
         lineHeight: 1.4
       }
-    }, lang === 'pt' ? 'Sem notificações ativas você pode perder vagas urgentes.' : lang === 'es' ? 'Sin notificaciones activas puedes perder trabajos urgentes.' : 'Without notifications enabled you may miss urgent jobs.')), notifStatus === 'denied' ? /*#__PURE__*/React.createElement("button", {
-      onClick: () => setNotifHelpOpen(true),
-      style: {
-        flexShrink: 0,
-        height: 36,
-        padding: '0 14px',
-        borderRadius: 9,
-        border: '1.5px solid #DC262640',
-        cursor: 'pointer',
-        fontSize: 12,
-        fontWeight: 700,
-        fontFamily: 'inherit',
-        background: '#DC262610',
-        color: '#DC2626',
-        whiteSpace: 'nowrap'
-      }
-    }, lang === 'pt' ? 'Como ativar?' : 'How to enable?') : /*#__PURE__*/React.createElement("button", {
+    }, lang === 'pt' ? 'Sem notificações ativas você pode perder vagas urgentes.' : lang === 'es' ? 'Sin notificaciones activas puedes perder trabajos urgentes.' : 'Without notifications enabled you may miss urgent jobs.')), /*#__PURE__*/React.createElement("button", {
       onClick: activatePush,
       style: {
         flexShrink: 0,
@@ -1876,23 +1862,7 @@ function QuickPoolsScreen({
       color: darkMode ? 'rgba(253,230,138,0.75)' : '#A16207',
       lineHeight: 1.4
     }
-  }, lang === 'pt' ? 'Você só receberá vagas em tempo real se as notificações estiverem ativas.' : lang === 'es' ? 'Solo recibirás trabajos en tiempo real si las notificaciones están activas.' : 'You\'ll only receive real-time job alerts if notifications are enabled.')), notifStatus === 'denied' ? /*#__PURE__*/React.createElement("button", {
-    onClick: () => setNotifHelpOpen(true),
-    style: {
-      flexShrink: 0,
-      height: 34,
-      padding: '0 12px',
-      borderRadius: 9,
-      border: `1.5px solid ${darkMode ? 'rgba(252,165,165,0.4)' : '#DC262640'}`,
-      cursor: 'pointer',
-      fontSize: 11,
-      fontWeight: 700,
-      fontFamily: 'inherit',
-      background: darkMode ? 'rgba(220,38,38,0.12)' : '#DC262610',
-      color: darkMode ? '#FCA5A5' : '#DC2626',
-      whiteSpace: 'nowrap'
-    }
-  }, lang === 'pt' ? 'Como ativar?' : 'How to enable?') : /*#__PURE__*/React.createElement("button", {
+  }, lang === 'pt' ? 'Você só receberá vagas em tempo real se as notificações estiverem ativas.' : lang === 'es' ? 'Solo recibirás trabajos en tiempo real si las notificaciones están activas.' : 'You\'ll only receive real-time job alerts if notifications are enabled.')), /*#__PURE__*/React.createElement("button", {
     onClick: activatePush,
     style: {
       flexShrink: 0,

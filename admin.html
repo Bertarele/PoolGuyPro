@@ -1682,7 +1682,22 @@ function AdminApp({ adminUser, onLogout }) {
       {v==='approved'?'✓ Aprovado':'⏳ Pendente'}
     </span>
   );
+  const toggleFeatured = async (row) => {
+    const next = !row.featured;
+    const { error } = await window.sb.from('marketplace').update({ featured: next }).eq('id', row.id);
+    if (error) { showToast('❌ ' + error.message, false); return; }
+    setMarket(p => p.map(m => m.id === row.id ? {...m, featured: next} : m));
+    showToast(next ? '⭐ Anúncio em destaque!' : '☆ Destaque removido.');
+  };
+
   const mktCols = [
+    {key:'featured',    label:'⭐',        render:(v,row)=>(
+      <button onClick={e=>{e.stopPropagation();toggleFeatured(row);}} title={v?'Remover destaque':'Colocar em destaque'}
+        style={{background:'none',border:'none',cursor:'pointer',padding:'2px 4px',fontSize:16,lineHeight:1,
+          filter:v?'none':'grayscale(1) opacity(0.35)',transition:'filter .15s'}}>
+        ⭐
+      </button>
+    )},
     {key:'status',      label:'Status',    render: statusBadge},
     {key:'type',        label:'Tipo',      render: v => v==='sell'?'Venda':v==='rent'?'Aluguel':v==='route'?'Rota':v},
     {key:'name',        label:'Nome / Rota'},
