@@ -522,6 +522,10 @@
   </script>
   <script>
     if ('serviceWorker' in navigator) {
+      // Auto-reload when a new SW takes over (clears stale JS from memory)
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!window.__swReloading) { window.__swReloading = true; window.location.reload(); }
+      });
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js', { scope: '/' })
           .then(reg => { window.__swReg = reg; })
