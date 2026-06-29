@@ -171,6 +171,7 @@ function QuickPoolsScreen({
 
   // Push notification status: 'checking' | 'needed' | 'active' | 'denied' | 'unsupported'
   const [notifStatus, setNotifStatus] = React.useState('checking');
+  const [notifHelpOpen, setNotifHelpOpen] = React.useState(false);
   const checkNotifStatus = React.useCallback(async () => {
     if (typeof Notification === 'undefined' || !('PushManager' in window)) {
       setNotifStatus('unsupported');
@@ -1513,17 +1514,23 @@ function QuickPoolsScreen({
         color: '#A16207',
         lineHeight: 1.4
       }
-    }, lang === 'pt' ? 'Sem notificações ativas você pode perder vagas urgentes.' : lang === 'es' ? 'Sin notificaciones activas puedes perder trabajos urgentes.' : 'Without notifications enabled you may miss urgent jobs.')), notifStatus === 'denied' ? /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'Sem notificações ativas você pode perder vagas urgentes.' : lang === 'es' ? 'Sin notificaciones activas puedes perder trabajos urgentes.' : 'Without notifications enabled you may miss urgent jobs.')), notifStatus === 'denied' ? /*#__PURE__*/React.createElement("button", {
+      onClick: () => setNotifHelpOpen(true),
       style: {
-        fontSize: 11,
-        fontWeight: 600,
-        color: '#DC2626',
         flexShrink: 0,
-        maxWidth: 100,
-        textAlign: 'center',
-        lineHeight: 1.3
+        height: 36,
+        padding: '0 14px',
+        borderRadius: 9,
+        border: '1.5px solid #DC262640',
+        cursor: 'pointer',
+        fontSize: 12,
+        fontWeight: 700,
+        fontFamily: 'inherit',
+        background: '#DC262610',
+        color: '#DC2626',
+        whiteSpace: 'nowrap'
       }
-    }, lang === 'pt' ? 'Bloqueado — habilite nas configurações do navegador' : 'Blocked — enable in browser settings') : /*#__PURE__*/React.createElement("button", {
+    }, lang === 'pt' ? 'Como ativar?' : 'How to enable?') : /*#__PURE__*/React.createElement("button", {
       onClick: activatePush,
       style: {
         flexShrink: 0,
@@ -1869,17 +1876,23 @@ function QuickPoolsScreen({
       color: darkMode ? 'rgba(253,230,138,0.75)' : '#A16207',
       lineHeight: 1.4
     }
-  }, lang === 'pt' ? 'Você só receberá vagas em tempo real se as notificações estiverem ativas.' : lang === 'es' ? 'Solo recibirás trabajos en tiempo real si las notificaciones están activas.' : 'You\'ll only receive real-time job alerts if notifications are enabled.')), notifStatus === 'denied' ? /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Você só receberá vagas em tempo real se as notificações estiverem ativas.' : lang === 'es' ? 'Solo recibirás trabajos en tiempo real si las notificaciones están activas.' : 'You\'ll only receive real-time job alerts if notifications are enabled.')), notifStatus === 'denied' ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => setNotifHelpOpen(true),
     style: {
-      fontSize: 10,
-      fontWeight: 600,
-      color: darkMode ? '#FCA5A5' : '#DC2626',
       flexShrink: 0,
-      maxWidth: 80,
-      textAlign: 'center',
-      lineHeight: 1.3
+      height: 34,
+      padding: '0 12px',
+      borderRadius: 9,
+      border: `1.5px solid ${darkMode ? 'rgba(252,165,165,0.4)' : '#DC262640'}`,
+      cursor: 'pointer',
+      fontSize: 11,
+      fontWeight: 700,
+      fontFamily: 'inherit',
+      background: darkMode ? 'rgba(220,38,38,0.12)' : '#DC262610',
+      color: darkMode ? '#FCA5A5' : '#DC2626',
+      whiteSpace: 'nowrap'
     }
-  }, lang === 'pt' ? 'Bloqueado nas config. do navegador' : 'Blocked in browser settings') : /*#__PURE__*/React.createElement("button", {
+  }, lang === 'pt' ? 'Como ativar?' : 'How to enable?') : /*#__PURE__*/React.createElement("button", {
     onClick: activatePush,
     style: {
       flexShrink: 0,
@@ -1970,7 +1983,101 @@ function QuickPoolsScreen({
     lang: lang,
     onConfirm: confirmDialog.onConfirm,
     onCancel: () => setConfirmDialog(null)
-  }));
+  }), notifHelpOpen && (() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const pt = lang === 'pt';
+    const step = (n, text) => /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 12,
+        alignItems: 'flex-start',
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 26,
+        height: 26,
+        borderRadius: 8,
+        background: '#0EBAC720',
+        border: '1px solid #0EBAC740',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        fontWeight: 800,
+        fontSize: 12,
+        color: '#0EBAC7'
+      }
+    }, n), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13.5,
+        color: 'var(--pg-ink-700)',
+        lineHeight: 1.5,
+        paddingTop: 3
+      }
+    }, text));
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.65)',
+        zIndex: 3000,
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center'
+      },
+      onClick: () => setNotifHelpOpen(false)
+    }, /*#__PURE__*/React.createElement("div", {
+      onClick: e => e.stopPropagation(),
+      style: {
+        background: 'var(--pg-ink-100)',
+        borderRadius: '22px 22px 0 0',
+        padding: '24px 22px 36px',
+        width: '100%',
+        maxWidth: 480,
+        boxShadow: '0 -8px 40px rgba(0,0,0,0.35)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 36,
+        height: 4,
+        borderRadius: 2,
+        background: 'var(--pg-ink-300)',
+        margin: '0 auto 20px'
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontWeight: 800,
+        fontSize: 17,
+        color: 'var(--pg-ink-900)',
+        marginBottom: 4
+      }
+    }, "\uD83D\uDD14 ", pt ? 'Como ativar notificações' : 'How to enable notifications'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12.5,
+        color: 'var(--pg-ink-500)',
+        marginBottom: 20,
+        lineHeight: 1.5
+      }
+    }, pt ? 'O acesso às notificações foi bloqueado. Siga os passos abaixo para reativar:' : 'Notification access was blocked. Follow the steps below to re-enable:'), isIOS && isStandalone && /*#__PURE__*/React.createElement(React.Fragment, null, step(1, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Abra o app ", /*#__PURE__*/React.createElement("b", null, "Ajustes"), " do iPhone") : /*#__PURE__*/React.createElement(React.Fragment, null, "Open iPhone ", /*#__PURE__*/React.createElement("b", null, "Settings"))), step(2, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Role e toque em ", /*#__PURE__*/React.createElement("b", null, "PoolGuyX"), " (ou em ", /*#__PURE__*/React.createElement("b", null, "Safari"), " se n\xE3o aparecer)") : /*#__PURE__*/React.createElement(React.Fragment, null, "Scroll and tap ", /*#__PURE__*/React.createElement("b", null, "PoolGuyX"), " (or ", /*#__PURE__*/React.createElement("b", null, "Safari"), " if not listed)")), step(3, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Toque em ", /*#__PURE__*/React.createElement("b", null, "Notifica\xE7\xF5es"), " e ative o bot\xE3o") : /*#__PURE__*/React.createElement(React.Fragment, null, "Tap ", /*#__PURE__*/React.createElement("b", null, "Notifications"), " and toggle it ON")), step(4, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, "Volte ao app"), " e toque em \"Ativar\" no banner") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, "Return to the app"), " and tap \"Enable\" on the banner"))), isIOS && !isStandalone && /*#__PURE__*/React.createElement(React.Fragment, null, step(1, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "No Safari, toque no \xEDcone ", /*#__PURE__*/React.createElement("b", null, "\u238B Compartilhar"), " (na barra inferior)") : /*#__PURE__*/React.createElement(React.Fragment, null, "In Safari, tap the ", /*#__PURE__*/React.createElement("b", null, "\u238B Share"), " icon (bottom bar)")), step(2, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Toque em ", /*#__PURE__*/React.createElement("b", null, "\"Adicionar \xE0 Tela de In\xEDcio\"")) : /*#__PURE__*/React.createElement(React.Fragment, null, "Tap ", /*#__PURE__*/React.createElement("b", null, "\"Add to Home Screen\""))), step(3, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Abra o app pela ", /*#__PURE__*/React.createElement("b", null, "tela inicial"), " do iPhone") : /*#__PURE__*/React.createElement(React.Fragment, null, "Open the app from your iPhone ", /*#__PURE__*/React.createElement("b", null, "Home Screen"))), step(4, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, "Notifica\xE7\xF5es push s\xF3 funcionam"), " quando o app est\xE1 instalado na tela inicial (PWA)") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, "Push notifications only work"), " when the app is installed on the Home Screen (PWA)"))), isAndroid && /*#__PURE__*/React.createElement(React.Fragment, null, step(1, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Toque no \xEDcone de ", /*#__PURE__*/React.createElement("b", null, "cadeado / info"), " na barra de endere\xE7o do Chrome") : /*#__PURE__*/React.createElement(React.Fragment, null, "Tap the ", /*#__PURE__*/React.createElement("b", null, "lock / info"), " icon in Chrome's address bar")), step(2, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Toque em ", /*#__PURE__*/React.createElement("b", null, "Permiss\xF5es")) : /*#__PURE__*/React.createElement(React.Fragment, null, "Tap ", /*#__PURE__*/React.createElement("b", null, "Permissions"))), step(3, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Toque em ", /*#__PURE__*/React.createElement("b", null, "Notifica\xE7\xF5es"), " e selecione ", /*#__PURE__*/React.createElement("b", null, "Permitir")) : /*#__PURE__*/React.createElement(React.Fragment, null, "Tap ", /*#__PURE__*/React.createElement("b", null, "Notifications"), " and select ", /*#__PURE__*/React.createElement("b", null, "Allow"))), step(4, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, "Recarregue a p\xE1gina"), " e ative as notifica\xE7\xF5es") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, "Reload the page"), " and enable notifications"))), !isIOS && !isAndroid && /*#__PURE__*/React.createElement(React.Fragment, null, step(1, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Clique no \xEDcone de ", /*#__PURE__*/React.createElement("b", null, "cadeado"), " na barra de endere\xE7o") : /*#__PURE__*/React.createElement(React.Fragment, null, "Click the ", /*#__PURE__*/React.createElement("b", null, "lock icon"), " in the address bar")), step(2, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "V\xE1 em ", /*#__PURE__*/React.createElement("b", null, "Permiss\xF5es do site \u2192 Notifica\xE7\xF5es")) : /*#__PURE__*/React.createElement(React.Fragment, null, "Go to ", /*#__PURE__*/React.createElement("b", null, "Site permissions \u2192 Notifications"))), step(3, pt ? /*#__PURE__*/React.createElement(React.Fragment, null, "Selecione ", /*#__PURE__*/React.createElement("b", null, "Permitir"), " e recarregue a p\xE1gina") : /*#__PURE__*/React.createElement(React.Fragment, null, "Select ", /*#__PURE__*/React.createElement("b", null, "Allow"), " and reload the page"))), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setNotifHelpOpen(false),
+      style: {
+        width: '100%',
+        height: 50,
+        borderRadius: 14,
+        border: 'none',
+        cursor: 'pointer',
+        background: 'linear-gradient(135deg,#0EBAC7,#0D7280)',
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: 15,
+        fontFamily: 'inherit',
+        marginTop: 4
+      }
+    }, pt ? 'Entendido' : 'Got it')));
+  })());
 }
 
 // ── Real interactive map with Leaflet ────────────────────────
