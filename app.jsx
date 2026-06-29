@@ -1494,13 +1494,13 @@ function App() {
           onSubmit={()=>setDayPickerVac(null)}
         />
       </Sheet>
-      <Sheet open={hiringSheetOpen} onClose={()=>setHiringSheetOpen(false)} height="80%">
+      <FullPage open={hiringSheetOpen} onClose={()=>setHiringSheetOpen(false)}>
         <PostHiringSheet
           lang={lang}
           onClose={()=>setHiringSheetOpen(false)}
           onSubmit={(data)=>{ setHiringSheetOpen(false); if(data) dbWrite('jobs', data).then(()=>loadLiveJobs()); showToast(lang==='pt'?'Vaga publicada ✓':lang==='es'?'Empleo publicado ✓':'Job posted ✓'); }}
         />
-      </Sheet>
+      </FullPage>
       <Sheet open={techSheetOpen} onClose={()=>setTechSheetOpen(false)} height="80%">
         <PostTechSheet
           lang={lang}

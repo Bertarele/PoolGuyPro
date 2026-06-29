@@ -2174,10 +2174,9 @@ function App() {
     confirmedDays: confirmedDays,
     onClose: () => setDayPickerVac(null),
     onSubmit: () => setDayPickerVac(null)
-  })), /*#__PURE__*/React.createElement(Sheet, {
+  })), /*#__PURE__*/React.createElement(FullPage, {
     open: hiringSheetOpen,
-    onClose: () => setHiringSheetOpen(false),
-    height: "80%"
+    onClose: () => setHiringSheetOpen(false)
   }, /*#__PURE__*/React.createElement(PostHiringSheet, {
     lang: lang,
     onClose: () => setHiringSheetOpen(false),
