@@ -283,24 +283,34 @@ function _unlockScreen() {
 
 // ── Bottom Sheet ──────────────────────────────────────────────
 function Sheet({ open, onClose, children, height='auto' }) {
-  const [mounted, setMounted] = React.useState(open);
-  const [closing, setClosing] = React.useState(false);
-  const lockedRef = React.useRef(false);
-  const sheetRef  = React.useRef(null);
+  const [mounted, setMounted]   = React.useState(open);
+  const [closing, setClosing]   = React.useState(false);
+  const lockedRef    = React.useRef(false);
+  const sheetRef     = React.useRef(null);
+  const skipAnimRef  = React.useRef(false); // true when drag already animated the exit
 
   React.useEffect(() => {
     if (open) {
       setMounted(true);
       setClosing(false);
+      skipAnimRef.current = false;
       if (!lockedRef.current) { lockedRef.current = true; _lockScreen(); }
     } else if (mounted) {
-      setClosing(true);
-      const t = setTimeout(() => {
+      if (skipAnimRef.current) {
+        // Drag already handled the exit animation — unmount immediately
+        skipAnimRef.current = false;
         setMounted(false);
         setClosing(false);
         if (lockedRef.current) { lockedRef.current = false; _unlockScreen(); }
-      }, 260);
-      return () => clearTimeout(t);
+      } else {
+        setClosing(true);
+        const t = setTimeout(() => {
+          setMounted(false);
+          setClosing(false);
+          if (lockedRef.current) { lockedRef.current = false; _unlockScreen(); }
+        }, 260);
+        return () => clearTimeout(t);
+      }
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -308,8 +318,8 @@ function Sheet({ open, onClose, children, height='auto' }) {
     return () => { if (lockedRef.current) { lockedRef.current = false; _unlockScreen(); } };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Swipe-to-dismiss on entire sheet — must use imperative addEventListener
-  // so we can pass { passive: false } and call preventDefault on iOS.
+  // Swipe-to-dismiss on the entire sheet.
+  // Uses imperative addEventListener with { passive: false } so preventDefault works on iOS.
   React.useEffect(() => {
     const el = sheetRef.current;
     if (!el) return;
@@ -323,7 +333,7 @@ function Sheet({ open, onClose, children, height='auto' }) {
     const onMove = (e) => {
       const dy = e.touches[0].clientY - startY;
       if (dy <= 0) { dragging = false; return; }
-      // Don't drag if user is scrolling scrollable content inside the sheet
+      // If user is scrolling scrollable content that isn't at top, don't drag sheet
       let node = e.target;
       while (node && node !== el) {
         if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight) return;
@@ -338,10 +348,21 @@ function Sheet({ open, onClose, children, height='auto' }) {
       }
     };
     const onEnd = () => {
-      el.style.transition = '';
-      if (dragging && offset > 80) { el.style.transform = ''; onClose(); }
-      else el.style.transform = '';
-      dragging = false; offset = 0;
+      if (dragging && offset > 80) {
+        // Animate sheet off-screen from current position, then close (no CSS class glitch)
+        const fullH = el.offsetHeight;
+        el.style.transition = 'transform 0.22s cubic-bezier(.36,0,.66,0)';
+        el.style.transform = `translateY(${fullH}px)`;
+        skipAnimRef.current = true;
+        setTimeout(() => onClose(), 220);
+      } else {
+        // Snap back smoothly
+        el.style.transition = 'transform 0.28s cubic-bezier(.22,1,.36,1)';
+        el.style.transform = '';
+        setTimeout(() => { if (el) el.style.transition = ''; }, 280);
+      }
+      dragging = false;
+      offset = 0;
     };
 
     el.addEventListener('touchstart', onStart, { passive: true });
