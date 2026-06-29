@@ -1,4 +1,4 @@
-// app.jsx — root, tab routing, overlays
+﻿// app.jsx — root, tab routing, overlays
 
 // ── Feedback Sheet ────────────────────────────────────────────
 function FeedbackSheet({ open, onClose, lang }) {
@@ -32,7 +32,7 @@ function FeedbackSheet({ open, onClose, lang }) {
     const body = encodeURIComponent(
       `Rating: ${'⭐'.repeat(rating)} (${rating}/5)\nType: ${category || 'general'}\n\n${text || '(no comment)'}`
     );
-    window.open(`mailto:feedback@usapoolmarket.com?subject=${subject}&body=${body}`, '_blank');
+    window.open(`mailto:feedback@poolguyx.com?subject=${subject}&body=${body}`, '_blank');
     setSent(true);
   };
 
@@ -2066,7 +2066,7 @@ function App() {
               : lang==='es'
               ? 'Si crees que esto fue un error, contacta al soporte en:'
               : 'If you believe this was a mistake, contact support at:'}
-            <br/><strong>support@usapoolmarket.com</strong>
+            <br/><strong>support@poolguyx.com</strong>
           </div>
           <button onClick={()=>{ window.sb && window.sb.auth.signOut(); setIsLoggedIn(false); }}
             style={{padding:'12px 28px',borderRadius:12,border:'1.5px solid var(--pg-ink-200)',

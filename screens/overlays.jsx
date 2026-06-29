@@ -1,4 +1,4 @@
-// overlays.jsx — chat inbox + conversation, notifications, paywall, post-menu,
+﻿// overlays.jsx — chat inbox + conversation, notifications, paywall, post-menu,
 //               language picker, applicants sheet
 
 // ── Chat helpers ──────────────────────────────────────────────
@@ -2244,7 +2244,7 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
       badge:    null,
       gradient: 'linear-gradient(135deg,#0c4a6e,#0077B6)',
       accent:   '#0EBAC7',
-      url:      'https://usapoolmarket.com/upgrade/pro',
+      url:      'https://poolguyx.com/upgrade/pro',
     },
     premium: {
       name:     'Pool Guy PREMIUM',
@@ -2255,7 +2255,7 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
       badge:    lang==='pt'?'MELHOR VALOR':lang==='es'?'MEJOR VALOR':'BEST VALUE',
       gradient: 'linear-gradient(135deg,#3b0764,#7c3aed)',
       accent:   '#a78bfa',
-      url:      'https://usapoolmarket.com/upgrade/premium',
+      url:      'https://poolguyx.com/upgrade/premium',
     },
   };
 

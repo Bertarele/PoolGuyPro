@@ -1,4 +1,4 @@
-// login.jsx — splash + login screen — PoolGuyX brand
+﻿// login.jsx — splash + login screen — PoolGuyX brand
 
 function LoginScreen({ onLogin, lang='en', setLang }) {
   const t = STRINGS[lang];
@@ -225,7 +225,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       </div>
       <button onClick={() => {
         const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-        const redirect = window.location.origin || 'https://usapoolmarket.com';
+        const redirect = window.location.origin || 'https://poolguyx.com';
         window.location.href = base + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(redirect);
       }} style={{width:'100%', height:48, borderRadius:12,
         border: isDesktop ? '1.5px solid var(--pg-ink-200)' : '1px solid rgba(255,255,255,0.30)',
@@ -380,7 +380,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                 <div style={{display:'flex', alignItems:'center', gap:10}}>
                   <div style={{flex:1, height:1, background:'#e2e8f0'}}/><span style={{fontSize:11, color:'#94a3b8', fontWeight:500}}>{t.orLbl}</span><div style={{flex:1, height:1, background:'#e2e8f0'}}/>
                 </div>
-                <button onClick={()=>{const b='https://xiszfqghizqzlwyrfjol.supabase.co';const r=window.location.origin||'https://usapoolmarket.com';window.location.href=b+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(r);}}
+                <button onClick={()=>{const b='https://xiszfqghizqzlwyrfjol.supabase.co';const r=window.location.origin||'https://poolguyx.com';window.location.href=b+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(r);}}
                   style={{width:'100%', height:50, borderRadius:12, border:'1.5px solid #e2e8f0', background:'#fff', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:14, color:'#0A2840', display:'flex', alignItems:'center', justifyContent:'center', gap:10}}>
                   <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
                   Continue with Google
@@ -650,7 +650,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
           <button onClick={() => {
             const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-            const redirect = window.location.origin || 'https://usapoolmarket.com';
+            const redirect = window.location.origin || 'https://poolguyx.com';
             window.location.href = base + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(redirect);
           }} style={{width:'100%', height:48, borderRadius:12, border:'1px solid rgba(255,255,255,0.30)',
             background:'rgba(255,255,255,0.18)', backdropFilter:'blur(8px)', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:13.5,

@@ -601,7 +601,7 @@ function LoginScreen({
   })), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-      const redirect = window.location.origin || 'https://usapoolmarket.com';
+      const redirect = window.location.origin || 'https://poolguyx.com';
       window.location.href = base + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(redirect);
     },
     style: {
@@ -1120,7 +1120,7 @@ function LoginScreen({
     })), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         const b = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-        const r = window.location.origin || 'https://usapoolmarket.com';
+        const r = window.location.origin || 'https://poolguyx.com';
         window.location.href = b + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(r);
       },
       style: {
@@ -1991,7 +1991,7 @@ function LoginScreen({
   })), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-      const redirect = window.location.origin || 'https://usapoolmarket.com';
+      const redirect = window.location.origin || 'https://poolguyx.com';
       window.location.href = base + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(redirect);
     },
     style: {

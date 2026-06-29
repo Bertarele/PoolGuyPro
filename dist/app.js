@@ -57,7 +57,7 @@ function FeedbackSheet({
   const handleSend = () => {
     const subject = encodeURIComponent(`[PoolGuyX Beta] ${category || 'Feedback'} — ${rating}⭐`);
     const body = encodeURIComponent(`Rating: ${'⭐'.repeat(rating)} (${rating}/5)\nType: ${category || 'general'}\n\n${text || '(no comment)'}`);
-    window.open(`mailto:feedback@usapoolmarket.com?subject=${subject}&body=${body}`, '_blank');
+    window.open(`mailto:feedback@poolguyx.com?subject=${subject}&body=${body}`, '_blank');
     setSent(true);
   };
   const handleClose = () => {
@@ -3425,7 +3425,7 @@ function App() {
       lineHeight: 1.6,
       marginBottom: 28
     }
-  }, lang === 'pt' ? 'Se você acredita que isso foi um erro, entre em contato com o suporte pelo e-mail:' : lang === 'es' ? 'Si crees que esto fue un error, contacta al soporte en:' : 'If you believe this was a mistake, contact support at:', /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", null, "support@usapoolmarket.com")), /*#__PURE__*/React.createElement("button", {
+  }, lang === 'pt' ? 'Se você acredita que isso foi um erro, entre em contato com o suporte pelo e-mail:' : lang === 'es' ? 'Si crees que esto fue un error, contacta al soporte en:' : 'If you believe this was a mistake, contact support at:', /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", null, "support@poolguyx.com")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       window.sb && window.sb.auth.signOut();
       setIsLoggedIn(false);

@@ -37,7 +37,7 @@ function ShareSheet({
   showToast
 }) {
   if (!item) return null;
-  const listingUrl = item._id ? `https://usapoolmarket.com/?listing=${item._id}` : 'https://usapoolmarket.com';
+  const listingUrl = item._id ? `https://poolguyx.com/?listing=${item._id}` : 'https://poolguyx.com';
   const txt = `${item.name}${item.priceMode === 'neg' ? ' — Negotiable' : item.price ? ` — $${item.price}` : ''}  📍 ${item.loc || 'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
   const enc = encodeURIComponent(txt);
   const btn = (label, icon, href, color, onClick) => /*#__PURE__*/React.createElement("a", {
@@ -1050,7 +1050,7 @@ function ViewListingSheet({
     if (!item?.loc) return;
     setMapLoading(true);
     const q = encodeURIComponent(item.loc + (item.loc.toLowerCase().includes('fl') ? '' : ', FL'));
-    fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&email=feedback@usapoolmarket.com`).then(r => r.json()).then(data => {
+    fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&email=feedback@poolguyx.com`).then(r => r.json()).then(data => {
       if (data && data[0]) setMapCoords({
         lat: parseFloat(data[0].lat),
         lon: parseFloat(data[0].lon)
@@ -6761,7 +6761,7 @@ function MarketplaceScreen({
   };
   const handleShare = async (e, item) => {
     if (e) e.stopPropagation();
-    const listingUrl = item._id ? `https://usapoolmarket.com/?listing=${item._id}` : 'https://usapoolmarket.com';
+    const listingUrl = item._id ? `https://poolguyx.com/?listing=${item._id}` : 'https://poolguyx.com';
     const txt = `${item.name}${item.priceMode === 'neg' ? ' — Negotiable' : item.price ? ` — $${item.price}` : ''}  📍 ${item.loc || 'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
     if (navigator.share) {
       // Try to share with photo

@@ -1,4 +1,4 @@
-// marketplace.jsx — navy header + dual seg + distance + categories
+﻿// marketplace.jsx — navy header + dual seg + distance + categories
 
 // ── Locale-aware number/price formatter ──────────────────────
 // PT/ES use "." as thousands sep; EN uses ","
@@ -21,7 +21,7 @@ function timeAgo(iso, lang='en') {
 // ── Share bottom sheet ───────────────────────────────────────
 function ShareSheet({ item, lang, onClose, showToast }) {
   if (!item) return null;
-  const listingUrl = item._id ? `https://usapoolmarket.com/?listing=${item._id}` : 'https://usapoolmarket.com';
+  const listingUrl = item._id ? `https://poolguyx.com/?listing=${item._id}` : 'https://poolguyx.com';
   const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
   const enc = encodeURIComponent(txt);
   const btn = (label, icon, href, color, onClick) => (
@@ -641,7 +641,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     if (!item?.loc) return;
     setMapLoading(true);
     const q = encodeURIComponent(item.loc + (item.loc.toLowerCase().includes('fl') ? '' : ', FL'));
-    fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&email=feedback@usapoolmarket.com`)
+    fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&email=feedback@poolguyx.com`)
       .then(r => r.json())
       .then(data => {
         if (data && data[0]) setMapCoords({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
@@ -3577,7 +3577,7 @@ function MarketplaceScreen({ ctx }) {
 
   const handleShare = async (e, item) => {
     if (e) e.stopPropagation();
-    const listingUrl = item._id ? `https://usapoolmarket.com/?listing=${item._id}` : 'https://usapoolmarket.com';
+    const listingUrl = item._id ? `https://poolguyx.com/?listing=${item._id}` : 'https://poolguyx.com';
     const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
     if (navigator.share) {
       // Try to share with photo
