@@ -19,7 +19,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mqzt4jdb">
+  <link rel="stylesheet" href="tokens.css?v=mqztwdqd">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -445,20 +445,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mqzt4jdb"></script>
-  <script src="tweaks-panel.js?v=mqzt4jdb"></script>
-  <script src="components.js?v=mqzt4jdb"></script>
-  <script src="brand.js?v=mqzt4jdb"></script>
-  <script src="data.js?v=mqzt4jdb"></script>
-  <script src="screens/login.js?v=mqzt4jdb"></script>
-  <script src="screens/home.js?v=mqzt4jdb"></script>
-  <script src="screens/marketplace.js?v=mqzt4jdb"></script>
-  <script src="screens/quickpools.js?v=mqzt4jdb"></script>
-  <script src="screens/post.js?v=mqzt4jdb"></script>
-  <script src="screens/work.js?v=mqzt4jdb"></script>
-  <script src="screens/profile.js?v=mqzt4jdb"></script>
-  <script src="screens/overlays.js?v=mqzt4jdb"></script>
-  <script src="app.js?v=mqzt4jdb"></script>
+  <script src="ios-frame.js?v=mqztwdqd"></script>
+  <script src="tweaks-panel.js?v=mqztwdqd"></script>
+  <script src="components.js?v=mqztwdqd"></script>
+  <script src="brand.js?v=mqztwdqd"></script>
+  <script src="data.js?v=mqztwdqd"></script>
+  <script src="screens/login.js?v=mqztwdqd"></script>
+  <script src="screens/home.js?v=mqztwdqd"></script>
+  <script src="screens/marketplace.js?v=mqztwdqd"></script>
+  <script src="screens/quickpools.js?v=mqztwdqd"></script>
+  <script src="screens/post.js?v=mqztwdqd"></script>
+  <script src="screens/work.js?v=mqztwdqd"></script>
+  <script src="screens/profile.js?v=mqztwdqd"></script>
+  <script src="screens/overlays.js?v=mqztwdqd"></script>
+  <script src="app.js?v=mqztwdqd"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {
@@ -492,29 +492,21 @@
     }
   </script>
   <script>
-    // Prevent iOS pull-to-refresh when dragging inside any bottom sheet.
-    // overscroll-behavior:none is not enough in PWA standalone mode on iOS.
+    // Block iOS native pull-to-refresh across the entire app.
+    // overscroll-behavior:none and body:fixed are not enough in PWA standalone mode on iOS 15+.
+    // Strategy: block ANY downward drag (dy>0) unless we find a scrollable ancestor
+    // that already has content scrolled (scrollTop>0), meaning the user is scrolling
+    // back up — in that case we let the browser handle it normally.
     ;(function() {
       var _startY = 0;
       document.addEventListener('touchstart', function(e) {
         _startY = e.touches[0].clientY;
       }, { passive: true });
       document.addEventListener('touchmove', function(e) {
-        if (!e.target.closest) return;
         var dy = e.touches[0].clientY - _startY;
-        if (dy <= 0) return; // upward — allow
-
-        // Backdrop: nothing scrollable here, always block pull-to-refresh
-        if (e.target.closest('.pg-sheet-backdrop')) {
-          e.preventDefault();
-          return;
-        }
-
-        // Inside sheet: block only if no scrolled ancestor between target and sheet
-        var sheet = e.target.closest('.pg-sheet');
-        if (!sheet) return;
+        if (dy <= 0) return; // upward swipe — always allow
         var node = e.target;
-        while (node && node !== sheet) {
+        while (node && node !== document.documentElement) {
           if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight) return;
           node = node.parentElement;
         }
