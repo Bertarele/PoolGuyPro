@@ -19,7 +19,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mqypqhnq">
+  <link rel="stylesheet" href="tokens.css?v=mqzscgjo">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -442,20 +442,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mqypqhnq"></script>
-  <script src="tweaks-panel.js?v=mqypqhnq"></script>
-  <script src="components.js?v=mqypqhnq"></script>
-  <script src="brand.js?v=mqypqhnq"></script>
-  <script src="data.js?v=mqypqhnq"></script>
-  <script src="screens/login.js?v=mqypqhnq"></script>
-  <script src="screens/home.js?v=mqypqhnq"></script>
-  <script src="screens/marketplace.js?v=mqypqhnq"></script>
-  <script src="screens/quickpools.js?v=mqypqhnq"></script>
-  <script src="screens/post.js?v=mqypqhnq"></script>
-  <script src="screens/work.js?v=mqypqhnq"></script>
-  <script src="screens/profile.js?v=mqypqhnq"></script>
-  <script src="screens/overlays.js?v=mqypqhnq"></script>
-  <script src="app.js?v=mqypqhnq"></script>
+  <script src="ios-frame.js?v=mqzscgjo"></script>
+  <script src="tweaks-panel.js?v=mqzscgjo"></script>
+  <script src="components.js?v=mqzscgjo"></script>
+  <script src="brand.js?v=mqzscgjo"></script>
+  <script src="data.js?v=mqzscgjo"></script>
+  <script src="screens/login.js?v=mqzscgjo"></script>
+  <script src="screens/home.js?v=mqzscgjo"></script>
+  <script src="screens/marketplace.js?v=mqzscgjo"></script>
+  <script src="screens/quickpools.js?v=mqzscgjo"></script>
+  <script src="screens/post.js?v=mqzscgjo"></script>
+  <script src="screens/work.js?v=mqzscgjo"></script>
+  <script src="screens/profile.js?v=mqzscgjo"></script>
+  <script src="screens/overlays.js?v=mqzscgjo"></script>
+  <script src="app.js?v=mqzscgjo"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {
@@ -487,6 +487,31 @@
         } catch(e) {}
       }, 1500);
     }
+  </script>
+  <script>
+    // Prevent iOS pull-to-refresh when dragging inside any bottom sheet.
+    // overscroll-behavior:none is not enough in PWA standalone mode on iOS.
+    ;(function() {
+      var _startY = 0;
+      document.addEventListener('touchstart', function(e) {
+        _startY = e.touches[0].clientY;
+      }, { passive: true });
+      document.addEventListener('touchmove', function(e) {
+        if (!e.target.closest) return;
+        var inSheet = e.target.closest('.pg-sheet, .pg-sheet-backdrop');
+        if (!inSheet) return;
+        var dy = e.touches[0].clientY - _startY;
+        if (dy <= 0) return; // upward – let browser handle
+        // Allow vertical scroll if inside scrolled content
+        var node = e.target;
+        var sheet = e.target.closest('.pg-sheet');
+        while (node && node !== sheet) {
+          if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight) return;
+          node = node.parentElement;
+        }
+        e.preventDefault(); // block pull-to-refresh
+      }, { passive: false });
+    })();
   </script>
   <script>
     if ('serviceWorker' in navigator) {
