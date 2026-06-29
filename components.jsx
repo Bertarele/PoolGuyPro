@@ -285,6 +285,7 @@ function _unlockScreen() {
 function FullPage({ open, onClose, children }) {
   const [mounted, setMounted] = React.useState(open);
   const [closing, setClosing] = React.useState(false);
+  const pageRef = React.useRef(null);
 
   React.useEffect(() => {
     if (open) { setMounted(true); setClosing(false); }
@@ -295,7 +296,33 @@ function FullPage({ open, onClose, children }) {
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  React.useEffect(() => () => {}, []);
+  // Block iOS native pull-to-refresh on downward drags, same approach as Sheet:
+  // imperative listener with { passive: false } so preventDefault actually works.
+  React.useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    let startY = 0;
+
+    const onStart = (e) => { startY = e.touches[0].clientY; };
+    const onMove = (e) => {
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0) return; // upward — allow normal scroll
+      // If touching scrollable content that is scrolled down, let it scroll normally
+      let node = e.target;
+      while (node && node !== el) {
+        if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight) return;
+        node = node.parentElement;
+      }
+      e.preventDefault();
+    };
+
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove',  onMove,  { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove',  onMove);
+    };
+  }, [mounted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!mounted) return null;
 
@@ -319,7 +346,7 @@ function FullPage({ open, onClose, children }) {
       : 'pg-sheet-up 0.34s cubic-bezier(.22,1,.36,1)',
   };
 
-  return <div style={style}>{children}</div>;
+  return <div ref={pageRef} style={style}>{children}</div>;
 }
 
 // ── Bottom Sheet ──────────────────────────────────────────────

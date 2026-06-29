@@ -685,6 +685,7 @@ function FullPage({
 }) {
   const [mounted, setMounted] = React.useState(open);
   const [closing, setClosing] = React.useState(false);
+  const pageRef = React.useRef(null);
   React.useEffect(() => {
     if (open) {
       setMounted(true);
@@ -699,7 +700,38 @@ function FullPage({
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  React.useEffect(() => () => {}, []);
+  // Block iOS native pull-to-refresh on downward drags, same approach as Sheet:
+  // imperative listener with { passive: false } so preventDefault actually works.
+  React.useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    let startY = 0;
+    const onStart = e => {
+      startY = e.touches[0].clientY;
+    };
+    const onMove = e => {
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0) return; // upward — allow normal scroll
+      // If touching scrollable content that is scrolled down, let it scroll normally
+      let node = e.target;
+      while (node && node !== el) {
+        if (node.scrollTop > 0 && node.scrollHeight > node.clientHeight) return;
+        node = node.parentElement;
+      }
+      e.preventDefault();
+    };
+    el.addEventListener('touchstart', onStart, {
+      passive: true
+    });
+    el.addEventListener('touchmove', onMove, {
+      passive: false
+    });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+    };
+  }, [mounted]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!mounted) return null;
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 540;
   const desktopW = isDesktop ? Math.min(520, Math.round(window.innerWidth * 0.96)) : null;
@@ -719,6 +751,7 @@ function FullPage({
     animation: closing ? 'pg-sheet-down 0.28s cubic-bezier(.36,0,.66,0) forwards' : 'pg-sheet-up 0.34s cubic-bezier(.22,1,.36,1)'
   };
   return /*#__PURE__*/React.createElement("div", {
+    ref: pageRef,
     style: style
   }, children);
 }
