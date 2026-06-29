@@ -486,7 +486,7 @@ function QuickPoolsScreen({ ctx }) {
                   width:36, height:36, borderRadius:10, border:'1px solid var(--pg-ink-300)',
                   background:'var(--pg-ink-100)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
                 }}>
-                  {Icon.edit(14,'var(--pg-ink-600)')}
+                  {Icon.edit(14,'var(--pg-ink-700)')}
                 </button>
                 <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
                   message: lang==='pt'?'Remover publicação?':lang==='es'?'¿Eliminar publicación?':'Remove posting?',

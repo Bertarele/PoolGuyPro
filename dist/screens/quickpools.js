@@ -765,7 +765,7 @@ function QuickPoolsScreen({
         alignItems: 'center',
         justifyContent: 'center'
       }
-    }, Icon.edit(14, 'var(--pg-ink-600)')), /*#__PURE__*/React.createElement("button", {
+    }, Icon.edit(14, 'var(--pg-ink-700)')), /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         setConfirmDialog({
