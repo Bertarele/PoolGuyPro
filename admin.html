@@ -1450,6 +1450,12 @@ function AdminApp({ adminUser, onLogout }) {
   const [qpFilter,      setQpFilter]      = React.useState('active'); // 'active'|'all'
   const [editQP,        setEditQP]        = React.useState(null); // job being edited
   const [openGroups,    setOpenGroups]    = React.useState({work:false, marketplace:false});
+  // User filters
+  const [userSearch,    setUserSearch]    = React.useState('');
+  const [userDateFrom,  setUserDateFrom]  = React.useState('');
+  const [userDateTo,    setUserDateTo]    = React.useState('');
+  const [userPhoneFilter, setUserPhoneFilter] = React.useState('all'); // 'all'|'with'|'without'
+  const [userStatusFilter, setUserStatusFilter] = React.useState('all'); // 'all'|'active'|'banned'|'pending'|'warnings'
 
   const showToast = (msg, ok=true) => { setToast({msg,ok}); setTimeout(()=>setToast(null), 2800); };
 
@@ -1839,77 +1845,157 @@ function AdminApp({ adminUser, onLogout }) {
           )}
 
           {/* ── Usuários ── */}
-          {section==='users' && (
-            <div>
-              <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>
-                Usuários <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({users.length})</span>
-                {verifyCount > 0 && <span style={{fontSize:12,fontWeight:700,padding:'2px 10px',borderRadius:999,background:'rgba(245,158,11,0.2)',color:'#F59E0B',border:'1px solid rgba(245,158,11,0.4)',marginLeft:10}}>{verifyCount} verificação{verifyCount!==1?'ões':''} pendente{verifyCount!==1?'s':''}</span>}
-              </h1>
-              <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Todas as contas cadastradas. Clique em ✓ Verificar para ativar o badge verde de identidade verificada.</p>
+          {section==='users' && (() => {
+            // ── Apply filters ──
+            const warnedIds = new Set(warnings.map(w=>w.user_id));
+            const filteredUsers = users.filter(u => {
+              const q = userSearch.trim().toLowerCase();
+              if (q && !((u.name||'').toLowerCase().includes(q)) && !((u.email||'').toLowerCase().includes(q)) && !((u.phone||'').includes(q))) return false;
+              if (userDateFrom && u.created_at && new Date(u.created_at) < new Date(userDateFrom)) return false;
+              if (userDateTo   && u.created_at && new Date(u.created_at) > new Date(userDateTo+'T23:59:59')) return false;
+              if (userPhoneFilter==='with'    && !u.phone) return false;
+              if (userPhoneFilter==='without' && u.phone)  return false;
+              if (userStatusFilter==='banned'   && !u.banned) return false;
+              if (userStatusFilter==='active'   && (u.banned||u.verification_requested)) return false;
+              if (userStatusFilter==='pending'  && !(u.verification_requested&&!u.verified)) return false;
+              if (userStatusFilter==='warnings' && !warnedIds.has(u.id)) return false;
+              return true;
+            });
 
-              {/* Pending verification requests highlighted */}
-              {verifyCount > 0 && (
-                <div style={{marginBottom:16,display:'flex',flexDirection:'column',gap:8}}>
-                  <div style={{fontSize:11,fontWeight:700,color:'#F59E0B',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>⏳ Aguardando aprovação de verificação</div>
-                  {users.filter(u=>u.verification_requested&&!u.verified).map(u=>(
-                    <div key={u.id} style={{background:'#1a1f2e',borderRadius:12,border:'1px solid rgba(245,158,11,0.4)',padding:'12px 16px',display:'flex',alignItems:'center',gap:12}}>
-                      {u.photo_url
-                        ? <img src={u.photo_url} alt="" style={{width:40,height:40,borderRadius:'50%',objectFit:'cover',flexShrink:0}}/>
-                        : <div style={{width:40,height:40,borderRadius:'50%',background:'#0EBAC720',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:700,color:'#0EBAC7',flexShrink:0}}>{(u.name||u.email||'?')[0].toUpperCase()}</div>
-                      }
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{u.name||'—'}</div>
-                        <div style={{fontSize:11,color:'#64748b'}}>{u.email} {u.phone?'· '+u.phone:''}</div>
-                      </div>
-                      <button className="act-btn act-btn-ok" onClick={()=>toggleVerified(u)} style={{flexShrink:0}}>
-                        ✓ Verificar
-                      </button>
-                    </div>
-                  ))}
+            const hasFilters = userSearch||userDateFrom||userDateTo||userPhoneFilter!=='all'||userStatusFilter!=='all';
+            const clearFilters = () => { setUserSearch(''); setUserDateFrom(''); setUserDateTo(''); setUserPhoneFilter('all'); setUserStatusFilter('all'); };
+            const inpS = {background:'#0f1117',border:'1px solid #1e293b',borderRadius:9,padding:'8px 12px',color:'#e2e8f0',fontSize:13,fontFamily:'inherit',outline:'none'};
+            const pill = (active,color='#0EBAC7') => ({padding:'6px 13px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:600,transition:'all .15s',
+              background:active?color+'22':'#1a1f2e', color:active?color:'#64748b',
+              outline:active?`1.5px solid ${color}55`:'1.5px solid #1e293b'});
+
+            return (
+              <div>
+                <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:4,flexWrap:'wrap'}}>
+                  <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9'}}>
+                    Usuários <span style={{fontSize:13,color:'#64748b',fontWeight:400}}>({filteredUsers.length}{hasFilters?' de '+users.length:''})</span>
+                  </h1>
+                  {verifyCount > 0 && <span style={{fontSize:12,fontWeight:700,padding:'2px 10px',borderRadius:999,background:'rgba(245,158,11,0.2)',color:'#F59E0B',border:'1px solid rgba(245,158,11,0.4)'}}>{verifyCount} verificação{verifyCount!==1?'ões':''} pendente{verifyCount!==1?'s':''}</span>}
                 </div>
-              )}
+                <p style={{fontSize:13,color:'#64748b',marginBottom:16}}>Todas as contas cadastradas. Clique em ✓ Verificar para ativar o badge verde de identidade verificada.</p>
 
-              <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',overflow:'hidden'}}>
-                <DataTable loading={loading} rows={users}
-                  columns={[
-                    {key:'name', label:'Nome', render:(v,row)=>(
-                      <button onClick={()=>setViewUserModal({userId:row.id, userName:row.name})}
-                        style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',
-                          fontSize:13,fontWeight:600,color:'#0EBAC7',padding:0,textAlign:'left',
-                          textDecoration:'underline',textDecorationColor:'rgba(14,186,199,0.35)',
-                          textUnderlineOffset:3,whiteSpace:'nowrap',maxWidth:150,overflow:'hidden',textOverflow:'ellipsis',display:'block'}}>
-                        {v||'—'}
+                {/* ── Filtros ── */}
+                <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',padding:'14px 16px',marginBottom:16,display:'flex',flexDirection:'column',gap:12}}>
+                  {/* Linha 1: busca + datas */}
+                  <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
+                    <div style={{position:'relative',flex:'2',minWidth:200}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      <input value={userSearch} onChange={e=>setUserSearch(e.target.value)}
+                        placeholder="Buscar por nome, e-mail ou telefone…"
+                        style={{...inpS,width:'100%',paddingLeft:32,boxSizing:'border-box'}}/>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+                      <span style={{fontSize:11,color:'#475569',fontWeight:600,whiteSpace:'nowrap'}}>De:</span>
+                      <input type="date" value={userDateFrom} onChange={e=>setUserDateFrom(e.target.value)} style={{...inpS,colorScheme:'dark',width:140}}/>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+                      <span style={{fontSize:11,color:'#475569',fontWeight:600,whiteSpace:'nowrap'}}>Até:</span>
+                      <input type="date" value={userDateTo} onChange={e=>setUserDateTo(e.target.value)} style={{...inpS,colorScheme:'dark',width:140}}/>
+                    </div>
+                    {hasFilters && (
+                      <button onClick={clearFilters} style={{padding:'7px 13px',borderRadius:8,border:'1px solid #334155',background:'transparent',color:'#64748b',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                        ✕ Limpar
                       </button>
-                    )},
-                    {key:'email',      label:'E-mail'},
-                    {key:'phone',      label:'Telefone'},
-                    {key:'verified',   label:'Verificado', render:(v,row)=>(
-                      <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:999,
-                        background:v?'rgba(22,163,74,0.15)':'transparent',
-                        color:v?'#22c55e':row.verification_requested?'#F59E0B':'#475569',
-                        border:`1px solid ${v?'rgba(22,163,74,0.4)':row.verification_requested?'rgba(245,158,11,0.4)':'#1e293b'}`}}>
-                        {v?'✓ Verificado':row.verification_requested?'⏳ Pendente':'—'}
-                      </span>
-                    )},
-                    {key:'role',       label:'Papel'},
-                    {key:'banned',     label:'Status', render:(v,row)=>(
-                      <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:999,
-                        background:v?'#ef444420':row.verification_requested&&!row.verified?'#f59e0b15':'#22c55e15',
-                        color:v?'#ef4444':row.verification_requested&&!row.verified?'#f59e0b':'#22c55e',
-                        border:`1px solid ${v?'#ef444440':row.verification_requested&&!row.verified?'#f59e0b40':'#22c55e30'}`}}>
-                        {v?'🚫 Banido':row.verification_requested&&!row.verified?'⏳ Verificação':'✓ Ativo'}
-                      </span>
-                    )},
-                    {key:'created_at', label:'Cadastrado', render:fmtDate},
-                  ]}
-                  onDelete={row=>deleteRow('profiles',row)}
-                  onPromote={toggleAdmin}
-                  onVerify={toggleVerified}
-                  onView={row=>setViewUserModal({userId:row.id, userName:row.name})}
-                />
+                    )}
+                  </div>
+                  {/* Linha 2: status + telefone */}
+                  <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+                    <span style={{fontSize:11,color:'#475569',fontWeight:700,textTransform:'uppercase',letterSpacing:'.05em',marginRight:2}}>Status:</span>
+                    {[
+                      {id:'all',      label:'Todos',       color:'#0EBAC7'},
+                      {id:'active',   label:'✓ Ativos',    color:'#22c55e'},
+                      {id:'banned',   label:'🚫 Banidos',  color:'#ef4444'},
+                      {id:'pending',  label:'⏳ Pendentes', color:'#f59e0b'},
+                      {id:'warnings', label:'⚠️ Com avisos',color:'#f97316'},
+                    ].map(f=>(
+                      <button key={f.id} onClick={()=>setUserStatusFilter(f.id)} style={pill(userStatusFilter===f.id,f.color)}>{f.label}</button>
+                    ))}
+                    <span style={{fontSize:11,color:'#475569',fontWeight:700,textTransform:'uppercase',letterSpacing:'.05em',marginLeft:8,marginRight:2}}>Tel:</span>
+                    {[
+                      {id:'all',     label:'Todos'},
+                      {id:'with',    label:'Com telefone'},
+                      {id:'without', label:'Sem telefone'},
+                    ].map(f=>(
+                      <button key={f.id} onClick={()=>setUserPhoneFilter(f.id)} style={pill(userPhoneFilter===f.id)}>{f.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pending verification requests highlighted */}
+                {verifyCount > 0 && userStatusFilter!=='warnings' && userStatusFilter!=='banned' && (
+                  <div style={{marginBottom:16,display:'flex',flexDirection:'column',gap:8}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#F59E0B',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>⏳ Aguardando aprovação de verificação</div>
+                    {users.filter(u=>u.verification_requested&&!u.verified).map(u=>(
+                      <div key={u.id} style={{background:'#1a1f2e',borderRadius:12,border:'1px solid rgba(245,158,11,0.4)',padding:'12px 16px',display:'flex',alignItems:'center',gap:12}}>
+                        {u.photo_url
+                          ? <img src={u.photo_url} alt="" style={{width:40,height:40,borderRadius:'50%',objectFit:'cover',flexShrink:0}}/>
+                          : <div style={{width:40,height:40,borderRadius:'50%',background:'#0EBAC720',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:700,color:'#0EBAC7',flexShrink:0}}>{(u.name||u.email||'?')[0].toUpperCase()}</div>
+                        }
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{u.name||'—'}</div>
+                          <div style={{fontSize:11,color:'#64748b'}}>{u.email} {u.phone?'· '+u.phone:''}</div>
+                        </div>
+                        <button className="act-btn act-btn-ok" onClick={()=>toggleVerified(u)} style={{flexShrink:0}}>✓ Verificar</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {filteredUsers.length===0 ? (
+                  <div style={{padding:'48px 24px',textAlign:'center',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:28,marginBottom:8}}>🔍</div>
+                    <div style={{fontWeight:600,color:'#64748b'}}>Nenhum usuário encontrado com esses filtros.</div>
+                    <button onClick={clearFilters} style={{marginTop:12,padding:'7px 16px',borderRadius:9,border:'1px solid #334155',background:'transparent',color:'#0EBAC7',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Limpar filtros</button>
+                  </div>
+                ) : (
+                  <div style={{background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b',overflow:'hidden'}}>
+                    <DataTable loading={loading} rows={filteredUsers}
+                      columns={[
+                        {key:'name', label:'Nome', render:(v,row)=>(
+                          <button onClick={()=>setViewUserModal({userId:row.id, userName:row.name})}
+                            style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',
+                              fontSize:13,fontWeight:600,color:'#0EBAC7',padding:0,textAlign:'left',
+                              textDecoration:'underline',textDecorationColor:'rgba(14,186,199,0.35)',
+                              textUnderlineOffset:3,whiteSpace:'nowrap',maxWidth:150,overflow:'hidden',textOverflow:'ellipsis',display:'block'}}>
+                            {v||'—'}
+                          </button>
+                        )},
+                        {key:'email', label:'E-mail'},
+                        {key:'phone', label:'Telefone'},
+                        {key:'verified', label:'Verificado', render:(v,row)=>(
+                          <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:999,
+                            background:v?'rgba(22,163,74,0.15)':'transparent',
+                            color:v?'#22c55e':row.verification_requested?'#F59E0B':'#475569',
+                            border:`1px solid ${v?'rgba(22,163,74,0.4)':row.verification_requested?'rgba(245,158,11,0.4)':'#1e293b'}`}}>
+                            {v?'✓ Verificado':row.verification_requested?'⏳ Pendente':'—'}
+                          </span>
+                        )},
+                        {key:'role', label:'Papel'},
+                        {key:'banned', label:'Status', render:(v,row)=>(
+                          <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:999,
+                            background:v?'#ef444420':row.verification_requested&&!row.verified?'#f59e0b15':'#22c55e15',
+                            color:v?'#ef4444':row.verification_requested&&!row.verified?'#f59e0b':'#22c55e',
+                            border:`1px solid ${v?'#ef444440':row.verification_requested&&!row.verified?'#f59e0b40':'#22c55e30'}`}}>
+                            {v?'🚫 Banido':row.verification_requested&&!row.verified?'⏳ Verificação':'✓ Ativo'}
+                          </span>
+                        )},
+                        {key:'created_at', label:'Cadastrado', render:fmtDate},
+                      ]}
+                      onDelete={row=>deleteRow('profiles',row)}
+                      onPromote={toggleAdmin}
+                      onVerify={toggleVerified}
+                      onView={row=>setViewUserModal({userId:row.id, userName:row.name})}
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ── Vagas ── */}
           {section==='jobs' && (
