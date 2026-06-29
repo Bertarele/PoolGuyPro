@@ -767,6 +767,7 @@ function Sheet({
   const [closing, setClosing] = React.useState(false);
   const lockedRef = React.useRef(false);
   const sheetRef = React.useRef(null);
+  const backdropRef = React.useRef(null);
   const skipAnimRef = React.useRef(false); // true when drag already animated the exit
 
   React.useEffect(() => {
@@ -881,6 +882,20 @@ function Sheet({
     };
   }, [mounted, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Backdrop has no scrollable content — always block native pull-to-refresh on it.
+  // Must be a real (non-passive) listener: React's onTouchMove prop is passive by
+  // default and can't call preventDefault, which let drags on the backdrop fall
+  // through to iOS's native pull-to-refresh.
+  React.useEffect(() => {
+    const el = backdropRef.current;
+    if (!el) return;
+    const onMove = e => e.preventDefault();
+    el.addEventListener('touchmove', onMove, {
+      passive: false
+    });
+    return () => el.removeEventListener('touchmove', onMove);
+  }, [mounted]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!mounted) return null;
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 540;
   const desktopW = isDesktop ? Math.min(520, Math.round(window.innerWidth * 0.96)) : null;
@@ -891,10 +906,10 @@ function Sheet({
     borderRadius: '20px 20px 0 0'
   } : {};
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    ref: backdropRef,
     className: `pg-sheet-backdrop${closing ? ' pg-sheet-backdrop-out' : ''}`,
     onClick: onClose,
-    onWheel: e => e.stopPropagation(),
-    onTouchMove: e => e.stopPropagation()
+    onWheel: e => e.stopPropagation()
   }), /*#__PURE__*/React.createElement("div", {
     ref: sheetRef,
     className: `pg-sheet${closing ? ' pg-sheet-down' : ''}`,
