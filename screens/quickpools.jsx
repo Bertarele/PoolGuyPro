@@ -907,7 +907,7 @@ function QuickPoolsScreen({ ctx }) {
                   <div style={{fontSize:10.5, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
                     {lang==='pt'?'ALERTAS EM TEMPO REAL':lang==='es'?'ALERTAS EN TIEMPO REAL':'REAL-TIME ALERTS'}
                   </div>
-                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:19, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
                     {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
                   </div>
                 </div>
