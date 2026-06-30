@@ -1600,223 +1600,285 @@ function QuickPoolsScreen({
       background: 'var(--pg-bg)'
     }
   }, (() => {
-    const _bg = darkMode ? 'linear-gradient(155deg, #010E1F 0%, #012044 40%, #013B78 80%, #004E9A 100%)' : 'linear-gradient(155deg, #daeeff 0%, #c2e4f8 40%, #a8d8f5 80%, #8ec8f0 100%)';
-    const _tx = darkMode ? '#fff' : '#0A2840';
-    const _sub = darkMode ? 'rgba(255,255,255,0.55)' : 'rgba(10,40,64,0.50)';
-    const _btnBg = darkMode ? 'rgba(0,180,216,0.28)' : 'rgba(0,100,180,0.13)';
-    const _btnBd = darkMode ? 'rgba(0,200,240,0.5)' : 'rgba(0,100,180,0.30)';
-    const _btnC = darkMode ? '#fff' : '#004A8F';
-    const _icBg = darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(10,40,64,0.08)';
-    const _icBd = darkMode ? 'rgba(255,255,255,0.18)' : 'rgba(10,40,64,0.14)';
-    const _notifBg = darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(10,40,64,0.07)';
-    const _notifBd = darkMode ? 'rgba(255,255,255,0.13)' : 'rgba(10,40,64,0.13)';
-    const _orb1 = darkMode ? 'rgba(0,200,240,0.32)' : 'rgba(0,120,200,0.18)';
-    const _orb2 = darkMode ? 'rgba(56,189,248,0.18)' : 'rgba(0,100,180,0.10)';
-    const _orb3 = darkMode ? 'rgba(0,120,210,0.22)' : 'rgba(0,80,160,0.10)';
-    const _waveFill = darkMode ? '#F4F8FB' : '#F4F8FB';
-    const _dotColor = '#34D399';
-    const _dotBorder = darkMode ? '#010E1F' : '#a8d8f5';
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: _bg,
-        padding: `calc(env(safe-area-inset-top, 0px) + 14px) 18px 28px`,
-        position: 'relative',
-        overflow: 'hidden'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        inset: 0,
-        pointerEvents: 'none',
-        backgroundImage: `repeating-linear-gradient(118deg, transparent, transparent 38px, ${darkMode ? 'rgba(255,255,255,0.028)' : 'rgba(255,255,255,0.45)'} 38px, ${darkMode ? 'rgba(255,255,255,0.028)' : 'rgba(255,255,255,0.45)'} 39px)`
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        top: -55,
-        right: -35,
-        width: 190,
-        height: 190,
-        borderRadius: '50%',
-        background: `radial-gradient(circle,${_orb1} 0%,transparent 65%)`,
-        pointerEvents: 'none'
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        top: 10,
-        right: 55,
-        width: 70,
-        height: 70,
-        borderRadius: '50%',
-        background: `radial-gradient(circle,${_orb2} 0%,transparent 70%)`,
-        pointerEvents: 'none'
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        bottom: 14,
-        left: -25,
-        width: 110,
-        height: 110,
-        borderRadius: '50%',
-        background: `radial-gradient(circle,${_orb3} 0%,transparent 70%)`,
-        pointerEvents: 'none'
-      }
-    }), /*#__PURE__*/React.createElement("svg", {
-      viewBox: "0 0 375 28",
-      xmlns: "http://www.w3.org/2000/svg",
-      preserveAspectRatio: "none",
-      style: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        width: '100%',
-        height: 28,
-        display: 'block',
-        pointerEvents: 'none'
-      }
+    const H = headerTheme(darkMode);
+    const dotBorder = darkMode ? '#010E1F' : '#a8d8f5';
+    const poolIcon = /*#__PURE__*/React.createElement("svg", {
+      width: "20",
+      height: "20",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: H.iconC,
+      strokeWidth: "1.75",
+      strokeLinecap: "round"
     }, /*#__PURE__*/React.createElement("path", {
-      d: "M0,14 C55,2 110,22 165,12 C220,2 275,20 330,10 C348,6 362,14 375,10 L375,28 L0,28 Z",
-      fill: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.4)'
+      d: "M2 10 Q6 6 10 10 Q14 14 18 10 Q20 8 22 10"
     }), /*#__PURE__*/React.createElement("path", {
-      d: "M0,20 C70,8 140,26 210,16 C265,8 320,22 375,18 L375,28 L0,28 Z",
-      fill: _waveFill
-    })), /*#__PURE__*/React.createElement("div", {
+      d: "M2 16 Q6 12 10 16 Q14 20 18 16 Q20 14 22 16"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "4",
+      r: "1.8",
+      fill: H.iconC,
+      stroke: "none"
+    }));
+    return /*#__PURE__*/React.createElement(NavyBar, {
+      darkMode: darkMode,
+      wave: true,
+      bgOverride: darkMode ? 'linear-gradient(155deg, #010E1F 0%, #012044 40%, #013B78 80%, #004E9A 100%)' : 'linear-gradient(155deg, #daeeff 0%, #c2e4f8 40%, #a8d8f5 80%, #8ec8f0 100%)',
+      title: /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          flexShrink: 0,
+          background: H.iconBg,
+          border: `0.5px solid ${H.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      }, poolIcon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 600,
+          color: H.sub,
+          letterSpacing: '0.10em',
+          marginBottom: 2,
+          textTransform: 'uppercase'
+        }
+      }, `QUICK POOLS · ${(county || 'BROWARD').toUpperCase()}`), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontFamily: 'var(--pg-font-display)',
+          fontSize: 20,
+          fontWeight: 800,
+          letterSpacing: '-0.025em',
+          lineHeight: 1.1,
+          color: H.text
+        }
+      }, lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'))),
+      right: /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          gap: 6,
+          alignItems: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: 'relative',
+          display: 'inline-flex'
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => openChat && openChat(),
+        style: {
+          width: 36,
+          height: 36,
+          borderRadius: 11,
+          background: H.iconBg,
+          border: `0.5px solid ${H.border}`,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      }, Icon.msg(17, H.text)), hasUnreadChat && /*#__PURE__*/React.createElement("span", {
+        style: {
+          position: 'absolute',
+          top: 5,
+          right: 5,
+          width: 7,
+          height: 7,
+          borderRadius: '50%',
+          background: '#FF3B30',
+          border: `1.5px solid ${dotBorder}`,
+          pointerEvents: 'none'
+        }
+      })), /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: 'relative',
+          display: 'inline-flex'
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => openNotifications && openNotifications(),
+        style: {
+          width: 36,
+          height: 36,
+          borderRadius: 11,
+          background: H.iconBg,
+          border: `0.5px solid ${H.border}`,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      }, Icon.bell(17, H.text)), hasUnreadNotif && /*#__PURE__*/React.createElement("span", {
+        style: {
+          position: 'absolute',
+          top: 5,
+          right: 5,
+          width: 7,
+          height: 7,
+          borderRadius: '50%',
+          background: '#FF3B30',
+          border: `1.5px solid ${dotBorder}`,
+          pointerEvents: 'none'
+        }
+      })))
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 8,
-        position: 'relative',
-        zIndex: 1
-      }
-    }, /*#__PURE__*/React.createElement("h1", {
-      style: {
-        margin: 0,
-        fontFamily: 'var(--pg-font-display)',
-        fontSize: 24,
-        fontWeight: 800,
-        color: _tx,
-        letterSpacing: '-0.025em',
-        lineHeight: 1
-      }
-    }, lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: 6
+        gap: 10,
+        marginTop: 8,
+        paddingTop: 8,
+        borderTop: `1px solid ${H.divider}`
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        position: 'relative'
+        display: 'flex',
+        alignItems: 'center',
+        gap: 7
       }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => openChat && openChat(),
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 36,
-        height: 36,
-        borderRadius: 11,
-        background: _icBg,
-        border: `0.5px solid ${_icBd}`,
-        cursor: 'pointer',
+        width: 30,
+        height: 30,
+        borderRadius: 9,
+        background: H.iconBg,
+        border: `0.5px solid ${H.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }
-    }, Icon.msg(17, _tx)), hasUnreadChat && /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "14",
+      height: "14",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: H.iconC,
+      strokeWidth: "1.75",
+      strokeLinecap: "round"
+    }, /*#__PURE__*/React.createElement("rect", {
+      x: "2",
+      y: "7",
+      width: "20",
+      height: "14",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M16 3 8 3"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M12 3v4"
+    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
-        position: 'absolute',
-        top: 6,
-        right: 6,
-        width: 7,
-        height: 7,
-        borderRadius: '50%',
-        background: '#FF3B30',
-        border: `1.5px solid ${_dotBorder}`,
-        pointerEvents: 'none'
+        fontSize: 16,
+        fontWeight: 800,
+        fontFamily: 'var(--pg-font-display)',
+        lineHeight: 1,
+        letterSpacing: '-0.02em',
+        color: H.text
       }
-    })), /*#__PURE__*/React.createElement("div", {
+    }, jobs.length), /*#__PURE__*/React.createElement("div", {
       style: {
-        position: 'relative'
+        fontSize: 10,
+        opacity: 0.55,
+        lineHeight: 1,
+        marginTop: 1.5,
+        fontWeight: 500,
+        color: H.text
       }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => openNotifications && openNotifications(),
+    }, lang === 'pt' ? 'vagas' : lang === 'es' ? 'puestos' : 'jobs'))), /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 36,
-        height: 36,
-        borderRadius: 11,
-        background: _icBg,
-        border: `0.5px solid ${_icBd}`,
-        cursor: 'pointer',
+        width: 1,
+        height: 28,
+        background: H.divider,
+        flexShrink: 0
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 7
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 30,
+        height: 30,
+        borderRadius: 9,
+        background: H.iconBg,
+        border: `0.5px solid ${H.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }
-    }, Icon.bell(17, _tx)), hasUnreadNotif && /*#__PURE__*/React.createElement("span", {
+    }, Icon.cal(14, H.iconC)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
-        position: 'absolute',
-        top: 6,
-        right: 6,
-        width: 7,
-        height: 7,
-        borderRadius: '50%',
-        background: '#FF3B30',
-        border: `1.5px solid ${_dotBorder}`,
-        pointerEvents: 'none'
+        fontSize: 16,
+        fontWeight: 800,
+        fontFamily: 'var(--pg-font-display)',
+        lineHeight: 1,
+        letterSpacing: '-0.02em',
+        color: '#34D399'
       }
-    })))), /*#__PURE__*/React.createElement("div", {
+    }, activeDayCount, "/7"), /*#__PURE__*/React.createElement("div", {
       style: {
-        position: 'relative',
-        zIndex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        background: _notifBg,
-        border: `0.5px solid ${_notifBd}`,
-        borderRadius: 12,
-        padding: '8px 12px'
+        fontSize: 10,
+        opacity: 0.55,
+        lineHeight: 1,
+        marginTop: 1.5,
+        fontWeight: 500,
+        color: H.text
       }
-    }, Icon.bell(12, _sub), /*#__PURE__*/React.createElement("span", {
+    }, lang === 'pt' ? 'dias ativos' : lang === 'es' ? 'días activos' : 'active days'))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 1,
+        height: 28,
+        background: H.divider,
+        flexShrink: 0
+      }
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0,
-        fontSize: 12,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        background: H.iconBg,
+        border: `0.5px solid ${H.border}`,
+        borderRadius: 10,
+        padding: '6px 10px'
+      }
+    }, Icon.bell(11, H.sub), /*#__PURE__*/React.createElement("span", {
+      style: {
+        flex: 1,
+        minWidth: 0,
+        fontSize: 11,
         fontWeight: 500,
-        color: _sub,
+        color: H.sub,
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis'
       }
-    }, notifCities.length > 0 ? notifCities.slice(0, 3).join(' · ') + (notifCities.length > 3 ? ` +${notifCities.length - 3}` : '') : lang === 'pt' ? 'Nenhuma cidade' : lang === 'es' ? 'Ninguna ciudad' : 'No cities'), activeDayCount > 0 && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        fontWeight: 700,
-        color: _dotColor,
-        flexShrink: 0
-      }
-    }, activeDayCount, "/7"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 1,
-        height: 14,
-        background: _notifBd,
-        flexShrink: 0
-      }
-    }), /*#__PURE__*/React.createElement("button", {
+    }, notifCities.length > 0 ? notifCities.slice(0, 3).join(' · ') + (notifCities.length > 3 ? ` +${notifCities.length - 3}` : '') : lang === 'pt' ? 'Nenhuma cidade' : lang === 'es' ? 'Ninguna ciudad' : 'No cities'), /*#__PURE__*/React.createElement("button", {
       onClick: openRegionEditor,
       style: {
         background: 'transparent',
         border: 'none',
-        color: _sub,
-        fontSize: 12,
-        fontWeight: 600,
+        color: H.sub,
+        fontSize: 11,
+        fontWeight: 700,
         cursor: 'pointer',
         padding: 0,
         flexShrink: 0,
         display: 'flex',
         alignItems: 'center',
-        gap: 4
+        gap: 3
       }
-    }, Icon.cal(12, _sub), " ", lang === 'pt' ? 'Editar' : lang === 'es' ? 'Editar' : 'Edit')));
+    }, Icon.cal(11, H.sub), " ", lang === 'pt' ? 'Editar' : 'Edit'))));
   })(), (notifStatus === 'needed' || notifStatus === 'denied') && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 18px 0'
