@@ -532,10 +532,19 @@ function App() {
     }
 
     try {
-      const reg = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('SW timeout')), 10000)),
-      ]);
+      // getRegistration() returns immediately (no waiting for SW to activate)
+      let reg = await navigator.serviceWorker.getRegistration('/');
+      if (!reg) {
+        // SW not registered yet — register it now
+        reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        // Give it a moment to install
+        await new Promise(r => setTimeout(r, 1500));
+        reg = await navigator.serviceWorker.getRegistration('/') || reg;
+      }
+      if (!reg || !reg.pushManager) {
+        if (manual) _setPushLog('❌ push não disponível neste dispositivo');
+        return;
+      }
 
       if (!manual) {
         // Silent path: only refresh if subscription already exists
