@@ -958,7 +958,7 @@ function WorkScreen({ ctx }) {
                                 background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
                                 display:'flex', alignItems:'center', justifyContent:'center',
                               }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                               </button>
                             )}
                           </div>

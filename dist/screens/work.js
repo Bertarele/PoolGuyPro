@@ -2194,8 +2194,10 @@ function WorkScreen({
           stroke: "currentColor",
           strokeWidth: "2.5",
           strokeLinecap: "round"
-        }, /*#__PURE__*/React.createElement("path", {
-          d: "M18 6L6 18M6 6l12 12"
+        }, /*#__PURE__*/React.createElement("polyline", {
+          points: "3 6 5 6 21 6"
+        }), /*#__PURE__*/React.createElement("path", {
+          d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
         }))));
       }
       // Vacation app
