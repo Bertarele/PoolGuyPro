@@ -12574,7 +12574,7 @@ function PostEquipmentSheet({
       display: 'block',
       marginBottom: 2
     }
-  }, lang === 'pt' ? 'Responsabilidade pelo equipamento' : 'Equipment Liability'), lang === 'pt' ? 'Declaro que me responsabilizo totalmente pelo equipamento disponibilizado para aluguel. O PoolGuyPro não se responsabiliza por perdas, danos ou furtos do equipamento durante o período de aluguel.' : 'I acknowledge full responsibility for the equipment listed for rental. PoolGuyPro is not liable for any loss, damage, or theft of the equipment during the rental period.')), /*#__PURE__*/React.createElement("button", {
+  }, lang === 'pt' ? 'Responsabilidade pelo equipamento' : 'Equipment Liability'), lang === 'pt' ? 'Declaro que me responsabilizo totalmente pelo equipamento disponibilizado para aluguel. O PoolGuyX não se responsabiliza por perdas, danos ou furtos do equipamento durante o período de aluguel.' : 'I acknowledge full responsibility for the equipment listed for rental. PoolGuyX is not liable for any loss, damage, or theft of the equipment during the rental period.')), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       // Build rentPrices map from enabled periods with a valid price
       const builtRentPrices = isRent ? Object.fromEntries(periodOptions.filter(p => rentEnabled[p.id] && rentPrices[p.id].trim().length > 0).map(p => [p.id, parseFloat(rentPrices[p.id])])) : null;

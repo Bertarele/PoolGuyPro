@@ -6473,8 +6473,8 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
                 {lang==='pt'?'Responsabilidade pelo equipamento':'Equipment Liability'}
               </b>
               {lang==='pt'
-                ? 'Declaro que me responsabilizo totalmente pelo equipamento disponibilizado para aluguel. O PoolGuyPro não se responsabiliza por perdas, danos ou furtos do equipamento durante o período de aluguel.'
-                : 'I acknowledge full responsibility for the equipment listed for rental. PoolGuyPro is not liable for any loss, damage, or theft of the equipment during the rental period.'}
+                ? 'Declaro que me responsabilizo totalmente pelo equipamento disponibilizado para aluguel. O PoolGuyX não se responsabiliza por perdas, danos ou furtos do equipamento durante o período de aluguel.'
+                : 'I acknowledge full responsibility for the equipment listed for rental. PoolGuyX is not liable for any loss, damage, or theft of the equipment during the rental period.'}
             </div>
           </button>
         )}
