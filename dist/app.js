@@ -718,7 +718,8 @@ function App() {
     } catch {}
   };
 
-  // manual=true: show step-by-step log; manual=false: silent (only set final ✅ or leave as-is)
+  // manual=true: called from user tap (shows steps, requests permission)
+  // manual=false: silent auto-check on login (only refreshes existing sub)
   const _registerPush = React.useCallback(async (manual = false) => {
     if (!user?.uid) return;
     if (!('serviceWorker' in navigator)) {
@@ -729,11 +730,23 @@ function App() {
       if (manual) _setPushLog('❌ PushManager indisponível — abra pelo ícone da Home Screen');
       return;
     }
+
+    // iOS requires Notification.requestPermission() to be called BEFORE any await
+    // so it stays within the user gesture context. Do it first on manual tap.
+    if (manual) {
+      _setPushLog('pedindo permissão...');
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        _setPushLog('❌ permissão negada — ative em Configurações > ' + (window.navigator.userAgent.includes('iPhone') ? 'PoolGuyPro' : 'Notificações'));
+        return;
+      }
+    }
     try {
       const reg = await Promise.race([navigator.serviceWorker.ready, new Promise((_, reject) => setTimeout(() => reject(new Error('SW timeout')), 10000))]);
-      // Check for existing subscription first (silent path — no permission prompt)
-      const existing = await reg.pushManager.getSubscription();
-      if (existing) {
+      if (!manual) {
+        // Silent path: only refresh if subscription already exists
+        const existing = await reg.pushManager.getSubscription();
+        if (!existing) return;
         const j = existing.toJSON();
         await window.sb.from('push_subscriptions').upsert({
           user_id: user.uid,
@@ -746,19 +759,14 @@ function App() {
         _setPushLog('✅ notificações ativas');
         return;
       }
-      // No existing subscription — need permission (only on manual tap)
-      if (!manual) return;
-      _setPushLog('pedindo permissão...');
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        _setPushLog('❌ permissão negada: ' + permission);
-        return;
-      }
+
+      // Manual path: subscribe (existing or new)
       _setPushLog('ativando...');
-      const sub = await reg.pushManager.subscribe({
+      const existing = await reg.pushManager.getSubscription();
+      const sub = existing || (await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
-      });
+      }));
       const j = sub.toJSON();
       const {
         error
@@ -776,7 +784,7 @@ function App() {
       }
       _setPushLog('✅ notificações ativas');
     } catch (e) {
-      if (manual) _setPushLog('❌ erro: ' + (e.message || String(e)));
+      if (manual) _setPushLog('❌ ' + (e.message || String(e)));
     }
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
