@@ -8628,7 +8628,8 @@ function MarketplaceScreen({
           fontWeight: 700,
           letterSpacing: '-0.025em',
           lineHeight: 1.1,
-          color: H.text
+          color: H.text,
+          whiteSpace: 'nowrap'
         }
       }, lang === 'pt' ? 'Equipamentos & Rotas' : lang === 'es' ? 'Equipos & Rutas' : 'Equipment & Routes'))),
       leftBack: !isDesktop,
