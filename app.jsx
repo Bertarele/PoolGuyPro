@@ -1535,14 +1535,14 @@ function App() {
           }}
         />
       </FullPage>
-      <Sheet open={!!dayPickerVac} onClose={()=>setDayPickerVac(null)} height="88%">
+      <FullPage open={!!dayPickerVac} onClose={()=>setDayPickerVac(null)}>
         <VacationDayPickerSheet
           vac={dayPickerVac} lang={lang}
           confirmedDays={confirmedDays}
           onClose={()=>setDayPickerVac(null)}
           onSubmit={()=>setDayPickerVac(null)}
         />
-      </Sheet>
+      </FullPage>
       <FullPage open={hiringSheetOpen} onClose={()=>setHiringSheetOpen(false)}>
         <PostHiringSheet
           lang={lang}

@@ -2209,10 +2209,9 @@ function App() {
         showToast(lang === 'pt' ? 'Férias publicadas ✓' : lang === 'es' ? 'Vacaciones publicadas ✓' : 'Vacation posted ✓');
       }
     }
-  })), /*#__PURE__*/React.createElement(Sheet, {
+  })), /*#__PURE__*/React.createElement(FullPage, {
     open: !!dayPickerVac,
-    onClose: () => setDayPickerVac(null),
-    height: "88%"
+    onClose: () => setDayPickerVac(null)
   }, /*#__PURE__*/React.createElement(VacationDayPickerSheet, {
     vac: dayPickerVac,
     lang: lang,

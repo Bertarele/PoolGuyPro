@@ -8293,10 +8293,10 @@ function VacationDayPickerSheet({
   const estLabel = lang === 'pt' ? 'Est.' : 'Est.';
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 18px 32px',
+      padding: '0 18px 0',
       display: 'flex',
       flexDirection: 'column',
-      height: '100%'
+      minHeight: '100%'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8630,7 +8630,15 @@ function VacationDayPickerSheet({
     }
   }, lang === 'pt' ? 'Continuar mesmo assim' : lang === 'es' ? 'Continuar de todos modos' : 'Continue anyway'))), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 'auto'
+      position: 'sticky',
+      bottom: 0,
+      background: 'var(--pg-bg, #fff)',
+      paddingBottom: 20,
+      paddingTop: 8,
+      marginLeft: -18,
+      marginRight: -18,
+      padding: '8px 18px 24px',
+      borderTop: '0.5px solid var(--pg-ink-100)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {

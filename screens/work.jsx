@@ -4087,7 +4087,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
   const estLabel       = lang==='pt' ? 'Est.' : 'Est.';
 
   return (
-    <div style={{padding:'0 18px 32px', display:'flex', flexDirection:'column', height:'100%'}}>
+    <div style={{padding:'0 18px 0', display:'flex', flexDirection:'column', minHeight:'100%'}}>
       {/* Header */}
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', paddingBottom:12, borderBottom:'0.5px solid var(--pg-ink-200)'}}>
         <div>
@@ -4267,7 +4267,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
       )}
 
       {/* Sticky CTA */}
-      <div style={{marginTop:'auto'}}>
+      <div style={{position:'sticky', bottom:0, background:'var(--pg-bg, #fff)', paddingBottom:20, paddingTop:8, marginLeft:-18, marginRight:-18, padding:'8px 18px 24px', borderTop:'0.5px solid var(--pg-ink-100)'}}>
         <div style={{
           display:'flex', alignItems:'center', justifyContent:'space-between',
           padding:'10px 14px', borderRadius:12, marginBottom:12,
