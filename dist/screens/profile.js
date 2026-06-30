@@ -892,6 +892,9 @@ function ProfileScreen({
   }), /*#__PURE__*/React.createElement(QuickPoolAppHistory, {
     user: user,
     lang: lang
+  }), /*#__PURE__*/React.createElement(WorkJobHistory, {
+    user: user,
+    lang: lang
   }), /*#__PURE__*/React.createElement(Section, {
     title: t.workRegions,
     action: t.edit,
@@ -2779,6 +2782,164 @@ function QuickPoolAppHistory({
       textAlign: 'center'
     }
   }, expanded ? lang === 'pt' ? 'Ver menos' : 'Show less' : lang === 'pt' ? `Ver todas (${apps.length})` : `View all (${apps.length})`))));
+}
+
+// ── Work / Jobs history (closed jobs published by the user) ──────
+function WorkJobHistory({
+  user,
+  lang
+}) {
+  const [jobs, setJobs] = React.useState(null);
+  const [expanded, setExpanded] = React.useState(false);
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb) return;
+    window.sb.from('jobs').select('id, role, loc, pay, pay_mode, hired_at, created_at').eq('author_id', user.uid).not('hired_at', 'is', null).order('hired_at', {
+      ascending: false
+    }).then(({
+      data
+    }) => setJobs(data || []));
+  }, [user?.uid]);
+  if (!jobs || jobs.length === 0) return null;
+  const title = lang === 'pt' ? 'Histórico de Vagas' : lang === 'es' ? 'Historial de Empleos' : 'Job History';
+  const visible = expanded ? jobs : jobs.slice(0, 3);
+  const fmtDate = iso => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+  return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      margin: 0,
+      fontWeight: 700,
+      color: 'var(--pg-ink-700)',
+      letterSpacing: '-0.01em',
+      textTransform: 'uppercase',
+      fontSize: 11
+    }
+  }, title), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)'
+    }
+  }, jobs.length)), /*#__PURE__*/React.createElement("div", {
+    className: "pg-card",
+    style: {
+      padding: 0,
+      overflow: 'hidden'
+    }
+  }, visible.map((job, idx) => {
+    const isLast = idx === visible.length - 1 && (jobs.length <= 3 || expanded);
+    const payStr = job.pay_mode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : job.pay ? `$${job.pay}${job.pay_mode === 'weekly' ? lang === 'pt' ? '/sem' : '/wk' : '/pool'}` : '—';
+    return /*#__PURE__*/React.createElement("div", {
+      key: job.id,
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '12px 14px',
+        borderBottom: isLast ? 'none' : '0.5px solid var(--pg-ink-100)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 34,
+        height: 34,
+        borderRadius: 9,
+        background: 'rgba(107,114,128,0.10)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "15",
+      height: "15",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#6B7280",
+      strokeWidth: "1.8",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("rect", {
+      x: "2",
+      y: "7",
+      width: "20",
+      height: "15",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--pg-ink-800)',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        letterSpacing: '-0.01em'
+      }
+    }, job.role), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-ink-500)',
+        marginTop: 2,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        flexWrap: 'wrap'
+      }
+    }, job.loc && /*#__PURE__*/React.createElement("span", null, job.loc), job.loc && /*#__PURE__*/React.createElement("span", null, "\xB7"), /*#__PURE__*/React.createElement("span", null, payStr))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flexShrink: 0,
+        textAlign: 'right'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10.5,
+        fontWeight: 700,
+        padding: '3px 8px',
+        borderRadius: 6,
+        background: 'rgba(107,114,128,0.10)',
+        color: '#6B7280'
+      }
+    }, lang === 'pt' ? 'ENCERRADA' : lang === 'es' ? 'CERRADA' : 'CLOSED'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: 'var(--pg-ink-400)',
+        marginTop: 3
+      }
+    }, fmtDate(job.hired_at))));
+  }), jobs.length > 3 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setExpanded(v => !v),
+    style: {
+      width: '100%',
+      padding: '10px 14px',
+      border: 'none',
+      borderTop: '0.5px solid var(--pg-ink-100)',
+      background: 'transparent',
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 600,
+      color: 'var(--pg-blue-500)',
+      textAlign: 'center'
+    }
+  }, expanded ? lang === 'pt' ? 'Ver menos' : lang === 'es' ? 'Ver menos' : 'Show less' : lang === 'pt' ? `Ver todas (${jobs.length})` : lang === 'es' ? `Ver todas (${jobs.length})` : `View all (${jobs.length})`)));
 }
 Object.assign(window, {
   ProfileScreen

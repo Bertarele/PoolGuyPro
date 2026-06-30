@@ -315,8 +315,8 @@ function WorkScreen({
   }, [workUserLocation, workRadiusMiles]);
   const filteredLiveJobs = liveJobs.filter(j => {
     const isOwn = user?.uid && j.author_id === user.uid;
-    if (isOwn) return true; // always show own jobs regardless of radius
-    if (j.hiredAt) return true; // hired jobs visible to everyone (position is filled — informational)
+    if (isOwn) return !j.hiredAt; // own jobs: show only while open (closed ones go to My Posts)
+    if (j.hiredAt) return false; // hired jobs hidden from public listing
     return radiusMatch(j.loc || j.region || '');
   });
   const filteredLiveTechs = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
@@ -348,7 +348,8 @@ function WorkScreen({
         pt: 'Publicado',
         es: 'Publicado'
       },
-      status: 'open',
+      status: j.hiredAt ? 'closed' : 'open',
+      hiredAt: j.hiredAt || null,
       pay: j.pay ? {
         en: j.pay,
         pt: j.pay,
@@ -420,6 +421,12 @@ function WorkScreen({
     }
     setDeletedAppIds(p => new Set([...p, app.id]));
   }, []);
+  const deletePost = React.useCallback(async post => {
+    if (post._live && window.sb) {
+      await window.sb.from('jobs').delete().eq('id', post.id);
+    }
+    removeJob && removeJob(post.id);
+  }, [removeJob]);
   const visibleApps = currentMyApps.slice(0, activityLimit);
 
   // ── Desktop layout ─────────────────────────────────────────────
@@ -1148,18 +1155,17 @@ function WorkScreen({
         fontSize: 12.5
       }
     }, emptyPosts) : currentMyPosts.map(post => {
+      const isClosed = post.status === 'closed' || !!post.hiredAt;
       const pending = post.applicants ? post.applicants.filter(a => a.status === 'pending').length : 0;
       const totalApps = post.applicants ? post.applicants.length : 0;
       return /*#__PURE__*/React.createElement("div", {
         key: post.id,
-        onClick: () => openApplicants && openApplicants(post),
         style: {
           display: 'flex',
           alignItems: 'center',
           gap: 10,
           padding: '9px 0',
-          borderTop: '1px solid var(--pg-ink-100)',
-          cursor: 'pointer'
+          borderTop: '1px solid var(--pg-ink-100)'
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -1167,18 +1173,20 @@ function WorkScreen({
           height: 8,
           borderRadius: '50%',
           flexShrink: 0,
-          background: 'var(--pg-blue-500)'
+          background: isClosed ? '#9CA3AF' : 'var(--pg-blue-500)'
         }
       }), /*#__PURE__*/React.createElement("div", {
+        onClick: () => !isClosed && openApplicants && openApplicants(post),
         style: {
           flex: 1,
-          minWidth: 0
+          minWidth: 0,
+          cursor: isClosed ? 'default' : 'pointer'
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 13,
           fontWeight: 700,
-          color: 'var(--pg-ink-900)',
+          color: isClosed ? 'var(--pg-ink-400)' : 'var(--pg-ink-900)',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis'
@@ -1190,7 +1198,16 @@ function WorkScreen({
           gap: 6,
           marginTop: 2
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, isClosed ? /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 10.5,
+          fontWeight: 700,
+          padding: '2px 6px',
+          borderRadius: 5,
+          background: 'rgba(107,114,128,0.12)',
+          color: '#6B7280'
+        }
+      }, lang === 'pt' ? 'ENCERRADA' : lang === 'es' ? 'CERRADA' : 'CLOSED') : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 10.5,
           fontWeight: 700,
@@ -1211,7 +1228,34 @@ function WorkScreen({
           color: 'var(--pg-blue-500)',
           fontWeight: 600
         }
-      }, totalApps, " apps"))), Icon.chev(13, 'var(--pg-ink-300)'));
+      }, totalApps, " apps")))), isClosed ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => deletePost(post),
+        style: {
+          flexShrink: 0,
+          width: 26,
+          height: 26,
+          borderRadius: 7,
+          border: '1px solid #FCA5A5',
+          background: '#FEF2F2',
+          color: '#EF4444',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "11",
+        height: "11",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2.5",
+        strokeLinecap: "round"
+      }, /*#__PURE__*/React.createElement("polyline", {
+        points: "3 6 5 6 21 6"
+      }), /*#__PURE__*/React.createElement("path", {
+        d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+      }))) : Icon.chev(13, 'var(--pg-ink-300)'));
     }))), sub === 'techs' && /*#__PURE__*/React.createElement("div", {
       style: {
         borderRadius: 18,
@@ -2127,7 +2171,7 @@ function WorkScreen({
             fontSize: 11,
             color: 'var(--pg-ink-400)'
           }
-        }, "\xB7 ", tr(app.pay, lang)))), !isRejected && Icon.chev(14, 'var(--pg-ink-300)')), isRejected && /*#__PURE__*/React.createElement("button", {
+        }, "\xB7 ", tr(app.pay, lang)))), isPending && Icon.chev(14, 'var(--pg-ink-300)')), (isRejected || isAccepted || isProgress) && /*#__PURE__*/React.createElement("button", {
           onClick: () => deleteApp(app),
           style: {
             flexShrink: 0,
@@ -2258,30 +2302,31 @@ function WorkScreen({
         fontSize: 12.5
       }
     }, emptyPosts) : myPosts.map(post => {
+      const isClosed = post.status === 'closed' || !!post.hiredAt;
       const pending = post.applicants ? post.applicants.filter(a => a.status === 'pending').length : 0;
       const withInterview = post.applicants ? post.applicants.filter(a => a.interview).length : 0;
       const totalApplicants = post.applicants ? post.applicants.length : 0;
       return /*#__PURE__*/React.createElement("div", {
         key: post.id,
-        onClick: () => openApplicants && openApplicants(post),
         style: {
           display: 'flex',
           alignItems: 'center',
           gap: 10,
           padding: '8px 0',
-          borderTop: '1px solid var(--pg-ink-100)',
-          cursor: 'pointer'
+          borderTop: '1px solid var(--pg-ink-100)'
         }
       }, /*#__PURE__*/React.createElement("div", {
+        onClick: () => !isClosed && openApplicants && openApplicants(post),
         style: {
           flex: 1,
-          minWidth: 0
+          minWidth: 0,
+          cursor: isClosed ? 'default' : 'pointer'
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 13,
           fontWeight: 700,
-          color: 'var(--pg-ink-900)',
+          color: isClosed ? 'var(--pg-ink-400)' : 'var(--pg-ink-900)',
           marginBottom: 3,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
@@ -2294,7 +2339,16 @@ function WorkScreen({
           gap: 5,
           flexWrap: 'wrap'
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, isClosed ? /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 10.5,
+          fontWeight: 700,
+          padding: '2px 6px',
+          borderRadius: 6,
+          background: 'rgba(107,114,128,0.12)',
+          color: '#6B7280'
+        }
+      }, lang === 'pt' ? 'ENCERRADA' : lang === 'es' ? 'CERRADA' : 'CLOSED') : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 10.5,
           fontWeight: 700,
@@ -2315,7 +2369,34 @@ function WorkScreen({
           color: 'oklch(0.40 0.18 145)',
           fontWeight: 600
         }
-      }, "\uD83D\uDCC5 ", withInterview, " ", lang === 'pt' ? 'entrev.' : lang === 'es' ? 'entrev.' : 'interview', withInterview > 1 ? 's' : ''))), /*#__PURE__*/React.createElement("div", {
+      }, withInterview, " ", lang === 'pt' ? 'entrev.' : lang === 'es' ? 'entrev.' : 'interview', withInterview > 1 ? 's' : '')))), isClosed ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => deletePost(post),
+        style: {
+          flexShrink: 0,
+          width: 28,
+          height: 28,
+          borderRadius: 8,
+          border: '1px solid #FCA5A5',
+          background: '#FEF2F2',
+          color: '#EF4444',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "12",
+        height: "12",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2.5",
+        strokeLinecap: "round"
+      }, /*#__PURE__*/React.createElement("polyline", {
+        points: "3 6 5 6 21 6"
+      }), /*#__PURE__*/React.createElement("path", {
+        d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+      }))) : /*#__PURE__*/React.createElement("div", {
         style: {
           display: 'flex',
           alignItems: 'center',

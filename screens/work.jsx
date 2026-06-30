@@ -195,8 +195,8 @@ function WorkScreen({ ctx }) {
 
   const filteredLiveJobs      = liveJobs.filter(j => {
     const isOwn = user?.uid && j.author_id === user.uid;
-    if (isOwn) return true;   // always show own jobs regardless of radius
-    if (j.hiredAt) return true; // hired jobs visible to everyone (position is filled — informational)
+    if (isOwn) return !j.hiredAt; // own jobs: show only while open (closed ones go to My Posts)
+    if (j.hiredAt) return false;  // hired jobs hidden from public listing
     return radiusMatch(j.loc || j.region || '');
   });
   const filteredLiveTechs     = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
@@ -218,7 +218,8 @@ function WorkScreen({ ctx }) {
         title: { en: j.role, pt: j.role, es: j.role },
         loc:   j.loc || '',
         date:  { en:'Live', pt:'Publicado', es:'Publicado' },
-        status:'open',
+        status: j.hiredAt ? 'closed' : 'open',
+        hiredAt: j.hiredAt || null,
         pay:   j.pay ? { en: j.pay, pt: j.pay, es: j.pay } : null,
         // Build fake applicant array so pending/interview badges render correctly
         applicants: [
@@ -266,6 +267,13 @@ function WorkScreen({ ctx }) {
     }
     setDeletedAppIds(p => new Set([...p, app.id]));
   }, []);
+
+  const deletePost = React.useCallback(async (post) => {
+    if (post._live && window.sb) {
+      await window.sb.from('jobs').delete().eq('id', post.id);
+    }
+    removeJob && removeJob(post.id);
+  }, [removeJob]);
 
   const visibleApps = currentMyApps.slice(0, activityLimit);
 
@@ -556,23 +564,40 @@ function WorkScreen({ ctx }) {
                   currentMyPosts.length === 0
                     ? <div style={{textAlign:'center',padding:'12px 0 4px',color:'var(--pg-ink-400)',fontSize:12.5}}>{emptyPosts}</div>
                     : currentMyPosts.map(post => {
+                        const isClosed  = post.status === 'closed' || !!post.hiredAt;
                         const pending   = post.applicants ? post.applicants.filter(a=>a.status==='pending').length : 0;
                         const totalApps = post.applicants ? post.applicants.length : 0;
                         return (
-                          <div key={post.id} onClick={()=>openApplicants&&openApplicants(post)}
-                            style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)',cursor:'pointer'}}>
-                            <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,background:'var(--pg-blue-500)'}}/>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{tr(post.title,lang)}</div>
+                          <div key={post.id} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)'}}>
+                            <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,background: isClosed ? '#9CA3AF' : 'var(--pg-blue-500)'}}/>
+                            <div onClick={()=>!isClosed && openApplicants&&openApplicants(post)}
+                              style={{flex:1,minWidth:0,cursor: isClosed ? 'default' : 'pointer'}}>
+                              <div style={{fontSize:13,fontWeight:700,color: isClosed ? 'var(--pg-ink-400)' : 'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{tr(post.title,lang)}</div>
                               <div style={{display:'flex',alignItems:'center',gap:6,marginTop:2}}>
-                                <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:'var(--pg-blue-100)',color:'var(--pg-blue-700)'}}>
-                                  {lang==='pt'?'ABERTA':lang==='es'?'ABIERTA':'OPEN'}
-                                </span>
-                                {pending > 0 && <span style={{fontSize:11,color:'oklch(0.48 0.14 68)',fontWeight:700}}>{pending} {lang==='pt'?'pend.':'pend.'}</span>}
-                                {totalApps > 0 && <span style={{fontSize:11,color:'var(--pg-blue-500)',fontWeight:600}}>{totalApps} apps</span>}
+                                {isClosed ? (
+                                  <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:'rgba(107,114,128,0.12)',color:'#6B7280'}}>
+                                    {lang==='pt'?'ENCERRADA':lang==='es'?'CERRADA':'CLOSED'}
+                                  </span>
+                                ) : (
+                                  <>
+                                    <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:'var(--pg-blue-100)',color:'var(--pg-blue-700)'}}>
+                                      {lang==='pt'?'ABERTA':lang==='es'?'ABIERTA':'OPEN'}
+                                    </span>
+                                    {pending > 0 && <span style={{fontSize:11,color:'oklch(0.48 0.14 68)',fontWeight:700}}>{pending} {lang==='pt'?'pend.':'pend.'}</span>}
+                                    {totalApps > 0 && <span style={{fontSize:11,color:'var(--pg-blue-500)',fontWeight:600}}>{totalApps} apps</span>}
+                                  </>
+                                )}
                               </div>
                             </div>
-                            {Icon.chev(13,'var(--pg-ink-300)')}
+                            {isClosed ? (
+                              <button onClick={()=>deletePost(post)} style={{
+                                flexShrink:0, width:26, height:26, borderRadius:7, border:'1px solid #FCA5A5',
+                                background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
+                                display:'flex', alignItems:'center', justifyContent:'center',
+                              }}>
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                              </button>
+                            ) : Icon.chev(13,'var(--pg-ink-300)')}
                           </div>
                         );
                       })
@@ -925,9 +950,9 @@ function WorkScreen({ ctx }) {
                                   <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>· {tr(app.pay, lang)}</span>
                                 </div>
                               </div>
-                              {!isRejected && Icon.chev(14,'var(--pg-ink-300)')}
+                              {isPending && Icon.chev(14,'var(--pg-ink-300)')}
                             </div>
-                            {isRejected && (
+                            {(isRejected || isAccepted || isProgress) && (
                               <button onClick={()=>deleteApp(app)} style={{
                                 flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid #FCA5A5',
                                 background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
@@ -992,35 +1017,54 @@ function WorkScreen({ ctx }) {
                 myPosts.length === 0
                   ? <div style={{textAlign:'center', padding:'10px 0 4px', color:'var(--pg-ink-400)', fontSize:12.5}}>{emptyPosts}</div>
                   : myPosts.map(post => {
+                      const isClosed      = post.status === 'closed' || !!post.hiredAt;
                       const pending       = post.applicants ? post.applicants.filter(a=>a.status==='pending').length : 0;
                       const withInterview = post.applicants ? post.applicants.filter(a=>a.interview).length : 0;
                       const totalApplicants = post.applicants ? post.applicants.length : 0;
                       return (
-                        <div key={post.id} onClick={()=>openApplicants && openApplicants(post)}
-                          style={{display:'flex', alignItems:'center', gap:10, padding:'8px 0',
-                            borderTop:'1px solid var(--pg-ink-100)', cursor:'pointer'}}>
-                          <div style={{flex:1, minWidth:0}}>
-                            <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:3,
+                        <div key={post.id} style={{display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderTop:'1px solid var(--pg-ink-100)'}}>
+                          <div onClick={()=>!isClosed && openApplicants && openApplicants(post)}
+                            style={{flex:1, minWidth:0, cursor: isClosed ? 'default' : 'pointer'}}>
+                            <div style={{fontSize:13, fontWeight:700, color: isClosed ? 'var(--pg-ink-400)' : 'var(--pg-ink-900)', marginBottom:3,
                               whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{tr(post.title, lang)}</div>
                             <div style={{display:'flex', alignItems:'center', gap:5, flexWrap:'wrap'}}>
-                              <span style={{fontSize:10.5, fontWeight:700, padding:'2px 6px', borderRadius:6,
-                                background:'var(--pg-blue-100)', color:'var(--pg-blue-700)'}}>
-                                {lang==='pt'?'ABERTA':lang==='es'?'ABIERTA':'OPEN'}
-                              </span>
-                              {pending > 0 && <span style={{fontSize:11, color:'oklch(0.48 0.14 68)', fontWeight:700}}>
-                                {pending} {lang==='pt'?'pendente(s)':lang==='es'?'pendiente(s)':'pending'}
-                              </span>}
-                              {withInterview > 0 && <span style={{fontSize:11, color:'oklch(0.40 0.18 145)', fontWeight:600}}>
-                                📅 {withInterview} {lang==='pt'?'entrev.':lang==='es'?'entrev.':'interview'}{withInterview>1?'s':''}
-                              </span>}
+                              {isClosed ? (
+                                <span style={{fontSize:10.5, fontWeight:700, padding:'2px 6px', borderRadius:6,
+                                  background:'rgba(107,114,128,0.12)', color:'#6B7280'}}>
+                                  {lang==='pt'?'ENCERRADA':lang==='es'?'CERRADA':'CLOSED'}
+                                </span>
+                              ) : (
+                                <>
+                                  <span style={{fontSize:10.5, fontWeight:700, padding:'2px 6px', borderRadius:6,
+                                    background:'var(--pg-blue-100)', color:'var(--pg-blue-700)'}}>
+                                    {lang==='pt'?'ABERTA':lang==='es'?'ABIERTA':'OPEN'}
+                                  </span>
+                                  {pending > 0 && <span style={{fontSize:11, color:'oklch(0.48 0.14 68)', fontWeight:700}}>
+                                    {pending} {lang==='pt'?'pendente(s)':lang==='es'?'pendiente(s)':'pending'}
+                                  </span>}
+                                  {withInterview > 0 && <span style={{fontSize:11, color:'oklch(0.40 0.18 145)', fontWeight:600}}>
+                                    {withInterview} {lang==='pt'?'entrev.':lang==='es'?'entrev.':'interview'}{withInterview>1?'s':''}
+                                  </span>}
+                                </>
+                              )}
                             </div>
                           </div>
-                          <div style={{display:'flex', alignItems:'center', gap:4, flexShrink:0}}>
-                            {totalApplicants > 0 && <span style={{fontSize:12, color:'var(--pg-blue-500)', fontWeight:700}}>
-                              {totalApplicants} {lang==='pt'?'cands.':lang==='es'?'cands.':'apps'}
-                            </span>}
-                            {Icon.chev(14,'var(--pg-ink-300)')}
-                          </div>
+                          {isClosed ? (
+                            <button onClick={()=>deletePost(post)} style={{
+                              flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid #FCA5A5',
+                              background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
+                              display:'flex', alignItems:'center', justifyContent:'center',
+                            }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                            </button>
+                          ) : (
+                            <div style={{display:'flex', alignItems:'center', gap:4, flexShrink:0}}>
+                              {totalApplicants > 0 && <span style={{fontSize:12, color:'var(--pg-blue-500)', fontWeight:700}}>
+                                {totalApplicants} {lang==='pt'?'cands.':lang==='es'?'cands.':'apps'}
+                              </span>}
+                              {Icon.chev(14,'var(--pg-ink-300)')}
+                            </div>
+                          )}
                         </div>
                       );
                     })
