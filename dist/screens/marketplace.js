@@ -8624,7 +8624,7 @@ function MarketplaceScreen({
       }, lang === 'pt' ? 'COMPRAR · VENDER · ALUGAR' : lang === 'es' ? 'COMPRAR · VENDER · ALQUILAR' : 'BUY · SELL · RENT'), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'var(--pg-font-display)',
-          fontSize: 19,
+          fontSize: 17,
           fontWeight: 700,
           letterSpacing: '-0.025em',
           lineHeight: 1.1,
