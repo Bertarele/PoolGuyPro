@@ -1604,23 +1604,12 @@ function QuickPoolsScreen({
     const H = headerTheme(darkMode);
     const dotBorder = darkMode ? '#010E1F' : '#a8d8f5';
     const poolIcon = /*#__PURE__*/React.createElement("svg", {
-      width: "20",
-      height: "20",
+      width: "22",
+      height: "22",
       viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: H.iconC,
-      strokeWidth: "1.75",
-      strokeLinecap: "round"
+      fill: H.iconC
     }, /*#__PURE__*/React.createElement("path", {
-      d: "M2 10 Q6 6 10 10 Q14 14 18 10 Q20 8 22 10"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M2 16 Q6 12 10 16 Q14 20 18 16 Q20 14 22 16"
-    }), /*#__PURE__*/React.createElement("circle", {
-      cx: "12",
-      cy: "4",
-      r: "1.8",
-      fill: H.iconC,
-      stroke: "none"
+      d: "M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"
     }));
     return /*#__PURE__*/React.createElement(NavyBar, {
       darkMode: darkMode,
@@ -1637,9 +1626,9 @@ function QuickPoolsScreen({
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          width: 44,
-          height: 44,
-          borderRadius: 13,
+          width: 52,
+          height: 52,
+          borderRadius: 15,
           flexShrink: 0,
           background: H.iconBg,
           border: `0.5px solid ${H.border}`,
@@ -1647,19 +1636,23 @@ function QuickPoolsScreen({
           alignItems: 'center',
           justifyContent: 'center'
         }
-      }, poolIcon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      }, poolIcon), /*#__PURE__*/React.createElement("div", {
         style: {
-          fontSize: 10,
+          paddingTop: 2
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10.5,
           fontWeight: 600,
           color: H.sub,
           letterSpacing: '0.10em',
-          marginBottom: 2,
+          marginBottom: 3,
           textTransform: 'uppercase'
         }
       }, `QUICK POOLS · ${(county || 'BROWARD').toUpperCase()}`), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'var(--pg-font-display)',
-          fontSize: 22,
+          fontSize: 24,
           fontWeight: 800,
           letterSpacing: '-0.025em',
           lineHeight: 1.1,
@@ -1738,8 +1731,8 @@ function QuickPoolsScreen({
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        marginTop: 8,
-        paddingTop: 8,
+        marginTop: 12,
+        paddingTop: 12,
         borderTop: `1px solid ${H.divider}`
       }
     }, /*#__PURE__*/React.createElement("div", {

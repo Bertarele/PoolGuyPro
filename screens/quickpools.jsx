@@ -884,10 +884,8 @@ function QuickPoolsScreen({ ctx }) {
         const H = headerTheme(darkMode);
         const dotBorder = darkMode ? '#010E1F' : '#a8d8f5';
         const poolIcon = (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.75" strokeLinecap="round">
-            <path d="M2 10 Q6 6 10 10 Q14 14 18 10 Q20 8 22 10"/>
-            <path d="M2 16 Q6 12 10 16 Q14 20 18 16 Q20 14 22 16"/>
-            <circle cx="12" cy="4" r="1.8" fill={H.iconC} stroke="none"/>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill={H.iconC}>
+            <path d="M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"/>
           </svg>
         );
         return (
@@ -902,14 +900,14 @@ function QuickPoolsScreen({ ctx }) {
             onBack={()=>goTab&&goTab('home')}
             title={
               <div style={{display:'flex', alignItems:'center', gap:10}}>
-                <div style={{width:44, height:44, borderRadius:13, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                <div style={{width:52, height:52, borderRadius:15, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
                   {poolIcon}
                 </div>
-                <div>
-                  <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:2, textTransform:'uppercase'}}>
+                <div style={{paddingTop:2}}>
+                  <div style={{fontSize:10.5, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
                     {`QUICK POOLS · ${(county||'BROWARD').toUpperCase()}`}
                   </div>
-                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:24, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
                     {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
                   </div>
                 </div>
@@ -933,7 +931,7 @@ function QuickPoolsScreen({ ctx }) {
             }
           >
             {/* Stats strip */}
-            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:8, paddingTop:8, borderTop:`1px solid ${H.divider}`}}>
+            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:12, paddingTop:12, borderTop:`1px solid ${H.divider}`}}>
               {/* Jobs */}
               <div style={{display:'flex', alignItems:'center', gap:7}}>
                 <div style={{width:30,height:30,borderRadius:9,background:H.iconBg,border:`0.5px solid ${H.border}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
