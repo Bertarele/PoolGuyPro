@@ -42,7 +42,8 @@ function WorkScreen({ ctx }) {
   }, []);
   const [myActivityTab, setMyActivityTab] = React.useState('applications'); // 'applications' | 'myposts'
   const [activityLimit, setActivityLimit] = React.useState(4);
-  const [deletedAppIds, setDeletedAppIds] = React.useState(new Set());
+  const [deletedAppIds,   setDeletedAppIds]   = React.useState(new Set());
+  const [completedAppIds, setCompletedAppIds] = React.useState(new Set());
   const [workUserLocation,     setWorkUserLocation]     = React.useState(() => { try { const s=localStorage.getItem('pg_loc'); return s?JSON.parse(s):null; } catch(e){return null;} });
   const [workRadiusMiles,      setWorkRadiusMiles]      = React.useState(() => { try { const s=localStorage.getItem('pg_loc_r_work'); return s?Number(s):25; } catch(e){return 25;} });
   const [workLocationFilterOpen, setWorkLocationFilterOpen] = React.useState(false);
@@ -218,8 +219,11 @@ function WorkScreen({ ctx }) {
         title: { en: j.role, pt: j.role, es: j.role },
         loc:   j.loc || '',
         date:  { en:'Live', pt:'Publicado', es:'Publicado' },
-        status: j.hiredAt ? 'closed' : 'open',
+        completedCount: (jobApplicantCounts[j._id] || {}).completed || 0,
         hiredAt: j.hiredAt || null,
+        status: j.hiredAt && ((jobApplicantCounts[j._id] || {}).completed || 0) > 0 ? 'completed'
+               : j.hiredAt ? 'closed'
+               : 'open',
         pay:   j.pay ? { en: j.pay, pt: j.pay, es: j.pay } : null,
         // Build fake applicant array so pending/interview badges render correctly
         applicants: [
@@ -242,7 +246,7 @@ function WorkScreen({ ctx }) {
       title:        { en: a.job_role || a.job_company || '', pt: a.job_role || a.job_company || '', es: a.job_role || a.job_company || '' },
       pay:          { en:'', pt:'', es:'' },
       loc:          relatedJob?.loc || relatedJob?.region || a.job_loc || '',
-      status:       a.status || 'pending',
+      status:       completedAppIds.has(a.id) ? 'completed' : (a.status || 'pending'),
       when:         relTime(a.created_at),
       interview:    a.interview_day ? {
         day:  { en: a.interview_day, pt: a.interview_day, es: a.interview_day },
@@ -266,6 +270,13 @@ function WorkScreen({ ctx }) {
       await window.sb.from('job_applications').delete().eq('id', app.id);
     }
     setDeletedAppIds(p => new Set([...p, app.id]));
+  }, []);
+
+  const completeApp = React.useCallback(async (app) => {
+    if (app._live && window.sb) {
+      await window.sb.from('job_applications').update({ status: 'completed' }).eq('id', app.id);
+    }
+    setCompletedAppIds(p => new Set([...p, app.id]));
   }, []);
 
   const deletePost = React.useCallback(async (post) => {
@@ -493,34 +504,46 @@ function WorkScreen({ ctx }) {
                     : <>
                       {visibleApps.map((app, i) => {
                         if (sub === 'hiring') {
-                          const isPending  = app.status === 'pending';
-                          const isAccepted = app.status === 'accepted' || app.status === 'in_progress';
-                          const isRejected = app.status === 'rejected';
+                          const isPending   = app.status === 'pending';
+                          const isAccepted  = app.status === 'accepted' || app.status === 'in_progress';
+                          const isRejected  = app.status === 'rejected';
+                          const isCompleted = app.status === 'completed';
+                          const dotColor = isCompleted ? 'oklch(0.40 0.18 145)' : isAccepted ? 'var(--pg-blue-500)' : isPending ? 'oklch(0.75 0.14 68)' : 'oklch(0.60 0.18 20)';
                           const statusCfg = isPending
                             ? {label:lang==='pt'?'Aguardando':lang==='es'?'Pendiente':'Pending',color:'oklch(0.48 0.14 68)',bg:'oklch(0.96 0.05 68)'}
+                            : isCompleted
+                              ? {label:lang==='pt'?'Concluída ✓':lang==='es'?'Completado ✓':'Completed ✓',color:'oklch(0.40 0.18 145)',bg:'oklch(0.95 0.05 145)'}
                             : isAccepted
-                              ? {label:lang==='pt'?'Aceito ✓':lang==='es'?'Aceptado ✓':'Accepted ✓',color:'var(--pg-blue-600)',bg:'var(--pg-blue-50)'}
+                              ? {label:lang==='pt'?'Em andamento':lang==='es'?'En curso':'In Progress',color:'var(--pg-blue-600)',bg:'var(--pg-blue-50)'}
                               : {label:lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected',color:'oklch(0.45 0.18 20)',bg:'oklch(0.95 0.04 20)'};
                           return (
                             <div key={app.id} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)'}}>
-                              <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
-                                background: isAccepted ? 'var(--pg-blue-500)' : isPending ? 'oklch(0.75 0.14 68)' : 'oklch(0.60 0.18 20)'}}/>
-                              <div onClick={()=>openHiringAppDetail&&openHiringAppDetail(app)} style={{flex:1,minWidth:0,cursor:'pointer'}}>
+                              <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0, background:dotColor}}/>
+                              <div onClick={()=>isPending&&openHiringAppDetail&&openHiringAppDetail(app)}
+                                style={{flex:1,minWidth:0,cursor:isPending?'pointer':'default'}}>
                                 <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{app.company}</div>
                                 <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginTop:2}}>
                                   <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:statusCfg.bg,color:statusCfg.color}}>{statusCfg.label}</span>
                                   <span style={{fontSize:11,color:'var(--pg-ink-400)'}}>· {tr(app.pay,lang)}</span>
                                 </div>
                               </div>
-                              {isRejected ? (
+                              {isAccepted ? (
+                                <button onClick={()=>completeApp(app)} style={{
+                                  flexShrink:0,height:26,padding:'0 9px',borderRadius:7,fontSize:10.5,fontWeight:700,
+                                  border:'1px solid rgba(16,185,129,0.35)',background:'rgba(16,185,129,0.10)',
+                                  color:'#10B981',cursor:'pointer',whiteSpace:'nowrap',
+                                }}>
+                                  {lang==='pt'?'Concluir':lang==='es'?'Completar':'Complete'}
+                                </button>
+                              ) : (isRejected || isCompleted) ? (
                                 <button onClick={()=>deleteApp(app)} style={{
                                   flexShrink:0,width:26,height:26,borderRadius:7,border:'1px solid rgba(239,68,68,0.22)',
                                   background:'rgba(239,68,68,0.08)',color:'#EF4444',cursor:'pointer',
                                   display:'flex',alignItems:'center',justifyContent:'center',
                                 }}>
-                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                                 </button>
-                              ) : Icon.chev(13,'var(--pg-ink-300)')}
+                              ) : null}
                             </div>
                           );
                         }
@@ -564,19 +587,26 @@ function WorkScreen({ ctx }) {
                   currentMyPosts.length === 0
                     ? <div style={{textAlign:'center',padding:'12px 0 4px',color:'var(--pg-ink-400)',fontSize:12.5}}>{emptyPosts}</div>
                     : currentMyPosts.map(post => {
-                        const isClosed  = post.status === 'closed' || !!post.hiredAt;
-                        const pending   = post.applicants ? post.applicants.filter(a=>a.status==='pending').length : 0;
-                        const totalApps = post.applicants ? post.applicants.length : 0;
+                        const isCompleted = post.status === 'completed';
+                        const isClosed    = post.status === 'closed' || (!!post.hiredAt && !isCompleted);
+                        const isOpen      = !isClosed && !isCompleted;
+                        const dotColor    = isCompleted ? 'oklch(0.40 0.18 145)' : isClosed ? 'oklch(0.75 0.14 68)' : 'var(--pg-blue-500)';
+                        const pending     = post.applicants ? post.applicants.filter(a=>a.status==='pending').length : 0;
+                        const totalApps   = post.applicants ? post.applicants.length : 0;
                         return (
                           <div key={post.id} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)'}}>
-                            <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,background: isClosed ? '#9CA3AF' : 'var(--pg-blue-500)'}}/>
-                            <div onClick={()=>!isClosed && openApplicants&&openApplicants(post)}
-                              style={{flex:1,minWidth:0,cursor: isClosed ? 'default' : 'pointer'}}>
-                              <div style={{fontSize:13,fontWeight:700,color: isClosed ? 'var(--pg-ink-400)' : 'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{tr(post.title,lang)}</div>
+                            <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,background:dotColor}}/>
+                            <div onClick={()=>isOpen && openApplicants&&openApplicants(post)}
+                              style={{flex:1,minWidth:0,cursor: isOpen ? 'pointer' : 'default'}}>
+                              <div style={{fontSize:13,fontWeight:700,color: isOpen ? 'var(--pg-ink-900)' : 'var(--pg-ink-400)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{tr(post.title,lang)}</div>
                               <div style={{display:'flex',alignItems:'center',gap:6,marginTop:2}}>
-                                {isClosed ? (
-                                  <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:'rgba(107,114,128,0.12)',color:'#6B7280'}}>
-                                    {lang==='pt'?'ENCERRADA':lang==='es'?'CERRADA':'CLOSED'}
+                                {isCompleted ? (
+                                  <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:'oklch(0.95 0.05 145)',color:'oklch(0.40 0.18 145)'}}>
+                                    {lang==='pt'?'CONCLUÍDA ✓':lang==='es'?'COMPLETADA ✓':'COMPLETED ✓'}
+                                  </span>
+                                ) : isClosed ? (
+                                  <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:'oklch(0.96 0.05 68)',color:'oklch(0.48 0.14 68)'}}>
+                                    {lang==='pt'?'EM ANDAMENTO':lang==='es'?'EN CURSO':'IN PROGRESS'}
                                   </span>
                                 ) : (
                                   <>
@@ -589,7 +619,7 @@ function WorkScreen({ ctx }) {
                                 )}
                               </div>
                             </div>
-                            {isClosed ? (
+                            {(isClosed || isCompleted) ? (
                               <button onClick={()=>deletePost(post)} style={{
                                 flexShrink:0, width:26, height:26, borderRadius:7, border:'1px solid rgba(239,68,68,0.22)',
                                 background:'rgba(239,68,68,0.08)', color:'#EF4444', cursor:'pointer',
@@ -929,18 +959,22 @@ function WorkScreen({ ctx }) {
                     {visibleApps.map((app, i) => {
                       // Hiring app
                       if (sub === 'hiring') {
-                        const isPending  = app.status === 'pending';
-                        const isAccepted = app.status === 'accepted';
-                        const isProgress = app.status === 'in_progress';
-                        const isRejected = app.status === 'rejected';
+                        const isPending   = app.status === 'pending';
+                        const isAccepted  = app.status === 'accepted';
+                        const isProgress  = app.status === 'in_progress';
+                        const isRejected  = app.status === 'rejected';
+                        const isCompleted = app.status === 'completed';
                         const statusCfg = isPending
-                          ? { label: lang==='pt'?'Aguardando':lang==='es'?'Pendiente':'Pending',   color:'oklch(0.48 0.14 68)', bg:'oklch(0.96 0.05 68)' }
+                          ? { label: lang==='pt'?'Aguardando':lang==='es'?'Pendiente':'Pending',          color:'oklch(0.48 0.14 68)',  bg:'oklch(0.96 0.05 68)' }
+                          : isCompleted
+                            ? { label: lang==='pt'?'Concluída ✓':lang==='es'?'Completado ✓':'Completed ✓', color:'oklch(0.40 0.18 145)', bg:'oklch(0.95 0.05 145)' }
                           : isAccepted || isProgress
-                            ? { label: lang==='pt'?'Aceito ✓':lang==='es'?'Aceptado ✓':'Accepted ✓', color:'var(--pg-blue-600)', bg:'var(--pg-blue-50)' }
-                            : { label: lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected',     color:'oklch(0.45 0.18 20)', bg:'oklch(0.95 0.04 20)' };
+                            ? { label: lang==='pt'?'Em andamento':lang==='es'?'En curso':'In Progress',    color:'var(--pg-blue-600)',    bg:'var(--pg-blue-50)' }
+                            : { label: lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected',           color:'oklch(0.45 0.18 20)',  bg:'oklch(0.95 0.04 20)' };
                         return (
                           <div key={app.id} style={{display:'flex', alignItems:'center', gap:8, padding:'8px 0', borderTop:'1px solid var(--pg-ink-100)'}}>
-                            <div onClick={()=>openHiringAppDetail && openHiringAppDetail(app)} style={{flex:1, minWidth:0, cursor:'pointer', display:'flex', alignItems:'center', gap:8}}>
+                            <div onClick={()=>isPending && openHiringAppDetail && openHiringAppDetail(app)}
+                              style={{flex:1, minWidth:0, cursor: isPending ? 'pointer' : 'default', display:'flex', alignItems:'center', gap:8}}>
                               <div style={{flex:1, minWidth:0}}>
                                 <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:3,
                                   whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{app.company}</div>
@@ -952,7 +986,16 @@ function WorkScreen({ ctx }) {
                               </div>
                               {isPending && Icon.chev(14,'var(--pg-ink-300)')}
                             </div>
-                            {(isRejected || isAccepted || isProgress) && (
+                            {(isAccepted || isProgress) && (
+                              <button onClick={()=>completeApp(app)} style={{
+                                flexShrink:0, height:28, padding:'0 10px', borderRadius:8, fontSize:11, fontWeight:700,
+                                border:'1px solid rgba(16,185,129,0.35)', background:'rgba(16,185,129,0.10)',
+                                color:'#10B981', cursor:'pointer', whiteSpace:'nowrap',
+                              }}>
+                                {lang==='pt'?'Concluir':lang==='es'?'Completar':'Complete'}
+                              </button>
+                            )}
+                            {(isRejected || isCompleted) && (
                               <button onClick={()=>deleteApp(app)} style={{
                                 flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid rgba(239,68,68,0.22)',
                                 background:'rgba(239,68,68,0.08)', color:'#EF4444', cursor:'pointer',
@@ -1017,21 +1060,28 @@ function WorkScreen({ ctx }) {
                 myPosts.length === 0
                   ? <div style={{textAlign:'center', padding:'10px 0 4px', color:'var(--pg-ink-400)', fontSize:12.5}}>{emptyPosts}</div>
                   : myPosts.map(post => {
-                      const isClosed      = post.status === 'closed' || !!post.hiredAt;
+                      const isCompleted   = post.status === 'completed';
+                      const isClosed      = post.status === 'closed' || (!!post.hiredAt && !isCompleted);
+                      const isOpen        = !isClosed && !isCompleted;
                       const pending       = post.applicants ? post.applicants.filter(a=>a.status==='pending').length : 0;
                       const withInterview = post.applicants ? post.applicants.filter(a=>a.interview).length : 0;
                       const totalApplicants = post.applicants ? post.applicants.length : 0;
                       return (
                         <div key={post.id} style={{display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderTop:'1px solid var(--pg-ink-100)'}}>
-                          <div onClick={()=>!isClosed && openApplicants && openApplicants(post)}
-                            style={{flex:1, minWidth:0, cursor: isClosed ? 'default' : 'pointer'}}>
-                            <div style={{fontSize:13, fontWeight:700, color: isClosed ? 'var(--pg-ink-400)' : 'var(--pg-ink-900)', marginBottom:3,
+                          <div onClick={()=>isOpen && openApplicants && openApplicants(post)}
+                            style={{flex:1, minWidth:0, cursor: isOpen ? 'pointer' : 'default'}}>
+                            <div style={{fontSize:13, fontWeight:700, color: isOpen ? 'var(--pg-ink-900)' : 'var(--pg-ink-400)', marginBottom:3,
                               whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{tr(post.title, lang)}</div>
                             <div style={{display:'flex', alignItems:'center', gap:5, flexWrap:'wrap'}}>
-                              {isClosed ? (
+                              {isCompleted ? (
                                 <span style={{fontSize:10.5, fontWeight:700, padding:'2px 6px', borderRadius:6,
-                                  background:'rgba(107,114,128,0.12)', color:'#6B7280'}}>
-                                  {lang==='pt'?'ENCERRADA':lang==='es'?'CERRADA':'CLOSED'}
+                                  background:'oklch(0.95 0.05 145)', color:'oklch(0.40 0.18 145)'}}>
+                                  {lang==='pt'?'CONCLUÍDA ✓':lang==='es'?'COMPLETADA ✓':'COMPLETED ✓'}
+                                </span>
+                              ) : isClosed ? (
+                                <span style={{fontSize:10.5, fontWeight:700, padding:'2px 6px', borderRadius:6,
+                                  background:'oklch(0.96 0.05 68)', color:'oklch(0.48 0.14 68)'}}>
+                                  {lang==='pt'?'EM ANDAMENTO':lang==='es'?'EN CURSO':'IN PROGRESS'}
                                 </span>
                               ) : (
                                 <>
@@ -1049,7 +1099,7 @@ function WorkScreen({ ctx }) {
                               )}
                             </div>
                           </div>
-                          {isClosed ? (
+                          {(isClosed || isCompleted) ? (
                             <button onClick={()=>deletePost(post)} style={{
                               flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid rgba(239,68,68,0.22)',
                               background:'rgba(239,68,68,0.08)', color:'#EF4444', cursor:'pointer',

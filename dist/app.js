@@ -1147,11 +1147,13 @@ function App() {
         if (!counts[row.job_id]) counts[row.job_id] = {
           total: 0,
           pending: 0,
-          withInterview: 0
+          withInterview: 0,
+          completed: 0
         };
         counts[row.job_id].total++;
         if (row.status === 'pending') counts[row.job_id].pending++;
         if (row.interview_day) counts[row.job_id].withInterview++;
+        if (row.status === 'completed') counts[row.job_id].completed++;
       });
       setJobApplicantCounts(counts);
     };
