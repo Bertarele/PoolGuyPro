@@ -152,7 +152,8 @@ function QuickPoolsScreen({
     openNotifications,
     hasUnreadNotif,
     darkMode = false,
-    openPublicProfile
+    openPublicProfile,
+    goTab
   } = ctx;
   const t = STRINGS[lang];
   const [selected, setSelected] = React.useState(null);
@@ -1624,7 +1625,10 @@ function QuickPoolsScreen({
     return /*#__PURE__*/React.createElement(NavyBar, {
       darkMode: darkMode,
       wave: true,
+      compact: false,
       bgOverride: darkMode ? 'linear-gradient(155deg, #010E1F 0%, #012044 40%, #013B78 80%, #004E9A 100%)' : 'linear-gradient(155deg, #daeeff 0%, #c2e4f8 40%, #a8d8f5 80%, #8ec8f0 100%)',
+      leftBack: true,
+      onBack: () => goTab && goTab('home'),
       title: /*#__PURE__*/React.createElement("div", {
         style: {
           display: 'flex',
@@ -1633,9 +1637,9 @@ function QuickPoolsScreen({
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          width: 40,
-          height: 40,
-          borderRadius: 12,
+          width: 44,
+          height: 44,
+          borderRadius: 13,
           flexShrink: 0,
           background: H.iconBg,
           border: `0.5px solid ${H.border}`,
@@ -1655,7 +1659,7 @@ function QuickPoolsScreen({
       }, `QUICK POOLS · ${(county || 'BROWARD').toUpperCase()}`), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'var(--pg-font-display)',
-          fontSize: 20,
+          fontSize: 22,
           fontWeight: 800,
           letterSpacing: '-0.025em',
           lineHeight: 1.1,

@@ -58,7 +58,7 @@ class JobDetailBoundary extends React.Component {
 }
 
 function QuickPoolsScreen({ ctx }) {
-  const { lang, user, openPaywall, openChat, openPost, openEditPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, openPublicProfile } = ctx;
+  const { lang, user, openPaywall, openChat, openPost, openEditPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, openPublicProfile, goTab } = ctx;
   const t = STRINGS[lang];
   const [selected,    setSelected]    = React.useState(null);
   const [highlighted, setHighlighted] = React.useState(null);
@@ -894,19 +894,22 @@ function QuickPoolsScreen({ ctx }) {
           <NavyBar
             darkMode={darkMode}
             wave={true}
+            compact={false}
             bgOverride={darkMode
               ? 'linear-gradient(155deg, #010E1F 0%, #012044 40%, #013B78 80%, #004E9A 100%)'
               : 'linear-gradient(155deg, #daeeff 0%, #c2e4f8 40%, #a8d8f5 80%, #8ec8f0 100%)'}
+            leftBack={true}
+            onBack={()=>goTab&&goTab('home')}
             title={
               <div style={{display:'flex', alignItems:'center', gap:10}}>
-                <div style={{width:40, height:40, borderRadius:12, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                <div style={{width:44, height:44, borderRadius:13, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
                   {poolIcon}
                 </div>
                 <div>
                   <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:2, textTransform:'uppercase'}}>
                     {`QUICK POOLS · ${(county||'BROWARD').toUpperCase()}`}
                   </div>
-                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
                     {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
                   </div>
                 </div>
