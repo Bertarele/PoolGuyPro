@@ -12178,7 +12178,7 @@ function PostEquipmentSheet({
   const [priceMode, setPriceMode] = React.useState('fixed');
   // Multi-period rental pricing
   const [rentEnabled, setRentEnabled] = React.useState({
-    day: true,
+    day: false,
     week: false,
     month: false
   });

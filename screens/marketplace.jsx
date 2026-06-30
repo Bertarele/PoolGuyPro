@@ -6241,7 +6241,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
   const [loc,         setLoc]        = React.useState('');
   const [priceMode,   setPriceMode]  = React.useState('fixed');
   // Multi-period rental pricing
-  const [rentEnabled, setRentEnabled] = React.useState({ day: true, week: false, month: false });
+  const [rentEnabled, setRentEnabled] = React.useState({ day: false, week: false, month: false });
   const [rentPrices,  setRentPrices]  = React.useState({ day: '', week: '', month: '' });
   const [photos,      setPhotos]     = React.useState([]);
   const [disclaimerChecked, setDisclaimerChecked] = React.useState(false);
