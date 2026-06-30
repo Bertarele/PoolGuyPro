@@ -742,16 +742,14 @@ function App() {
       }
     }
     try {
-      // getRegistration() returns immediately (no waiting for SW to activate)
       let reg = await navigator.serviceWorker.getRegistration('/');
-      if (!reg) {
-        // SW not registered yet — register it now
-        reg = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/'
-        });
-        // Give it a moment to install
-        await new Promise(r => setTimeout(r, 1500));
-        reg = (await navigator.serviceWorker.getRegistration('/')) || reg;
+      if (!reg) reg = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/'
+      });
+
+      // pushManager.subscribe() requires an *active* SW — wait for it if needed
+      if (!reg.active) {
+        reg = await Promise.race([navigator.serviceWorker.ready, new Promise((_, reject) => setTimeout(() => reject(new Error('SW não ativou a tempo')), 20000))]);
       }
       if (!reg || !reg.pushManager) {
         if (manual) _setPushLog('❌ push não disponível neste dispositivo');
