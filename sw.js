@@ -8,7 +8,6 @@ const CACHE_VER = 'pgp-v7';
 const PRECACHE = [
   '/tokens.css',
   '/icone.png',
-  '/icone_orig_rgba.png',
   '/manifest.json',
 ];
 
