@@ -1649,7 +1649,7 @@ function QuickPoolsScreen({
           marginBottom: 3,
           textTransform: 'uppercase'
         }
-      }, `QUICK POOLS · ${(county || 'BROWARD').toUpperCase()}`), /*#__PURE__*/React.createElement("div", {
+      }, lang === 'pt' ? 'PISCINAS RÁPIDAS' : lang === 'es' ? 'PISCINAS RÁPIDAS' : 'EXPRESS POOLS'), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'var(--pg-font-display)',
           fontSize: 22,

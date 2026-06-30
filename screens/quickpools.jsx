@@ -905,7 +905,7 @@ function QuickPoolsScreen({ ctx }) {
                 </div>
                 <div style={{paddingTop:2}}>
                   <div style={{fontSize:10.5, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
-                    {`QUICK POOLS · ${(county||'BROWARD').toUpperCase()}`}
+                    {lang==='pt'?'PISCINAS RÁPIDAS':lang==='es'?'PISCINAS RÁPIDAS':'EXPRESS POOLS'}
                   </div>
                   <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
                     {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
