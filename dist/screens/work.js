@@ -1598,7 +1598,7 @@ function WorkScreen({
       }, t.work), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'var(--pg-font-display)',
-          fontSize: sub === 'techs' ? 22 : 20,
+          fontSize: sub === 'techs' ? 24 : 20,
           fontWeight: 700,
           letterSpacing: '-0.025em',
           lineHeight: 1.1,
