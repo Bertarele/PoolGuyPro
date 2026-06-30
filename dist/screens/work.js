@@ -1566,9 +1566,27 @@ function WorkScreen({
     return /*#__PURE__*/React.createElement(NavyBar, {
       darkMode: darkMode,
       wave: false,
-      compact: true,
+      compact: false,
       bgOverride: darkMode ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)' : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)',
-      title: /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      title: /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 44,
+          height: 44,
+          borderRadius: 13,
+          flexShrink: 0,
+          background: H.iconBg,
+          border: `0.5px solid ${H.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      }, Icon.briefcase(20, H.iconC)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 600,
@@ -1580,13 +1598,13 @@ function WorkScreen({
       }, t.work), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'var(--pg-font-display)',
-          fontSize: 21,
+          fontSize: 22,
           fontWeight: 700,
           letterSpacing: '-0.025em',
           lineHeight: 1.1,
           color: H.text
         }
-      }, sub === 'hiring' ? lang === 'pt' ? 'Vagas de Emprego' : lang === 'es' ? 'Ofertas de Trabajo' : 'Job Openings' : sub === 'techs' ? lang === 'pt' ? 'Técnicos Disponíveis' : lang === 'es' ? 'Técnicos Disponibles' : 'Available Techs' : lang === 'pt' ? 'Cobertura de Férias' : lang === 'es' ? 'Cobertura de Vacaciones' : 'Vacation Cover')),
+      }, sub === 'hiring' ? lang === 'pt' ? 'Vagas de Emprego' : lang === 'es' ? 'Ofertas de Trabajo' : 'Job Openings' : sub === 'techs' ? lang === 'pt' ? 'Técnicos Disponíveis' : lang === 'es' ? 'Técnicos Disponibles' : 'Available Techs' : lang === 'pt' ? 'Cobertura de Férias' : lang === 'es' ? 'Cobertura de Vacaciones' : 'Vacation Cover'))),
       leftBack: !isDesktop,
       onBack: () => goTab('home'),
       right: isDesktop ? null : /*#__PURE__*/React.createElement("div", {
@@ -1653,15 +1671,16 @@ function WorkScreen({
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 26,
-        height: 26,
-        borderRadius: 7,
+        width: 30,
+        height: 30,
+        borderRadius: 9,
         background: H.iconBg,
+        border: `0.5px solid ${H.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }
-    }, Icon.briefcase(13, H.iconC)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, Icon.briefcase(14, H.iconC)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 16,
         fontWeight: 700,
@@ -1691,15 +1710,16 @@ function WorkScreen({
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 26,
-        height: 26,
-        borderRadius: 7,
+        width: 30,
+        height: 30,
+        borderRadius: 9,
         background: H.iconBg,
+        border: `0.5px solid ${H.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }
-    }, Icon.check(13, H.iconC)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, Icon.check(14, H.iconC)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 16,
         fontWeight: 700,
@@ -1769,17 +1789,18 @@ function WorkScreen({
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 26,
-        height: 26,
-        borderRadius: 7,
+        width: 30,
+        height: 30,
+        borderRadius: 9,
         background: H.iconBg,
+        border: `0.5px solid ${H.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }
     }, /*#__PURE__*/React.createElement("svg", {
-      width: "13",
-      height: "13",
+      width: "14",
+      height: "14",
       viewBox: "0 0 24 24",
       fill: "none",
       stroke: H.iconC,
@@ -1862,17 +1883,18 @@ function WorkScreen({
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 26,
-        height: 26,
-        borderRadius: 7,
+        width: 30,
+        height: 30,
+        borderRadius: 9,
         background: H.iconBg,
+        border: `0.5px solid ${H.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }
     }, /*#__PURE__*/React.createElement("svg", {
-      width: "13",
-      height: "13",
+      width: "14",
+      height: "14",
       viewBox: "0 0 24 24",
       fill: "none",
       stroke: H.iconC,
@@ -1917,10 +1939,11 @@ function WorkScreen({
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 26,
-        height: 26,
-        borderRadius: 7,
+        width: 30,
+        height: 30,
+        borderRadius: 9,
         background: H.iconBg,
+        border: `0.5px solid ${H.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'

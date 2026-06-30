@@ -749,21 +749,26 @@ function WorkScreen({ ctx }) {
           <NavyBar
             darkMode={darkMode}
             wave={false}
-            compact={true}
+            compact={false}
             bgOverride={darkMode
               ? 'linear-gradient(135deg, #011B5A 0%, #0A2E6A 30%, #0077B6 70%, #023E8A 100%)'
               : 'linear-gradient(135deg, #e8f5ff 0%, #cfe9f8 40%, #b8dff5 100%)'}
             title={
-              <div>
-                <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
-                  {t.work}
+              <div style={{display:'flex', alignItems:'center', gap:10}}>
+                <div style={{width:44, height:44, borderRadius:13, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                  {Icon.briefcase(20, H.iconC)}
                 </div>
-                <div style={{fontFamily:'var(--pg-font-display)', fontSize:21, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
-                  {sub==='hiring'
-                    ? (lang==='pt'?'Vagas de Emprego':lang==='es'?'Ofertas de Trabajo':'Job Openings')
-                    : sub==='techs'
-                      ? (lang==='pt'?'Técnicos Disponíveis':lang==='es'?'Técnicos Disponibles':'Available Techs')
-                      : (lang==='pt'?'Cobertura de Férias':lang==='es'?'Cobertura de Vacaciones':'Vacation Cover')}
+                <div>
+                  <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
+                    {t.work}
+                  </div>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
+                    {sub==='hiring'
+                      ? (lang==='pt'?'Vagas de Emprego':lang==='es'?'Ofertas de Trabajo':'Job Openings')
+                      : sub==='techs'
+                        ? (lang==='pt'?'Técnicos Disponíveis':lang==='es'?'Técnicos Disponibles':'Available Techs')
+                        : (lang==='pt'?'Cobertura de Férias':lang==='es'?'Cobertura de Vacaciones':'Vacation Cover')}
+                  </div>
                 </div>
               </div>
             }
@@ -789,8 +794,8 @@ function WorkScreen({ ctx }) {
             <div style={{display:'flex', alignItems:'center', gap:14, marginTop:10, paddingTop:10, borderTop:`1px solid ${H.border}`}}>
               {sub === 'hiring' && <>
                 <div style={{display:'flex', alignItems:'center', gap:6}}>
-                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                    {Icon.briefcase(13,H.iconC)}
+                  <div style={{width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    {Icon.briefcase(14,H.iconC)}
                   </div>
                   <div>
                     <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{HIRING.length}</div>
@@ -799,8 +804,8 @@ function WorkScreen({ ctx }) {
                 </div>
                 <div style={{width:1, height:28, background:H.divider}}/>
                 <div style={{display:'flex', alignItems:'center', gap:6}}>
-                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                    {Icon.check(13,H.iconC)}
+                  <div style={{width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    {Icon.check(14,H.iconC)}
                   </div>
                   <div>
                     <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{myAppsHiring.length}</div>
@@ -817,8 +822,8 @@ function WorkScreen({ ctx }) {
               </>}
               {sub === 'techs' && <>
                 <div style={{display:'flex', alignItems:'center', gap:6}}>
-                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>
+                  <div style={{width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>
                   </div>
                   <div>
                     <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{TECHS.length}</div>
@@ -835,8 +840,8 @@ function WorkScreen({ ctx }) {
               </>}
               {sub === 'vac' && <>
                 <div style={{display:'flex', alignItems:'center', gap:6}}>
-                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>
+                  <div style={{width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>
                   </div>
                   <div>
                     <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{VACATION_LISTINGS.length}</div>
@@ -845,7 +850,7 @@ function WorkScreen({ ctx }) {
                 </div>
                 <div style={{width:1, height:28, background:H.divider}}/>
                 <div style={{display:'flex', alignItems:'center', gap:6}}>
-                  <div style={{width:26, height:26, borderRadius:7, background:H.iconBg, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                  <div style={{width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
                     {Icon.cal(13,H.iconC)}
                   </div>
                   <div>

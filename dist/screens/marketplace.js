@@ -8601,9 +8601,9 @@ function MarketplaceScreen({
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          width: 40,
-          height: 40,
-          borderRadius: 12,
+          width: 44,
+          height: 44,
+          borderRadius: 13,
           flexShrink: 0,
           background: H.iconBg,
           border: `0.5px solid ${H.border}`,
@@ -8623,7 +8623,7 @@ function MarketplaceScreen({
       }, t.marketplace), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'var(--pg-font-display)',
-          fontSize: 20,
+          fontSize: 22,
           fontWeight: 700,
           letterSpacing: '-0.025em',
           lineHeight: 1.1,
@@ -8684,8 +8684,8 @@ function MarketplaceScreen({
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        marginTop: 6,
-        paddingTop: 6,
+        marginTop: 10,
+        paddingTop: 10,
         borderTop: `1px solid ${H.border}`
       }
     }, /*#__PURE__*/React.createElement("div", {

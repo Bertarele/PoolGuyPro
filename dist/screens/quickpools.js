@@ -1604,8 +1604,8 @@ function QuickPoolsScreen({
     const H = headerTheme(darkMode);
     const dotBorder = darkMode ? '#010E1F' : '#a8d8f5';
     const poolIcon = /*#__PURE__*/React.createElement("svg", {
-      width: "22",
-      height: "22",
+      width: "20",
+      height: "20",
       viewBox: "0 0 24 24",
       fill: H.iconC
     }, /*#__PURE__*/React.createElement("path", {
@@ -1626,9 +1626,9 @@ function QuickPoolsScreen({
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          width: 52,
-          height: 52,
-          borderRadius: 15,
+          width: 44,
+          height: 44,
+          borderRadius: 13,
           flexShrink: 0,
           background: H.iconBg,
           border: `0.5px solid ${H.border}`,
@@ -1670,26 +1670,16 @@ function QuickPoolsScreen({
           position: 'relative',
           display: 'inline-flex'
         }
-      }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => openChat && openChat(),
-        style: {
-          width: 36,
-          height: 36,
-          borderRadius: 11,
-          background: H.iconBg,
-          border: `0.5px solid ${H.border}`,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }
-      }, Icon.msg(17, H.text)), hasUnreadChat && /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/React.createElement(IconButton, {
+        dark: darkMode,
+        onClick: () => openChat && openChat()
+      }, Icon.msg(20, H.text)), hasUnreadChat && /*#__PURE__*/React.createElement("span", {
         style: {
           position: 'absolute',
           top: 5,
           right: 5,
-          width: 7,
-          height: 7,
+          width: 8,
+          height: 8,
           borderRadius: '50%',
           background: '#FF3B30',
           border: `1.5px solid ${dotBorder}`,
@@ -1700,26 +1690,16 @@ function QuickPoolsScreen({
           position: 'relative',
           display: 'inline-flex'
         }
-      }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => openNotifications && openNotifications(),
-        style: {
-          width: 36,
-          height: 36,
-          borderRadius: 11,
-          background: H.iconBg,
-          border: `0.5px solid ${H.border}`,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }
-      }, Icon.bell(17, H.text)), hasUnreadNotif && /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/React.createElement(IconButton, {
+        dark: darkMode,
+        onClick: () => openNotifications && openNotifications()
+      }, Icon.bell(20, H.text)), hasUnreadNotif && /*#__PURE__*/React.createElement("span", {
         style: {
           position: 'absolute',
           top: 5,
           right: 5,
-          width: 7,
-          height: 7,
+          width: 8,
+          height: 8,
           borderRadius: '50%',
           background: '#FF3B30',
           border: `1.5px solid ${dotBorder}`,
@@ -1731,8 +1711,8 @@ function QuickPoolsScreen({
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        marginTop: 12,
-        paddingTop: 12,
+        marginTop: 10,
+        paddingTop: 10,
         borderTop: `1px solid ${H.divider}`
       }
     }, /*#__PURE__*/React.createElement("div", {

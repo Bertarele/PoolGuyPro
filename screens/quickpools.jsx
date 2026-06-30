@@ -884,7 +884,7 @@ function QuickPoolsScreen({ ctx }) {
         const H = headerTheme(darkMode);
         const dotBorder = darkMode ? '#010E1F' : '#a8d8f5';
         const poolIcon = (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill={H.iconC}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill={H.iconC}>
             <path d="M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"/>
           </svg>
         );
@@ -900,7 +900,7 @@ function QuickPoolsScreen({ ctx }) {
             onBack={()=>goTab&&goTab('home')}
             title={
               <div style={{display:'flex', alignItems:'center', gap:10}}>
-                <div style={{width:52, height:52, borderRadius:15, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                <div style={{width:44, height:44, borderRadius:13, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
                   {poolIcon}
                 </div>
                 <div style={{paddingTop:2}}>
@@ -916,22 +916,22 @@ function QuickPoolsScreen({ ctx }) {
             right={
               <div style={{display:'flex', gap:6, alignItems:'center'}}>
                 <div style={{position:'relative', display:'inline-flex'}}>
-                  <button onClick={()=>openChat&&openChat()} style={{width:36,height:36,borderRadius:11,background:H.iconBg,border:`0.5px solid ${H.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    {Icon.msg(17,H.text)}
-                  </button>
-                  {hasUnreadChat&&<span style={{position:'absolute',top:5,right:5,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${dotBorder}`,pointerEvents:'none'}}/>}
+                  <IconButton dark={darkMode} onClick={()=>openChat&&openChat()}>
+                    {Icon.msg(20, H.text)}
+                  </IconButton>
+                  {hasUnreadChat&&<span style={{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${dotBorder}`,pointerEvents:'none'}}/>}
                 </div>
                 <div style={{position:'relative', display:'inline-flex'}}>
-                  <button onClick={()=>openNotifications&&openNotifications()} style={{width:36,height:36,borderRadius:11,background:H.iconBg,border:`0.5px solid ${H.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    {Icon.bell(17,H.text)}
-                  </button>
-                  {hasUnreadNotif&&<span style={{position:'absolute',top:5,right:5,width:7,height:7,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${dotBorder}`,pointerEvents:'none'}}/>}
+                  <IconButton dark={darkMode} onClick={()=>openNotifications&&openNotifications()}>
+                    {Icon.bell(20, H.text)}
+                  </IconButton>
+                  {hasUnreadNotif&&<span style={{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:'50%',background:'#FF3B30',border:`1.5px solid ${dotBorder}`,pointerEvents:'none'}}/>}
                 </div>
               </div>
             }
           >
             {/* Stats strip */}
-            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:12, paddingTop:12, borderTop:`1px solid ${H.divider}`}}>
+            <div style={{display:'flex', alignItems:'center', gap:10, marginTop:10, paddingTop:10, borderTop:`1px solid ${H.divider}`}}>
               {/* Jobs */}
               <div style={{display:'flex', alignItems:'center', gap:7}}>
                 <div style={{width:30,height:30,borderRadius:9,background:H.iconBg,border:`0.5px solid ${H.border}`,display:'flex',alignItems:'center',justifyContent:'center'}}>

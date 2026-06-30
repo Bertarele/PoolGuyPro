@@ -4472,7 +4472,7 @@ function MarketplaceScreen({ ctx }) {
             title={
               <div style={{display:'flex', alignItems:'center', gap:10}}>
                 <div style={{
-                  width:40, height:40, borderRadius:12, flexShrink:0,
+                  width:44, height:44, borderRadius:13, flexShrink:0,
                   background:H.iconBg, border:`0.5px solid ${H.border}`,
                   display:'flex', alignItems:'center', justifyContent:'center',
                 }}>
@@ -4480,7 +4480,7 @@ function MarketplaceScreen({ ctx }) {
                 </div>
                 <div>
                   <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:2, textTransform:'uppercase'}}>{t.marketplace}</div>
-                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
                     {locationLbl}
                   </div>
                 </div>
@@ -4505,7 +4505,7 @@ function MarketplaceScreen({ ctx }) {
             )}
           >
             {/* Stats strip below title */}
-            <div style={{display:'flex', alignItems:'center', gap:12, marginTop:6, paddingTop:6, borderTop:`1px solid ${H.border}`}}>
+            <div style={{display:'flex', alignItems:'center', gap:12, marginTop:10, paddingTop:10, borderTop:`1px solid ${H.border}`}}>
               <div style={{display:'flex', alignItems:'center', gap:7}}>
                 <div style={{
                   width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`,
