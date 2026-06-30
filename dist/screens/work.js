@@ -5607,7 +5607,36 @@ function VacationPanel({
       style: {
         fontSize: 11
       }
-    }, lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable')), !isOwner && (user.tier === 'free' ? /*#__PURE__*/React.createElement("button", {
+    }, lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable')), !isOwner && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 7,
+        alignItems: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => onChat && onChat({
+        id: vac.author_id,
+        name: vac.owner || vac.author || '?',
+        listingId: vac._id || null,
+        listingContext: {
+          name: (lang === 'pt' ? 'Férias' : 'Vacation') + (vac.yearMonth ? ' – ' + monthName : ''),
+          type: 'vac'
+        }
+      }),
+      style: {
+        width: 38,
+        height: 38,
+        borderRadius: 999,
+        border: '1px solid var(--pg-ink-200)',
+        background: 'var(--pg-ink-100)',
+        color: 'var(--pg-blue-600)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }
+    }, Icon.msg(15, 'var(--pg-blue-600)')), user.tier === 'free' ? /*#__PURE__*/React.createElement("button", {
       onClick: () => onUnlockVac && onUnlockVac(),
       style: {
         height: 38,
@@ -8183,6 +8212,7 @@ function VacationDayPickerSheet({
   const [selected, setSelected] = React.useState(new Set());
   const [submitted, setSubmitted] = React.useState(false);
   const [conflictPending, setConflictPending] = React.useState(null); // {d, owner}
+  const [showCommitWarning, setShowCommitWarning] = React.useState(false);
 
   // Build a map of confirmed date-keys → owner name
   const confirmedMap = React.useMemo(() => {
@@ -8631,11 +8661,69 @@ function VacationDayPickerSheet({
       color: 'var(--pg-ink-400)',
       textAlign: 'right'
     }
-  }, /*#__PURE__*/React.createElement("div", null, selArr.sort((a, b) => a - b).join(', ')))), /*#__PURE__*/React.createElement("button", {
-    disabled: selArr.length === 0,
+  }, /*#__PURE__*/React.createElement("div", null, selArr.sort((a, b) => a - b).join(', ')))), showCommitWarning && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12,
+      padding: '16px',
+      borderRadius: 14,
+      background: 'oklch(0.97 0.04 60)',
+      border: '1.5px solid oklch(0.80 0.12 60)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 700,
+      color: 'oklch(0.38 0.14 55)',
+      marginBottom: 8
+    }
+  }, "\u26A0\uFE0F ", lang === 'pt' ? 'Compromisso obrigatório' : lang === 'es' ? 'Compromiso obligatorio' : 'Mandatory commitment'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: 'oklch(0.42 0.12 55)',
+      lineHeight: 1.55,
+      marginBottom: 14
+    }
+  }, lang === 'pt' ? `Ao confirmar, você se compromete a cobrir os ${selArr.length} dia(s) selecionado(s). Faltas sem justificativa resultarão em penalidades no aplicativo, incluindo suspensão de conta.` : lang === 'es' ? `Al confirmar, te comprometes a cubrir los ${selArr.length} día(s) seleccionado(s). Las ausencias injustificadas resultarán en penalidades en la app, incluyendo suspensión de cuenta.` : `By confirming, you commit to covering the ${selArr.length} selected day(s). Unjustified no-shows will result in app penalties, including account suspension.`), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowCommitWarning(false),
+    style: {
+      flex: 1,
+      height: 42,
+      borderRadius: 10,
+      fontSize: 13,
+      fontWeight: 600,
+      border: '1px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)',
+      cursor: 'pointer',
+      fontFamily: 'inherit'
+    }
+  }, lang === 'pt' ? 'Cancelar' : lang === 'es' ? 'Cancelar' : 'Cancel'), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
+      setShowCommitWarning(false);
       setSubmitted(true);
       setTimeout(onSubmit, 1600);
+    },
+    style: {
+      flex: 2,
+      height: 42,
+      borderRadius: 10,
+      fontSize: 13,
+      fontWeight: 700,
+      border: 'none',
+      background: 'var(--pg-blue-500)',
+      color: '#fff',
+      cursor: 'pointer',
+      fontFamily: 'inherit'
+    }
+  }, lang === 'pt' ? 'Entendi, confirmar aplicação' : lang === 'es' ? 'Entendido, confirmar' : 'I understand, confirm'))), /*#__PURE__*/React.createElement("button", {
+    disabled: selArr.length === 0 || submitted,
+    onClick: () => {
+      if (!submitted) setShowCommitWarning(true);
     },
     className: "pg-btn pg-btn-primary",
     style: {

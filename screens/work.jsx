@@ -2557,22 +2557,35 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                         </span>
                       )}
                     </div>
-                    {!isOwner && (user.tier === 'free' ? (
-                      <button onClick={()=>onUnlockVac&&onUnlockVac()}
-                        style={{height:38, padding:'0 16px', fontSize:12.5, borderRadius:999,
-                          border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700,
-                          background:'linear-gradient(135deg,#0c4a6e,#0077B6)',
-                          color:'#fff', display:'flex', alignItems:'center', gap:6}}>
-                        {Icon.lock(13,'#fff')}
-                        {lang==='pt'?'PRO para aplicar':lang==='es'?'PRO para aplicar':'PRO to apply'}
-                      </button>
-                    ) : (
-                      <button onClick={()=>openDayPicker && openDayPicker(vac)}
-                        className="pg-btn pg-btn-primary"
-                        style={{height:38, padding:'0 20px', fontSize:13.5, borderRadius:999, gap:5}}>
-                        {pickDaysLabel} →
-                      </button>
-                    ))}
+                    {!isOwner && (
+                      <div style={{display:'flex', gap:7, alignItems:'center'}}>
+                        <button onClick={()=>onChat && onChat({ id: vac.author_id, name: vac.owner || vac.author || '?', listingId: vac._id || null, listingContext: { name: (lang==='pt'?'Férias':'Vacation') + (vac.yearMonth ? ' – ' + monthName : ''), type: 'vac' } })}
+                          style={{
+                            width:38, height:38, borderRadius:999, border:'1px solid var(--pg-ink-200)',
+                            background:'var(--pg-ink-100)', color:'var(--pg-blue-600)',
+                            cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                            flexShrink:0,
+                          }}>
+                          {Icon.msg(15, 'var(--pg-blue-600)')}
+                        </button>
+                        {user.tier === 'free' ? (
+                          <button onClick={()=>onUnlockVac&&onUnlockVac()}
+                            style={{height:38, padding:'0 16px', fontSize:12.5, borderRadius:999,
+                              border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700,
+                              background:'linear-gradient(135deg,#0c4a6e,#0077B6)',
+                              color:'#fff', display:'flex', alignItems:'center', gap:6}}>
+                            {Icon.lock(13,'#fff')}
+                            {lang==='pt'?'PRO para aplicar':lang==='es'?'PRO para aplicar':'PRO to apply'}
+                          </button>
+                        ) : (
+                          <button onClick={()=>openDayPicker && openDayPicker(vac)}
+                            className="pg-btn pg-btn-primary"
+                            style={{height:38, padding:'0 20px', fontSize:13.5, borderRadius:999, gap:5}}>
+                            {pickDaysLabel} →
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {isOwner && user?.role !== 'admin' && (
                       <div style={{display:'flex', gap:6}}>
                         <button onClick={()=>onEditVac && onEditVac(vac)}
@@ -3988,7 +4001,8 @@ function DayChips({ days, bookedDays=[], selectedDays=null, size=26, yearMonth=n
 function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDays=[] }) {
   const [selected, setSelected] = React.useState(new Set());
   const [submitted, setSubmitted] = React.useState(false);
-  const [conflictPending, setConflictPending] = React.useState(null); // {d, owner}
+  const [conflictPending,    setConflictPending]    = React.useState(null); // {d, owner}
+  const [showCommitWarning,  setShowCommitWarning]  = React.useState(false);
 
   // Build a map of confirmed date-keys → owner name
   const confirmedMap = React.useMemo(() => {
@@ -4277,9 +4291,50 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
             </div>
           )}
         </div>
+        {/* Commitment warning dialog */}
+        {showCommitWarning && (
+          <div style={{
+            marginBottom:12, padding:'16px', borderRadius:14,
+            background:'oklch(0.97 0.04 60)', border:'1.5px solid oklch(0.80 0.12 60)',
+          }}>
+            <div style={{fontSize:15, fontWeight:700, color:'oklch(0.38 0.14 55)', marginBottom:8}}>
+              ⚠️ {lang==='pt'?'Compromisso obrigatório'
+                  :lang==='es'?'Compromiso obligatorio'
+                  :'Mandatory commitment'}
+            </div>
+            <div style={{fontSize:13, color:'oklch(0.42 0.12 55)', lineHeight:1.55, marginBottom:14}}>
+              {lang==='pt'
+                ? `Ao confirmar, você se compromete a cobrir os ${selArr.length} dia(s) selecionado(s). Faltas sem justificativa resultarão em penalidades no aplicativo, incluindo suspensão de conta.`
+                : lang==='es'
+                  ? `Al confirmar, te comprometes a cubrir los ${selArr.length} día(s) seleccionado(s). Las ausencias injustificadas resultarán en penalidades en la app, incluyendo suspensión de cuenta.`
+                  : `By confirming, you commit to covering the ${selArr.length} selected day(s). Unjustified no-shows will result in app penalties, including account suspension.`}
+            </div>
+            <div style={{display:'flex', gap:8}}>
+              <button onClick={()=>setShowCommitWarning(false)}
+                style={{
+                  flex:1, height:42, borderRadius:10, fontSize:13, fontWeight:600,
+                  border:'1px solid var(--pg-ink-200)', background:'var(--pg-ink-100)',
+                  color:'var(--pg-ink-700)', cursor:'pointer', fontFamily:'inherit',
+                }}>
+                {lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}
+              </button>
+              <button onClick={()=>{ setShowCommitWarning(false); setSubmitted(true); setTimeout(onSubmit, 1600); }}
+                style={{
+                  flex:2, height:42, borderRadius:10, fontSize:13, fontWeight:700,
+                  border:'none', background:'var(--pg-blue-500)',
+                  color:'#fff', cursor:'pointer', fontFamily:'inherit',
+                }}>
+                {lang==='pt'?'Entendi, confirmar aplicação'
+                :lang==='es'?'Entendido, confirmar'
+                :'I understand, confirm'}
+              </button>
+            </div>
+          </div>
+        )}
+
         <button
-          disabled={selArr.length === 0}
-          onClick={()=>{ setSubmitted(true); setTimeout(onSubmit, 1600); }}
+          disabled={selArr.length === 0 || submitted}
+          onClick={()=>{ if (!submitted) setShowCommitWarning(true); }}
           className="pg-btn pg-btn-primary"
           style={{width:'100%', height:50, fontSize:15, fontWeight:700, borderRadius:14,
             opacity: selArr.length === 0 ? 0.4 : 1}}>
