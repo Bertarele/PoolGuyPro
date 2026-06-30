@@ -2862,7 +2862,7 @@ function PostVacationSheet({ onClose, lang='en', onSubmit, initialData=null }) {
   const [weekdayRegions, setWeekdayRegions] = React.useState(initialData?.weekdayRegions || {});
   const [poolsPerWeekday, setPoolsPerWeekday] = React.useState(initialData?.poolsPerWeekday || {});
   const [wdAddresses, setWdAddresses]         = React.useState({});  // {wd: string[]}
-  const [price, setPrice] = React.useState(initialData?.price ?? '55');
+  const [price, setPrice] = React.useState(initialData?.price ?? '0');
   const [priceMode, setPriceMode] = React.useState(initialData?.priceMode ?? 'fixed');
   const [note, setNote] = React.useState(initialData?.note || '');
 
