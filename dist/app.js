@@ -702,7 +702,15 @@ function App() {
       o.stop(ac.currentTime + 0.25);
     } catch (e) {}
   };
-  const [pushLog, setPushLog] = React.useState('');
+  const [pushLog, setPushLog] = React.useState(() => {
+    try {
+      const stored = localStorage.getItem('pg_push_log') || '';
+      // Only restore final states (✅ or ❌) — never restore intermediate "aguardando..." messages
+      return stored.startsWith('✅') || stored.startsWith('❌') ? stored : '';
+    } catch {
+      return '';
+    }
+  });
   const _setPushLog = msg => {
     setPushLog(msg);
     try {
@@ -726,9 +734,8 @@ function App() {
       _setPushLog('❌ permissão negada: ' + permission);
       return;
     }
-    _setPushLog('aguardando service worker...');
     try {
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await Promise.race([navigator.serviceWorker.ready, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout aguardando SW')), 10000))]);
       _setPushLog('criando subscription...');
       const existing = await reg.pushManager.getSubscription();
       const sub = existing || (await reg.pushManager.subscribe({
