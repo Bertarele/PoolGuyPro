@@ -2793,11 +2793,11 @@ function WorkJobHistory({
   const [expanded, setExpanded] = React.useState(false);
   React.useEffect(() => {
     if (!user?.uid || !window.sb) return;
-    window.sb.from('jobs').select('id, role, loc, pay, pay_mode, hired_at, created_at').eq('author_id', user.uid).filter('hired_at', 'not.is', null).order('hired_at', {
+    window.sb.from('jobs').select('id, role, loc, pay, pay_mode, hired_at, created_at').eq('author_id', user.uid).order('created_at', {
       ascending: false
     }).then(({
       data
-    }) => setJobs(data || []));
+    }) => setJobs((data || []).filter(j => j.hired_at)));
   }, [user?.uid]);
   if (!jobs || jobs.length === 0) return null;
   const title = lang === 'pt' ? 'Histórico de Vagas' : lang === 'es' ? 'Historial de Empleos' : 'Job History';
