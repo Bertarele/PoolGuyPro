@@ -3039,21 +3039,27 @@ function PostVacationSheet({ onClose, lang='en', onSubmit, initialData=null }) {
                 ))}
                 {Array.from({length: daysInMonth}, (_, i) => i+1).map(d => {
                   const on = selectedDays.has(d);
-                  const today = new Date();
-                  const isToday = today.getDate()===d && today.getMonth()===monthIdx && today.getFullYear()===year;
+                  const _now = new Date(); _now.setHours(0,0,0,0);
+                  const _dayDate = new Date(year, monthIdx, d);
+                  const isPastDay = _dayDate < _now;
+                  const isToday = _dayDate.getTime() === _now.getTime();
                   return (
-                    <button key={d} onClick={()=>toggleDay(d)} style={{
+                    <button key={d} onClick={()=>!isPastDay && toggleDay(d)} style={{
                       width:DAY_SIZE, height:DAY_SIZE,
                       borderRadius:10, fontSize:13, fontWeight: on ? 700 : 500,
                       display:'flex', alignItems:'center', justifyContent:'center',
-                      background: on
-                        ? 'var(--pg-blue-500)'
+                      background: isPastDay ? 'transparent'
+                        : on ? 'var(--pg-blue-500)'
                         : isToday ? 'var(--pg-blue-50)' : 'transparent',
-                      color: on ? '#fff' : isToday ? 'var(--pg-blue-600)' : 'var(--pg-ink-800)',
-                      border: isToday && !on ? '1.5px solid var(--pg-blue-200)' : 'none',
-                      cursor:'pointer', fontFamily:'inherit',
+                      color: isPastDay ? 'var(--pg-ink-200)'
+                        : on ? '#fff'
+                        : isToday ? 'var(--pg-blue-600)' : 'var(--pg-ink-800)',
+                      border: isToday && !on && !isPastDay ? '1.5px solid var(--pg-blue-200)' : 'none',
+                      cursor: isPastDay ? 'default' : 'pointer',
+                      fontFamily:'inherit',
                       boxShadow: on ? '0 2px 6px rgba(0,119,182,0.35)' : 'none',
                       transition:'all .12s ease',
+                      textDecoration: isPastDay ? 'line-through' : 'none',
                     }}>{d}</button>
                   );
                 })}
@@ -3998,7 +4004,15 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
   if (!vac) return null;
 
   const bookedSet   = new Set(vac.bookedDays || []);
-  const availDays   = vac.days.filter(d => !bookedSet.has(d));
+  const _vacToday   = new Date(); _vacToday.setHours(0,0,0,0);
+  const availDays   = vac.days.filter(d => {
+    if (bookedSet.has(d)) return false;
+    if (vac.yearMonth) {
+      const dd = new Date(vac.yearMonth.year, vac.yearMonth.month, d);
+      if (dd < _vacToday) return false;
+    }
+    return true;
+  });
   const selArr      = Array.from(selected);
 
   // Weekday short names per lang (Sun=0)
@@ -4096,24 +4110,30 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
           const sel      = selected.has(d);
           const poolsCnt = getPoolsForDay(d);
           const wd       = getDayWd(d);
-          const isConflict = !booked && !sel && vac.yearMonth &&
+          const _today = new Date(); _today.setHours(0,0,0,0);
+          const _dayDate = vac.yearMonth ? new Date(vac.yearMonth.year, vac.yearMonth.month, d) : null;
+          const isPastDay = _dayDate ? _dayDate < _today : false;
+          const isUnavail = booked || isPastDay;
+          const isConflict = !isUnavail && !sel && vac.yearMonth &&
             !!confirmedMap[`${vac.yearMonth.year}-${vac.yearMonth.month}-${d}`];
           return (
-            <button key={d} onClick={()=>toggle(d)} style={{
+            <button key={d} onClick={()=>!isUnavail && toggle(d)} style={{
               width:56, height:68, borderRadius:12, border: isConflict ? '2px solid var(--pg-warn)' : 'none',
-              cursor: booked ? 'default' : 'pointer',
+              cursor: isUnavail ? 'default' : 'pointer',
               display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1,
               fontFamily:'inherit', transition:'all .12s ease',
-              background: booked    ? 'var(--pg-ink-100)'
-                        : isConflict? 'oklch(0.97 0.05 60)'
-                        : sel       ? 'var(--pg-blue-500)'
-                        :             'var(--pg-blue-100)',
-              color:      booked    ? 'var(--pg-ink-300)'
-                        : isConflict? 'oklch(0.48 0.14 60)'
-                        : sel       ? '#fff'
-                        :             'var(--pg-blue-600)',
-              boxShadow:  sel && !booked ? '0 4px 12px oklch(0.58 0.16 235 / 0.35)' : 'none',
-              transform:  sel && !booked ? 'scale(1.06)' : 'scale(1)',
+              background: isUnavail  ? 'var(--pg-ink-100)'
+                        : isConflict ? 'oklch(0.97 0.05 60)'
+                        : sel        ? 'var(--pg-blue-500)'
+                        :              'var(--pg-blue-100)',
+              color:      isUnavail  ? 'var(--pg-ink-300)'
+                        : isConflict ? 'oklch(0.48 0.14 60)'
+                        : sel        ? '#fff'
+                        :              'var(--pg-blue-600)',
+              boxShadow:  sel && !isUnavail ? '0 4px 12px oklch(0.58 0.16 235 / 0.35)' : 'none',
+              transform:  sel && !isUnavail ? 'scale(1.06)' : 'scale(1)',
+              textDecoration: isPastDay && !booked ? 'line-through' : 'none',
+              opacity: isPastDay ? 0.5 : 1,
             }}>
               {getDayName(d) && (
                 <span style={{fontSize:8.5, fontWeight:700, letterSpacing:'0.03em', opacity: booked ? 0.5 : 0.85}}>

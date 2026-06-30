@@ -36,7 +36,7 @@ function PostQuickPool({
           saltwater: initialData.extras?.saltwater || false
         }],
         priceMode: initialData.price_negotiable ? 'neg' : 'fixed',
-        price: initialData.price_per_pool ? String(initialData.price_per_pool) : '45',
+        price: initialData.price_per_pool ? String(initialData.price_per_pool) : '0',
         date: lang === 'pt' ? 'Agora' : lang === 'es' ? 'Ahora' : 'Now',
         showPhone: !!initialData.poster_phone,
         phone: initialData.poster_phone || '',
@@ -51,7 +51,7 @@ function PostQuickPool({
       notes: '',
       pools: [newPool(1)],
       priceMode: 'fixed',
-      price: '45',
+      price: '0',
       date: lang === 'pt' ? 'Agora' : lang === 'es' ? 'Ahora' : 'Now',
       showPhone: false,
       phone: '',
