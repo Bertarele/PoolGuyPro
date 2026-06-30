@@ -100,11 +100,12 @@ function QuickPoolsScreen({ ctx }) {
   React.useEffect(() => { checkNotifStatus(); }, [checkNotifStatus]);
 
   const activatePush = React.useCallback(async () => {
-    // If already denied, skip the (no-op) request and go straight to instructions
     if (Notification.permission === 'denied') { setNotifHelpOpen(true); return; }
-    if (ctx.registerPush) await ctx.registerPush();
+    // retryPush calls _registerPush(true) — triggers the browser permission prompt
+    if (ctx.retryPush) { await ctx.retryPush(); await checkNotifStatus(); return; }
+    if (ctx.registerPush) await ctx.registerPush(true);
     await checkNotifStatus();
-  }, [ctx.registerPush, checkNotifStatus]);
+  }, [ctx.retryPush, ctx.registerPush, checkNotifStatus]);
 
   // Auto-prompt when tab opens and permission not yet decided
   const autoPromptedRef = React.useRef(false);
