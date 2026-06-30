@@ -4369,14 +4369,30 @@ function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToa
   const labelspt = { 1:'Péssimo', 2:'Ruim', 3:'Ok', 4:'Bom', 5:'Excelente!' };
 
   const handleSubmit = async () => {
-    if (!stars || !window.sb) return;
+    if (!stars || !window.sb || !currentUser?.uid || !rating?.to_id) return;
     setSubmitting(true);
     try {
-      const { error } = await window.sb.from('ratings')
-        .update({ stars, comment, pending: false })
-        .eq('id', rating.id)
-        .eq('from_id', currentUser.uid);
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const myName = currentUser.name || currentUser.displayName || '';
+      const { error } = await window.sb.from('ratings').upsert({
+        from_id:         currentUser.uid,
+        to_id:           rating.to_id,
+        from_name:       myName,
+        listing_name:    rating.listing_name || rating.to_name || null,
+        stars,
+        comment:         comment || null,
+        pending:         true,
+        connection_type: rating.connection_type || null,
+        connection_id:   rating.connection_id   || null,
+        expires_at:      expiresAt,
+      }, { onConflict: 'from_id,to_id' });
       if (error) throw error;
+      if (window.sendPush && rating.to_id) {
+        const msg = lang==='pt'
+          ? `${myName} avaliou você! Avalie-o(a) em até 7 dias para ver a nota.`
+          : `${myName} rated you! Rate them back within 7 days to see their rating.`;
+        window.sendPush(rating.to_id, myName, msg, '/#home', 'rating');
+      }
       showToast && showToast('⭐ ' + (lang==='pt' ? 'Avaliação enviada!' : 'Rating submitted!'));
       onDone && onDone(rating.id);
     } catch(e) {
@@ -4583,32 +4599,49 @@ function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUse
 
   const rating = pendingRatings[0] || null;
 
+  // rating.from_id = the person who rated ME; I need to rate them back
   React.useEffect(() => {
-    if (!open || !rating?.to_id || !window.sb) { setToProfile(null); setStars(0); setComment(''); return; }
-    window.sb.from('profiles').select('name,photo_url').eq('id', rating.to_id).single()
+    if (!open || !rating?.from_id || !window.sb) { setToProfile(null); setStars(0); setComment(''); return; }
+    window.sb.from('profiles').select('name,photo_url').eq('id', rating.from_id).single()
       .then(({ data }) => { if (data) setToProfile(data); })
       .catch(() => {});
-  }, [open, rating?.to_id]);
+  }, [open, rating?.from_id]);
 
   if (!open || !rating) return null;
 
-  const toName      = toProfile?.name || rating.to_name || rating.from_name || '?';
+  const toName      = toProfile?.name || rating.from_name || '?';
   const listingName = rating.listing_name || '';
   const count       = pendingRatings.length;
   const labels      = { 1:'Poor', 2:'Fair', 3:'Good', 4:'Very Good', 5:'Excellent!' };
   const labelspt    = { 1:'Péssimo', 2:'Ruim', 3:'Ok', 4:'Bom', 5:'Excelente!' };
 
   const handleSubmit = async () => {
-    if (!stars || !window.sb) return;
+    if (!stars || !window.sb || !currentUser?.uid || !rating?.from_id) return;
     setSubmitting(true);
     try {
-      const { error } = await window.sb.from('ratings')
-        .update({ stars, comment, pending: false })
-        .eq('id', rating.id)
-        .eq('from_id', currentUser.uid);
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const myName = currentUser.name || currentUser.displayName || '';
+      const { error } = await window.sb.from('ratings').upsert({
+        from_id:         currentUser.uid,
+        to_id:           rating.from_id,
+        from_name:       myName,
+        listing_name:    rating.listing_name || null,
+        stars,
+        comment:         comment || null,
+        pending:         true,
+        connection_type: rating.connection_type || null,
+        connection_id:   rating.connection_id   || null,
+        expires_at:      expiresAt,
+      }, { onConflict: 'from_id,to_id' });
       if (error) throw error;
+      if (window.sendPush && rating.from_id) {
+        const msg = lang==='pt'
+          ? `${myName} também te avaliou! Ambas as avaliações agora estão visíveis.`
+          : `${myName} also rated you! Both ratings are now visible.`;
+        window.sendPush(rating.from_id, myName, msg, '/#home', 'rating');
+      }
       showToast && showToast('⭐ ' + (lang==='pt' ? 'Avaliação enviada!' : 'Rating submitted!'));
-      onRateNow && onRateNow(null); // signal done (null = don't open RatingSheet again)
+      onRateNow && onRateNow(null);
     } catch(e) {
       showToast && showToast('❌ ' + (e.message || 'Error'));
       setSubmitting(false);
@@ -4659,9 +4692,9 @@ function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUse
           </div>
           <div style={{fontSize:12.5, color:'var(--pg-ink-500)', textAlign:'center', lineHeight:1.5}}>
             {lang==='pt'
-              ? `Comprou "${listingName}"`
-              : lang==='es' ? `Compró "${listingName}"`
-              : `Purchased "${listingName}"`}
+              ? (listingName ? `Transação: "${listingName}"` : 'Avalie para revelar a nota deles')
+              : lang==='es' ? (listingName ? `Transacción: "${listingName}"` : 'Evalúa para revelar su calificación')
+              : (listingName ? `Transaction: "${listingName}"` : 'Rate them to reveal their rating')}
             {count > 1 && (
               <span style={{marginLeft:8, fontSize:11, fontWeight:700, padding:'2px 7px', borderRadius:6,
                 background:'var(--pg-blue-500)', color:'#fff', verticalAlign:'middle'}}>

@@ -4,7 +4,7 @@ function WorkScreen({ ctx }) {
   const { lang, openChat, goTab, openPostMenu, openApplicants, openJobDetail,
           openHiringAppDetail, openApplyJob,
           openVacSheet, openEditVacSheet, openHiringSheet, openTechSheet, openDayPicker, openSchedule,
-          openPublicProfile, showToast,
+          openPublicProfile, showToast, openRating,
           removeJob, removeTech, removeVacation,
           liveJobs=[], liveTechs=[], liveVacations=[],
           liveApplications=[], jobApplicantCounts={},
@@ -277,7 +277,16 @@ function WorkScreen({ ctx }) {
       await window.sb.from('job_applications').update({ status: 'completed' }).eq('id', app.id);
     }
     setCompletedAppIds(p => new Set([...p, app.id]));
-  }, []);
+    if (app.author_id && openRating) {
+      openRating({
+        to_id:           app.author_id,
+        to_name:         app.company || '',
+        listing_name:    tr(app.title, lang) || app.company || '',
+        connection_type: 'hiring',
+        connection_id:   app.job_id || app.id,
+      });
+    }
+  }, [openRating, lang]);
 
   const deletePost = React.useCallback(async (post) => {
     if (post._live && window.sb) {

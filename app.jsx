@@ -444,12 +444,21 @@ function App() {
   const loadPendingRatings = React.useCallback(async () => {
     if (!window.sb || !user?.uid) return;
     try {
-      const { data } = await window.sb.from('ratings')
-        .select('id,listing_id,listing_name,from_id,from_name,to_id,stars,created_at')
-        .eq('from_id', user.uid)
+      // Find people who rated ME but I haven't rated back yet
+      const { data: received } = await window.sb.from('ratings')
+        .select('id,listing_id,listing_name,from_id,from_name,to_id,connection_type,connection_id,created_at,expires_at')
+        .eq('to_id', user.uid)
         .eq('pending', true)
         .order('created_at', { ascending: true });
-      setPendingRatings(data || []);
+      if (!received || received.length === 0) { setPendingRatings([]); return; }
+      const now = Date.now();
+      const notExpired = received.filter(r => !r.expires_at || new Date(r.expires_at).getTime() > now);
+      if (notExpired.length === 0) { setPendingRatings([]); return; }
+      // Filter out ones I already rated back
+      const { data: myRatings } = await window.sb.from('ratings')
+        .select('to_id').eq('from_id', user.uid).in('to_id', notExpired.map(r => r.from_id));
+      const alreadyRated = new Set((myRatings || []).map(r => r.to_id));
+      setPendingRatings(notExpired.filter(r => !alreadyRated.has(r.from_id)));
     } catch(e) {}
   }, [user?.uid]);
 
