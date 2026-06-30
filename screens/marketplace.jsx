@@ -4480,9 +4480,11 @@ function MarketplaceScreen({ ctx }) {
                   {Icon.cart(20,ic)}
                 </div>
                 <div>
-                  <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:2, textTransform:'uppercase'}}>{t.marketplace}</div>
+                  <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:2, textTransform:'uppercase'}}>
+                    {lang==='pt'?'COMPRAR · VENDER · ALUGAR':lang==='es'?'COMPRAR · VENDER · ALQUILAR':'BUY · SELL · RENT'}
+                  </div>
                   <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
-                    {locationLbl}
+                    {lang==='pt'?'Equipamentos & Rotas':lang==='es'?'Equipos & Rutas':'Equipment & Routes'}
                   </div>
                 </div>
               </div>

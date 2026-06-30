@@ -8621,7 +8621,7 @@ function MarketplaceScreen({
           marginBottom: 2,
           textTransform: 'uppercase'
         }
-      }, t.marketplace), /*#__PURE__*/React.createElement("div", {
+      }, lang === 'pt' ? 'COMPRAR · VENDER · ALUGAR' : lang === 'es' ? 'COMPRAR · VENDER · ALQUILAR' : 'BUY · SELL · RENT'), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'var(--pg-font-display)',
           fontSize: 22,
@@ -8630,7 +8630,7 @@ function MarketplaceScreen({
           lineHeight: 1.1,
           color: H.text
         }
-      }, locationLbl))),
+      }, lang === 'pt' ? 'Equipamentos & Rotas' : lang === 'es' ? 'Equipos & Rutas' : 'Equipment & Routes'))),
       leftBack: !isDesktop,
       onBack: () => goTab('home'),
       right: isDesktop ? null : /*#__PURE__*/React.createElement("div", {
