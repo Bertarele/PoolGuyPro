@@ -507,41 +507,57 @@ function App() {
   });
   const _setPushLog = (msg) => { setPushLog(msg); try { localStorage.setItem('pg_push_log', msg); } catch{} };
 
-  const _registerPush = React.useCallback(async () => {
+  // manual=true: show step-by-step log; manual=false: silent (only set final ✅ or leave as-is)
+  const _registerPush = React.useCallback(async (manual = false) => {
     if (!user?.uid) return;
-    _setPushLog('iniciando...');
-    if (!('serviceWorker' in navigator)) { _setPushLog('❌ serviceWorker não suportado'); return; }
-    if (!('PushManager' in window))      { _setPushLog('❌ PushManager indisponível — abra pelo ícone da Home Screen'); return; }
-    _setPushLog('pedindo permissão...');
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') { _setPushLog('❌ permissão negada: ' + permission); return; }
+    if (!('serviceWorker' in navigator)) {
+      if (manual) _setPushLog('❌ serviceWorker não suportado');
+      return;
+    }
+    if (!('PushManager' in window)) {
+      if (manual) _setPushLog('❌ PushManager indisponível — abra pelo ícone da Home Screen');
+      return;
+    }
     try {
       const reg = await Promise.race([
         navigator.serviceWorker.ready,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout aguardando SW')), 10000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('SW timeout')), 10000)),
       ]);
-      _setPushLog('criando subscription...');
+      // Check for existing subscription first (silent path — no permission prompt)
       const existing = await reg.pushManager.getSubscription();
-      const sub = existing || await reg.pushManager.subscribe({
+      if (existing) {
+        const j = existing.toJSON();
+        await window.sb.from('push_subscriptions').upsert({
+          user_id: user.uid, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth,
+        }, { onConflict: 'user_id,endpoint' });
+        _setPushLog('✅ notificações ativas');
+        return;
+      }
+      // No existing subscription — need permission (only on manual tap)
+      if (!manual) return;
+      _setPushLog('pedindo permissão...');
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') { _setPushLog('❌ permissão negada: ' + permission); return; }
+      _setPushLog('ativando...');
+      const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
       });
       const j = sub.toJSON();
-      _setPushLog('salvando no banco...');
       const { error } = await window.sb.from('push_subscriptions').upsert({
-        user_id:  user.uid,
-        endpoint: j.endpoint,
-        p256dh:   j.keys.p256dh,
-        auth:     j.keys.auth,
+        user_id: user.uid, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth,
       }, { onConflict: 'user_id,endpoint' });
-      if (error) { _setPushLog('❌ upsert falhou: ' + error.message); return; }
+      if (error) { _setPushLog('❌ erro ao salvar: ' + error.message); return; }
       _setPushLog('✅ notificações ativas');
-    } catch(e) { _setPushLog('❌ erro: ' + (e.message || String(e))); }
+    } catch(e) {
+      if (manual) _setPushLog('❌ erro: ' + (e.message || String(e)));
+    }
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-register silently on login (no permission prompt — only refreshes existing sub)
   React.useEffect(() => {
     if (!isLoggedIn || !user?.uid) return;
-    const t = setTimeout(_registerPush, 2000);
+    const t = setTimeout(() => _registerPush(false), 2000);
     return () => clearTimeout(t);
   }, [isLoggedIn, user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1117,7 +1133,7 @@ function App() {
       showToast && showToast('✓ Verificação solicitada! Nossa equipe vai analisar em breve.');
     },
     openPushNotif:      () => setPushNotifOpen(true),
-    retryPush: _registerPush,
+    retryPush: () => _registerPush(true),
     pushLog,
     openWallet:         () => setWalletOpen(true),
     openJobDetail:      (app) => setJobDetailApp(app),
