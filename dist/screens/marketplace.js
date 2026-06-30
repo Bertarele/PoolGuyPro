@@ -6821,9 +6821,14 @@ function MarketplaceScreen({
       es: 'Pole'
     },
     Car: {
-      en: 'Car',
-      pt: 'Carro',
-      es: 'Carro'
+      en: 'Cart',
+      pt: 'Carrinho',
+      es: 'Carrito'
+    },
+    Truck: {
+      en: 'Truck',
+      pt: 'Truck',
+      es: 'Truck'
     },
     Jug: {
       en: 'Jug',
@@ -12167,7 +12172,7 @@ function PostEquipmentSheet({
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [cat, setCat] = React.useState('Pumps');
-  const [condition, setCondition] = React.useState('likeNew');
+  const [condition, setCondition] = React.useState('new');
   const [price, setPrice] = React.useState('');
   const [loc, setLoc] = React.useState('');
   const [priceMode, setPriceMode] = React.useState('fixed');
@@ -12203,13 +12208,14 @@ function PostEquipmentSheet({
   }];
   // At least one period must be enabled with a valid price
   const hasAnyRentPrice = isRent && periodOptions.some(p => rentEnabled[p.id] && rentPrices[p.id].trim().length > 0);
-  const cats = ['Pumps', 'Vacuum', 'Heaters', 'Pole', 'Car', 'Jug', 'Net', 'Chemicals', 'Filters', 'Others'];
+  const cats = ['Pumps', 'Vacuum', 'Heaters', 'Pole', 'Car', 'Truck', 'Jug', 'Net', 'Chemicals', 'Filters', 'Others'];
   const catLabels = {
     Pumps: lang === 'pt' ? 'Bombas' : lang === 'es' ? 'Bombas' : 'Pumps',
     Vacuum: lang === 'pt' ? 'Aspiradores' : lang === 'es' ? 'Aspiradores' : 'Vacuum',
     Heaters: lang === 'pt' ? 'Aquecedores' : lang === 'es' ? 'Calentadores' : 'Heaters',
     Pole: 'Pole',
-    Car: lang === 'pt' ? 'Carro' : lang === 'es' ? 'Carro' : 'Car',
+    Car: lang === 'pt' ? 'Carrinho' : lang === 'es' ? 'Carrito' : 'Cart',
+    Truck: 'Truck',
     Jug: 'Jug',
     Net: 'Net',
     Chemicals: lang === 'pt' ? 'Químicos' : lang === 'es' ? 'Químicos' : 'Chemicals',
@@ -12217,6 +12223,9 @@ function PostEquipmentSheet({
     Others: lang === 'pt' ? 'Outros' : lang === 'es' ? 'Otros' : 'Others'
   };
   const conditions = [{
+    id: 'new',
+    label: t.newLbl
+  }, {
     id: 'likeNew',
     label: t.likeNewLbl
   }, {

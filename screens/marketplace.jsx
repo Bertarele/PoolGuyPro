@@ -3600,17 +3600,18 @@ function MarketplaceScreen({ ctx }) {
   };
 
   const catLabels = {
-    All:       {en:'All',        pt:'Todos',        es:'Todos'},
-    Pumps:     {en:'Pumps',      pt:'Bombas',        es:'Bombas'},
-    Vacuum:    {en:'Vacuum',     pt:'Aspiradores',   es:'Aspiradores'},
-    Heaters:   {en:'Heaters',    pt:'Aquecedores',   es:'Calentadores'},
-    Pole:      {en:'Pole',       pt:'Pole',          es:'Pole'},
-    Car:       {en:'Car',        pt:'Carro',         es:'Carro'},
-    Jug:       {en:'Jug',        pt:'Jug',           es:'Jug'},
-    Net:       {en:'Net',        pt:'Net',           es:'Net'},
-    Chemicals: {en:'Chemicals',  pt:'Químicos',      es:'Químicos'},
-    Filters:   {en:'Filters',    pt:'Filtros',       es:'Filtros'},
-    Others:    {en:'Others',     pt:'Outros',        es:'Otros'},
+    All:       {en:'All',        pt:'Todos',         es:'Todos'},
+    Pumps:     {en:'Pumps',      pt:'Bombas',         es:'Bombas'},
+    Vacuum:    {en:'Vacuum',     pt:'Aspiradores',    es:'Aspiradores'},
+    Heaters:   {en:'Heaters',    pt:'Aquecedores',    es:'Calentadores'},
+    Pole:      {en:'Pole',       pt:'Pole',           es:'Pole'},
+    Car:       {en:'Cart',       pt:'Carrinho',       es:'Carrito'},
+    Truck:     {en:'Truck',      pt:'Truck',          es:'Truck'},
+    Jug:       {en:'Jug',        pt:'Jug',            es:'Jug'},
+    Net:       {en:'Net',        pt:'Net',            es:'Net'},
+    Chemicals: {en:'Chemicals',  pt:'Químicos',       es:'Químicos'},
+    Filters:   {en:'Filters',    pt:'Filtros',        es:'Filtros'},
+    Others:    {en:'Others',     pt:'Outros',         es:'Otros'},
   };
   const cats = Object.keys(catLabels);
 
@@ -6235,7 +6236,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
   const [name,        setName]       = React.useState('');
   const [description, setDescription]= React.useState('');
   const [cat,         setCat]        = React.useState('Pumps');
-  const [condition,   setCondition]  = React.useState('likeNew');
+  const [condition,   setCondition]  = React.useState('new');
   const [price,       setPrice]      = React.useState('');
   const [loc,         setLoc]        = React.useState('');
   const [priceMode,   setPriceMode]  = React.useState('fixed');
@@ -6260,13 +6261,14 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
   // At least one period must be enabled with a valid price
   const hasAnyRentPrice = isRent && periodOptions.some(p => rentEnabled[p.id] && rentPrices[p.id].trim().length > 0);
 
-  const cats = ['Pumps','Vacuum','Heaters','Pole','Car','Jug','Net','Chemicals','Filters','Others'];
+  const cats = ['Pumps','Vacuum','Heaters','Pole','Car','Truck','Jug','Net','Chemicals','Filters','Others'];
   const catLabels = {
     Pumps:     lang==='pt'?'Bombas':     lang==='es'?'Bombas':     'Pumps',
     Vacuum:    lang==='pt'?'Aspiradores':lang==='es'?'Aspiradores':'Vacuum',
     Heaters:   lang==='pt'?'Aquecedores':lang==='es'?'Calentadores':'Heaters',
     Pole:      'Pole',
-    Car:       lang==='pt'?'Carro':      lang==='es'?'Carro':      'Car',
+    Car:       lang==='pt'?'Carrinho':   lang==='es'?'Carrito':    'Cart',
+    Truck:     'Truck',
     Jug:       'Jug',
     Net:       'Net',
     Chemicals: lang==='pt'?'Químicos':   lang==='es'?'Químicos':   'Chemicals',
@@ -6275,6 +6277,7 @@ function PostEquipmentSheet({ lang, t, mode='sell', onClose, onSubmit }) {
   };
 
   const conditions = [
+    { id:'new',     label:t.newLbl },
     { id:'likeNew', label:t.likeNewLbl },
     { id:'good',    label:t.goodLbl },
     { id:'used',    label:t.usedLbl },

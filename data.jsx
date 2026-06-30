@@ -114,7 +114,7 @@ const STRINGS = {
     rejected:'Rejected', pendingLbl:'Pending',
     // Marketplace post form
     whatToList:'What do you want to list?', postListingBtn:'Post listing',
-    conditionLbl:'Condition', likeNewLbl:'Like new', goodLbl:'Good', usedLbl:'Used', forPartsLbl:'For parts',
+    conditionLbl:'Condition', newLbl:'New', likeNewLbl:'Like new', goodLbl:'Good', usedLbl:'Used', forPartsLbl:'For parts',
     modelLbl:'Model / Name', modelPh:'e.g. Pentair IntelliFlo VSF',
     ratePerDay:'Rate per day', ratePerWeek:'Rate per week',
     routeNameLbl:'Route name', routeNamePh:'e.g. Weston Lakes — 14 pools',
@@ -224,7 +224,7 @@ const STRINGS = {
     rejected:'Rejeitado', pendingLbl:'Pendente',
     // Marketplace post form
     whatToList:'O que você quer anunciar?', postListingBtn:'Publicar anúncio',
-    conditionLbl:'Condição', likeNewLbl:'Seminovo', goodLbl:'Bom estado', usedLbl:'Usado', forPartsLbl:'Para peças',
+    conditionLbl:'Condição', newLbl:'Novo', likeNewLbl:'Seminovo', goodLbl:'Bom estado', usedLbl:'Usado', forPartsLbl:'Para peças',
     modelLbl:'Modelo / Nome', modelPh:'ex: Pentair IntelliFlo VSF',
     ratePerDay:'Valor por dia', ratePerWeek:'Valor por semana',
     routeNameLbl:'Nome da rota', routeNamePh:'ex: Weston Lakes — 14 piscinas',
@@ -334,7 +334,7 @@ const STRINGS = {
     rejected:'Rechazado', pendingLbl:'Pendiente',
     // Marketplace post form
     whatToList:'¿Qué quieres publicar?', postListingBtn:'Publicar anuncio',
-    conditionLbl:'Condición', likeNewLbl:'Como nuevo', goodLbl:'Buen estado', usedLbl:'Usado', forPartsLbl:'Para repuestos',
+    conditionLbl:'Condición', newLbl:'Nuevo', likeNewLbl:'Como nuevo', goodLbl:'Buen estado', usedLbl:'Usado', forPartsLbl:'Para repuestos',
     modelLbl:'Modelo / Nombre', modelPh:'ej: Pentair IntelliFlo VSF',
     ratePerDay:'Tarifa por día', ratePerWeek:'Tarifa por semana',
     routeNameLbl:'Nombre de ruta', routeNamePh:'ej: Weston Lakes — 14 piscinas',
