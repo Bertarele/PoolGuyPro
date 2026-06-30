@@ -1105,8 +1105,6 @@ const TECHS = [{
     pt: 'R$450/visita',
     es: '$90/visita'
   },
-  rating: 4.9,
-  jobs: 142,
   loc: 'Miami',
   phone: '(305) 487-2910',
   email: 'rafael.pool@gmail.com'
@@ -1123,8 +1121,6 @@ const TECHS = [{
     pt: 'R$550/visita',
     es: '$110/visita'
   },
-  rating: 4.8,
-  jobs: 88,
   loc: 'Fort Lauderdale',
   phone: '(954) 623-7841',
   email: null
@@ -1141,8 +1137,6 @@ const TECHS = [{
     pt: 'R$600/visita',
     es: '$120/visita'
   },
-  rating: 5.0,
-  jobs: 64,
   loc: 'Boca Raton',
   phone: '(561) 302-5588',
   email: 'anderson.pool@outlook.com'
@@ -1159,8 +1153,6 @@ const TECHS = [{
     pt: 'Orçamento',
     es: 'Cotización'
   },
-  rating: 4.7,
-  jobs: 51,
   loc: 'West Palm',
   phone: '(561) 774-1923',
   email: null
@@ -1210,8 +1202,6 @@ const VACATIONS_POSTED = [{
 const VACATION_LISTINGS = [{
   id: 1,
   owner: 'Marco S.',
-  ownerRating: 4.9,
-  ownerJobs: 87,
   month: {
     en: 'June 2026',
     pt: 'Junho 2026',
@@ -1242,8 +1232,6 @@ const VACATION_LISTINGS = [{
 }, {
   id: 2,
   owner: 'Lisa C.',
-  ownerRating: 4.8,
-  ownerJobs: 54,
   month: {
     en: 'July 2026',
     pt: 'Julho 2026',
@@ -1274,8 +1262,6 @@ const VACATION_LISTINGS = [{
 }, {
   id: 3,
   owner: 'David R.',
-  ownerRating: 5.0,
-  ownerJobs: 142,
   month: {
     en: 'August 2026',
     pt: 'Agosto 2026',
@@ -1306,8 +1292,6 @@ const VACATION_LISTINGS = [{
 }, {
   id: 4,
   owner: 'Ana P.',
-  ownerRating: 4.7,
-  ownerJobs: 31,
   month: {
     en: 'June 2026',
     pt: 'Junho 2026',
@@ -1337,49 +1321,7 @@ const VACATION_LISTINGS = [{
   }
 }];
 const VACATIONS_APPLIED = [];
-const REVIEWS = [{
-  id: 1,
-  from: 'Carlos N.',
-  rating: 5,
-  text: {
-    en: 'Took my whole route for a week. Pools were spotless when I got back.',
-    pt: 'Cobriu minha rota inteira por uma semana. As piscinas estavam impecáveis quando voltei.',
-    es: 'Cubrió toda mi ruta por una semana. Las piscinas estaban impecables al volver.'
-  },
-  when: {
-    en: '2 weeks ago',
-    pt: '2 semanas atrás',
-    es: 'hace 2 semanas'
-  }
-}, {
-  id: 2,
-  from: 'Patrícia L.',
-  rating: 5,
-  text: {
-    en: 'Super communicative. Pictures every day. Will hire again.',
-    pt: 'Super comunicativo. Fotos todos os dias. Contrato de novo.',
-    es: 'Muy comunicativo. Fotos cada día. Volveré a contratar.'
-  },
-  when: {
-    en: '1 month ago',
-    pt: '1 mês atrás',
-    es: 'hace 1 mes'
-  }
-}, {
-  id: 3,
-  from: 'Sandra R.',
-  rating: 4,
-  text: {
-    en: 'Solid work, just had to remind about the gate code once.',
-    pt: 'Bom trabalho, só tive que lembrar do código do portão uma vez.',
-    es: 'Buen trabajo, solo tuve que recordar el código del portón una vez.'
-  },
-  when: {
-    en: '2 months ago',
-    pt: '2 meses atrás',
-    es: 'hace 2 meses'
-  }
-}];
+const REVIEWS = [];
 const NOTIFICATIONS = [{
   id: 1,
   kind: 'job',

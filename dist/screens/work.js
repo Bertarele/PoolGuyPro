@@ -4275,7 +4275,20 @@ function TechsPanel({
         flex: 1,
         minWidth: 0
       }
-    }, tech.name)), /*#__PURE__*/React.createElement("div", {
+    }, tech.name), tech.rating != null && /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        fontSize: 12,
+        color: 'var(--pg-ink-700)',
+        fontWeight: 600,
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement(Stars, {
+      rating: tech.rating,
+      size: 11
+    }), " ", tech.rating)), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',
@@ -4463,9 +4476,9 @@ function TechsPanel({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => openPublicProfile && openPublicProfile({
       name: tech.name,
-      rating: tech.rating,
-      reviews: tech.jobs,
-      jobs: tech.jobs,
+      rating: null,
+      reviews: 0,
+      jobs: 0,
       loc: tech.loc
     }),
     style: {
@@ -4495,19 +4508,7 @@ function TechsPanel({
       flex: 1,
       minWidth: 0
     }
-  }, tech.name), /*#__PURE__*/React.createElement("span", {
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 3,
-      fontSize: 12,
-      color: 'var(--pg-ink-700)',
-      fontWeight: 600
-    }
-  }, /*#__PURE__*/React.createElement(Stars, {
-    rating: tech.rating,
-    size: 11
-  }), " ", tech.rating)), /*#__PURE__*/React.createElement("p", {
+  }, tech.name)), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: 0,
       fontSize: 13,
@@ -4548,7 +4549,7 @@ function TechsPanel({
       alignItems: 'center',
       gap: 5
     }
-  }, Icon.shield(13, 'var(--pg-ink-500)'), " ", verifiedLbl, " \xB7 ", tech.jobs, " ", lang === 'pt' ? 'trabalhos' : lang === 'es' ? 'trabajos' : 'jobs')), /*#__PURE__*/React.createElement("div", {
+  }, Icon.shield(13, 'var(--pg-ink-500)'), " ", verifiedLbl)), /*#__PURE__*/React.createElement("div", {
     className: "pg-divider",
     style: {
       margin: '12px 0'
@@ -4835,9 +4836,9 @@ function AcceptedVacCard({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => openPublicProfile && openPublicProfile({
       name: v.owner,
-      rating: v.ownerRating || 4.8,
-      reviews: v.ownerJobs || 30,
-      jobs: v.ownerJobs || 30,
+      rating: v.ownerRating || null,
+      reviews: v.ownerJobs || 0,
+      jobs: v.ownerJobs || 0,
       loc: v.region
     }),
     style: {
@@ -5869,9 +5870,9 @@ function VacationPanel({
       return /*#__PURE__*/React.createElement("button", {
         onClick: freeBlur ? () => onUnlockVac && onUnlockVac() : () => openPublicProfile && openPublicProfile({
           name: v.owner,
-          rating: v.ownerRating,
-          reviews: v.ownerJobs,
-          jobs: v.ownerJobs,
+          rating: v.ownerRating || null,
+          reviews: v.ownerJobs || 0,
+          jobs: v.ownerJobs || 0,
           loc: v.region
         }),
         style: {
@@ -5903,7 +5904,7 @@ function VacationPanel({
           fontSize: 13,
           fontWeight: 600
         }
-      }, v.owner), /*#__PURE__*/React.createElement("span", {
+      }, v.owner), v.ownerRating != null && /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
           color: 'var(--pg-ink-400)',

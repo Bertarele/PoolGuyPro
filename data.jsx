@@ -428,10 +428,10 @@ const QUICK_POOLS = [
 const HIRING = [];
 
 const TECHS = [
-  { id:1, name:'Rafael S.',  speciality:{en:'Pump & Motor Repair', pt:'Reparo de Bombas e Motores', es:'Reparación de Bombas'},    rate:{en:'$90/visit', pt:'R$450/visita', es:'$90/visita'}, rating:4.9, jobs:142, loc:'Miami',          phone:'(305) 487-2910', email:'rafael.pool@gmail.com' },
-  { id:2, name:'Joana P.',   speciality:{en:'Heater & Heat Pumps', pt:'Aquecedores e Bombas de Calor', es:'Calentadores y Bombas'}, rate:{en:'$110/visit', pt:'R$550/visita', es:'$110/visita'},rating:4.8, jobs:88,  loc:'Fort Lauderdale', phone:'(954) 623-7841', email:null },
-  { id:3, name:'Anderson L.',speciality:{en:'Automation & Salt Cells', pt:'Automação e Células de Sal', es:'Automatización y Celdas'}, rate:{en:'$120/visit', pt:'R$600/visita', es:'$120/visita'},rating:5.0, jobs:64,  loc:'Boca Raton',    phone:'(561) 302-5588', email:'anderson.pool@outlook.com' },
-  { id:4, name:'Carla M.',   speciality:{en:'Tile & Plaster', pt:'Azulejo e Reboco', es:'Azulejo y Yeso'},         rate:{en:'Quote', pt:'Orçamento', es:'Cotización'}, rating:4.7, jobs:51,  loc:'West Palm',       phone:'(561) 774-1923', email:null },
+  { id:1, name:'Rafael S.',  speciality:{en:'Pump & Motor Repair', pt:'Reparo de Bombas e Motores', es:'Reparación de Bombas'},    rate:{en:'$90/visit', pt:'R$450/visita', es:'$90/visita'}, loc:'Miami',          phone:'(305) 487-2910', email:'rafael.pool@gmail.com' },
+  { id:2, name:'Joana P.',   speciality:{en:'Heater & Heat Pumps', pt:'Aquecedores e Bombas de Calor', es:'Calentadores y Bombas'}, rate:{en:'$110/visit', pt:'R$550/visita', es:'$110/visita'}, loc:'Fort Lauderdale', phone:'(954) 623-7841', email:null },
+  { id:3, name:'Anderson L.',speciality:{en:'Automation & Salt Cells', pt:'Automação e Células de Sal', es:'Automatización y Celdas'}, rate:{en:'$120/visit', pt:'R$600/visita', es:'$120/visita'}, loc:'Boca Raton',    phone:'(561) 302-5588', email:'anderson.pool@outlook.com' },
+  { id:4, name:'Carla M.',   speciality:{en:'Tile & Plaster', pt:'Azulejo e Reboco', es:'Azulejo y Yeso'},         rate:{en:'Quote', pt:'Orçamento', es:'Cotización'}, loc:'West Palm',       phone:'(561) 774-1923', email:null },
 ];
 
 const VACATIONS_POSTED = [
@@ -447,7 +447,7 @@ const VACATIONS_POSTED = [
 
 // Available vacations from other pool guys (pool guy can apply, pick specific days)
 const VACATION_LISTINGS = [
-  { id:1, owner:'Marco S.', ownerRating:4.9, ownerJobs:87,
+  { id:1, owner:'Marco S.',
     month:{en:'June 2026', pt:'Junho 2026', es:'Junio 2026'},
     yearMonth:{year:2026, month:5},
     days:[2,3,4,5,6,9,10,11], bookedDays:[2,3],
@@ -459,7 +459,7 @@ const VACATION_LISTINGS = [
           pt:'Químicos e equipamentos no local. Chave embaixo do tapete.',
           es:'Químicos y equipos en sitio. Llave bajo el tapete.'} },
 
-  { id:2, owner:'Lisa C.', ownerRating:4.8, ownerJobs:54,
+  { id:2, owner:'Lisa C.',
     month:{en:'July 2026', pt:'Julho 2026', es:'Julio 2026'},
     yearMonth:{year:2026, month:6},
     days:[6,7,8,9,10,13,14], bookedDays:[6,7],
@@ -471,7 +471,7 @@ const VACATION_LISTINGS = [
           pt:'Caminhonete disponível se precisar. Rota de água salgada — 3 propriedades com cães.',
           es:'Camioneta disponible si se necesita. Ruta de agua salada — 3 propiedades con perros.'} },
 
-  { id:3, owner:'David R.', ownerRating:5.0, ownerJobs:142,
+  { id:3, owner:'David R.',
     month:{en:'August 2026', pt:'Agosto 2026', es:'Agosto 2026'},
     yearMonth:{year:2026, month:7},
     days:[3,4,5,6,7,10,11,12], bookedDays:[],
@@ -483,7 +483,7 @@ const VACATION_LISTINGS = [
           pt:'Rota residencial premium — piscinas bem mantidas. Transporte próprio necessário.',
           es:'Ruta residencial premium — piscinas bien mantenidas. Transporte propio requerido.'} },
 
-  { id:4, owner:'Ana P.', ownerRating:4.7, ownerJobs:31,
+  { id:4, owner:'Ana P.',
     month:{en:'June 2026', pt:'Junho 2026', es:'Junio 2026'},
     yearMonth:{year:2026, month:5},
     days:[15,16,17,18,19,22], bookedDays:[15,16,17],
@@ -498,20 +498,7 @@ const VACATION_LISTINGS = [
 
 const VACATIONS_APPLIED = [];
 
-const REVIEWS = [
-  { id:1, from:'Carlos N.',  rating:5, text:{en:'Took my whole route for a week. Pools were spotless when I got back.',
-    pt:'Cobriu minha rota inteira por uma semana. As piscinas estavam impecáveis quando voltei.',
-    es:'Cubrió toda mi ruta por una semana. Las piscinas estaban impecables al volver.'},
-    when:{en:'2 weeks ago', pt:'2 semanas atrás', es:'hace 2 semanas'} },
-  { id:2, from:'Patrícia L.',rating:5, text:{en:'Super communicative. Pictures every day. Will hire again.',
-    pt:'Super comunicativo. Fotos todos os dias. Contrato de novo.',
-    es:'Muy comunicativo. Fotos cada día. Volveré a contratar.'},
-    when:{en:'1 month ago', pt:'1 mês atrás', es:'hace 1 mes'} },
-  { id:3, from:'Sandra R.',  rating:4, text:{en:'Solid work, just had to remind about the gate code once.',
-    pt:'Bom trabalho, só tive que lembrar do código do portão uma vez.',
-    es:'Buen trabajo, solo tuve que recordar el código del portón una vez.'},
-    when:{en:'2 months ago', pt:'2 meses atrás', es:'hace 2 meses'} },
-];
+const REVIEWS = [];
 
 const NOTIFICATIONS = [
   { id:1, kind:'job',     unread:true,  whenKey:'justNow',  titleKey:'notif1Title', bodyKey:'notif1Body', who:null },

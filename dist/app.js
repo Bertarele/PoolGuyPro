@@ -1105,7 +1105,33 @@ function App() {
         ascending: false
       })]);
       if (j.data) setLiveJobs(j.data.map(normJob));
-      if (tc.data) setLiveTechs(tc.data.map(normTech));
+      if (tc.data) {
+        const techAuthorIds = tc.data.map(r => r.author_id).filter(Boolean);
+        if (techAuthorIds.length > 0) {
+          const {
+            data: ratingRows
+          } = await window.sb.from('ratings').select('to_id, stars').in('to_id', techAuthorIds);
+          const ratingMap = {};
+          (ratingRows || []).forEach(r => {
+            if (!ratingMap[r.to_id]) ratingMap[r.to_id] = {
+              sum: 0,
+              count: 0
+            };
+            ratingMap[r.to_id].sum += r.stars;
+            ratingMap[r.to_id].count++;
+          });
+          setLiveTechs(tc.data.map(r => {
+            const rm = ratingMap[r.author_id];
+            return {
+              ...normTech(r),
+              rating: rm ? Math.round(rm.sum / rm.count * 10) / 10 : null,
+              reviewCount: rm ? rm.count : 0
+            };
+          }));
+        } else {
+          setLiveTechs(tc.data.map(normTech));
+        }
+      }
       if (v.data) setLiveVacations(v.data.map(normVac));
       if (m.data) setLiveMarket(m.data.map(normMkt));
       if (m.error) console.warn('[Supabase] marketplace fetch error:', m.error.message);

@@ -1842,6 +1842,11 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
             style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit',textAlign:'left',width:'100%',paddingRight:(isOwner||user?.role==='admin')?36:0}}>
             <Avatar name={tech.name} size={28} src={tech.photoUrl||undefined}/>
             <h3 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:16,fontWeight:700,letterSpacing:'-0.015em',flex:1,minWidth:0}}>{tech.name}</h3>
+            {tech.rating != null && (
+              <span style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:12,color:'var(--pg-ink-700)',fontWeight:600,flexShrink:0}}>
+                <Stars rating={tech.rating} size={11}/> {tech.rating}
+              </span>
+            )}
           </button>
 
           {/* Info rows */}
@@ -1923,13 +1928,10 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
       {/* ── Static seed techs ── */}
       {TECHS.filter(tech => !hiddenStatic.includes(tech.id)).map(tech => (
         <article key={tech.id} className="pg-card" style={{padding:'14px 16px 14px'}}>
-          <button onClick={()=>openPublicProfile && openPublicProfile({ name:tech.name, rating:tech.rating, reviews:tech.jobs, jobs:tech.jobs, loc:tech.loc })}
+          <button onClick={()=>openPublicProfile && openPublicProfile({ name:tech.name, rating:null, reviews:0, jobs:0, loc:tech.loc })}
             style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', width:'100%'}} className="pg-press">
             <Avatar name={tech.name} size={28}/>
             <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0}}>{tech.name}</h3>
-            <span style={{display:'inline-flex', alignItems:'center', gap:3, fontSize:12, color:'var(--pg-ink-700)', fontWeight:600}}>
-              <Stars rating={tech.rating} size={11}/> {tech.rating}
-            </span>
           </button>
           <p style={{margin:0, fontSize:13, lineHeight:1.45, color:'var(--pg-ink-700)'}}>
             {descForTech(tech, lang)}
@@ -1944,7 +1946,7 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               </span>
             </div>
             <div style={{display:'inline-flex', alignItems:'center', gap:5}}>
-              {Icon.shield(13, 'var(--pg-ink-500)')} {verifiedLbl} · {tech.jobs} {lang==='pt'?'trabalhos':lang==='es'?'trabajos':'jobs'}
+              {Icon.shield(13, 'var(--pg-ink-500)')} {verifiedLbl}
             </div>
           </div>
           <div className="pg-divider" style={{margin:'12px 0'}}/>
@@ -2102,7 +2104,7 @@ function AcceptedVacCard({ v, lang, onChat, onSchedule, openPublicProfile }) {
       {/* Body */}
       <div style={{padding:'12px 14px 14px'}}>
         <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
-          <button onClick={()=>openPublicProfile && openPublicProfile({ name:v.owner, rating:v.ownerRating||4.8, reviews:v.ownerJobs||30, jobs:v.ownerJobs||30, loc:v.region })}
+          <button onClick={()=>openPublicProfile && openPublicProfile({ name:v.owner, rating:v.ownerRating||null, reviews:v.ownerJobs||0, jobs:v.ownerJobs||0, loc:v.region })}
             style={{display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left'}} className="pg-press">
             <Avatar name={v.owner} size={34}/>
             <div style={{flex:1, minWidth:0}}>
@@ -2697,14 +2699,16 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                   {/* Owner row */}
                   <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
                     {(() => { const freeBlur = !isStaticOwner && user?.tier === 'free'; return (
-                    <button onClick={freeBlur ? ()=>onUnlockVac&&onUnlockVac() : ()=>openPublicProfile&&openPublicProfile({ name:v.owner, rating:v.ownerRating, reviews:v.ownerJobs, jobs:v.ownerJobs, loc:v.region })}
+                    <button onClick={freeBlur ? ()=>onUnlockVac&&onUnlockVac() : ()=>openPublicProfile&&openPublicProfile({ name:v.owner, rating:v.ownerRating||null, reviews:v.ownerJobs||0, jobs:v.ownerJobs||0, loc:v.region })}
                       style={{display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', filter:freeBlur?'blur(5px)':undefined, userSelect:freeBlur?'none':undefined}} className="pg-press">
                       <Avatar name={v.owner} size={30}/>
                       <div style={{flex:1, minWidth:0}}>
                         <span style={{fontSize:13, fontWeight:600}}>{v.owner}</span>
-                        <span style={{fontSize:11, color:'var(--pg-ink-400)', marginLeft:5}}>
-                          ★ {v.ownerRating} · {v.ownerJobs} jobs
-                        </span>
+                        {v.ownerRating != null && (
+                          <span style={{fontSize:11, color:'var(--pg-ink-400)', marginLeft:5}}>
+                            ★ {v.ownerRating} · {v.ownerJobs} jobs
+                          </span>
+                        )}
                       </div>
                     </button>
                     ); })()}
