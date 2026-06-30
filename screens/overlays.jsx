@@ -4389,8 +4389,8 @@ function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToa
       if (error) throw error;
       if (window.sendPush && rating.to_id) {
         const msg = lang==='pt'
-          ? `${myName} avaliou você! Avalie-o(a) em até 7 dias para ver a nota.`
-          : `${myName} rated you! Rate them back within 7 days to see their rating.`;
+          ? `${myName} avaliou você! Avalie-o também.`
+          : `${myName} rated you! Rate them back.`;
         window.sendPush(rating.to_id, myName, msg, '/#home', 'rating');
       }
       showToast && showToast('⭐ ' + (lang==='pt' ? 'Avaliação enviada!' : 'Rating submitted!'));
