@@ -591,8 +591,8 @@ function WorkScreen({ ctx }) {
                             </div>
                             {isClosed ? (
                               <button onClick={()=>deletePost(post)} style={{
-                                flexShrink:0, width:26, height:26, borderRadius:7, border:'1px solid #FCA5A5',
-                                background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
+                                flexShrink:0, width:26, height:26, borderRadius:7, border:'1px solid rgba(239,68,68,0.22)',
+                                background:'rgba(239,68,68,0.08)', color:'#EF4444', cursor:'pointer',
                                 display:'flex', alignItems:'center', justifyContent:'center',
                               }}>
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
@@ -954,8 +954,8 @@ function WorkScreen({ ctx }) {
                             </div>
                             {(isRejected || isAccepted || isProgress) && (
                               <button onClick={()=>deleteApp(app)} style={{
-                                flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid #FCA5A5',
-                                background:'#FEF2F2', color:'#EF4444', cursor:'pointer',
+                                flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid rgba(239,68,68,0.22)',
+                                background:'rgba(239,68,68,0.08)', color:'#EF4444', cursor:'pointer',
                                 display:'flex', alignItems:'center', justifyContent:'center',
                               }}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
