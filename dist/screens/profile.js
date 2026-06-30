@@ -2793,7 +2793,7 @@ function WorkJobHistory({
   const [expanded, setExpanded] = React.useState(false);
   React.useEffect(() => {
     if (!user?.uid || !window.sb) return;
-    window.sb.from('jobs').select('id, role, loc, pay, pay_mode, hired_at, created_at').eq('author_id', user.uid).not('hired_at', 'is', null).order('hired_at', {
+    window.sb.from('jobs').select('id, role, loc, pay, pay_mode, hired_at, created_at').eq('author_id', user.uid).filter('hired_at', 'not.is', null).order('hired_at', {
       ascending: false
     }).then(({
       data

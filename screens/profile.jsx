@@ -1324,7 +1324,7 @@ function WorkJobHistory({ user, lang }) {
     window.sb.from('jobs')
       .select('id, role, loc, pay, pay_mode, hired_at, created_at')
       .eq('author_id', user.uid)
-      .not('hired_at', 'is', null)
+      .filter('hired_at', 'not.is', null)
       .order('hired_at', { ascending: false })
       .then(({ data }) => setJobs(data || []));
   }, [user?.uid]);
