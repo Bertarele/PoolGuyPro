@@ -1598,11 +1598,12 @@ function WorkScreen({
       }, t.work), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'var(--pg-font-display)',
-          fontSize: sub === 'techs' ? 16 : 20,
+          fontSize: sub === 'techs' ? 18 : 20,
           fontWeight: 700,
           letterSpacing: '-0.025em',
           lineHeight: 1.1,
-          color: H.text
+          color: H.text,
+          whiteSpace: 'nowrap'
         }
       }, sub === 'hiring' ? lang === 'pt' ? 'Vagas de Emprego' : lang === 'es' ? 'Ofertas de Trabajo' : 'Job Openings' : sub === 'techs' ? lang === 'pt' ? 'Técnicos Disponíveis' : lang === 'es' ? 'Técnicos Disponibles' : 'Available Techs' : lang === 'pt' ? 'Cobertura de Férias' : lang === 'es' ? 'Cobertura de Vacaciones' : 'Vacation Cover'))),
       leftBack: !isDesktop,
