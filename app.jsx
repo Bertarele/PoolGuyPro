@@ -1495,7 +1495,7 @@ function App() {
         open={!!reviewApp} onClose={()=>setReviewApp(null)}
         app={reviewApp} lang={lang}
         onSubmitDone={()=>{ setReviewApp(null); showToast(lang==='pt'?'Avaliação enviada ✓':lang==='es'?'Reseña enviada ✓':'Review submitted ✓'); }}/>
-      <Sheet open={vacSheetOpen} onClose={()=>{ setVacSheetOpen(false); setEditingVac(null); }} height="92%">
+      <FullPage open={vacSheetOpen} onClose={()=>{ setVacSheetOpen(false); setEditingVac(null); }}>
         <PostVacationSheet
           lang={lang}
           initialData={editingVac}
@@ -1534,7 +1534,7 @@ function App() {
             }
           }}
         />
-      </Sheet>
+      </FullPage>
       <Sheet open={!!dayPickerVac} onClose={()=>setDayPickerVac(null)} height="88%">
         <VacationDayPickerSheet
           vac={dayPickerVac} lang={lang}

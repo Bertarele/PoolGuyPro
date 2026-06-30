@@ -2142,13 +2142,12 @@ function App() {
       setReviewApp(null);
       showToast(lang === 'pt' ? 'Avaliação enviada ✓' : lang === 'es' ? 'Reseña enviada ✓' : 'Review submitted ✓');
     }
-  }), /*#__PURE__*/React.createElement(Sheet, {
+  }), /*#__PURE__*/React.createElement(FullPage, {
     open: vacSheetOpen,
     onClose: () => {
       setVacSheetOpen(false);
       setEditingVac(null);
-    },
-    height: "92%"
+    }
   }, /*#__PURE__*/React.createElement(PostVacationSheet, {
     lang: lang,
     initialData: editingVac,
