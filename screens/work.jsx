@@ -3314,10 +3314,10 @@ function WeekdayRegionRow({ label, values, cities, onToggle, poolCount, onPoolCh
         </div>
         <button onClick={()=>{ setOpen(!open); setQ(''); }} style={{
           border:'1px solid ' + (open ? 'var(--pg-blue-400)' : 'var(--pg-ink-200)'),
-          background: open ? 'var(--pg-blue-50)' : '#fff',
+          background: open ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
           height:30, padding:'0 11px', borderRadius:8,
           fontSize:12, fontWeight:600,
-          color: open ? 'var(--pg-blue-600)' : 'var(--pg-blue-500)',
+          color: open ? '#fff' : 'var(--pg-blue-500)',
           cursor:'pointer', fontFamily:'inherit',
           display:'inline-flex', alignItems:'center', gap:4, flexShrink:0,
         }}>{open ? (lang==='pt'?'Fechar':lang==='es'?'Cerrar':'Close') : addLbl}</button>
@@ -3429,10 +3429,10 @@ function WeekdayRegionRow({ label, values, cities, onToggle, poolCount, onPoolCh
                 : `${addresses.filter(a=>a.trim()).length}/${poolCount} addresses`}
           </span>
           <button onClick={()=>setShowAddrs(v=>!v)} style={{
-            border:'1px solid var(--pg-ink-200)', background: showAddrs ? 'var(--pg-blue-50)' : '#fff',
+            border:'1px solid var(--pg-ink-200)', background: showAddrs ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
             height:26, padding:'0 10px', borderRadius:7,
             fontSize:11.5, fontWeight:600,
-            color: showAddrs ? 'var(--pg-blue-600)' : 'var(--pg-ink-600)',
+            color: showAddrs ? '#fff' : 'var(--pg-ink-600)',
             cursor:'pointer', fontFamily:'inherit',
           }}>
             {showAddrs
