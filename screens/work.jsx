@@ -762,7 +762,7 @@ function WorkScreen({ ctx }) {
                   <div style={{fontSize:10, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
                     {t.work}
                   </div>
-                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
+                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:sub==='techs'?16:20, fontWeight:700, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
                     {sub==='hiring'
                       ? (lang==='pt'?'Vagas de Emprego':lang==='es'?'Ofertas de Trabajo':'Job Openings')
                       : sub==='techs'
