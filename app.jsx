@@ -735,6 +735,8 @@ function App() {
     const stage = document.getElementById('stage');
     if (stage) stage.setAttribute('data-pg-dark', darkMode ? '1' : '0');
     try { localStorage.setItem('pg_dark', darkMode ? '1' : '0'); } catch(e) {}
+    // Keep html bg in sync with tab bar so any uncovered gap matches (iOS safe-area fallback)
+    document.documentElement.style.background = darkMode ? '#161B22' : '#ffffff';
   }, [darkMode]);
   const toggleDark = React.useCallback(() => setDarkModeState(v => !v), []);
 
@@ -2201,7 +2203,7 @@ function App() {
             position:'fixed', bottom:0, left:0, right:0,
             height:'env(safe-area-inset-bottom, 34px)',
             background: darkMode ? 'rgba(22,27,34,0.96)' : 'rgba(255,255,255,0.96)',
-            zIndex:31,
+            zIndex:29,
             WebkitBackdropFilter:'blur(20px) saturate(180%)',
             backdropFilter:'blur(20px) saturate(180%)',
           }}/>
