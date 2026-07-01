@@ -19,25 +19,22 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mr1axpwa">
+  <link rel="stylesheet" href="tokens.css?v=mr1bbdd9">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    html { margin: 0; padding: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+    html { margin: 0; padding: 0; overflow: hidden; overscroll-behavior: none; background: #010E1F; }
     body {
       margin: 0; padding: 0;
-      position: fixed; width: 100%; height: 100%;
+      position: fixed; top: 0; right: 0; bottom: 0; left: 0;
       overflow: hidden; overscroll-behavior: none;
       font-family: "Poppins", -apple-system, system-ui, sans-serif;
       background: var(--pg-bg);
     }
     #stage {
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
+      position: absolute; inset: 0;
       overflow: hidden;
       background: var(--pg-bg);
-      position: relative;
     }
     #stage::after { display: none; }
     #root { width: 100%; height: 100%; }
@@ -445,20 +442,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mr1axpwa"></script>
-  <script src="tweaks-panel.js?v=mr1axpwa"></script>
-  <script src="components.js?v=mr1axpwa"></script>
-  <script src="brand.js?v=mr1axpwa"></script>
-  <script src="data.js?v=mr1axpwa"></script>
-  <script src="screens/login.js?v=mr1axpwa"></script>
-  <script src="screens/home.js?v=mr1axpwa"></script>
-  <script src="screens/marketplace.js?v=mr1axpwa"></script>
-  <script src="screens/quickpools.js?v=mr1axpwa"></script>
-  <script src="screens/post.js?v=mr1axpwa"></script>
-  <script src="screens/work.js?v=mr1axpwa"></script>
-  <script src="screens/profile.js?v=mr1axpwa"></script>
-  <script src="screens/overlays.js?v=mr1axpwa"></script>
-  <script src="app.js?v=mr1axpwa"></script>
+  <script src="ios-frame.js?v=mr1bbdd9"></script>
+  <script src="tweaks-panel.js?v=mr1bbdd9"></script>
+  <script src="components.js?v=mr1bbdd9"></script>
+  <script src="brand.js?v=mr1bbdd9"></script>
+  <script src="data.js?v=mr1bbdd9"></script>
+  <script src="screens/login.js?v=mr1bbdd9"></script>
+  <script src="screens/home.js?v=mr1bbdd9"></script>
+  <script src="screens/marketplace.js?v=mr1bbdd9"></script>
+  <script src="screens/quickpools.js?v=mr1bbdd9"></script>
+  <script src="screens/post.js?v=mr1bbdd9"></script>
+  <script src="screens/work.js?v=mr1bbdd9"></script>
+  <script src="screens/profile.js?v=mr1bbdd9"></script>
+  <script src="screens/overlays.js?v=mr1bbdd9"></script>
+  <script src="app.js?v=mr1bbdd9"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {

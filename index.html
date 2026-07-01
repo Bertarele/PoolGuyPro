@@ -24,21 +24,18 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    html { margin: 0; padding: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+    html { margin: 0; padding: 0; overflow: hidden; overscroll-behavior: none; background: #010E1F; }
     body {
       margin: 0; padding: 0;
-      position: fixed; width: 100%; height: 100%;
+      position: fixed; top: 0; right: 0; bottom: 0; left: 0;
       overflow: hidden; overscroll-behavior: none;
       font-family: "Poppins", -apple-system, system-ui, sans-serif;
       background: var(--pg-bg);
     }
     #stage {
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
+      position: absolute; inset: 0;
       overflow: hidden;
       background: var(--pg-bg);
-      position: relative;
     }
     #stage::after { display: none; }
     #root { width: 100%; height: 100%; }
