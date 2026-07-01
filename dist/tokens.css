@@ -238,7 +238,8 @@ button { font-family: inherit; }
 
 .pg-tabbar {
   position: fixed; left: 0; right: 0;
-  bottom: calc(-1 * var(--pg-bottom-gap, 0px));
+  bottom: 0;
+  transform: translateY(var(--pg-bottom-gap, 0px));
   display: flex; align-items: flex-start; justify-content: space-around;
   padding: 0px 6px calc(16px + env(safe-area-inset-bottom, 0px) + var(--pg-bottom-gap, 0px));
   min-height: calc(68px + env(safe-area-inset-bottom, 0px) + var(--pg-bottom-gap, 0px));
