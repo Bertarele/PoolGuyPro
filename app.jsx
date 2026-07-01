@@ -748,6 +748,9 @@ function App() {
     const gap = Math.round(screen.height - window.innerHeight);
     const safe = (gap > 5 && gap <= 40) ? gap : 0;
     document.documentElement.style.setProperty('--pg-bottom-gap', safe + 'px');
+    // TEMP DIAG
+    const el = document.getElementById('pg-diag');
+    if (el) el.textContent = `iH=${window.innerHeight} sH=${screen.height} iW=${window.innerWidth} sW=${screen.width} gap=${gap} dpr=${devicePixelRatio.toFixed(1)}`;
   }, []);
   const toggleDark = React.useCallback(() => setDarkModeState(v => !v), []);
 
@@ -2206,6 +2209,14 @@ function App() {
             {tab === 'work'    && <WorkScreen ctx={ctx}/>}
             {tab === 'profile' && <ProfileScreen ctx={ctx}/>}
           </div>
+
+          {/* TEMP DIAG — remove after */}
+          <div id="pg-diag" style={{
+            position:'fixed', bottom:0, left:0, right:0, zIndex:99999,
+            background:'rgba(255,0,0,0.85)', color:'#fff', fontSize:11,
+            padding:'4px 8px 8px', fontFamily:'monospace', textAlign:'center',
+            pointerEvents:'none',
+          }}>measuring...</div>
 
           {/* Tab bar */}
           <TabBar tab={tab} setTab={switchTab} lang={lang}/>
