@@ -20,6 +20,7 @@ function WorkScreen({
     openSchedule,
     openPublicProfile,
     showToast,
+    openRating,
     removeJob,
     removeTech,
     removeVacation,
@@ -430,7 +431,16 @@ function WorkScreen({
       }).eq('id', app.id);
     }
     setCompletedAppIds(p => new Set([...p, app.id]));
-  }, []);
+    if (app.author_id && openRating) {
+      openRating({
+        to_id: app.author_id,
+        to_name: app.company || '',
+        listing_name: tr(app.title, lang) || app.company || '',
+        connection_type: 'hiring',
+        connection_id: app.job_id || app.id
+      });
+    }
+  }, [openRating, lang]);
   const deletePost = React.useCallback(async post => {
     if (post._live && window.sb) {
       await window.sb.from('jobs').delete().eq('id', post.id);

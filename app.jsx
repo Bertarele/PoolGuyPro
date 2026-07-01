@@ -2196,12 +2196,12 @@ function App() {
 
           {/* Tab bar */}
           <TabBar tab={tab} setTab={switchTab} lang={lang}/>
-          {/* Safe-area filler — covers the gap between tab bar and physical bottom edge */}
+          {/* Safe-area filler — position:fixed bypasses overflow:hidden on any ancestor */}
           <div style={{
-            position:'absolute', bottom:0, left:0, right:0,
-            height:'env(safe-area-inset-bottom, 0px)',
+            position:'fixed', bottom:0, left:0, right:0,
+            height:'env(safe-area-inset-bottom, 34px)',
             background: darkMode ? 'rgba(22,27,34,0.96)' : 'rgba(255,255,255,0.96)',
-            zIndex:29,
+            zIndex:31,
             WebkitBackdropFilter:'blur(20px) saturate(180%)',
             backdropFilter:'blur(20px) saturate(180%)',
           }}/>

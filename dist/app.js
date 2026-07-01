@@ -635,12 +635,28 @@ function App() {
   const loadPendingRatings = React.useCallback(async () => {
     if (!window.sb || !user?.uid) return;
     try {
+      // Find people who rated ME but I haven't rated back yet
       const {
-        data
-      } = await window.sb.from('ratings').select('id,listing_id,listing_name,from_id,from_name,to_id,stars,created_at').eq('from_id', user.uid).eq('pending', true).order('created_at', {
+        data: received
+      } = await window.sb.from('ratings').select('id,listing_id,listing_name,from_id,from_name,to_id,connection_type,connection_id,created_at,expires_at').eq('to_id', user.uid).eq('pending', true).order('created_at', {
         ascending: true
       });
-      setPendingRatings(data || []);
+      if (!received || received.length === 0) {
+        setPendingRatings([]);
+        return;
+      }
+      const now = Date.now();
+      const notExpired = received.filter(r => !r.expires_at || new Date(r.expires_at).getTime() > now);
+      if (notExpired.length === 0) {
+        setPendingRatings([]);
+        return;
+      }
+      // Filter out ones I already rated back
+      const {
+        data: myRatings
+      } = await window.sb.from('ratings').select('to_id').eq('from_id', user.uid).in('to_id', notExpired.map(r => r.from_id));
+      const alreadyRated = new Set((myRatings || []).map(r => r.to_id));
+      setPendingRatings(notExpired.filter(r => !alreadyRated.has(r.from_id)));
     } catch (e) {}
   }, [user?.uid]);
   React.useEffect(() => {
@@ -3579,6 +3595,18 @@ function App() {
     tab: tab,
     setTab: switchTab,
     lang: lang
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 'env(safe-area-inset-bottom, 34px)',
+      background: darkMode ? 'rgba(22,27,34,0.96)' : 'rgba(255,255,255,0.96)',
+      zIndex: 31,
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      backdropFilter: 'blur(20px) saturate(180%)'
+    }
   }), (tab === 'market' || tab === 'quick') && /*#__PURE__*/React.createElement("button", {
     onClick: tab === 'market' ? () => setMarketPostOpen(true) : () => setPostQPOpen(true),
     className: "pg-press",
