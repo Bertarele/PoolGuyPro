@@ -996,6 +996,17 @@ function App() {
     // Keep html bg in sync with tab bar so any uncovered gap matches (iOS safe-area fallback)
     document.documentElement.style.background = darkMode ? '#161B22' : '#ffffff';
   }, [darkMode]);
+
+  // ── iOS bottom gap fix ─────────────────────────────────────────
+  // When viewport-fit=cover is not active (cached old PWA), window.innerHeight
+  // excludes the 34pt home-indicator area. We measure the difference vs
+  // screen.height and push the tab bar down with a negative bottom offset so it
+  // physically reaches the screen edge inside the WKWebView's full render area.
+  React.useEffect(() => {
+    const gap = Math.round(screen.height - window.innerHeight);
+    const safe = gap > 5 && gap <= 40 ? gap : 0;
+    document.documentElement.style.setProperty('--pg-bottom-gap', safe + 'px');
+  }, []);
   const toggleDark = React.useCallback(() => setDarkModeState(v => !v), []);
 
   // ── Live Firestore data ────────────────────────────────────
@@ -3579,7 +3590,7 @@ function App() {
     style: {
       position: 'absolute',
       inset: 0,
-      paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
+      paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px) + var(--pg-bottom-gap, 0px))',
       overflow: 'auto',
       overscrollBehavior: 'none'
     }
@@ -3600,10 +3611,10 @@ function App() {
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
-      bottom: 0,
+      bottom: 'calc(-1 * var(--pg-bottom-gap, 0px))',
       left: 0,
       right: 0,
-      height: 'env(safe-area-inset-bottom, 34px)',
+      height: 'calc(env(safe-area-inset-bottom, 0px) + var(--pg-bottom-gap, 0px))',
       background: darkMode ? 'rgba(22,27,34,0.96)' : 'rgba(255,255,255,0.96)',
       zIndex: 29,
       WebkitBackdropFilter: 'blur(20px) saturate(180%)',
