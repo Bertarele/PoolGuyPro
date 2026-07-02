@@ -268,7 +268,7 @@ button { font-family: inherit; }
   box-shadow:
     0 6px 14px rgba(14,186,199,0.45),
     0 0 0 4px #fff;
-  margin-top: -22px; margin-bottom: 4px;
+  margin-top: -28px; margin-bottom: 4px;
   transition: transform .2s cubic-bezier(.22,1,.36,1), box-shadow .2s ease;
 }
 .pg-tab-center-dot.on {
