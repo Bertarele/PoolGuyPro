@@ -240,8 +240,8 @@ button { font-family: inherit; }
   position: absolute; left: 0; right: 0;
   bottom: 0;
   display: flex; align-items: flex-start; justify-content: space-around;
-  padding: 0px 6px env(safe-area-inset-bottom, 16px);
-  min-height: 68px;
+  padding: 0px 6px calc(16px + env(safe-area-inset-bottom, 0px));
+  min-height: calc(68px + env(safe-area-inset-bottom, 0px));
   background: rgba(255,255,255,0.96);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
@@ -268,7 +268,7 @@ button { font-family: inherit; }
   box-shadow:
     0 6px 14px rgba(14,186,199,0.45),
     0 0 0 4px #fff;
-  margin-top: -28px; margin-bottom: 4px;
+  margin-top: -22px; margin-bottom: 4px;
   transition: transform .2s cubic-bezier(.22,1,.36,1), box-shadow .2s ease;
 }
 .pg-tab-center-dot.on {
