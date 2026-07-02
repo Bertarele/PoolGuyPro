@@ -735,8 +735,11 @@ function App() {
     const stage = document.getElementById('stage');
     if (stage) stage.setAttribute('data-pg-dark', darkMode ? '1' : '0');
     try { localStorage.setItem('pg_dark', darkMode ? '1' : '0'); } catch(e) {}
-    // Keep html bg in sync with tab bar so any uncovered gap matches (iOS safe-area fallback)
-    document.documentElement.style.background = darkMode ? '#161B22' : '#ffffff';
+    // Body canvas background covers the iOS safe-area gap below CSS viewport (per CSS spec:
+    // html{overflow:hidden} → canvas = body background, painting the full WKWebView surface)
+    const bg = darkMode ? '#161B22' : '#ffffff';
+    document.documentElement.style.background = bg;
+    document.body.style.background = bg;
   }, [darkMode]);
 
   // ── iOS bottom gap fix ─────────────────────────────────────────
@@ -746,8 +749,13 @@ function App() {
   // physically reaches the screen edge inside the WKWebView's full render area.
   React.useEffect(() => {
     const gap = Math.round(screen.height - window.innerHeight);
-    const safe = (gap > 5 && gap <= 40) ? gap : 0;
-    document.documentElement.style.setProperty('--pg-bottom-gap', safe + 'px');
+    if (gap > 5 && gap <= 40) {
+      // CSS viewport doesn't cover safe area — env() would double-count, zero it out.
+      // Body canvas background (set by dark mode effect) covers the gap visually.
+      document.documentElement.style.setProperty('--pg-no-env', '0px');
+    } else {
+      document.documentElement.style.removeProperty('--pg-no-env');
+    }
   }, []);
   const toggleDark = React.useCallback(() => setDarkModeState(v => !v), []);
 
@@ -2199,7 +2207,7 @@ function App() {
             onTouchStart={onPTRTouchStart}
             onTouchMove={onPTRTouchMove}
             onTouchEnd={onPTRTouchEnd}
-            style={{position:'absolute', inset:0, paddingBottom:'calc(68px + max(env(safe-area-inset-bottom, 0px), var(--pg-bottom-gap, 0px)))', overflow:'auto', overscrollBehavior:'none'}}>
+            style={{position:'absolute', inset:0, paddingBottom:'calc(68px + var(--pg-no-env, env(safe-area-inset-bottom, 0px)))', overflow:'auto', overscrollBehavior:'none'}}>
             {tab === 'home'    && <HomeScreen ctx={ctx}/>}
             {tab === 'market'  && <MarketplaceScreen ctx={ctx}/>}
             {tab === 'quick'   && <QuickPoolsScreen ctx={ctx}/>}
@@ -2209,18 +2217,6 @@ function App() {
 
           {/* Tab bar */}
           <TabBar tab={tab} setTab={switchTab} lang={lang}/>
-          {/* Safe-area filler — covers gap below CSS viewport using transform (bypasses iOS viewport clip) */}
-          <div style={{
-            position:'fixed',
-            bottom:0,
-            transform:'translateY(var(--pg-bottom-gap, 0px))',
-            left:0, right:0,
-            height:'calc(max(env(safe-area-inset-bottom, 0px), var(--pg-bottom-gap, 0px)))',
-            background: darkMode ? 'rgba(22,27,34,0.96)' : 'rgba(255,255,255,0.96)',
-            zIndex:29,
-            WebkitBackdropFilter:'blur(20px) saturate(180%)',
-            backdropFilter:'blur(20px) saturate(180%)',
-          }}/>
 
           {/* Floating action button */}
           {(tab === 'market' || tab === 'quick') && (
@@ -2228,7 +2224,7 @@ function App() {
               onClick={tab === 'market' ? ()=>setMarketPostOpen(true) : ()=>setPostQPOpen(true)}
               className="pg-press"
               style={{
-                position:'absolute', bottom:'calc(96px + max(env(safe-area-inset-bottom, 0px), var(--pg-bottom-gap, 0px)))', right:18, zIndex:35,
+                position:'absolute', bottom:'calc(96px + var(--pg-no-env, env(safe-area-inset-bottom, 0px)))', right:18, zIndex:35,
                 width:56, height:56, borderRadius:'50%', padding:0,
                 display:'inline-flex', alignItems:'center', justifyContent:'center',
                 background:'linear-gradient(135deg, #0EBAC7 0%, #0D7280 100%)',
