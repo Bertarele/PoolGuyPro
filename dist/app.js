@@ -3582,7 +3582,7 @@ function App() {
     style: {
       position: 'absolute',
       inset: 0,
-      paddingBottom: 'calc(86px + env(safe-area-inset-bottom, 0px))',
+      paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
       overflow: 'auto',
       overscrollBehavior: 'none'
     }

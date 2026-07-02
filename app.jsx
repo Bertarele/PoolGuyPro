@@ -2192,7 +2192,7 @@ function App() {
             onTouchStart={onPTRTouchStart}
             onTouchMove={onPTRTouchMove}
             onTouchEnd={onPTRTouchEnd}
-            style={{position:'absolute', inset:0, paddingBottom:'calc(86px + env(safe-area-inset-bottom, 0px))', overflow:'auto', overscrollBehavior:'none'}}>
+            style={{position:'absolute', inset:0, paddingBottom:'calc(68px + env(safe-area-inset-bottom, 0px))', overflow:'auto', overscrollBehavior:'none'}}>
             {tab === 'home'    && <HomeScreen ctx={ctx}/>}
             {tab === 'market'  && <MarketplaceScreen ctx={ctx}/>}
             {tab === 'quick'   && <QuickPoolsScreen ctx={ctx}/>}
