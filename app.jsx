@@ -2199,7 +2199,7 @@ function App() {
             onTouchStart={onPTRTouchStart}
             onTouchMove={onPTRTouchMove}
             onTouchEnd={onPTRTouchEnd}
-            style={{position:'absolute', inset:0, paddingBottom:'calc(68px + env(safe-area-inset-bottom, 0px) + var(--pg-bottom-gap, 0px))', overflow:'auto', overscrollBehavior:'none'}}>
+            style={{position:'absolute', inset:0, paddingBottom:'calc(68px + max(env(safe-area-inset-bottom, 0px), var(--pg-bottom-gap, 0px)))', overflow:'auto', overscrollBehavior:'none'}}>
             {tab === 'home'    && <HomeScreen ctx={ctx}/>}
             {tab === 'market'  && <MarketplaceScreen ctx={ctx}/>}
             {tab === 'quick'   && <QuickPoolsScreen ctx={ctx}/>}
@@ -2215,7 +2215,7 @@ function App() {
             bottom:0,
             transform:'translateY(var(--pg-bottom-gap, 0px))',
             left:0, right:0,
-            height:'calc(env(safe-area-inset-bottom, 0px) + var(--pg-bottom-gap, 0px))',
+            height:'calc(max(env(safe-area-inset-bottom, 0px), var(--pg-bottom-gap, 0px)))',
             background: darkMode ? 'rgba(22,27,34,0.96)' : 'rgba(255,255,255,0.96)',
             zIndex:29,
             WebkitBackdropFilter:'blur(20px) saturate(180%)',
@@ -2228,7 +2228,7 @@ function App() {
               onClick={tab === 'market' ? ()=>setMarketPostOpen(true) : ()=>setPostQPOpen(true)}
               className="pg-press"
               style={{
-                position:'absolute', bottom:'calc(96px + env(safe-area-inset-bottom, 0px))', right:18, zIndex:35,
+                position:'absolute', bottom:'calc(96px + max(env(safe-area-inset-bottom, 0px), var(--pg-bottom-gap, 0px)))', right:18, zIndex:35,
                 width:56, height:56, borderRadius:'50%', padding:0,
                 display:'inline-flex', alignItems:'center', justifyContent:'center',
                 background:'linear-gradient(135deg, #0EBAC7 0%, #0D7280 100%)',
