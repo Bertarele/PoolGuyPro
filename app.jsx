@@ -742,21 +742,6 @@ function App() {
     document.body.style.background = bg;
   }, [darkMode]);
 
-  // ── iOS bottom gap fix ─────────────────────────────────────────
-  // When viewport-fit=cover is not active (cached old PWA), window.innerHeight
-  // excludes the 34pt home-indicator area. We measure the difference vs
-  // screen.height and push the tab bar down with a negative bottom offset so it
-  // physically reaches the screen edge inside the WKWebView's full render area.
-  React.useEffect(() => {
-    const gap = Math.round(screen.height - window.innerHeight);
-    if (gap > 5 && gap <= 40) {
-      // CSS viewport doesn't cover safe area — env() would double-count, zero it out.
-      // Body canvas background (set by dark mode effect) covers the gap visually.
-      document.documentElement.style.setProperty('--pg-no-env', '0px');
-    } else {
-      document.documentElement.style.removeProperty('--pg-no-env');
-    }
-  }, []);
   const toggleDark = React.useCallback(() => setDarkModeState(v => !v), []);
 
   // ── Live Firestore data ────────────────────────────────────
@@ -2207,7 +2192,7 @@ function App() {
             onTouchStart={onPTRTouchStart}
             onTouchMove={onPTRTouchMove}
             onTouchEnd={onPTRTouchEnd}
-            style={{position:'absolute', inset:0, paddingBottom:'calc(68px + var(--pg-no-env, env(safe-area-inset-bottom, 0px)))', overflow:'auto', overscrollBehavior:'none'}}>
+            style={{position:'absolute', inset:0, paddingBottom:'calc(86px + env(safe-area-inset-bottom, 0px))', overflow:'auto', overscrollBehavior:'none'}}>
             {tab === 'home'    && <HomeScreen ctx={ctx}/>}
             {tab === 'market'  && <MarketplaceScreen ctx={ctx}/>}
             {tab === 'quick'   && <QuickPoolsScreen ctx={ctx}/>}
@@ -2224,7 +2209,7 @@ function App() {
               onClick={tab === 'market' ? ()=>setMarketPostOpen(true) : ()=>setPostQPOpen(true)}
               className="pg-press"
               style={{
-                position:'absolute', bottom:'calc(96px + var(--pg-no-env, env(safe-area-inset-bottom, 0px)))', right:18, zIndex:35,
+                position:'absolute', bottom:'calc(96px + env(safe-area-inset-bottom, 0px))', right:18, zIndex:35,
                 width:56, height:56, borderRadius:'50%', padding:0,
                 display:'inline-flex', alignItems:'center', justifyContent:'center',
                 background:'linear-gradient(135deg, #0EBAC7 0%, #0D7280 100%)',
