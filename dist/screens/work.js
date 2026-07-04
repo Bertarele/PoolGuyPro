@@ -3875,7 +3875,8 @@ function TechReviewSheet({
   onClose,
   tech,
   lang = 'en',
-  user = null
+  user = null,
+  onRated
 }) {
   const [rating, setRating] = React.useState(0);
   const [hover, setHover] = React.useState(0);
@@ -3936,6 +3937,7 @@ function TechReviewSheet({
       return;
     }
     setSubmitted(true);
+    onRated && onRated(tech);
     setTimeout(() => onClose(), 1900);
   };
   const BlockedState = ({
@@ -4174,6 +4176,17 @@ function TechsPanel({
   const [contactOpen, setContactOpen] = React.useState(null);
   const [ratingFor, setRatingFor] = React.useState(null);
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
+  const [ratedIds, setRatedIds] = React.useState(new Set());
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb || !liveTechs.length) return;
+    const toIds = liveTechs.map(t => t.author_id).filter(Boolean);
+    if (!toIds.length) return;
+    window.sb.from('ratings').select('to_id').eq('from_id', user.uid).in('to_id', toIds).then(({
+      data
+    }) => {
+      if (data) setRatedIds(new Set(data.map(r => r.to_id)));
+    });
+  }, [user?.uid, liveTechs.length]);
   const Briefcase = (s = 13, c = 'var(--pg-ink-500)') => Icon.briefcase(s, c);
   const Tool = (s = 13, c = 'var(--pg-ink-500)') => /*#__PURE__*/React.createElement("svg", {
     width: s,
@@ -4380,7 +4393,7 @@ function TechsPanel({
         display: 'flex',
         gap: 8
       }
-    }, !isOwner && /*#__PURE__*/React.createElement("button", {
+    }, !isOwner && !ratedIds.has(tech.author_id) && /*#__PURE__*/React.createElement("button", {
       onClick: () => setRatingFor(tech),
       className: "pg-btn pg-btn-ghost",
       title: lang === 'pt' ? 'Avaliar técnico' : lang === 'es' ? 'Calificar técnico' : 'Rate technician',
@@ -4608,17 +4621,6 @@ function TechsPanel({
       gap: 8
     }
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setRatingFor(tech),
-    className: "pg-btn pg-btn-ghost",
-    title: lang === 'pt' ? 'Avaliar técnico' : lang === 'es' ? 'Calificar técnico' : 'Rate technician',
-    style: {
-      height: 36,
-      width: 36,
-      padding: 0,
-      borderRadius: 999,
-      flexShrink: 0
-    }
-  }, Icon.star(16, 'oklch(0.72 0.17 80)', false)), /*#__PURE__*/React.createElement("button", {
     onClick: () => setContactOpen(contactOpen === tech.id ? null : tech.id),
     className: contactOpen === tech.id ? 'pg-btn pg-btn-ghost' : 'pg-btn pg-btn-primary',
     style: {
@@ -4808,7 +4810,8 @@ function TechsPanel({
     onClose: () => setRatingFor(null),
     tech: ratingFor,
     lang: lang,
-    user: user
+    user: user,
+    onRated: tech => setRatedIds(prev => new Set([...prev, tech.author_id]))
   }));
 }
 
