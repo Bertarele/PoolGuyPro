@@ -2309,10 +2309,9 @@ function App() {
       if (data) dbWrite('jobs', data).then(() => loadLiveJobs());
       showToast(lang === 'pt' ? 'Vaga publicada ✓' : lang === 'es' ? 'Empleo publicado ✓' : 'Job posted ✓');
     }
-  })), /*#__PURE__*/React.createElement(Sheet, {
+  })), /*#__PURE__*/React.createElement(FullPage, {
     open: techSheetOpen,
-    onClose: () => setTechSheetOpen(false),
-    height: "80%"
+    onClose: () => setTechSheetOpen(false)
   }, /*#__PURE__*/React.createElement(PostTechSheet, {
     lang: lang,
     user: user,

@@ -7814,14 +7814,18 @@ function PostTechSheet({
   const isValid = specialty.trim().length > 0 && loc.trim().length > 0 && phone.replace(/\D/g, '').length === 10;
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '8px 0 24px'
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '4px 18px 14px',
+      padding: '14px 18px 14px',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-between'
+      justifyContent: 'space-between',
+      flexShrink: 0,
+      borderBottom: '0.5px solid var(--pg-ink-200)'
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onClose,
@@ -7848,7 +7852,10 @@ function PostTechSheet({
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 18px',
+      flex: 1,
+      overflow: 'auto',
+      touchAction: 'pan-y',
+      padding: '20px 18px',
       display: 'flex',
       flexDirection: 'column',
       gap: 18
@@ -8044,10 +8051,9 @@ function PostTechSheet({
     }
   }, lang === 'pt' ? '/visita' : lang === 'es' ? '/visita' : '/visit')))), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '18px 18px 8px',
-      position: 'sticky',
-      bottom: 0,
-      background: 'var(--pg-white)',
+      padding: '14px 18px',
+      flexShrink: 0,
+      background: 'var(--pg-bg)',
       borderTop: '0.5px solid var(--pg-ink-200)'
     }
   }, /*#__PURE__*/React.createElement("button", {
