@@ -1662,7 +1662,7 @@ function descForHiring(h, lang) {
 }
 
 // ── Tech Review Sheet ─────────────────────────────────────────
-function TechReviewSheet({ open, onClose, tech, lang='en', user=null }) {
+function TechReviewSheet({ open, onClose, tech, lang='en', user=null, onRated }) {
   const [rating,      setRating]      = React.useState(0);
   const [hover,       setHover]       = React.useState(0);
   const [comment,     setComment]     = React.useState('');
@@ -1677,7 +1677,7 @@ function TechReviewSheet({ open, onClose, tech, lang='en', user=null }) {
     if (user?.uid && tech?.author_id && window.sb) {
       setChecking(true);
       window.sb.from('ratings').select('id').eq('from_id', user.uid).eq('to_id', tech.author_id)
-        .maybeSingle().then(({ data }) => { setAlreadyRated(!!data); setChecking(false); });
+        .limit(1).then(({ data }) => { setAlreadyRated(!!(data && data.length)); setChecking(false); });
     }
   }, [open]);
 
@@ -1709,6 +1709,7 @@ function TechReviewSheet({ open, onClose, tech, lang='en', user=null }) {
     setSubmitting(false);
     if (error) { return; }
     setSubmitted(true);
+    onRated && onRated(tech);
     setTimeout(() => onClose(), 1900);
   };
 
@@ -1793,6 +1794,15 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
   const [contactOpen,  setContactOpen]  = React.useState(null);
   const [ratingFor,    setRatingFor]    = React.useState(null);
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
+  const [ratedIds,     setRatedIds]     = React.useState(new Set());
+
+  React.useEffect(() => {
+    if (!user?.uid || !window.sb || !liveTechs.length) return;
+    const toIds = liveTechs.map(t => t.author_id).filter(Boolean);
+    if (!toIds.length) return;
+    window.sb.from('ratings').select('to_id').eq('from_id', user.uid).in('to_id', toIds)
+      .then(({ data }) => { if (data) setRatedIds(new Set(data.map(r => r.to_id))); });
+  }, [user?.uid, liveTechs.length]);
 
   const Briefcase = (s=13, c='var(--pg-ink-500)') => Icon.briefcase(s, c);
   const Tool = (s=13, c='var(--pg-ink-500)') => (
@@ -1883,7 +1893,7 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               {rateDisplay}
             </div>
             <div style={{display:'flex', gap:8}}>
-              {!isOwner && (
+              {!isOwner && !ratedIds.has(tech.author_id) && (
                 <button onClick={()=>setRatingFor(tech)}
                   className="pg-btn pg-btn-ghost"
                   title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
@@ -1971,13 +1981,6 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
               letterSpacing:'-0.01em',
             }}>{tr(tech.rate, lang)}</div>
             <div style={{display:'flex', gap:8}}>
-              {/* Rate button */}
-              <button onClick={()=>setRatingFor(tech)}
-                className="pg-btn pg-btn-ghost"
-                title={lang==='pt'?'Avaliar técnico':lang==='es'?'Calificar técnico':'Rate technician'}
-                style={{height:36, width:36, padding:0, borderRadius:999, flexShrink:0}}>
-                {Icon.star(16,'oklch(0.72 0.17 80)',false)}
-              </button>
               {/* Contact / Close */}
               <button
                 onClick={()=>setContactOpen(contactOpen===tech.id ? null : tech.id)}
@@ -2075,7 +2078,8 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
     {/* Tech Review Sheet */}
     <TechReviewSheet
       open={!!ratingFor} onClose={()=>setRatingFor(null)}
-      tech={ratingFor} lang={lang} user={user}/>
+      tech={ratingFor} lang={lang} user={user}
+      onRated={(tech) => setRatedIds(prev => new Set([...prev, tech.author_id]))}/>
     </>
   );
 }
@@ -3810,14 +3814,16 @@ function PostTechSheet({ onClose, lang='en', onSubmit, user=null }) {
                && loc.trim().length > 0 && phone.replace(/\D/g,'').length === 10;
 
   return (
-    <div style={{padding:'8px 0 24px'}}>
-      <div style={{padding:'4px 18px 14px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+    <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
+      {/* Header */}
+      <div style={{padding:'14px 18px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0, borderBottom:'0.5px solid var(--pg-ink-200)'}}>
         <button onClick={onClose} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:15, fontWeight:600, cursor:'pointer', padding:0}}>{t.cancel}</button>
         <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, letterSpacing:'-0.01em'}}>{headLbl}</h2>
         <div style={{width:60}}/>
       </div>
 
-      <div style={{padding:'0 18px', display:'flex', flexDirection:'column', gap:18}}>
+      {/* Scrollable form body */}
+      <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'20px 18px', display:'flex', flexDirection:'column', gap:18}}>
         {/* Profile photo */}
         <PhotoPicker
           photos={photos}
@@ -3888,7 +3894,8 @@ function PostTechSheet({ onClose, lang='en', onSubmit, user=null }) {
         </div>
       </div>
 
-      <div style={{padding:'18px 18px 8px', position:'sticky', bottom:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
+      {/* Submit — fixed to bottom */}
+      <div style={{padding:'14px 18px', flexShrink:0, background:'var(--pg-bg)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         <button onClick={()=>onSubmit && onSubmit({ name: user?.name||'', specialty, loc, phone, email, rateMode, rate, photoUrl: photos[0]||null })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>

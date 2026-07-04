@@ -1610,14 +1610,14 @@ function App() {
           onSubmit={(data)=>{ setHiringSheetOpen(false); if(data) dbWrite('jobs', data).then(()=>loadLiveJobs()); showToast(lang==='pt'?'Vaga publicada ✓':lang==='es'?'Empleo publicado ✓':'Job posted ✓'); }}
         />
       </FullPage>
-      <Sheet open={techSheetOpen} onClose={()=>setTechSheetOpen(false)} height="80%">
+      <FullPage open={techSheetOpen} onClose={()=>setTechSheetOpen(false)}>
         <PostTechSheet
           lang={lang}
           user={user}
           onClose={()=>setTechSheetOpen(false)}
           onSubmit={(data)=>{ setTechSheetOpen(false); if(data) dbWrite('techs', data); showToast(lang==='pt'?'Perfil publicado ✓':lang==='es'?'Perfil publicado ✓':'Profile posted ✓'); }}
         />
-      </Sheet>
+      </FullPage>
       <ApplyJobSheet
         open={!!applyJob} onClose={()=>setApplyJob(null)}
         job={applyJob} user={user} lang={lang}
