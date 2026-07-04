@@ -3895,10 +3895,10 @@ function TechReviewSheet({
     setSubmitting(false);
     if (user?.uid && tech?.author_id && window.sb) {
       setChecking(true);
-      window.sb.from('ratings').select('id').eq('from_id', user.uid).eq('to_id', tech.author_id).maybeSingle().then(({
+      window.sb.from('ratings').select('id').eq('from_id', user.uid).eq('to_id', tech.author_id).limit(1).then(({
         data
       }) => {
-        setAlreadyRated(!!data);
+        setAlreadyRated(!!(data && data.length));
         setChecking(false);
       });
     }
