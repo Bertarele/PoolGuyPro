@@ -20,7 +20,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mr76yf4l">
+  <link rel="stylesheet" href="tokens.css?v=mr77mvuz">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -38,6 +38,20 @@
       background: var(--pg-bg);
     }
     #stage::after { display: none; }
+    /* Fundo full-screen que alcança a safe area inferior (indicador de home).
+       Em iPhones menores que o Pro Max, o width=430 faz o bottom:0 parar na
+       linha da safe area, deixando ~34px do fundo nativo (preto) à mostra.
+       100vh alcança a tela física inteira e pinta essa faixa com a cor do app.
+       No Pro Max é invisível (fica atrás do tabbar que já cobre tudo). */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 100vh;
+      background: var(--pg-bg);
+      z-index: -1;
+      pointer-events: none;
+    }
     #root { width: 100%; height: 100%; }
 
     /* ── Splash screen — shown instantly before any JS loads ── */
@@ -443,20 +457,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mr76yf4l"></script>
-  <script src="tweaks-panel.js?v=mr76yf4l"></script>
-  <script src="components.js?v=mr76yf4l"></script>
-  <script src="brand.js?v=mr76yf4l"></script>
-  <script src="data.js?v=mr76yf4l"></script>
-  <script src="screens/login.js?v=mr76yf4l"></script>
-  <script src="screens/home.js?v=mr76yf4l"></script>
-  <script src="screens/marketplace.js?v=mr76yf4l"></script>
-  <script src="screens/quickpools.js?v=mr76yf4l"></script>
-  <script src="screens/post.js?v=mr76yf4l"></script>
-  <script src="screens/work.js?v=mr76yf4l"></script>
-  <script src="screens/profile.js?v=mr76yf4l"></script>
-  <script src="screens/overlays.js?v=mr76yf4l"></script>
-  <script src="app.js?v=mr76yf4l"></script>
+  <script src="ios-frame.js?v=mr77mvuz"></script>
+  <script src="tweaks-panel.js?v=mr77mvuz"></script>
+  <script src="components.js?v=mr77mvuz"></script>
+  <script src="brand.js?v=mr77mvuz"></script>
+  <script src="data.js?v=mr77mvuz"></script>
+  <script src="screens/login.js?v=mr77mvuz"></script>
+  <script src="screens/home.js?v=mr77mvuz"></script>
+  <script src="screens/marketplace.js?v=mr77mvuz"></script>
+  <script src="screens/quickpools.js?v=mr77mvuz"></script>
+  <script src="screens/post.js?v=mr77mvuz"></script>
+  <script src="screens/work.js?v=mr77mvuz"></script>
+  <script src="screens/profile.js?v=mr77mvuz"></script>
+  <script src="screens/overlays.js?v=mr77mvuz"></script>
+  <script src="app.js?v=mr77mvuz"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {

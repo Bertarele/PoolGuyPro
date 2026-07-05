@@ -153,34 +153,6 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "showDevControls": true
 }/*EDITMODE-END*/;
 
-function DiagBar() {
-  const [info, setInfo] = React.useState(null);
-  React.useEffect(() => {
-    const envDiv = document.createElement('div');
-    envDiv.style.cssText = 'position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden';
-    document.body.appendChild(envDiv);
-    const envPx = envDiv.offsetHeight;
-    document.body.removeChild(envDiv);
-    setInfo({
-      innerH: window.innerHeight,
-      screenH: screen.height,
-      gap: Math.round(screen.height - window.innerHeight),
-      env: envPx,
-    });
-  }, []);
-  if (!info) return null;
-  return (
-    <div style={{
-      position:'fixed', bottom: 0, left:0, right:0, zIndex:9999,
-      background:'rgba(255,0,0,0.85)', color:'#fff',
-      fontSize:11, fontFamily:'monospace', padding:'4px 8px',
-      lineHeight:1.5, pointerEvents:'none',
-    }}>
-      innerH={info.innerH} screenH={info.screenH} gap={info.gap} env={info.env}px
-    </div>
-  );
-}
-
 function App() {
   const _savedTier = (typeof localStorage !== 'undefined' && localStorage.getItem('pg_tier')) || null;
   const [t, setTweak] = useTweaks({ ...TWEAK_DEFAULTS, ...(_savedTier ? { tier: _savedTier } : {}) });
@@ -2230,9 +2202,6 @@ function App() {
 
           {/* Tab bar */}
           <TabBar tab={tab} setTab={switchTab} lang={lang}/>
-
-          {/* TEMP DIAGNOSTIC — remove after measuring */}
-          <DiagBar/>
 
           {/* Floating action button */}
           {(tab === 'market' || tab === 'quick') && (
