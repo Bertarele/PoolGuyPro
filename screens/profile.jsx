@@ -688,7 +688,7 @@ function PersonalInfoCard({ user, setUser, lang }) {
   const [otpLoading, setOtpLoading] = React.useState(false);
   const [otpError,   setOtpError]   = React.useState('');
   const SB_URL = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
+  const SB_KEY = 'sb_publishable_2C7PFtLNiXt3IziFnMVb4w_1YGfBqyX';
 
   const sendOtp = async () => {
     const digits = (user.phone||'').replace(/\D/g,'');
