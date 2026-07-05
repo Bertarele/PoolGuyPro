@@ -1151,7 +1151,7 @@ function App() {
     const doFetch = async () => {
       const [j, tc, v, m] = await Promise.all([window.sb.from('jobs').select('*').order('created_at', {
         ascending: false
-      }), window.sb.from('techs').select('*').order('created_at', {
+      }), window.sb.from('techs_public').select('*').order('created_at', {
         ascending: false
       }), window.sb.from('vacations').select('*').order('created_at', {
         ascending: false

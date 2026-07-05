@@ -627,7 +627,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   React.useEffect(() => {
     setAuthorPhotoUrl(null); setAuthorVerified(false);
     if (!item?.author_id || !window.sb) return;
-    window.sb.from('profiles').select('photo_url, verified').eq('id', item.author_id).single()
+    window.sb.from('profiles_public').select('photo_url, verified').eq('id', item.author_id).single()
       .then(({ data }) => {
         if (data?.photo_url) setAuthorPhotoUrl(data.photo_url);
         if (data?.verified)  setAuthorVerified(true);
@@ -983,7 +983,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     };
     if (item.author_id && window.sb) {
       try {
-        const { data } = await window.sb.from('profiles')
+        const { data } = await window.sb.from('profiles_public')
           .select('name, region, role, photo_url')
           .eq('id', item.author_id)
           .single();

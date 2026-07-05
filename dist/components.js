@@ -491,7 +491,7 @@ function AvatarFetch({
       setSrc(_pgPhotoCache.get(uid) || undefined);
       return;
     }
-    window.sb.from('profiles').select('photo_url').eq('id', uid).single().then(({
+    window.sb.from('profiles_public').select('photo_url').eq('id', uid).single().then(({
       data
     }) => {
       const url = data?.photo_url || '';

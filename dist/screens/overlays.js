@@ -383,7 +383,7 @@ function ChatConversation({
   React.useEffect(() => {
     if (!convo.receiverId || !window.sb) return;
     const check = () => {
-      window.sb.from('profiles').select('photo_url,is_online,last_seen').eq('id', convo.receiverId).single().then(({
+      window.sb.from('profiles_public').select('photo_url,is_online,last_seen').eq('id', convo.receiverId).single().then(({
         data
       }) => {
         if (!data) return;
@@ -1222,7 +1222,7 @@ function ApplicantsSheet({
     // Fetch current profile photos for all applicants in one batch
     const ids = apps.map(a => a.applicant_id).filter(Boolean);
     if (ids.length && window.sb) {
-      window.sb.from('profiles').select('id,photo_url').in('id', ids).then(({
+      window.sb.from('profiles_public').select('id,photo_url').in('id', ids).then(({
         data: pdata
       }) => {
         if (!pdata) return;
@@ -2711,7 +2711,7 @@ function ApplicantProfileSheet({
     setLivePhoto(null);
     if (!open || !applicant?.applicant_id || !window.sb) return;
     // Photo from profiles table (always fresh, even for old applications)
-    window.sb.from('profiles').select('photo_url').eq('id', applicant.applicant_id).then(({
+    window.sb.from('profiles_public').select('photo_url').eq('id', applicant.applicant_id).then(({
       data
     }) => {
       const row = Array.isArray(data) ? data[0] : null;
@@ -7801,7 +7801,7 @@ function PublicProfileSheet({
   React.useEffect(() => {
     setFetchedProfile(null);
     if (!open || !profile?.uid || !window.sb) return;
-    window.sb.from('profiles').select('id,name,photo_url,role,verified,region,tier').eq('id', profile.uid).single().then(({
+    window.sb.from('profiles_public').select('id,name,photo_url,role,verified,region').eq('id', profile.uid).single().then(({
       data
     }) => {
       if (data) setFetchedProfile(data);
@@ -8224,7 +8224,7 @@ function RatingSheet({
       return;
     }
     if (!rating?.to_id || !window.sb) return;
-    window.sb.from('profiles').select('name,photo_url').eq('id', rating.to_id).single().then(({
+    window.sb.from('profiles_public').select('name,photo_url').eq('id', rating.to_id).single().then(({
       data
     }) => {
       if (data) setToProfile(data);
@@ -8747,7 +8747,7 @@ function BuyerRatingPromptModal({
       setComment('');
       return;
     }
-    window.sb.from('profiles').select('name,photo_url').eq('id', rating.from_id).single().then(({
+    window.sb.from('profiles_public').select('name,photo_url').eq('id', rating.from_id).single().then(({
       data
     }) => {
       if (data) setToProfile(data);

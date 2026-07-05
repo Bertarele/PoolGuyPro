@@ -1036,7 +1036,7 @@ function ViewListingSheet({
     setAuthorPhotoUrl(null);
     setAuthorVerified(false);
     if (!item?.author_id || !window.sb) return;
-    window.sb.from('profiles').select('photo_url, verified').eq('id', item.author_id).single().then(({
+    window.sb.from('profiles_public').select('photo_url, verified').eq('id', item.author_id).single().then(({
       data
     }) => {
       if (data?.photo_url) setAuthorPhotoUrl(data.photo_url);
@@ -1536,7 +1536,7 @@ function ViewListingSheet({
       try {
         const {
           data
-        } = await window.sb.from('profiles').select('name, region, role, photo_url').eq('id', item.author_id).single();
+        } = await window.sb.from('profiles_public').select('name, region, role, photo_url').eq('id', item.author_id).single();
         if (data) {
           if (data.name) base.name = data.name;
           if (data.region) base.loc = data.region;

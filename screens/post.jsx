@@ -119,7 +119,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
     const dayIdx = isCustom && customDT ? new Date(customDT).getDay() : new Date().getDay();
     const dayKey = ['sun','mon','tue','wed','thu','fri','sat'][dayIdx];
     setMatchCount(null);
-    window.sb.from('profiles').select('regions_by_day').then(({ data }) => {
+    window.sb.from('profiles_public').select('regions_by_day').then(({ data }) => {
       const c = (data || []).filter(p => (p.regions_by_day?.[dayKey] || []).includes(city)).length;
       setMatchCount(c);
     });

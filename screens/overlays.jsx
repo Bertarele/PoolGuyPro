@@ -198,7 +198,7 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
   React.useEffect(() => {
     if (!convo.receiverId || !window.sb) return;
     const check = () => {
-      window.sb.from('profiles').select('photo_url,is_online,last_seen').eq('id', convo.receiverId).single()
+      window.sb.from('profiles_public').select('photo_url,is_online,last_seen').eq('id', convo.receiverId).single()
         .then(({ data }) => {
           if (!data) return;
           if (data.photo_url) setReceiverPhoto(data.photo_url);
@@ -648,7 +648,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
     // Fetch current profile photos for all applicants in one batch
     const ids = apps.map(a => a.applicant_id).filter(Boolean);
     if (ids.length && window.sb) {
-      window.sb.from('profiles').select('id,photo_url').in('id', ids)
+      window.sb.from('profiles_public').select('id,photo_url').in('id', ids)
         .then(({ data: pdata }) => {
           if (!pdata) return;
           const photoMap = {};
@@ -1464,7 +1464,7 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
     setLivePhoto(null);
     if (!open || !applicant?.applicant_id || !window.sb) return;
     // Photo from profiles table (always fresh, even for old applications)
-    window.sb.from('profiles').select('photo_url').eq('id', applicant.applicant_id)
+    window.sb.from('profiles_public').select('photo_url').eq('id', applicant.applicant_id)
       .then(({ data }) => {
         const row = Array.isArray(data) ? data[0] : null;
         if (row?.photo_url) setLivePhoto(row.photo_url);
@@ -4149,8 +4149,8 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
   React.useEffect(() => {
     setFetchedProfile(null);
     if (!open || !profile?.uid || !window.sb) return;
-    window.sb.from('profiles')
-      .select('id,name,photo_url,role,verified,region,tier')
+    window.sb.from('profiles_public')
+      .select('id,name,photo_url,role,verified,region')
       .eq('id', profile.uid).single()
       .then(({ data }) => { if (data) setFetchedProfile(data); })
       .catch(() => {});
@@ -4359,7 +4359,7 @@ function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToa
   React.useEffect(() => {
     if (!open) { setStars(0); setComment(''); setToProfile(null); return; }
     if (!rating?.to_id || !window.sb) return;
-    window.sb.from('profiles').select('name,photo_url').eq('id', rating.to_id).single()
+    window.sb.from('profiles_public').select('name,photo_url').eq('id', rating.to_id).single()
       .then(({ data }) => { if (data) setToProfile(data); })
       .catch(() => {});
   }, [open, rating?.to_id]);
@@ -4602,7 +4602,7 @@ function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUse
   // rating.from_id = the person who rated ME; I need to rate them back
   React.useEffect(() => {
     if (!open || !rating?.from_id || !window.sb) { setToProfile(null); setStars(0); setComment(''); return; }
-    window.sb.from('profiles').select('name,photo_url').eq('id', rating.from_id).single()
+    window.sb.from('profiles_public').select('name,photo_url').eq('id', rating.from_id).single()
       .then(({ data }) => { if (data) setToProfile(data); })
       .catch(() => {});
   }, [open, rating?.from_id]);

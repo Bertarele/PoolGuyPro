@@ -78,13 +78,28 @@
 (function(){
   var BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
   var KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzM3NDMsImV4cCI6MjA5NTc0OTc0M30.BeRc6j0XnJteUSaA7nAjOWCS_bZ9rcBlGvw54cXcmeg';
-  var ADMIN_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
+  // SEGURANÇA: a service_role key foi REMOVIDA do cliente.
+  // Operações comuns usam o token de sessão do admin (_tok) + policies RLS "admin_*".
+  // Operações de auth privilegiadas (ver/deletar conta) vão pela Edge Function
+  // 'admin-user', que guarda a service_role no servidor e valida o admin.
   var _tok = null;
   window._adminGetTok = function(){ return _tok; };
   try { var s=JSON.parse(localStorage.getItem('pg_admin_s')||'null'); if(s&&s.t) _tok=s.t; } catch(e){}
 
   function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
-  function adminHdrs(extra){ var h={'apikey':ADMIN_KEY,'Content-Type':'application/json','Authorization':'Bearer '+ADMIN_KEY}; return Object.assign(h,extra||{}); }
+  // adminHdrs agora usa o token de sessão do admin (não mais a service_role).
+  function adminHdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
+
+  // Chama a Edge Function admin-user para operações de auth privilegiadas.
+  window._adminUserAction = async function(action, userId){
+    var r = await fetch(BASE+'/functions/v1/admin-user', {
+      method:'POST',
+      headers:{'apikey':KEY,'Authorization':'Bearer '+(_tok||''),'Content-Type':'application/json'},
+      body:JSON.stringify({ action: action, user_id: userId })
+    });
+    var d = {}; try { d = await r.json(); } catch(e){}
+    return { ok: r.ok, status: r.status, data: d };
+  };
 
   function makeBuilder(table){
     var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null, _limit=null, _in=null, _inCol=null;
@@ -165,11 +180,10 @@
     from:function(table){return makeBuilder(table);},
     storage:{
       from:function(bucket){
-        var SRK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
         return {
           upload:async function(path,file,opts){
             var url=BASE+'/storage/v1/object/'+bucket+'/'+path;
-            var r=await fetch(url,{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+SRK,'Content-Type':(opts&&opts.contentType)||file.type,'x-upsert':(opts&&opts.upsert)?'true':'false'},body:file});
+            var r=await fetch(url,{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+(_tok||KEY),'Content-Type':(opts&&opts.contentType)||file.type,'x-upsert':(opts&&opts.upsert)?'true':'false'},body:file});
             if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||e.error||'Upload falhou: '+r.status}};}
             return{data:{path:path},error:null};
           },
@@ -721,17 +735,15 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
   const [disputes,     setDisputes]     = React.useState([]);
 
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
-  const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
 
   React.useEffect(() => {
     if (!userId) return;
     const load = async () => {
       setLoading(true);
-      const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
       const [profRes, authRes, disputesAsReporter, disputesAsReported, ratingsRes, rentalsRes, photosRes, warningsRes,
              jobsRes, mktRes, qpRes, vacRes, ratingsGivenRes, appRes] = await Promise.all([
         window.sb.from('profiles').select('*').eq('id', userId).single(),
-        fetch(BASE + '/auth/v1/admin/users/' + userId, { headers:{ apikey:SRK, Authorization:'Bearer '+SRK } }).then(r=>r.json()).catch(()=>({})),
+        window._adminUserAction('get', userId).then(r => r.data || {}).catch(()=>({})),
         window.sb.from('dispute_reports').select('id,listing_name,severity,status,created_at').eq('reporter_id', userId).order('created_at',{ascending:false}),
         window.sb.from('dispute_reports').select('id,listing_name,severity,status,resolution_action,created_at').eq('reported_user_id', userId).order('created_at',{ascending:false}),
         window.sb.from('rental_ratings').select('stars').eq('ratee_id', userId),
@@ -1166,7 +1178,6 @@ function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
   const [action,     setAction]     = React.useState('none');
   const [warnWeight, setWarnWeight] = React.useState('leve');
   const [saving,     setSaving]     = React.useState(false);
-  const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
   const BASE = 'https://xiszfqghizqzlwyrfjol.supabase.co';
 
   const actions = [
@@ -1202,12 +1213,10 @@ function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
           user_id: dispute.reported_user_id, dispute_id: dispute.id, reason: message, severity: sev,
         });
       }
-      // 4. Ban: delete auth user
+      // 4. Ban: delete auth user (via Edge Function admin-user)
       if (action === 'ban') {
-        const r = await fetch(BASE + '/auth/v1/admin/users/' + dispute.reported_user_id, {
-          method: 'DELETE', headers: { apikey: SRK, Authorization: 'Bearer ' + SRK },
-        });
-        if (!r.ok) { let e={}; try{e=await r.json();}catch(x){} throw new Error(e.message||'Erro ao banir'); }
+        const res = await window._adminUserAction('delete', dispute.reported_user_id);
+        if (!res.ok) { throw new Error((res.data && res.data.error) || 'Erro ao banir'); }
       }
       // 5. Auto-ban se acumular >= 5 pontos
       if (action === 'warning') {
@@ -1518,16 +1527,10 @@ function AdminApp({ adminUser, onLogout }) {
     let error = null;
 
     if (isUser) {
-      // Admin Auth API — deleta user + invalida todas as sessões imediatamente
-      const BASE_AUTH = 'https://xiszfqghizqzlwyrfjol.supabase.co';
-      const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
-      const r = await fetch(BASE_AUTH + '/auth/v1/admin/users/' + row.id, {
-        method: 'DELETE',
-        headers: { 'apikey': SRK, 'Authorization': 'Bearer ' + SRK },
-      });
-      if (!r.ok) {
-        let e = {}; try { e = await r.json(); } catch(x) {}
-        error = { message: e.message || e.msg || 'Erro ao excluir conta (status ' + r.status + ')' };
+      // Admin Auth API via Edge Function — deleta user + invalida sessões
+      const res = await window._adminUserAction('delete', row.id);
+      if (!res.ok) {
+        error = { message: (res.data && res.data.error) || 'Erro ao excluir conta (status ' + res.status + ')' };
       }
     } else {
       const res = await window.sb.from(table).delete().eq('id', row.id);
@@ -1549,7 +1552,6 @@ function AdminApp({ adminUser, onLogout }) {
   };
 
   const approveMarket = async (row) => {
-    const SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpc3pmcWdoaXpxemx3eXJmam9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3Mzc0MywiZXhwIjoyMDk1NzQ5NzQzfQ.0g5pxJbcdTEKBaqGYXVycU6LyXHB-PefTzzvFDWcqng';
     const {data,error} = await window.sb.from('marketplace').update({status:'approved'}).eq('id',row.id);
     if(error){ error.message.includes('RLS')?setRlsOpen(true):showToast('❌ '+error.message,false); return; }
     setMarket(p=>p.map(m=>m.id===row.id?{...m,status:'approved'}:m));
@@ -1568,7 +1570,7 @@ function AdminApp({ adminUser, onLogout }) {
       try {
         await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/send-push', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SRK}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${window._adminGetTok() || ''}` },
           body: JSON.stringify({
             user_id: row.author_id,
             title: notifTitle,
