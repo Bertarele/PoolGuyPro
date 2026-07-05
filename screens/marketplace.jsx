@@ -3682,7 +3682,12 @@ function MarketplaceScreen({ ctx }) {
   React.useEffect(() => {
     if (!deepLinkListingId || !window.sb) return;
     window.sb.from('marketplace').select('*').eq('id', deepLinkListingId).single()
-      .then(({ data }) => { if (data) { setViewListing(normMktItem(data)); historyPushed.current = true; } })
+      .then(({ data }) => {
+        if (!data) return;
+        const normalized = normMktItem(data);
+        if (isMyPost(normalized)) { setMyPostDetail(normalized); }
+        else { setViewListing(normalized); historyPushed.current = true; }
+      })
       .catch(() => {})
       .finally(() => { if (clearDeepLink) clearDeepLink(); });
   }, [deepLinkListingId]); // eslint-disable-line
@@ -3906,7 +3911,7 @@ function MarketplaceScreen({ ctx }) {
     const photoSrc = (item.photoUrls&&item.photoUrls[0]) || item.photoUrl || null;
     return (
       <button key={item._id}
-        onClick={()=> isSoldItem ? (isMyPost(item) ? setMyPostDetail(item) : null) : openListing(item)}
+        onClick={()=> isMyPost(item) ? setMyPostDetail(item) : openListing(item)}
         className={isSoldItem ? '' : 'pg-press'}
         style={{
           padding:0, overflow:'hidden', position:'relative', cursor: isSoldItem ? (isMyPost(item) ? 'pointer' : 'default') : 'pointer',
@@ -4455,7 +4460,7 @@ function MarketplaceScreen({ ctx }) {
                 {user.tier === 'free' ? null :
                 <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(360px,1fr))', gap:16}}>
                   {list.map(r => (
-                    <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ if(m.status==='sold'&&!isMyPost(m)){return;} openListing(m); } } else { setSelected({...r, _type:'route'}); window.history.pushState({pgRoute:r.id},'','?listing=route-'+r.id); } }}
+                    <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ if(isMyPost(m)){ setMyPostDetail(m); return; } if(m.status==='sold'){return;} openListing(m); } } else { setSelected({...r, _type:'route'}); window.history.pushState({pgRoute:r.id},'','?listing=route-'+r.id); } }}
                       style={{
                         background:'var(--pg-white)', borderRadius:16, overflow:'hidden',
                         border:'1px solid var(--pg-ink-200)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
@@ -4837,7 +4842,7 @@ function MarketplaceScreen({ ctx }) {
                 };
                 return (
                   <button key={item._id}
-                    onClick={()=> isSoldItem ? (isMyPost(item) ? setMyPostDetail(item) : null) : openListing(item)}
+                    onClick={()=> isMyPost(item) ? setMyPostDetail(item) : openListing(item)}
                     className={isSoldItem ? '' : 'pg-press'}
                     style={{
                       padding:0, overflow:'hidden', position:'relative',
@@ -5300,7 +5305,7 @@ function MarketplaceScreen({ ctx }) {
             {/* Route cards */}
             {routeSub === 'routes' && list.map(r => (
               <div key={r.id||r._liveId} className="pg-card pg-card-tap"
-                onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ if(m.status==='sold'&&!isMyPost(m)){return;} openListing(m); } } else { setSelected({...r, _type:'route'}); window.history.pushState({pgRoute:r.id},'','?listing=route-'+r.id); } }}
+                onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ if(isMyPost(m)){ setMyPostDetail(m); return; } if(m.status==='sold'){return;} openListing(m); } } else { setSelected({...r, _type:'route'}); window.history.pushState({pgRoute:r.id},'','?listing=route-'+r.id); } }}
                 style={{padding:14, display:'flex', gap:12, position:'relative'}}>
                 <div style={{width:90, height:90, borderRadius:12, overflow:'hidden', flexShrink:0,
                   background:'linear-gradient(135deg,var(--pg-blue-100) 0%,var(--pg-blue-50) 100%)',
@@ -5371,7 +5376,7 @@ function MarketplaceScreen({ ctx }) {
                 onClick={()=>{
                   if (p._live) {
                     const m = liveMarket.find(x => x._id === p._liveId);
-                    if (m) { openListing(m); return; }
+                    if (m) { if (isMyPost(m)) { setMyPostDetail(m); } else { openListing(m); } return; }
                   }
                   setSelected({...p, _type:'pool'}); window.history.pushState({pgPool:p.id},'','?listing=pool-'+p.id);
                 }}

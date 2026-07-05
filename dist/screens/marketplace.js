@@ -6943,8 +6943,12 @@ function MarketplaceScreen({
     window.sb.from('marketplace').select('*').eq('id', deepLinkListingId).single().then(({
       data
     }) => {
-      if (data) {
-        setViewListing(normMktItem(data));
+      if (!data) return;
+      const normalized = normMktItem(data);
+      if (isMyPost(normalized)) {
+        setMyPostDetail(normalized);
+      } else {
+        setViewListing(normalized);
         historyPushed.current = true;
       }
     }).catch(() => {}).finally(() => {
@@ -7230,7 +7234,7 @@ function MarketplaceScreen({
     const photoSrc = item.photoUrls && item.photoUrls[0] || item.photoUrl || null;
     return /*#__PURE__*/React.createElement("button", {
       key: item._id,
-      onClick: () => isSoldItem ? isMyPost(item) ? setMyPostDetail(item) : null : openListing(item),
+      onClick: () => isMyPost(item) ? setMyPostDetail(item) : openListing(item),
       className: isSoldItem ? '' : 'pg-press',
       style: {
         padding: 0,
@@ -8457,7 +8461,11 @@ function MarketplaceScreen({
         if (r._live) {
           const m = liveMarket.find(x => x._id === r._liveId);
           if (m) {
-            if (m.status === 'sold' && !isMyPost(m)) {
+            if (isMyPost(m)) {
+              setMyPostDetail(m);
+              return;
+            }
+            if (m.status === 'sold') {
               return;
             }
             openListing(m);
@@ -9275,7 +9283,7 @@ function MarketplaceScreen({
     };
     return /*#__PURE__*/React.createElement("button", {
       key: item._id,
-      onClick: () => isSoldItem ? isMyPost(item) ? setMyPostDetail(item) : null : openListing(item),
+      onClick: () => isMyPost(item) ? setMyPostDetail(item) : openListing(item),
       className: isSoldItem ? '' : 'pg-press',
       style: {
         padding: 0,
@@ -10158,7 +10166,11 @@ function MarketplaceScreen({
       if (r._live) {
         const m = liveMarket.find(x => x._id === r._liveId);
         if (m) {
-          if (m.status === 'sold' && !isMyPost(m)) {
+          if (isMyPost(m)) {
+            setMyPostDetail(m);
+            return;
+          }
+          if (m.status === 'sold') {
             return;
           }
           openListing(m);
@@ -10371,7 +10383,11 @@ function MarketplaceScreen({
       if (p._live) {
         const m = liveMarket.find(x => x._id === p._liveId);
         if (m) {
-          openListing(m);
+          if (isMyPost(m)) {
+            setMyPostDetail(m);
+          } else {
+            openListing(m);
+          }
           return;
         }
       }
