@@ -1809,12 +1809,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       {isOwner && !isSold && (
         <button onClick={()=>setMarkSoldOpen(true)} style={{
           width:'100%', padding:'13px', borderRadius:14,
-          border:'1.5px solid #86EFAC', background:'#F0FDF4',
-          color:'#16A34A', cursor:'pointer', fontFamily:'inherit',
-          fontSize:14, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+          border:'none', cursor:'pointer', fontFamily:'inherit',
+          background:'linear-gradient(135deg,#22C55E,#15803D)',
+          color:'#fff', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+          boxShadow:'0 4px 14px rgba(21,128,61,0.35)',
           transition:'all .15s',
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12.99V2h10.99l8.6 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
           {lang==='pt'?'Marcar como vendido':lang==='es'?'Marcar como vendido':'Mark as Sold'}
         </button>
       )}
@@ -2949,13 +2950,14 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         {!isRent && item.author_id && currentUser?.uid && item.author_id === currentUser.uid && item.status !== 'sold' && (
           <button onClick={()=>setMarkSoldOpen(true)} style={{
             width:'100%', marginTop:10, padding:'13px', borderRadius:14,
-            border:'1.5px solid #86EFAC', background:'#F0FDF4',
-            color:'#16A34A', cursor:'pointer', fontFamily:'inherit',
-            fontSize:14, fontWeight:700,
+            border:'none', cursor:'pointer', fontFamily:'inherit',
+            background:'linear-gradient(135deg,#22C55E,#15803D)',
+            color:'#fff', fontSize:14, fontWeight:700,
             display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            boxShadow:'0 4px 14px rgba(21,128,61,0.35)',
             transition:'all .15s',
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12.99V2h10.99l8.6 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             {lang==='pt' ? 'Marcar como vendido' : lang==='es' ? 'Marcar como vendido' : 'Mark as Sold'}
           </button>
         )}
@@ -3192,7 +3194,20 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
   const lbl = (text) => <div style={{fontSize:11,fontWeight:700,color:'var(--pg-ink-500)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:6}}>{text}</div>;
 
   return (
-    <div style={{padding:'0 0 36px'}}>
+    <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
+      {/* Header */}
+      <div style={{padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0, borderBottom:'0.5px solid var(--pg-ink-200)'}}>
+        <button onClick={editing ? ()=>setEditing(false) : onClose} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:15, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit'}}>
+          {editing ? (lang==='pt'?'Voltar':lang==='es'?'Volver':'Back') : (lang==='pt'?'Fechar':lang==='es'?'Cerrar':'Close')}
+        </button>
+        <div style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.01em', flex:1, textAlign:'center', margin:'0 10px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+          {editing ? (lang==='pt'?'Editar anúncio':lang==='es'?'Editar anuncio':'Edit listing') : (item.name || (lang==='pt'?'Seu anúncio':lang==='es'?'Tu anuncio':'Your listing'))}
+        </div>
+        <div style={{width:44, flexShrink:0}}/>
+      </div>
+
+      {/* Scrollable body */}
+      <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'0 0 36px'}}>
       {/* Photo carousel with status badge overlay */}
       <div style={{position:'relative'}}>
         <PhotoCarousel urls={allPhotos} fallbackCat={item.cat||'Tools'} height={220}/>
@@ -3357,13 +3372,14 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
             {item.type !== 'route' && item.status !== 'sold' && (
               <button onClick={()=>setMarkSoldOpen(true)} style={{
                 width:'100%', marginTop:10, padding:'13px', borderRadius:14,
-                border:'1.5px solid #86EFAC', background:'#F0FDF4',
-                color:'#16A34A', cursor:'pointer', fontFamily:'inherit',
-                fontSize:14, fontWeight:700,
+                border:'none', cursor:'pointer', fontFamily:'inherit',
+                background:'linear-gradient(135deg,#22C55E,#15803D)',
+                color:'#fff', fontSize:14, fontWeight:700,
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                boxShadow:'0 4px 14px rgba(21,128,61,0.35)',
                 transition:'all .15s',
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12.99V2h10.99l8.6 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                 {lang==='pt' ? 'Marcar como vendido' : lang==='es' ? 'Marcar como vendido' : 'Mark as Sold'}
               </button>
             )}
@@ -3423,18 +3439,8 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
         ) : (
           /* ── Edit mode ── */
           <>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
-              <button onClick={()=>setEditing(false)} style={{width:34,height:34,borderRadius:'50%',border:'1.5px solid var(--pg-ink-200)',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                {Icon.chev(16,'var(--pg-ink-700)','left')}
-              </button>
-              <div>
-                <div style={{fontFamily:'var(--pg-font-display)',fontSize:17,fontWeight:700,color:'var(--pg-ink-900)'}}>
-                  {lang==='pt'?'Editar anúncio':lang==='es'?'Editar anuncio':'Edit listing'}
-                </div>
-                <div style={{fontSize:11.5,color:'var(--pg-ink-400)',marginTop:1}}>
-                  {lang==='pt'?'Alterações salvas instantaneamente':lang==='es'?'Los cambios se guardan al instante':'Changes are saved instantly'}
-                </div>
-              </div>
+            <div style={{fontSize:12,color:'var(--pg-ink-400)',marginBottom:16}}>
+              {lang==='pt'?'Alterações salvas instantaneamente':lang==='es'?'Los cambios se guardan al instante':'Changes are saved instantly'}
             </div>
 
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
@@ -3527,6 +3533,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   );
@@ -4556,12 +4563,12 @@ function MarketplaceScreen({ ctx }) {
         </div>
       )}
       {shareItem && <ShareSheet item={shareItem} lang={lang} onClose={()=>setShareItem(null)} showToast={showToast}/>}
-      <Sheet open={!!myPostDetail} onClose={()=>setMyPostDetail(null)} height="auto">
+      <FullPage open={!!myPostDetail} onClose={()=>setMyPostDetail(null)}>
         {myPostDetail && <MyPostDetailSheet item={myPostDetail} lang={lang} onClose={()=>setMyPostDetail(null)} showToast={showToast}
           currentUser={user} openRating={openRating}
           onUpdated={()=>{ setMyPostDetail(null); if(ctx.liveMarket)ctx.liveMarket.splice(0); }}
           onDeleted={(id)=>{ setMyPostDetail(null); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}/>}
-      </Sheet>
+      </FullPage>
       {selected && (
         <div style={{position:'fixed', inset:0, zIndex:200, background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
           <ListingDetail selected={selected} lang={lang} t={t} catLabels={catLabels} openChat={openChat}
@@ -5523,7 +5530,7 @@ function MarketplaceScreen({ ctx }) {
       {shareItem && <ShareSheet item={shareItem} lang={lang} onClose={()=>setShareItem(null)} showToast={showToast}/>}
 
       {/* My post detail / edit sheet */}
-      <Sheet open={!!myPostDetail} onClose={()=>setMyPostDetail(null)} height="auto">
+      <FullPage open={!!myPostDetail} onClose={()=>setMyPostDetail(null)}>
         {myPostDetail && <MyPostDetailSheet
           item={myPostDetail} lang={lang}
           onClose={()=>setMyPostDetail(null)}
@@ -5538,7 +5545,7 @@ function MarketplaceScreen({ ctx }) {
             if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
           }}
         />}
-      </Sheet>
+      </FullPage>
 
       {/* Item detail — full screen overlay, same as equipment */}
       {selected && (

@@ -3454,17 +3454,18 @@ function ViewListingSheet({
       width: '100%',
       padding: '13px',
       borderRadius: 14,
-      border: '1.5px solid #86EFAC',
-      background: '#F0FDF4',
-      color: '#16A34A',
+      border: 'none',
       cursor: 'pointer',
       fontFamily: 'inherit',
+      background: 'linear-gradient(135deg,#22C55E,#15803D)',
+      color: '#fff',
       fontSize: 14,
       fontWeight: 700,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
+      boxShadow: '0 4px 14px rgba(21,128,61,0.35)',
       transition: 'all .15s'
     }
   }, /*#__PURE__*/React.createElement("svg", {
@@ -3472,11 +3473,17 @@ function ViewListingSheet({
     height: "16",
     viewBox: "0 0 24 24",
     fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.5",
-    strokeLinecap: "round"
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "20 6 9 17 4 12"
+    stroke: "#fff",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12.99V2h10.99l8.6 8.59a2 2 0 0 1 0 2.82z"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "7",
+    x2: "7.01",
+    y2: "7"
   })), lang === 'pt' ? 'Marcar como vendido' : lang === 'es' ? 'Marcar como vendido' : 'Mark as Sold'), isSold && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 16px',
@@ -5668,17 +5675,18 @@ function ViewListingSheet({
       marginTop: 10,
       padding: '13px',
       borderRadius: 14,
-      border: '1.5px solid #86EFAC',
-      background: '#F0FDF4',
-      color: '#16A34A',
+      border: 'none',
       cursor: 'pointer',
       fontFamily: 'inherit',
+      background: 'linear-gradient(135deg,#22C55E,#15803D)',
+      color: '#fff',
       fontSize: 14,
       fontWeight: 700,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
+      boxShadow: '0 4px 14px rgba(21,128,61,0.35)',
       transition: 'all .15s'
     }
   }, /*#__PURE__*/React.createElement("svg", {
@@ -5686,11 +5694,17 @@ function ViewListingSheet({
     height: "16",
     viewBox: "0 0 24 24",
     fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.5",
-    strokeLinecap: "round"
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "20 6 9 17 4 12"
+    stroke: "#fff",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12.99V2h10.99l8.6 8.59a2 2 0 0 1 0 2.82z"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "7",
+    x2: "7.01",
+    y2: "7"
   })), lang === 'pt' ? 'Marcar como vendido' : lang === 'es' ? 'Marcar como vendido' : 'Mark as Sold'), item.status === 'sold' && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10,
@@ -6084,6 +6098,54 @@ function MyPostDetailSheet({
   }, text);
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 18px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexShrink: 0,
+      borderBottom: '0.5px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: editing ? () => setEditing(false) : onClose,
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-blue-500)',
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: 'pointer',
+      padding: 0,
+      fontFamily: 'inherit'
+    }
+  }, editing ? lang === 'pt' ? 'Voltar' : lang === 'es' ? 'Volver' : 'Back' : lang === 'pt' ? 'Fechar' : lang === 'es' ? 'Cerrar' : 'Close'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--pg-font-display)',
+      fontSize: 16,
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+      flex: 1,
+      textAlign: 'center',
+      margin: '0 10px',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  }, editing ? lang === 'pt' ? 'Editar anúncio' : lang === 'es' ? 'Editar anuncio' : 'Edit listing' : item.name || (lang === 'pt' ? 'Seu anúncio' : lang === 'es' ? 'Tu anuncio' : 'Your listing')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 44,
+      flexShrink: 0
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflow: 'auto',
+      touchAction: 'pan-y',
       padding: '0 0 36px'
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -6462,17 +6524,18 @@ function MyPostDetailSheet({
       marginTop: 10,
       padding: '13px',
       borderRadius: 14,
-      border: '1.5px solid #86EFAC',
-      background: '#F0FDF4',
-      color: '#16A34A',
+      border: 'none',
       cursor: 'pointer',
       fontFamily: 'inherit',
+      background: 'linear-gradient(135deg,#22C55E,#15803D)',
+      color: '#fff',
       fontSize: 14,
       fontWeight: 700,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
+      boxShadow: '0 4px 14px rgba(21,128,61,0.35)',
       transition: 'all .15s'
     }
   }, /*#__PURE__*/React.createElement("svg", {
@@ -6480,11 +6543,17 @@ function MyPostDetailSheet({
     height: "16",
     viewBox: "0 0 24 24",
     fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2.5",
-    strokeLinecap: "round"
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "20 6 9 17 4 12"
+    stroke: "#fff",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12.99V2h10.99l8.6 8.59a2 2 0 0 1 0 2.82z"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "7",
+    x2: "7.01",
+    y2: "7"
   })), lang === 'pt' ? 'Marcar como vendido' : lang === 'es' ? 'Marcar como vendido' : 'Mark as Sold'), item.status === 'sold' && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10,
@@ -6565,39 +6634,11 @@ function MyPostDetailSheet({
   /* ── Edit mode ── */
   React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      marginBottom: 20
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setEditing(false),
-    style: {
-      width: 34,
-      height: 34,
-      borderRadius: '50%',
-      border: '1.5px solid var(--pg-ink-200)',
-      background: 'transparent',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }
-  }, Icon.chev(16, 'var(--pg-ink-700)', 'left')), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--pg-font-display)',
-      fontSize: 17,
-      fontWeight: 700,
-      color: 'var(--pg-ink-900)'
-    }
-  }, lang === 'pt' ? 'Editar anúncio' : lang === 'es' ? 'Editar anuncio' : 'Edit listing'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11.5,
+      fontSize: 12,
       color: 'var(--pg-ink-400)',
-      marginTop: 1
+      marginBottom: 16
     }
-  }, lang === 'pt' ? 'Alterações salvas instantaneamente' : lang === 'es' ? 'Los cambios se guardan al instante' : 'Changes are saved instantly'))), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Alterações salvas instantaneamente' : lang === 'es' ? 'Los cambios se guardan al instante' : 'Changes are saved instantly'), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -6727,7 +6768,7 @@ function MyPostDetailSheet({
       opacity: saving ? 0.7 : 1,
       boxShadow: '0 4px 14px rgba(0,119,182,0.30)'
     }
-  }, saving ? lang === 'pt' ? 'Salvando…' : lang === 'es' ? 'Guardando…' : 'Saving…' : lang === 'pt' ? 'Salvar alterações' : lang === 'es' ? 'Guardar cambios' : 'Save changes')))));
+  }, saving ? lang === 'pt' ? 'Salvando…' : lang === 'es' ? 'Guardando…' : 'Saving…' : lang === 'pt' ? 'Salvar alterações' : lang === 'es' ? 'Guardar cambios' : 'Save changes'))))));
 }
 function MarketplaceScreen({
   ctx
@@ -8680,10 +8721,9 @@ function MarketplaceScreen({
       lang: lang,
       onClose: () => setShareItem(null),
       showToast: showToast
-    }), /*#__PURE__*/React.createElement(Sheet, {
+    }), /*#__PURE__*/React.createElement(FullPage, {
       open: !!myPostDetail,
-      onClose: () => setMyPostDetail(null),
-      height: "auto"
+      onClose: () => setMyPostDetail(null)
     }, myPostDetail && /*#__PURE__*/React.createElement(MyPostDetailSheet, {
       item: myPostDetail,
       lang: lang,
@@ -10679,10 +10719,9 @@ function MarketplaceScreen({
     lang: lang,
     onClose: () => setShareItem(null),
     showToast: showToast
-  }), /*#__PURE__*/React.createElement(Sheet, {
+  }), /*#__PURE__*/React.createElement(FullPage, {
     open: !!myPostDetail,
-    onClose: () => setMyPostDetail(null),
-    height: "auto"
+    onClose: () => setMyPostDetail(null)
   }, myPostDetail && /*#__PURE__*/React.createElement(MyPostDetailSheet, {
     item: myPostDetail,
     lang: lang,
