@@ -76,11 +76,13 @@ function HomeScreen({ ctx }) {
       .then(({ data }) => { if (data && data.length > 0) setSponsoredCard(data[0]); });
   }, []);
 
-  // Featured marketplace listings — items marked as featured by admin
+  // Featured marketplace listings — admin-picked (featured=true) OR user-paid boost still active
   const [featuredListings, setFeaturedListings] = React.useState([]);
   React.useEffect(() => {
     if (!window.sb) return;
-    window.sb.from('marketplace').select('*').eq('featured', true).eq('status', 'approved')
+    window.sb.from('marketplace').select('*')
+      .eq('status', 'approved')
+      .or('featured.eq.true,boosted_until.gt.' + new Date().toISOString())
       .order('created_at', { ascending: false }).limit(10)
       .then(({ data }) => { if (data && data.length > 0) setFeaturedListings(data); });
   }, []);

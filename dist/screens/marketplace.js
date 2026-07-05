@@ -29,6 +29,179 @@ function timeAgo(iso, lang = 'en') {
   return lang === 'pt' ? `${w}sem` : lang === 'es' ? `${w}sem` : `${w}w ago`;
 }
 
+// ── Boost (paid listing highlight) ────────────────────────────
+// NOTE: prices are placeholders — final values TBD, easy to tweak here.
+const BOOST_PLANS = [{
+  days: 3,
+  price: 4.99
+}, {
+  days: 7,
+  price: 8.99
+}, {
+  days: 14,
+  price: 14.99
+}];
+function BoostListingSheet({
+  item,
+  lang,
+  onClose,
+  onBoosted,
+  showToast
+}) {
+  const [planIdx, setPlanIdx] = React.useState(1); // default: 7 days
+  const [buying, setBuying] = React.useState(false);
+  const plan = BOOST_PLANS[planIdx];
+  const alreadyBoosted = item.boostedUntil && new Date(item.boostedUntil) > new Date();
+  const handleBuy = async () => {
+    if (!window.sb || buying) return;
+    setBuying(true);
+    // Open external checkout — no Apple cut, same pattern as subscription upgrades
+    window.open(`https://poolguyx.com/boost/${item._id}?days=${plan.days}`, '_blank', 'noopener');
+    // NOTE: In production, remove the block below. Boost is activated server-side
+    // via payment webhook once pricing is finalized. Kept here for demo/testing only.
+    const until = new Date(Date.now() + plan.days * 86400000).toISOString();
+    const {
+      error
+    } = await window.sb.from('marketplace').update({
+      boosted_until: until
+    }).eq('id', item._id);
+    setBuying(false);
+    if (error) {
+      showToast && showToast('❌ ' + error.message);
+      return;
+    }
+    showToast && showToast(lang === 'pt' ? '🚀 Anúncio destacado!' : lang === 'es' ? '🚀 ¡Anuncio destacado!' : '🚀 Listing boosted!');
+    onBoosted && onBoosted(until);
+    onClose && onClose();
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '20px 18px 36px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      background: 'var(--pg-ink-200)',
+      margin: '-6px auto 20px'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: 'var(--pg-ink-900)',
+      fontFamily: 'var(--pg-font-display)',
+      marginBottom: 4
+    }
+  }, "\uD83D\uDE80 ", lang === 'pt' ? 'Destacar anúncio' : lang === 'es' ? 'Destacar anuncio' : 'Boost listing'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: 'var(--pg-ink-500)',
+      marginBottom: 20,
+      lineHeight: 1.5
+    }
+  }, lang === 'pt' ? `Coloque "${item.name}" na seção de Destaques da tela inicial para mais visibilidade.` : lang === 'es' ? `Coloca "${item.name}" en la sección de Destacados de la pantalla principal para más visibilidad.` : `Get "${item.name}" placed in the Featured Listings section on Home for extra visibility.`), alreadyBoosted && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16,
+      padding: '11px 14px',
+      borderRadius: 12,
+      background: 'rgba(14,186,199,0.10)',
+      border: '1.5px solid rgba(14,186,199,0.35)',
+      fontSize: 12.5,
+      color: '#0EBAC7',
+      fontWeight: 600
+    }
+  }, lang === 'pt' ? `Já está destacado até ${new Date(item.boostedUntil).toLocaleDateString('pt-BR')}. Comprar de novo estende o prazo.` : lang === 'es' ? `Ya está destacado hasta ${new Date(item.boostedUntil).toLocaleDateString('es-ES')}. Comprar de nuevo extiende el plazo.` : `Already boosted until ${new Date(item.boostedUntil).toLocaleDateString('en-US')}. Buying again extends it.`), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      marginBottom: 20
+    }
+  }, BOOST_PLANS.map((pl, i) => /*#__PURE__*/React.createElement("button", {
+    key: pl.days,
+    onClick: () => setPlanIdx(i),
+    style: {
+      padding: '14px 16px',
+      borderRadius: 12,
+      border: '1.5px solid ' + (planIdx === i ? '#0EBAC7' : 'var(--pg-ink-200)'),
+      background: planIdx === i ? 'rgba(14,186,199,0.08)' : 'var(--pg-white)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      textAlign: 'left',
+      transition: 'all .12s'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, pl.days, " ", lang === 'pt' ? 'dias' : lang === 'es' ? 'días' : 'days'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      color: '#0EBAC7'
+    }
+  }, "$", pl.price), planIdx === i && /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#0EBAC7",
+    strokeWidth: "2.5",
+    strokeLinecap: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "20 6 9 17 4 12"
+  })))))), /*#__PURE__*/React.createElement("button", {
+    onClick: handleBuy,
+    disabled: buying,
+    style: {
+      width: '100%',
+      padding: '15px',
+      borderRadius: 14,
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 15,
+      fontWeight: 700,
+      color: '#fff',
+      background: 'linear-gradient(135deg,#0EBAC7,#0891A0)',
+      opacity: buying ? 0.7 : 1,
+      transition: 'all .15s',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8
+    }
+  }, buying ? '...' : lang === 'pt' ? `Destacar por $${plan.price}` : lang === 'es' ? `Destacar por $${plan.price}` : `Boost for $${plan.price}`), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      width: '100%',
+      marginTop: 10,
+      padding: '12px',
+      borderRadius: 14,
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 14,
+      fontWeight: 600,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-600)'
+    }
+  }, lang === 'pt' ? 'Cancelar' : lang === 'es' ? 'Cancelar' : 'Cancel'));
+}
+
 // ── Share bottom sheet ───────────────────────────────────────
 function ShareSheet({
   item,
@@ -5800,6 +5973,8 @@ function MyPostDetailSheet({
   const [activeRental, setActiveRental] = React.useState(null); // rental_request blocking edit
   const [rentLoaded, setRentLoaded] = React.useState(false);
   const [markSoldOpen, setMarkSoldOpen] = React.useState(false);
+  const [boostOpen, setBoostOpen] = React.useState(false);
+  const [boostedUntil, setBoostedUntil] = React.useState(item.boostedUntil || null);
   const [form, setForm] = React.useState({
     name: item.name || '',
     description: item.description || '',
@@ -5933,7 +6108,24 @@ function MyPostDetailSheet({
       color: statusColor,
       letterSpacing: '0.03em'
     }
-  }, statusLabel), item.cat && /*#__PURE__*/React.createElement("span", {
+  }, statusLabel), boostedUntil && new Date(boostedUntil) > new Date() && /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      bottom: 14,
+      left: 16,
+      zIndex: 2,
+      fontSize: 11,
+      fontWeight: 700,
+      padding: '5px 12px',
+      borderRadius: 8,
+      background: 'rgba(14,186,199,0.92)',
+      color: '#fff',
+      letterSpacing: '0.03em',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 5
+    }
+  }, "\uD83D\uDE80 ", lang === 'pt' ? 'Destacado' : lang === 'es' ? 'Destacado' : 'Boosted'), item.cat && /*#__PURE__*/React.createElement("span", {
     style: {
       position: 'absolute',
       top: 14,
@@ -6320,7 +6512,27 @@ function MyPostDetailSheet({
       fontWeight: 700,
       color: '#16A34A'
     }
-  }, lang === 'pt' ? 'Vendido!' : lang === 'es' ? '¡Vendido!' : 'Sold!')), /*#__PURE__*/React.createElement(Sheet, {
+  }, lang === 'pt' ? 'Vendido!' : lang === 'es' ? '¡Vendido!' : 'Sold!')), item.status !== 'sold' && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setBoostOpen(true),
+    style: {
+      width: '100%',
+      marginTop: 10,
+      padding: '13px',
+      borderRadius: 14,
+      border: '1.5px solid rgba(14,186,199,0.4)',
+      background: 'rgba(14,186,199,0.08)',
+      color: '#0EBAC7',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 14,
+      fontWeight: 700,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      transition: 'all .15s'
+    }
+  }, "\uD83D\uDE80 ", boostedUntil && new Date(boostedUntil) > new Date() ? lang === 'pt' ? 'Estender destaque' : lang === 'es' ? 'Extender destacado' : 'Extend boost' : lang === 'pt' ? 'Destacar anúncio' : lang === 'es' ? 'Destacar anuncio' : 'Boost listing'), /*#__PURE__*/React.createElement(Sheet, {
     open: markSoldOpen,
     onClose: () => setMarkSoldOpen(false),
     height: "auto"
@@ -6335,6 +6547,19 @@ function MyPostDetailSheet({
       onClose && onClose();
       if (sellerRating && openRating) setTimeout(() => openRating(sellerRating), 220);
     }
+  })), /*#__PURE__*/React.createElement(Sheet, {
+    open: boostOpen,
+    onClose: () => setBoostOpen(false),
+    height: "auto"
+  }, boostOpen && /*#__PURE__*/React.createElement(BoostListingSheet, {
+    item: {
+      ...item,
+      boostedUntil
+    },
+    lang: lang,
+    onClose: () => setBoostOpen(false),
+    showToast: showToast,
+    onBoosted: until => setBoostedUntil(until)
   }))) :
   /*#__PURE__*/
   /* ── Edit mode ── */
@@ -6560,7 +6785,8 @@ function MarketplaceScreen({
     rentPrices: r.rent_prices || null,
     status: r.status || 'pending',
     createdAt: r.created_at || null,
-    soldAt: r.sold_at || null
+    soldAt: r.sold_at || null,
+    boostedUntil: r.boosted_until || null
   });
 
   // Show sold items for 1 day only, then they get auto-deleted from marketplace (archived to history)

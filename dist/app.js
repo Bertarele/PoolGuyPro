@@ -1110,7 +1110,8 @@ function App() {
       rentPrices: r.rent_prices || null,
       status: r.status || 'pending',
       createdAt: r.created_at || null,
-      soldAt: r.sold_at || null
+      soldAt: r.sold_at || null,
+      boostedUntil: r.boosted_until || null
     });
 
     // Clean up sold listings older than 1 day (fire-and-forget)
