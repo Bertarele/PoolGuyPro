@@ -993,11 +993,13 @@ function App() {
     try {
       localStorage.setItem('pg_dark', darkMode ? '1' : '0');
     } catch (e) {}
-    // Body canvas background covers the iOS safe-area gap below CSS viewport (per CSS spec:
-    // html{overflow:hidden} → canvas = body background, painting the full WKWebView surface)
+    // iOS safe-area strip (home indicator) below the CSS viewport is painted by the
+    // CANVAS, which per CSS spec takes the ROOT (<html>) background — but only while
+    // <body> stays transparent. A fixed <body> with its own background does NOT
+    // propagate, leaving the strip black. So set ONLY <html>, never <body>.
     const bg = darkMode ? '#161B22' : '#ffffff';
     document.documentElement.style.background = bg;
-    document.body.style.background = bg;
+    document.body.style.background = 'transparent';
   }, [darkMode]);
   const toggleDark = React.useCallback(() => setDarkModeState(v => !v), []);
 

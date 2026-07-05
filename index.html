@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <title>PoolGuyX — Florida Pool Network</title>
   <meta name="viewport" content="width=430, viewport-fit=cover, user-scalable=no"/>
-  <script>try{var _d=localStorage.getItem('pg_dark');var _bg=_d==='1'?'#161B22':'#ffffff';document.documentElement.style.background=_bg;document.body.style.background=_bg;}catch(e){}</script>
+  <script>try{var _d=localStorage.getItem('pg_dark');var _bg=_d==='1'?'#161B22':'#ffffff';document.documentElement.style.background=_bg;}catch(e){}</script>
   <meta name="theme-color" content="#0077B6"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -39,20 +39,6 @@
       background: var(--pg-bg);
     }
     #stage::after { display: none; }
-    /* Fundo full-screen que alcança a safe area inferior (indicador de home).
-       Em iPhones menores que o Pro Max, o width=430 faz o bottom:0 parar na
-       linha da safe area, deixando ~34px do fundo nativo (preto) à mostra.
-       100vh alcança a tela física inteira e pinta essa faixa com a cor do app.
-       No Pro Max é invisível (fica atrás do tabbar que já cobre tudo). */
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 100vh;
-      background: var(--pg-bg);
-      z-index: -1;
-      pointer-events: none;
-    }
     #root { width: 100%; height: 100%; }
 
     /* ── Splash screen — shown instantly before any JS loads ── */
