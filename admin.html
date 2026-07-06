@@ -1479,6 +1479,9 @@ function AdminApp({ adminUser, onLogout }) {
   const [editQP,        setEditQP]        = React.useState(null); // job being edited
   const [openGroups,    setOpenGroups]    = React.useState({work:false, marketplace:false});
   const [flaggedRatings, setFlaggedRatings] = React.useState([]); // suspicious ratings (collusion/manipulation)
+  const [repeatedTradePairs, setRepeatedTradePairs] = React.useState([]); // same pair trading "sold" repeatedly
+  const [newAccountRaters,   setNewAccountRaters]   = React.useState([]); // brand-new accounts rating fast
+  const [antifraudTab, setAntifraudTab] = React.useState('ratings'); // 'ratings'|'pairs'|'newaccounts'
   // User filters
   const [userSearch,    setUserSearch]    = React.useState('');
   const [userDateFrom,  setUserDateFrom]  = React.useState('');
@@ -1490,7 +1493,7 @@ function AdminApp({ adminUser, onLogout }) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [u,j,tc,m,v,d,w,r,sp,qp,fr] = await Promise.all([
+    const [u,j,tc,m,v,d,w,r,sp,qp,fr,rtp,nar] = await Promise.all([
       window.sb.from('profiles').select('*').order('created_at',{ascending:false}),
       window.sb.from('jobs').select('*, profiles(name, email)').order('created_at',{ascending:false}),
       window.sb.from('techs').select('*').order('created_at',{ascending:false}),
@@ -1502,6 +1505,8 @@ function AdminApp({ adminUser, onLogout }) {
       window.sb.from('sponsored_cards').select('*').order('created_at',{ascending:false}),
       window.sb.from('quick_pool_jobs').select('*').order('created_at',{ascending:false}).limit(200),
       window.sb.from('flagged_ratings').select('*').order('created_at',{ascending:false}),
+      window.sb.from('repeated_trade_pairs').select('*').order('trade_count',{ascending:false}),
+      window.sb.from('new_account_raters').select('*').order('ratings_given',{ascending:false}),
     ]);
     if(u.data) setUsers(u.data);
     if(j.data) setJobs(j.data);
@@ -1514,6 +1519,8 @@ function AdminApp({ adminUser, onLogout }) {
     if(sp.data) setSponsors(sp.data);
     if(qp.data) setQuickPools(qp.data);
     if(fr.data) setFlaggedRatings(fr.data);
+    if(rtp.data) setRepeatedTradePairs(rtp.data);
+    if(nar.data) setNewAccountRaters(nar.data);
     const hiringsCount = j.data?.filter(x=>x.hired_at)?.length??0;
     const pendingRentals = r.data?.filter(x=>x.status==='pending'||x.status==='active')?.length??0;
     setStats({ users:u.data?.length??0, jobs:j.data?.length??0, techs:tc.data?.length??0, market:m.data?.length??0, vacs:v.data?.length??0, disputes:d.data?.filter(x=>x.status==='pending')?.length??0, hirings:hiringsCount, rentals:r.data?.length??0, pendingRentals });
@@ -1567,6 +1574,16 @@ function AdminApp({ adminUser, onLogout }) {
     // Apenas some da lista nesta sessão do admin — não altera o banco.
     // Útil quando o admin já revisou e concluiu que a avaliação é legítima.
     setFlaggedRatings(p=>p.filter(r=>r.id!==row.id));
+    showToast('✓ Marcado como revisado (só nesta sessão).');
+  };
+
+  const dismissTradePair = (row) => {
+    setRepeatedTradePairs(p=>p.filter(r=>!(r.user_a===row.user_a && r.user_b===row.user_b)));
+    showToast('✓ Marcado como revisado (só nesta sessão).');
+  };
+
+  const dismissNewAccountRater = (row) => {
+    setNewAccountRaters(p=>p.filter(r=>r.from_id!==row.from_id));
     showToast('✓ Marcado como revisado (só nesta sessão).');
   };
 
@@ -1683,12 +1700,12 @@ function AdminApp({ adminUser, onLogout }) {
     },
     { type:'item',  id:'quickpools', label:'Express Pools', icon:IC.bolt,    badge:openQPCount },
     { type:'item',  id:'disputes',   label:'Reclamações',   icon:IC.flag,    badge:disputeCount },
-    { type:'item',  id:'ratings',    label:'Avaliações',    icon:IC.star,    badge:flaggedRatings.length },
+    { type:'item',  id:'ratings',    label:'Antifraude',    icon:IC.star,    badge:flaggedRatings.length+repeatedTradePairs.length+newAccountRaters.length },
     { type:'item',  id:'sponsors',   label:'Patrocinadores',icon:IC.sponsor, badge:0 },
   ];
 
   const sectionLabels = {
-    dashboard:'Painel', users:'Usuários', jobs:'Vagas', hirings:'Contratações', ratings:'Avaliações',
+    dashboard:'Painel', users:'Usuários', jobs:'Vagas', hirings:'Contratações', ratings:'Antifraude',
     techs:'Técnicos', vacations:'Férias / Rotas', market:'Marketplace · Anúncios',
     rentals:'Marketplace · Aluguéis', quickpools:'Express Pools',
     disputes:'Reclamações', sponsors:'Patrocinadores',
@@ -2695,83 +2712,198 @@ function AdminApp({ adminUser, onLogout }) {
               fast_reciprocal:   { label:'⚡ Recíproca rápida (<2h)',           color:'#8B5CF6' },
               new_account_rater: { label:'🆕 Conta nova avaliando (<24h)',      color:'#0EBAC7' },
             };
+            const tabs = [
+              { id:'ratings',     label:'Avaliações suspeitas', count:flaggedRatings.length },
+              { id:'pairs',       label:'Pares recorrentes',    count:repeatedTradePairs.length },
+              { id:'newaccounts', label:'Contas novas',         count:newAccountRaters.length },
+            ];
             return (
             <div>
-              <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>Avaliações suspeitas</h1>
+              <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>Antifraude</h1>
               <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>
-                Padrões que sugerem manipulação: avaliações mútuas combinadas, trocas recíprocas muito rápidas ou contas novas avaliando imediatamente. Isso não significa que é fraude — revise antes de agir.
+                Sinais de manipulação de reputação: avaliações mútuas combinadas, o mesmo par revendendo entre si repetidamente, e contas novas avaliando com velocidade suspeita. Isso não significa que é fraude — revise antes de agir.
               </p>
 
-              {flaggedRatings.length === 0 && !loading && (
-                <div style={{padding:48,textAlign:'center',color:'#475569',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
-                  <div style={{fontSize:32,marginBottom:8}}>✅</div>
-                  <div style={{fontWeight:600}}>Nenhuma avaliação suspeita no momento.</div>
-                </div>
-              )}
+              {/* Tabs */}
+              <div style={{display:'flex',gap:6,marginBottom:20,flexWrap:'wrap'}}>
+                {tabs.map(tab => (
+                  <button key={tab.id} onClick={()=>setAntifraudTab(tab.id)} style={{
+                    padding:'7px 16px', borderRadius:10, border:'none', cursor:'pointer',
+                    fontFamily:'inherit', fontSize:13, fontWeight:700, transition:'all .15s',
+                    background: antifraudTab===tab.id ? '#0EBAC722' : '#1a1f2e',
+                    color: antifraudTab===tab.id ? '#0EBAC7' : '#64748b',
+                    outline: antifraudTab===tab.id ? '1.5px solid #0EBAC755' : '1.5px solid #1e293b',
+                    display:'flex', alignItems:'center', gap:7,
+                  }}>
+                    {tab.label}
+                    <span style={{
+                      fontSize:11, fontWeight:800, padding:'1px 7px', borderRadius:999,
+                      background: antifraudTab===tab.id ? '#0EBAC733' : '#0f1117',
+                      color: antifraudTab===tab.id ? '#0EBAC7' : '#475569',
+                    }}>{tab.count}</span>
+                  </button>
+                ))}
+              </div>
 
-              <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                {flaggedRatings.map(r => (
-                  <div key={r.id} style={{background:'#1a1f2e',borderRadius:16,border:'1px solid #1e293b',overflow:'hidden'}}>
-                    <div style={{padding:'16px 18px'}}>
-                      {/* Reason badges */}
-                      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
-                        {(r.reasons||[]).map(reason => {
-                          const m = reasonMeta[reason] || { label:reason, color:'#64748b' };
-                          return (
-                            <span key={reason} style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,
-                              background:m.color+'20',color:m.color,border:'1px solid '+m.color+'40'}}>
-                              {m.label}
-                            </span>
-                          );
-                        })}
-                        <span style={{fontSize:11,color:'#475569',marginLeft:'auto'}}>{fmtDateTime(r.created_at)}</span>
-                      </div>
-
-                      {/* Parties */}
-                      <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:10,alignItems:'center',marginBottom:12}}>
-                        <button onClick={()=>setViewUserModal({userId:r.from_id,userName:r.from_name})}
-                          style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit'}}>
-                          <div style={{fontSize:10,color:'#64748b',fontWeight:700,letterSpacing:'.05em',marginBottom:3}}>AVALIOU</div>
-                          <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{r.from_name||'—'}</div>
-                          <div style={{fontSize:12,color:'#F59E0B',marginTop:2}}>{'★'.repeat(r.stars||0)}{'☆'.repeat(5-(r.stars||0))} ({r.stars})</div>
-                        </button>
-                        <div style={{color:'#475569',fontSize:16}}>→</div>
-                        <button onClick={()=>setViewUserModal({userId:r.to_id,userName:r.to_name})}
-                          style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit'}}>
-                          <div style={{fontSize:10,color:'#64748b',fontWeight:700,letterSpacing:'.05em',marginBottom:3}}>RECEBEU</div>
-                          <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{r.to_name||'—'}</div>
-                          {r.reciprocal_stars != null && (
-                            <div style={{fontSize:11,color:'#64748b',marginTop:2}}>
-                              avaliou de volta: {'★'.repeat(r.reciprocal_stars)}{'☆'.repeat(5-r.reciprocal_stars)} ({r.reciprocal_stars})
-                            </div>
-                          )}
-                        </button>
-                      </div>
-
-                      {r.comment && (
-                        <div style={{fontSize:12.5,color:'#94a3b8',fontStyle:'italic',padding:'8px 12px',background:'#0f1117',borderRadius:8,marginBottom:12}}>
-                          "{r.comment}"
+              {/* ── Aba: Avaliações suspeitas ── */}
+              {antifraudTab==='ratings' && (<>
+                {flaggedRatings.length === 0 && !loading && (
+                  <div style={{padding:48,textAlign:'center',color:'#475569',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:32,marginBottom:8}}>✅</div>
+                    <div style={{fontWeight:600}}>Nenhuma avaliação suspeita no momento.</div>
+                  </div>
+                )}
+                <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                  {flaggedRatings.map(r => (
+                    <div key={r.id} style={{background:'#1a1f2e',borderRadius:16,border:'1px solid #1e293b',overflow:'hidden'}}>
+                      <div style={{padding:'16px 18px'}}>
+                        {/* Reason badges */}
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
+                          {(r.reasons||[]).map(reason => {
+                            const m = reasonMeta[reason] || { label:reason, color:'#64748b' };
+                            return (
+                              <span key={reason} style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,
+                                background:m.color+'20',color:m.color,border:'1px solid '+m.color+'40'}}>
+                                {m.label}
+                              </span>
+                            );
+                          })}
+                          <span style={{fontSize:11,color:'#475569',marginLeft:'auto'}}>{fmtDateTime(r.created_at)}</span>
                         </div>
-                      )}
 
-                      <div style={{display:'flex',gap:8}}>
-                        <button onClick={()=>dismissFlaggedRating(r)} style={{
-                          flex:1,padding:'9px 0',borderRadius:10,border:'1px solid #1e293b',background:'transparent',
+                        {/* Parties */}
+                        <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:10,alignItems:'center',marginBottom:12}}>
+                          <button onClick={()=>setViewUserModal({userId:r.from_id,userName:r.from_name})}
+                            style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit'}}>
+                            <div style={{fontSize:10,color:'#64748b',fontWeight:700,letterSpacing:'.05em',marginBottom:3}}>AVALIOU</div>
+                            <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{r.from_name||'—'}</div>
+                            <div style={{fontSize:12,color:'#F59E0B',marginTop:2}}>{'★'.repeat(r.stars||0)}{'☆'.repeat(5-(r.stars||0))} ({r.stars})</div>
+                          </button>
+                          <div style={{color:'#475569',fontSize:16}}>→</div>
+                          <button onClick={()=>setViewUserModal({userId:r.to_id,userName:r.to_name})}
+                            style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit'}}>
+                            <div style={{fontSize:10,color:'#64748b',fontWeight:700,letterSpacing:'.05em',marginBottom:3}}>RECEBEU</div>
+                            <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{r.to_name||'—'}</div>
+                            {r.reciprocal_stars != null && (
+                              <div style={{fontSize:11,color:'#64748b',marginTop:2}}>
+                                avaliou de volta: {'★'.repeat(r.reciprocal_stars)}{'☆'.repeat(5-r.reciprocal_stars)} ({r.reciprocal_stars})
+                              </div>
+                            )}
+                          </button>
+                        </div>
+
+                        {r.comment && (
+                          <div style={{fontSize:12.5,color:'#94a3b8',fontStyle:'italic',padding:'8px 12px',background:'#0f1117',borderRadius:8,marginBottom:12}}>
+                            "{r.comment}"
+                          </div>
+                        )}
+
+                        <div style={{display:'flex',gap:8}}>
+                          <button onClick={()=>dismissFlaggedRating(r)} style={{
+                            flex:1,padding:'9px 0',borderRadius:10,border:'1px solid #1e293b',background:'transparent',
+                            color:'#94a3b8',cursor:'pointer',fontFamily:'inherit',fontSize:12.5,fontWeight:700,
+                          }}>
+                            ✓ Marcar como revisado
+                          </button>
+                          <button onClick={()=>deleteFlaggedRating(r)} style={{
+                            flex:1,padding:'9px 0',borderRadius:10,border:'1px solid rgba(239,68,68,0.35)',background:'rgba(239,68,68,0.08)',
+                            color:'#EF4444',cursor:'pointer',fontFamily:'inherit',fontSize:12.5,fontWeight:700,
+                          }}>
+                            🗑️ Excluir avaliação
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>)}
+
+              {/* ── Aba: Pares recorrentes (mesmo par revendendo entre si) ── */}
+              {antifraudTab==='pairs' && (<>
+                {repeatedTradePairs.length === 0 && !loading && (
+                  <div style={{padding:48,textAlign:'center',color:'#475569',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:32,marginBottom:8}}>✅</div>
+                    <div style={{fontWeight:600}}>Nenhum par revendendo entre si repetidamente.</div>
+                  </div>
+                )}
+                <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                  {repeatedTradePairs.map(p => (
+                    <div key={p.user_a+p.user_b} style={{background:'#1a1f2e',borderRadius:16,border:'1px solid #1e293b',overflow:'hidden'}}>
+                      <div style={{padding:'16px 18px'}}>
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12,alignItems:'center'}}>
+                          <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,
+                            background:'#F59E0B20',color:'#F59E0B',border:'1px solid #F59E0B40'}}>
+                            🔁 {p.trade_count}x transações entre o mesmo par
+                          </span>
+                          {p.last_trade_at && <span style={{fontSize:11,color:'#475569',marginLeft:'auto'}}>última em {fmtDateTime(p.last_trade_at)}</span>}
+                        </div>
+                        <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:10,alignItems:'center',marginBottom:12}}>
+                          <button onClick={()=>setViewUserModal({userId:p.user_a,userName:p.user_a_name})}
+                            style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit'}}>
+                            <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{p.user_a_name||'—'}</div>
+                          </button>
+                          <div style={{color:'#475569',fontSize:16}}>⇄</div>
+                          <button onClick={()=>setViewUserModal({userId:p.user_b,userName:p.user_b_name})}
+                            style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit'}}>
+                            <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{p.user_b_name||'—'}</div>
+                          </button>
+                        </div>
+                        <div style={{fontSize:12,color:'#94a3b8',marginBottom:12}}>
+                          Anúncios: {(p.listing_names||[]).join(' · ')}
+                        </div>
+                        <button onClick={()=>dismissTradePair(p)} style={{
+                          width:'100%',padding:'9px 0',borderRadius:10,border:'1px solid #1e293b',background:'transparent',
                           color:'#94a3b8',cursor:'pointer',fontFamily:'inherit',fontSize:12.5,fontWeight:700,
                         }}>
                           ✓ Marcar como revisado
                         </button>
-                        <button onClick={()=>deleteFlaggedRating(r)} style={{
-                          flex:1,padding:'9px 0',borderRadius:10,border:'1px solid rgba(239,68,68,0.35)',background:'rgba(239,68,68,0.08)',
-                          color:'#EF4444',cursor:'pointer',fontFamily:'inherit',fontSize:12.5,fontWeight:700,
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>)}
+
+              {/* ── Aba: Contas novas avaliando com velocidade alta ── */}
+              {antifraudTab==='newaccounts' && (<>
+                {newAccountRaters.length === 0 && !loading && (
+                  <div style={{padding:48,textAlign:'center',color:'#475569',background:'#1a1f2e',borderRadius:14,border:'1px solid #1e293b'}}>
+                    <div style={{fontSize:32,marginBottom:8}}>✅</div>
+                    <div style={{fontWeight:600}}>Nenhuma conta nova com avaliações em excesso.</div>
+                  </div>
+                )}
+                <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                  {newAccountRaters.map(a => (
+                    <div key={a.from_id} style={{background:'#1a1f2e',borderRadius:16,border:'1px solid #1e293b',overflow:'hidden'}}>
+                      <div style={{padding:'16px 18px'}}>
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12,alignItems:'center'}}>
+                          <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,
+                            background:'#0EBAC720',color:'#0EBAC7',border:'1px solid #0EBAC740'}}>
+                            🆕 conta de {fmtDateTime(a.account_created_at)}
+                          </span>
+                          <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,
+                            background:'#8B5CF620',color:'#8B5CF6',border:'1px solid #8B5CF640'}}>
+                            ⚡ {a.ratings_given} avaliações dadas
+                          </span>
+                        </div>
+                        <button onClick={()=>setViewUserModal({userId:a.from_id,userName:a.rater_name})}
+                          style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit',marginBottom:12,width:'100%'}}>
+                          <div style={{fontSize:10,color:'#64748b',fontWeight:700,letterSpacing:'.05em',marginBottom:3}}>QUEM AVALIOU</div>
+                          <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{a.rater_name||'—'}</div>
+                        </button>
+                        <div style={{fontSize:12,color:'#94a3b8',marginBottom:12}}>
+                          Avaliou: {(a.rated_user_names||[]).map((n,i)=>`${n||'—'} (${(a.stars_given||[])[i]}★)`).join(' · ')}
+                        </div>
+                        <button onClick={()=>dismissNewAccountRater(a)} style={{
+                          width:'100%',padding:'9px 0',borderRadius:10,border:'1px solid #1e293b',background:'transparent',
+                          color:'#94a3b8',cursor:'pointer',fontFamily:'inherit',fontSize:12.5,fontWeight:700,
                         }}>
-                          🗑️ Excluir avaliação
+                          ✓ Marcar como revisado
                         </button>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>)}
             </div>
             );
           })()}

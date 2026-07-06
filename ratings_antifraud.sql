@@ -100,10 +100,68 @@ SELECT * FROM flagged WHERE array_length(reasons, 1) > 0;
 
 GRANT SELECT ON flagged_ratings TO authenticated;
 
+-- ----------------------------------------------------------------------------
+-- Pares que trocam "vendido" entre si mais de uma vez.
+-- Compra/venda repetida entre o MESMO par de contas é incomum organicamente
+-- (estranhos raramente voltam a negociar repetidamente) — sinal forte de
+-- conluio, independente de qual nota cada um deu.
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW repeated_trade_pairs AS
+SELECT
+  LEAST(m.author_id, m.buyer_id)    AS user_a,
+  GREATEST(m.author_id, m.buyer_id) AS user_b,
+  pa.name AS user_a_name,
+  pb.name AS user_b_name,
+  COUNT(*) AS trade_count,
+  ARRAY_AGG(m.id ORDER BY m.sold_at)   AS listing_ids,
+  ARRAY_AGG(m.name ORDER BY m.sold_at) AS listing_names,
+  MIN(m.sold_at) AS first_trade_at,
+  MAX(m.sold_at) AS last_trade_at
+FROM marketplace m
+LEFT JOIN profiles pa ON pa.id = LEAST(m.author_id, m.buyer_id)
+LEFT JOIN profiles pb ON pb.id = GREATEST(m.author_id, m.buyer_id)
+WHERE m.status = 'sold' AND m.author_id IS NOT NULL AND m.buyer_id IS NOT NULL
+GROUP BY LEAST(m.author_id, m.buyer_id), GREATEST(m.author_id, m.buyer_id), pa.name, pb.name
+HAVING COUNT(*) > 1;
+
+GRANT SELECT ON repeated_trade_pairs TO authenticated;
+
+-- ----------------------------------------------------------------------------
+-- Contas novas com velocidade alta de avaliação: já avaliaram 2+ pessoas
+-- diferentes nos primeiros 7 dias de conta. Uma avaliação isolada de conta
+-- nova (já coberta por 'new_account_rater' em flagged_ratings) é normal;
+-- várias avaliações em sequência logo na criação da conta é padrão de farm.
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW new_account_raters AS
+SELECT
+  r.from_id,
+  p.name AS rater_name,
+  p.created_at AS account_created_at,
+  COUNT(*) AS ratings_given,
+  ARRAY_AGG(r.to_id)   AS rated_user_ids,
+  ARRAY_AGG(pt.name)   AS rated_user_names,
+  ARRAY_AGG(r.stars)   AS stars_given,
+  MIN(r.created_at) AS first_rating_at,
+  MAX(r.created_at) AS last_rating_at
+FROM ratings r
+JOIN profiles p ON p.id = r.from_id
+LEFT JOIN profiles pt ON pt.id = r.to_id
+WHERE r.stars IS NOT NULL
+  AND r.created_at - p.created_at < INTERVAL '7 days'
+GROUP BY r.from_id, p.name, p.created_at
+HAVING COUNT(*) >= 2;
+
+GRANT SELECT ON new_account_raters TO authenticated;
+
 -- ============================================================================
 -- Próximos passos possíveis (não implementados ainda, decisão de produto):
 --   - Fricção de tempo: exigir que um anúncio fique visível X horas antes de
 --     poder ser marcado como vendido (dificulta ciclo rápido criar→vender→
 --     avaliar entre contas colaborando).
---   - Sinalizar pares que trocam status "vendido" entre si mais de uma vez.
+--   - Limite de velocidade reforçado no banco (não só detecção): bloquear via
+--     trigger mais de N avaliações/dia por usuário.
+--   - Idade mínima de conta antes de poder publicar/avaliar.
+--   - Correlação de IP/dispositivo entre contas (precisa de infraestrutura
+--     extra de captura, não coberto aqui).
+--   - Ponderar a nota pública pela idade/verificação da conta que avaliou.
 -- ============================================================================
