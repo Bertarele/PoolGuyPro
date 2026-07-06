@@ -7226,20 +7226,23 @@ function EditProfileSheet({
     on: on,
     onChange: onChange
   }));
-  return /*#__PURE__*/React.createElement(Sheet, {
+  return /*#__PURE__*/React.createElement(FullPage, {
     open: open,
-    onClose: onClose,
-    height: "95%"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '6px 18px 52px'
-    }
+    onClose: onClose
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 18px',
+      display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 22
+      flexShrink: 0,
+      borderBottom: '0.5px solid var(--pg-ink-200)'
     }
   }, /*#__PURE__*/React.createElement("h2", {
     style: {
@@ -7262,6 +7265,13 @@ function EditProfileSheet({
       justifyContent: 'center'
     }
   }, Icon.x(16, 'var(--pg-ink-700)'))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflow: 'auto',
+      touchAction: 'pan-y',
+      padding: '20px 18px 24px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -7768,7 +7778,14 @@ function EditProfileSheet({
       justifyContent: 'center',
       gap: 6
     }
-  }, Icon.plus(14, 'var(--pg-blue-600)'), s('Add experience', 'Adicionar experiência', 'Agregar experiencia'))), /*#__PURE__*/React.createElement("button", {
+  }, Icon.plus(14, 'var(--pg-blue-600)'), s('Add experience', 'Adicionar experiência', 'Agregar experiencia')))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 18px',
+      flexShrink: 0,
+      background: 'var(--pg-bg)',
+      borderTop: '0.5px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: handleSave,
     className: "pg-btn pg-btn-primary",
     style: {
@@ -7777,7 +7794,7 @@ function EditProfileSheet({
       fontSize: 15,
       borderRadius: 14
     }
-  }, s('Save profile', 'Salvar perfil', 'Guardar perfil'))));
+  }, s('Save profile', 'Salvar perfil', 'Guardar perfil')))));
 }
 
 // ── Public user profile sheet ────────────────────────────────

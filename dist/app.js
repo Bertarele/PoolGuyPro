@@ -385,35 +385,14 @@ function App() {
     rating: null,
     reviews: 0,
     regions: ['Broward', 'Weston', 'Plantation'],
-    // Profile fields — pre-filled on job applications
-    age: 31,
-    region: 'Fort Lauderdale, FL',
-    hasCar: true,
-    hasLicense: true,
-    hasEquipment: true,
-    equipment: {
-      en: ['Pentair VS pump', 'Pool vacuum robot', 'Chemical test kit'],
-      pt: ['Bomba Pentair VS', 'Robô aspirador', 'Kit de teste químico'],
-      es: ['Bomba Pentair VS', 'Robot aspiradora', 'Kit de prueba química']
-    },
-    experience: [{
-      company: 'Self-employed',
-      role: {
-        en: 'Independent Pool Technician',
-        pt: 'Técnico de Piscinas Autônomo',
-        es: 'Técnico de Piscinas Independiente'
-      },
-      duration: {
-        en: '4+ yrs',
-        pt: '4+ anos',
-        es: '4+ años'
-      },
-      desc: {
-        en: 'Managed my own service route with 30+ regular clients across Broward County. Chemical balancing, equipment repair, client relations.',
-        pt: 'Gerenciei minha própria rota com 30+ clientes fixos no Broward County. Balanceamento químico, reparos e atendimento ao cliente.',
-        es: 'Gestioné mi propia ruta con 30+ clientes fijos en el Condado de Broward. Balance químico, reparaciones y atención al cliente.'
-      }
-    }]
+    // Profile fields — start empty; each user fills these in themselves
+    age: null,
+    region: '',
+    hasCar: false,
+    hasLicense: false,
+    hasEquipment: false,
+    equipment: null,
+    experience: []
   });
   const loadProfile = React.useCallback(async sbUser => {
     if (!sbUser || !window.sb) return;

@@ -735,6 +735,14 @@ function FullPage({
   if (!mounted) return null;
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 540;
   const desktopW = isDesktop ? Math.min(520, Math.round(window.innerWidth * 0.96)) : null;
+  // screen.width reflects the physical device width regardless of the app's
+  // width=430 viewport meta (which forces window.innerWidth to ~430 on every
+  // phone). On phones narrower than Pro Max (390pt vs 428-430pt), that meta
+  // tag scales the layout down, and a plain fixed-px header padding ends up
+  // too small to clear the status bar / Dynamic Island — worse still during
+  // an active call, when iOS temporarily grows the safe area. Reserve real
+  // safe-area space only on those smaller phones; Pro Max is untouched.
+  const isSmallPhone = typeof screen !== 'undefined' && screen.width > 0 && screen.width < 420;
   const style = {
     position: 'fixed',
     bottom: 0,
@@ -748,6 +756,7 @@ function FullPage({
     overscrollBehavior: 'none',
     display: 'flex',
     flexDirection: 'column',
+    paddingTop: isSmallPhone ? 'env(safe-area-inset-top, 24px)' : 0,
     animation: closing ? 'pg-sheet-down 0.28s cubic-bezier(.36,0,.66,0) forwards' : 'pg-sheet-up 0.34s cubic-bezier(.22,1,.36,1)'
   };
   return /*#__PURE__*/React.createElement("div", {

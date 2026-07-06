@@ -3852,18 +3852,20 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
   );
 
   return (
-    <Sheet open={open} onClose={onClose} height="95%">
-      <div style={{padding:'6px 18px 52px'}}>
+    <FullPage open={open} onClose={onClose}>
+    <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
+      {/* Header */}
+      <div style={{padding:'14px 18px', display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0, borderBottom:'0.5px solid var(--pg-ink-200)'}}>
+        <h2 style={{margin:0, fontSize:18, fontWeight:700, letterSpacing:'-0.01em'}}>
+          {s('Edit profile','Editar perfil','Editar perfil')}
+        </h2>
+        <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
+          {Icon.x(16,'var(--pg-ink-700)')}
+        </button>
+      </div>
 
-        {/* Header */}
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22}}>
-          <h2 style={{margin:0, fontSize:18, fontWeight:700, letterSpacing:'-0.01em'}}>
-            {s('Edit profile','Editar perfil','Editar perfil')}
-          </h2>
-          <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
-            {Icon.x(16,'var(--pg-ink-700)')}
-          </button>
-        </div>
+      {/* Scrollable body */}
+      <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'20px 18px 24px'}}>
 
         {/* ── PROFILE PHOTO ── */}
         <div style={{display:'flex', flexDirection:'column', alignItems:'center', marginBottom:24, gap:10}}>
@@ -4126,13 +4128,17 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
           )}
         </div>
 
-        {/* Save */}
+      </div>
+
+      {/* Save — fixed footer */}
+      <div style={{padding:'14px 18px', flexShrink:0, background:'var(--pg-bg)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         <button onClick={handleSave} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:15, borderRadius:14}}>
           {s('Save profile','Salvar perfil','Guardar perfil')}
         </button>
       </div>
-    </Sheet>
+    </div>
+    </FullPage>
   );
 }
 
