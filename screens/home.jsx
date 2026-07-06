@@ -904,7 +904,7 @@ function HomeScreen({ ctx }) {
                 </div>
                 <div className="pg-divider" style={{margin:'0 0 16px'}}/>
                 <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:16}}>
-                  <button onClick={()=>openPublicProfile && openPublicProfile({ name:f.seller||'Verified Seller', rating:4.9, reviews:58, jobs:58, loc:'South Florida' })}
+                  <button onClick={()=>openPublicProfile && openPublicProfile({ uid:f.author_id||undefined, name:f.seller||f.author||'Verified Seller', loc:'South Florida' })}
                     style={{display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left'}} className="pg-press">
                     <Avatar name={f.seller || 'Seller'} size={38}/>
                     <div style={{flex:1, minWidth:0}}>

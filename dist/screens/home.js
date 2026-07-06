@@ -1779,10 +1779,8 @@ function HomeScreen({
       }
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => openPublicProfile && openPublicProfile({
-        name: f.seller || 'Verified Seller',
-        rating: 4.9,
-        reviews: 58,
-        jobs: 58,
+        uid: f.author_id || undefined,
+        name: f.seller || f.author || 'Verified Seller',
         loc: 'South Florida'
       }),
       style: {

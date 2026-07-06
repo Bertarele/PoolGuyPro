@@ -107,8 +107,10 @@ function ProfileScreen({ ctx }) {
                   <ReputationBadge jobs={user.reviews} lang={lang} size="lg"/>
                 </div>
                 <div style={{display:'flex', alignItems:'center', gap:6, marginTop:6}}>
-                  <Stars rating={user.rating} size={13}/>
-                  <span style={{fontSize:13, fontWeight:600, color:H.mid}}>{user.rating}</span>
+                  <Stars rating={user.rating||0} size={13}/>
+                  {user.rating != null
+                    ? <span style={{fontSize:13, fontWeight:600, color:H.mid}}>{user.rating}</span>
+                    : <span style={{fontSize:12, color:H.faint, fontStyle:'italic'}}>{lang==='pt'?'Novo':lang==='es'?'Nuevo':'New'}</span>}
                   <span style={{fontSize:12, color:H.faint}}>({user.reviews} {lang==='pt'?'avaliações':lang==='es'?'reseñas':'reviews'})</span>
                 </div>
                 <div style={{marginTop:5, display:'flex', alignItems:'center', gap:5}}>
@@ -121,7 +123,7 @@ function ProfileScreen({ ctx }) {
             {/* Stats strip */}
             <div style={{display:'flex', marginTop:14, paddingTop:13, borderTop:`1px solid ${H.border}`}}>
               {[
-                { val: user.rating, lbl: lang==='pt'?'Avaliação':lang==='es'?'Calificación':'Rating' },
+                { val: user.rating != null ? user.rating : '—', lbl: lang==='pt'?'Avaliação':lang==='es'?'Calificación':'Rating' },
                 { val: user.reviews, lbl: lang==='pt'?'Trabalhos':lang==='es'?'Trabajos':'Jobs Done' },
                 { val: EQUIPMENT.filter(e=>e).length + POOL_ROUTES.length, lbl: lang==='pt'?'Anúncios':lang==='es'?'Anuncios':'Listings' },
               ].map((s, i, arr) => (

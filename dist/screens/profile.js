@@ -340,15 +340,21 @@ function ProfileScreen({
         marginTop: 6
       }
     }, /*#__PURE__*/React.createElement(Stars, {
-      rating: user.rating,
+      rating: user.rating || 0,
       size: 13
-    }), /*#__PURE__*/React.createElement("span", {
+    }), user.rating != null ? /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 13,
         fontWeight: 600,
         color: H.mid
       }
-    }, user.rating), /*#__PURE__*/React.createElement("span", {
+    }, user.rating) : /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: H.faint,
+        fontStyle: 'italic'
+      }
+    }, lang === 'pt' ? 'Novo' : lang === 'es' ? 'Nuevo' : 'New'), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         color: H.faint
@@ -373,7 +379,7 @@ function ProfileScreen({
         borderTop: `1px solid ${H.border}`
       }
     }, [{
-      val: user.rating,
+      val: user.rating != null ? user.rating : '—',
       lbl: lang === 'pt' ? 'Avaliação' : lang === 'es' ? 'Calificación' : 'Rating'
     }, {
       val: user.reviews,

@@ -1570,21 +1570,35 @@ function AdminApp({ adminUser, onLogout }) {
     showToast('🗑️ Avaliação excluída.');
   };
 
-  const dismissFlaggedRating = (row) => {
-    // Apenas some da lista nesta sessão do admin — não altera o banco.
-    // Útil quando o admin já revisou e concluiu que a avaliação é legítima.
+  const markAntifraudReviewed = async (signalType, signalKey) => {
+    const { error } = await window.sb.from('antifraud_reviewed').insert({
+      signal_type: signalType, signal_key: signalKey, reviewed_by: adminUser?.id || null,
+    });
+    if (error) { showToast('❌ '+error.message, false); return false; }
+    return true;
+  };
+
+  const dismissFlaggedRating = async (row) => {
+    // Persiste no banco — não volta a aparecer depois de recarregar a página.
+    const ok = await markAntifraudReviewed('flagged_rating', row.id);
+    if (!ok) return;
     setFlaggedRatings(p=>p.filter(r=>r.id!==row.id));
-    showToast('✓ Marcado como revisado (só nesta sessão).');
+    showToast('✓ Marcado como revisado.');
   };
 
-  const dismissTradePair = (row) => {
+  const dismissTradePair = async (row) => {
+    const key = row.user_a+'|'+row.user_b;
+    const ok = await markAntifraudReviewed('trade_pair', key);
+    if (!ok) return;
     setRepeatedTradePairs(p=>p.filter(r=>!(r.user_a===row.user_a && r.user_b===row.user_b)));
-    showToast('✓ Marcado como revisado (só nesta sessão).');
+    showToast('✓ Marcado como revisado.');
   };
 
-  const dismissNewAccountRater = (row) => {
+  const dismissNewAccountRater = async (row) => {
+    const ok = await markAntifraudReviewed('new_account_rater', row.from_id);
+    if (!ok) return;
     setNewAccountRaters(p=>p.filter(r=>r.from_id!==row.from_id));
-    showToast('✓ Marcado como revisado (só nesta sessão).');
+    showToast('✓ Marcado como revisado.');
   };
 
   const approveMarket = async (row) => {

@@ -382,8 +382,8 @@ function App() {
     uid: '',
     role: 'user',
     tier: t.tier,
-    rating: 4.9,
-    reviews: 128,
+    rating: null,
+    reviews: 0,
     regions: ['Broward', 'Weston', 'Plantation'],
     // Profile fields — pre-filled on job applications
     age: 31,
@@ -492,6 +492,18 @@ function App() {
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
       setRegionsByDay(profile.regions_by_day);
     }
+    // Live rating/review count — computed from real ratings received, never cached/hardcoded
+    window.sb.from('ratings').select('stars').eq('to_id', sbUser.id).then(({
+      data
+    }) => {
+      const stars = (data || []).map(r => r.stars).filter(s => s != null);
+      const avg = stars.length ? Math.round(stars.reduce((a, b) => a + b, 0) / stars.length * 10) / 10 : null;
+      setUser(u => ({
+        ...u,
+        rating: avg,
+        reviews: stars.length
+      }));
+    }).catch(() => {});
   }, []);
 
   // authReady gates the data fetch — ensures profile is loaded before querying DB
@@ -2160,7 +2172,7 @@ function App() {
     onOpenProfile: applicant => setPublicProfileUser({
       uid: applicant.applicant_id || null,
       name: applicant.name,
-      rating: applicant.rating || 4.9,
+      rating: applicant.rating || null,
       reviews: applicant.jobs || 0,
       jobs: applicant.jobs || 0,
       loc: applicant.profile?.region || '',
