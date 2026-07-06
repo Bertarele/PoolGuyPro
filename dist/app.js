@@ -524,8 +524,11 @@ function App() {
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
       setRegionsByDay(profile.regions_by_day);
     }
-    // Live rating/review count — computed from real ratings received, never cached/hardcoded
-    window.sb.from('ratings').select('stars').eq('to_id', sbUser.id).then(({
+    // Live rating/review count — computed from real ratings received, never cached/hardcoded.
+    // Only counts ratings that are actually revealed (both sides rated, or the 7-day blind
+    // window expired) — otherwise a seller could see their own score the instant they rate
+    // a buyer, before the buyer has had a chance to rate back.
+    window.sb.from('ratings').select('stars').eq('to_id', sbUser.id).or('pending.eq.false,expires_at.lt.' + new Date().toISOString()).then(({
       data
     }) => {
       const stars = (data || []).map(r => r.stars).filter(s => s != null);
@@ -679,10 +682,14 @@ function App() {
   const loadPendingRatings = React.useCallback(async () => {
     if (!window.sb || !user?.uid) return;
     try {
-      // Find people who rated ME but I haven't rated back yet
+      // Find people who rated ME but I haven't rated back yet.
+      // NOTE: `pending` stays true even after the rater submits — it means "still in the
+      // 7-day blind window", not "not yet submitted". So we must check stars IS NOT NULL
+      // (valid stars are 1-5, never 0) to know the OTHER side actually rated me, instead
+      // of filtering on `pending` here.
       const {
         data: received
-      } = await window.sb.from('ratings').select('id,listing_id,listing_name,from_id,from_name,to_id,connection_type,connection_id,created_at,expires_at').eq('to_id', user.uid).eq('pending', true).order('created_at', {
+      } = await window.sb.from('ratings').select('id,listing_id,listing_name,from_id,from_name,to_id,connection_type,connection_id,created_at,expires_at').eq('to_id', user.uid).neq('stars', 0).order('created_at', {
         ascending: true
       });
       if (!received || received.length === 0) {
@@ -695,10 +702,12 @@ function App() {
         setPendingRatings([]);
         return;
       }
-      // Filter out ones I already rated back
+      // Filter out ones I already rated back — my own reciprocal row always exists as an
+      // empty placeholder from the moment the sale closes, so check it has real stars too,
+      // not just that a row exists.
       const {
         data: myRatings
-      } = await window.sb.from('ratings').select('to_id').eq('from_id', user.uid).in('to_id', notExpired.map(r => r.from_id));
+      } = await window.sb.from('ratings').select('to_id').eq('from_id', user.uid).neq('stars', 0).in('to_id', notExpired.map(r => r.from_id));
       const alreadyRated = new Set((myRatings || []).map(r => r.to_id));
       setPendingRatings(notExpired.filter(r => !alreadyRated.has(r.from_id)));
     } catch (e) {}
@@ -720,7 +729,7 @@ function App() {
   }
 
   // Global helper: fire-and-forget push to another user via Edge Function
-  window.sendPush = async function (userId, title, body, url, notifType) {
+  window.sendPush = async function (userId, title, body, url, notifType, convoId) {
     try {
       const {
         data: {
@@ -739,7 +748,8 @@ function App() {
           title,
           body,
           url,
-          notif_type: notifType
+          notif_type: notifType,
+          convo_id: convoId || null
         })
       });
     } catch (e) {}

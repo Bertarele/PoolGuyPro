@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
     headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' }
   });
 
-  const { user_id, title, body, url, notif_type } = await req.json();
+  const { user_id, title, body, url, notif_type, convo_id } = await req.json();
   if (!user_id || !title) return new Response('missing fields', { status: 400 });
 
   const headers = {
@@ -21,16 +21,22 @@ Deno.serve(async (req) => {
     'Content-Type': 'application/json',
   };
 
-  // Check user notification preferences before sending
+  // Check user notification preferences, and whether they're already looking at
+  // this exact conversation, before sending
   if (notif_type) {
     const prefRes = await fetch(
-      `${SB_URL}/rest/v1/profiles?select=notif_prefs&id=eq.${user_id}&limit=1`,
+      `${SB_URL}/rest/v1/profiles?select=notif_prefs,active_conversation_id&id=eq.${user_id}&limit=1`,
       { headers }
     );
     const [prof] = await prefRes.json();
     const prefs = prof?.notif_prefs;
     if (prefs && prefs[notif_type] === false) {
       return new Response(JSON.stringify({ sent: 0, reason: 'disabled by user' }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+    if (notif_type === 'chat' && convo_id && prof?.active_conversation_id === convo_id) {
+      return new Response(JSON.stringify({ sent: 0, reason: 'viewing conversation' }), {
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }

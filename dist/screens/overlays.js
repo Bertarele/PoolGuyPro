@@ -433,6 +433,14 @@ function ChatConversation({
     if (onUnreadChange) setTimeout(onUnreadChange, 500);
     pollRef.current = setInterval(loadMessages, 2500);
 
+    // Mark this conversation as actively open — send-push checks this to skip
+    // notifying the recipient about messages they're already looking at.
+    if (currentUser?.uid) {
+      window.sb.from('profiles').update({
+        active_conversation_id: convoId
+      }).eq('id', currentUser.uid).catch(() => {});
+    }
+
     // Typing broadcast channel — one channel per conversation pair
     const typingCh = window.sb.channel('typing-' + convoId).on('broadcast', {
       event: 'typing'
@@ -449,6 +457,11 @@ function ChatConversation({
       clearInterval(pollRef.current);
       clearTimeout(typingTimer.current);
       window.sb.removeChannel(typingCh);
+      if (currentUser?.uid) {
+        window.sb.from('profiles').update({
+          active_conversation_id: null
+        }).eq('id', currentUser.uid).catch(() => {});
+      }
     };
   }, [convoId]); // eslint-disable-line
 
@@ -486,7 +499,7 @@ function ChatConversation({
       });
       // Push notification to recipient — deep link opens chat with sender
       if (convo.receiverId && window.sendPush) {
-        window.sendPush(convo.receiverId, myName, text.length > 120 ? text.slice(0, 120) + '…' : text, `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(myName)}`, 'chat');
+        window.sendPush(convo.receiverId, myName, text.length > 120 ? text.slice(0, 120) + '…' : text, `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(myName)}`, 'chat', convoId);
       }
       // Store listing context in the conversation row so seller also sees it
       if (convo.listingId || convo.listingContext?.name) {
@@ -2718,7 +2731,8 @@ function ApplicantProfileSheet({
       if (row?.photo_url) setLivePhoto(row.photo_url);
     });
     // Real ratings
-    window.sb.from('ratings').select('id,stars,comment,from_id,from_name,created_at').eq('to_id', applicant.applicant_id).eq('pending', false).order('created_at', {
+    // Visible once either: revealed (both sides rated) or the 7-day blind window expired
+    window.sb.from('ratings').select('id,stars,comment,from_id,from_name,created_at').eq('to_id', applicant.applicant_id).or('pending.eq.false,expires_at.lt.' + new Date().toISOString()).order('created_at', {
       ascending: false
     }).limit(20).then(({
       data
@@ -7829,7 +7843,8 @@ function PublicProfileSheet({
   React.useEffect(() => {
     setRealRatings(null);
     if (!open || !profile?.uid || !window.sb) return;
-    window.sb.from('ratings').select('id,stars,comment,from_id,from_name,listing_name,created_at').eq('to_id', profile.uid).eq('pending', false).order('created_at', {
+    // Visible once either: revealed (both sides rated) or the 7-day blind window expired
+    window.sb.from('ratings').select('id,stars,comment,from_id,from_name,listing_name,created_at').eq('to_id', profile.uid).or('pending.eq.false,expires_at.lt.' + new Date().toISOString()).order('created_at', {
       ascending: false
     }).limit(20).then(({
       data
@@ -8285,6 +8300,11 @@ function RatingSheet({
         onConflict: 'from_id,to_id'
       });
       if (error) throw error;
+      // Reveals both ratings to each other if the other side already submitted theirs
+      window.sb.rpc('reveal_mutual_rating', {
+        p_a: currentUser.uid,
+        p_b: rating.to_id
+      }).catch(() => {});
       if (window.sendPush && rating.to_id) {
         const msg = lang === 'pt' ? `${myName} avaliou você! Avalie-o também.` : `${myName} rated you! Rate them back.`;
         window.sendPush(rating.to_id, myName, msg, '/#home', 'rating');
@@ -8811,6 +8831,11 @@ function BuyerRatingPromptModal({
         onConflict: 'from_id,to_id'
       });
       if (error) throw error;
+      // Both sides have now submitted — reveal both ratings to each other
+      window.sb.rpc('reveal_mutual_rating', {
+        p_a: currentUser.uid,
+        p_b: rating.from_id
+      }).catch(() => {});
       if (window.sendPush && rating.from_id) {
         const msg = lang === 'pt' ? `${myName} também te avaliou! Ambas as avaliações agora estão visíveis.` : `${myName} also rated you! Both ratings are now visible.`;
         window.sendPush(rating.from_id, myName, msg, '/#home', 'rating');

@@ -723,10 +723,12 @@ function MarkSoldSheet({
       }
       // If ratings already exist (retry case), skip insert — just fetch the existing one
 
-      // Fetch the seller's pending rating (only pending=true — if already submitted, don't reopen)
+      // Fetch the seller's own placeholder rating, only if not yet submitted (stars still
+      // null) — `pending` stays true even after submitting (it means "still in the 7-day
+      // blind window"), so checking it here would wrongly reopen an already-submitted rating.
       const {
         data: myRatings
-      } = await window.sb.from('ratings').select('*').eq('listing_id', item._id).eq('from_id', currentUser.uid).eq('pending', true).limit(1);
+      } = await window.sb.from('ratings').select('*').eq('listing_id', item._id).eq('from_id', currentUser.uid).or('stars.is.null').limit(1);
       const sellerRating = myRatings?.[0] || null;
       showToast && showToast('✅ ' + (lang === 'pt' ? 'Vendido! Avalie o comprador agora.' : 'Sold! Rate the buyer now.'));
 
