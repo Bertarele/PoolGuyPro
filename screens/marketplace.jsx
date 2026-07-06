@@ -4585,11 +4585,11 @@ function MarketplaceScreen({ ctx }) {
       </FullPage>
       <FullPage open={postOpen&&postMode==='route'} onClose={()=>{setPostMode(null);setPostOpen(false);}}>
         <PostRouteSheet lang={lang} t={t} onClose={()=>{setPostMode(null);setPostOpen(false);}}
-          onSubmit={async(data)=>{ setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false&&showToast)showToast(lang==='pt'?'✓ Rota enviada para revisão':'✓ Route sent for review');}}}/>
+          onSubmit={async(data)=>{ setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false){setView('routes');setRouteSub('routes');if(showToast)showToast(lang==='pt'?'✓ Rota enviada para revisão':'✓ Route sent for review');}}}}/>
       </FullPage>
       <FullPage open={postOpen&&postMode==='pool'} onClose={()=>{setPostMode(null);setPostOpen(false);}}>
         <PostPoolSheet lang={lang} t={t} onClose={()=>{setPostMode(null);setPostOpen(false);}}
-          onSubmit={async(data)=>{ setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false&&showToast)showToast(lang==='pt'?'✓ Piscina enviada para revisão':'✓ Pool sent for review');}}}/>
+          onSubmit={async(data)=>{ setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false){setView('routes');setRouteSub('pools');if(showToast)showToast(lang==='pt'?'✓ Piscina enviada para revisão':'✓ Pool sent for review');}}}}/>
       </FullPage>
 
       <LocationFilterSheet open={locationFilterOpen} onClose={()=>setLocationFilterOpen(false)}
@@ -5584,7 +5584,10 @@ function MarketplaceScreen({ ctx }) {
             setPostMode(null); setPostOpen(false);
             if (data && dbWrite) {
               const ok = await dbWrite('marketplace', data);
-              if (ok !== false && showToast) showToast(lang==='pt'?'✓ Rota enviada para revisão':lang==='es'?'✓ Ruta enviada a revisión':'✓ Route sent for review');
+              if (ok !== false) {
+                setView('routes'); setRouteSub('routes');
+                if (showToast) showToast(lang==='pt'?'✓ Rota enviada para revisão':lang==='es'?'✓ Ruta enviada a revisión':'✓ Route sent for review');
+              }
             }
           }}/>
       </FullPage>
@@ -5597,7 +5600,10 @@ function MarketplaceScreen({ ctx }) {
             setPostMode(null); setPostOpen(false);
             if (data && dbWrite) {
               const ok = await dbWrite('marketplace', data);
-              if (ok !== false && showToast) showToast(lang==='pt'?'✓ Piscina enviada para revisão':lang==='es'?'✓ Piscina enviada a revisión':'✓ Pool sent for review');
+              if (ok !== false) {
+                setView('routes'); setRouteSub('pools');
+                if (showToast) showToast(lang==='pt'?'✓ Piscina enviada para revisão':lang==='es'?'✓ Piscina enviada a revisión':'✓ Pool sent for review');
+              }
             }
           }}/>
       </FullPage>

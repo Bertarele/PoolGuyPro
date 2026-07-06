@@ -8808,7 +8808,11 @@ function MarketplaceScreen({
         setPostOpen(false);
         if (data && dbWrite) {
           const ok = await dbWrite('marketplace', data);
-          if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Rota enviada para revisão' : '✓ Route sent for review');
+          if (ok !== false) {
+            setView('routes');
+            setRouteSub('routes');
+            if (showToast) showToast(lang === 'pt' ? '✓ Rota enviada para revisão' : '✓ Route sent for review');
+          }
         }
       }
     })), /*#__PURE__*/React.createElement(FullPage, {
@@ -8829,7 +8833,11 @@ function MarketplaceScreen({
         setPostOpen(false);
         if (data && dbWrite) {
           const ok = await dbWrite('marketplace', data);
-          if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Piscina enviada para revisão' : '✓ Pool sent for review');
+          if (ok !== false) {
+            setView('routes');
+            setRouteSub('pools');
+            if (showToast) showToast(lang === 'pt' ? '✓ Piscina enviada para revisão' : '✓ Pool sent for review');
+          }
         }
       }
     })), /*#__PURE__*/React.createElement(LocationFilterSheet, {
@@ -10808,7 +10816,11 @@ function MarketplaceScreen({
       setPostOpen(false);
       if (data && dbWrite) {
         const ok = await dbWrite('marketplace', data);
-        if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Rota enviada para revisão' : lang === 'es' ? '✓ Ruta enviada a revisión' : '✓ Route sent for review');
+        if (ok !== false) {
+          setView('routes');
+          setRouteSub('routes');
+          if (showToast) showToast(lang === 'pt' ? '✓ Rota enviada para revisão' : lang === 'es' ? '✓ Ruta enviada a revisión' : '✓ Route sent for review');
+        }
       }
     }
   })), /*#__PURE__*/React.createElement(FullPage, {
@@ -10829,7 +10841,11 @@ function MarketplaceScreen({
       setPostOpen(false);
       if (data && dbWrite) {
         const ok = await dbWrite('marketplace', data);
-        if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Piscina enviada para revisão' : lang === 'es' ? '✓ Piscina enviada a revisión' : '✓ Pool sent for review');
+        if (ok !== false) {
+          setView('routes');
+          setRouteSub('pools');
+          if (showToast) showToast(lang === 'pt' ? '✓ Piscina enviada para revisão' : lang === 'es' ? '✓ Piscina enviada a revisión' : '✓ Pool sent for review');
+        }
       }
     }
   })));
