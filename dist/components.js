@@ -644,7 +644,7 @@ function ReputationBadge({
       letterSpacing: '0.05em',
       padding: isLg ? '4px 10px' : '2px 7px',
       borderRadius: 6,
-      background: 'transparent',
+      background: bg,
       color,
       border: `1px solid ${color}`
     }

@@ -31,7 +31,8 @@ function ProfileScreen({
     retryPush,
     pushLog = '',
     notifPrefs,
-    saveNotifPrefs
+    saveNotifPrefs,
+    openListingById
   } = ctx;
   const t = STRINGS[lang];
   const typeIcon = type => {
@@ -888,7 +889,8 @@ function ProfileScreen({
     }, lang === 'pt' ? 'Solicitar' : 'Request')));
   })(), /*#__PURE__*/React.createElement(SavedSection, {
     user: user,
-    lang: lang
+    lang: lang,
+    openListingById: openListingById
   }), /*#__PURE__*/React.createElement(HistorySection, {
     user: user,
     lang: lang
@@ -1358,7 +1360,8 @@ function ProfileScreen({
 }
 function SavedSection({
   user,
-  lang
+  lang,
+  openListingById
 }) {
   const [items, setItems] = React.useState(null); // null = loading
 
@@ -1443,11 +1446,13 @@ function SavedSection({
     const isLast = idx === items.length - 1;
     return /*#__PURE__*/React.createElement("div", {
       key: r.listing_id,
+      onClick: () => openListingById && openListingById(r.listing_id),
       style: {
         display: 'flex',
         alignItems: 'center',
         gap: 12,
         padding: '12px 14px',
+        cursor: 'pointer',
         borderBottom: isLast ? 'none' : '0.5px solid var(--pg-ink-100)'
       }
     }, /*#__PURE__*/React.createElement("div", {
@@ -1497,7 +1502,10 @@ function SavedSection({
         marginTop: 2
       }
     }, m.price_mode === 'neg' ? lang === 'pt' ? 'Negociável' : 'Negotiable' : m.price ? `$${m.price}` : '—', m.loc ? ` · ${m.loc}` : '')), /*#__PURE__*/React.createElement("button", {
-      onClick: () => unsave(r.listing_id),
+      onClick: e => {
+        e.stopPropagation();
+        unsave(r.listing_id);
+      },
       style: {
         width: 32,
         height: 32,

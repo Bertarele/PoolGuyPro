@@ -250,7 +250,7 @@ function ReputationBadge({ jobs=0, lang='en', size='sm' }) {
       display:'inline-flex', alignItems:'center', gap:4,
       fontSize: isLg ? 11 : 9.5, fontWeight:700, letterSpacing:'0.05em',
       padding: isLg ? '4px 10px' : '2px 7px', borderRadius:6,
-      background:'transparent', color,
+      background: bg, color,
       border: `1px solid ${color}`,
     }}>
       {isLg && <span style={{fontSize:12}}>{'⭐'}</span>}

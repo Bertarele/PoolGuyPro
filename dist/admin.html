@@ -83,39 +83,83 @@
   // Operações de auth privilegiadas (ver/deletar conta) vão pela Edge Function
   // 'admin-user', que guarda a service_role no servidor e valida o admin.
   var _tok = null;
+  var _refreshing = null; // pending refresh promise — avoids race conditions
   window._adminGetTok = function(){ return _tok; };
   try { var s=JSON.parse(localStorage.getItem('pg_admin_s')||'null'); if(s&&s.t) _tok=s.t; } catch(e){}
+
+  // Access tokens expire in 20min (Supabase default) — admin sessions routinely
+  // stay open longer than that. Without refresh, every request after expiry
+  // fails with "JWT expired" until the admin manually logs out and back in.
+  async function _doRefresh() {
+    try {
+      var stored = JSON.parse(localStorage.getItem('pg_admin_s') || 'null');
+      if (!stored || !stored.r) return false;
+      var resp = await fetch(BASE + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: { 'apikey': KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: stored.r }),
+      });
+      if (!resp.ok) return false;
+      var d = await resp.json();
+      if (!d.access_token) return false;
+      _tok = d.access_token;
+      try {
+        localStorage.setItem('pg_admin_s', JSON.stringify({ t: d.access_token, r: d.refresh_token || stored.r, u: stored.u }));
+      } catch(e) {}
+      return true;
+    } catch(e) { return false; }
+  }
+  function _refreshOnce() {
+    if (_refreshing) return _refreshing;
+    _refreshing = _doRefresh().finally(function(){ _refreshing = null; });
+    return _refreshing;
+  }
+  function _isExpired(msg) {
+    return msg && (msg.indexOf('JWT expired') !== -1 || msg.indexOf('invalid JWT') !== -1 || msg.indexOf('token is expired') !== -1);
+  }
 
   function hdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
   // adminHdrs agora usa o token de sessão do admin (não mais a service_role).
   function adminHdrs(extra){ var h={'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_tok||KEY)}; return Object.assign(h,extra||{}); }
 
   // Chama a Edge Function admin-user para operações de auth privilegiadas.
-  window._adminUserAction = async function(action, userId){
+  window._adminUserAction = async function(action, userId, _retried){
     var r = await fetch(BASE+'/functions/v1/admin-user', {
       method:'POST',
       headers:{'apikey':KEY,'Authorization':'Bearer '+(_tok||''),'Content-Type':'application/json'},
       body:JSON.stringify({ action: action, user_id: userId })
     });
     var d = {}; try { d = await r.json(); } catch(e){}
+    if (!r.ok && !_retried && (r.status===401 || _isExpired(d.error||d.message||''))) {
+      var ok = await _refreshOnce();
+      if (ok) return window._adminUserAction(action, userId, true);
+    }
     return { ok: r.ok, status: r.status, data: d };
   };
 
   function makeBuilder(table){
     var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null, _limit=null, _in=null, _inCol=null;
-    var run=async function(){
+    var run=async function(retried){
       var url=BASE+'/rest/v1/'+table, h=hdrs();
       if(op==='insert'){
         var ah=adminHdrs({'Prefer':'return=minimal'});
         var r=await fetch(url,{method:'POST',headers:ah,body:JSON.stringify(body)});
-        if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Erro ao inserir '+r.status}};}
+        if(!r.ok){
+          var e={}; try{e=await r.json();}catch(x){}
+          if(!retried && (r.status===401 || _isExpired(e.message||''))){ var ok=await _refreshOnce(); if(ok) return run(true); }
+          return{data:null,error:{message:e.message||'Erro ao inserir '+r.status}};
+        }
         return{data:null,error:null};
       }
       if(op==='update'){
         var qs=filters.join('&');
         var ah=adminHdrs({'Prefer':'return=representation'});
         var r=await fetch(url+(qs?'?'+qs:''),{method:'PATCH',headers:ah,body:JSON.stringify(body)});
-        if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Erro ao atualizar '+r.status}};}
+        if(!r.ok){
+          var e={}; try{e=await r.json();}catch(x){}
+          if(!retried && (r.status===401 || _isExpired(e.message||''))){ var ok=await _refreshOnce(); if(ok) return run(true); }
+          return{data:null,error:{message:e.message||'Erro ao atualizar '+r.status}};
+        }
         var d=[]; try{d=await r.json();}catch(x){}
         if(!Array.isArray(d)||d.length===0) return{data:null,error:{message:'Nenhuma linha atualizada.'}};
         return{data:d,error:null};
@@ -124,7 +168,11 @@
         var qs=filters.join('&');
         var ah=adminHdrs();
         var r=await fetch(url+(qs?'?'+qs:''),{method:'DELETE',headers:ah});
-        if(!r.ok){var e={}; try{e=await r.json();}catch(x){} return{data:null,error:{message:e.message||'Erro ao excluir '+r.status}};}
+        if(!r.ok){
+          var e={}; try{e=await r.json();}catch(x){}
+          if(!retried && (r.status===401 || _isExpired(e.message||''))){ var ok=await _refreshOnce(); if(ok) return run(true); }
+          return{data:null,error:{message:e.message||'Erro ao excluir '+r.status}};
+        }
         return{data:null,error:null};
       }
       var p=['select='+encodeURIComponent(sel)];
@@ -136,7 +184,10 @@
       var r=await fetch(url+'?'+p.join('&'),{headers:h});
       if(r.status===406||r.status===404) return{data:null,error:null};
       var d=await r.json();
-      if(!r.ok) return{data:null,error:{message:d.message||d.hint||'Erro na consulta '+r.status}};
+      if(!r.ok){
+        if(!retried && (r.status===401 || _isExpired(d.message||''))){ var ok=await _refreshOnce(); if(ok) return run(true); }
+        return{data:null,error:{message:d.message||d.hint||'Erro na consulta '+r.status}};
+      }
       return{data:d,error:null};
     };
     var b={
@@ -165,7 +216,7 @@
         if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Credenciais inválidas'}};
         _tok=d.access_token;
         window._adminGetTok = function(){ return _tok; };
-        try{localStorage.setItem('pg_admin_s',JSON.stringify({t:d.access_token,u:{id:d.user.id,email:d.user.email}}));}catch(e){}
+        try{localStorage.setItem('pg_admin_s',JSON.stringify({t:d.access_token,r:d.refresh_token||null,u:{id:d.user.id,email:d.user.email}}));}catch(e){}
         return{data:{user:d.user,session:d},error:null};
       },
       getSession:async function(){
@@ -1559,6 +1610,7 @@ function AdminApp({ adminUser, onLogout }) {
     else if(table==='techs')  setTechs(p=>p.filter(r=>r.id!==row.id));
     else if(table==='profiles') setUsers(p=>p.filter(r=>r.id!==row.id));
     else if(table==='vacations') setVacs(p=>p.filter(r=>r.id!==row.id));
+    else if(table==='quick_pool_jobs') setQuickPools(p=>p.filter(r=>r.id!==row.id));
     showToast(isUser ? '🗑️ Conta excluída — acesso revogado.' : '🗑️ Excluído.');
   };
 

@@ -6,7 +6,7 @@ function ProfileScreen({ ctx }) {
           openEditProfile, onLogout, openHelp, openPrivacy,
           darkMode, toggleDark, openChat, hasUnreadChat, openNotifications, hasUnreadNotif, requestVerification,
           openWallet, isDesktop=false, retryPush, pushLog='',
-          notifPrefs, saveNotifPrefs } = ctx;
+          notifPrefs, saveNotifPrefs, openListingById } = ctx;
   const t = STRINGS[lang];
 
   const typeIcon = (type) => {
@@ -387,7 +387,7 @@ function ProfileScreen({ ctx }) {
         })()}
 
         {/* Saved listings */}
-        <SavedSection user={user} lang={lang}/>
+        <SavedSection user={user} lang={lang} openListingById={openListingById}/>
 
         {/* Sales history */}
         <HistorySection user={user} lang={lang}/>
@@ -596,7 +596,7 @@ function ProfileScreen({ ctx }) {
   );
 }
 
-function SavedSection({ user, lang }) {
+function SavedSection({ user, lang, openListingById }) {
   const [items, setItems] = React.useState(null); // null = loading
 
   React.useEffect(() => {
@@ -644,8 +644,8 @@ function SavedSection({ user, lang }) {
           const m = r.marketplace;
           const isLast = idx === items.length - 1;
           return (
-            <div key={r.listing_id} style={{
-              display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
+            <div key={r.listing_id} onClick={()=>openListingById && openListingById(r.listing_id)} style={{
+              display:'flex', alignItems:'center', gap:12, padding:'12px 14px', cursor:'pointer',
               borderBottom: isLast ? 'none' : '0.5px solid var(--pg-ink-100)',
             }}>
               {/* Thumbnail */}
@@ -663,7 +663,7 @@ function SavedSection({ user, lang }) {
                 </div>
               </div>
               {/* Unsave button */}
-              <button onClick={()=>unsave(r.listing_id)} style={{
+              <button onClick={(e)=>{e.stopPropagation(); unsave(r.listing_id);}} style={{
                 width:32, height:32, borderRadius:8, border:'1px solid #FCA5A5',
                 background:'#FEF2F2', color:'#EF4444', cursor:'pointer', flexShrink:0,
                 display:'flex', alignItems:'center', justifyContent:'center',
