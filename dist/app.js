@@ -817,6 +817,45 @@ function App() {
   // Overlays
   const [chatOpen, setChatOpen] = React.useState(false);
   const [chatConvoTarget, setChatConvoTarget] = React.useState(null); // string | { id, name }
+
+  // Opening chat from a push-notification deep link only tells us WHO sent the
+  // message, not which conversation thread it belongs to (general vs tied to a
+  // specific listing) — conversations are keyed by makeConvoId(me, other, listingId),
+  // so guessing listingId=null here would land in the wrong (often brand-new) thread
+  // whenever the real conversation was scoped to a listing. Look up the most recently
+  // active real conversation between the two of us first, and reuse its listing scope.
+  const openChatFromDeepLink = React.useCallback(async (userId, userName) => {
+    let listingId = null,
+      listingContext = null,
+      name = userName || undefined;
+    try {
+      if (window.sb && user?.uid && userId) {
+        const q = `and(participant_1.eq.${user.uid},participant_2.eq.${userId}),and(participant_1.eq.${userId},participant_2.eq.${user.uid})`;
+        const {
+          data
+        } = await window.sb.from('conversations').select('*').or(q).order('last_message_at', {
+          ascending: false
+        }).limit(1);
+        const row = data && data[0];
+        if (row) {
+          listingId = row.listing_id || null;
+          if (listingId) listingContext = {
+            name: row.listing_name || null,
+            photoUrl: row.listing_photo_url || null
+          };
+          const amP1 = row.participant_1 === user.uid;
+          name = (amP1 ? row.name_2 : row.name_1) || name;
+        }
+      }
+    } catch {}
+    setChatConvoTarget({
+      id: userId,
+      name,
+      listingId,
+      listingContext
+    });
+    setChatOpen(true);
+  }, [user?.uid]);
   const [pendingQuickJobId, setPendingQuickJobId] = React.useState(() => {
     try {
       const hash = window.location.hash; // e.g. "#quick?job=uuid"
@@ -859,15 +898,11 @@ function App() {
     if (!pendingDeepLink || !user?.uid) return;
     setPendingDeepLink(null);
     if (pendingDeepLink.type === 'chat') {
-      setChatConvoTarget({
-        id: pendingDeepLink.userId,
-        name: pendingDeepLink.userName || undefined
-      });
-      setChatOpen(true);
+      openChatFromDeepLink(pendingDeepLink.userId, pendingDeepLink.userName);
     } else if (pendingDeepLink.type === 'tab') {
       setTab(pendingDeepLink.tab);
     }
-  }, [pendingDeepLink, user?.uid]);
+  }, [pendingDeepLink, user?.uid, openChatFromDeepLink]);
   // Listen for service worker postMessage (notification click while app is open)
   React.useEffect(() => {
     if (!navigator.serviceWorker) return;
@@ -883,11 +918,7 @@ function App() {
         const userId = params.get('user') || null;
         const userName = params.get('name') || null;
         if (userId) {
-          setChatConvoTarget({
-            id: userId,
-            name: userName || undefined
-          });
-          setChatOpen(true);
+          openChatFromDeepLink(userId, userName);
         }
       } else if (hash.startsWith('#quick')) {
         const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
@@ -907,7 +938,7 @@ function App() {
     };
     navigator.serviceWorker.addEventListener('message', handler);
     return () => navigator.serviceWorker.removeEventListener('message', handler);
-  }, []);
+  }, [openChatFromDeepLink]);
   const [notifOpen, setNotifOpen] = React.useState(false);
   // Unread badges — derived from real Supabase data
   const [hasUnreadChat, setHasUnreadChat] = React.useState(false);
