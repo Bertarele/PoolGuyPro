@@ -988,7 +988,9 @@ function App() {
     // CANVAS, which per CSS spec takes the ROOT (<html>) background — but only while
     // <body> stays transparent. A fixed <body> with its own background does NOT
     // propagate, leaving the strip black. So set ONLY <html>, never <body>.
-    const bg = darkMode ? '#161B22' : '#ffffff';
+    // Must match --pg-bg from tokens.css exactly, or the strip shows a visibly
+    // different shade than the rest of the app (e.g. FullPage screens).
+    const bg = darkMode ? '#0D1117' : '#F4F8FB';
     document.documentElement.style.background = bg;
     document.body.style.background = 'transparent';
   }, [darkMode]);
