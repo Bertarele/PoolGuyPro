@@ -3542,7 +3542,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 }
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating, loadPendingRatings, darkMode=false, openNotifications, hasUnreadNotif, isDesktop=false } = ctx;
+  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating, openBuyerRatingPrompt, loadPendingRatings, darkMode=false, openNotifications, hasUnreadNotif, isDesktop=false } = ctx;
 
   // Normalize a raw Supabase marketplace row to app format
   const normMktItem = (r) => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
@@ -4231,7 +4231,7 @@ function MarketplaceScreen({ ctx }) {
         {/* Pending ratings pill (floating, top-right) */}
         {pendingRatings.length > 0 && (
           <div style={{display:'flex', justifyContent:'flex-end', padding:'10px 32px 0'}}>
-            <div onClick={()=>openRating&&openRating(pendingRatings[0])} style={{
+            <div onClick={()=>openBuyerRatingPrompt&&openBuyerRatingPrompt()} style={{
               display:'inline-flex', alignItems:'center', gap:8, cursor:'pointer',
               background:'linear-gradient(135deg,#FFFBEB,#FEF3C7)',
               border:'1.5px solid #FDE68A', borderRadius:999, padding:'8px 16px',
@@ -4713,7 +4713,7 @@ function MarketplaceScreen({ ctx }) {
         <div style={{margin:'12px 18px 0', padding:'12px 14px', borderRadius:14,
           background:'linear-gradient(135deg,#FFFBEB,#FEF3C7)', border:'1.5px solid #FDE68A',
           display:'flex', alignItems:'center', gap:12, cursor:'pointer'}}
-          onClick={()=>openRating && openRating(pendingRatings[0])}>
+          onClick={()=>openBuyerRatingPrompt && openBuyerRatingPrompt()}>
           <div style={{fontSize:26, lineHeight:1, flexShrink:0}}>⭐</div>
           <div style={{flex:1}}>
             <div style={{fontSize:13, fontWeight:700, color:'#92400E'}}>

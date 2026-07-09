@@ -6789,6 +6789,7 @@ function MarketplaceScreen({
     clearDeepLink,
     pendingRatings = [],
     openRating,
+    openBuyerRatingPrompt,
     loadPendingRatings,
     darkMode = false,
     openNotifications,
@@ -8008,7 +8009,7 @@ function MarketplaceScreen({
         padding: '10px 32px 0'
       }
     }, /*#__PURE__*/React.createElement("div", {
-      onClick: () => openRating && openRating(pendingRatings[0]),
+      onClick: () => openBuyerRatingPrompt && openBuyerRatingPrompt(),
       style: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -9117,7 +9118,7 @@ function MarketplaceScreen({
       gap: 12,
       cursor: 'pointer'
     },
-    onClick: () => openRating && openRating(pendingRatings[0])
+    onClick: () => openBuyerRatingPrompt && openBuyerRatingPrompt()
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 26,

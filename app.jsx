@@ -1297,6 +1297,11 @@ function App() {
     },
     pendingRatings,
     openRating: (r) => setActiveRating(r),
+    // Use this — not openRating — for items from `pendingRatings`. Those rows have
+    // to_id === me (someone rated ME); openRating/RatingSheet expects to_id === the
+    // person being rated, so passing a pendingRatings row into it submits a
+    // self-rating. BuyerRatingPromptModal correctly targets rating.from_id instead.
+    openBuyerRatingPrompt: () => setRatingPromptOpen(true),
     loadPendingRatings,
     darkMode, toggleDark,
     isDesktop: !isMobile,
