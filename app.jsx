@@ -153,50 +153,6 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "showDevControls": true
 }/*EDITMODE-END*/;
 
-function DiagBar2() {
-  const [info, setInfo] = React.useState(null);
-  React.useEffect(() => {
-    const measure = () => {
-      const tb = document.querySelector('.pg-tabbar');
-      const tbRect = tb ? tb.getBoundingClientRect() : null;
-      const envDiv = document.createElement('div');
-      envDiv.style.cssText = 'position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden';
-      document.body.appendChild(envDiv);
-      const envPx = envDiv.offsetHeight;
-      document.body.removeChild(envDiv);
-      setInfo({
-        innerH: window.innerHeight,
-        innerW: window.innerWidth,
-        screenH: screen.height,
-        screenW: screen.width,
-        docClientH: document.documentElement.clientHeight,
-        vvH: window.visualViewport ? Math.round(window.visualViewport.height) : 'n/a',
-        dpr: window.devicePixelRatio,
-        env: envPx,
-        tbBottom: tbRect ? Math.round(tbRect.bottom) : 'n/a',
-        tbTop: tbRect ? Math.round(tbRect.top) : 'n/a',
-        htmlBg: getComputedStyle(document.documentElement).backgroundColor,
-        bodyBg: getComputedStyle(document.body).backgroundColor,
-        stageBg: (() => { const s = document.getElementById('stage'); return s ? getComputedStyle(s).backgroundColor : 'n/a'; })(),
-      });
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, []);
-  if (!info) return null;
-  return (
-    <div style={{
-      position:'fixed', bottom: 0, left:0, right:0, zIndex:9999,
-      background:'rgba(255,0,0,0.9)', color:'#fff',
-      fontSize:9, fontFamily:'monospace', padding:'4px 6px',
-      lineHeight:1.4, pointerEvents:'none', whiteSpace:'pre-wrap',
-    }}>
-      {`innerH=${info.innerH} innerW=${info.innerW} screenH=${info.screenH} screenW=${info.screenW}\ndocClientH=${info.docClientH} vvH=${info.vvH} dpr=${info.dpr} env=${info.env}px\ntbTop=${info.tbTop} tbBottom=${info.tbBottom} (gap below tb = ${info.innerH - info.tbBottom}px)\nhtmlBg=${info.htmlBg} bodyBg=${info.bodyBg} stageBg=${info.stageBg}`}
-    </div>
-  );
-}
-
 function App() {
   const _savedTier = (typeof localStorage !== 'undefined' && localStorage.getItem('pg_tier')) || null;
   const [t, setTweak] = useTweaks({ ...TWEAK_DEFAULTS, ...(_savedTier ? { tier: _savedTier } : {}) });
@@ -2288,9 +2244,6 @@ function App() {
 
           {/* Tab bar */}
           <TabBar tab={tab} setTab={switchTab} lang={lang}/>
-
-          {/* TEMP DIAGNOSTIC — remove after measuring the bottom-gap bug */}
-          <DiagBar2/>
 
           {/* Floating action button */}
           {(tab === 'market' || tab === 'quick') && (
