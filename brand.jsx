@@ -705,7 +705,7 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
         </div>
 
         {/* Save */}
-        <div style={{padding:'12px 18px 18px', borderTop:'0.5px solid var(--pg-ink-200)', background:'#fff'}}>
+        <div style={{padding:'12px 18px calc(18px + env(safe-area-inset-bottom, 0px))', borderTop:'0.5px solid var(--pg-ink-200)', background:'var(--pg-white)', flexShrink:0}}>
           <button onClick={()=>{ saveRegionsByDay && saveRegionsByDay(regionsByDay); onClose(); }} className="pg-btn pg-btn-primary" style={{width:'100%', height:50, fontSize:15}}>
             {head.save}
           </button>

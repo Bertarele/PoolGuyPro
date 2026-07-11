@@ -1363,9 +1363,10 @@ function RegionEditorSheet({
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '12px 18px 18px',
+      padding: '12px 18px calc(18px + env(safe-area-inset-bottom, 0px))',
       borderTop: '0.5px solid var(--pg-ink-200)',
-      background: '#fff'
+      background: 'var(--pg-white)',
+      flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
