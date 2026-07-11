@@ -845,7 +845,7 @@ function QuickPoolsScreen({
     }, /*#__PURE__*/React.createElement("div", {
       onClick: e => {
         e.stopPropagation();
-        locked ? openPaywall() : j.poster_id && openPublicProfile({
+        locked ? openPaywall('quickpools') : j.poster_id && openPublicProfile({
           uid: j.poster_id,
           name: j.poster
         });
@@ -1003,7 +1003,7 @@ function QuickPoolsScreen({
     })))) : locked ? /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
-        openPaywall();
+        openPaywall('quickpools');
       },
       style: {
         height: 36,
@@ -1194,7 +1194,7 @@ function QuickPoolsScreen({
     lang: lang,
     applied: !!applied[selected.id],
     onApply: sharePhone => applyToJob(selected.id, sharePhone),
-    onUnlock: openPaywall,
+    onUnlock: () => openPaywall('quickpools'),
     onChat: openChat,
     onClose: () => setSelected(null),
     onDelete: deleteJob,
@@ -1620,7 +1620,7 @@ function QuickPoolsScreen({
         x2: "19",
         y2: "12"
       })), lang === 'pt' ? 'Publicar' : lang === 'es' ? 'Publicar' : 'Post'), /*#__PURE__*/React.createElement("button", {
-        onClick: () => user.tier === 'premium' ? openRegionEditor() : openPaywall(),
+        onClick: () => user.tier === 'premium' ? openRegionEditor() : openPaywall('quickpools'),
         style: {
           height: 38,
           padding: '0 14px',
@@ -1811,23 +1811,72 @@ function QuickPoolsScreen({
         color: 'var(--pg-ink-500)',
         marginTop: 4
       }
-    }, lang === 'pt' ? `Broward County · ordenado por proximidade` : `${county} County · sorted by proximity`)), user.tier !== 'premium' && /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? `Broward County · ordenado por proximidade` : `${county} County · sorted by proximity`)), user.tier !== 'premium' && /*#__PURE__*/React.createElement("button", {
+      onClick: () => openPaywall('quickpools'),
       style: {
         display: 'flex',
         alignItems: 'center',
-        gap: 6,
-        padding: '7px 14px',
+        gap: 7,
+        padding: '9px 16px',
         borderRadius: 999,
-        background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)',
-        border: '1px solid #c4b5fd'
+        background: 'linear-gradient(135deg,#7c3aed,#6d28d9)',
+        border: 'none',
+        cursor: 'pointer',
+        boxShadow: '0 4px 14px rgba(124,58,237,0.35)'
       }
-    }, Icon.lock(12, '#7c3aed'), /*#__PURE__*/React.createElement("span", {
+    }, Icon.lock(12, '#fff'), /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 12,
-        fontWeight: 700,
-        color: '#6d28d9'
+        fontSize: 12.5,
+        fontWeight: 800,
+        color: '#fff',
+        letterSpacing: '-0.005em'
       }
-    }, lang === 'pt' ? 'Exclusivo Premium' : 'Premium only'))), sortedJobs.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'Só para assinantes Premium' : 'Premium subscribers only'))), user.tier !== 'premium' && /*#__PURE__*/React.createElement("button", {
+      onClick: () => openPaywall('quickpools'),
+      style: {
+        width: '100%',
+        textAlign: 'left',
+        border: '1px solid #c4b5fd',
+        cursor: 'pointer',
+        padding: '12px 16px',
+        marginBottom: 20,
+        borderRadius: 14,
+        fontFamily: 'inherit',
+        background: 'linear-gradient(110deg,#f5f3ff,#ede9fe)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 38,
+        height: 38,
+        borderRadius: '50%',
+        flexShrink: 0,
+        background: 'linear-gradient(150deg,#7c3aed,#6d28d9)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, Icon.crown(18, '#fff')), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 800,
+        color: '#5b21b6'
+      }
+    }, lang === 'pt' ? 'Piscinas Rápidas é exclusivo Premium' : 'Express Pools is Premium-exclusive'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        color: '#6d28d9',
+        marginTop: 2,
+        lineHeight: 1.35
+      }
+    }, lang === 'pt' ? 'Assine Premium para ver quem publicou, candidatar-se e configurar suas cidades/dias.' : 'Subscribe to Premium to see who posted, apply, and set your cities/days.')), Icon.chev(14, '#6d28d9')), sortedJobs.length === 0 ? /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '48px 24px',
         textAlign: 'center',
@@ -2133,7 +2182,7 @@ function QuickPoolsScreen({
         textOverflow: 'ellipsis'
       }
     }, notifCities.length > 0 ? notifCities.slice(0, 3).join(' · ') + (notifCities.length > 3 ? ` +${notifCities.length - 3}` : '') : lang === 'pt' ? 'Nenhuma cidade' : lang === 'es' ? 'Ninguna ciudad' : 'No cities'), /*#__PURE__*/React.createElement("button", {
-      onClick: () => user.tier === 'premium' ? openRegionEditor() : openPaywall(),
+      onClick: () => user.tier === 'premium' ? openRegionEditor() : openPaywall('quickpools'),
       style: {
         background: 'transparent',
         border: 'none',
@@ -2249,16 +2298,74 @@ function QuickPoolsScreen({
       color: 'var(--pg-ink-900)',
       letterSpacing: '-0.01em'
     }
-  }, lang === 'pt' ? `${jobs.length} vagas disponíveis` : lang === 'es' ? `${jobs.length} trabajos disponibles` : `${jobs.length} jobs available`), user.tier !== 'premium' && /*#__PURE__*/React.createElement("span", {
+  }, lang === 'pt' ? `${jobs.length} vagas disponíveis` : lang === 'es' ? `${jobs.length} trabajos disponibles` : `${jobs.length} jobs available`), user.tier !== 'premium' && /*#__PURE__*/React.createElement("button", {
+    onClick: () => openPaywall('quickpools'),
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 5,
+      padding: '6px 12px',
+      borderRadius: 999,
+      background: 'linear-gradient(135deg,#7c3aed,#6d28d9)',
+      border: 'none',
+      cursor: 'pointer',
+      boxShadow: '0 3px 10px rgba(124,58,237,0.32)'
+    }
+  }, Icon.lock(10, '#fff'), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
-      color: '#7c3aed',
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 4,
-      fontWeight: 700
+      fontWeight: 800,
+      color: '#fff'
     }
-  }, Icon.lock(11, '#7c3aed'), " Premium only")), sortedJobs.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Só Premium' : 'Premium only'))), user.tier !== 'premium' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '10px 18px 0'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => openPaywall('quickpools'),
+    style: {
+      width: '100%',
+      textAlign: 'left',
+      border: '1px solid #c4b5fd',
+      cursor: 'pointer',
+      padding: '12px 14px',
+      borderRadius: 14,
+      fontFamily: 'inherit',
+      background: 'linear-gradient(110deg,#f5f3ff,#ede9fe)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 34,
+      height: 34,
+      borderRadius: '50%',
+      flexShrink: 0,
+      background: 'linear-gradient(150deg,#7c3aed,#6d28d9)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, Icon.crown(16, '#fff')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      fontWeight: 800,
+      color: '#5b21b6'
+    }
+  }, lang === 'pt' ? 'Piscinas Rápidas é exclusivo Premium' : 'Express Pools is Premium-exclusive'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: '#6d28d9',
+      marginTop: 1,
+      lineHeight: 1.3
+    }
+  }, lang === 'pt' ? 'Veja quem publicou, candidate-se e configure suas cidades/dias.' : 'See who posted, apply, and set your cities/days.')), Icon.chev(13, '#6d28d9'))), sortedJobs.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       margin: '10px 18px 0',
       padding: '40px 20px',

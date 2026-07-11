@@ -549,7 +549,7 @@ function QuickPoolsScreen({ ctx }) {
 
           {/* Row 2: poster + action */}
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:10}}>
-            <div onClick={(e)=>{ e.stopPropagation(); locked ? openPaywall() : (j.poster_id && openPublicProfile({ uid: j.poster_id, name: j.poster })); }}
+            <div onClick={(e)=>{ e.stopPropagation(); locked ? openPaywall('quickpools') : (j.poster_id && openPublicProfile({ uid: j.poster_id, name: j.poster })); }}
               style={{display:'flex', alignItems:'center', gap:10, minWidth:0, cursor: 'pointer'}}>
               <div style={{filter: locked ? 'blur(5px)' : 'none'}}>
                 <AvatarFetch uid={j.poster_id} name={j.poster} size={32}/>
@@ -610,7 +610,7 @@ function QuickPoolsScreen({ ctx }) {
                 </button>
               </div>
             ) : locked ? (
-              <button onClick={(e)=>{e.stopPropagation();openPaywall();}} style={{
+              <button onClick={(e)=>{e.stopPropagation();openPaywall('quickpools');}} style={{
                 height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
                 background:'linear-gradient(135deg, var(--pg-blue-700), oklch(0.45 0.15 230))',
                 color:'#fff', fontFamily:'inherit',
@@ -710,7 +710,7 @@ function QuickPoolsScreen({ ctx }) {
         <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
           applied={!!applied[selected.id]}
           onApply={(sharePhone)=>applyToJob(selected.id, sharePhone)}
-          onUnlock={openPaywall}
+          onUnlock={()=>openPaywall('quickpools')}
           onChat={openChat}
           onClose={()=>setSelected(null)}
           onDelete={deleteJob}
@@ -882,7 +882,7 @@ function QuickPoolsScreen({ ctx }) {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
                   </button>
-                  <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall()} style={{height:38,padding:'0 14px',borderRadius:11,border:_ibr,background:_ib,color:_tx,fontFamily:'inherit',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,transition:'all .15s'}}>
+                  <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} style={{height:38,padding:'0 14px',borderRadius:11,border:_ibr,background:_ib,color:_tx,fontFamily:'inherit',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,transition:'all .15s'}}>
                     {Icon.cal(13,_tx)} {lang==='pt'?'Editar':'Edit'}
                   </button>
                   <button onClick={()=>openChat&&openChat()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
@@ -974,18 +974,40 @@ function QuickPoolsScreen({ ctx }) {
                 </div>
               </div>
               {user.tier !== 'premium' && (
-                <div style={{
-                  display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:999,
-                  background:'linear-gradient(135deg,#f5f3ff,#ede9fe)',
-                  border:'1px solid #c4b5fd',
+                <button onClick={()=>openPaywall('quickpools')} style={{
+                  display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:999,
+                  background:'linear-gradient(135deg,#7c3aed,#6d28d9)', border:'none', cursor:'pointer',
+                  boxShadow:'0 4px 14px rgba(124,58,237,0.35)',
                 }}>
-                  {Icon.lock(12,'#7c3aed')}
-                  <span style={{fontSize:12, fontWeight:700, color:'#6d28d9'}}>
-                    {lang==='pt'?'Exclusivo Premium':'Premium only'}
+                  {Icon.lock(12,'#fff')}
+                  <span style={{fontSize:12.5, fontWeight:800, color:'#fff', letterSpacing:'-0.005em'}}>
+                    {lang==='pt'?'Só para assinantes Premium':'Premium subscribers only'}
                   </span>
-                </div>
+                </button>
               )}
             </div>
+
+            {user.tier !== 'premium' && (
+              <button onClick={()=>openPaywall('quickpools')} style={{
+                width:'100%', textAlign:'left', border:'1px solid #c4b5fd', cursor:'pointer',
+                padding:'12px 16px', marginBottom:20, borderRadius:14, fontFamily:'inherit',
+                background:'linear-gradient(110deg,#f5f3ff,#ede9fe)',
+                display:'flex', alignItems:'center', gap:12,
+              }}>
+                <div style={{width:38, height:38, borderRadius:'50%', flexShrink:0, background:'linear-gradient(150deg,#7c3aed,#6d28d9)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                  {Icon.crown(18,'#fff')}
+                </div>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13, fontWeight:800, color:'#5b21b6'}}>
+                    {lang==='pt'?'Piscinas Rápidas é exclusivo Premium':'Express Pools is Premium-exclusive'}
+                  </div>
+                  <div style={{fontSize:11.5, color:'#6d28d9', marginTop:2, lineHeight:1.35}}>
+                    {lang==='pt'?'Assine Premium para ver quem publicou, candidatar-se e configurar suas cidades/dias.':'Subscribe to Premium to see who posted, apply, and set your cities/days.'}
+                  </div>
+                </div>
+                {Icon.chev(14,'#6d28d9')}
+              </button>
+            )}
 
             {/* Cards */}
             {sortedJobs.length === 0 ? (
@@ -1118,7 +1140,7 @@ function QuickPoolsScreen({ ctx }) {
                     ? notifCities.slice(0,3).join(' · ')+(notifCities.length>3?` +${notifCities.length-3}`:'')
                     : (lang==='pt'?'Nenhuma cidade':lang==='es'?'Ninguna ciudad':'No cities')}
                 </span>
-                <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall()} style={{background:'transparent',border:'none',color:H.sub,fontSize:11,fontWeight:700,cursor:'pointer',padding:0,flexShrink:0,display:'flex',alignItems:'center',gap:3}}>
+                <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} style={{background:'transparent',border:'none',color:H.sub,fontSize:11,fontWeight:700,cursor:'pointer',padding:0,flexShrink:0,display:'flex',alignItems:'center',gap:3}}>
                   {Icon.cal(11,H.sub)} {lang==='pt'?'Editar':'Edit'}
                 </button>
               </div>
@@ -1189,11 +1211,42 @@ function QuickPoolsScreen({ ctx }) {
           {lang==='pt'?`${jobs.length} vagas disponíveis`:lang==='es'?`${jobs.length} trabajos disponibles`:`${jobs.length} jobs available`}
         </div>
         {user.tier !== 'premium' && (
-          <span style={{fontSize:11, color:'#7c3aed', display:'inline-flex', alignItems:'center', gap:4, fontWeight:700}}>
-            {Icon.lock(11,'#7c3aed')} Premium only
-          </span>
+          <button onClick={()=>openPaywall('quickpools')} style={{
+            display:'flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:999,
+            background:'linear-gradient(135deg,#7c3aed,#6d28d9)', border:'none', cursor:'pointer',
+            boxShadow:'0 3px 10px rgba(124,58,237,0.32)',
+          }}>
+            {Icon.lock(10,'#fff')}
+            <span style={{fontSize:11, fontWeight:800, color:'#fff'}}>
+              {lang==='pt'?'Só Premium':'Premium only'}
+            </span>
+          </button>
         )}
       </div>
+
+      {user.tier !== 'premium' && (
+        <div style={{padding:'10px 18px 0'}}>
+          <button onClick={()=>openPaywall('quickpools')} style={{
+            width:'100%', textAlign:'left', border:'1px solid #c4b5fd', cursor:'pointer',
+            padding:'12px 14px', borderRadius:14, fontFamily:'inherit',
+            background:'linear-gradient(110deg,#f5f3ff,#ede9fe)',
+            display:'flex', alignItems:'center', gap:10,
+          }}>
+            <div style={{width:34, height:34, borderRadius:'50%', flexShrink:0, background:'linear-gradient(150deg,#7c3aed,#6d28d9)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+              {Icon.crown(16,'#fff')}
+            </div>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:12.5, fontWeight:800, color:'#5b21b6'}}>
+                {lang==='pt'?'Piscinas Rápidas é exclusivo Premium':'Express Pools is Premium-exclusive'}
+              </div>
+              <div style={{fontSize:11, color:'#6d28d9', marginTop:1, lineHeight:1.3}}>
+                {lang==='pt'?'Veja quem publicou, candidate-se e configure suas cidades/dias.':'See who posted, apply, and set your cities/days.'}
+              </div>
+            </div>
+            {Icon.chev(13,'#6d28d9')}
+          </button>
+        </div>
+      )}
 
       {/* Job list */}
       {sortedJobs.length === 0 ? (
