@@ -871,6 +871,41 @@ function HomeScreen({
       d: "M16 3 8 3"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M12 3v4"
+    }))) : !item.photoUrl && item.type === 'route' ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: '100%',
+        height: '100%',
+        background: 'linear-gradient(135deg, var(--pg-blue-500), var(--pg-blue-700))',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, Icon.pin(26, '#fff')) : !item.photoUrl && item.type === 'pool' ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: '100%',
+        height: '100%',
+        background: 'linear-gradient(135deg, var(--pg-blue-500), var(--pg-blue-700))',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "26",
+      height: "26",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "1.8",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M2 18 Q6 14 10 18 Q14 22 18 18 Q20 16 22 18"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "5",
+      r: "2.5"
     }))) : item.photoUrl ? /*#__PURE__*/React.createElement("img", {
       src: item.photoUrl,
       alt: item.name,

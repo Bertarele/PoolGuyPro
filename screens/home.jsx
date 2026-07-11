@@ -482,6 +482,18 @@ function HomeScreen({ ctx }) {
                         <div style={{width:'100%', height:'100%', background:'linear-gradient(135deg, var(--pg-blue-500), var(--pg-blue-700))', display:'flex', alignItems:'center', justifyContent:'center'}}>
                           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3 8 3"/><path d="M12 3v4"/></svg>
                         </div>
+                      ) : !item.photoUrl && item.type === 'route' ? (
+                        <div style={{width:'100%', height:'100%', background:'linear-gradient(135deg, var(--pg-blue-500), var(--pg-blue-700))', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                          {Icon.pin(26, '#fff')}
+                        </div>
+                      ) : !item.photoUrl && item.type === 'pool' ? (
+                        <div style={{width:'100%', height:'100%', background:'linear-gradient(135deg, var(--pg-blue-500), var(--pg-blue-700))', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"/>
+                            <path d="M2 18 Q6 14 10 18 Q14 22 18 18 Q20 16 22 18"/>
+                            <circle cx="12" cy="5" r="2.5"/>
+                          </svg>
+                        </div>
                       ) : item.photoUrl
                         ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
                         : <NoPhotoPlaceholder height={72} small/>
