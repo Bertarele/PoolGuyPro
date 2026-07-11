@@ -263,8 +263,8 @@ function QuickPoolsScreen({
   const [confirmDialog, setConfirmDialog] = React.useState(null); // { message, subMessage, confirmLabel, onConfirm }
   const [extendDialog, setExtendDialog] = React.useState(null); // jobId of the job being offered an extension
 
-  // Live jobs from Supabase
-  const [jobs, setJobs] = React.useState(QUICK_POOLS);
+  // Live jobs from Supabase — no demo/seed fallback, only real postings
+  const [jobs, setJobs] = React.useState([]);
   const [jobsLoading, setJobsLoading] = React.useState(false);
 
   // Push notification status: 'checking' | 'needed' | 'active' | 'denied' | 'unsupported'
@@ -333,10 +333,10 @@ function QuickPoolsScreen({
       } = await window.sb.from('quick_pool_jobs').select('*').in('status', ['open', 'filled']).order('created_at', {
         ascending: false
       }).limit(50);
-      if (data && data.length > 0) {
+      {
         // Expire jobs past their expires_at locally too, in case the RPC above hasn't landed yet
         const now = Date.now();
-        const active = data.filter(j => {
+        const active = (data || []).filter(j => {
           const exp = j.expires_at ? new Date(j.expires_at).getTime() : new Date(j.created_at).getTime() + 24 * 60 * 60 * 1000;
           return !(j.status === 'open' && now > exp);
         });
@@ -1087,7 +1087,7 @@ function QuickPoolsScreen({
         boxShadow: '0 3px 10px rgba(0,119,182,0.30)',
         transition: 'all .15s'
       }
-    }, t.apply), isAdmin && !isOwn && /*#__PURE__*/React.createElement("button", {
+    }, t.apply), isAdmin && !isOwn && j._live && /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         openEditPost && openEditPost({
@@ -1117,7 +1117,7 @@ function QuickPoolsScreen({
         justifyContent: 'center',
         marginLeft: 6
       }
-    }, Icon.edit(14, 'var(--pg-ink-700)')), isAdmin && !isOwn && /*#__PURE__*/React.createElement("button", {
+    }, Icon.edit(14, 'var(--pg-ink-700)')), isAdmin && !isOwn && j._live && /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         setConfirmDialog({
@@ -1818,7 +1818,31 @@ function QuickPoolsScreen({
         fontWeight: 700,
         color: '#6d28d9'
       }
-    }, lang === 'pt' ? 'Exclusivo Premium' : 'Premium only'))), /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'Exclusivo Premium' : 'Premium only'))), sortedJobs.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: '48px 24px',
+        textAlign: 'center',
+        background: 'var(--pg-white)',
+        borderRadius: 16,
+        border: '1px solid var(--pg-ink-200)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 32,
+        marginBottom: 8
+      }
+    }, "\u26A1"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontWeight: 700,
+        color: 'var(--pg-ink-600)'
+      }
+    }, lang === 'pt' ? 'Nenhuma vaga disponível no momento' : lang === 'es' ? 'Ninguna vacante disponible por ahora' : 'No jobs available right now'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: 'var(--pg-ink-400)',
+        marginTop: 4
+      }
+    }, lang === 'pt' ? 'Volte mais tarde ou publique a sua.' : lang === 'es' ? 'Vuelve más tarde o publica la tuya.' : 'Check back later or post your own.')) : /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',
@@ -2225,7 +2249,32 @@ function QuickPoolsScreen({
       gap: 4,
       fontWeight: 700
     }
-  }, Icon.lock(11, '#7c3aed'), " Premium only")), /*#__PURE__*/React.createElement("div", {
+  }, Icon.lock(11, '#7c3aed'), " Premium only")), sortedJobs.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: '10px 18px 0',
+      padding: '40px 20px',
+      textAlign: 'center',
+      background: 'var(--pg-white)',
+      borderRadius: 16,
+      border: '1px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 30,
+      marginBottom: 8
+    }
+  }, "\u26A1"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: 'var(--pg-ink-600)'
+    }
+  }, lang === 'pt' ? 'Nenhuma vaga disponível no momento' : lang === 'es' ? 'Ninguna vacante disponible por ahora' : 'No jobs available right now'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: 'var(--pg-ink-400)',
+      marginTop: 4
+    }
+  }, lang === 'pt' ? 'Volte mais tarde ou publique a sua.' : lang === 'es' ? 'Vuelve más tarde o publica la tuya.' : 'Check back later or post your own.')) : /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '10px 18px 0',
       display: 'flex',
@@ -2840,13 +2889,13 @@ function QuickPoolDetails({
       alignItems: 'center',
       gap: 6
     }
-  }, "\u23F3 ", lang === 'pt' ? 'Em andamento' : lang === 'es' ? 'En curso' : 'In progress'), (isOwn && !isOwnFilled || isAdmin && !isOwn) && /*#__PURE__*/React.createElement("div", {
+  }, "\u23F3 ", lang === 'pt' ? 'Em andamento' : lang === 'es' ? 'En curso' : 'In progress'), (isOwn && !isOwnFilled || isAdmin && !isOwn && job._live) && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: 6
     }
-  }, isAdmin && !isOwn && openEditPost && /*#__PURE__*/React.createElement("button", {
+  }, isAdmin && !isOwn && job._live && openEditPost && /*#__PURE__*/React.createElement("button", {
     onClick: () => openEditPost({
       id: job.id,
       title: typeof job.title === 'object' ? job.title[lang] || job.title.pt || job.title.en : job.title,

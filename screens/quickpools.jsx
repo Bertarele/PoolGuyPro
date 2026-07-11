@@ -116,8 +116,8 @@ function QuickPoolsScreen({ ctx }) {
   const [confirmDialog, setConfirmDialog] = React.useState(null); // { message, subMessage, confirmLabel, onConfirm }
   const [extendDialog,  setExtendDialog]  = React.useState(null); // jobId of the job being offered an extension
 
-  // Live jobs from Supabase
-  const [jobs, setJobs] = React.useState(QUICK_POOLS);
+  // Live jobs from Supabase — no demo/seed fallback, only real postings
+  const [jobs, setJobs] = React.useState([]);
   const [jobsLoading, setJobsLoading] = React.useState(false);
 
 
@@ -169,10 +169,10 @@ function QuickPoolsScreen({ ctx }) {
       window.sb.rpc('cleanup_quick_pool_jobs').then(()=>{}).catch(()=>{});
       const { data } = await window.sb.from('quick_pool_jobs')
         .select('*').in('status',['open','filled']).order('created_at',{ ascending:false }).limit(50);
-      if (data && data.length > 0) {
+      {
         // Expire jobs past their expires_at locally too, in case the RPC above hasn't landed yet
         const now = Date.now();
-        const active = data.filter(j => {
+        const active = (data || []).filter(j => {
           const exp = j.expires_at ? new Date(j.expires_at).getTime() : (new Date(j.created_at).getTime() + 24*60*60*1000);
           return !(j.status === 'open' && now > exp);
         });
@@ -661,7 +661,7 @@ function QuickPoolsScreen({ ctx }) {
                 boxShadow:'0 3px 10px rgba(0,119,182,0.30)', transition:'all .15s',
               }}>{t.apply}</button>
             )}
-            {isAdmin && !isOwn && (
+            {isAdmin && !isOwn && j._live && (
               <button onClick={(e)=>{ e.stopPropagation(); openEditPost && openEditPost({
                 id: j.id, title: typeof j.title==='object' ? (j.title[lang]||j.title.pt||j.title.en) : j.title,
                 description: typeof j.body==='object' ? (j.body[lang]||j.body.pt||j.body.en) : '',
@@ -676,7 +676,7 @@ function QuickPoolsScreen({ ctx }) {
                 {Icon.edit(14,'var(--pg-ink-700)')}
               </button>
             )}
-            {isAdmin && !isOwn && (
+            {isAdmin && !isOwn && j._live && (
               <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
                 message: lang==='pt'?'[Admin] Excluir publicação?':lang==='es'?'[Admin] ¿Eliminar publicación?':'[Admin] Delete posting?',
                 subMessage: lang==='pt'?'Remove a vaga deste usuário permanentemente.':lang==='es'?'Elimina la vacante de este usuario permanentemente.':'Permanently removes this user\'s posting.',
@@ -986,9 +986,21 @@ function QuickPoolsScreen({ ctx }) {
             </div>
 
             {/* Cards */}
-            <div style={{display:'flex', flexDirection:'column', gap:12}}>
-              {sortedJobs.map(j => <JobCard key={j.id} j={j}/>)}
-            </div>
+            {sortedJobs.length === 0 ? (
+              <div style={{padding:'48px 24px', textAlign:'center', background:'var(--pg-white)', borderRadius:16, border:'1px solid var(--pg-ink-200)'}}>
+                <div style={{fontSize:32, marginBottom:8}}>⚡</div>
+                <div style={{fontWeight:700, color:'var(--pg-ink-600)'}}>
+                  {lang==='pt'?'Nenhuma vaga disponível no momento':lang==='es'?'Ninguna vacante disponible por ahora':'No jobs available right now'}
+                </div>
+                <div style={{fontSize:13, color:'var(--pg-ink-400)', marginTop:4}}>
+                  {lang==='pt'?'Volte mais tarde ou publique a sua.':lang==='es'?'Vuelve más tarde o publica la tuya.':'Check back later or post your own.'}
+                </div>
+              </div>
+            ) : (
+              <div style={{display:'flex', flexDirection:'column', gap:12}}>
+                {sortedJobs.map(j => <JobCard key={j.id} j={j}/>)}
+              </div>
+            )}
             <HistorySection/>
           </div>
         </div>
@@ -1182,9 +1194,21 @@ function QuickPoolsScreen({ ctx }) {
       </div>
 
       {/* Job list */}
-      <div style={{padding:'10px 18px 0', display:'flex', flexDirection:'column', gap:10}}>
-        {sortedJobs.map(j => <JobCard key={j.id} j={j} compact/>)}
-      </div>
+      {sortedJobs.length === 0 ? (
+        <div style={{margin:'10px 18px 0', padding:'40px 20px', textAlign:'center', background:'var(--pg-white)', borderRadius:16, border:'1px solid var(--pg-ink-200)'}}>
+          <div style={{fontSize:30, marginBottom:8}}>⚡</div>
+          <div style={{fontWeight:700, color:'var(--pg-ink-600)'}}>
+            {lang==='pt'?'Nenhuma vaga disponível no momento':lang==='es'?'Ninguna vacante disponible por ahora':'No jobs available right now'}
+          </div>
+          <div style={{fontSize:13, color:'var(--pg-ink-400)', marginTop:4}}>
+            {lang==='pt'?'Volte mais tarde ou publique a sua.':lang==='es'?'Vuelve más tarde o publica la tuya.':'Check back later or post your own.'}
+          </div>
+        </div>
+      ) : (
+        <div style={{padding:'10px 18px 0', display:'flex', flexDirection:'column', gap:10}}>
+          {sortedJobs.map(j => <JobCard key={j.id} j={j} compact/>)}
+        </div>
+      )}
       <HistorySection/>
 
     </div>
@@ -1662,9 +1686,9 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
             ⏳ {lang==='pt'?'Em andamento':lang==='es'?'En curso':'In progress'}
           </div>
         )}
-        {((isOwn && !isOwnFilled) || (isAdmin && !isOwn)) && (
+        {((isOwn && !isOwnFilled) || (isAdmin && !isOwn && job._live)) && (
           <div style={{display:'flex', alignItems:'center', gap:6}}>
-            {isAdmin && !isOwn && openEditPost && (
+            {isAdmin && !isOwn && job._live && openEditPost && (
               <button onClick={()=>openEditPost({
                 id: job.id,
                 title: typeof job.title==='object' ? (job.title[lang]||job.title.pt||job.title.en) : job.title,
