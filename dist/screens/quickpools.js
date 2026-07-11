@@ -85,6 +85,102 @@ function ConfirmModal({
     }
   }, confirmLabel || (lang === 'pt' ? 'Confirmar' : lang === 'es' ? 'Confirmar' : 'Confirm')))));
 }
+function ExtendJobModal({
+  onExtend,
+  onCancel,
+  lang = 'pt'
+}) {
+  const opts = [{
+    hours: 6,
+    label: lang === 'pt' ? '+6 horas' : lang === 'es' ? '+6 horas' : '+6 hours'
+  }, {
+    hours: 12,
+    label: lang === 'pt' ? '+12 horas' : lang === 'es' ? '+12 horas' : '+12 hours'
+  }, {
+    hours: 24,
+    label: lang === 'pt' ? '+1 dia' : lang === 'es' ? '+1 día' : '+1 day'
+  }, {
+    hours: 72,
+    label: lang === 'pt' ? '+3 dias' : lang === 'es' ? '+3 días' : '+3 days'
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 10000,
+      background: 'rgba(0,0,0,0.6)',
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '100%',
+      maxWidth: 520,
+      background: 'var(--pg-white)',
+      borderRadius: '20px 20px 0 0',
+      padding: '24px 20px 36px',
+      boxShadow: '0 -8px 32px rgba(0,0,0,0.2)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 4,
+      borderRadius: 4,
+      background: 'var(--pg-ink-200)',
+      margin: '0 auto 20px'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: 'var(--pg-ink-900)',
+      textAlign: 'center',
+      marginBottom: 8
+    }
+  }, lang === 'pt' ? 'Sua vaga está prestes a expirar' : lang === 'es' ? 'Tu vacante está por expirar' : 'Your job posting is about to expire'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: 'var(--pg-ink-500)',
+      textAlign: 'center',
+      marginBottom: 20,
+      lineHeight: 1.4
+    }
+  }, lang === 'pt' ? 'Deseja estender e por quantos dias a mais?' : lang === 'es' ? '¿Deseas extenderla y por cuánto tiempo?' : 'Would you like to extend it, and by how long?'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 10,
+      marginBottom: 10
+    }
+  }, opts.map(o => /*#__PURE__*/React.createElement("button", {
+    key: o.hours,
+    onClick: () => onExtend(o.hours),
+    style: {
+      height: 48,
+      borderRadius: 14,
+      border: '1px solid var(--pg-blue-200)',
+      background: 'var(--pg-blue-50)',
+      color: 'var(--pg-blue-700)',
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: 'pointer'
+    }
+  }, o.label))), /*#__PURE__*/React.createElement("button", {
+    onClick: onCancel,
+    style: {
+      width: '100%',
+      height: 44,
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-50)',
+      color: 'var(--pg-ink-700)',
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: 'pointer'
+    }
+  }, lang === 'pt' ? 'Deixar expirar' : lang === 'es' ? 'Dejar expirar' : 'Let it expire')));
+}
 class JobDetailBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -165,6 +261,7 @@ function QuickPoolsScreen({
   const [historyJobs, setHistoryJobs] = React.useState([]);
   const [showHistory, setShowHistory] = React.useState(false);
   const [confirmDialog, setConfirmDialog] = React.useState(null); // { message, subMessage, confirmLabel, onConfirm }
+  const [extendDialog, setExtendDialog] = React.useState(null); // jobId of the job being offered an extension
 
   // Live jobs from Supabase
   const [jobs, setJobs] = React.useState(QUICK_POOLS);
@@ -230,25 +327,19 @@ function QuickPoolsScreen({
     if (!window.sb) return;
     setJobsLoading(true);
     try {
+      window.sb.rpc('cleanup_quick_pool_jobs').then(() => {}).catch(() => {});
       const {
         data
       } = await window.sb.from('quick_pool_jobs').select('*').in('status', ['open', 'filled']).order('created_at', {
         ascending: false
       }).limit(50);
       if (data && data.length > 0) {
-        // Expire jobs older than 24h
+        // Expire jobs past their expires_at locally too, in case the RPC above hasn't landed yet
         const now = Date.now();
-        const expiredIds = [];
         const active = data.filter(j => {
-          if (j.status === 'open' && now - new Date(j.created_at).getTime() > 24 * 60 * 60 * 1000) {
-            expiredIds.push(j.id);
-            return false;
-          }
-          return true;
+          const exp = j.expires_at ? new Date(j.expires_at).getTime() : new Date(j.created_at).getTime() + 24 * 60 * 60 * 1000;
+          return !(j.status === 'open' && now > exp);
         });
-        if (expiredIds.length > 0) window.sb.from('quick_pool_jobs').update({
-          status: 'expired'
-        }).in('id', expiredIds).then(() => {});
         setJobs(active.map(j => ({
           id: j.id,
           _live: true,
@@ -286,6 +377,7 @@ function QuickPoolsScreen({
             es: j.description || ''
           },
           created_at: j.created_at,
+          expires_at: j.expires_at,
           status: j.status
         })));
       }
@@ -302,6 +394,22 @@ function QuickPoolsScreen({
     window.addEventListener('pgQuickPoolPosted', handler);
     return () => window.removeEventListener('pgQuickPoolPosted', handler);
   }, [loadJobs]);
+
+  // Proactively offer to extend the owner's own soon-to-expire open jobs
+  const promptedExpiryRef = React.useRef(new Set());
+  React.useEffect(() => {
+    if (!user?.uid || extendDialog) return;
+    const soon = jobs.find(j => {
+      if (!j._live || j.poster_id !== user.uid || j.status !== 'open' || !j.expires_at) return false;
+      if (promptedExpiryRef.current.has(j.id)) return false;
+      const remainingMs = new Date(j.expires_at).getTime() - Date.now();
+      return remainingMs > 0 && remainingMs < 3 * 60 * 60 * 1000;
+    });
+    if (soon) {
+      promptedExpiryRef.current.add(soon.id);
+      setExtendDialog(soon.id);
+    }
+  }, [jobs, user?.uid, extendDialog]);
 
   // Load accepted applications for current user so we can highlight them
   React.useEffect(() => {
@@ -507,6 +615,27 @@ function QuickPoolsScreen({
     }).eq('id', jobId);
     setJobs(prev => prev.filter(j => String(j.id) !== String(jobId)));
     if (selected && String(selected.id) === String(jobId)) setSelected(null);
+  };
+
+  // ── Extend a job's expiration (owner only) ──────────────────
+  const extendJob = async (jobId, hours) => {
+    if (!window.sb) return;
+    const job = jobs.find(j => String(j.id) === String(jobId));
+    const base = job?.expires_at && new Date(job.expires_at) > new Date() ? new Date(job.expires_at) : new Date();
+    const newExpiry = new Date(base.getTime() + hours * 60 * 60 * 1000).toISOString();
+    const {
+      error
+    } = await window.sb.from('quick_pool_jobs').update({
+      expires_at: newExpiry,
+      status: 'open'
+    }).eq('id', jobId);
+    if (error) return;
+    setJobs(prev => prev.map(j => String(j.id) === String(jobId) ? {
+      ...j,
+      expires_at: newExpiry,
+      status: 'open'
+    } : j));
+    setExtendDialog(null);
   };
 
   // ── Finalize a filled job (owner marks complete → removed) ──
@@ -773,7 +902,24 @@ function QuickPoolsScreen({
         display: 'flex',
         gap: 6
       }
-    }, /*#__PURE__*/React.createElement("button", {
+    }, j.status === 'open' && /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        setExtendDialog(j.id);
+      },
+      title: lang === 'pt' ? 'Estender' : lang === 'es' ? 'Extender' : 'Extend',
+      style: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        border: '1px solid var(--pg-ink-300)',
+        background: 'var(--pg-ink-100)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, Icon.clock(14, 'var(--pg-ink-700)')), /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         openEditPost && openEditPost({
@@ -1612,6 +1758,10 @@ function QuickPoolsScreen({
       lang: lang,
       onConfirm: confirmDialog.onConfirm,
       onCancel: () => setConfirmDialog(null)
+    }), extendDialog && /*#__PURE__*/React.createElement(ExtendJobModal, {
+      lang: lang,
+      onExtend: hours => extendJob(extendDialog, hours),
+      onCancel: () => setExtendDialog(null)
     }));
   }
 
@@ -2017,6 +2167,10 @@ function QuickPoolsScreen({
     lang: lang,
     onConfirm: confirmDialog.onConfirm,
     onCancel: () => setConfirmDialog(null)
+  }), extendDialog && /*#__PURE__*/React.createElement(ExtendJobModal, {
+    lang: lang,
+    onExtend: hours => extendJob(extendDialog, hours),
+    onCancel: () => setExtendDialog(null)
   }), notifHelpOpen && (() => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
