@@ -456,7 +456,7 @@ function HomeScreen({ ctx }) {
                       ? `$${item.price}${isJob?(item.payMode==='weekly'?'/sem':'/pool'):isQuick?'/pool':''}`
                       : '—';
                 return (
-                  <button key={item._id} onClick={()=>{
+                  <div key={item._id} onClick={()=>{
                     if (isQuick) { ctx.openQuickJobById ? ctx.openQuickJobById(item._id) : goTab('quick'); }
                     else if (isJob) { window.__pgOpenJobId = item._id; goTab('work'); }
                     else { openListingById ? openListingById(item._id) : goTab('market'); }
@@ -512,7 +512,7 @@ function HomeScreen({ ctx }) {
                       color: isPending ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
                       marginTop:'auto',
                     }}>{priceStr}</div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
