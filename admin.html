@@ -3212,11 +3212,24 @@ function AdminApp({ adminUser, onLogout }) {
               : quickPools;
 
             const deleteQP = async (qp) => {
-              if(!confirm(`Cancelar/excluir a vaga "${qp.title||qp.city}"?\n\nIsso marcará como cancelado e ela sumirá do app.`)) return;
-              const {error} = await window.sb.from('quick_pool_jobs').update({status:'cancelled'}).eq('id',qp.id);
+              const st = qp.status||'open';
+              const isActiveQP = st==='open'||st==='filled';
+              if(!confirm(`Excluir permanentemente a vaga "${qp.title||qp.city}"?\n\nIsso remove o registro do banco de dados e não pode ser desfeito.`)) return;
+              if (isActiveQP) {
+                const { data: accepted } = await window.sb.from('quick_pool_applications')
+                  .select('id, applicant_id').eq('job_id', qp.id).eq('status','accepted').limit(1);
+                if (accepted && accepted[0]) {
+                  window.sb.from('notifications').insert({
+                    user_id: accepted[0].applicant_id, type: 'quickpool_cancelled',
+                    title: 'Vaga cancelada',
+                    body: `O administrador removeu a vaga "${qp.title||qp.city}".`,
+                  }).catch(()=>{});
+                }
+              }
+              const {error} = await window.sb.from('quick_pool_jobs').delete().eq('id',qp.id);
               if(error){ showToast('❌ '+error.message, false); return; }
-              setQuickPools(p=>p.map(x=>x.id===qp.id?{...x,status:'cancelled'}:x));
-              showToast('✓ Vaga cancelada.');
+              setQuickPools(p=>p.filter(x=>x.id!==qp.id));
+              showToast('✓ Vaga excluída permanentemente.');
             };
 
             return (
@@ -3322,12 +3335,10 @@ function AdminApp({ adminUser, onLogout }) {
                                     {AIco.edit}
                                   </button>
                                 )}
-                                {(isActive||st==='expired')&&(
-                                  <button onClick={()=>deleteQP(qp)}
-                                    className="aib aib-red" title="Cancelar/Excluir">
-                                    {AIco.trash}
-                                  </button>
-                                )}
+                                <button onClick={()=>deleteQP(qp)}
+                                  className="aib aib-red" title="Excluir">
+                                  {AIco.trash}
+                                </button>
                               </div>
                             </div>
                           </div>
