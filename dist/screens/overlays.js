@@ -4354,13 +4354,16 @@ function PaywallSheet({
     height: "92%"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 0 32px'
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '6px 16px 0',
       display: 'flex',
-      justifyContent: 'flex-end'
+      justifyContent: 'flex-end',
+      flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onClose,
@@ -4376,6 +4379,11 @@ function PaywallSheet({
       justifyContent: 'center'
     }
   }, Icon.x(16, 'var(--pg-ink-700)'))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflow: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '4px 20px 16px',
       textAlign: 'center'
@@ -4565,9 +4573,12 @@ function PaywallSheet({
       strokeWidth: "1.8",
       strokeLinecap: "round"
     })));
-  })))), /*#__PURE__*/React.createElement("div", {
+  }))))), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '18px 16px 0'
+      padding: '14px 16px calc(14px + env(safe-area-inset-bottom, 0px))',
+      borderTop: '0.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-white)',
+      flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: handleSubscribe,

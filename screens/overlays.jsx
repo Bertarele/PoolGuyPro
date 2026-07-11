@@ -2368,13 +2368,15 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
 
   return (
     <Sheet open={open} onClose={onClose} height="92%">
-      <div style={{padding:'0 0 32px'}}>
+      <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
         {/* Close */}
-        <div style={{padding:'6px 16px 0', display:'flex', justifyContent:'flex-end'}}>
+        <div style={{padding:'6px 16px 0', display:'flex', justifyContent:'flex-end', flexShrink:0}}>
           <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
             {Icon.x(16,'var(--pg-ink-700)')}
           </button>
         </div>
+
+        <div style={{flex:1, overflow:'auto'}}>
 
         {/* Header */}
         <div style={{padding:'4px 20px 16px', textAlign:'center'}}>
@@ -2467,8 +2469,10 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
           ))}
         </div>
 
+        </div>
+
         {/* CTA */}
-        <div style={{padding:'18px 16px 0'}}>
+        <div style={{padding:'14px 16px calc(14px + env(safe-area-inset-bottom, 0px))', borderTop:'0.5px solid var(--pg-ink-200)', background:'var(--pg-white)', flexShrink:0}}>
           <button onClick={handleSubscribe}
             style={{width:'100%', height:52, borderRadius:14, border:'none',
               background: p.gradient,
