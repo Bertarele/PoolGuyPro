@@ -643,6 +643,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
   // Normalize a DB row from job_applications → UI applicant shape
   const normApp = (row) => {
     const snap = row.profile_snapshot || {};
+    const vacDays = row.vacation_days || null;
     return {
       id:           row.id,
       _dbId:        row.id,
@@ -654,6 +655,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
       note:         row.note   || null,
       when:         relTime(row.created_at),
       rejectReason: row.reject_reason || null,
+      selectedDays: vacDays?.selectedDays || null,
       interview: row.interview_day ? {
         day:  { en: row.interview_day, pt: row.interview_day, es: row.interview_day },
         time: row.interview_time || '',
@@ -718,6 +720,30 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
     if (error) console.warn('[ApplicantsSheet] update error:', error.message);
   };
 
+  // Hiring (not vacation, where multiple different-day accepts are normal): accepting
+  // one applicant closes the job and rejects everyone else, so the listing stops
+  // accepting new applications and other applicants aren't left thinking they're
+  // still in the running. Shared by both accept paths (plain accept + schedule interview).
+  const closeJobAndRejectOthers = async (acceptedId) => {
+    if (post.type !== 'hiring' || !window.sb) return;
+    await window.sb.from('jobs').update({ hired_at: new Date().toISOString() }).eq('id', post._id);
+    const others = applicants.filter(a => a.id !== acceptedId && a.status !== 'rejected' && a._dbId);
+    for (const other of others) {
+      await dbUpdate(other._dbId, { status: 'rejected' });
+      if (other.applicant_id) {
+        window.sb.from('notifications').insert({
+          user_id: other.applicant_id,
+          type:    'job_rejected',
+          title:   JSON.stringify({ en:'Application not selected', pt:'Candidatura não selecionada', es:'Postulación no seleccionada' }),
+          body:    JSON.stringify({ en:`Your application for "${post.role||post.company||''}" was not selected — another candidate was hired.`, pt:`Sua candidatura para "${post.role||post.company||''}" não foi selecionada — outro candidato foi contratado.`, es:`Tu postulación para "${post.role||post.company||''}" no fue seleccionada — se contrató a otro candidato.` }),
+          link_id: post._id || null,
+          read:    false,
+        });
+      }
+    }
+    setApplicants(prev => prev.map(a => a.id===acceptedId ? a : (a.status!=='rejected' ? {...a, status:'rejected'} : a)));
+  };
+
   const scheduleInterview = async (applicantId, interview) => {
     const app = applicants.find(a => a.id === applicantId);
     setApplicants(prev => prev.map(a => a.id===applicantId ? {...a, interview, status:'accepted'} : a));
@@ -744,6 +770,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
           read:    false,
         });
       }
+      await closeJobAndRejectOthers(applicantId);
     }
   };
 
@@ -770,6 +797,14 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
           link_id: post._id || null,
           read:    false,
         });
+      }
+      if (status === 'accepted') await closeJobAndRejectOthers(id);
+      // Persist accepted vacation days so booked_days reflects reality — it's what
+      // the day-picker/listing UI use to grey out days that are already taken.
+      if (status === 'accepted' && post.type === 'vacation' && app.selectedDays?.length) {
+        const { data: fresh } = await window.sb.from('vacations').select('booked_days').eq('id', post._id).single();
+        const merged = Array.from(new Set([...(fresh?.booked_days || []), ...app.selectedDays]));
+        await window.sb.from('vacations').update({ booked_days: merged }).eq('id', post._id);
       }
     }
   };

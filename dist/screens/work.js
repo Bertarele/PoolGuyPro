@@ -280,9 +280,36 @@ function WorkScreen({
 
   // Static test data
   const staticAppsHiring = MY_APPLICATIONS.filter(a => a.type === 'hiring');
-  const myAppsVac = typeof VACATIONS_APPLIED !== 'undefined' ? VACATIONS_APPLIED : [];
   const staticPostsHiring = MY_POSTS.filter(p => p.type === 'hiring');
   const myPostsVac = MY_POSTS.filter(p => p.type === 'vacation');
+
+  // Live vacation-coverage applications (I applied to cover someone's route) →
+  // appear in My Applications. Was previously always empty/seed-only because
+  // VacationDayPickerSheet's submit never persisted anything to the DB.
+  const myLiveVacApps = liveApplications.filter(a => liveVacations.some(v => v._id === a.job_id)).map(a => {
+    const relatedVac = liveVacations.find(v => v._id === a.job_id);
+    return {
+      id: a.id,
+      _live: true,
+      type: 'vacation',
+      owner: relatedVac?.author || a.job_company || '?',
+      author_id: relatedVac?.author_id || a.job_author_id || null,
+      pricePerPool: relatedVac?.pricePerPool || 0,
+      status: completedAppIds.has(a.id) ? 'completed' : a.status === 'accepted' ? 'accepted' : 'awaiting',
+      selectedDays: a.selectedDays || null,
+      job_id: a.job_id,
+      title: relatedVac ? {
+        en: 'Route coverage',
+        pt: 'Cobertura de rota',
+        es: 'Cobertura de ruta'
+      } : {
+        en: '',
+        pt: '',
+        es: ''
+      }
+    };
+  });
+  const myAppsVac = [...myLiveVacApps, ...(typeof VACATIONS_APPLIED !== 'undefined' ? VACATIONS_APPLIED : [])];
 
   // City label for location button — uses stored city, falls back to haversine lookup
   const workLocCity = React.useMemo(() => {
@@ -437,6 +464,26 @@ function WorkScreen({
         to_name: app.company || '',
         listing_name: tr(app.title, lang) || app.company || '',
         connection_type: 'hiring',
+        connection_id: app.job_id || app.id
+      });
+    }
+  }, [openRating, lang]);
+
+  // Vacation coverage had no completion step at all — the arrangement could never
+  // be closed out and neither side was ever prompted to rate the other.
+  const completeVacApp = React.useCallback(async app => {
+    if (app._live && window.sb) {
+      await window.sb.from('job_applications').update({
+        status: 'completed'
+      }).eq('id', app.id);
+    }
+    setCompletedAppIds(p => new Set([...p, app.id]));
+    if (app.author_id && openRating) {
+      openRating({
+        to_id: app.author_id,
+        to_name: app.owner || '',
+        listing_name: lang === 'pt' ? 'Cobertura de rota' : lang === 'es' ? 'Cobertura de ruta' : 'Route coverage',
+        connection_type: 'vacation',
         connection_id: app.job_id || app.id
       });
     }
@@ -1106,10 +1153,15 @@ function WorkScreen({
       // Vacation app
       const isAwaiting = app.status === 'awaiting';
       const isAcc = app.status === 'accepted';
+      const isDone = app.status === 'completed';
       const sCfg = isAwaiting ? {
         label: lang === 'pt' ? 'Aguardando' : lang === 'es' ? 'Pendiente' : 'Pending',
         color: 'oklch(0.48 0.14 68)',
         bg: 'oklch(0.96 0.05 68)'
+      } : isDone ? {
+        label: lang === 'pt' ? 'Concluída ✓' : lang === 'es' ? 'Completado ✓' : 'Completed ✓',
+        color: 'oklch(0.40 0.18 145)',
+        bg: 'oklch(0.95 0.05 145)'
       } : isAcc ? {
         label: lang === 'pt' ? 'Confirmado ✓' : lang === 'es' ? 'Confirmado ✓' : 'Confirmed ✓',
         color: 'var(--pg-blue-600)',
@@ -1121,14 +1173,12 @@ function WorkScreen({
       };
       return /*#__PURE__*/React.createElement("div", {
         key: app.id,
-        onClick: () => openSchedule && openSchedule(app),
         style: {
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          gap: 8,
           padding: '9px 0',
-          borderTop: '1px solid var(--pg-ink-100)',
-          cursor: 'pointer'
+          borderTop: '1px solid var(--pg-ink-100)'
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -1139,9 +1189,11 @@ function WorkScreen({
           background: isAcc ? 'var(--pg-blue-500)' : 'oklch(0.75 0.14 68)'
         }
       }), /*#__PURE__*/React.createElement("div", {
+        onClick: () => openSchedule && openSchedule(app),
         style: {
           flex: 1,
-          minWidth: 0
+          minWidth: 0,
+          cursor: 'pointer'
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -1174,7 +1226,22 @@ function WorkScreen({
           fontSize: 11,
           color: 'var(--pg-ink-400)'
         }
-      }, "\xB7 $", app.pricePerPool, lang === 'pt' ? '/pisc' : '/pool'))), Icon.chev(13, 'var(--pg-ink-300)'));
+      }, "\xB7 $", app.pricePerPool, lang === 'pt' ? '/pisc' : '/pool'))), isAcc ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => completeVacApp(app),
+        style: {
+          flexShrink: 0,
+          height: 26,
+          padding: '0 9px',
+          borderRadius: 7,
+          fontSize: 10.5,
+          fontWeight: 700,
+          border: '1px solid rgba(16,185,129,0.35)',
+          background: 'rgba(16,185,129,0.10)',
+          color: '#10B981',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap'
+        }
+      }, lang === 'pt' ? 'Concluir' : lang === 'es' ? 'Completar' : 'Complete') : Icon.chev(13, 'var(--pg-ink-300)'));
     }), currentMyApps.length > activityLimit && /*#__PURE__*/React.createElement("button", {
       onClick: () => setActivityLimit(p => p + 4),
       style: {
@@ -3737,7 +3804,7 @@ function HiringPanel({
       fontWeight: 600,
       flexShrink: 0
     }
-  }, "Ver perfil \u2192")), /*#__PURE__*/React.createElement("p", {
+  }, lang === 'pt' ? 'Ver perfil →' : lang === 'es' ? 'Ver perfil →' : 'View profile →')), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: 0,
       fontSize: 13,
@@ -4185,6 +4252,7 @@ function TechsPanel({
   const [ratingFor, setRatingFor] = React.useState(null);
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const [ratedIds, setRatedIds] = React.useState(new Set());
+  const [editingTech, setEditingTech] = React.useState(null);
   React.useEffect(() => {
     if (!user?.uid || !window.sb || !liveTechs.length) return;
     const toIds = liveTechs.map(t => t.author_id).filter(Boolean);
@@ -4296,7 +4364,7 @@ function TechsPanel({
     }), /*#__PURE__*/React.createElement("path", {
       d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
     }))), /*#__PURE__*/React.createElement("button", {
-      onClick: () => openPublicProfile && openPublicProfile({
+      onClick: () => isOwner ? setEditingTech(tech) : openPublicProfile && openPublicProfile({
         name: tech.name,
         photo: tech.photoUrl,
         loc: tech.loc,
@@ -4820,7 +4888,44 @@ function TechsPanel({
     lang: lang,
     user: user,
     onRated: tech => setRatedIds(prev => new Set([...prev, tech.author_id]))
-  }));
+  }), /*#__PURE__*/React.createElement(FullPage, {
+    open: !!editingTech,
+    onClose: () => setEditingTech(null)
+  }, editingTech && /*#__PURE__*/React.createElement(PostTechSheet, {
+    lang: lang,
+    user: user,
+    initialValues: {
+      specialty: editingTech.specialty || '',
+      loc: editingTech.loc || '',
+      phone: editingTech.phone || '',
+      email: editingTech.email || '',
+      rateMode: editingTech.rateMode || editingTech.rate_mode || 'fixed',
+      rate: editingTech.rate || '90',
+      photoUrl: editingTech.photoUrl || null
+    },
+    onClose: () => setEditingTech(null),
+    onSubmit: async data => {
+      const techId = editingTech._id;
+      setEditingTech(null);
+      if (!window.sb) return;
+      const {
+        error
+      } = await window.sb.from('techs').update({
+        specialty: data.specialty,
+        loc: data.loc,
+        phone: data.phone,
+        email: data.email,
+        rate_mode: data.rateMode,
+        rate: data.rate,
+        photo_url: data.photoUrl || null
+      }).eq('id', techId);
+      if (error) {
+        showToast && showToast('❌ ' + error.message);
+        return;
+      }
+      showToast && showToast(lang === 'pt' ? '✓ Perfil atualizado' : lang === 'es' ? '✓ Perfil actualizado' : '✓ Profile updated');
+    }
+  })));
 }
 
 // ── Accepted vacation application card with address reveal ────
@@ -7792,24 +7897,26 @@ function PostTechSheet({
   onClose,
   lang = 'en',
   onSubmit,
-  user = null
+  user = null,
+  initialValues = null
 }) {
   const t = STRINGS[lang];
-  const [specialty, setSpecialty] = React.useState('');
-  const [loc, setLoc] = React.useState('');
-  const [phone, setPhone] = React.useState(user?.phone || '');
-  const [email, setEmail] = React.useState(user?.email || '');
-  const [photos, setPhotos] = React.useState([]);
-  const [rateMode, setRateMode] = React.useState('fixed');
-  const [rate, setRate] = React.useState('90');
-  const headLbl = lang === 'pt' ? 'Cadastrar técnico' : lang === 'es' ? 'Registrar técnico' : 'Register as technician';
+  const isEdit = !!initialValues;
+  const [specialty, setSpecialty] = React.useState(initialValues?.specialty || '');
+  const [loc, setLoc] = React.useState(initialValues?.loc || '');
+  const [phone, setPhone] = React.useState(initialValues?.phone || user?.phone || '');
+  const [email, setEmail] = React.useState(initialValues?.email || user?.email || '');
+  const [photos, setPhotos] = React.useState(initialValues?.photoUrl ? [initialValues.photoUrl] : []);
+  const [rateMode, setRateMode] = React.useState(initialValues?.rateMode || 'fixed');
+  const [rate, setRate] = React.useState(initialValues?.rate || '90');
+  const headLbl = isEdit ? lang === 'pt' ? 'Editar perfil' : lang === 'es' ? 'Editar perfil' : 'Edit profile' : lang === 'pt' ? 'Cadastrar técnico' : lang === 'es' ? 'Registrar técnico' : 'Register as technician';
   const specLbl = lang === 'pt' ? 'Especialidade' : lang === 'es' ? 'Especialidad' : 'Specialty';
   const specPh = lang === 'pt' ? 'ex: Reparo de bombas e motores' : lang === 'es' ? 'ej: Reparación de bombas y motores' : 'e.g. Pump & Motor Repair';
   const locLbl = lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City';
   const phoneLbl = lang === 'pt' ? 'Telefone' : lang === 'es' ? 'Teléfono' : 'Phone number';
   const emailLbl = lang === 'pt' ? 'E-mail (opcional)' : lang === 'es' ? 'E-mail (opcional)' : 'Email (optional)';
   const rateLbl = lang === 'pt' ? 'Preço por visita' : lang === 'es' ? 'Precio por visita' : 'Rate per visit';
-  const submitLbl = lang === 'pt' ? 'Publicar perfil' : lang === 'es' ? 'Publicar perfil' : 'Post profile';
+  const submitLbl = isEdit ? lang === 'pt' ? 'Salvar alterações' : lang === 'es' ? 'Guardar cambios' : 'Save changes' : lang === 'pt' ? 'Publicar perfil' : lang === 'es' ? 'Publicar perfil' : 'Post profile';
 
   // US phone mask: (xxx) XXX-XXXX
   const formatPhone = val => {

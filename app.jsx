@@ -955,6 +955,8 @@ function App() {
         p => setLiveJobs(prev => prev.filter(j => j._id !== p.old.id)))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'techs' },
         p => setLiveTechs(prev => [normTech(p.new), ...prev]))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'techs' },
+        p => setLiveTechs(prev => prev.map(tc => tc._id === p.new.id ? normTech(p.new) : tc)))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vacations' },
         p => setLiveVacations(prev => [normVac(p.new), ...prev]))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'marketplace' },
@@ -1597,6 +1599,17 @@ function App() {
           onSubmit={(data)=>{
             setVacSheetOpen(false);
             if (!data) { setEditingVac(null); return; }
+            const overlap = liveVacations.some(v =>
+              v.author_id === user.uid &&
+              (!editingVac || v._id !== editingVac._id) &&
+              v.monthIdx === data.monthIdx && v.year === data.year &&
+              (v.selectedDays || []).some(d => (data.selectedDays || []).includes(d))
+            );
+            if (overlap) {
+              setEditingVac(null);
+              showToast(lang==='pt'?'Você já tem férias publicadas com dias sobrepostos':lang==='es'?'Ya tienes vacaciones publicadas con días superpuestos':'You already have a vacation posted with overlapping days');
+              return;
+            }
             if (editingVac) {
               const row = {
                 month_idx: data.monthIdx, year: data.year,
@@ -1634,7 +1647,37 @@ function App() {
           vac={dayPickerVac} lang={lang}
           confirmedDays={confirmedDays}
           onClose={()=>setDayPickerVac(null)}
-          onSubmit={()=>setDayPickerVac(null)}
+          onSubmit={async (data)=>{
+            const vac = dayPickerVac;
+            setDayPickerVac(null);
+            if (!window.sb || !user?.uid || !vac?._id) return;
+            const { data: existing } = await window.sb.from('job_applications')
+              .select('id').eq('job_id', vac._id).eq('applicant_id', user.uid);
+            if (existing && existing.length > 0) {
+              showToast(lang==='pt'?'Você já se candidatou para esta rota':lang==='es'?'Ya te postulaste a esta ruta':'You already applied to this route');
+              return;
+            }
+            const { error } = await window.sb.from('job_applications').insert({
+              job_id:         vac._id,
+              job_company:    vac.author || '',
+              job_role:       lang==='pt'?'Cobertura de rota':lang==='es'?'Cobertura de ruta':'Route coverage',
+              job_loc:        vac.region || '',
+              job_author_id:  vac.author_id || null,
+              applicant_id:   user.uid,
+              applicant_name: user.name || '',
+              applicant_rating: user.rating || null,
+              note:           data?.note || null,
+              status:         'pending',
+              vacation_days:  data ? {
+                selectedDays: data.selectedDays, monthIdx: data.monthIdx, year: data.year,
+                weekdayRegions: data.weekdayRegions, poolsPerWeekday: data.poolsPerWeekday,
+                price: data.price, priceMode: data.priceMode,
+              } : null,
+            });
+            if (error) { showToast('❌ ' + (lang==='pt'?'Erro ao enviar candidatura':'Failed to submit application')); return; }
+            showToast(lang==='pt'?'✓ Candidatura enviada':lang==='es'?'✓ Postulación enviada':'✓ Application sent');
+            loadLiveApplications(user.uid);
+          }}
         />
       </FullPage>
       <FullPage open={hiringSheetOpen} onClose={()=>setHiringSheetOpen(false)}>
