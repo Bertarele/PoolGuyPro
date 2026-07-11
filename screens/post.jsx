@@ -132,8 +132,8 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
   };
 
   return (
-    <div style={{padding:'8px 0 24px'}}>
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'4px 18px 16px'}}>
+    <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 18px 16px', flexShrink:0}}>
         <button onClick={step===1?onClose:()=>setStep(step-1)} style={{
           border:'none', background:'transparent', color:'var(--pg-blue-500)',
           fontSize:15, fontWeight:600, cursor:'pointer', padding:0,
@@ -142,7 +142,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
         <div style={{width:60}}/>
       </div>
 
-      <div style={{padding:'0 18px'}}>
+      <div style={{padding:'0 18px', flex:1, overflow:'auto'}}>
         <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em'}}>
           {step===1 && t.pqStep1Title}
           {step===2 && lbl.step2Title}
@@ -451,7 +451,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
         </div>
       </div>
 
-      <div style={{padding:'18px 18px 8px', position:'sticky', bottom:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
+      <div style={{padding:'18px 18px calc(8px + env(safe-area-inset-bottom, 0px))', flexShrink:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         {step < 3 ? (
           <button onClick={()=>setStep(step+1)} disabled={!canContinue()} className="pg-btn pg-btn-primary"
             style={{width:'100%', height:52, fontSize:16, opacity: canContinue() ? 1 : 0.45}}>

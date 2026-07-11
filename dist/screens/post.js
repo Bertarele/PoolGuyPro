@@ -150,14 +150,17 @@ function PostQuickPool({
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '8px 0 24px'
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '4px 18px 16px'
+      padding: '12px 18px 16px',
+      flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: step === 1 ? onClose : () => setStep(step - 1),
@@ -182,7 +185,9 @@ function PostQuickPool({
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 18px'
+      padding: '0 18px',
+      flex: 1,
+      overflow: 'auto'
     }
   }, /*#__PURE__*/React.createElement("h2", {
     style: {
@@ -760,9 +765,8 @@ function PostQuickPool({
     }
   }, matchCount === null ? lang === 'pt' ? 'Calculando…' : 'Calculating…' : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, matchCount), " ", t.matchNotice)))))), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '18px 18px 8px',
-      position: 'sticky',
-      bottom: 0,
+      padding: '18px 18px calc(8px + env(safe-area-inset-bottom, 0px))',
+      flexShrink: 0,
       background: 'var(--pg-white)',
       borderTop: '0.5px solid var(--pg-ink-200)'
     }
