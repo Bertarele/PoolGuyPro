@@ -103,7 +103,7 @@ class JobDetailBoundary extends React.Component {
 }
 
 function QuickPoolsScreen({ ctx }) {
-  const { lang, user, openPaywall, openChat, openPost, openEditPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, openPublicProfile, goTab } = ctx;
+  const { lang, user, openPaywall, openChat, openPost, openEditPost, openRegionEditor, regionsByDay, county, hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, openPublicProfile, goTab, showToast } = ctx;
   const t = STRINGS[lang];
   const [selected,    setSelected]    = React.useState(null);
   const [highlighted, setHighlighted] = React.useState(null);
@@ -212,6 +212,16 @@ function QuickPoolsScreen({ ctx }) {
     return () => window.removeEventListener('pgQuickPoolPosted', handler);
   }, [loadJobs]);
 
+  const EXTEND_WINDOW_MS = 4 * 60 * 60 * 1000; // extend option only offered once <4h remain
+  const formatRemaining = (expiresAt) => {
+    const ms = new Date(expiresAt).getTime() - Date.now();
+    if (ms <= 0) return null;
+    const h = Math.floor(ms / (60*60*1000));
+    const m = Math.floor((ms % (60*60*1000)) / (60*1000));
+    if (h >= 24) { const d = Math.floor(h/24); return lang==='pt'?`${d}d restantes`:lang==='es'?`${d}d restantes`:`${d}d left`; }
+    return lang==='pt'?`${h}h ${m}min restantes`:lang==='es'?`${h}h ${m}min restantes`:`${h}h ${m}min left`;
+  };
+
   // Proactively offer to extend the owner's own soon-to-expire open jobs
   const promptedExpiryRef = React.useRef(new Set());
   React.useEffect(() => {
@@ -220,7 +230,7 @@ function QuickPoolsScreen({ ctx }) {
       if (!j._live || j.poster_id !== user.uid || j.status !== 'open' || !j.expires_at) return false;
       if (promptedExpiryRef.current.has(j.id)) return false;
       const remainingMs = new Date(j.expires_at).getTime() - Date.now();
-      return remainingMs > 0 && remainingMs < 3 * 60 * 60 * 1000;
+      return remainingMs > 0 && remainingMs < EXTEND_WINDOW_MS;
     });
     if (soon) { promptedExpiryRef.current.add(soon.id); setExtendDialog(soon.id); }
   }, [jobs, user?.uid, extendDialog]);
@@ -386,9 +396,18 @@ function QuickPoolsScreen({ ctx }) {
     const newExpiry = new Date(base.getTime() + hours * 60 * 60 * 1000).toISOString();
     const { error } = await window.sb.from('quick_pool_jobs')
       .update({ expires_at: newExpiry, status: 'open' }).eq('id', jobId);
-    if (error) return;
-    setJobs(prev => prev.map(j => String(j.id) === String(jobId) ? { ...j, expires_at: newExpiry, status: 'open' } : j));
     setExtendDialog(null);
+    if (error) { showToast && showToast('❌ ' + error.message); return; }
+    // The REST client uses Prefer: return=minimal on updates, so a 0-row RLS-blocked
+    // write still reports success — verify the row actually changed before trusting it.
+    const { data: verify } = await window.sb.from('quick_pool_jobs').select('expires_at').eq('id', jobId).single();
+    if (!verify || new Date(verify.expires_at).getTime() !== new Date(newExpiry).getTime()) {
+      showToast && showToast(lang==='pt'?'❌ Não foi possível estender — tente novamente':lang==='es'?'❌ No se pudo extender — inténtalo de nuevo':'❌ Could not extend — please try again');
+      return;
+    }
+    promptedExpiryRef.current.delete(jobId);
+    setJobs(prev => prev.map(j => String(j.id) === String(jobId) ? { ...j, expires_at: newExpiry, status: 'open' } : j));
+    showToast && showToast(lang==='pt'?'✓ Vaga estendida':lang==='es'?'✓ Vacante extendida':'✓ Job extended');
   };
 
   // ── Finalize a filled job (owner marks complete → removed) ──
@@ -573,14 +592,20 @@ function QuickPoolsScreen({ ctx }) {
                 ⏳ {lang==='pt'?'Em andamento':lang==='es'?'En curso':'In progress'}
               </div>
             ) : isOwn ? (
-              <div style={{display:'flex', gap:6}}>
-                {j.status === 'open' && (
-                  <button onClick={(e)=>{ e.stopPropagation(); setExtendDialog(j.id); }} title={lang==='pt'?'Estender':lang==='es'?'Extender':'Extend'} style={{
-                    width:36, height:36, borderRadius:10, border:'1px solid var(--pg-ink-300)',
-                    background:'var(--pg-ink-100)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-                  }}>
-                    {Icon.clock(14,'var(--pg-ink-700)')}
-                  </button>
+              <div style={{display:'flex', alignItems:'center', gap:6}}>
+                {j.status === 'open' && j.expires_at && (
+                  (new Date(j.expires_at).getTime() - Date.now()) < EXTEND_WINDOW_MS ? (
+                    <button onClick={(e)=>{ e.stopPropagation(); setExtendDialog(j.id); }} title={lang==='pt'?'Estender':lang==='es'?'Extender':'Extend'} style={{
+                      width:36, height:36, borderRadius:10, border:'1px solid var(--pg-ink-300)',
+                      background:'var(--pg-ink-100)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                    }}>
+                      {Icon.clock(14,'var(--pg-ink-700)')}
+                    </button>
+                  ) : (
+                    <span style={{fontSize:10.5, color:'var(--pg-ink-400)', fontWeight:600, whiteSpace:'nowrap'}}>
+                      {formatRemaining(j.expires_at)}
+                    </span>
+                  )
                 )}
                 <button onClick={(e)=>{ e.stopPropagation(); openEditPost && openEditPost({
                   id: j.id, title: typeof j.title==='object' ? (j.title[lang]||j.title.pt||j.title.en) : j.title,
