@@ -1408,7 +1408,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
         const job = selectedJob;
         const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
         return (
-          <div style={{padding:'0 0 32px'}}>
+          <div style={{padding:'0 0 32px', height:'100%', overflow:'auto', boxSizing:'border-box'}}>
             <div style={{padding:'8px 18px 16px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
               <button onClick={()=>setSelectedJob(null)} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:15, fontWeight:600, cursor:'pointer', padding:0}}>
                 {lang==='pt'?'Fechar':lang==='es'?'Cerrar':'Close'}
@@ -4687,7 +4687,7 @@ function ScheduleSheet({ app, lang='en', onClose }) {
   };
 
   return (
-    <div style={{paddingBottom:48}}>
+    <div style={{paddingBottom:48, height:'100%', overflow:'auto', boxSizing:'border-box'}}>
       {/* Header */}
       <div style={{padding:'12px 18px 14px', display:'flex', alignItems:'center',
         justifyContent:'space-between', borderBottom:'0.5px solid var(--pg-ink-100)'}}>

@@ -2994,7 +2994,10 @@ function HiringPanel({
     const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
     return /*#__PURE__*/React.createElement("div", {
       style: {
-        padding: '0 0 32px'
+        padding: '0 0 32px',
+        height: '100%',
+        overflow: 'auto',
+        boxSizing: 'border-box'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -9260,7 +9263,10 @@ function ScheduleSheet({
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      paddingBottom: 48
+      paddingBottom: 48,
+      height: '100%',
+      overflow: 'auto',
+      boxSizing: 'border-box'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {

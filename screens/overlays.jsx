@@ -1610,7 +1610,7 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
 
   return (
     <Sheet open={open} onClose={onClose} height="90%">
-      <div style={{padding:'0 18px 40px'}}>
+      <div style={{padding:'0 18px 40px', height:'100%', overflow:'auto', boxSizing:'border-box'}}>
 
         {/* Header */}
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18}}>
@@ -2188,7 +2188,7 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
 
   return (
     <Sheet open={open} onClose={onClose} height="72%">
-      <div style={{padding:'4px 18px 30px'}}>
+      <div style={{padding:'4px 18px 30px', height:'100%', overflow:'auto', boxSizing:'border-box'}}>
         {/* Header */}
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14}}>
           <h2 style={{margin:0, fontSize:20, fontWeight:700, letterSpacing:'-0.02em'}}>
@@ -3192,7 +3192,7 @@ function ApplyJobSheet({ open, onClose, job, user, lang='en', onSubmit, onEditPr
 
   return (
     <Sheet open={open} onClose={onClose} height="92%">
-      <div style={{padding:'6px 18px 44px'}}>
+      <div style={{padding:'6px 18px 44px', height:'100%', overflow:'auto', boxSizing:'border-box'}}>
 
         {/* Header */}
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18}}>
@@ -3518,7 +3518,7 @@ function HiringAppDetailSheet({ open, onClose, app, lang='en', onWithdraw, onCha
 
   return (
     <Sheet open={open} onClose={onClose} height="auto">
-      <div style={{padding:'6px 20px 44px'}}>
+      <div style={{padding:'6px 20px 44px', maxHeight:'100%', overflow:'auto', boxSizing:'border-box'}}>
 
         {/* Drag + close */}
         <div style={{display:'flex', justifyContent:'flex-end', marginBottom:16}}>

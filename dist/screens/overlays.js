@@ -2944,7 +2944,10 @@ function ApplicantProfileSheet({
     height: "90%"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 18px 40px'
+      padding: '0 18px 40px',
+      height: '100%',
+      overflow: 'auto',
+      boxSizing: 'border-box'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4056,7 +4059,10 @@ function NotificationsSheet({
     height: "72%"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '4px 18px 30px'
+      padding: '4px 18px 30px',
+      height: '100%',
+      overflow: 'auto',
+      boxSizing: 'border-box'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6061,7 +6067,10 @@ function ApplyJobSheet({
     height: "92%"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '6px 18px 44px'
+      padding: '6px 18px 44px',
+      height: '100%',
+      overflow: 'auto',
+      boxSizing: 'border-box'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6625,7 +6634,10 @@ function HiringAppDetailSheet({
     height: "auto"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '6px 20px 44px'
+      padding: '6px 20px 44px',
+      maxHeight: '100%',
+      overflow: 'auto',
+      boxSizing: 'border-box'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
