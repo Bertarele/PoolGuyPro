@@ -3171,7 +3171,8 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
   const handleSave = async () => {
     if (!window.sb) return;
     setSaving(true);
-    // Keep current status — no need to send back for review just for price/desc edits
+    // Only name/description/photo changes require a new admin review; price and other fields don't
+    const contentChanged = form.name !== (item.name || '') || (form.description || '') !== (item.description || '');
     const patch = {
       name:        form.name,
       description: form.description || null,
@@ -3182,10 +3183,13 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
       cat:         form.cat,
       asking:      form.asking ? (parseFloat(form.asking) || null) : null,
     };
+    if (contentChanged && item.status === 'approved') patch.status = 'pending';
     const { error } = await window.sb.from('marketplace').update(patch).eq('id', item._id);
     setSaving(false);
     if (error) { if (showToast) showToast('❌ ' + error.message); return; }
-    if (showToast) showToast(lang==='pt'?'✓ Anúncio atualizado':'✓ Listing updated');
+    if (showToast) showToast(patch.status === 'pending'
+      ? (lang==='pt'?'✓ Atualizado — enviado para nova revisão':lang==='es'?'✓ Actualizado — enviado a nueva revisión':'✓ Updated — sent back for review')
+      : (lang==='pt'?'✓ Anúncio atualizado':'✓ Listing updated'));
     setEditing(false);
     onUpdated && onUpdated({...item, ...patch});
   };
