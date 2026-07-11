@@ -417,6 +417,7 @@ function QuickPoolsScreen({ ctx }) {
   const JobCard = ({ j, compact=false }) => {
     const isApplied    = !!applied[j.id];
     const isOwn        = j._live && user?.uid && j.poster_id === user.uid;
+    const isAdmin       = user?.role === 'admin';
     const locked       = !isOwn && user.tier !== 'premium';
     // Green only for the candidate whose application was accepted
     const isAccepted   = !isOwn && myAcceptedJobIds.has(String(j.id));
@@ -659,6 +660,21 @@ function QuickPoolsScreen({ ctx }) {
                 color:'#fff', fontFamily:'inherit', fontSize:13, fontWeight:700,
                 boxShadow:'0 3px 10px rgba(0,119,182,0.30)', transition:'all .15s',
               }}>{t.apply}</button>
+            )}
+            {isAdmin && !isOwn && (
+              <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
+                message: lang==='pt'?'[Admin] Excluir publicação?':lang==='es'?'[Admin] ¿Eliminar publicación?':'[Admin] Delete posting?',
+                subMessage: lang==='pt'?'Remove a vaga deste usuário permanentemente.':lang==='es'?'Elimina la vacante de este usuario permanentemente.':'Permanently removes this user\'s posting.',
+                confirmLabel: lang==='pt'?'Sim, excluir':lang==='es'?'Sí, eliminar':'Yes, delete',
+                onConfirm: () => { deleteJob(j.id); setConfirmDialog(null); },
+              }); }} title={lang==='pt'?'Excluir (admin)':lang==='es'?'Eliminar (admin)':'Delete (admin)'} style={{
+                width:36, height:36, borderRadius:10, border:'1px solid #FECACA',
+                background:'#FEF2F2', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', marginLeft:6,
+              }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
             )}
           </div>
         </div>
@@ -1339,6 +1355,7 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
 // ── Detail view ──────────────────────────────────────────────
 function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, openPublicProfile, openEditPost, onStatusChange, onMyJobAccepted }) {
   const isOwn   = job._live && user?.uid && job.poster_id === user.uid;
+  const isAdmin = user?.role === 'admin';
   const isOwnFilled = isOwn && job.status === 'filled';
   const locked  = !isOwn && user.tier !== 'premium';
   const [confirmDialog,  setConfirmDialog]  = React.useState(null);
@@ -1630,7 +1647,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
             ⏳ {lang==='pt'?'Em andamento':lang==='es'?'En curso':'In progress'}
           </div>
         )}
-        {isOwn && !isOwnFilled && (
+        {((isOwn && !isOwnFilled) || (isAdmin && !isOwn)) && (
           <button onClick={()=>setConfirmDialog({
             message: lang==='pt'?'Excluir publicação?':lang==='es'?'¿Eliminar publicación?':'Delete posting?',
             subMessage: lang==='pt'?'Essa vaga será removida permanentemente.':lang==='es'?'Esta vacante será eliminada permanentemente.':'This job will be permanently removed.',
