@@ -465,7 +465,13 @@ function App() {
         quick: true,
         market: true,
         work: true
-      }
+      },
+      age: profile?.age ?? null,
+      hasCar: !!profile?.has_car,
+      hasLicense: !!profile?.has_license,
+      hasEquipment: !!profile?.has_equipment,
+      equipment: profile?.equipment ?? null,
+      experience: profile?.experience ?? []
     }));
     // Load regionsByDay from profile if saved
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {

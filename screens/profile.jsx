@@ -1171,7 +1171,7 @@ function HistorySection({ user, lang }) {
         )}
       </div>
       <div className="pg-card" style={{padding: items && items.length > 0 ? 0 : '16px 14px', overflow:'hidden'}}>
-        {_historyList({ items, expanded, setExpanded, emptyMsg, fmtDate, fmtType, badge:'SOLD', lang })}
+        {_historyList({ items, expanded, setExpanded, emptyMsg, fmtDate, fmtType, badge: lang==='pt'?'VENDIDO':lang==='es'?'VENDIDO':'SOLD', lang })}
       </div>
     </section>
   );
@@ -1216,7 +1216,7 @@ function PurchasesSection({ user, lang }) {
         )}
       </div>
       <div className="pg-card" style={{padding: items && items.length > 0 ? 0 : '16px 14px', overflow:'hidden'}}>
-        {_historyList({ items, expanded, setExpanded, emptyMsg, fmtDate, fmtType, badge:'BOUGHT', lang })}
+        {_historyList({ items, expanded, setExpanded, emptyMsg, fmtDate, fmtType, badge: lang==='pt'?'COMPRADO':lang==='es'?'COMPRADO':'BOUGHT', lang })}
       </div>
     </section>
   );

@@ -611,30 +611,11 @@ function ReputationBadge({
       es: 'Elite'
     }
   }];
-  const palette = [{
-    color: 'oklch(0.52 0.13 80)',
-    bg: 'oklch(0.95 0.05 80)'
-  }, {
-    color: 'oklch(0.48 0.14 210)',
-    bg: 'oklch(0.94 0.04 210)'
-  }, {
-    color: 'oklch(0.44 0.17 245)',
-    bg: 'oklch(0.93 0.06 245)'
-  }, {
-    color: 'oklch(0.42 0.17 178)',
-    bg: 'oklch(0.93 0.06 178)'
-  }, {
-    color: 'oklch(0.42 0.19 310)',
-    bg: 'oklch(0.94 0.07 310)'
-  }];
   const idx = levels.reduce((best, lv, i) => jobs >= lv.min ? i : best, 0);
-  const {
-    color,
-    bg
-  } = palette[idx];
   const lbl = tr(levels[idx].label, lang);
   const isLg = size === 'lg';
   return /*#__PURE__*/React.createElement("span", {
+    className: `pg-rep-badge-${idx}`,
     style: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -644,9 +625,8 @@ function ReputationBadge({
       letterSpacing: '0.05em',
       padding: isLg ? '4px 10px' : '2px 7px',
       borderRadius: 6,
-      background: bg,
-      color,
-      border: `1px solid ${color}`
+      borderWidth: 1,
+      borderStyle: 'solid'
     }
   }, isLg && /*#__PURE__*/React.createElement("span", {
     style: {
@@ -1058,7 +1038,9 @@ function TabBar({
     style: {
       padding: '0px 6px 0px'
     }
-  }, tabs.map(tb => {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pg-tabbar-fill"
+  }), tabs.map(tb => {
     const on = tb.id === tab;
     if (tb.center) {
       return /*#__PURE__*/React.createElement("button", {

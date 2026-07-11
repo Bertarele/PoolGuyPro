@@ -1,6 +1,47 @@
 // overlays.jsx — chat inbox + conversation, notifications, paywall, post-menu,
 //               language picker, applicants sheet
 
+// ── Rating compliment tags (shown on 4-5★, OfferUp-style) ─────
+const RATING_TAGS = {
+  en: ['Friendly', 'Reliable', 'Communicative', 'On time', 'Great value', 'Professional'],
+  pt: ['Simpático', 'Confiável', 'Comunicativo', 'Pontual', 'Bom custo-benefício', 'Profissional'],
+  es: ['Amable', 'Confiable', 'Comunicativo', 'Puntual', 'Buena relación calidad-precio', 'Profesional']
+};
+function RatingTagPicker({
+  lang,
+  selected,
+  onToggle
+}) {
+  const tags = RATING_TAGS[lang] || RATING_TAGS.en;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 7,
+      marginBottom: 14
+    }
+  }, tags.map(tag => {
+    const on = selected.includes(tag);
+    return /*#__PURE__*/React.createElement("button", {
+      key: tag,
+      type: "button",
+      onClick: () => onToggle(tag),
+      style: {
+        padding: '7px 13px',
+        borderRadius: 999,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 12.5,
+        fontWeight: 600,
+        border: on ? '1.5px solid #F59E0B' : '1.5px solid var(--pg-ink-200)',
+        background: on ? 'rgba(245,158,11,0.12)' : 'var(--pg-white)',
+        color: on ? '#B45309' : 'var(--pg-ink-600)',
+        transition: 'all .12s'
+      }
+    }, on ? '✓ ' : '', tag);
+  }));
+}
+
 // ── Chat helpers ──────────────────────────────────────────────
 function makeConvoId(uidA, uidB, listingId) {
   const base = [uidA, uidB].sort().join('_');
@@ -7123,10 +7164,11 @@ function EditProfileSheet({
         es: e.desc
       }
     }));
+    const newAge = parseInt(age) || null;
     setUser(prev => ({
       ...prev,
       name: name.trim() || prev.name,
-      age: parseInt(age) || prev.age,
+      age: newAge || prev.age,
       region: region.trim() || prev.region,
       hasCar,
       hasLicense,
@@ -7135,14 +7177,22 @@ function EditProfileSheet({
       experience: expArr,
       photoUrl: photoUrl || prev.photoUrl || ''
     }));
-    // Also persist to Supabase profiles table if logged in
+    // Persist to Supabase so it survives reload / other devices, not just this session
     if (window.sb && user.uid) {
       window.sb.from('profiles').update({
+        name: name.trim() || undefined,
+        region: region.trim() || undefined,
+        age: newAge,
+        has_car: hasCar,
+        has_license: hasLicense,
+        has_equipment: hasEquipment,
+        equipment: eqObj,
+        experience: expArr,
         photo_url: photoUrl || ''
       }).eq('id', user.uid).then(({
         error
       }) => {
-        if (error) console.warn('[Profile photo save]', error.message);
+        if (error) console.warn('[Profile save]', error.message);
       });
     }
     onClose();
@@ -8246,12 +8296,15 @@ function RatingSheet({
   const [stars, setStars] = React.useState(0);
   const [hovered, setHovered] = React.useState(0);
   const [comment, setComment] = React.useState('');
+  const [tags, setTags] = React.useState([]);
   const [submitting, setSubmitting] = React.useState(false);
   const [toProfile, setToProfile] = React.useState(null);
+  const toggleTag = tag => setTags(p => p.includes(tag) ? p.filter(t => t !== tag) : [...p, tag]);
   React.useEffect(() => {
     if (!open) {
       setStars(0);
       setComment('');
+      setTags([]);
       setToProfile(null);
       return;
     }
@@ -8292,6 +8345,7 @@ function RatingSheet({
         listing_name: rating.listing_name || rating.to_name || null,
         stars,
         comment: comment || null,
+        tags: tags.length > 0 ? tags : null,
         pending: true,
         connection_type: rating.connection_type || null,
         connection_id: rating.connection_id || null,
@@ -8390,7 +8444,11 @@ function RatingSheet({
       fontWeight: 700,
       color: '#F59E0B'
     }
-  }, lang === 'pt' ? labelspt[hovered || stars] : labels[hovered || stars])), /*#__PURE__*/React.createElement("textarea", {
+  }, lang === 'pt' ? labelspt[hovered || stars] : labels[hovered || stars])), stars >= 4 && /*#__PURE__*/React.createElement(RatingTagPicker, {
+    lang: lang,
+    selected: tags,
+    onToggle: toggleTag
+  }), /*#__PURE__*/React.createElement("textarea", {
     value: comment,
     onChange: e => setComment(e.target.value),
     placeholder: lang === 'pt' ? 'Comentário opcional (max 280 caracteres)...' : 'Optional comment (max 280 chars)...',
@@ -8773,7 +8831,9 @@ function BuyerRatingPromptModal({
   const [stars, setStars] = React.useState(0);
   const [hovered, setHovered] = React.useState(0);
   const [comment, setComment] = React.useState('');
+  const [tags, setTags] = React.useState([]);
   const [submitting, setSubmitting] = React.useState(false);
+  const toggleTag = tag => setTags(p => p.includes(tag) ? p.filter(t => t !== tag) : [...p, tag]);
   const rating = pendingRatings[0] || null;
 
   // rating.from_id = the person who rated ME; I need to rate them back
@@ -8782,6 +8842,7 @@ function BuyerRatingPromptModal({
       setToProfile(null);
       setStars(0);
       setComment('');
+      setTags([]);
       return;
     }
     window.sb.from('profiles_public').select('name,photo_url').eq('id', rating.from_id).single().then(({
@@ -8823,6 +8884,7 @@ function BuyerRatingPromptModal({
         listing_name: rating.listing_name || null,
         stars,
         comment: comment || null,
+        tags: tags.length > 0 ? tags : null,
         pending: true,
         connection_type: rating.connection_type || null,
         connection_id: rating.connection_id || null,
@@ -8980,7 +9042,11 @@ function BuyerRatingPromptModal({
       fontWeight: 700,
       color: '#F59E0B'
     }
-  }, lang === 'pt' ? labelspt[hovered || stars] : labels[hovered || stars])), /*#__PURE__*/React.createElement("textarea", {
+  }, lang === 'pt' ? labelspt[hovered || stars] : labels[hovered || stars])), stars >= 4 && /*#__PURE__*/React.createElement(RatingTagPicker, {
+    lang: lang,
+    selected: tags,
+    onToggle: toggleTag
+  }), /*#__PURE__*/React.createElement("textarea", {
     value: comment,
     onChange: e => setComment(e.target.value),
     placeholder: lang === 'pt' ? 'Comentário opcional...' : lang === 'es' ? 'Comentario opcional...' : 'Optional comment...',

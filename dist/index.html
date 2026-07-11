@@ -5,6 +5,32 @@
   <title>PoolGuyX — Florida Pool Network</title>
   <meta name="viewport" content="width=430, viewport-fit=cover, user-scalable=no"/>
   <script>try{var _d=localStorage.getItem('pg_dark');var _bg=_d==='1'?'#0D1117':'#F4F8FB';document.documentElement.style.background=_bg;}catch(e){}</script>
+  <script>
+  // On phones smaller than Pro Max, the width=430 viewport meta scales the layout
+  // down, and WebKit's own layout-viewport height then falls short of the true
+  // physical screen (screen.height + home-indicator safe area) by a device-specific
+  // amount — a browser rendering quirk, not something any single fixed CSS value can
+  // predict. Measure the real shortfall and expose it as a CSS var so fixed-bottom
+  // elements (tab bar) can bridge exactly that gap. No-op / 0px on Pro Max.
+  try {
+    if (screen.width > 0 && screen.width < 420) {
+      var _fixGap = function () {
+        try {
+          var d = document.createElement('div');
+          d.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';
+          document.body.appendChild(d);
+          var envPx = d.offsetHeight;
+          document.body.removeChild(d);
+          var gap = Math.round((screen.height + envPx) - window.innerHeight);
+          document.documentElement.style.setProperty('--pg-extra-bottom-gap', Math.max(0, gap) + 'px');
+        } catch (e) {}
+      };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _fixGap);
+      else _fixGap();
+      window.addEventListener('resize', _fixGap);
+    }
+  } catch (e) {}
+  </script>
   <meta name="theme-color" content="#0077B6"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -20,7 +46,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mre8kpql">
+  <link rel="stylesheet" href="tokens.css?v=mrfnnb83">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -445,20 +471,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mre8kpql"></script>
-  <script src="tweaks-panel.js?v=mre8kpql"></script>
-  <script src="components.js?v=mre8kpql"></script>
-  <script src="brand.js?v=mre8kpql"></script>
-  <script src="data.js?v=mre8kpql"></script>
-  <script src="screens/login.js?v=mre8kpql"></script>
-  <script src="screens/home.js?v=mre8kpql"></script>
-  <script src="screens/marketplace.js?v=mre8kpql"></script>
-  <script src="screens/quickpools.js?v=mre8kpql"></script>
-  <script src="screens/post.js?v=mre8kpql"></script>
-  <script src="screens/work.js?v=mre8kpql"></script>
-  <script src="screens/profile.js?v=mre8kpql"></script>
-  <script src="screens/overlays.js?v=mre8kpql"></script>
-  <script src="app.js?v=mre8kpql"></script>
+  <script src="ios-frame.js?v=mrfnnb83"></script>
+  <script src="tweaks-panel.js?v=mrfnnb83"></script>
+  <script src="components.js?v=mrfnnb83"></script>
+  <script src="brand.js?v=mrfnnb83"></script>
+  <script src="data.js?v=mrfnnb83"></script>
+  <script src="screens/login.js?v=mrfnnb83"></script>
+  <script src="screens/home.js?v=mrfnnb83"></script>
+  <script src="screens/marketplace.js?v=mrfnnb83"></script>
+  <script src="screens/quickpools.js?v=mrfnnb83"></script>
+  <script src="screens/post.js?v=mrfnnb83"></script>
+  <script src="screens/work.js?v=mrfnnb83"></script>
+  <script src="screens/profile.js?v=mrfnnb83"></script>
+  <script src="screens/overlays.js?v=mrfnnb83"></script>
+  <script src="app.js?v=mrfnnb83"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {

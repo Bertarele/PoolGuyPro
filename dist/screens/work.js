@@ -3881,15 +3881,18 @@ function TechReviewSheet({
   const [rating, setRating] = React.useState(0);
   const [hover, setHover] = React.useState(0);
   const [comment, setComment] = React.useState('');
+  const [tags, setTags] = React.useState([]);
   const [submitted, setSubmitted] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
   const [alreadyRated, setAlreadyRated] = React.useState(false);
   const [checking, setChecking] = React.useState(false);
+  const toggleTag = tag => setTags(p => p.includes(tag) ? p.filter(t => t !== tag) : [...p, tag]);
   React.useEffect(() => {
     if (!open) return;
     setRating(0);
     setHover(0);
     setComment('');
+    setTags([]);
     setSubmitted(false);
     setAlreadyRated(false);
     setSubmitting(false);
@@ -3926,6 +3929,7 @@ function TechReviewSheet({
     } = await window.sb.from('ratings').insert({
       stars: rating,
       comment: comment || null,
+      tags: tags.length > 0 ? tags : null,
       from_id: user.uid,
       to_id: tech.author_id,
       from_name: user.name || '',
@@ -4128,7 +4132,11 @@ function TechReviewSheet({
       color: 'oklch(0.55 0.18 80)',
       letterSpacing: '-0.01em'
     }
-  }, sLabels[displayed - 1])), /*#__PURE__*/React.createElement("textarea", {
+  }, sLabels[displayed - 1])), rating >= 4 && /*#__PURE__*/React.createElement(RatingTagPicker, {
+    lang: lang,
+    selected: tags,
+    onToggle: toggleTag
+  }), /*#__PURE__*/React.createElement("textarea", {
     value: comment,
     onChange: e => setComment(e.target.value),
     placeholder: reviewPh,

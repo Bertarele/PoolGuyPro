@@ -5,6 +5,32 @@
   <title>PoolGuyX — Florida Pool Network</title>
   <meta name="viewport" content="width=430, viewport-fit=cover, user-scalable=no"/>
   <script>try{var _d=localStorage.getItem('pg_dark');var _bg=_d==='1'?'#0D1117':'#F4F8FB';document.documentElement.style.background=_bg;}catch(e){}</script>
+  <script>
+  // On phones smaller than Pro Max, the width=430 viewport meta scales the layout
+  // down, and WebKit's own layout-viewport height then falls short of the true
+  // physical screen (screen.height + home-indicator safe area) by a device-specific
+  // amount — a browser rendering quirk, not something any single fixed CSS value can
+  // predict. Measure the real shortfall and expose it as a CSS var so fixed-bottom
+  // elements (tab bar) can bridge exactly that gap. No-op / 0px on Pro Max.
+  try {
+    if (screen.width > 0 && screen.width < 420) {
+      var _fixGap = function () {
+        try {
+          var d = document.createElement('div');
+          d.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';
+          document.body.appendChild(d);
+          var envPx = d.offsetHeight;
+          document.body.removeChild(d);
+          var gap = Math.round((screen.height + envPx) - window.innerHeight);
+          document.documentElement.style.setProperty('--pg-extra-bottom-gap', Math.max(0, gap) + 'px');
+        } catch (e) {}
+      };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _fixGap);
+      else _fixGap();
+      window.addEventListener('resize', _fixGap);
+    }
+  } catch (e) {}
+  </script>
   <meta name="theme-color" content="#0077B6"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>

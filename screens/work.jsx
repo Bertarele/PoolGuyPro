@@ -1666,14 +1666,16 @@ function TechReviewSheet({ open, onClose, tech, lang='en', user=null, onRated })
   const [rating,      setRating]      = React.useState(0);
   const [hover,       setHover]       = React.useState(0);
   const [comment,     setComment]     = React.useState('');
+  const [tags,        setTags]        = React.useState([]);
   const [submitted,   setSubmitted]   = React.useState(false);
   const [submitting,  setSubmitting]  = React.useState(false);
   const [alreadyRated, setAlreadyRated] = React.useState(false);
   const [checking,    setChecking]    = React.useState(false);
+  const toggleTag = (tag) => setTags(p => p.includes(tag) ? p.filter(t=>t!==tag) : [...p, tag]);
 
   React.useEffect(() => {
     if (!open) return;
-    setRating(0); setHover(0); setComment(''); setSubmitted(false); setAlreadyRated(false); setSubmitting(false);
+    setRating(0); setHover(0); setComment(''); setTags([]); setSubmitted(false); setAlreadyRated(false); setSubmitting(false);
     if (user?.uid && tech?.author_id && window.sb) {
       setChecking(true);
       window.sb.from('ratings').select('id').eq('from_id', user.uid).eq('to_id', tech.author_id)
@@ -1702,6 +1704,7 @@ function TechReviewSheet({ open, onClose, tech, lang='en', user=null, onRated })
     setSubmitting(true);
     const { error } = await window.sb.from('ratings').insert({
       stars: rating, comment: comment || null,
+      tags: tags.length > 0 ? tags : null,
       from_id: user.uid, to_id: tech.author_id,
       from_name: user.name || '', listing_name: tech.name || '',
       pending: false,
@@ -1776,6 +1779,7 @@ function TechReviewSheet({ open, onClose, tech, lang='en', user=null, onRated })
               </div>
               {displayed > 0 && <div style={{fontSize:15, fontWeight:700, color:'oklch(0.55 0.18 80)', letterSpacing:'-0.01em'}}>{sLabels[displayed-1]}</div>}
             </div>
+            {rating >= 4 && <RatingTagPicker lang={lang} selected={tags} onToggle={toggleTag}/>}
             <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder={reviewPh} rows={3}
               style={{width:'100%', borderRadius:12, border:'1px solid var(--pg-ink-200)', padding:'12px 14px', fontSize:14, fontFamily:'inherit', resize:'none', outline:'none', background:'var(--pg-ink-50)', boxSizing:'border-box', color:'var(--pg-ink-900)', lineHeight:1.5}}/>
             <button onClick={handleSubmit} disabled={rating===0||submitting} className="pg-btn pg-btn-primary"

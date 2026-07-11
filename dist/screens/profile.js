@@ -2562,7 +2562,7 @@ function HistorySection({
     emptyMsg,
     fmtDate,
     fmtType,
-    badge: 'SOLD',
+    badge: lang === 'pt' ? 'VENDIDO' : lang === 'es' ? 'VENDIDO' : 'SOLD',
     lang
   })));
 }
@@ -2636,7 +2636,7 @@ function PurchasesSection({
     emptyMsg,
     fmtDate,
     fmtType,
-    badge: 'BOUGHT',
+    badge: lang === 'pt' ? 'COMPRADO' : lang === 'es' ? 'COMPRADO' : 'BOUGHT',
     lang
   })));
 }

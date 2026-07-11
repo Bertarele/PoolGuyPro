@@ -120,6 +120,18 @@ button { font-family: inherit; }
 .pg-badge-pro     { background: var(--pg-navy-800); color: var(--pg-aqua-400); }
 .pg-badge-applied { background: var(--pg-aqua-100); color: var(--pg-aqua-700); }
 
+/* Reputation tier badges (Rookie/Reliable/Expert/Master/Elite) */
+.pg-rep-badge-0 { background: oklch(0.95 0.05 80);  color: oklch(0.52 0.13 80);  border-color: oklch(0.52 0.13 80); }
+.pg-rep-badge-1 { background: oklch(0.94 0.04 210); color: oklch(0.48 0.14 210); border-color: oklch(0.48 0.14 210); }
+.pg-rep-badge-2 { background: oklch(0.93 0.06 245); color: oklch(0.44 0.17 245); border-color: oklch(0.44 0.17 245); }
+.pg-rep-badge-3 { background: oklch(0.93 0.06 178); color: oklch(0.42 0.17 178); border-color: oklch(0.42 0.17 178); }
+.pg-rep-badge-4 { background: oklch(0.94 0.07 310); color: oklch(0.42 0.19 310); border-color: oklch(0.42 0.19 310); }
+[data-pg-dark="1"] .pg-rep-badge-0 { background: #3D2E0A; color: #F5A623; border-color: #F5A62360; }
+[data-pg-dark="1"] .pg-rep-badge-1 { background: #0F2942; color: #60A5FA; border-color: #60A5FA60; }
+[data-pg-dark="1"] .pg-rep-badge-2 { background: #1E1B4B; color: #818CF8; border-color: #818CF860; }
+[data-pg-dark="1"] .pg-rep-badge-3 { background: #042F2E; color: #2DD4BF; border-color: #2DD4BF60; }
+[data-pg-dark="1"] .pg-rep-badge-4 { background: #2E1065; color: #C084FC; border-color: #C084FC60; }
+
 .pg-divider { height: 0.5px; background: var(--pg-ink-200); }
 
 @keyframes pg-spin {
@@ -248,6 +260,19 @@ button { font-family: inherit; }
   border-top: 0.5px solid var(--pg-ink-200);
   z-index: 30;
 }
+/* Bridges the sub-Max-iPhone viewport shortfall (see index.html) — a purely
+   decorative strip matching the tab bar's own surface, extending its visible
+   background past bottom:0 so no gap/seam shows below it. No-op on Pro Max. */
+.pg-tabbar-fill {
+  position: absolute; left: 0; right: 0;
+  bottom: calc(-1 * var(--pg-extra-bottom-gap, 0px));
+  height: var(--pg-extra-bottom-gap, 0px);
+  background: rgba(255,255,255,0.96);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  pointer-events: none;
+}
+[data-pg-dark="1"] .pg-tabbar-fill { background: rgba(22,27,34,0.96); }
 .pg-tab {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
   padding: 8px 0; border: none; background: transparent;

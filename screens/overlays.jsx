@@ -1,6 +1,35 @@
 ﻿// overlays.jsx — chat inbox + conversation, notifications, paywall, post-menu,
 //               language picker, applicants sheet
 
+// ── Rating compliment tags (shown on 4-5★, OfferUp-style) ─────
+const RATING_TAGS = {
+  en: ['Friendly', 'Reliable', 'Communicative', 'On time', 'Great value', 'Professional'],
+  pt: ['Simpático', 'Confiável', 'Comunicativo', 'Pontual', 'Bom custo-benefício', 'Profissional'],
+  es: ['Amable', 'Confiable', 'Comunicativo', 'Puntual', 'Buena relación calidad-precio', 'Profesional'],
+};
+function RatingTagPicker({ lang, selected, onToggle }) {
+  const tags = RATING_TAGS[lang] || RATING_TAGS.en;
+  return (
+    <div style={{display:'flex', flexWrap:'wrap', gap:7, marginBottom:14}}>
+      {tags.map(tag => {
+        const on = selected.includes(tag);
+        return (
+          <button key={tag} type="button" onClick={()=>onToggle(tag)} style={{
+            padding:'7px 13px', borderRadius:999, cursor:'pointer', fontFamily:'inherit',
+            fontSize:12.5, fontWeight:600,
+            border: on ? '1.5px solid #F59E0B' : '1.5px solid var(--pg-ink-200)',
+            background: on ? 'rgba(245,158,11,0.12)' : 'var(--pg-white)',
+            color: on ? '#B45309' : 'var(--pg-ink-600)',
+            transition:'all .12s',
+          }}>
+            {on ? '✓ ' : ''}{tag}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Chat helpers ──────────────────────────────────────────────
 function makeConvoId(uidA, uidB, listingId) {
   const base = [uidA, uidB].sort().join('_');
@@ -3806,20 +3835,31 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
       duration: { en:e.duration, pt:e.duration, es:e.duration },
       desc:     { en:e.desc,     pt:e.desc,     es:e.desc },
     }));
+    const newAge = parseInt(age) || null;
     setUser(prev => ({
       ...prev,
       name:        name.trim() || prev.name,
-      age:         parseInt(age) || prev.age,
+      age:         newAge || prev.age,
       region:      region.trim() || prev.region,
       hasCar, hasLicense, hasEquipment,
       equipment:   eqObj,
       experience:  expArr,
       photoUrl:    photoUrl || prev.photoUrl || '',
     }));
-    // Also persist to Supabase profiles table if logged in
+    // Persist to Supabase so it survives reload / other devices, not just this session
     if (window.sb && user.uid) {
-      window.sb.from('profiles').update({ photo_url: photoUrl || '' }).eq('id', user.uid)
-        .then(({error}) => { if (error) console.warn('[Profile photo save]', error.message); });
+      window.sb.from('profiles').update({
+        name:          name.trim() || undefined,
+        region:        region.trim() || undefined,
+        age:           newAge,
+        has_car:       hasCar,
+        has_license:   hasLicense,
+        has_equipment: hasEquipment,
+        equipment:     eqObj,
+        experience:    expArr,
+        photo_url:     photoUrl || '',
+      }).eq('id', user.uid)
+        .then(({error}) => { if (error) console.warn('[Profile save]', error.message); });
     }
     onClose();
   };
@@ -4371,11 +4411,13 @@ function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToa
   const [stars,      setStars]      = React.useState(0);
   const [hovered,    setHovered]    = React.useState(0);
   const [comment,    setComment]    = React.useState('');
+  const [tags,       setTags]       = React.useState([]);
   const [submitting, setSubmitting] = React.useState(false);
   const [toProfile,  setToProfile]  = React.useState(null);
+  const toggleTag = (tag) => setTags(p => p.includes(tag) ? p.filter(t=>t!==tag) : [...p, tag]);
 
   React.useEffect(() => {
-    if (!open) { setStars(0); setComment(''); setToProfile(null); return; }
+    if (!open) { setStars(0); setComment(''); setTags([]); setToProfile(null); return; }
     if (!rating?.to_id || !window.sb) return;
     window.sb.from('profiles_public').select('name,photo_url').eq('id', rating.to_id).single()
       .then(({ data }) => { if (data) setToProfile(data); })
@@ -4399,6 +4441,7 @@ function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToa
         listing_name:    rating.listing_name || rating.to_name || null,
         stars,
         comment:         comment || null,
+        tags:            tags.length > 0 ? tags : null,
         pending:         true,
         connection_type: rating.connection_type || null,
         connection_id:   rating.connection_id   || null,
@@ -4458,6 +4501,9 @@ function RatingSheet({ open, rating, lang, currentUser, onClose, onDone, showToa
             </span>
           )}
         </div>
+
+        {/* Compliment tags — shown once a positive rating is picked */}
+        {stars >= 4 && <RatingTagPicker lang={lang} selected={tags} onToggle={toggleTag}/>}
 
         {/* Comment */}
         <textarea value={comment} onChange={e=>setComment(e.target.value)}
@@ -4615,13 +4661,15 @@ function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUse
   const [stars,      setStars]      = React.useState(0);
   const [hovered,    setHovered]    = React.useState(0);
   const [comment,    setComment]    = React.useState('');
+  const [tags,       setTags]       = React.useState([]);
   const [submitting, setSubmitting] = React.useState(false);
+  const toggleTag = (tag) => setTags(p => p.includes(tag) ? p.filter(t=>t!==tag) : [...p, tag]);
 
   const rating = pendingRatings[0] || null;
 
   // rating.from_id = the person who rated ME; I need to rate them back
   React.useEffect(() => {
-    if (!open || !rating?.from_id || !window.sb) { setToProfile(null); setStars(0); setComment(''); return; }
+    if (!open || !rating?.from_id || !window.sb) { setToProfile(null); setStars(0); setComment(''); setTags([]); return; }
     window.sb.from('profiles_public').select('name,photo_url').eq('id', rating.from_id).single()
       .then(({ data }) => { if (data) setToProfile(data); })
       .catch(() => {});
@@ -4648,6 +4696,7 @@ function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUse
         listing_name:    rating.listing_name || null,
         stars,
         comment:         comment || null,
+        tags:            tags.length > 0 ? tags : null,
         pending:         true,
         connection_type: rating.connection_type || null,
         connection_id:   rating.connection_id   || null,
@@ -4754,6 +4803,9 @@ function BuyerRatingPromptModal({ open, pendingRatings=[], lang='en', currentUse
             </span>
           )}
         </div>
+
+        {/* Compliment tags — shown once a positive rating is picked */}
+        {stars >= 4 && <RatingTagPicker lang={lang} selected={tags} onToggle={toggleTag}/>}
 
         {/* Comment */}
         <textarea
