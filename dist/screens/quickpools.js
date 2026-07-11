@@ -845,7 +845,7 @@ function QuickPoolsScreen({
     }, /*#__PURE__*/React.createElement("div", {
       onClick: e => {
         e.stopPropagation();
-        j.poster_id && openPublicProfile({
+        locked ? openPaywall() : j.poster_id && openPublicProfile({
           uid: j.poster_id,
           name: j.poster
         });
@@ -855,20 +855,29 @@ function QuickPoolsScreen({
         alignItems: 'center',
         gap: 10,
         minWidth: 0,
-        cursor: j.poster_id ? 'pointer' : 'default'
+        cursor: 'pointer'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        filter: locked ? 'blur(5px)' : 'none'
       }
     }, /*#__PURE__*/React.createElement(AvatarFetch, {
       uid: j.poster_id,
       name: j.poster,
       size: 32
-    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        filter: locked ? 'blur(4px)' : 'none',
+        userSelect: locked ? 'none' : 'auto'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 600,
         color: 'var(--pg-ink-800)',
         lineHeight: 1.2
       }
-    }, j.poster), /*#__PURE__*/React.createElement("div", {
+    }, locked ? 'Pool Guy' : j.poster), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -1611,7 +1620,7 @@ function QuickPoolsScreen({
         x2: "19",
         y2: "12"
       })), lang === 'pt' ? 'Publicar' : lang === 'es' ? 'Publicar' : 'Post'), /*#__PURE__*/React.createElement("button", {
-        onClick: openRegionEditor,
+        onClick: () => user.tier === 'premium' ? openRegionEditor() : openPaywall(),
         style: {
           height: 38,
           padding: '0 14px',
@@ -2124,7 +2133,7 @@ function QuickPoolsScreen({
         textOverflow: 'ellipsis'
       }
     }, notifCities.length > 0 ? notifCities.slice(0, 3).join(' · ') + (notifCities.length > 3 ? ` +${notifCities.length - 3}` : '') : lang === 'pt' ? 'Nenhuma cidade' : lang === 'es' ? 'Ninguna ciudad' : 'No cities'), /*#__PURE__*/React.createElement("button", {
-      onClick: openRegionEditor,
+      onClick: () => user.tier === 'premium' ? openRegionEditor() : openPaywall(),
       style: {
         background: 'transparent',
         border: 'none',
@@ -3172,27 +3181,33 @@ function QuickPoolDetails({
       display: 'flex',
       alignItems: 'center',
       gap: 12,
-      cursor: job.poster_id ? 'pointer' : 'default'
+      cursor: locked ? 'pointer' : job.poster_id ? 'pointer' : 'default'
     },
-    onClick: () => job.poster_id && openPublicProfile({
+    onClick: () => locked ? onUnlock && onUnlock() : job.poster_id && openPublicProfile({
       uid: job.poster_id,
       name: job.poster
     })
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      filter: locked ? 'blur(6px)' : 'none'
+    }
   }, /*#__PURE__*/React.createElement(AvatarFetch, {
     uid: job.poster_id,
     name: job.poster,
     size: 48
-  }), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
-      minWidth: 0
+      minWidth: 0,
+      filter: locked ? 'blur(5px)' : 'none',
+      userSelect: locked ? 'none' : 'auto'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 15,
       fontWeight: 600
     }
-  }, job.poster), /*#__PURE__*/React.createElement("div", {
+  }, locked ? 'Pool Guy' : job.poster), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -3204,7 +3219,12 @@ function QuickPoolDetails({
   }, /*#__PURE__*/React.createElement(Stars, {
     rating: job.rating,
     size: 11
-  }), " ", job.rating, " \xB7 26 ", t.completedJobs)), /*#__PURE__*/React.createElement("span", {
+  }), " ", job.rating, " \xB7 26 ", t.completedJobs)), locked ? /*#__PURE__*/React.createElement("span", {
+    className: "pg-chip",
+    style: {
+      fontSize: 11
+    }
+  }, Icon.lock(11, 'var(--pg-ink-500)'), " ", t.unlock) : /*#__PURE__*/React.createElement("span", {
     className: "pg-chip pg-chip-aqua",
     style: {
       fontSize: 11

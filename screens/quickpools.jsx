@@ -549,11 +549,13 @@ function QuickPoolsScreen({ ctx }) {
 
           {/* Row 2: poster + action */}
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:10}}>
-            <div onClick={(e)=>{ e.stopPropagation(); j.poster_id && openPublicProfile({ uid: j.poster_id, name: j.poster }); }}
-              style={{display:'flex', alignItems:'center', gap:10, minWidth:0, cursor: j.poster_id ? 'pointer' : 'default'}}>
-              <AvatarFetch uid={j.poster_id} name={j.poster} size={32}/>
-              <div>
-                <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)', lineHeight:1.2}}>{j.poster}</div>
+            <div onClick={(e)=>{ e.stopPropagation(); locked ? openPaywall() : (j.poster_id && openPublicProfile({ uid: j.poster_id, name: j.poster })); }}
+              style={{display:'flex', alignItems:'center', gap:10, minWidth:0, cursor: 'pointer'}}>
+              <div style={{filter: locked ? 'blur(5px)' : 'none'}}>
+                <AvatarFetch uid={j.poster_id} name={j.poster} size={32}/>
+              </div>
+              <div style={{filter: locked ? 'blur(4px)' : 'none', userSelect: locked ? 'none' : 'auto'}}>
+                <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)', lineHeight:1.2}}>{locked ? 'Pool Guy' : j.poster}</div>
                 <div style={{display:'flex', alignItems:'center', gap:4, marginTop:2}}>
                   <Stars rating={j.rating} size={10}/>
                   <span style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:500}}>{j.rating}</span>
@@ -880,7 +882,7 @@ function QuickPoolsScreen({ ctx }) {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
                   </button>
-                  <button onClick={openRegionEditor} style={{height:38,padding:'0 14px',borderRadius:11,border:_ibr,background:_ib,color:_tx,fontFamily:'inherit',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,transition:'all .15s'}}>
+                  <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall()} style={{height:38,padding:'0 14px',borderRadius:11,border:_ibr,background:_ib,color:_tx,fontFamily:'inherit',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,transition:'all .15s'}}>
                     {Icon.cal(13,_tx)} {lang==='pt'?'Editar':'Edit'}
                   </button>
                   <button onClick={()=>openChat&&openChat()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
@@ -1116,7 +1118,7 @@ function QuickPoolsScreen({ ctx }) {
                     ? notifCities.slice(0,3).join(' · ')+(notifCities.length>3?` +${notifCities.length-3}`:'')
                     : (lang==='pt'?'Nenhuma cidade':lang==='es'?'Ninguna ciudad':'No cities')}
                 </span>
-                <button onClick={openRegionEditor} style={{background:'transparent',border:'none',color:H.sub,fontSize:11,fontWeight:700,cursor:'pointer',padding:0,flexShrink:0,display:'flex',alignItems:'center',gap:3}}>
+                <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall()} style={{background:'transparent',border:'none',color:H.sub,fontSize:11,fontWeight:700,cursor:'pointer',padding:0,flexShrink:0,display:'flex',alignItems:'center',gap:3}}>
                   {Icon.cal(11,H.sub)} {lang==='pt'?'Editar':'Edit'}
                 </button>
               </div>
@@ -1802,16 +1804,22 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         ) : null}
 
         <div className="pg-card" style={{padding:14, marginTop:14, display:'flex', alignItems:'center', gap:12,
-          cursor: job.poster_id ? 'pointer' : 'default'}}
-          onClick={()=>job.poster_id && openPublicProfile({ uid: job.poster_id, name: job.poster })}>
-          <AvatarFetch uid={job.poster_id} name={job.poster} size={48}/>
-          <div style={{flex:1, minWidth:0}}>
-            <div style={{fontSize:15, fontWeight:600}}>{job.poster}</div>
+          cursor: locked ? 'pointer' : (job.poster_id ? 'pointer' : 'default')}}
+          onClick={()=>locked ? onUnlock && onUnlock() : (job.poster_id && openPublicProfile({ uid: job.poster_id, name: job.poster }))}>
+          <div style={{filter: locked ? 'blur(6px)' : 'none'}}>
+            <AvatarFetch uid={job.poster_id} name={job.poster} size={48}/>
+          </div>
+          <div style={{flex:1, minWidth:0, filter: locked ? 'blur(5px)' : 'none', userSelect: locked ? 'none' : 'auto'}}>
+            <div style={{fontSize:15, fontWeight:600}}>{locked ? 'Pool Guy' : job.poster}</div>
             <div style={{display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--pg-ink-500)', marginTop:2}}>
               <Stars rating={job.rating} size={11}/> {job.rating} · 26 {t.completedJobs}
             </div>
           </div>
-          <span className="pg-chip pg-chip-aqua" style={{fontSize:11}}>{Icon.shield(11, 'var(--pg-aqua-700)')} {t.verified}</span>
+          {locked ? (
+            <span className="pg-chip" style={{fontSize:11}}>{Icon.lock(11, 'var(--pg-ink-500)')} {t.unlock}</span>
+          ) : (
+            <span className="pg-chip pg-chip-aqua" style={{fontSize:11}}>{Icon.shield(11, 'var(--pg-aqua-700)')} {t.verified}</span>
+          )}
         </div>
 
         {/* Phone + address — visible to poster OR accepted applicant */}
