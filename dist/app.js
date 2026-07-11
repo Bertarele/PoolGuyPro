@@ -323,6 +323,9 @@ function App() {
   const [pullDist, setPullDist] = React.useState(0);
   const [refreshing, setRefreshing] = React.useState(false);
   const PULL_THRESHOLD = 64;
+  const pullStartX = React.useRef(null);
+  const pullLocked = React.useRef(false); // true once a gesture is confirmed vertical-only
+
   const onPTRTouchStart = React.useCallback(e => {
     // Disable PTR when any sheet or full-page overlay is open
     if (document.querySelector('.pg-sheet-backdrop')) return;
@@ -334,10 +337,26 @@ function App() {
       el = el.parentElement;
     }
     pullStartY.current = e.touches[0].clientY;
+    pullStartX.current = e.touches[0].clientX;
+    pullLocked.current = false;
   }, []);
   const onPTRTouchMove = React.useCallback(e => {
     if (pullStartY.current === null) return;
     const dy = e.touches[0].clientY - pullStartY.current;
+    const dx = e.touches[0].clientX - (pullStartX.current ?? e.touches[0].clientX);
+    // A horizontal (or diagonal-leaning-horizontal) drag — e.g. swiping the "Meus
+    // Anúncios" carousel — should never engage pull-to-refresh. Bail out for good
+    // once we detect that, rather than re-checking every move (which would let a
+    // late vertical correction re-trigger PTR mid-swipe).
+    if (!pullLocked.current) {
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+        pullStartY.current = null;
+        pullStartX.current = null;
+        setPullDist(0);
+        return;
+      }
+      if (Math.abs(dy) > 10) pullLocked.current = true; // confirmed vertical intent
+    }
     if (dy > 0) {
       if (screenRef.current && screenRef.current.scrollTop > 0) {
         pullStartY.current = null;
@@ -3643,48 +3662,108 @@ function App() {
       cursor: 'pointer',
       fontFamily: 'inherit'
     }
-  }, lang === 'pt' ? 'Sair da conta' : lang === 'es' ? 'Cerrar sesión' : 'Sign out')), isLoggedIn && !user.banned && /*#__PURE__*/React.createElement(React.Fragment, null, (pullDist > 4 || refreshing) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 9999,
-      display: 'flex',
-      justifyContent: 'center',
-      paddingTop: 'max(10px, env(safe-area-inset-top, 10px))',
-      pointerEvents: 'none',
-      transform: `translateY(${Math.min(pullDist, PULL_THRESHOLD) - PULL_THRESHOLD}px)`,
-      transition: pullDist === 0 || refreshing ? 'transform .25s ease' : 'none'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 34,
-      height: 34,
-      borderRadius: '50%',
-      background: 'var(--pg-white)',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "18",
-    height: "18",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "var(--pg-blue-500)",
-    strokeWidth: "2.5",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    style: {
-      animation: refreshing ? 'pg-spin .7s linear infinite' : 'none',
-      transform: !refreshing ? `rotate(${pullDist / PULL_THRESHOLD * 270}deg)` : undefined,
-      transition: !refreshing ? 'none' : undefined
-    }
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M21 12a9 9 0 1 1-6.219-8.56"
-  })))), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Sair da conta' : lang === 'es' ? 'Cerrar sesión' : 'Sign out')), isLoggedIn && !user.banned && /*#__PURE__*/React.createElement(React.Fragment, null, (pullDist > 4 || refreshing) && (() => {
+    const progress = Math.min(pullDist / PULL_THRESHOLD, 1);
+    const ready = progress >= 1;
+    const R = 15,
+      C = 2 * Math.PI * R;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        display: 'flex',
+        justifyContent: 'center',
+        paddingTop: 'max(10px, env(safe-area-inset-top, 10px))',
+        pointerEvents: 'none',
+        transform: `translateY(${Math.min(pullDist, PULL_THRESHOLD) - PULL_THRESHOLD}px) scale(${refreshing ? 1 : 0.72 + progress * 0.28})`,
+        opacity: refreshing ? 1 : 0.35 + progress * 0.65,
+        transition: pullDist === 0 || refreshing ? 'transform .28s cubic-bezier(.34,1.56,.64,1), opacity .2s ease' : 'none'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 42,
+        height: 42,
+        borderRadius: '50%',
+        position: 'relative',
+        background: 'linear-gradient(135deg, #0EBAC7, #0077B6)',
+        boxShadow: `0 4px 16px rgba(14,186,199,${0.20 + progress * 0.25}), 0 0 0 4px rgba(255,255,255,0.9)`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "42",
+      height: "42",
+      viewBox: "0 0 42 42",
+      style: {
+        position: 'absolute',
+        inset: 0,
+        transform: 'rotate(-90deg)'
+      }
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "21",
+      cy: "21",
+      r: R,
+      fill: "none",
+      stroke: "rgba(255,255,255,0.28)",
+      strokeWidth: "2.5"
+    }), !refreshing && /*#__PURE__*/React.createElement("circle", {
+      cx: "21",
+      cy: "21",
+      r: R,
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "2.5",
+      strokeLinecap: "round",
+      strokeDasharray: C,
+      strokeDashoffset: C * (1 - progress),
+      style: {
+        transition: 'stroke-dashoffset .05s linear'
+      }
+    })), refreshing ? /*#__PURE__*/React.createElement("svg", {
+      width: "17",
+      height: "17",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "2.5",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      style: {
+        animation: 'pg-spin .7s linear infinite'
+      }
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M21 12a9 9 0 1 1-6.219-8.56"
+    })) : ready ? /*#__PURE__*/React.createElement("svg", {
+      width: "17",
+      height: "17",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "3",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "20 6 9 17 4 12"
+    })) : /*#__PURE__*/React.createElement("svg", {
+      width: "16",
+      height: "16",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "2.5",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      style: {
+        transform: `rotate(${progress * 180}deg)`
+      }
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M12 5v14M12 19l-5-5M12 19l5-5"
+    }))));
+  })(), /*#__PURE__*/React.createElement("div", {
     ref: screenRef,
     "data-pg-screen": true,
     onTouchStart: onPTRTouchStart,
