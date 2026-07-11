@@ -841,10 +841,20 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
   const handleOwnerDecision = async (requestId, newStatus) => {
     if (!window.sb) return;
+    if (newStatus === 'approved' && ownerRequests.some(r => r.status === 'approved' && r.id !== requestId)) {
+      showToast && showToast(lang==='pt'?'❌ Já existe um pedido aprovado para este item':'❌ Another request for this item is already approved');
+      return;
+    }
     const { error } = await window.sb.from('rental_requests')
       .update({ status: newStatus, responded_at: new Date().toISOString() })
       .eq('id', requestId);
-    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    if (error) {
+      const msg = (error.message||'').includes('duplicate key') || (error.message||'').includes('rental_requests_one_approved_per_listing')
+        ? (lang==='pt'?'❌ Já existe um pedido aprovado para este item':'❌ Another request for this item is already approved')
+        : '❌ ' + (error.message||'Error');
+      showToast && showToast(msg);
+      return;
+    }
     setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: newStatus} : r));
     showToast && showToast(newStatus === 'approved'
       ? (lang==='pt'?'✓ Aluguel aprovado!':'✓ Rental approved!')
@@ -3182,6 +3192,10 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 
   const handleDelete = async () => {
     if (!window.sb) return;
+    if (activeRental) {
+      if (showToast) showToast(lang==='pt'?'❌ Não é possível excluir com aluguel ativo':'❌ Cannot delete while a rental is active');
+      return;
+    }
     const ok = window.confirm(lang==='pt'?'Deletar este anúncio? Não pode ser desfeito.':'Delete this listing? This cannot be undone.');
     if (!ok) return;
     setDeleting(true);
@@ -3360,11 +3374,11 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
                   ? (lang==='pt'?'Edição bloqueada':'Edit locked')
                   : (lang==='pt'?'Editar anúncio':lang==='es'?'Editar anuncio':'Edit listing')}
               </button>
-              <button onClick={handleDelete} disabled={deleting} style={{
+              <button onClick={handleDelete} disabled={deleting||!!activeRental} title={activeRental?(lang==='pt'?'Bloqueado — aluguel ativo':'Locked — active rental'):undefined} style={{
                 width:50,height:50,borderRadius:14,border:'1.5px solid #FCA5A5',
-                background:'#FEF2F2',color:'#EF4444',cursor:'pointer',
+                background:'#FEF2F2',color:'#EF4444',cursor:activeRental?'not-allowed':'pointer',
                 display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,
-                opacity:deleting?0.6:1,
+                opacity:(deleting||activeRental)?0.5:1,
               }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
               </button>
@@ -4583,7 +4597,7 @@ function MarketplaceScreen({ ctx }) {
       </Sheet>
       <FullPage open={postOpen&&(postMode==='sell'||postMode==='rent')} onClose={()=>{setPostMode(null);setPostOpen(false);}}>
         <PostEquipmentSheet lang={lang} t={t} mode={postMode} onClose={()=>{setPostMode(null);setPostOpen(false);}}
-          onSubmit={async(data)=>{ setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false&&showToast)showToast(lang==='pt'?'✓ Anúncio enviado para revisão':'✓ Listing sent for review');}}}/>
+          onSubmit={async(data)=>{ const mode=postMode; setPostMode(null);setPostOpen(false); if(data&&dbWrite){const ok=await dbWrite('marketplace',data);if(ok!==false){setView(mode==='rent'?'rent':'buy');if(showToast)showToast(lang==='pt'?'✓ Anúncio enviado para revisão':'✓ Listing sent for review');}}}}/>
       </FullPage>
       <FullPage open={postOpen&&postMode==='route'} onClose={()=>{setPostMode(null);setPostOpen(false);}}>
         <PostRouteSheet lang={lang} t={t} onClose={()=>{setPostMode(null);setPostOpen(false);}}
@@ -5570,10 +5584,14 @@ function MarketplaceScreen({ ctx }) {
         <PostEquipmentSheet lang={lang} t={t} mode={postMode}
           onClose={()=>{ setPostMode(null); setPostOpen(false); }}
           onSubmit={async (data)=>{
+            const mode = postMode;
             setPostMode(null); setPostOpen(false);
             if (data && dbWrite) {
               const ok = await dbWrite('marketplace', data);
-              if (ok !== false && showToast) showToast(lang==='pt'?'✓ Anúncio enviado para revisão':lang==='es'?'✓ Anuncio enviado a revisión':'✓ Listing sent for review');
+              if (ok !== false) {
+                setView(mode==='rent' ? 'rent' : 'buy');
+                if (showToast) showToast(lang==='pt'?'✓ Anúncio enviado para revisão':lang==='es'?'✓ Anuncio enviado a revisión':'✓ Listing sent for review');
+              }
             }
           }}/>
       </FullPage>

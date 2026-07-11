@@ -185,6 +185,19 @@ function QuickPoolsScreen({ ctx }) {
         setMyAcceptedJobIds(accepted);
         setMyDoneJobIds(done);
       });
+    // Hydrate `applied` from the DB too — it used to be session-only local state,
+    // so a job the user already applied to in a previous session showed the plain
+    // "Apply" button again after reload, inviting a duplicate application attempt.
+    window.sb.from('quick_pool_applications')
+      .select('job_id').eq('applicant_id', user.uid).neq('status', 'withdrawn')
+      .then(({ data }) => {
+        if (!data || data.length === 0) return;
+        setApplied(prev => {
+          const next = { ...prev };
+          data.forEach(r => { next[r.job_id] = true; });
+          return next;
+        });
+      });
     // Load history: accepted apps where pool_guy_done=true, fetch full job details
     window.sb.from('quick_pool_applications')
       .select('job_id,pool_guy_done_at,submitted_photos,quick_pool_jobs!inner(id,title,city,price_per_pool,price_negotiable,poster_name,poster_id,poster_phone,pool_address,status,created_at,day_of_week,time_slot,when_label,pools_count,pool_type,extras,required_photos,description)')
@@ -291,6 +304,19 @@ function QuickPoolsScreen({ ctx }) {
   const deleteJob = async (jobId, e) => {
     e && e.stopPropagation();
     if (!window.sb) return;
+    // If someone was already accepted for this job, notify them and clear their
+    // application so it doesn't linger stuck at status:'accepted' forever.
+    const { data: accepted } = await window.sb.from('quick_pool_applications')
+      .select('id, applicant_id').eq('job_id', jobId).eq('status', 'accepted').limit(1);
+    if (accepted && accepted[0]) {
+      await window.sb.from('quick_pool_applications').update({ status: 'cancelled' }).eq('id', accepted[0].id);
+      window.sendPush && window.sendPush(accepted[0].applicant_id,
+        lang==='pt' ? '⚠️ Vaga cancelada' : lang==='es' ? '⚠️ Vacante cancelada' : '⚠️ Job cancelled',
+        lang==='pt' ? 'O dono cancelou esta vaga depois de ter aceitado sua candidatura.'
+          : lang==='es' ? 'El propietario canceló esta vacante después de aceptar tu solicitud.'
+          : 'The poster cancelled this job after accepting your application.',
+        '/#express-pools', 'quick');
+    }
     await window.sb.from('quick_pool_jobs').update({ status:'cancelled' }).eq('id', jobId);
     setJobs(prev => prev.filter(j => String(j.id) !== String(jobId)));
     if (selected && String(selected.id) === String(jobId)) setSelected(null);
@@ -1222,6 +1248,7 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
 // ── Detail view ──────────────────────────────────────────────
 function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, openPublicProfile, openEditPost, onStatusChange, onMyJobAccepted }) {
   const isOwn   = job._live && user?.uid && job.poster_id === user.uid;
+  const isOwnFilled = isOwn && job.status === 'filled';
   const locked  = !isOwn && user.tier !== 'premium';
   const [confirmDialog,  setConfirmDialog]  = React.useState(null);
   const [applicants,     setApplicants]     = React.useState([]);
@@ -1305,17 +1332,40 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
 
   const submitOwnerRatingAndFinishPoolGuy = async () => {
     setOwnerRatingSubmitting(true);
-    if (ownerRatingStars > 0 && window.sb) {
+    if (window.sb) {
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      // Blind mutual rating: create/fill my own row, plus an empty placeholder for the
+      // owner so loadPendingRatings picks it up and reminds them to rate back — same
+      // pattern used everywhere else in the app (marketplace sales, tech reviews).
+      if (ownerRatingStars > 0) {
+        await window.sb.from('ratings').upsert({
+          listing_id: job.id,
+          listing_name: tr(job.title, lang),
+          from_id: user.uid,
+          to_id: job.poster_id,
+          from_name: user.name || user.email || 'Pool Guy',
+          stars: ownerRatingStars,
+          comment: ownerRatingComment.trim() || null,
+          pending: true,
+          connection_type: 'quickpool',
+          connection_id: String(job.id),
+          expires_at: expiresAt,
+        }, { onConflict: 'from_id,to_id' }).then(()=>{});
+        window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: job.poster_id }).catch(()=>{});
+      }
       await window.sb.from('ratings').insert({
         listing_id: job.id,
         listing_name: tr(job.title, lang),
-        from_id: user.uid,
-        to_id: job.poster_id,
-        from_name: user.name || user.email || 'Pool Guy',
-        stars: ownerRatingStars,
-        comment: ownerRatingComment.trim() || null,
-        pending: false,
-      }).then(()=>{});
+        from_id: job.poster_id,
+        from_name: job.poster || '',
+        to_id: user.uid,
+        stars: null,
+        comment: '',
+        pending: true,
+        connection_type: 'quickpool',
+        connection_id: String(job.id),
+        expires_at: expiresAt,
+      }).catch(()=>{}); // ignore duplicate-key — placeholder may already exist
     }
     // Mark pool_guy_done; also re-save submitted_photos atomically (in case first save failed)
     if (myApp && window.sb) {
@@ -1420,17 +1470,39 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
 
   const submitRatingAndFinalize = async () => {
     setRatingSubmitting(true);
-    if (ratingStars > 0 && acceptedApp && window.sb) {
+    if (acceptedApp && window.sb) {
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      if (ratingStars > 0) {
+        // Fills the pool guy's placeholder if it already exists (created when they
+        // finished the job), or creates the row if it doesn't — blind mutual rating.
+        await window.sb.from('ratings').upsert({
+          listing_id: job.id,
+          listing_name: tr(job.title, lang),
+          from_id: user.uid,
+          to_id: acceptedApp.applicant_id,
+          from_name: user.name || user.email || 'Pool Owner',
+          stars: ratingStars,
+          comment: ratingComment.trim() || null,
+          pending: true,
+          connection_type: 'quickpool',
+          connection_id: String(job.id),
+          expires_at: expiresAt,
+        }, { onConflict: 'from_id,to_id' }).then(()=>{});
+        window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: acceptedApp.applicant_id }).catch(()=>{});
+      }
       await window.sb.from('ratings').insert({
         listing_id: job.id,
         listing_name: tr(job.title, lang),
-        from_id: user.uid,
-        to_id: acceptedApp.applicant_id,
-        from_name: user.name || user.email || 'Pool Owner',
-        stars: ratingStars,
-        comment: ratingComment.trim() || null,
-        pending: false,
-      }).then(()=>{});
+        from_id: acceptedApp.applicant_id,
+        from_name: acceptedApp.applicant_name || '',
+        to_id: user.uid,
+        stars: null,
+        comment: '',
+        pending: true,
+        connection_type: 'quickpool',
+        connection_id: String(job.id),
+        expires_at: expiresAt,
+      }).catch(()=>{}); // ignore duplicate-key — placeholder may already exist
     }
     setRatingSubmitting(false);
     setShowRating(false);
@@ -1457,7 +1529,17 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           </svg>
           {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
         </button>
-        {isOwn && (
+        {isOwnFilled && (
+          <div style={{
+            height:32, padding:'0 12px', borderRadius:9,
+            background:'#FFFBEB', border:'1px solid #FCD34D',
+            color:'#92400E', fontSize:12, fontWeight:700,
+            display:'flex', alignItems:'center', gap:6,
+          }}>
+            ⏳ {lang==='pt'?'Em andamento':lang==='es'?'En curso':'In progress'}
+          </div>
+        )}
+        {isOwn && !isOwnFilled && (
           <button onClick={()=>setConfirmDialog({
             message: lang==='pt'?'Excluir publicação?':lang==='es'?'¿Eliminar publicación?':'Delete posting?',
             subMessage: lang==='pt'?'Essa vaga será removida permanentemente.':lang==='es'?'Esta vacante será eliminada permanentemente.':'This job will be permanently removed.',
@@ -2216,6 +2298,10 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
     if (!title.trim()) return setErr(lang==='pt'?'Adicione um título':'Add a title');
     if (!city) return setErr(lang==='pt'?'Escolha a cidade':'Choose city');
     if (!day)  return setErr(lang==='pt'?'Escolha o dia':'Choose day');
+    const parsedPrice = parseFloat(price);
+    if (!neg && (!price.trim() || isNaN(parsedPrice) || parsedPrice <= 0)) {
+      return setErr(lang==='pt'?'Informe um preço válido ou marque como negociável':'Enter a valid price or mark as negotiable');
+    }
     if (!window.sb || !user?.uid) return setErr('Login required');
     setSaving(true);
     const timeLabel = timeSlot ? (' · ' + (TIME_SLOTS.find(t=>t.key===timeSlot)||{}).label||'') : '';
@@ -2224,7 +2310,7 @@ function PostJobSheet({ open, onClose, lang, user, darkMode=false, onPosted }) {
       poster_phone: showPhone ? (phone||null) : null, pool_address: address.trim()||null, city, day_of_week: day,
       when_label: dayLabels[DAY_KEYS.indexOf(day)] + timeLabel,
       time_slot: timeSlot || null,
-      pools_count: 1, price_per_pool: neg ? null : (parseFloat(price)||null),
+      pools_count: 1, price_per_pool: neg ? null : parsedPrice,
       price_negotiable: neg, title: title.trim(), description: desc.trim()||null,
       pool_type: poolType,
       extras: poolType==='condo'

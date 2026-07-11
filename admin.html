@@ -3245,7 +3245,8 @@ function AdminApp({ adminUser, onLogout }) {
                     {label:'Abertas',    val:quickPools.filter(x=>x.status==='open').length,      color:'#0EBAC7'},
                     {label:'Em andamento',val:quickPools.filter(x=>x.status==='filled').length,    color:'#F59E0B'},
                     {label:'Concluídas', val:quickPools.filter(x=>x.status==='completed').length,  color:'#22c55e'},
-                    {label:'Canceladas', val:quickPools.filter(x=>x.status==='cancelled'||x.status==='expired').length, color:'#64748b'},
+                    {label:'Canceladas', val:quickPools.filter(x=>x.status==='cancelled').length, color:'#64748b'},
+                    {label:'Expiradas',  val:quickPools.filter(x=>x.status==='expired').length,  color:'#94a3b8'},
                   ].map(s=>(
                     <div key={s.label} style={{background:'#1a1f2e',borderRadius:10,border:`1px solid ${s.color}25`,padding:'10px 16px',display:'flex',alignItems:'center',gap:10,flex:'1 1 120px'}}>
                       <span style={{fontSize:22,fontWeight:800,color:s.color,lineHeight:1}}>{s.val}</span>

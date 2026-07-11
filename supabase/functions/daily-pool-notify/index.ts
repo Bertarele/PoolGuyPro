@@ -18,8 +18,10 @@ Deno.serve(async (req) => {
   const todayStart = new Date(now); todayStart.setHours(6, 55, 0, 0);
   const todayEnd   = new Date(now); todayEnd.setHours(23, 59, 59, 0);
 
+  // daily_notified_at guards against duplicate sends if this function is re-triggered
+  // (cron misfire, manual retry, overlapping schedule) within the same day.
   const jobsRes = await fetch(
-    `${SB_URL}/rest/v1/quick_pool_jobs?select=*&status=eq.open&notify_at=gte.${todayStart.toISOString()}&notify_at=lte.${todayEnd.toISOString()}`,
+    `${SB_URL}/rest/v1/quick_pool_jobs?select=*&status=eq.open&notify_at=gte.${todayStart.toISOString()}&notify_at=lte.${todayEnd.toISOString()}&daily_notified_at=is.null`,
     { headers }
   );
   const jobs: any[] = await jobsRes.json();
@@ -28,14 +30,23 @@ Deno.serve(async (req) => {
   let totalSent = 0;
 
   for (const job of jobs) {
-    // Get all profiles and find those with matching city+day
+    // Get all profiles and find those with matching city+day — exclude the poster
+    // themselves, they shouldn't be notified about their own job.
     const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,regions_by_day`, { headers });
     const profiles: any[] = await profilesRes.json();
     const matching = profiles.filter(p => {
+      if (p.id === job.poster_id) return false;
       const rbd = p.regions_by_day;
       if (!rbd) return false;
       const dayCities: string[] = rbd[job.day_of_week] || [];
       return dayCities.includes(job.city);
+    });
+    // Mark this job as notified regardless of whether anyone matched, so it's never
+    // re-scanned/re-sent on a later invocation the same day.
+    await fetch(`${SB_URL}/rest/v1/quick_pool_jobs?id=eq.${job.id}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ daily_notified_at: new Date().toISOString() }),
     });
     if (!matching.length) continue;
 

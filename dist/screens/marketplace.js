@@ -1341,6 +1341,10 @@ function ViewListingSheet({
   };
   const handleOwnerDecision = async (requestId, newStatus) => {
     if (!window.sb) return;
+    if (newStatus === 'approved' && ownerRequests.some(r => r.status === 'approved' && r.id !== requestId)) {
+      showToast && showToast(lang === 'pt' ? '❌ Já existe um pedido aprovado para este item' : '❌ Another request for this item is already approved');
+      return;
+    }
     const {
       error
     } = await window.sb.from('rental_requests').update({
@@ -1348,7 +1352,8 @@ function ViewListingSheet({
       responded_at: new Date().toISOString()
     }).eq('id', requestId);
     if (error) {
-      showToast && showToast('❌ ' + (error.message || 'Error'));
+      const msg = (error.message || '').includes('duplicate key') || (error.message || '').includes('rental_requests_one_approved_per_listing') ? lang === 'pt' ? '❌ Já existe um pedido aprovado para este item' : '❌ Another request for this item is already approved' : '❌ ' + (error.message || 'Error');
+      showToast && showToast(msg);
       return;
     }
     setOwnerRequests(prev => prev.map(r => r.id === requestId ? {
@@ -6060,6 +6065,10 @@ function MyPostDetailSheet({
   };
   const handleDelete = async () => {
     if (!window.sb) return;
+    if (activeRental) {
+      if (showToast) showToast(lang === 'pt' ? '❌ Não é possível excluir com aluguel ativo' : '❌ Cannot delete while a rental is active');
+      return;
+    }
     const ok = window.confirm(lang === 'pt' ? 'Deletar este anúncio? Não pode ser desfeito.' : 'Delete this listing? This cannot be undone.');
     if (!ok) return;
     setDeleting(true);
@@ -6486,7 +6495,8 @@ function MyPostDetailSheet({
     d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
   })), activeRental ? lang === 'pt' ? 'Edição bloqueada' : 'Edit locked' : lang === 'pt' ? 'Editar anúncio' : lang === 'es' ? 'Editar anuncio' : 'Edit listing'), /*#__PURE__*/React.createElement("button", {
     onClick: handleDelete,
-    disabled: deleting,
+    disabled: deleting || !!activeRental,
+    title: activeRental ? lang === 'pt' ? 'Bloqueado — aluguel ativo' : 'Locked — active rental' : undefined,
     style: {
       width: 50,
       height: 50,
@@ -6494,12 +6504,12 @@ function MyPostDetailSheet({
       border: '1.5px solid #FCA5A5',
       background: '#FEF2F2',
       color: '#EF4444',
-      cursor: 'pointer',
+      cursor: activeRental ? 'not-allowed' : 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
-      opacity: deleting ? 0.6 : 1
+      opacity: deleting || activeRental ? 0.5 : 1
     }
   }, /*#__PURE__*/React.createElement("svg", {
     width: "18",
@@ -8786,11 +8796,15 @@ function MarketplaceScreen({
         setPostOpen(false);
       },
       onSubmit: async data => {
+        const mode = postMode;
         setPostMode(null);
         setPostOpen(false);
         if (data && dbWrite) {
           const ok = await dbWrite('marketplace', data);
-          if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Anúncio enviado para revisão' : '✓ Listing sent for review');
+          if (ok !== false) {
+            setView(mode === 'rent' ? 'rent' : 'buy');
+            if (showToast) showToast(lang === 'pt' ? '✓ Anúncio enviado para revisão' : '✓ Listing sent for review');
+          }
         }
       }
     })), /*#__PURE__*/React.createElement(FullPage, {
@@ -10794,11 +10808,15 @@ function MarketplaceScreen({
       setPostOpen(false);
     },
     onSubmit: async data => {
+      const mode = postMode;
       setPostMode(null);
       setPostOpen(false);
       if (data && dbWrite) {
         const ok = await dbWrite('marketplace', data);
-        if (ok !== false && showToast) showToast(lang === 'pt' ? '✓ Anúncio enviado para revisão' : lang === 'es' ? '✓ Anuncio enviado a revisión' : '✓ Listing sent for review');
+        if (ok !== false) {
+          setView(mode === 'rent' ? 'rent' : 'buy');
+          if (showToast) showToast(lang === 'pt' ? '✓ Anúncio enviado para revisão' : lang === 'es' ? '✓ Anuncio enviado a revisión' : '✓ Listing sent for review');
+        }
       }
     }
   })), /*#__PURE__*/React.createElement(FullPage, {

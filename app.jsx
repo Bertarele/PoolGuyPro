@@ -1430,6 +1430,13 @@ function App() {
           lang={lang}
           onClose={()=>setPostQPOpen(false)}
           onSubmit={async (formData)=>{
+            if (formData.priceMode === 'fixed') {
+              const p = parseFloat(formData.price);
+              if (!formData.price || isNaN(p) || p <= 0) {
+                showToast(lang==='pt'?'❌ Informe um preço válido ou marque como negociável':'❌ Enter a valid price or mark as negotiable');
+                return;
+              }
+            }
             setPostQPOpen(false);
             setTab('quick');
             if (!window.sb || !user?.uid) return;
@@ -1505,6 +1512,13 @@ function App() {
           initialData={editQPJob}
           onClose={()=>setEditQPJob(null)}
           onSubmit={async (formData)=>{
+            if (formData.priceMode === 'fixed') {
+              const p = parseFloat(formData.price);
+              if (!formData.price || isNaN(p) || p <= 0) {
+                showToast(lang==='pt'?'❌ Informe um preço válido ou marque como negociável':'❌ Enter a valid price or mark as negotiable');
+                return;
+              }
+            }
             const jobId = editQPJob.id;
             setEditQPJob(null);
             if (!window.sb || !user?.uid) return;

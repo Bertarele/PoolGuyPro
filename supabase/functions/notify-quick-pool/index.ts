@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
   const profiles: any[] = await profilesRes.json();
 
   const matching = profiles.filter(p => {
+    if (p.id === job.poster_id) return false; // never notify the poster about their own job
     const rbd = p.regions_by_day;
     if (!rbd) return false;
     const dayCities: string[] = rbd[job.day_of_week] || [];
@@ -70,10 +71,9 @@ Deno.serve(async (req) => {
     }
   }));
 
-  // ── 2. Create in-app notifications for matching users (skip poster) ──
-  const toNotify = matching.filter(p => p.id !== job.poster_id);
-  if (toNotify.length > 0) {
-    await Promise.allSettled(toNotify.map(p =>
+  // ── 2. Create in-app notifications for matching users (poster already excluded above) ──
+  if (matching.length > 0) {
+    await Promise.allSettled(matching.map(p =>
       fetch(`${SB_URL}/rest/v1/notifications`, {
         method: 'POST',
         headers: { ...headers, 'Prefer': 'return=minimal' },
