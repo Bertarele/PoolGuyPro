@@ -662,6 +662,21 @@ function QuickPoolsScreen({ ctx }) {
               }}>{t.apply}</button>
             )}
             {isAdmin && !isOwn && (
+              <button onClick={(e)=>{ e.stopPropagation(); openEditPost && openEditPost({
+                id: j.id, title: typeof j.title==='object' ? (j.title[lang]||j.title.pt||j.title.en) : j.title,
+                description: typeof j.body==='object' ? (j.body[lang]||j.body.pt||j.body.en) : '',
+                city: j.loc, pool_type: j.type, extras: j.extras,
+                price_negotiable: j.price==='neg', price_per_pool: j.price==='neg' ? null : j.price,
+                poster_phone: j.poster_phone, pool_address: j.pool_address,
+                required_photos: j.required_photos || [],
+              }); }} title={lang==='pt'?'Editar (admin)':lang==='es'?'Editar (admin)':'Edit (admin)'} style={{
+                width:36, height:36, borderRadius:10, border:'1px solid var(--pg-ink-300)',
+                background:'var(--pg-ink-100)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', marginLeft:6,
+              }}>
+                {Icon.edit(14,'var(--pg-ink-700)')}
+              </button>
+            )}
+            {isAdmin && !isOwn && (
               <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
                 message: lang==='pt'?'[Admin] Excluir publicação?':lang==='es'?'[Admin] ¿Eliminar publicación?':'[Admin] Delete posting?',
                 subMessage: lang==='pt'?'Remove a vaga deste usuário permanentemente.':lang==='es'?'Elimina la vacante de este usuario permanentemente.':'Permanently removes this user\'s posting.',
@@ -1648,20 +1663,39 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           </div>
         )}
         {((isOwn && !isOwnFilled) || (isAdmin && !isOwn)) && (
-          <button onClick={()=>setConfirmDialog({
-            message: lang==='pt'?'Excluir publicação?':lang==='es'?'¿Eliminar publicación?':'Delete posting?',
-            subMessage: lang==='pt'?'Essa vaga será removida permanentemente.':lang==='es'?'Esta vacante será eliminada permanentemente.':'This job will be permanently removed.',
-            confirmLabel: lang==='pt'?'Sim, excluir':lang==='es'?'Sí, eliminar':'Yes, delete',
-            onConfirm: ()=>{ onDelete && onDelete(job.id); onClose(); setConfirmDialog(null); },
-          })} style={{
-            display:'flex', alignItems:'center', gap:5, height:32, padding:'0 12px', borderRadius:9,
-            border:'1px solid #FECACA', background:'#FEF2F2', cursor:'pointer', fontSize:12, fontWeight:600, color:'#DC2626',
-          }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-            </svg>
-            {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
-          </button>
+          <div style={{display:'flex', alignItems:'center', gap:6}}>
+            {isAdmin && !isOwn && openEditPost && (
+              <button onClick={()=>openEditPost({
+                id: job.id,
+                title: typeof job.title==='object' ? (job.title[lang]||job.title.pt||job.title.en) : job.title,
+                description: typeof job.body==='object' ? (job.body[lang]||job.body.pt||job.body.en) : '',
+                city: job.loc, pool_type: job.type, extras: job.extras,
+                price_negotiable: job.price==='neg', price_per_pool: job.price==='neg' ? null : job.price,
+                poster_phone: job.poster_phone, pool_address: job.pool_address,
+                required_photos: job.required_photos || [],
+              })} title={lang==='pt'?'Editar (admin)':lang==='es'?'Editar (admin)':'Edit (admin)'} style={{
+                display:'flex', alignItems:'center', gap:5, height:32, padding:'0 12px', borderRadius:9,
+                border:'1px solid var(--pg-ink-300)', background:'var(--pg-ink-100)', cursor:'pointer', fontSize:12, fontWeight:600, color:'var(--pg-ink-700)',
+              }}>
+                {Icon.edit(13,'var(--pg-ink-700)')}
+                {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
+              </button>
+            )}
+            <button onClick={()=>setConfirmDialog({
+              message: lang==='pt'?'Excluir publicação?':lang==='es'?'¿Eliminar publicación?':'Delete posting?',
+              subMessage: lang==='pt'?'Essa vaga será removida permanentemente.':lang==='es'?'Esta vacante será eliminada permanentemente.':'This job will be permanently removed.',
+              confirmLabel: lang==='pt'?'Sim, excluir':lang==='es'?'Sí, eliminar':'Yes, delete',
+              onConfirm: ()=>{ onDelete && onDelete(job.id); onClose(); setConfirmDialog(null); },
+            })} style={{
+              display:'flex', alignItems:'center', gap:5, height:32, padding:'0 12px', borderRadius:9,
+              border:'1px solid #FECACA', background:'#FEF2F2', cursor:'pointer', fontSize:12, fontWeight:600, color:'#DC2626',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+              </svg>
+              {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+            </button>
+          </div>
         )}
       </div>
 
