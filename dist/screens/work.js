@@ -6656,7 +6656,9 @@ function PostVacationSheet({
   }, "$"), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
     value: price,
-    onChange: e => setPrice(e.target.value),
+    onChange: e => setPrice(e.target.value.replace(/[^0-9]/g, '').replace(/^0+(?!$)/, '')),
+    inputMode: "numeric",
+    pattern: "[0-9]*",
     style: {
       flex: 1,
       border: 'none',

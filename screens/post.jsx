@@ -380,7 +380,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                 <Field label={t.pricePerPool}>
                   <div style={{position:'relative'}}>
                     <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
-                    <input className="pg-field" value={form.price} onChange={e=>upd('price', e.target.value.replace(/[^0-9]/g,''))}
+                    <input className="pg-field" value={form.price} onChange={e=>upd('price', e.target.value.replace(/[^0-9]/g,'').replace(/^0+(?!$)/,''))}
                       inputMode="numeric" pattern="[0-9]*"
                       style={{height:64, paddingLeft:36, fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', fontFamily:'var(--pg-font-display)'}}/>
                     <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--pg-ink-500)'}}>{t.perPool}</span>

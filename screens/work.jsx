@@ -3237,7 +3237,8 @@ function PostVacationSheet({ onClose, lang='en', onSubmit, initialData=null }) {
                   <input
                     className="pg-field"
                     value={price}
-                    onChange={e=>setPrice(e.target.value)}
+                    onChange={e=>setPrice(e.target.value.replace(/[^0-9]/g,'').replace(/^0+(?!$)/,''))}
+                    inputMode="numeric" pattern="[0-9]*"
                     style={{
                       flex:1, border:'none', padding:0, height:40, fontSize:32,
                       fontWeight:800, color:'var(--pg-blue-500)', letterSpacing:'-0.03em',
