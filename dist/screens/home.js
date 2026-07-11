@@ -65,7 +65,32 @@ function HomeScreen({
     priceMode: j.payMode || 'fixed',
     payMode: j.payMode
   }));
-  const myPosts = [...myMarketPosts, ...myOwnJobs];
+
+  // My own Quick Pool postings
+  const [myQuickJobs, setMyQuickJobs] = React.useState([]);
+  React.useEffect(() => {
+    if (!window.sb || !user?.uid) {
+      setMyQuickJobs([]);
+      return;
+    }
+    window.sb.from('quick_pool_jobs').select('*').eq('poster_id', user.uid).in('status', ['open', 'filled']).order('created_at', {
+      ascending: false
+    }).then(({
+      data
+    }) => {
+      setMyQuickJobs((data || []).map(j => ({
+        _id: j.id,
+        _isQuickPool: true,
+        status: 'approved',
+        name: j.title || j.city || '—',
+        type: 'quick',
+        loc: j.city || '',
+        price: j.price_negotiable ? null : j.price_per_pool,
+        priceMode: j.price_negotiable ? 'neg' : 'fixed'
+      })));
+    });
+  }, [user?.uid]);
+  const myPosts = [...myMarketPosts, ...myOwnJobs, ...myQuickJobs];
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob, setSelectedJob] = React.useState(null);
 
@@ -760,11 +785,14 @@ function HomeScreen({
   }, myPosts.map(item => {
     const isPending = item.status === 'pending';
     const isJob = item._isJob === true;
-    const priceStr = item.priceMode === 'neg' || item.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : item.asking ? `$${Number(item.asking).toLocaleString()}` : item.price ? `$${item.price}${isJob ? item.payMode === 'weekly' ? '/sem' : '/pool' : ''}` : '—';
+    const isQuick = item._isQuickPool === true;
+    const priceStr = item.priceMode === 'neg' || item.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : item.asking ? `$${Number(item.asking).toLocaleString()}` : item.price ? `$${item.price}${isJob ? item.payMode === 'weekly' ? '/sem' : '/pool' : isQuick ? '/pool' : ''}` : '—';
     return /*#__PURE__*/React.createElement("button", {
       key: item._id,
       onClick: () => {
-        if (isJob) {
+        if (isQuick) {
+          ctx.openQuickJobById ? ctx.openQuickJobById(item._id) : goTab('quick');
+        } else if (isJob) {
           window.__pgOpenJobId = item._id;
           goTab('work');
         } else {
@@ -797,7 +825,23 @@ function HomeScreen({
         flexShrink: 0,
         marginBottom: 9
       }
-    }, item.photoUrl ? /*#__PURE__*/React.createElement("img", {
+    }, isQuick ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: '100%',
+        height: '100%',
+        background: 'linear-gradient(135deg,#0EBAC7,#0077B6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "26",
+      height: "26",
+      viewBox: "0 0 24 24",
+      fill: "#fff"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"
+    }))) : item.photoUrl ? /*#__PURE__*/React.createElement("img", {
       src: item.photoUrl,
       alt: item.name,
       style: {
@@ -823,10 +867,10 @@ function HomeScreen({
         padding: '2px 7px',
         borderRadius: 5,
         letterSpacing: '0.04em',
-        background: isPending ? '#FFF3CD' : isJob ? 'rgba(14,186,199,0.15)' : 'var(--pg-blue-100)',
-        color: isPending ? '#856404' : isJob ? '#0A7A88' : 'var(--pg-blue-700)'
+        background: isPending ? '#FFF3CD' : isQuick ? 'rgba(14,186,199,0.15)' : isJob ? 'rgba(14,186,199,0.15)' : 'var(--pg-blue-100)',
+        color: isPending ? '#856404' : isQuick ? '#0A7A88' : isJob ? '#0A7A88' : 'var(--pg-blue-700)'
       }
-    }, isPending ? lang === 'pt' ? 'REVISÃO' : lang === 'es' ? 'REVISIÓN' : 'REVIEW' : isJob ? lang === 'pt' ? 'VAGA' : lang === 'es' ? 'OFERTA' : 'JOB' : 'ATIVO')), /*#__PURE__*/React.createElement("div", {
+    }, isPending ? lang === 'pt' ? 'REVISÃO' : lang === 'es' ? 'REVISIÓN' : 'REVIEW' : isQuick ? lang === 'pt' ? 'RÁPIDA' : lang === 'es' ? 'RÁPIDA' : 'QUICK' : isJob ? lang === 'pt' ? 'VAGA' : lang === 'es' ? 'OFERTA' : 'JOB' : 'ATIVO')), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12.5,
         fontWeight: 700,
