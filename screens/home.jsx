@@ -36,9 +36,11 @@ function HomeScreen({ ctx }) {
     )
   );
 
-  // My own job postings (from liveJobs in the Work tab)
+  // My own job postings (from liveJobs in the Work tab) — exclude already-hired
+  // ones, since those age out of the Work tab's own list and this card would
+  // then point at a listing that's no longer reachable there.
   const myOwnJobs = liveJobs
-    .filter(j => j.author_id && user.uid && j.author_id === user.uid)
+    .filter(j => j.author_id && user.uid && j.author_id === user.uid && !j.hiredAt)
     .map(j => ({
       _id: j._id,
       _isJob: true,
@@ -475,6 +477,10 @@ function HomeScreen({ ctx }) {
                       {isQuick ? (
                         <div style={{width:'100%', height:'100%', background:'linear-gradient(135deg,#0EBAC7,#0077B6)', display:'flex', alignItems:'center', justifyContent:'center'}}>
                           <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"/></svg>
+                        </div>
+                      ) : isJob ? (
+                        <div style={{width:'100%', height:'100%', background:'linear-gradient(135deg, var(--pg-blue-500), var(--pg-blue-700))', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3 8 3"/><path d="M12 3v4"/></svg>
                         </div>
                       ) : item.photoUrl
                         ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>

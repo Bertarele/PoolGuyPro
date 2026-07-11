@@ -53,8 +53,10 @@ function HomeScreen({
   // (prevents false-match when two users share the same display name)
   const myMarketPosts = liveMarket.filter(m => m.status !== 'sold' && (user.uid && m.author_id && m.author_id === user.uid || !m.author_id && myAuthor && m.author === myAuthor || !m.author_id && user.name && m.author === user.name || !m.author_id && user.email && m.author === user.email.split('@')[0]));
 
-  // My own job postings (from liveJobs in the Work tab)
-  const myOwnJobs = liveJobs.filter(j => j.author_id && user.uid && j.author_id === user.uid).map(j => ({
+  // My own job postings (from liveJobs in the Work tab) — exclude already-hired
+  // ones, since those age out of the Work tab's own list and this card would
+  // then point at a listing that's no longer reachable there.
+  const myOwnJobs = liveJobs.filter(j => j.author_id && user.uid && j.author_id === user.uid && !j.hiredAt).map(j => ({
     _id: j._id,
     _isJob: true,
     status: 'approved',
@@ -841,6 +843,34 @@ function HomeScreen({
       fill: "#fff"
     }, /*#__PURE__*/React.createElement("path", {
       d: "M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"
+    }))) : isJob ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: '100%',
+        height: '100%',
+        background: 'linear-gradient(135deg, var(--pg-blue-500), var(--pg-blue-700))',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "26",
+      height: "26",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("rect", {
+      x: "2",
+      y: "7",
+      width: "20",
+      height: "14",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M16 3 8 3"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M12 3v4"
     }))) : item.photoUrl ? /*#__PURE__*/React.createElement("img", {
       src: item.photoUrl,
       alt: item.name,
