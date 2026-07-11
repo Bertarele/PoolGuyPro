@@ -3737,18 +3737,15 @@ function App() {
       }
     }, /*#__PURE__*/React.createElement("path", {
       d: "M21 12a9 9 0 1 1-6.219-8.56"
-    })) : ready ? /*#__PURE__*/React.createElement("svg", {
-      width: "17",
-      height: "17",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "#fff",
-      strokeWidth: "3",
-      strokeLinecap: "round",
-      strokeLinejoin: "round"
-    }, /*#__PURE__*/React.createElement("polyline", {
-      points: "20 6 9 17 4 12"
-    })) : /*#__PURE__*/React.createElement("svg", {
+    })) : ready ? /*#__PURE__*/React.createElement("img", {
+      src: "icone.png",
+      alt: "",
+      style: {
+        width: 22,
+        height: 22,
+        objectFit: 'contain'
+      }
+    }) : /*#__PURE__*/React.createElement("svg", {
       width: "16",
       height: "16",
       viewBox: "0 0 24 24",
