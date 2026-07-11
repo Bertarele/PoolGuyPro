@@ -41,6 +41,22 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
     ? regionItems.filter(i => i.label.toLowerCase().includes(regionSearch.toLowerCase()))
     : regionItems.slice(0, 20); // show first 20 when no search
 
+  // Browser/password-manager autofill sets input.value directly without firing React's
+  // onChange, so canSubmit (and the Log In button) stayed stuck disabled until the user
+  // clicked into a field. The CSS animation trick in tokens.css (.pg-field:-webkit-autofill)
+  // lets us detect autofill via 'animationstart' and sync state from the real DOM value.
+  React.useEffect(() => {
+    const onAutoFill = (e) => {
+      if (e.animationName !== 'pgAutoFillStart') return;
+      const el = e.target;
+      if (!el || !el.matches || !el.matches('input.pg-field')) return;
+      if (el.type === 'email' && el.value) setEmail(el.value);
+      else if (el.type === 'password' && el.value) setPass(el.value);
+    };
+    document.addEventListener('animationstart', onAutoFill, true);
+    return () => document.removeEventListener('animationstart', onAutoFill, true);
+  }, []);
+
   const canSubmit = email.trim().length > 3 && pass.trim().length >= 4;
 
   const handleLogin = async () => {

@@ -323,6 +323,10 @@ button { font-family: inherit; }
   font-family: inherit; outline: none; transition: border-color .15s ease;
 }
 .pg-field:focus { border-color: var(--pg-blue-500); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+/* Detect browser autofill (which sets input.value without firing React's onChange)
+   via a no-op animation that we listen for with a JS 'animationstart' handler. */
+@keyframes pgAutoFillStart { from {} to {} }
+.pg-field:-webkit-autofill { animation-name: pgAutoFillStart; }
 .pg-textarea {
   width: 100%; padding: 12px 14px;
   border-radius: 12px; border: 1px solid var(--pg-ink-200);
