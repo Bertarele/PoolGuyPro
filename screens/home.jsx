@@ -807,31 +807,15 @@ function HomeScreen({ ctx }) {
               )}
             </div>
             {sponsoredCards.length > 1 && (
-              <>
-                <button onClick={() => goSponsored(-1)} aria-label="Previous" style={{
-                  position:'absolute', top:0, bottom:20, left:2, width:34,
-                  border:'none', background:'transparent', cursor:'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'flex-start', padding:0,
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <button onClick={() => goSponsored(1)} aria-label="Next" style={{
-                  position:'absolute', top:0, bottom:20, right:2, width:34,
-                  border:'none', background:'transparent', cursor:'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'flex-end', padding:0,
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </button>
-                <div style={{position:'absolute', bottom:8, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none'}}>
-                  {sponsoredCards.map((c, i) => (
-                    <div key={c.id} style={{
-                      width: i === sponsoredIdx ? 14 : 5, height: 5, borderRadius: 999,
-                      background: i === sponsoredIdx ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)',
-                      transition: 'all .3s ease',
-                    }}/>
-                  ))}
-                </div>
-              </>
+              <div style={{position:'absolute', bottom:8, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none'}}>
+                {sponsoredCards.map((c, i) => (
+                  <div key={c.id} style={{
+                    width: i === sponsoredIdx ? 14 : 5, height: 5, borderRadius: 999,
+                    background: i === sponsoredIdx ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)',
+                    transition: 'all .3s ease',
+                  }}/>
+                ))}
+              </div>
             )}
           </div>
         )}

@@ -1585,63 +1585,7 @@ function HomeScreen({
     }
   }, /*#__PURE__*/React.createElement("polyline", {
     points: "9 18 15 12 9 6"
-  }))), sponsoredCards.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-    onClick: () => goSponsored(-1),
-    "aria-label": "Previous",
-    style: {
-      position: 'absolute',
-      top: 0,
-      bottom: 20,
-      left: 2,
-      width: 34,
-      border: 'none',
-      background: 'transparent',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'flex-start',
-      padding: 0
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "16",
-    height: "16",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "rgba(255,255,255,0.65)",
-    strokeWidth: "2.5",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "15 18 9 12 15 6"
-  }))), /*#__PURE__*/React.createElement("button", {
-    onClick: () => goSponsored(1),
-    "aria-label": "Next",
-    style: {
-      position: 'absolute',
-      top: 0,
-      bottom: 20,
-      right: 2,
-      width: 34,
-      border: 'none',
-      background: 'transparent',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-      padding: 0
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "16",
-    height: "16",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "rgba(255,255,255,0.65)",
-    strokeWidth: "2.5",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "9 18 15 12 9 6"
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), sponsoredCards.length > 1 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       bottom: 8,
@@ -1661,7 +1605,7 @@ function HomeScreen({
       background: i === sponsoredIdx ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)',
       transition: 'all .3s ease'
     }
-  }))))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',
