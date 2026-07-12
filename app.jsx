@@ -2287,36 +2287,50 @@ function App() {
           {(pullDist > 4 || refreshing) && (() => {
             const progress = Math.min(pullDist / PULL_THRESHOLD, 1);
             const ready = progress >= 1;
+            const label = refreshing
+              ? (lang==='pt'?'Atualizando…':lang==='es'?'Actualizando…':'Refreshing…')
+              : ready
+                ? (lang==='pt'?'Solte para atualizar':lang==='es'?'Suelta para actualizar':'Release to refresh')
+                : (lang==='pt'?'Puxe para atualizar':lang==='es'?'Tira para actualizar':'Pull to refresh');
             return (
             <div style={{
               position:'fixed', top:0, left:0, right:0, zIndex:9999,
               display:'flex', justifyContent:'center',
               paddingTop:'max(10px, env(safe-area-inset-top, 10px))',
               pointerEvents:'none',
-              transform:`translateY(${Math.min(pullDist, PULL_THRESHOLD) - PULL_THRESHOLD}px) scale(${refreshing ? 1 : 0.72 + progress * 0.28})`,
-              opacity: refreshing ? 1 : 0.35 + progress * 0.65,
-              transition: pullDist === 0 || refreshing ? 'transform .28s cubic-bezier(.34,1.56,.64,1), opacity .2s ease' : 'none',
+              transform:`translateY(${Math.min(pullDist, PULL_THRESHOLD) - PULL_THRESHOLD}px) scale(${refreshing ? 1 : 0.85 + progress * 0.15})`,
+              opacity: refreshing ? 1 : 0.45 + progress * 0.55,
+              transition: pullDist === 0 || refreshing ? 'transform .3s cubic-bezier(.34,1.56,.64,1), opacity .2s ease' : 'none',
             }}>
               <div style={{
-                width:42, height:42, borderRadius:'50%', position:'relative', overflow:'hidden',
+                display:'flex', alignItems:'center', gap:9,
+                height:38, padding:'0 16px 0 12px', borderRadius:999,
                 background: 'linear-gradient(135deg, #0EBAC7, #0077B6)',
-                boxShadow: `0 4px 16px rgba(14,186,199,${0.20 + progress * 0.25})`,
-                display:'flex', alignItems:'center', justifyContent:'center',
+                boxShadow: `0 6px 20px rgba(4,20,40,0.28), 0 0 0 1px rgba(255,255,255,0.14) inset`,
               }}>
-                {refreshing ? (
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"
-                    strokeLinecap="round" strokeLinejoin="round" style={{animation:'pg-spin .7s linear infinite'}}>
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                  </svg>
-                ) : ready ? (
-                  <img src="icone-watermark.png" alt="" style={{width:80, height:80, objectFit:'cover', flexShrink:0}}/>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"
-                    strokeLinecap="round" strokeLinejoin="round"
-                    style={{transform:`rotate(${progress*180}deg)`}}>
-                    <path d="M12 5v14M12 19l-5-5M12 19l5-5"/>
-                  </svg>
-                )}
+                <div style={{
+                  width:22, height:22, borderRadius:'50%', flexShrink:0, position:'relative', overflow:'hidden',
+                  background:'rgba(255,255,255,0.16)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  {refreshing ? (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"
+                      strokeLinecap="round" strokeLinejoin="round" style={{animation:'pg-spin .7s linear infinite'}}>
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                  ) : ready ? (
+                    <img src="icone-watermark.png" alt="" style={{width:46, height:46, objectFit:'cover', flexShrink:0}}/>
+                  ) : (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"
+                      strokeLinecap="round" strokeLinejoin="round"
+                      style={{transform:`rotate(${progress*180}deg)`, transition:'transform .1s linear'}}>
+                      <path d="M12 5v14M12 19l-5-5M12 19l5-5"/>
+                    </svg>
+                  )}
+                </div>
+                <span style={{fontSize:12.5, fontWeight:700, color:'#fff', letterSpacing:'-0.005em', whiteSpace:'nowrap'}}>
+                  {label}
+                </span>
               </div>
             </div>
             );
