@@ -7229,6 +7229,12 @@ function MarketplaceScreen({
   }));
   const allPools = [...livePools];
   const list = isEquipment ? EQUIPMENT.filter(e => e.mode === mode && (cat === 'All' || e.category === cat) && (q === '' || e.name.toLowerCase().includes(q.toLowerCase())) && (priceRange === 'all' || priceRange === 'u100' && e.price < 100 || priceRange === '100-500' && e.price >= 100 && e.price <= 500 || priceRange === 'o500' && e.price > 500)) : view === 'routes' && routeSub === 'pools' ? allPools.filter(p => poolPrice === 'all' || poolPrice === 'u1500' && p.est < 1500 || poolPrice === '1500-3k' && p.est >= 1500 && p.est <= 3000 || poolPrice === 'o3k' && p.est > 3000) : allRoutes.filter(r => routePrice === 'all' || routePrice === 'u5k' && r.est < 5000 || routePrice === '5k-8k' && r.est >= 5000 && r.est <= 8000 || routePrice === 'o8k' && r.est > 8000);
+  // Own postings always float to the top of whichever list is being shown
+  list.sort((a, b) => {
+    const aOwn = user?.uid && a._authorId === user.uid ? 0 : 1;
+    const bOwn = user?.uid && b._authorId === user.uid ? 0 : 1;
+    return aOwn - bOwn;
+  });
   const tabIcons = {
     buy: (s, c) => Icon.cart(s, c),
     rent: (s, c) => Icon.key(s, c),
@@ -7628,7 +7634,11 @@ function MarketplaceScreen({
   // ── DESKTOP LAYOUT (≥ 900px) ─────────────────────────────────
   // ══════════════════════════════════════════════════════════════
   if (isDesktop) {
-    const liveEquipment = marketByCounty.filter(m => m.type === mode && (cat === 'All' || !m.cat || m.cat === cat) && (m.status === 'approved' || m.status === 'pending' && isMyPost(m)));
+    const liveEquipment = marketByCounty.filter(m => m.type === mode && (cat === 'All' || !m.cat || m.cat === cat) && (m.status === 'approved' || m.status === 'pending' && isMyPost(m))).sort((a, b) => {
+      const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+      const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+      return aOwn - bOwn;
+    });
     return /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'relative',
@@ -9330,7 +9340,11 @@ function MarketplaceScreen({
       gap: 12,
       marginTop: 14
     }
-  }, marketByCounty.filter(m => m.type === mode && (cat === 'All' || !m.cat || m.cat === cat) && (m.status === 'approved' || m.status === 'pending' && isMyPost(m))).map(item => {
+  }, marketByCounty.filter(m => m.type === mode && (cat === 'All' || !m.cat || m.cat === cat) && (m.status === 'approved' || m.status === 'pending' && isMyPost(m))).sort((a, b) => {
+    const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+    const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+    return aOwn - bOwn;
+  }).map(item => {
     const isPending = item.status === 'pending';
     const isSoldItem = item.status === 'sold';
     const canAdminDelete = user.role === 'admin' || isMyPost(item);

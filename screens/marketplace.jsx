@@ -3880,6 +3880,12 @@ function MarketplaceScreen({ ctx }) {
            (routePrice === '5k-8k' && r.est >= 5000 && r.est <= 8000) ||
            (routePrice === 'o8k'   && r.est > 8000))
         );
+  // Own postings always float to the top of whichever list is being shown
+  list.sort((a, b) => {
+    const aOwn = user?.uid && a._authorId === user.uid ? 0 : 1;
+    const bOwn = user?.uid && b._authorId === user.uid ? 0 : 1;
+    return aOwn - bOwn;
+  });
 
   const tabIcons = {
     buy:    (s,c)=> Icon.cart(s, c),
@@ -4075,7 +4081,11 @@ function MarketplaceScreen({ ctx }) {
     const liveEquipment = marketByCounty.filter(m => m.type === mode &&
       (cat === 'All' || !m.cat || m.cat === cat) &&
       (m.status==='approved' || (m.status==='pending'&&isMyPost(m)))
-    );
+    ).sort((a, b) => {
+      const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+      const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+      return aOwn - bOwn;
+    });
     return (
       <div style={{position:'relative', width:'100%', height:'100%', overflow:'hidden'}}>
       <div style={{height:'100%', overflowY:'auto', background:'var(--pg-bg)'}}>
@@ -4852,6 +4862,11 @@ function MarketplaceScreen({ ctx }) {
                 (cat === 'All' || !m.cat || m.cat === cat) &&
                 (m.status === 'approved' || (m.status === 'pending' && isMyPost(m)))
               )
+              .sort((a, b) => {
+                const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+                const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+                return aOwn - bOwn;
+              })
               .map(item => {
                 const isPending = item.status === 'pending';
                 const isSoldItem = item.status === 'sold';

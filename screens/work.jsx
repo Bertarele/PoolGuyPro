@@ -1501,7 +1501,11 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
     </Sheet>
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
       {/* ── Live jobs posted by real users (hide own jobs if hidePosted) ── */}
-      {liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).map(job => {
+      {liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).sort((a, b) => {
+        const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+        const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+        return aOwn - bOwn;
+      }).map(job => {
         const isOwner   = user?.uid && user.uid === job.author_id;
         const isAdmin   = user?.role === 'admin';
         const isHired   = !!job.hiredAt;
@@ -1889,7 +1893,11 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
     <>
     <div style={{display:'flex', flexDirection:'column', gap:12}}>
       {/* ── Live techs registered by real users ── */}
-      {liveTechs.map(tech => {
+      {[...liveTechs].sort((a, b) => {
+        const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+        const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+        return aOwn - bOwn;
+      }).map(tech => {
         const isOwner = user?.uid && user.uid === tech.author_id;
         const isOpen  = contactOpen === tech._id;
         const rateIsFixed = (tech.rateMode || tech.rate_mode) === 'fixed' && tech.rate;
@@ -2413,10 +2421,15 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
       .sort((a, b) => getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days));
   }, [hiddenStatic, today]);
 
-  // Sort live vacations by proximity
+  // Sort live vacations by proximity, but always float the user's own postings to the top
   const sortedLiveVac = React.useMemo(() => {
-    return [...liveVacations].sort((a, b) => getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days));
-  }, [liveVacations, today]);
+    return [...liveVacations].sort((a, b) => {
+      const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+      const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+      if (aOwn !== bOwn) return aOwn - bOwn;
+      return getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days);
+    });
+  }, [liveVacations, today, user?.uid]);
   const boost = {
     title: lang==='pt'
       ? 'Cobrir férias impulsiona seu perfil'

@@ -3325,7 +3325,11 @@ function HiringPanel({
       flexDirection: 'column',
       gap: 12
     }
-  }, liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).map(job => {
+  }, liveJobs.filter(job => !hidePosted || !user?.uid || user.uid !== job.author_id).sort((a, b) => {
+    const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+    const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+    return aOwn - bOwn;
+  }).map(job => {
     const isOwner = user?.uid && user.uid === job.author_id;
     const isAdmin = user?.role === 'admin';
     const isHired = !!job.hiredAt;
@@ -4312,7 +4316,11 @@ function TechsPanel({
       flexDirection: 'column',
       gap: 12
     }
-  }, liveTechs.map(tech => {
+  }, [...liveTechs].sort((a, b) => {
+    const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+    const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+    return aOwn - bOwn;
+  }).map(tech => {
     const isOwner = user?.uid && user.uid === tech.author_id;
     const isOpen = contactOpen === tech._id;
     const rateIsFixed = (tech.rateMode || tech.rate_mode) === 'fixed' && tech.rate;
@@ -5370,10 +5378,15 @@ function VacationPanel({
     }).sort((a, b) => getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days));
   }, [hiddenStatic, today]);
 
-  // Sort live vacations by proximity
+  // Sort live vacations by proximity, but always float the user's own postings to the top
   const sortedLiveVac = React.useMemo(() => {
-    return [...liveVacations].sort((a, b) => getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days));
-  }, [liveVacations, today]);
+    return [...liveVacations].sort((a, b) => {
+      const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+      const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+      if (aOwn !== bOwn) return aOwn - bOwn;
+      return getFirstDay(a.yearMonth, a.days) - getFirstDay(b.yearMonth, b.days);
+    });
+  }, [liveVacations, today, user?.uid]);
   const boost = {
     title: lang === 'pt' ? 'Cobrir férias impulsiona seu perfil' : lang === 'es' ? 'Cubrir vacaciones impulsa tu perfil' : 'Covering vacations boosts your profile',
     body: lang === 'pt' ? 'Pool guys que cobrem férias ganham impulsionamento no perfil e melhores avaliações — aparecendo no topo das buscas.' : lang === 'es' ? 'Los pool guys que cubren vacaciones obtienen impulso en el perfil y mejores reseñas — apareciendo en el top de las búsquedas.' : 'Pool guys who cover vacations earn a profile boost and better reviews — showing up at the top of searches.',
