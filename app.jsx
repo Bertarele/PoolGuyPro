@@ -2318,7 +2318,7 @@ function App() {
                     <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                   </svg>
                 ) : ready ? (
-                  <img src="icone.png" alt="" style={{width:22, height:22, objectFit:'contain'}}/>
+                  <img src="icone-watermark.png" alt="" style={{width:24, height:24, objectFit:'contain'}}/>
                 ) : (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"
                     strokeLinecap="round" strokeLinejoin="round"

@@ -3738,11 +3738,11 @@ function App() {
     }, /*#__PURE__*/React.createElement("path", {
       d: "M21 12a9 9 0 1 1-6.219-8.56"
     })) : ready ? /*#__PURE__*/React.createElement("img", {
-      src: "icone.png",
+      src: "icone-watermark.png",
       alt: "",
       style: {
-        width: 22,
-        height: 22,
+        width: 24,
+        height: 24,
         objectFit: 'contain'
       }
     }) : /*#__PURE__*/React.createElement("svg", {
