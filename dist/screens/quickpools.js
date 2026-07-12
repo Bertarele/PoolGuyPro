@@ -4058,7 +4058,58 @@ function QuickPoolDetails({
       flexDirection: 'column',
       gap: 8
     }
-  }, job.status === 'filled' && acceptedApp?.pool_guy_done ? /*#__PURE__*/React.createElement("button", {
+  }, job.status === 'filled' && acceptedApp?.pool_guy_done ? /*#__PURE__*/React.createElement(React.Fragment, null, acceptedApp.submitted_photos && acceptedApp.submitted_photos.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '10px 12px',
+      borderRadius: 12,
+      background: 'var(--pg-ink-50)',
+      border: '1px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)',
+      marginBottom: 8
+    }
+  }, "\uD83D\uDCF8 ", lang === 'pt' ? 'Fotos enviadas pelo pool guy' : lang === 'es' ? 'Fotos enviadas por el pool guy' : 'Photos submitted by the pool guy', " (", acceptedApp.submitted_photos.length, ")"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      flexWrap: 'wrap'
+    }
+  }, acceptedApp.submitted_photos.map((p, i) => /*#__PURE__*/React.createElement("a", {
+    key: i,
+    href: p.url,
+    target: "_blank",
+    rel: "noreferrer",
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 3,
+      borderRadius: 10,
+      overflow: 'hidden',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: p.url,
+    alt: photoLabel(p.type),
+    style: {
+      width: 76,
+      height: 76,
+      objectFit: 'cover',
+      display: 'block',
+      borderRadius: 10,
+      border: '1px solid var(--pg-ink-200)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: 'var(--pg-ink-500)',
+      fontWeight: 600
+    }
+  }, photoLabel(p.type)))))), /*#__PURE__*/React.createElement("button", {
     onClick: () => setConfirmDialog({
       message: lang === 'pt' ? 'Finalizar e remover vaga?' : lang === 'es' ? '¿Finalizar y eliminar?' : 'Mark complete & remove?',
       subMessage: lang === 'pt' ? 'A vaga será removida da lista. Você poderá avaliar o pool guy.' : 'The job will be removed from the list. You can rate the pool guy.',
@@ -4094,7 +4145,7 @@ function QuickPoolDetails({
     strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("polyline", {
     points: "20 6 9 17 4 12"
-  })), lang === 'pt' ? 'Finalizar e remover vaga' : lang === 'es' ? 'Finalizar y eliminar' : 'Mark complete & remove') : job.status === 'filled' ? /*#__PURE__*/React.createElement("div", {
+  })), lang === 'pt' ? 'Finalizar e remover vaga' : lang === 'es' ? 'Finalizar y eliminar' : 'Mark complete & remove')) : job.status === 'filled' ? /*#__PURE__*/React.createElement("div", {
     style: {
       height: 50,
       borderRadius: 14,
