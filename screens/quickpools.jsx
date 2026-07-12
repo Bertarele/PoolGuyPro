@@ -85,6 +85,63 @@ function ExtendJobModal({ onExtend, onCancel, lang='pt' }) {
   );
 }
 
+function PendingRatingModal({ target, onSubmit, onClose, lang='pt' }) {
+  const [stars,   setStars]   = React.useState(0);
+  const [comment, setComment] = React.useState('');
+  if (!target) return null;
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:10000,
+      background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-end', justifyContent:'center',
+    }}>
+      <div style={{
+        width:'100%', maxWidth:520, background:'var(--pg-white)',
+        borderRadius:'20px 20px 0 0', padding:'24px 20px 32px',
+        boxShadow:'0 -8px 32px rgba(0,0,0,0.2)',
+      }}>
+        <div style={{width:40, height:4, borderRadius:4, background:'var(--pg-ink-200)', margin:'0 auto 20px'}}/>
+        <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', textAlign:'center', marginBottom:6}}>
+          {lang==='pt'?'Avaliação pendente':lang==='es'?'Calificación pendiente':'Pending rating'}
+        </div>
+        <div style={{fontSize:14, color:'var(--pg-ink-500)', textAlign:'center', marginBottom:20, lineHeight:1.4}}>
+          {target.listing_name || (lang==='pt'?'Serviço concluído':'Completed job')}
+        </div>
+        <div style={{display:'flex', justifyContent:'center', gap:8, marginBottom:20}}>
+          {[1,2,3,4,5].map(s => (
+            <button key={s} onClick={()=>setStars(s)} style={{border:'none', background:'transparent', cursor:'pointer', padding:2}}>
+              <svg width="30" height="30" viewBox="0 0 24 24" fill={s<=stars?'#F59E0B':'none'} stroke={s<=stars?'#F59E0B':'var(--pg-ink-300)'} strokeWidth="1.5">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
+          ))}
+        </div>
+        <textarea value={comment} onChange={e=>setComment(e.target.value)} rows={2}
+          placeholder={lang==='pt'?'Comentário (opcional)':lang==='es'?'Comentario (opcional)':'Comment (optional)'}
+          style={{
+            width:'100%', boxSizing:'border-box', padding:'11px 13px', borderRadius:12,
+            border:'1px solid var(--pg-ink-200)', background:'var(--pg-ink-50)', fontSize:13.5,
+            fontFamily:'inherit', color:'var(--pg-ink-900)', resize:'none', outline:'none', marginBottom:14,
+          }}/>
+        <div style={{display:'flex', gap:10}}>
+          <button onClick={onClose} style={{
+            flex:1, height:48, borderRadius:14, border:'1px solid var(--pg-ink-200)',
+            background:'var(--pg-ink-50)', color:'var(--pg-ink-700)', fontSize:14, fontWeight:600, cursor:'pointer',
+          }}>
+            {lang==='pt'?'Depois':lang==='es'?'Después':'Later'}
+          </button>
+          <button onClick={()=>onSubmit(target, stars, comment)} disabled={stars===0} style={{
+            flex:2, height:48, borderRadius:14, border:'none', cursor: stars>0?'pointer':'default',
+            background: stars>0 ? 'linear-gradient(135deg,#16A34A,#22C55E)' : 'var(--pg-ink-200)',
+            color:'#fff', fontSize:14, fontWeight:700,
+          }}>
+            {lang==='pt'?'Enviar avaliação':lang==='es'?'Enviar calificación':'Submit rating'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 class JobDetailBoundary extends React.Component {
   constructor(props) { super(props); this.state = { err: null }; }
   static getDerivedStateFromError(e) { return { err: e }; }
@@ -115,6 +172,31 @@ function QuickPoolsScreen({ ctx }) {
   const [showHistory,     setShowHistory]     = React.useState(false);
   const [confirmDialog, setConfirmDialog] = React.useState(null); // { message, subMessage, confirmLabel, onConfirm }
   const [extendDialog,  setExtendDialog]  = React.useState(null); // jobId of the job being offered an extension
+
+  // Ratings I still owe (skipped or never submitted) for finished Quick Pool jobs —
+  // these outlive the job card itself, which disappears once finalized.
+  const [pendingOutRatings, setPendingOutRatings] = React.useState([]);
+  const [rateNowTarget,     setRateNowTarget]     = React.useState(null); // row being rated
+  const loadPendingOutRatings = React.useCallback(() => {
+    if (!window.sb || !user?.uid) return;
+    window.sb.from('ratings')
+      .select('id,listing_name,to_id,connection_id')
+      .eq('from_id', user.uid).eq('connection_type', 'quickpool')
+      .or('stars.is.null')
+      .or('expires_at.is.null,expires_at.gte.' + new Date().toISOString())
+      .then(({ data }) => setPendingOutRatings(data || []));
+  }, [user?.uid]);
+  React.useEffect(() => { loadPendingOutRatings(); }, [loadPendingOutRatings]);
+  const submitPendingOutRating = async (row, stars, comment) => {
+    if (!window.sb || stars === 0) return;
+    const { error } = await window.sb.from('ratings')
+      .update({ stars, comment: comment?.trim() || null }).eq('id', row.id);
+    if (error) { showToast && showToast('❌ ' + error.message); return; }
+    window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: row.to_id }).catch(()=>{});
+    setPendingOutRatings(prev => prev.filter(r => r.id !== row.id));
+    setRateNowTarget(null);
+    showToast && showToast(lang==='pt'?'✓ Avaliação enviada':lang==='es'?'✓ Calificación enviada':'✓ Rating submitted');
+  };
 
   // Live jobs from Supabase — no demo/seed fallback, only real postings
   const [jobs, setJobs] = React.useState([]);
@@ -211,6 +293,13 @@ function QuickPoolsScreen({ ctx }) {
     window.addEventListener('pgQuickPoolPosted', handler);
     return () => window.removeEventListener('pgQuickPoolPosted', handler);
   }, [loadJobs]);
+
+  // Refresh outstanding-rating banner whenever a job finishes/finalizes (rated or skipped)
+  React.useEffect(() => {
+    const handler = () => loadPendingOutRatings();
+    window.addEventListener('pgQuickPoolRatingChanged', handler);
+    return () => window.removeEventListener('pgQuickPoolRatingChanged', handler);
+  }, [loadPendingOutRatings]);
 
   const EXTEND_WINDOW_MS = 4 * 60 * 60 * 1000; // extend option only offered once <4h remain
   const formatRemaining = (expiresAt) => {
@@ -1037,6 +1126,31 @@ function QuickPoolsScreen({ ctx }) {
               </button>
             )}
 
+            {/* Pending ratings — jobs already finalized where I still owe a rating */}
+            {pendingOutRatings.length > 0 && (
+              <button onClick={()=>setRateNowTarget(pendingOutRatings[0])} style={{
+                width:'100%', textAlign:'left', border:'1px solid #FCD34D', cursor:'pointer',
+                padding:'12px 16px', marginBottom:20, borderRadius:14, fontFamily:'inherit',
+                background:'linear-gradient(110deg,#FFFBEB,#FEF3C7)',
+                display:'flex', alignItems:'center', gap:12,
+              }}>
+                <div style={{width:38, height:38, borderRadius:'50%', flexShrink:0, background:'#F59E0B', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18}}>
+                  ⭐
+                </div>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13, fontWeight:800, color:'#92400E'}}>
+                    {pendingOutRatings.length > 1
+                      ? (lang==='pt'?`Você tem ${pendingOutRatings.length} avaliações pendentes`:`You have ${pendingOutRatings.length} pending ratings`)
+                      : (lang==='pt'?'Você tem uma avaliação pendente':'You have a pending rating')}
+                  </div>
+                  <div style={{fontSize:11.5, color:'#B45309', marginTop:2, lineHeight:1.35}}>
+                    {pendingOutRatings[0].listing_name || (lang==='pt'?'Toque para avaliar':'Tap to rate')}
+                  </div>
+                </div>
+                {Icon.chev(14,'#B45309')}
+              </button>
+            )}
+
             {/* Cards */}
             {sortedJobs.length === 0 ? (
               <div style={{padding:'48px 24px', textAlign:'center', background:'var(--pg-white)', borderRadius:16, border:'1px solid var(--pg-ink-200)'}}>
@@ -1073,6 +1187,14 @@ function QuickPoolsScreen({ ctx }) {
           lang={lang}
           onExtend={(hours)=>extendJob(extendDialog, hours)}
           onCancel={()=>setExtendDialog(null)}
+        />
+      )}
+      {rateNowTarget && (
+        <PendingRatingModal
+          target={rateNowTarget}
+          lang={lang}
+          onSubmit={submitPendingOutRating}
+          onClose={()=>setRateNowTarget(null)}
         />
       )}
       </div>
@@ -1276,6 +1398,33 @@ function QuickPoolsScreen({ ctx }) {
         </div>
       )}
 
+      {/* Pending ratings — jobs already finalized where I still owe a rating */}
+      {pendingOutRatings.length > 0 && (
+        <div style={{padding:'10px 18px 0'}}>
+          <button onClick={()=>setRateNowTarget(pendingOutRatings[0])} style={{
+            width:'100%', textAlign:'left', border:'1px solid #FCD34D', cursor:'pointer',
+            padding:'12px 14px', borderRadius:14, fontFamily:'inherit',
+            background:'linear-gradient(110deg,#FFFBEB,#FEF3C7)',
+            display:'flex', alignItems:'center', gap:10,
+          }}>
+            <div style={{width:34, height:34, borderRadius:'50%', flexShrink:0, background:'#F59E0B', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>
+              ⭐
+            </div>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:12.5, fontWeight:800, color:'#92400E'}}>
+                {pendingOutRatings.length > 1
+                  ? (lang==='pt'?`Você tem ${pendingOutRatings.length} avaliações pendentes`:`You have ${pendingOutRatings.length} pending ratings`)
+                  : (lang==='pt'?'Você tem uma avaliação pendente':'You have a pending rating')}
+              </div>
+              <div style={{fontSize:11, color:'#B45309', marginTop:1, lineHeight:1.3}}>
+                {pendingOutRatings[0].listing_name || (lang==='pt'?'Toque para avaliar':'Tap to rate')}
+              </div>
+            </div>
+            {Icon.chev(13,'#B45309')}
+          </button>
+        </div>
+      )}
+
       {/* Job list */}
       {sortedJobs.length === 0 ? (
         <div style={{margin:'10px 18px 0', padding:'40px 20px', textAlign:'center', background:'var(--pg-white)', borderRadius:16, border:'1px solid var(--pg-ink-200)'}}>
@@ -1311,6 +1460,14 @@ function QuickPoolsScreen({ ctx }) {
         lang={lang}
         onExtend={(hours)=>extendJob(extendDialog, hours)}
         onCancel={()=>setExtendDialog(null)}
+      />
+    )}
+    {rateNowTarget && (
+      <PendingRatingModal
+        target={rateNowTarget}
+        lang={lang}
+        onSubmit={submitPendingOutRating}
+        onClose={()=>setRateNowTarget(null)}
       />
     )}
 
@@ -1567,20 +1724,23 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
       // Blind mutual rating: create/fill my own row, plus an empty placeholder for the
       // owner so loadPendingRatings picks it up and reminds them to rate back — same
       // pattern used everywhere else in the app (marketplace sales, tech reviews).
+      // Always write my own row even when skipping (stars:null) — otherwise there's no
+      // durable record that I still owe a rating, and it becomes unreachable once the
+      // job card disappears from the list.
+      await window.sb.from('ratings').upsert({
+        listing_id: job.id,
+        listing_name: tr(job.title, lang),
+        from_id: user.uid,
+        to_id: job.poster_id,
+        from_name: user.name || user.email || 'Pool Guy',
+        stars: ownerRatingStars > 0 ? ownerRatingStars : null,
+        comment: ownerRatingComment.trim() || null,
+        pending: true,
+        connection_type: 'quickpool',
+        connection_id: String(job.id),
+        expires_at: expiresAt,
+      }, { onConflict: 'from_id,to_id' }).then(()=>{});
       if (ownerRatingStars > 0) {
-        await window.sb.from('ratings').upsert({
-          listing_id: job.id,
-          listing_name: tr(job.title, lang),
-          from_id: user.uid,
-          to_id: job.poster_id,
-          from_name: user.name || user.email || 'Pool Guy',
-          stars: ownerRatingStars,
-          comment: ownerRatingComment.trim() || null,
-          pending: true,
-          connection_type: 'quickpool',
-          connection_id: String(job.id),
-          expires_at: expiresAt,
-        }, { onConflict: 'from_id,to_id' }).then(()=>{});
         window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: job.poster_id }).catch(()=>{});
       }
       await window.sb.from('ratings').insert({
@@ -1631,6 +1791,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     setOwnerRatingSubmitting(false);
     setShowOwnerRating(false);
     setPoolGuyDone(true);
+    window.dispatchEvent(new CustomEvent('pgQuickPoolRatingChanged'));
   };
 
   const loadApplicants = React.useCallback(() => {
@@ -1702,22 +1863,24 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     setRatingSubmitting(true);
     if (acceptedApp && window.sb) {
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      // Fills the pool guy's placeholder if it already exists (created when they
+      // finished the job), or creates the row if it doesn't — blind mutual rating.
+      // Always write my own row even when skipping (stars:null) so there's a durable
+      // record I still owe a rating, instead of it vanishing once the job is finalized.
+      await window.sb.from('ratings').upsert({
+        listing_id: job.id,
+        listing_name: tr(job.title, lang),
+        from_id: user.uid,
+        to_id: acceptedApp.applicant_id,
+        from_name: user.name || user.email || 'Pool Owner',
+        stars: ratingStars > 0 ? ratingStars : null,
+        comment: ratingComment.trim() || null,
+        pending: true,
+        connection_type: 'quickpool',
+        connection_id: String(job.id),
+        expires_at: expiresAt,
+      }, { onConflict: 'from_id,to_id' }).then(()=>{});
       if (ratingStars > 0) {
-        // Fills the pool guy's placeholder if it already exists (created when they
-        // finished the job), or creates the row if it doesn't — blind mutual rating.
-        await window.sb.from('ratings').upsert({
-          listing_id: job.id,
-          listing_name: tr(job.title, lang),
-          from_id: user.uid,
-          to_id: acceptedApp.applicant_id,
-          from_name: user.name || user.email || 'Pool Owner',
-          stars: ratingStars,
-          comment: ratingComment.trim() || null,
-          pending: true,
-          connection_type: 'quickpool',
-          connection_id: String(job.id),
-          expires_at: expiresAt,
-        }, { onConflict: 'from_id,to_id' }).then(()=>{});
         window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: acceptedApp.applicant_id }).catch(()=>{});
       }
       await window.sb.from('ratings').insert({
@@ -1736,6 +1899,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     }
     setRatingSubmitting(false);
     setShowRating(false);
+    window.dispatchEvent(new CustomEvent('pgQuickPoolRatingChanged'));
     onComplete && onComplete(job.id);
   };
 
