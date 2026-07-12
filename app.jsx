@@ -2287,50 +2287,36 @@ function App() {
           {(pullDist > 4 || refreshing) && (() => {
             const progress = Math.min(pullDist / PULL_THRESHOLD, 1);
             const ready = progress >= 1;
-            const label = refreshing
-              ? (lang==='pt'?'Atualizando…':lang==='es'?'Actualizando…':'Refreshing…')
-              : ready
-                ? (lang==='pt'?'Solte para atualizar':lang==='es'?'Suelta para actualizar':'Release to refresh')
-                : (lang==='pt'?'Puxe para atualizar':lang==='es'?'Tira para actualizar':'Pull to refresh');
             return (
             <div style={{
               position:'fixed', top:0, left:0, right:0, zIndex:9999,
               display:'flex', justifyContent:'center',
-              paddingTop:'max(10px, env(safe-area-inset-top, 10px))',
+              paddingTop:'max(8px, env(safe-area-inset-top, 8px))',
               pointerEvents:'none',
-              transform:`translateY(${Math.min(pullDist, PULL_THRESHOLD) - PULL_THRESHOLD}px) scale(${refreshing ? 1 : 0.85 + progress * 0.15})`,
-              opacity: refreshing ? 1 : 0.45 + progress * 0.55,
+              transform:`translateY(${Math.min(pullDist, PULL_THRESHOLD) - PULL_THRESHOLD}px) scale(${refreshing ? 1 : 0.8 + progress * 0.2})`,
+              opacity: refreshing ? 1 : 0.4 + progress * 0.6,
               transition: pullDist === 0 || refreshing ? 'transform .3s cubic-bezier(.34,1.56,.64,1), opacity .2s ease' : 'none',
             }}>
               <div style={{
-                display:'flex', alignItems:'center', gap:7,
-                height:32, padding:'0 14px 0 10px', borderRadius:999,
-                background: 'rgba(255,255,255,0.92)',
-                backdropFilter:'blur(8px)',
-                boxShadow:'0 2px 10px rgba(4,20,40,0.12)',
+                width:26, height:26, borderRadius:'50%', position:'relative', overflow:'hidden',
+                background: 'rgba(255,255,255,0.88)',
+                boxShadow:'0 1px 6px rgba(4,20,40,0.14)',
+                display:'flex', alignItems:'center', justifyContent:'center',
               }}>
-                <div style={{
-                  width:18, height:18, borderRadius:'50%', flexShrink:0, position:'relative', overflow:'hidden',
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                }}>
-                  {refreshing ? (
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5"
-                      strokeLinecap="round" strokeLinejoin="round" style={{animation:'pg-spin .7s linear infinite'}}>
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                    </svg>
-                  ) : ready ? (
-                    <img src="icone-watermark.png" alt="" style={{width:40, height:40, objectFit:'cover', flexShrink:0}}/>
-                  ) : (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5"
-                      strokeLinecap="round" strokeLinejoin="round"
-                      style={{transform:`rotate(${progress*180}deg)`, transition:'transform .1s linear'}}>
-                      <path d="M12 5v14M12 19l-5-5M12 19l5-5"/>
-                    </svg>
-                  )}
-                </div>
-                <span style={{fontSize:11.5, fontWeight:600, color:'var(--pg-ink-600)', letterSpacing:'-0.005em', whiteSpace:'nowrap'}}>
-                  {label}
-                </span>
+                {refreshing ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5"
+                    strokeLinecap="round" strokeLinejoin="round" style={{animation:'pg-spin .7s linear infinite'}}>
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
+                ) : ready ? (
+                  <img src="icone-watermark.png" alt="" style={{width:56, height:56, objectFit:'cover', flexShrink:0}}/>
+                ) : (
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    style={{transform:`rotate(${progress*180}deg)`, transition:'transform .1s linear'}}>
+                    <path d="M12 5v14M12 19l-5-5M12 19l5-5"/>
+                  </svg>
+                )}
               </div>
             </div>
             );
