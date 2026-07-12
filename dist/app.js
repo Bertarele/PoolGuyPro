@@ -3685,22 +3685,22 @@ function App() {
       style: {
         display: 'flex',
         alignItems: 'center',
-        gap: 9,
-        height: 38,
-        padding: '0 16px 0 12px',
+        gap: 7,
+        height: 32,
+        padding: '0 14px 0 10px',
         borderRadius: 999,
-        background: 'linear-gradient(135deg, #0EBAC7, #0077B6)',
-        boxShadow: `0 6px 20px rgba(4,20,40,0.28), 0 0 0 1px rgba(255,255,255,0.14) inset`
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(8px)',
+        boxShadow: '0 2px 10px rgba(4,20,40,0.12)'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 22,
-        height: 22,
+        width: 18,
+        height: 18,
         borderRadius: '50%',
         flexShrink: 0,
         position: 'relative',
         overflow: 'hidden',
-        background: 'rgba(255,255,255,0.16)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -3710,8 +3710,8 @@ function App() {
       height: "13",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: "#fff",
-      strokeWidth: "3",
+      stroke: "var(--pg-blue-500)",
+      strokeWidth: "2.5",
       strokeLinecap: "round",
       strokeLinejoin: "round",
       style: {
@@ -3723,8 +3723,8 @@ function App() {
       src: "icone-watermark.png",
       alt: "",
       style: {
-        width: 46,
-        height: 46,
+        width: 40,
+        height: 40,
         objectFit: 'cover',
         flexShrink: 0
       }
@@ -3733,8 +3733,8 @@ function App() {
       height: "12",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: "#fff",
-      strokeWidth: "3",
+      stroke: "var(--pg-blue-500)",
+      strokeWidth: "2.5",
       strokeLinecap: "round",
       strokeLinejoin: "round",
       style: {
@@ -3745,9 +3745,9 @@ function App() {
       d: "M12 5v14M12 19l-5-5M12 19l5-5"
     }))), /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 12.5,
-        fontWeight: 700,
-        color: '#fff',
+        fontSize: 11.5,
+        fontWeight: 600,
+        color: 'var(--pg-ink-600)',
         letterSpacing: '-0.005em',
         whiteSpace: 'nowrap'
       }
