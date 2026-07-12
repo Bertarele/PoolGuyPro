@@ -100,11 +100,22 @@ function HomeScreen({ ctx }) {
       .order('created_at', { ascending: false })
       .then(({ data }) => { if (data) setSponsoredCards(data); });
   }, []);
-  React.useEffect(() => {
+  const sponsoredTimerRef = React.useRef(null);
+  const restartSponsoredTimer = React.useCallback(() => {
+    if (sponsoredTimerRef.current) clearInterval(sponsoredTimerRef.current);
     if (sponsoredCards.length < 2) return;
-    const t = setInterval(() => setSponsoredIdx(i => (i + 1) % sponsoredCards.length), 7000);
-    return () => clearInterval(t);
+    sponsoredTimerRef.current = setInterval(() => setSponsoredIdx(i => (i + 1) % sponsoredCards.length), 7000);
   }, [sponsoredCards.length]);
+  React.useEffect(() => {
+    restartSponsoredTimer();
+    return () => { if (sponsoredTimerRef.current) clearInterval(sponsoredTimerRef.current); };
+  }, [restartSponsoredTimer]);
+  const goSponsored = (dir) => {
+    if (sponsoredCards.length < 2) return;
+    setSponsoredIdx(i => (i + dir + sponsoredCards.length) % sponsoredCards.length);
+    restartSponsoredTimer();
+  };
+  const sponsoredTouch = React.useRef(null);
   const sponsoredCard = sponsoredCards[sponsoredIdx] || null;
 
   // Featured marketplace listings — admin-picked (featured=true) OR user-paid boost still active
@@ -731,7 +742,11 @@ function HomeScreen({ ctx }) {
         {/* Sponsored card — auto-rotates every 7s when more than one is active */}
         {sponsoredCard && (
           <div style={{position:'relative'}}>
-            <div key={sponsoredCard.id} onClick={() => { if (sponsoredCard.link_url) window.open(sponsoredCard.link_url, '_blank'); }}
+            <div key={sponsoredCard.id}
+              onClick={() => {
+                if (sponsoredTouch.current?.swiped) return;
+                if (sponsoredCard.link_url) window.open(sponsoredCard.link_url, '_blank');
+              }}
               style={{
                 background: sponsoredCard.bg_color || '#001f4d',
                 borderRadius: 14,
@@ -742,9 +757,25 @@ function HomeScreen({ ctx }) {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
                 transition: 'opacity .15s',
                 animation: 'pg-fade-in .45s ease',
+                touchAction: sponsoredCards.length > 1 ? 'pan-y' : 'auto',
               }}
-              onTouchStart={e => { if (sponsoredCard.link_url) e.currentTarget.style.opacity = '0.82'; }}
-              onTouchEnd={e => { e.currentTarget.style.opacity = '1'; }}>
+              onTouchStart={e => {
+                sponsoredTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, swiped: false };
+                if (sponsoredCard.link_url) e.currentTarget.style.opacity = '0.82';
+              }}
+              onTouchMove={e => {
+                if (!sponsoredTouch.current || sponsoredCards.length < 2) return;
+                const dx = e.touches[0].clientX - sponsoredTouch.current.x;
+                const dy = e.touches[0].clientY - sponsoredTouch.current.y;
+                if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) sponsoredTouch.current.swiped = true;
+              }}
+              onTouchEnd={e => {
+                e.currentTarget.style.opacity = '1';
+                if (!sponsoredTouch.current) return;
+                const dx = e.changedTouches[0].clientX - sponsoredTouch.current.x;
+                if (sponsoredTouch.current.swiped && Math.abs(dx) > 40) goSponsored(dx < 0 ? 1 : -1);
+                setTimeout(() => { sponsoredTouch.current = null; }, 0);
+              }}>
               {(sponsoredCard.logo_url || sponsoredCard.logo_text) && (
                 <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,flexShrink:0}}>
                   {sponsoredCard.logo_url && (
@@ -776,15 +807,31 @@ function HomeScreen({ ctx }) {
               )}
             </div>
             {sponsoredCards.length > 1 && (
-              <div style={{position:'absolute', bottom:8, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none'}}>
-                {sponsoredCards.map((c, i) => (
-                  <div key={c.id} style={{
-                    width: i === sponsoredIdx ? 14 : 5, height: 5, borderRadius: 999,
-                    background: i === sponsoredIdx ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)',
-                    transition: 'all .3s ease',
-                  }}/>
-                ))}
-              </div>
+              <>
+                <button onClick={() => goSponsored(-1)} aria-label="Previous" style={{
+                  position:'absolute', top:0, bottom:20, left:2, width:34,
+                  border:'none', background:'transparent', cursor:'pointer',
+                  display:'flex', alignItems:'center', justifyContent:'flex-start', padding:0,
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button onClick={() => goSponsored(1)} aria-label="Next" style={{
+                  position:'absolute', top:0, bottom:20, right:2, width:34,
+                  border:'none', background:'transparent', cursor:'pointer',
+                  display:'flex', alignItems:'center', justifyContent:'flex-end', padding:0,
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <div style={{position:'absolute', bottom:8, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none'}}>
+                  {sponsoredCards.map((c, i) => (
+                    <div key={c.id} style={{
+                      width: i === sponsoredIdx ? 14 : 5, height: 5, borderRadius: 999,
+                      background: i === sponsoredIdx ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)',
+                      transition: 'all .3s ease',
+                    }}/>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}

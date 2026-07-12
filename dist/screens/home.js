@@ -118,11 +118,24 @@ function HomeScreen({
       if (data) setSponsoredCards(data);
     });
   }, []);
-  React.useEffect(() => {
+  const sponsoredTimerRef = React.useRef(null);
+  const restartSponsoredTimer = React.useCallback(() => {
+    if (sponsoredTimerRef.current) clearInterval(sponsoredTimerRef.current);
     if (sponsoredCards.length < 2) return;
-    const t = setInterval(() => setSponsoredIdx(i => (i + 1) % sponsoredCards.length), 7000);
-    return () => clearInterval(t);
+    sponsoredTimerRef.current = setInterval(() => setSponsoredIdx(i => (i + 1) % sponsoredCards.length), 7000);
   }, [sponsoredCards.length]);
+  React.useEffect(() => {
+    restartSponsoredTimer();
+    return () => {
+      if (sponsoredTimerRef.current) clearInterval(sponsoredTimerRef.current);
+    };
+  }, [restartSponsoredTimer]);
+  const goSponsored = dir => {
+    if (sponsoredCards.length < 2) return;
+    setSponsoredIdx(i => (i + dir + sponsoredCards.length) % sponsoredCards.length);
+    restartSponsoredTimer();
+  };
+  const sponsoredTouch = React.useRef(null);
   const sponsoredCard = sponsoredCards[sponsoredIdx] || null;
 
   // Featured marketplace listings — admin-picked (featured=true) OR user-paid boost still active
@@ -1463,6 +1476,7 @@ function HomeScreen({
   }, /*#__PURE__*/React.createElement("div", {
     key: sponsoredCard.id,
     onClick: () => {
+      if (sponsoredTouch.current?.swiped) return;
       if (sponsoredCard.link_url) window.open(sponsoredCard.link_url, '_blank');
     },
     style: {
@@ -1476,13 +1490,31 @@ function HomeScreen({
       cursor: sponsoredCard.link_url ? 'pointer' : 'default',
       boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
       transition: 'opacity .15s',
-      animation: 'pg-fade-in .45s ease'
+      animation: 'pg-fade-in .45s ease',
+      touchAction: sponsoredCards.length > 1 ? 'pan-y' : 'auto'
     },
     onTouchStart: e => {
+      sponsoredTouch.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        swiped: false
+      };
       if (sponsoredCard.link_url) e.currentTarget.style.opacity = '0.82';
+    },
+    onTouchMove: e => {
+      if (!sponsoredTouch.current || sponsoredCards.length < 2) return;
+      const dx = e.touches[0].clientX - sponsoredTouch.current.x;
+      const dy = e.touches[0].clientY - sponsoredTouch.current.y;
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) sponsoredTouch.current.swiped = true;
     },
     onTouchEnd: e => {
       e.currentTarget.style.opacity = '1';
+      if (!sponsoredTouch.current) return;
+      const dx = e.changedTouches[0].clientX - sponsoredTouch.current.x;
+      if (sponsoredTouch.current.swiped && Math.abs(dx) > 40) goSponsored(dx < 0 ? 1 : -1);
+      setTimeout(() => {
+        sponsoredTouch.current = null;
+      }, 0);
     }
   }, (sponsoredCard.logo_url || sponsoredCard.logo_text) && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1553,7 +1585,63 @@ function HomeScreen({
     }
   }, /*#__PURE__*/React.createElement("polyline", {
     points: "9 18 15 12 9 6"
-  }))), sponsoredCards.length > 1 && /*#__PURE__*/React.createElement("div", {
+  }))), sponsoredCards.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => goSponsored(-1),
+    "aria-label": "Previous",
+    style: {
+      position: 'absolute',
+      top: 0,
+      bottom: 20,
+      left: 2,
+      width: 34,
+      border: 'none',
+      background: 'transparent',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      padding: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "rgba(255,255,255,0.65)",
+    strokeWidth: "2.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "15 18 9 12 15 6"
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => goSponsored(1),
+    "aria-label": "Next",
+    style: {
+      position: 'absolute',
+      top: 0,
+      bottom: 20,
+      right: 2,
+      width: 34,
+      border: 'none',
+      background: 'transparent',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      padding: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "rgba(255,255,255,0.65)",
+    strokeWidth: "2.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "9 18 15 12 9 6"
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       bottom: 8,
@@ -1573,7 +1661,7 @@ function HomeScreen({
       background: i === sponsoredIdx ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)',
       transition: 'all .3s ease'
     }
-  })))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+  }))))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',
