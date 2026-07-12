@@ -763,6 +763,9 @@ function QuickPoolsScreen({ ctx }) {
       return true;
     })
     .sort((a, b) => {
+      const aOwn = (a._live && user?.uid && a.poster_id === user.uid) ? 0 : 1;
+      const bOwn = (b._live && user?.uid && b.poster_id === user.uid) ? 0 : 1;
+      if (aOwn !== bOwn) return aOwn - bOwn;
       const aDone = myDoneJobIds.has(String(a.id)) ? 1 : 0;
       const bDone = myDoneJobIds.has(String(b.id)) ? 1 : 0;
       if (aDone !== bDone) return aDone - bDone;
