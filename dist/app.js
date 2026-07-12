@@ -3688,6 +3688,7 @@ function App() {
         height: 42,
         borderRadius: '50%',
         position: 'relative',
+        overflow: 'hidden',
         background: 'linear-gradient(135deg, #0EBAC7, #0077B6)',
         boxShadow: `0 4px 16px rgba(14,186,199,${0.20 + progress * 0.25}), 0 0 0 4px rgba(255,255,255,0.9)`,
         display: 'flex',
@@ -3741,9 +3742,10 @@ function App() {
       src: "icone-watermark.png",
       alt: "",
       style: {
-        width: 24,
-        height: 24,
-        objectFit: 'contain'
+        width: 80,
+        height: 80,
+        objectFit: 'cover',
+        flexShrink: 0
       }
     }) : /*#__PURE__*/React.createElement("svg", {
       width: "16",
