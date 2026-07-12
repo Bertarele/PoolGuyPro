@@ -89,15 +89,23 @@ function HomeScreen({ ctx }) {
     return () => document.removeEventListener('visibilitychange', update);
   }, []);
 
-  // Sponsored card — active, not expired
-  const [sponsoredCard, setSponsoredCard] = React.useState(null);
+  // Sponsored cards — active, not expired. When more than one is active they
+  // auto-rotate every 7s instead of only ever showing the first row returned.
+  const [sponsoredCards, setSponsoredCards] = React.useState([]);
+  const [sponsoredIdx,   setSponsoredIdx]   = React.useState(0);
   React.useEffect(() => {
     if (!window.sb) return;
     window.sb.from('sponsored_cards').select('*').eq('active', true)
       .or('expires_at.is.null,expires_at.gte.' + new Date().toISOString())
-      .order('created_at', { ascending: false }).limit(1)
-      .then(({ data }) => { if (data && data.length > 0) setSponsoredCard(data[0]); });
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setSponsoredCards(data); });
   }, []);
+  React.useEffect(() => {
+    if (sponsoredCards.length < 2) return;
+    const t = setInterval(() => setSponsoredIdx(i => (i + 1) % sponsoredCards.length), 7000);
+    return () => clearInterval(t);
+  }, [sponsoredCards.length]);
+  const sponsoredCard = sponsoredCards[sponsoredIdx] || null;
 
   // Featured marketplace listings — admin-picked (featured=true) OR user-paid boost still active
   const [featuredListings, setFeaturedListings] = React.useState([]);
@@ -720,49 +728,63 @@ function HomeScreen({ ctx }) {
           </div>
         </section>
 
-        {/* Sponsored card */}
+        {/* Sponsored card — auto-rotates every 7s when more than one is active */}
         {sponsoredCard && (
-          <div onClick={() => { if (sponsoredCard.link_url) window.open(sponsoredCard.link_url, '_blank'); }}
-            style={{
-              background: sponsoredCard.bg_color || '#001f4d',
-              borderRadius: 14,
-              padding: '13px 15px',
-              display: 'flex', alignItems: 'center', gap: 12,
-              border: '1px solid rgba(0,119,182,0.35)',
-              cursor: sponsoredCard.link_url ? 'pointer' : 'default',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
-              transition: 'opacity .15s',
-            }}
-            onTouchStart={e => { if (sponsoredCard.link_url) e.currentTarget.style.opacity = '0.82'; }}
-            onTouchEnd={e => { e.currentTarget.style.opacity = '1'; }}>
-            {(sponsoredCard.logo_url || sponsoredCard.logo_text) && (
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,flexShrink:0}}>
-                {sponsoredCard.logo_url && (
-                  <img src={sponsoredCard.logo_url} alt={sponsoredCard.company_name}
-                    style={{width:44, height:44, objectFit:'contain', borderRadius:9}}/>
-                )}
-                {sponsoredCard.logo_text && (
-                  <div style={{
-                    background: '#fff', borderRadius: 5, padding: '2px 8px',
-                    fontWeight: 900, fontSize: 10, color: sponsoredCard.bg_color || '#003d7a',
-                    whiteSpace: 'nowrap', letterSpacing: '0.02em',
-                  }}>{sponsoredCard.logo_text}</div>
+          <div style={{position:'relative'}}>
+            <div key={sponsoredCard.id} onClick={() => { if (sponsoredCard.link_url) window.open(sponsoredCard.link_url, '_blank'); }}
+              style={{
+                background: sponsoredCard.bg_color || '#001f4d',
+                borderRadius: 14,
+                padding: sponsoredCards.length > 1 ? '13px 15px 20px' : '13px 15px',
+                display: 'flex', alignItems: 'center', gap: 12,
+                border: '1px solid rgba(0,119,182,0.35)',
+                cursor: sponsoredCard.link_url ? 'pointer' : 'default',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
+                transition: 'opacity .15s',
+                animation: 'pg-fade-in .45s ease',
+              }}
+              onTouchStart={e => { if (sponsoredCard.link_url) e.currentTarget.style.opacity = '0.82'; }}
+              onTouchEnd={e => { e.currentTarget.style.opacity = '1'; }}>
+              {(sponsoredCard.logo_url || sponsoredCard.logo_text) && (
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,flexShrink:0}}>
+                  {sponsoredCard.logo_url && (
+                    <img src={sponsoredCard.logo_url} alt={sponsoredCard.company_name}
+                      style={{width:44, height:44, objectFit:'contain', borderRadius:9}}/>
+                  )}
+                  {sponsoredCard.logo_text && (
+                    <div style={{
+                      background: '#fff', borderRadius: 5, padding: '2px 8px',
+                      fontWeight: 900, fontSize: 10, color: sponsoredCard.bg_color || '#003d7a',
+                      whiteSpace: 'nowrap', letterSpacing: '0.02em',
+                    }}>{sponsoredCard.logo_text}</div>
+                  )}
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 2, fontWeight: 700, letterSpacing: '0.07em' }}>
+                  {lang === 'pt' ? 'PATROCINADO' : lang === 'es' ? 'PATROCINADO' : 'SPONSORED'}
+                </div>
+                <div style={{ fontSize: 13, color: '#fff', fontWeight: 700, lineHeight: 1.3 }}>{sponsoredCard.headline}</div>
+                {sponsoredCard.subtext && (
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 3, lineHeight: 1.3 }}>{sponsoredCard.subtext}</div>
                 )}
               </div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 2, fontWeight: 700, letterSpacing: '0.07em' }}>
-                {lang === 'pt' ? 'PATROCINADO' : lang === 'es' ? 'PATROCINADO' : 'SPONSORED'}
-              </div>
-              <div style={{ fontSize: 13, color: '#fff', fontWeight: 700, lineHeight: 1.3 }}>{sponsoredCard.headline}</div>
-              {sponsoredCard.subtext && (
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 3, lineHeight: 1.3 }}>{sponsoredCard.subtext}</div>
+              {sponsoredCard.link_url && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
               )}
             </div>
-            {sponsoredCard.link_url && (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
+            {sponsoredCards.length > 1 && (
+              <div style={{position:'absolute', bottom:8, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none'}}>
+                {sponsoredCards.map((c, i) => (
+                  <div key={c.id} style={{
+                    width: i === sponsoredIdx ? 14 : 5, height: 5, borderRadius: 999,
+                    background: i === sponsoredIdx ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)',
+                    transition: 'all .3s ease',
+                  }}/>
+                ))}
+              </div>
             )}
           </div>
         )}
