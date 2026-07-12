@@ -2287,7 +2287,6 @@ function App() {
           {(pullDist > 4 || refreshing) && (() => {
             const progress = Math.min(pullDist / PULL_THRESHOLD, 1);
             const ready = progress >= 1;
-            const R = 15, C = 2 * Math.PI * R;
             return (
             <div style={{
               position:'fixed', top:0, left:0, right:0, zIndex:9999,
@@ -2304,14 +2303,6 @@ function App() {
                 boxShadow: `0 4px 16px rgba(14,186,199,${0.20 + progress * 0.25})`,
                 display:'flex', alignItems:'center', justifyContent:'center',
               }}>
-                <svg width="42" height="42" viewBox="0 0 42 42" style={{position:'absolute', inset:0, transform:'rotate(-90deg)'}}>
-                  <circle cx="21" cy="21" r={R} fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="2.5"/>
-                  {!refreshing && (
-                    <circle cx="21" cy="21" r={R} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"
-                      strokeDasharray={C} strokeDashoffset={C * (1 - progress)}
-                      style={{transition:'stroke-dashoffset .05s linear'}}/>
-                  )}
-                </svg>
                 {refreshing ? (
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"
                     strokeLinecap="round" strokeLinejoin="round" style={{animation:'pg-spin .7s linear infinite'}}>

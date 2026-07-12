@@ -3665,8 +3665,6 @@ function App() {
   }, lang === 'pt' ? 'Sair da conta' : lang === 'es' ? 'Cerrar sesión' : 'Sign out')), isLoggedIn && !user.banned && /*#__PURE__*/React.createElement(React.Fragment, null, (pullDist > 4 || refreshing) && (() => {
     const progress = Math.min(pullDist / PULL_THRESHOLD, 1);
     const ready = progress >= 1;
-    const R = 15,
-      C = 2 * Math.PI * R;
     return /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'fixed',
@@ -3695,36 +3693,7 @@ function App() {
         alignItems: 'center',
         justifyContent: 'center'
       }
-    }, /*#__PURE__*/React.createElement("svg", {
-      width: "42",
-      height: "42",
-      viewBox: "0 0 42 42",
-      style: {
-        position: 'absolute',
-        inset: 0,
-        transform: 'rotate(-90deg)'
-      }
-    }, /*#__PURE__*/React.createElement("circle", {
-      cx: "21",
-      cy: "21",
-      r: R,
-      fill: "none",
-      stroke: "rgba(255,255,255,0.28)",
-      strokeWidth: "2.5"
-    }), !refreshing && /*#__PURE__*/React.createElement("circle", {
-      cx: "21",
-      cy: "21",
-      r: R,
-      fill: "none",
-      stroke: "#fff",
-      strokeWidth: "2.5",
-      strokeLinecap: "round",
-      strokeDasharray: C,
-      strokeDashoffset: C * (1 - progress),
-      style: {
-        transition: 'stroke-dashoffset .05s linear'
-      }
-    })), refreshing ? /*#__PURE__*/React.createElement("svg", {
+    }, refreshing ? /*#__PURE__*/React.createElement("svg", {
       width: "17",
       height: "17",
       viewBox: "0 0 24 24",
