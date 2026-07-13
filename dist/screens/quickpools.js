@@ -4001,10 +4001,8 @@ function QuickPoolDetails({
       gap: 8
     }
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setShowRating(false);
-      onComplete && onComplete(job.id);
-    },
+    onClick: submitRatingAndFinalize,
+    disabled: ratingSubmitting,
     style: {
       flex: 1,
       height: 46,

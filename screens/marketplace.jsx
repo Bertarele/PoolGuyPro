@@ -643,7 +643,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         if (isOwnerLocal) {
           setOwnerRequests(data);
           // Check which resolved requests the owner has already rated
-          const resolvedIds = data.filter(r => r.status === 'resolved').map(r => r.id);
+          const resolvedIds = data.filter(r => r.status === 'resolved' || r.status === 'completed').map(r => r.id);
           if (resolvedIds.length > 0 && window.sb) {
             window.sb.from('rental_ratings').select('request_id').eq('rater_id', currentUser.uid)
               .then(({ data: rd }) => { if (rd) setOwnerRatedRequests(new Set(rd.map(r => r.request_id))); })
@@ -1732,8 +1732,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 </div>
               )}
 
-              {/* Rate renter — only for resolved disputes */}
-              {isResolved && (
+              {/* Rate renter — persistent re-entry for both resolved disputes and normal completed rentals */}
+              {(isResolved || isComp) && (
                 <div style={{marginTop:10}}>
                   {!ownerRatedRequests.has(req.id) ? (
                     <button onClick={()=>{ setRatingStars(0); setRatingComment(''); setRatingSheet({ requestId:req.id, rateeId:req.requester_id, rateeName:req.requester_name||'Renter' }); }} style={{

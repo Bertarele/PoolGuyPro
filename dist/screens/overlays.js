@@ -1043,7 +1043,7 @@ function ChatConversation({
     value: draft,
     onChange: e => {
       setDraft(e.target.value);
-      if (myTypingRef.current && e.target.value) myTypingRef.current.send({
+      if (myTypingRef.current && typeof myTypingRef.current.send === 'function' && e.target.value) myTypingRef.current.send({
         type: 'broadcast',
         event: 'typing',
         payload: {
@@ -3863,9 +3863,11 @@ function NotificationsSheet({
   };
   const deleteNotif = id => {
     if (!window.sb) return;
-    setNotifs(prev => (prev || []).filter(n => n.id !== id));
+    const next = (notifs || []).filter(n => n.id !== id);
+    setNotifs(next);
     window.sb.from('notifications').delete().eq('id', id).catch(() => {});
-    if (onUnreadChange) onUnreadChange(c => Math.max(0, (c || 1) - 1));
+    // Parent expects a NUMBER (does count>0), not an updater fn — recompute remaining unread.
+    if (onUnreadChange) onUnreadChange(next.filter(n => !n.read).length);
   };
 
   // Real-time new notifications
@@ -3878,7 +3880,7 @@ function NotificationsSheet({
       filter: `user_id=eq.${user.uid}`
     }, p => {
       setNotifs(prev => prev ? [p.new, ...prev] : [p.new]);
-      if (onUnreadChange) onUnreadChange(c => (c || 0) + 1);
+      if (onUnreadChange) onUnreadChange(1);
     }).subscribe();
     return () => window.sb.removeChannel(ch);
   }, [user?.uid]);

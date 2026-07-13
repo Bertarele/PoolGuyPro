@@ -295,7 +295,7 @@ function WorkScreen({
       owner: relatedVac?.author || a.job_company || '?',
       author_id: relatedVac?.author_id || a.job_author_id || null,
       pricePerPool: relatedVac?.pricePerPool || 0,
-      status: completedAppIds.has(a.id) ? 'completed' : a.status === 'accepted' ? 'accepted' : 'awaiting',
+      status: completedAppIds.has(a.id) ? 'completed' : a.status === 'accepted' ? 'accepted' : a.status === 'rejected' ? 'rejected' : 'awaiting',
       selectedDays: a.selectedDays || null,
       job_id: a.job_id,
       title: relatedVac ? {
@@ -2369,14 +2369,24 @@ function WorkScreen({
       // Vacation app
       const isAwaiting = app.status === 'awaiting';
       const isAccepted = app.status === 'accepted';
+      const isDone = app.status === 'completed';
+      const isRejectedVac = app.status === 'rejected';
       const statusCfg = isAwaiting ? {
         label: lang === 'pt' ? 'Aguardando' : lang === 'es' ? 'Pendiente' : 'Pending',
         color: 'oklch(0.48 0.14 68)',
         bg: 'oklch(0.96 0.05 68)'
+      } : isDone ? {
+        label: lang === 'pt' ? 'Concluída ✓' : lang === 'es' ? 'Completado ✓' : 'Completed ✓',
+        color: 'oklch(0.40 0.18 145)',
+        bg: 'oklch(0.95 0.05 145)'
       } : isAccepted ? {
         label: lang === 'pt' ? 'Confirmado ✓' : lang === 'es' ? 'Confirmado ✓' : 'Confirmed ✓',
         color: 'var(--pg-blue-600)',
         bg: 'var(--pg-blue-50)'
+      } : isRejectedVac ? {
+        label: lang === 'pt' ? 'Recusado' : lang === 'es' ? 'Rechazado' : 'Rejected',
+        color: 'oklch(0.45 0.18 20)',
+        bg: 'oklch(0.95 0.04 20)'
       } : {
         label: app.status,
         color: 'var(--pg-ink-500)',
@@ -2384,19 +2394,19 @@ function WorkScreen({
       };
       return /*#__PURE__*/React.createElement("div", {
         key: app.id,
-        onClick: () => openSchedule && openSchedule(app),
         style: {
           display: 'flex',
           alignItems: 'center',
           gap: 10,
           padding: '8px 0',
-          borderTop: '1px solid var(--pg-ink-100)',
-          cursor: 'pointer'
+          borderTop: '1px solid var(--pg-ink-100)'
         }
       }, /*#__PURE__*/React.createElement("div", {
+        onClick: () => openSchedule && openSchedule(app),
         style: {
           flex: 1,
-          minWidth: 0
+          minWidth: 0,
+          cursor: 'pointer'
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -2429,7 +2439,22 @@ function WorkScreen({
           fontSize: 11,
           color: 'var(--pg-ink-400)'
         }
-      }, "\xB7 ", tr(app.month, lang), " \xB7 ", app.poolsPerDay, " ", lang === 'pt' ? 'pisc/dia' : lang === 'es' ? 'pisc/día' : 'pools/day'))), /*#__PURE__*/React.createElement("div", {
+      }, "\xB7 ", tr(app.month, lang), " \xB7 ", app.poolsPerDay, " ", lang === 'pt' ? 'pisc/dia' : lang === 'es' ? 'pisc/día' : 'pools/day'))), isAccepted ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => completeVacApp(app),
+        style: {
+          flexShrink: 0,
+          height: 28,
+          padding: '0 10px',
+          borderRadius: 8,
+          fontSize: 11,
+          fontWeight: 700,
+          border: '1px solid rgba(16,185,129,0.35)',
+          background: 'rgba(16,185,129,0.10)',
+          color: '#10B981',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap'
+        }
+      }, lang === 'pt' ? 'Concluir' : lang === 'es' ? 'Completar' : 'Complete') : /*#__PURE__*/React.createElement("div", {
         style: {
           textAlign: 'right',
           flexShrink: 0
@@ -4951,14 +4976,14 @@ function AcceptedVacCard({
   const [mapDayWd, setMapDayWd] = React.useState(null); // which weekday's map is open
 
   const wdFull = lang === 'pt' ? ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'] : lang === 'es' ? ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const earnings = (v.selectedDays || v.days).length * (v.poolsPerDay || 0) * (v.pricePerPool || 0);
+  const earnings = (v.selectedDays || v.days || []).length * (v.poolsPerDay || 0) * (v.pricePerPool || 0);
   const hasAddresses = v.addresses && Object.keys(v.addresses).length > 0;
 
   // Involved weekdays for the selected days
   const involvedWds = React.useMemo(() => {
     if (!v.yearMonth) return [];
     const set = new Set();
-    (v.selectedDays || v.days).forEach(d => set.add(new Date(v.yearMonth.year, v.yearMonth.month, d).getDay()));
+    (v.selectedDays || v.days || []).forEach(d => set.add(new Date(v.yearMonth.year, v.yearMonth.month, d).getDay()));
     return [...set].sort();
   }, [v]);
   return /*#__PURE__*/React.createElement("article", {
@@ -5052,13 +5077,13 @@ function AcceptedVacCard({
       fontSize: 10.5,
       color: 'var(--pg-ink-400)'
     }
-  }, (v.selectedDays || v.days).length, " ", lang === 'pt' ? 'dias' : lang === 'es' ? 'días' : 'days', " \xB7 $", v.pricePerPool, "/pool"))), /*#__PURE__*/React.createElement("div", {
+  }, (v.selectedDays || v.days || []).length, " ", lang === 'pt' ? 'dias' : lang === 'es' ? 'días' : 'days', " \xB7 $", v.pricePerPool, "/pool"))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 10
     }
   }, /*#__PURE__*/React.createElement(DayChips, {
-    days: v.days,
-    selectedDays: v.selectedDays || v.days
+    days: v.days || v.selectedDays || [],
+    selectedDays: v.selectedDays || v.days || []
   })), v.poolsByWeekday && involvedWds.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',

@@ -180,7 +180,7 @@ function WorkScreen({ ctx }) {
         owner:        relatedVac?.author || a.job_company || '?',
         author_id:    relatedVac?.author_id || a.job_author_id || null,
         pricePerPool: relatedVac?.pricePerPool || 0,
-        status:       completedAppIds.has(a.id) ? 'completed' : (a.status === 'accepted' ? 'accepted' : 'awaiting'),
+        status:       completedAppIds.has(a.id) ? 'completed' : (a.status === 'accepted' ? 'accepted' : a.status === 'rejected' ? 'rejected' : 'awaiting'),
         selectedDays: a.selectedDays || null,
         job_id:       a.job_id,
         title:        relatedVac ? { en:'Route coverage', pt:'Cobertura de rota', es:'Cobertura de ruta' } : { en:'', pt:'', es:'' },
@@ -1073,16 +1073,22 @@ function WorkScreen({ ctx }) {
                       // Vacation app
                       const isAwaiting = app.status === 'awaiting';
                       const isAccepted = app.status === 'accepted';
+                      const isDone     = app.status === 'completed';
+                      const isRejectedVac = app.status === 'rejected';
                       const statusCfg = isAwaiting
                         ? { label: lang==='pt'?'Aguardando':lang==='es'?'Pendiente':'Pending',   color:'oklch(0.48 0.14 68)', bg:'oklch(0.96 0.05 68)' }
+                        : isDone
+                          ? { label: lang==='pt'?'Concluída ✓':lang==='es'?'Completado ✓':'Completed ✓', color:'oklch(0.40 0.18 145)', bg:'oklch(0.95 0.05 145)' }
                         : isAccepted
                           ? { label: lang==='pt'?'Confirmado ✓':lang==='es'?'Confirmado ✓':'Confirmed ✓', color:'var(--pg-blue-600)', bg:'var(--pg-blue-50)' }
+                        : isRejectedVac
+                          ? { label: lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected', color:'oklch(0.45 0.18 20)', bg:'oklch(0.95 0.04 20)' }
                           : { label: app.status, color:'var(--pg-ink-500)', bg:'var(--pg-ink-100)' };
                       return (
-                        <div key={app.id} onClick={()=>openSchedule && openSchedule(app)}
+                        <div key={app.id}
                           style={{display:'flex', alignItems:'center', gap:10, padding:'8px 0',
-                            borderTop:'1px solid var(--pg-ink-100)', cursor:'pointer'}}>
-                          <div style={{flex:1, minWidth:0}}>
+                            borderTop:'1px solid var(--pg-ink-100)'}}>
+                          <div onClick={()=>openSchedule && openSchedule(app)} style={{flex:1, minWidth:0, cursor:'pointer'}}>
                             <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:3,
                               whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
                               {app.owner}
@@ -1095,14 +1101,24 @@ function WorkScreen({ ctx }) {
                               </span>
                             </div>
                           </div>
-                          <div style={{textAlign:'right', flexShrink:0}}>
-                            <div style={{fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700, color:'var(--pg-blue-500)'}}>
-                              ${app.pricePerPool}
+                          {isAccepted ? (
+                            <button onClick={()=>completeVacApp(app)} style={{
+                              flexShrink:0, height:28, padding:'0 10px', borderRadius:8, fontSize:11, fontWeight:700,
+                              border:'1px solid rgba(16,185,129,0.35)', background:'rgba(16,185,129,0.10)',
+                              color:'#10B981', cursor:'pointer', whiteSpace:'nowrap',
+                            }}>
+                              {lang==='pt'?'Concluir':lang==='es'?'Completar':'Complete'}
+                            </button>
+                          ) : (
+                            <div style={{textAlign:'right', flexShrink:0}}>
+                              <div style={{fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:700, color:'var(--pg-blue-500)'}}>
+                                ${app.pricePerPool}
+                              </div>
+                              <div style={{fontSize:10, color:'var(--pg-ink-400)'}}>
+                                {lang==='pt'?'/piscina':lang==='es'?'/piscina':'/pool'}
+                              </div>
                             </div>
-                            <div style={{fontSize:10, color:'var(--pg-ink-400)'}}>
-                              {lang==='pt'?'/piscina':lang==='es'?'/piscina':'/pool'}
-                            </div>
-                          </div>
+                          )}
                         </div>
                       );
                     })}
@@ -2188,7 +2204,7 @@ function AcceptedVacCard({ v, lang, onChat, onSchedule, openPublicProfile }) {
       ? ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
       : ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-  const earnings = (v.selectedDays||v.days).length * (v.poolsPerDay||0) * (v.pricePerPool||0);
+  const earnings = (v.selectedDays||v.days||[]).length * (v.poolsPerDay||0) * (v.pricePerPool||0);
 
   const hasAddresses = v.addresses && Object.keys(v.addresses).length > 0;
 
@@ -2196,7 +2212,7 @@ function AcceptedVacCard({ v, lang, onChat, onSchedule, openPublicProfile }) {
   const involvedWds = React.useMemo(() => {
     if (!v.yearMonth) return [];
     const set = new Set();
-    (v.selectedDays || v.days).forEach(d =>
+    (v.selectedDays || v.days || []).forEach(d =>
       set.add(new Date(v.yearMonth.year, v.yearMonth.month, d).getDay())
     );
     return [...set].sort();
@@ -2231,14 +2247,14 @@ function AcceptedVacCard({ v, lang, onChat, onSchedule, openPublicProfile }) {
               ${earnings.toLocaleString()}
             </div>
             <div style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>
-              {(v.selectedDays||v.days).length} {lang==='pt'?'dias':lang==='es'?'días':'days'} · ${v.pricePerPool}/pool
+              {(v.selectedDays||v.days||[]).length} {lang==='pt'?'dias':lang==='es'?'días':'days'} · ${v.pricePerPool}/pool
             </div>
           </div>
         </div>
 
         {/* Selected days */}
         <div style={{marginBottom:10}}>
-          <DayChips days={v.days} selectedDays={v.selectedDays||v.days}/>
+          <DayChips days={v.days||v.selectedDays||[]} selectedDays={v.selectedDays||v.days||[]}/>
         </div>
 
         {/* Per-weekday pools info */}

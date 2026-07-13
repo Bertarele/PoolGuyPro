@@ -558,7 +558,7 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
       {/* Input */}
       <div style={{padding:'10px 12px', paddingBottom:'calc(14px + env(safe-area-inset-bottom, 0px))', borderTop:'0.5px solid var(--pg-ink-200)', display:'flex', gap:8, alignItems:'flex-end', flexShrink:0}}>
         <div style={{flex:1, background:'var(--pg-ink-100)', borderRadius:18, padding:'10px 14px', display:'flex', alignItems:'center'}}>
-          <input value={draft} onChange={e=>{ setDraft(e.target.value); if(myTypingRef.current&&e.target.value) myTypingRef.current.send({type:'broadcast',event:'typing',payload:{uid:currentUser?.uid}}); }} onKeyDown={e=>e.key==='Enter'&&send()}
+          <input value={draft} onChange={e=>{ setDraft(e.target.value); if(myTypingRef.current&&typeof myTypingRef.current.send==='function'&&e.target.value) myTypingRef.current.send({type:'broadcast',event:'typing',payload:{uid:currentUser?.uid}}); }} onKeyDown={e=>e.key==='Enter'&&send()}
             placeholder={t.messagePh || 'Type a message…'}
             style={{flex:1, border:'none', background:'transparent', outline:'none', fontSize:14, fontFamily:'inherit'}}/>
         </div>
@@ -2041,9 +2041,11 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
 
   const deleteNotif = (id) => {
     if (!window.sb) return;
-    setNotifs(prev => (prev || []).filter(n => n.id !== id));
+    const next = (notifs || []).filter(n => n.id !== id);
+    setNotifs(next);
     window.sb.from('notifications').delete().eq('id', id).catch(() => {});
-    if (onUnreadChange) onUnreadChange(c => Math.max(0, (c||1) - 1));
+    // Parent expects a NUMBER (does count>0), not an updater fn — recompute remaining unread.
+    if (onUnreadChange) onUnreadChange(next.filter(n => !n.read).length);
   };
 
   // Real-time new notifications
@@ -2051,7 +2053,7 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
     if (!user?.uid || !window.sb) return;
     const ch = window.sb.channel('notifs-ui-' + user.uid)
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'notifications', filter:`user_id=eq.${user.uid}` },
-        p => { setNotifs(prev => prev ? [p.new, ...prev] : [p.new]); if (onUnreadChange) onUnreadChange(c => (c||0)+1); })
+        p => { setNotifs(prev => prev ? [p.new, ...prev] : [p.new]); if (onUnreadChange) onUnreadChange(1); })
       .subscribe();
     return () => window.sb.removeChannel(ch);
   }, [user?.uid]);

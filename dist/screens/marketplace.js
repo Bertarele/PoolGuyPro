@@ -1119,7 +1119,7 @@ function ViewListingSheet({
       if (isOwnerLocal) {
         setOwnerRequests(data);
         // Check which resolved requests the owner has already rated
-        const resolvedIds = data.filter(r => r.status === 'resolved').map(r => r.id);
+        const resolvedIds = data.filter(r => r.status === 'resolved' || r.status === 'completed').map(r => r.id);
         if (resolvedIds.length > 0 && window.sb) {
           window.sb.from('rental_ratings').select('request_id').eq('rater_id', currentUser.uid).then(({
             data: rd
@@ -3237,7 +3237,7 @@ function ViewListingSheet({
         y1: "6",
         x2: "18",
         y2: "18"
-      })), lang === 'pt' ? 'Recusar' : 'Decline')), isResolved && /*#__PURE__*/React.createElement("div", {
+      })), lang === 'pt' ? 'Recusar' : 'Decline')), (isResolved || isComp) && /*#__PURE__*/React.createElement("div", {
         style: {
           marginTop: 10
         }

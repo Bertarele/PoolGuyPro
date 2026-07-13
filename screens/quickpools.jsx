@@ -2222,7 +2222,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
               placeholder={lang==='pt'?'Comentário opcional...':'Optional comment...'}
               style={{width:'100%',minHeight:64,borderRadius:10,border:'1px solid var(--pg-ink-200)',padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'none',outline:'none',boxSizing:'border-box',marginBottom:12}}/>
             <div style={{display:'flex', gap:8}}>
-              <button onClick={()=>{ setShowRating(false); onComplete && onComplete(job.id); }} style={{
+              <button onClick={submitRatingAndFinalize} disabled={ratingSubmitting} style={{
                 flex:1, height:46, borderRadius:12, border:'1px solid var(--pg-ink-200)',
                 background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', fontSize:13, fontWeight:600, cursor:'pointer',
               }}>
