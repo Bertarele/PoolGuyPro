@@ -1,7 +1,7 @@
 // PoolGuyPro Service Worker — Push Notifications + Offline Cache
 
 const APP_ICON  = '/icone.png';
-const CACHE_VER = 'pgp-v9';
+const CACHE_VER = 'pgp-v10';
 
 // Static assets to pre-cache on install (only files that actually exist in dist/)
 // HTML is intentionally excluded so it's always fetched fresh (network-first)
@@ -83,7 +83,10 @@ self.addEventListener('push', e => {
 // ── Tap notification → open/focus the app and deep-link ───────
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  const url = e.notification.data?.url || '/';
+  // Only ever navigate within our own origin — never let a push payload's url
+  // send the user to an external (phishing) site via openWindow.
+  let url = e.notification.data?.url || '/';
+  if (typeof url !== 'string' || !url.startsWith('/') || url.startsWith('//')) url = '/';
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       const existing = list.find(c => c.url.startsWith(self.location.origin));

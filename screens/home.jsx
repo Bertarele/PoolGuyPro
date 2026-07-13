@@ -134,7 +134,7 @@ function HomeScreen({ ctx }) {
   React.useEffect(() => {
     if (!window.sb) return;
     const cutoff = Date.now() - 24*60*60*1000;
-    window.sb.from('quick_pool_jobs').select('*').eq('status','open')
+    window.sb.from('quick_pool_jobs_feed').select('*').eq('status','open')
       .order('created_at', { ascending: false }).limit(30)
       .then(({ data }) => {
         if (!data) return;

@@ -249,7 +249,9 @@ function QuickPoolsScreen({ ctx }) {
     setJobsLoading(true);
     try {
       window.sb.rpc('cleanup_quick_pool_jobs').then(()=>{}).catch(()=>{});
-      const { data } = await window.sb.from('quick_pool_jobs')
+      // Feed reads the redacting view (poster_phone/pool_address are only revealed
+      // to the poster or an accepted applicant — everyone else gets null).
+      const { data } = await window.sb.from('quick_pool_jobs_feed')
         .select('*').in('status',['open','filled']).order('created_at',{ ascending:false }).limit(50);
       {
         // Expire jobs past their expires_at locally too, in case the RPC above hasn't landed yet
@@ -408,7 +410,7 @@ function QuickPoolsScreen({ ctx }) {
     if (j) { setSelected(j); ctx.clearPendingQuickJob(); return; }
     // Not in list yet — fetch directly from Supabase (handles timing + expired jobs)
     if (!window.sb) return;
-    window.sb.from('quick_pool_jobs').select('*').eq('id', id).single()
+    window.sb.from('quick_pool_jobs_feed').select('*').eq('id', id).single()
       .then(({ data }) => {
         if (!data) return;
         setSelected({

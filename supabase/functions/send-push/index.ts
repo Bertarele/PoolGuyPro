@@ -12,14 +12,36 @@ Deno.serve(async (req) => {
     headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' }
   });
 
-  const { user_id, title, body, url, notif_type, convo_id } = await req.json();
-  if (!user_id || !title) return new Response('missing fields', { status: 400 });
-
   const headers = {
     'apikey': SB_SRK,
     'Authorization': `Bearer ${SB_SRK}`,
     'Content-Type': 'application/json',
   };
+
+  // ── Require a valid signed-in caller ──────────────────────────────
+  // Without this, anyone on the internet could POST arbitrary title/body to any
+  // user_id and deliver a native phishing push. We only accept requests carrying
+  // a valid Supabase user JWT.
+  const callerToken = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  if (!callerToken) return new Response(JSON.stringify({ error: 'unauthorized' }), {
+    status: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+  });
+  const whoRes = await fetch(`${SB_URL}/auth/v1/user`, {
+    headers: { 'apikey': SB_SRK, 'Authorization': `Bearer ${callerToken}` },
+  });
+  if (!whoRes.ok) return new Response(JSON.stringify({ error: 'unauthorized' }), {
+    status: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+  });
+
+  const { user_id, title, body, url, notif_type, convo_id } = await req.json();
+  if (!user_id || !title) return new Response('missing fields', { status: 400 });
+
+  // Harden attacker-controlled fields: an authenticated user can invoke this to
+  // push ANY user_id, so never let them deliver an external click target (which
+  // the service worker would openWindow → phishing) or oversized text.
+  const safeUrl = (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) ? url : '/';
+  const safeTitle = String(title).slice(0, 120);
+  const safeBody  = String(body || '').slice(0, 300);
 
   // Check user notification preferences, and whether they're already looking at
   // this exact conversation, before sending
@@ -59,7 +81,7 @@ Deno.serve(async (req) => {
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify({ title, body: body || '', url: url || '/', icon: '/icone.png', badge: '/icone.png', vibrate: [150, 80, 150] })
+        JSON.stringify({ title: safeTitle, body: safeBody, url: safeUrl, icon: '/icone.png', badge: '/icone.png', vibrate: [150, 80, 150] })
       );
       sent++;
     } catch(e) {
