@@ -2137,15 +2137,24 @@ function App() {
           status: 'open',
           notify_at: notifyAt
         };
+        // Proactively refresh a possibly-stale session before writing — a stale
+        // token here fails the insert's RLS check silently (see notify refresh below).
+        if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(() => {});
         const {
-          data: inserted
+          data: inserted,
+          error: insertErr
         } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
-        if (inserted) window.dispatchEvent(new CustomEvent('pgQuickPoolPosted', {
+        if (insertErr || !inserted) {
+          console.error('[QuickPools] insert failed', insertErr);
+          showToast(lang === 'pt' ? '❌ Erro ao publicar a vaga' : lang === 'es' ? '❌ Error al publicar el trabajo' : '❌ Error posting the job');
+          return;
+        }
+        window.dispatchEvent(new CustomEvent('pgQuickPoolPosted', {
           detail: inserted
         }));
         let notifyCount = 0;
         let notifyFailed = false;
-        if (inserted && !scheduledFor) {
+        if (!scheduledFor) {
           try {
             // getSession() reads a cached token with no freshness check — if it's
             // stale, the Edge Function's platform-level JWT check 401s before our
@@ -2170,7 +2179,10 @@ function App() {
             });
             if (res.ok) {
               const result = await res.json().catch(() => ({}));
-              notifyCount = result?.sent ?? result?.matched ?? 0;
+              // "matched" = users who got the (guaranteed) in-app notification;
+              // "sent" only counts best-effort push deliveries, which can be 0
+              // even when everyone was notified in-app (e.g. stale push subs).
+              notifyCount = result?.matched ?? result?.sent ?? 0;
             } else {
               notifyFailed = true;
               console.error('[QuickPools] notify-quick-pool failed', res.status, await res.text().catch(() => ''));

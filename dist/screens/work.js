@@ -2925,7 +2925,8 @@ function HiringPanel({
   showToast,
   onDeleteJob,
   onJobUpdated,
-  liveApplications = []
+  liveApplications = [],
+  jobApplicantCounts = {}
 }) {
   const Company = (s = 20, c = 'var(--pg-blue-500)') => /*#__PURE__*/React.createElement("svg", {
     width: s,
