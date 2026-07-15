@@ -542,6 +542,19 @@ function ChatConversation({
       if (convo.receiverId && window.sendPush) {
         window.sendPush(convo.receiverId, myName, text.length > 120 ? text.slice(0, 120) + '…' : text, `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(myName)}`, 'chat', convoId);
       }
+      // In-app notification too — chat was the only type that skipped this table,
+      // so it never showed in the bell list and relied entirely on OS push (which
+      // silently does nothing if the user hasn't granted permission). This also
+      // rides the existing real-time notif-badge subscription for instant delivery.
+      if (convo.receiverId && window.sb) {
+        window.sb.from('notifications').insert({
+          user_id: convo.receiverId,
+          type: 'chat',
+          title: myName,
+          body: text.length > 120 ? text.slice(0, 120) + '…' : text,
+          link_id: currentUser.uid
+        }).catch(() => {});
+      }
       // Store listing context in the conversation row so seller also sees it
       if (convo.listingId || convo.listingContext?.name) {
         window.sb.from('conversations').update({
@@ -4026,6 +4039,7 @@ function NotificationsSheet({
         fontSize: 16
       }
     }, "\u2705");
+    if (type === 'chat') return Icon.msg(16, '#fff');
     return Icon.bolt(17, '#fff');
   };
   const colorFor = type => {
@@ -4042,6 +4056,7 @@ function NotificationsSheet({
     if (type === 'quick_pool_done') return '#16A34A';
     if (type === 'market') return '#6366F1';
     if (type === 'verification_approved') return '#22C55E';
+    if (type === 'chat') return '#38BDF8';
     return '#3B82F6';
   };
   const fmtTime = d => {

@@ -1374,7 +1374,10 @@ function App() {
         onNavigate={(type, linkId)=>{
           setNotifOpen(false);
           setTimeout(()=>{
-            if (type==='warning') {
+            if (type==='chat') {
+              if (linkId) openChatFromDeepLink(linkId, null);
+              else setChatOpen(true);
+            } else if (type==='warning') {
               switchTab('profile');
             } else if (type==='quick_pool_new' || type==='quick_pool_done') {
               // Open the specific quick pool job if we have an ID, else just go to tab
