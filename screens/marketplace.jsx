@@ -822,7 +822,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     const periodEntry = availablePeriods.find(p => p.period === reqPeriod);
     const totalPrice  = periodEntry ? periodEntry.price * reqQty : 0;
     setReqLoading(true);
-    const { error } = await window.sb.from('rental_requests').insert({
+    const { data: inserted, error } = await window.sb.from('rental_requests').insert({
       listing_id:     item._id,
       listing_name:   item.name || '',
       requester_id:   currentUser.uid,
@@ -832,9 +832,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       quantity:           reqQty,
       total_price:        totalPrice,
       requester_verified: currentUser.verified || false,
-    });
+    }).select().single();
     setReqLoading(false);
     if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    if (inserted?.id) setMyRequestId(inserted.id);
     // Notify owner (multilingual — receiver sees in their own language)
     const _renterName = currentUser.name || (currentUser.email||'').split('@')[0] || 'Someone';
     _notify(item.author_id, 'rental_request',
@@ -896,8 +897,15 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     const { error } = await window.sb.from('rental_requests')
       .update({ status: 'cancelled' })
       .eq('id', myRequestId);
+    if (error) { setCancelLoading(false); showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    // The REST client uses Prefer: return=minimal on updates, so an RLS-blocked
+    // 0-row write still reports success — verify the row actually changed.
+    const { data: verify } = await window.sb.from('rental_requests').select('status').eq('id', myRequestId).single();
     setCancelLoading(false);
-    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    if (verify?.status !== 'cancelled') {
+      showToast && showToast(lang==='pt'?'❌ Não foi possível cancelar — tente novamente':'❌ Could not cancel — please try again');
+      return;
+    }
     setReqStatus('cancelled');
     setListingOccupied(false);
     showToast && showToast(lang==='pt'?'Pedido cancelado.':'Request cancelled.');

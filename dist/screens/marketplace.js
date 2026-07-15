@@ -1313,6 +1313,7 @@ function ViewListingSheet({
     const totalPrice = periodEntry ? periodEntry.price * reqQty : 0;
     setReqLoading(true);
     const {
+      data: inserted,
       error
     } = await window.sb.from('rental_requests').insert({
       listing_id: item._id,
@@ -1324,12 +1325,13 @@ function ViewListingSheet({
       quantity: reqQty,
       total_price: totalPrice,
       requester_verified: currentUser.verified || false
-    });
+    }).select().single();
     setReqLoading(false);
     if (error) {
       showToast && showToast('❌ ' + (error.message || 'Error'));
       return;
     }
+    if (inserted?.id) setMyRequestId(inserted.id);
     // Notify owner (multilingual — receiver sees in their own language)
     const _renterName = currentUser.name || (currentUser.email || '').split('@')[0] || 'Someone';
     _notify(item.author_id, 'rental_request', {
@@ -1411,9 +1413,19 @@ function ViewListingSheet({
     } = await window.sb.from('rental_requests').update({
       status: 'cancelled'
     }).eq('id', myRequestId);
-    setCancelLoading(false);
     if (error) {
+      setCancelLoading(false);
       showToast && showToast('❌ ' + (error.message || 'Error'));
+      return;
+    }
+    // The REST client uses Prefer: return=minimal on updates, so an RLS-blocked
+    // 0-row write still reports success — verify the row actually changed.
+    const {
+      data: verify
+    } = await window.sb.from('rental_requests').select('status').eq('id', myRequestId).single();
+    setCancelLoading(false);
+    if (verify?.status !== 'cancelled') {
+      showToast && showToast(lang === 'pt' ? '❌ Não foi possível cancelar — tente novamente' : '❌ Could not cancel — please try again');
       return;
     }
     setReqStatus('cancelled');
