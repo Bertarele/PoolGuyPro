@@ -967,7 +967,7 @@ function WorkScreen({
       }
     }, lang === 'pt' ? 'Minha Atividade' : lang === 'es' ? 'Mi Actividad' : 'My Activity')), /*#__PURE__*/React.createElement("div", {
       style: {
-        display: 'flex',
+        display: sub === 'hiring' ? 'none' : 'flex',
         gap: 0,
         background: 'var(--pg-ink-100)',
         borderRadius: 10,
@@ -983,7 +983,7 @@ function WorkScreen({
       label: myPostsLbl,
       count: currentMyPosts.length
     }].map(tab => {
-      const on = myActivityTab === tab.id;
+      const on = (sub === 'hiring' ? 'applications' : myActivityTab) === tab.id;
       return /*#__PURE__*/React.createElement("button", {
         key: tab.id,
         onClick: () => setMyActivityTab(tab.id),
@@ -1020,7 +1020,7 @@ function WorkScreen({
           justifyContent: 'center'
         }
       }, tab.count));
-    })), myActivityTab === 'applications' && (currentMyApps.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    })), (sub === 'hiring' || myActivityTab === 'applications') && (currentMyApps.length === 0 ? /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: 'center',
         padding: '12px 0 4px',
@@ -1257,7 +1257,7 @@ function WorkScreen({
         cursor: 'pointer',
         fontFamily: 'inherit'
       }
-    }, lang === 'pt' ? `Ver mais (${currentMyApps.length - activityLimit})` : lang === 'es' ? `Ver más (${currentMyApps.length - activityLimit})` : `See more (${currentMyApps.length - activityLimit})`))), myActivityTab === 'myposts' && (currentMyPosts.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? `Ver mais (${currentMyApps.length - activityLimit})` : lang === 'es' ? `Ver más (${currentMyApps.length - activityLimit})` : `See more (${currentMyApps.length - activityLimit})`))), sub !== 'hiring' && myActivityTab === 'myposts' && (currentMyPosts.length === 0 ? /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: 'center',
         padding: '12px 0 4px',
@@ -1583,7 +1583,8 @@ function WorkScreen({
       showToast: showToast,
       onDeleteJob: removeJob,
       onJobUpdated: ctx.loadLiveJobs,
-      liveApplications: liveApplications
+      liveApplications: liveApplications,
+      jobApplicantCounts: jobApplicantCounts
     }), sub === 'techs' && /*#__PURE__*/React.createElement(TechsPanel, {
       t: t,
       lang: lang,
@@ -2182,7 +2183,7 @@ function WorkScreen({
       }
     }, activityLbl)), /*#__PURE__*/React.createElement("div", {
       style: {
-        display: 'flex',
+        display: sub === 'hiring' ? 'none' : 'flex',
         gap: 0,
         background: 'var(--pg-ink-100)',
         borderRadius: 10,
@@ -2198,7 +2199,7 @@ function WorkScreen({
       label: myPostsLbl,
       count: totalPosts
     }].map(tab => {
-      const on = myActivityTab === tab.id;
+      const on = (sub === 'hiring' ? 'applications' : myActivityTab) === tab.id;
       return /*#__PURE__*/React.createElement("button", {
         key: tab.id,
         onClick: () => setMyActivityTab(tab.id),
@@ -2235,7 +2236,7 @@ function WorkScreen({
           justifyContent: 'center'
         }
       }, tab.count));
-    })), myActivityTab === 'applications' && (currentMyApps.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    })), (sub === 'hiring' || myActivityTab === 'applications') && (currentMyApps.length === 0 ? /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: 'center',
         padding: '10px 0 4px',
@@ -2487,7 +2488,7 @@ function WorkScreen({
         cursor: 'pointer',
         fontFamily: 'inherit'
       }
-    }, lang === 'pt' ? `Ver mais (${currentMyApps.length - activityLimit})` : lang === 'es' ? `Ver más (${currentMyApps.length - activityLimit})` : `See more (${currentMyApps.length - activityLimit})`))), myActivityTab === 'myposts' && (myPosts.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? `Ver mais (${currentMyApps.length - activityLimit})` : lang === 'es' ? `Ver más (${currentMyApps.length - activityLimit})` : `See more (${currentMyApps.length - activityLimit})`))), sub !== 'hiring' && myActivityTab === 'myposts' && (myPosts.length === 0 ? /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: 'center',
         padding: '10px 0 4px',
@@ -2633,7 +2634,8 @@ function WorkScreen({
     showToast: showToast,
     onDeleteJob: removeJob,
     onJobUpdated: ctx.loadLiveJobs,
-    liveApplications: liveApplications
+    liveApplications: liveApplications,
+    jobApplicantCounts: jobApplicantCounts
   }), sub === 'techs' && /*#__PURE__*/React.createElement(TechsPanel, {
     t: t,
     lang: lang,
@@ -3359,6 +3361,7 @@ function HiringPanel({
     const isAdmin = user?.role === 'admin';
     const isHired = !!job.hiredAt;
     const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
+    const appCount = (jobApplicantCounts[job._id] || {}).total || 0;
     return /*#__PURE__*/React.createElement("article", {
       key: job._id,
       className: isHired ? 'pg-card' : 'pg-card pg-press',
@@ -3714,7 +3717,27 @@ function HiringPanel({
       r: "9"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M9 12l2 2 4-4"
-    })), lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted') : isOwner ? /*#__PURE__*/React.createElement("span", {
+    })), lang === 'pt' ? 'Aceito' : lang === 'es' ? 'Aceptado' : 'Accepted') : isOwner && appCount > 0 ? /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        onViewApplicants && onViewApplicants(job);
+      },
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        height: 36,
+        padding: '0 14px',
+        borderRadius: 999,
+        border: 'none',
+        cursor: 'pointer',
+        background: 'linear-gradient(135deg,#0077B6,#023E8A)',
+        color: '#fff',
+        fontSize: 12.5,
+        fontWeight: 700,
+        boxShadow: '0 3px 10px rgba(0,119,182,0.30)'
+      }
+    }, Icon.check ? Icon.check(13, '#fff') : null, appCount, " ", appCount === 1 ? lang === 'pt' ? 'candidato' : lang === 'es' ? 'candidato' : 'applicant' : lang === 'pt' ? 'candidatos' : lang === 'es' ? 'candidatos' : 'applicants') : isOwner ? /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -3739,7 +3762,7 @@ function HiringPanel({
     }, t.apply)), isOwner && !isHired && /*#__PURE__*/React.createElement("div", {
       onClick: async e => {
         e.stopPropagation();
-        const msg = lang === 'pt' ? `Marcar "${job.role}" como preenchida? A vaga ficará visível por 1 dia e depois some.` : lang === 'es' ? `¿Marcar "${job.role}" como cubierta?` : `Mark "${job.role}" as filled? It will remain visible for 1 day then disappear.`;
+        const msg = lang === 'pt' ? `Contratou alguém para "${job.role}"? Isso vai encerrar a vaga — ela some da lista após 1 dia.` : lang === 'es' ? `¿Contrataste a alguien para "${job.role}"? Esto cerrará la vacante — desaparecerá de la lista después de 1 día.` : `Hired someone for "${job.role}"? This will close the listing — it disappears from the list after 1 day.`;
         if (!window.confirm(msg)) return;
         const {
           error
@@ -3750,7 +3773,7 @@ function HiringPanel({
           showToast && showToast('❌ ' + error.message);
           return;
         }
-        showToast && showToast('✓ ' + (lang === 'pt' ? 'Contratação registrada!' : lang === 'es' ? '¡Contratación registrada!' : 'Hiring recorded!'));
+        showToast && showToast('✓ ' + (lang === 'pt' ? 'Vaga encerrada!' : lang === 'es' ? '¡Vacante cerrada!' : 'Listing closed!'));
         onJobUpdated && onJobUpdated();
       },
       style: {
@@ -3780,7 +3803,7 @@ function HiringPanel({
       strokeLinejoin: "round"
     }, /*#__PURE__*/React.createElement("path", {
       d: "M20 6L9 17l-5-5"
-    })), lang === 'pt' ? 'Já contratei' : lang === 'es' ? 'Ya contraté' : 'Hired someone'));
+    })), lang === 'pt' ? 'Contratei alguém — encerrar vaga' : lang === 'es' ? 'Contraté a alguien — cerrar vacante' : 'I hired someone — close listing'));
   }), HIRING.filter(h => !hiddenStatic.includes(h.id)).map(h => /*#__PURE__*/React.createElement("article", {
     key: h.id,
     className: "pg-card",

@@ -518,13 +518,15 @@ function WorkScreen({ ctx }) {
                     {lang==='pt'?'Minha Atividade':lang==='es'?'Mi Actividad':'My Activity'}
                   </span>
                 </div>
-                {/* Inner tabs */}
-                <div style={{display:'flex',gap:0,background:'var(--pg-ink-100)',borderRadius:10,padding:3,marginBottom:14}}>
+                {/* Inner tabs — "My Posts" only makes sense for Vacation here; Hiring's own
+                    job cards already surface applicant counts directly, so no need to
+                    duplicate that view behind a second tab. */}
+                <div style={{display: sub==='hiring' ? 'none' : 'flex', gap:0,background:'var(--pg-ink-100)',borderRadius:10,padding:3,marginBottom:14}}>
                   {[
                     {id:'applications',label:appsLbl,count:currentMyApps.length},
                     {id:'myposts',label:myPostsLbl,count:currentMyPosts.length},
                   ].map(tab => {
-                    const on = myActivityTab === tab.id;
+                    const on = (sub==='hiring' ? 'applications' : myActivityTab) === tab.id;
                     return (
                       <button key={tab.id} onClick={()=>setMyActivityTab(tab.id)} style={{
                         flex:1,padding:'7px 4px',border:'none',borderRadius:8,cursor:'pointer',
@@ -546,7 +548,7 @@ function WorkScreen({ ctx }) {
                 </div>
 
                 {/* Applications list */}
-                {myActivityTab === 'applications' && (
+                {(sub==='hiring' || myActivityTab === 'applications') && (
                   currentMyApps.length === 0
                     ? <div style={{textAlign:'center',padding:'12px 0 4px',color:'var(--pg-ink-400)',fontSize:12.5}}>{emptyApps}</div>
                     : <>
@@ -641,7 +643,7 @@ function WorkScreen({ ctx }) {
                 )}
 
                 {/* My Posts list */}
-                {myActivityTab === 'myposts' && (
+                {(sub!=='hiring' && myActivityTab === 'myposts') && (
                   currentMyPosts.length === 0
                     ? <div style={{textAlign:'center',padding:'12px 0 4px',color:'var(--pg-ink-400)',fontSize:12.5}}>{emptyPosts}</div>
                     : currentMyPosts.map(post => {
@@ -782,7 +784,7 @@ function WorkScreen({ ctx }) {
 
             {/* Panel content */}
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
-              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications}/>}
+              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
               {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
             </div>
@@ -985,13 +987,14 @@ function WorkScreen({ ctx }) {
                 </span>
               </div>
 
-              {/* Inner tab switcher */}
-              <div style={{display:'flex', gap:0, background:'var(--pg-ink-100)', borderRadius:10, padding:3, marginBottom:12}}>
+              {/* Inner tab switcher — "My Posts" hidden for Hiring; its job cards already
+                  surface applicant counts directly, so no need for a second tab. */}
+              <div style={{display: sub==='hiring' ? 'none' : 'flex', gap:0, background:'var(--pg-ink-100)', borderRadius:10, padding:3, marginBottom:12}}>
                 {[
                   { id:'applications', label: appsLbl,    count: totalApps  },
                   { id:'myposts',      label: myPostsLbl, count: totalPosts },
                 ].map(tab => {
-                  const on = myActivityTab === tab.id;
+                  const on = (sub==='hiring' ? 'applications' : myActivityTab) === tab.id;
                   return (
                     <button key={tab.id} onClick={()=>setMyActivityTab(tab.id)} style={{
                       flex:1, padding:'7px 4px', border:'none', borderRadius:8, cursor:'pointer',
@@ -1015,7 +1018,7 @@ function WorkScreen({ ctx }) {
               </div>
 
               {/* ── Applications tab ── */}
-              {myActivityTab === 'applications' && (
+              {(sub==='hiring' || myActivityTab === 'applications') && (
                 currentMyApps.length === 0
                   ? <div style={{textAlign:'center', padding:'10px 0 4px', color:'var(--pg-ink-400)', fontSize:12.5}}>{emptyApps}</div>
                   : <>
@@ -1135,7 +1138,7 @@ function WorkScreen({ ctx }) {
               )}
 
               {/* ── My Posts tab ── */}
-              {myActivityTab === 'myposts' && (
+              {(sub!=='hiring' && myActivityTab === 'myposts') && (
                 myPosts.length === 0
                   ? <div style={{textAlign:'center', padding:'10px 0 4px', color:'var(--pg-ink-400)', fontSize:12.5}}>{emptyPosts}</div>
                   : myPosts.map(post => {
@@ -1205,7 +1208,7 @@ function WorkScreen({ ctx }) {
 
       {/* ── Content panels ── */}
       <div style={{padding:'14px 18px 0'}}>
-        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications}/>}
+        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts}/>}
         {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
                               onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')}
@@ -1526,6 +1529,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
         const isAdmin   = user?.role === 'admin';
         const isHired   = !!job.hiredAt;
         const myApp     = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
+        const appCount  = (jobApplicantCounts[job._id] || {}).total || 0;
         return (
         <article key={job._id} className={isHired ? 'pg-card' : 'pg-card pg-press'} onClick={()=>!isHired && setSelectedJob(job)}
           style={{padding:'14px 16px', cursor: isHired?'default':'pointer', position:'relative',
@@ -1619,6 +1623,15 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
                 {lang==='pt'?'Aceito':lang==='es'?'Aceptado':'Accepted'}
               </div>
+            ) : isOwner && appCount > 0 ? (
+              <button onClick={(e)=>{ e.stopPropagation(); onViewApplicants && onViewApplicants(job); }} style={{
+                display:'flex', alignItems:'center', gap:6, height:36, padding:'0 14px', borderRadius:999, border:'none', cursor:'pointer',
+                background:'linear-gradient(135deg,#0077B6,#023E8A)', color:'#fff', fontSize:12.5, fontWeight:700,
+                boxShadow:'0 3px 10px rgba(0,119,182,0.30)',
+              }}>
+                {Icon.check ? Icon.check(13,'#fff') : null}
+                {appCount} {appCount===1?(lang==='pt'?'candidato':lang==='es'?'candidato':'applicant'):(lang==='pt'?'candidatos':lang==='es'?'candidatos':'applicants')}
+              </button>
             ) : isOwner ? (
               <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(0,119,182,0.12)', color:'var(--pg-blue-600)', border:'1px solid rgba(0,119,182,0.25)'}}>
                 {lang==='pt'?'Sua vaga':lang==='es'?'Tu oferta':'Your listing'}
@@ -1633,12 +1646,13 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
           {isOwner && !isHired && (
             <div onClick={async (e) => {
               e.stopPropagation();
-              const msg = lang==='pt'?`Marcar "${job.role}" como preenchida? A vaga ficará visível por 1 dia e depois some.`
-                :lang==='es'?`¿Marcar "${job.role}" como cubierta?`:`Mark "${job.role}" as filled? It will remain visible for 1 day then disappear.`;
+              const msg = lang==='pt'?`Contratou alguém para "${job.role}"? Isso vai encerrar a vaga — ela some da lista após 1 dia.`
+                :lang==='es'?`¿Contrataste a alguien para "${job.role}"? Esto cerrará la vacante — desaparecerá de la lista después de 1 día.`
+                :`Hired someone for "${job.role}"? This will close the listing — it disappears from the list after 1 day.`;
               if (!window.confirm(msg)) return;
               const { error } = await window.sb.from('jobs').update({ hired_at: new Date().toISOString() }).eq('id', job._id);
               if (error) { showToast && showToast('❌ ' + error.message); return; }
-              showToast && showToast('✓ ' + (lang==='pt'?'Contratação registrada!':lang==='es'?'¡Contratación registrada!':'Hiring recorded!'));
+              showToast && showToast('✓ ' + (lang==='pt'?'Vaga encerrada!':lang==='es'?'¡Vacante cerrada!':'Listing closed!'));
               onJobUpdated && onJobUpdated();
             }} style={{
               marginTop:8, padding:'5px 0', borderRadius:8, cursor:'pointer', display:'flex',
@@ -1646,7 +1660,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
               border:'1px solid rgba(16,185,129,0.28)', color:'#10B981', fontSize:11, fontWeight:700, width:'100%',
             }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-              {lang==='pt'?'Já contratei':lang==='es'?'Ya contraté':'Hired someone'}
+              {lang==='pt'?'Contratei alguém — encerrar vaga':lang==='es'?'Contraté a alguien — cerrar vacante':'I hired someone — close listing'}
             </div>
           )}
         </article>

@@ -1519,8 +1519,14 @@ function App() {
               const { data: inserted } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
               if (inserted) window.dispatchEvent(new CustomEvent('pgQuickPoolPosted', { detail: inserted }));
               let notifyCount = 0;
+              let notifyFailed = false;
               if (inserted && !scheduledFor) {
                 try {
+                  // getSession() reads a cached token with no freshness check — if it's
+                  // stale, the Edge Function's platform-level JWT check 401s before our
+                  // code even runs. Proactively refresh first so this doesn't silently
+                  // no-op (which used to show "0 notified" even when it wasn't true).
+                  if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(()=>{});
                   const { data: { session } } = await window.sb.auth.getSession();
                   const token = session?.access_token || '';
                   const res = await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
@@ -1531,14 +1537,19 @@ function App() {
                   if (res.ok) {
                     const result = await res.json().catch(()=>({}));
                     notifyCount = result?.sent ?? result?.matched ?? 0;
+                  } else {
+                    notifyFailed = true;
+                    console.error('[QuickPools] notify-quick-pool failed', res.status, await res.text().catch(()=>''));
                   }
-                } catch {}
+                } catch(e) { notifyFailed = true; console.error('[QuickPools] notify-quick-pool error', e); }
               }
-              const toastMsg = lang==='pt'
-                ? `Piscina Rápida publicada — ${notifyCount} piscineiros notificados`
-                : lang==='es'
-                  ? `Piscina Rápida publicada — ${notifyCount} técnicos notificados`
-                  : `Quick Pool posted — ${notifyCount} pool guys notified`;
+              const toastMsg = notifyFailed
+                ? (lang==='pt'?'⚠️ Vaga publicada, mas o alerta pode não ter chegado a todos':lang==='es'?'⚠️ Vacante publicada, pero la alerta puede no haber llegado a todos':'⚠️ Job posted, but the alert may not have reached everyone')
+                : lang==='pt'
+                  ? `Piscina Rápida publicada — ${notifyCount} piscineiros notificados`
+                  : lang==='es'
+                    ? `Piscina Rápida publicada — ${notifyCount} técnicos notificados`
+                    : `Quick Pool posted — ${notifyCount} pool guys notified`;
               showToast(toastMsg);
             } catch { showToast(lang==='pt'?'❌ Erro ao publicar':'❌ Error posting'); }
           }}

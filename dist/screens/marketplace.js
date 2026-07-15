@@ -5184,7 +5184,7 @@ function ViewListingSheet({
     onClick: onClose,
     style: {
       position: 'absolute',
-      top: 12,
+      top: 'calc(12px + env(safe-area-inset-top, 0px))',
       left: 12,
       zIndex: 3,
       width: 36,
@@ -5202,7 +5202,7 @@ function ViewListingSheet({
   }, Icon.chev(20, '#fff', 'left')), /*#__PURE__*/React.createElement("span", {
     style: {
       position: 'absolute',
-      top: 16,
+      top: 'calc(16px + env(safe-area-inset-top, 0px))',
       left: 58,
       zIndex: 2,
       fontSize: 10,
@@ -5218,7 +5218,7 @@ function ViewListingSheet({
   }, item.type === 'rent' ? lang === 'pt' ? 'ALUGUEL' : lang === 'es' ? 'ALQUILER' : 'RENTAL' : lang === 'pt' ? 'VENDA' : lang === 'es' ? 'VENTA' : 'FOR SALE'), allPhotos.length > 1 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
-      top: 12,
+      top: 'calc(12px + env(safe-area-inset-top, 0px))',
       right: 12,
       zIndex: 2,
       background: 'rgba(0,0,0,0.45)',
@@ -7336,6 +7336,37 @@ function MarketplaceScreen({
     const bOwn = user?.uid && b._authorId === user.uid ? 0 : 1;
     return aOwn - bOwn;
   });
+
+  // Batch-fetch seller ratings for whatever routes/pools are currently listed, so
+  // the seller's name + rating can show directly on the card (not just once opened).
+  const [authorRatings, setAuthorRatings] = React.useState({}); // id -> {avg, count}
+  const authorIdsKey = [...new Set(list.map(x => x._authorId).filter(Boolean))].sort().join(',');
+  React.useEffect(() => {
+    if (!window.sb || !authorIdsKey) return;
+    const ids = authorIdsKey.split(',');
+    window.sb.from('ratings').select('to_id, stars').in('to_id', ids).then(({
+      data
+    }) => {
+      const map = {};
+      (data || []).forEach(r => {
+        if (r.stars == null) return;
+        if (!map[r.to_id]) map[r.to_id] = {
+          sum: 0,
+          count: 0
+        };
+        map[r.to_id].sum += r.stars;
+        map[r.to_id].count++;
+      });
+      const out = {};
+      Object.keys(map).forEach(id => {
+        out[id] = {
+          avg: Math.round(map[id].sum / map[id].count * 10) / 10,
+          count: map[id].count
+        };
+      });
+      setAuthorRatings(out);
+    }).catch(() => {});
+  }, [authorIdsKey]);
   const tabIcons = {
     buy: (s, c) => Icon.cart(s, c),
     rent: (s, c) => Icon.key(s, c),
@@ -10470,7 +10501,37 @@ function MarketplaceScreen({
       fontSize: 11,
       color: 'var(--pg-ink-500)'
     }
-  }, r.area)), /*#__PURE__*/React.createElement("div", {
+  }, r.area)), r._author && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 5,
+      marginTop: 5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-ink-600)',
+      fontWeight: 600,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      maxWidth: 110
+    }
+  }, r._author), authorRatings[r._authorId] ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Stars, {
+    rating: authorRatings[r._authorId].avg,
+    size: 10
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-400)'
+    }
+  }, authorRatings[r._authorId].avg, " (", authorRatings[r._authorId].count, ")")) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10.5,
+      color: 'var(--pg-ink-400)'
+    }
+  }, lang === 'pt' ? 'sem avaliações' : lang === 'es' ? 'sin calificaciones' : 'no ratings')), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'baseline',
@@ -10707,7 +10768,37 @@ function MarketplaceScreen({
       color: 'var(--pg-blue-700)',
       borderColor: 'var(--pg-blue-100)'
     }
-  }, tr(p.revenue, lang))), /*#__PURE__*/React.createElement("div", {
+  }, tr(p.revenue, lang))), p._author && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 5,
+      marginTop: 5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-ink-600)',
+      fontWeight: 600,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      maxWidth: 110
+    }
+  }, p._author), authorRatings[p._authorId] ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Stars, {
+    rating: authorRatings[p._authorId].avg,
+    size: 10
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-400)'
+    }
+  }, authorRatings[p._authorId].avg, " (", authorRatings[p._authorId].count, ")")) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10.5,
+      color: 'var(--pg-ink-400)'
+    }
+  }, lang === 'pt' ? 'sem avaliações' : lang === 'es' ? 'sin calificaciones' : 'no ratings')), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'baseline',

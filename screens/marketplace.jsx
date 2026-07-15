@@ -2727,7 +2727,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
         {/* Back arrow — top left */}
         <button onClick={onClose} style={{
-          position:'absolute', top:12, left:12, zIndex:3,
+          position:'absolute', top:'calc(12px + env(safe-area-inset-top, 0px))', left:12, zIndex:3,
           width:36, height:36, borderRadius:'50%',
           background:'rgba(0,0,0,0.48)', backdropFilter:'blur(6px)',
           border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
@@ -2737,7 +2737,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         </button>
 
         {/* Type badge — shifted right of back arrow */}
-        <span style={{position:'absolute', top:16, left:58, zIndex:2,
+        <span style={{position:'absolute', top:'calc(16px + env(safe-area-inset-top, 0px))', left:58, zIndex:2,
           fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:8,
           background: item.type==='rent' ? 'rgba(14,186,199,0.92)' : 'rgba(59,130,246,0.92)',
           color:'#fff', letterSpacing:'0.06em', backdropFilter:'blur(4px)', textTransform:'uppercase'}}>
@@ -2747,7 +2747,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
         {/* Counter badge — top right (only if multiple photos) */}
         {allPhotos.length > 1 && (
-          <div style={{position:'absolute', top:12, right:12, zIndex:2,
+          <div style={{position:'absolute', top:'calc(12px + env(safe-area-inset-top, 0px))', right:12, zIndex:2,
             background:'rgba(0,0,0,0.45)', borderRadius:999,
             padding:'3px 10px', fontSize:11, fontWeight:700, color:'#fff'}}>
             {imgIdx + 1} / {allPhotos.length}
@@ -3931,6 +3931,29 @@ function MarketplaceScreen({ ctx }) {
     const bOwn = user?.uid && b._authorId === user.uid ? 0 : 1;
     return aOwn - bOwn;
   });
+
+  // Batch-fetch seller ratings for whatever routes/pools are currently listed, so
+  // the seller's name + rating can show directly on the card (not just once opened).
+  const [authorRatings, setAuthorRatings] = React.useState({}); // id -> {avg, count}
+  const authorIdsKey = [...new Set(list.map(x => x._authorId).filter(Boolean))].sort().join(',');
+  React.useEffect(() => {
+    if (!window.sb || !authorIdsKey) return;
+    const ids = authorIdsKey.split(',');
+    window.sb.from('ratings').select('to_id, stars').in('to_id', ids)
+      .then(({ data }) => {
+        const map = {};
+        (data || []).forEach(r => {
+          if (r.stars == null) return;
+          if (!map[r.to_id]) map[r.to_id] = { sum: 0, count: 0 };
+          map[r.to_id].sum += r.stars;
+          map[r.to_id].count++;
+        });
+        const out = {};
+        Object.keys(map).forEach(id => { out[id] = { avg: Math.round(map[id].sum / map[id].count * 10) / 10, count: map[id].count }; });
+        setAuthorRatings(out);
+      })
+      .catch(() => {});
+  }, [authorIdsKey]);
 
   const tabIcons = {
     buy:    (s,c)=> Icon.cart(s, c),
@@ -5421,6 +5444,19 @@ function MarketplaceScreen({ ctx }) {
                     {r.revenue && <span className="pg-chip pg-chip-aqua" style={{padding:'3px 8px', fontSize:11}}>{tr(r.revenue, lang)}</span>}
                     <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>{r.area}</span>
                   </div>
+                  {r._author && (
+                    <div style={{display:'flex', alignItems:'center', gap:5, marginTop:5}}>
+                      <span style={{fontSize:11.5, color:'var(--pg-ink-600)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:110}}>{r._author}</span>
+                      {authorRatings[r._authorId] ? (
+                        <>
+                          <Stars rating={authorRatings[r._authorId].avg} size={10}/>
+                          <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>{authorRatings[r._authorId].avg} ({authorRatings[r._authorId].count})</span>
+                        </>
+                      ) : (
+                        <span style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>{lang==='pt'?'sem avaliações':lang==='es'?'sin calificaciones':'no ratings'}</span>
+                      )}
+                    </div>
+                  )}
                   <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:8}}>
                     <div>
                       <div style={{fontSize:10, color:'var(--pg-ink-400)'}}>{t.asking}</div>
@@ -5509,6 +5545,19 @@ function MarketplaceScreen({ ctx }) {
                     <div style={{display:'flex', gap:6, alignItems:'center', marginTop:5, flexWrap:'wrap'}}>
                       <span className="pg-chip" style={{padding:'3px 8px', fontSize:11, background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', borderColor:'var(--pg-blue-100)'}}>{tr(p.revenue, lang)}</span>
                     </div>
+                    {p._author && (
+                      <div style={{display:'flex', alignItems:'center', gap:5, marginTop:5}}>
+                        <span style={{fontSize:11.5, color:'var(--pg-ink-600)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:110}}>{p._author}</span>
+                        {authorRatings[p._authorId] ? (
+                          <>
+                            <Stars rating={authorRatings[p._authorId].avg} size={10}/>
+                            <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>{authorRatings[p._authorId].avg} ({authorRatings[p._authorId].count})</span>
+                          </>
+                        ) : (
+                          <span style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>{lang==='pt'?'sem avaliações':lang==='es'?'sin calificaciones':'no ratings'}</span>
+                        )}
+                      </div>
+                    )}
                     <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop:7}}>
                       <div>
                         <div style={{fontSize:10, color:'var(--pg-ink-400)'}}>{t.asking}</div>
