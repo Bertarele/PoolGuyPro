@@ -498,6 +498,23 @@ function App() {
     }
   }, [isLoggedIn, user?.uid, loadPendingRatings]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Real-time: someone rated me → surface the rating popup instantly, on
+  // whatever tab I'm on, instead of waiting for the next Home-tab visit. ──
+  React.useEffect(() => {
+    if (!isLoggedIn || !user?.uid || !window.sb) return;
+    const ch = window.sb.channel('ratings-live-' + user.uid)
+      .on('postgres_changes',
+        { event:'*', schema:'public', table:'ratings', filter:`to_id=eq.${user.uid}` },
+        p => {
+          if (p.new && p.new.stars != null) {
+            loadPendingRatings();
+            setRatingPromptOpen(true);
+          }
+        })
+      .subscribe();
+    return () => window.sb.removeChannel(ch);
+  }, [isLoggedIn, user?.uid, loadPendingRatings]);
+
   // ── Push notification subscription ─────────────────────────────
   const VAPID_PUBLIC = 'BC5W23IjAHOReRjCYC3MtRac1YMPSaodjgrhXXwWWCzHHCvAm7KgZG8_eeDcKK2w_wqbsVBHgHpbdcxZtors-5g';
 

@@ -566,6 +566,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [viewerOpen,    setViewerOpen]   = React.useState(false);
   const [authorPhotoUrl,setAuthorPhotoUrl] = React.useState(null);
   const [authorVerified,setAuthorVerified] = React.useState(false);
+  const [authorRating,  setAuthorRating]   = React.useState(null); // { avg, count } | null
+
   const [mapCoords,     setMapCoords]    = React.useState(null);
   const [mapLoading,    setMapLoading]   = React.useState(false);
   const [isDesktop,     setIsDesktop]    = React.useState(() => window.innerWidth >= 900);
@@ -724,12 +726,20 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
   // Fetch author profile photo when listing opens
   React.useEffect(() => {
-    setAuthorPhotoUrl(null); setAuthorVerified(false);
+    setAuthorPhotoUrl(null); setAuthorVerified(false); setAuthorRating(null);
     if (!item?.author_id || !window.sb) return;
     window.sb.from('profiles_public').select('photo_url, verified').eq('id', item.author_id).single()
       .then(({ data }) => {
         if (data?.photo_url) setAuthorPhotoUrl(data.photo_url);
         if (data?.verified)  setAuthorVerified(true);
+      })
+      .catch(() => {});
+    window.sb.from('ratings').select('stars').eq('to_id', item.author_id)
+      .then(({ data }) => {
+        const stars = (data || []).map(r => r.stars).filter(s => s != null);
+        if (stars.length === 0) return;
+        const avg = stars.reduce((s,v) => s + v, 0) / stars.length;
+        setAuthorRating({ avg: Math.round(avg * 10) / 10, count: stars.length });
       })
       .catch(() => {});
   }, [item?.author_id]);
@@ -1188,8 +1198,17 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             </span>
           )}
         </div>
-        <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:1}}>
-          {timeAgoLabel ? <span style={{color:'var(--pg-ink-400)'}}>{timeAgoLabel}</span> : null}
+        <div style={{display:'flex', alignItems:'center', gap:5, marginTop:2, flexWrap:'wrap'}}>
+          {authorRating ? (
+            <>
+              <Stars rating={authorRating.avg} size={12}/>
+              <span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-700)'}}>{authorRating.avg}</span>
+              <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>({authorRating.count})</span>
+            </>
+          ) : (
+            <span style={{fontSize:11.5, color:'var(--pg-ink-400)'}}>{lang==='pt'?'Sem avaliações ainda':lang==='es'?'Sin calificaciones aún':'No ratings yet'}</span>
+          )}
+          {timeAgoLabel ? <span style={{fontSize:11.5, color:'var(--pg-ink-400)'}}> · {timeAgoLabel}</span> : null}
         </div>
       </div>
       <span style={{
@@ -2820,10 +2839,28 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
         }}>
           <Avatar name={authorDisplay} size={44} src={authorPhotoUrl || undefined}/>
           <div style={{flex:1, minWidth:0}}>
-            <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-900)'}}>{authorDisplay}</div>
-            <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:1}}>
-              {lang==='pt'?'✓ Membro verificado':lang==='es'?'✓ Miembro verificado':'✓ Verified member'}
-              {timeAgoLabel ? <span style={{color:'var(--pg-ink-400)'}}> · {timeAgoLabel}</span> : null}
+            <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
+              <span style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-900)'}}>{authorDisplay}</span>
+              {authorVerified && (
+                <span style={{fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:999,
+                  background:'rgba(22,163,74,0.12)',color:'#16A34A',border:'1px solid rgba(22,163,74,0.3)',
+                  display:'inline-flex',alignItems:'center',gap:3,flexShrink:0}}>
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  {lang==='pt'?'Verificado':'Verified'}
+                </span>
+              )}
+            </div>
+            <div style={{display:'flex', alignItems:'center', gap:5, marginTop:2, flexWrap:'wrap'}}>
+              {authorRating ? (
+                <>
+                  <Stars rating={authorRating.avg} size={12}/>
+                  <span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-700)'}}>{authorRating.avg}</span>
+                  <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>({authorRating.count})</span>
+                </>
+              ) : (
+                <span style={{fontSize:11.5, color:'var(--pg-ink-400)'}}>{lang==='pt'?'Sem avaliações ainda':lang==='es'?'Sin calificaciones aún':'No ratings yet'}</span>
+              )}
+              {timeAgoLabel ? <span style={{fontSize:11.5, color:'var(--pg-ink-400)'}}> · {timeAgoLabel}</span> : null}
             </div>
           </div>
           <span className="pg-chip pg-chip-aqua" style={{fontSize:11, flexShrink:0}}>Pool Guy</span>
