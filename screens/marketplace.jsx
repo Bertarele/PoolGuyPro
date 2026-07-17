@@ -3935,7 +3935,7 @@ function MarketplaceScreen({ ctx }) {
   // Batch-fetch seller ratings for whatever routes/pools are currently listed, so
   // the seller's name + rating can show directly on the card (not just once opened).
   const [authorRatings, setAuthorRatings] = React.useState({}); // id -> {avg, count}
-  const authorIdsKey = [...new Set(list.map(x => x._authorId).filter(Boolean))].sort().join(',');
+  const authorIdsKey = [...new Set(list.map(x => x._authorId || x.author_id).filter(Boolean))].sort().join(',');
   React.useEffect(() => {
     if (!window.sb || !authorIdsKey) return;
     const ids = authorIdsKey.split(',');
@@ -4068,6 +4068,24 @@ function MarketplaceScreen({ ctx }) {
             display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
             <Tx lang={lang}>{item.description||([item.condition,item.loc].filter(Boolean).join(' · ')||'—')}</Tx>
           </div>
+          {item.author_id && (
+            <div style={{display:'flex', alignItems:'center', gap:5, marginTop:6}}>
+              <AvatarFetch uid={item.author_id} name={fmtAuthor(item.author)} size={18}/>
+              <span style={{fontSize:11.5, fontWeight:600, color:'var(--pg-ink-600)',
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:90}}>
+                {fmtAuthor(item.author)}
+              </span>
+              {authorRatings[item.author_id] ? (
+                <>
+                  <Stars rating={authorRatings[item.author_id].avg} size={10}/>
+                  <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>{authorRatings[item.author_id].avg} ({authorRatings[item.author_id].count})</span>
+                </>
+              ) : (
+                <span style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>{lang==='pt'?'sem avaliações':lang==='es'?'sin calificaciones':'no ratings'}</span>
+              )}
+              {item.createdAt && <span style={{fontSize:10, color:'var(--pg-ink-400)', flexShrink:0, marginLeft:'auto'}}>· {timeAgo(item.createdAt,lang)}</span>}
+            </div>
+          )}
           <div style={{height:1, background:'var(--pg-ink-100)', margin:'10px 0'}}/>
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:4}}>
             {item.priceMode==='neg' ? (
@@ -4084,19 +4102,6 @@ function MarketplaceScreen({ ctx }) {
                 ${fmtN(item.price, lang)}
               </span>
             )}
-            <div style={{display:'flex', alignItems:'center', gap:4, minWidth:0}}>
-              <div style={{width:20, height:20, borderRadius:'50%',
-                background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-                display:'flex', alignItems:'center', justifyContent:'center',
-                color:'#fff', fontSize:8, fontWeight:700, flexShrink:0}}>
-                {(fmtAuthor(item.author)[0]||'?').toUpperCase()}
-              </div>
-              <span style={{fontSize:11, fontWeight:600, color:'var(--pg-ink-500)',
-                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0}}>
-                {fmtAuthor(item.author)}
-              </span>
-              {item.createdAt && <span style={{fontSize:10, color:'var(--pg-ink-400)', flexShrink:0}}>· {timeAgo(item.createdAt,lang)}</span>}
-            </div>
           </div>
           {!isMyPost(item) && !isPending && (
             <div style={{display:'flex', gap:6, marginTop:8}}>
@@ -5022,9 +5027,32 @@ function MarketplaceScreen({ ctx }) {
                           ? item.description
                           : ([item.condition, item.loc].filter(Boolean).join(' · ') || '—')}
                       </div>
+                      {/* Seller — photo + name + rating, above the price */}
+                      {item.author_id && (
+                        <div style={{display:'flex', alignItems:'center', gap:5, marginTop:6}}>
+                          <AvatarFetch uid={item.author_id} name={fmtAuthor(item.author)} size={18}/>
+                          <span style={{fontSize:11.5, fontWeight:600, color:'var(--pg-ink-600)',
+                            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:90}}>
+                            {fmtAuthor(item.author)}
+                          </span>
+                          {authorRatings[item.author_id] ? (
+                            <>
+                              <Stars rating={authorRatings[item.author_id].avg} size={10}/>
+                              <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>{authorRatings[item.author_id].avg} ({authorRatings[item.author_id].count})</span>
+                            </>
+                          ) : (
+                            <span style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>{lang==='pt'?'sem avaliações':lang==='es'?'sin calificaciones':'no ratings'}</span>
+                          )}
+                          {item.createdAt && (
+                            <span style={{fontSize:10, color:'var(--pg-ink-400)', flexShrink:0, marginLeft:'auto'}}>
+                              · {timeAgo(item.createdAt, lang)}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {/* Divider */}
                       <div style={{height:1, background:'var(--pg-ink-100)', margin:'10px 0'}}/>
-                      {/* Price + author — same row, price as badge when negotiable */}
+                      {/* Price */}
                       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:4}}>
                         {isSoldItem ? (
                           <span style={{
@@ -5065,23 +5093,6 @@ function MarketplaceScreen({ ctx }) {
                             })()}
                           </span>
                         )}
-                        <div style={{display:'flex', alignItems:'center', gap:4, minWidth:0}}>
-                          <div style={{width:22, height:22, borderRadius:'50%',
-                            background:'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-                            display:'flex', alignItems:'center', justifyContent:'center',
-                            color:'#fff', fontSize:9, fontWeight:700, flexShrink:0}}>
-                            {(fmtAuthor(item.author)[0]||'?').toUpperCase()}
-                          </div>
-                          <span style={{fontSize:11, fontWeight:600, color:'var(--pg-ink-600)',
-                            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0}}>
-                            {fmtAuthor(item.author)}
-                          </span>
-                          {item.createdAt && (
-                            <span style={{fontSize:10, color:'var(--pg-ink-400)', flexShrink:0, marginLeft:2}}>
-                              · {timeAgo(item.createdAt, lang)}
-                            </span>
-                          )}
-                        </div>
                       </div>
                       {/* Heart + Share row — hide for sold items */}
                       {!isMyPost(item) && !isPending && !isSoldItem && (
@@ -5446,6 +5457,7 @@ function MarketplaceScreen({ ctx }) {
                   </div>
                   {r._author && (
                     <div style={{display:'flex', alignItems:'center', gap:5, marginTop:5}}>
+                      <AvatarFetch uid={r._authorId} name={r._author} size={18}/>
                       <span style={{fontSize:11.5, color:'var(--pg-ink-600)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:110}}>{r._author}</span>
                       {authorRatings[r._authorId] ? (
                         <>
@@ -5547,6 +5559,7 @@ function MarketplaceScreen({ ctx }) {
                     </div>
                     {p._author && (
                       <div style={{display:'flex', alignItems:'center', gap:5, marginTop:5}}>
+                        <AvatarFetch uid={p._authorId} name={p._author} size={18}/>
                         <span style={{fontSize:11.5, color:'var(--pg-ink-600)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:110}}>{p._author}</span>
                         {authorRatings[p._authorId] ? (
                           <>

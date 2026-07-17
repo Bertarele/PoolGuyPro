@@ -7340,7 +7340,7 @@ function MarketplaceScreen({
   // Batch-fetch seller ratings for whatever routes/pools are currently listed, so
   // the seller's name + rating can show directly on the card (not just once opened).
   const [authorRatings, setAuthorRatings] = React.useState({}); // id -> {avg, count}
-  const authorIdsKey = [...new Set(list.map(x => x._authorId).filter(Boolean))].sort().join(',');
+  const authorIdsKey = [...new Set(list.map(x => x._authorId || x.author_id).filter(Boolean))].sort().join(',');
   React.useEffect(() => {
     if (!window.sb || !authorIdsKey) return;
     const ids = authorIdsKey.split(',');
@@ -7561,7 +7561,48 @@ function MarketplaceScreen({
       }
     }, /*#__PURE__*/React.createElement(Tx, {
       lang: lang
-    }, item.description || [item.condition, item.loc].filter(Boolean).join(' · ') || '—')), /*#__PURE__*/React.createElement("div", {
+    }, item.description || [item.condition, item.loc].filter(Boolean).join(' · ') || '—')), item.author_id && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        marginTop: 6
+      }
+    }, /*#__PURE__*/React.createElement(AvatarFetch, {
+      uid: item.author_id,
+      name: fmtAuthor(item.author),
+      size: 18
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11.5,
+        fontWeight: 600,
+        color: 'var(--pg-ink-600)',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        maxWidth: 90
+      }
+    }, fmtAuthor(item.author)), authorRatings[item.author_id] ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Stars, {
+      rating: authorRatings[item.author_id].avg,
+      size: 10
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-ink-400)'
+      }
+    }, authorRatings[item.author_id].avg, " (", authorRatings[item.author_id].count, ")")) : /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10.5,
+        color: 'var(--pg-ink-400)'
+      }
+    }, lang === 'pt' ? 'sem avaliações' : lang === 'es' ? 'sin calificaciones' : 'no ratings'), item.createdAt && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: 'var(--pg-ink-400)',
+        flexShrink: 0,
+        marginLeft: 'auto'
+      }
+    }, "\xB7 ", timeAgo(item.createdAt, lang))), /*#__PURE__*/React.createElement("div", {
       style: {
         height: 1,
         background: 'var(--pg-ink-100)',
@@ -7596,44 +7637,7 @@ function MarketplaceScreen({
         flexShrink: 0,
         textDecoration: isSoldItem ? 'line-through' : 'none'
       }
-    }, "$", fmtN(item.price, lang)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 20,
-        height: 20,
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#fff',
-        fontSize: 8,
-        fontWeight: 700,
-        flexShrink: 0
-      }
-    }, (fmtAuthor(item.author)[0] || '?').toUpperCase()), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        fontWeight: 600,
-        color: 'var(--pg-ink-500)',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        minWidth: 0
-      }
-    }, fmtAuthor(item.author)), item.createdAt && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 10,
-        color: 'var(--pg-ink-400)',
-        flexShrink: 0
-      }
-    }, "\xB7 ", timeAgo(item.createdAt, lang)))), !isMyPost(item) && !isPending && /*#__PURE__*/React.createElement("div", {
+    }, "$", fmtN(item.price, lang))), !isMyPost(item) && !isPending && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 6,
@@ -9626,7 +9630,48 @@ function MarketplaceScreen({
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden'
       }
-    }, item.description ? item.description : [item.condition, item.loc].filter(Boolean).join(' · ') || '—'), /*#__PURE__*/React.createElement("div", {
+    }, item.description ? item.description : [item.condition, item.loc].filter(Boolean).join(' · ') || '—'), item.author_id && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        marginTop: 6
+      }
+    }, /*#__PURE__*/React.createElement(AvatarFetch, {
+      uid: item.author_id,
+      name: fmtAuthor(item.author),
+      size: 18
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11.5,
+        fontWeight: 600,
+        color: 'var(--pg-ink-600)',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        maxWidth: 90
+      }
+    }, fmtAuthor(item.author)), authorRatings[item.author_id] ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Stars, {
+      rating: authorRatings[item.author_id].avg,
+      size: 10
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-ink-400)'
+      }
+    }, authorRatings[item.author_id].avg, " (", authorRatings[item.author_id].count, ")")) : /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10.5,
+        color: 'var(--pg-ink-400)'
+      }
+    }, lang === 'pt' ? 'sem avaliações' : lang === 'es' ? 'sin calificaciones' : 'no ratings'), item.createdAt && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: 'var(--pg-ink-400)',
+        flexShrink: 0,
+        marginLeft: 'auto'
+      }
+    }, "\xB7 ", timeAgo(item.createdAt, lang))), /*#__PURE__*/React.createElement("div", {
       style: {
         height: 1,
         background: 'var(--pg-ink-100)',
@@ -9709,45 +9754,7 @@ function MarketplaceScreen({
           marginLeft: 2
         }
       }, sfx));
-    })()), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 22,
-        height: 22,
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg,var(--pg-blue-500),var(--pg-blue-700))',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#fff',
-        fontSize: 9,
-        fontWeight: 700,
-        flexShrink: 0
-      }
-    }, (fmtAuthor(item.author)[0] || '?').toUpperCase()), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        fontWeight: 600,
-        color: 'var(--pg-ink-600)',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        minWidth: 0
-      }
-    }, fmtAuthor(item.author)), item.createdAt && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 10,
-        color: 'var(--pg-ink-400)',
-        flexShrink: 0,
-        marginLeft: 2
-      }
-    }, "\xB7 ", timeAgo(item.createdAt, lang)))), !isMyPost(item) && !isPending && !isSoldItem && /*#__PURE__*/React.createElement("div", {
+    })())), !isMyPost(item) && !isPending && !isSoldItem && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 6,
@@ -10508,7 +10515,11 @@ function MarketplaceScreen({
       gap: 5,
       marginTop: 5
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(AvatarFetch, {
+    uid: r._authorId,
+    name: r._author,
+    size: 18
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11.5,
       color: 'var(--pg-ink-600)',
@@ -10775,7 +10786,11 @@ function MarketplaceScreen({
       gap: 5,
       marginTop: 5
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(AvatarFetch, {
+    uid: p._authorId,
+    name: p._author,
+    size: 18
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11.5,
       color: 'var(--pg-ink-600)',
