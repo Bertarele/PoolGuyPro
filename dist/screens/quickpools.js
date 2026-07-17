@@ -185,6 +185,7 @@ function PendingRatingModal({
   target,
   onSubmit,
   onClose,
+  onDecline,
   lang = 'pt'
 }) {
   const [stars, setStars] = React.useState(0);
@@ -230,10 +231,22 @@ function PendingRatingModal({
       fontSize: 14,
       color: 'var(--pg-ink-500)',
       textAlign: 'center',
-      marginBottom: 20,
+      marginBottom: 10,
       lineHeight: 1.4
     }
   }, target.listing_name || (lang === 'pt' ? 'Serviço concluído' : 'Completed job')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: 'var(--pg-blue-700)',
+      background: 'var(--pg-blue-50)',
+      border: '1px solid var(--pg-blue-100)',
+      borderRadius: 10,
+      padding: '8px 12px',
+      textAlign: 'center',
+      lineHeight: 1.4,
+      marginBottom: 18
+    }
+  }, lang === 'pt' ? 'Você só verá a avaliação da outra pessoa depois de avaliar.' : lang === 'es' ? 'Solo verás la calificación de la otra persona después de calificar.' : "You'll only see their rating of you after you rate them."), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'center',
@@ -309,7 +322,22 @@ function PendingRatingModal({
       fontSize: 14,
       fontWeight: 700
     }
-  }, lang === 'pt' ? 'Enviar avaliação' : lang === 'es' ? 'Enviar calificación' : 'Submit rating'))));
+  }, lang === 'pt' ? 'Enviar avaliação' : lang === 'es' ? 'Enviar calificación' : 'Submit rating')), onDecline && /*#__PURE__*/React.createElement("button", {
+    onClick: () => onDecline(target),
+    style: {
+      display: 'block',
+      width: '100%',
+      marginTop: 12,
+      padding: '4px 0',
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-ink-400)',
+      fontSize: 12.5,
+      fontWeight: 600,
+      cursor: 'pointer',
+      textDecoration: 'underline'
+    }
+  }, lang === 'pt' ? 'Não avaliar' : lang === 'es' ? 'No calificar' : "Don't rate")));
 }
 class JobDetailBoundary extends React.Component {
   constructor(props) {
@@ -426,6 +454,17 @@ function QuickPoolsScreen({
     setPendingOutRatings(prev => prev.filter(r => r.id !== row.id));
     setRateNowTarget(null);
     showToast && showToast(lang === 'pt' ? '✓ Avaliação enviada' : lang === 'es' ? '✓ Calificación enviada' : '✓ Rating submitted');
+  };
+  // Permanent "don't rate" — there's no client-side DELETE policy on ratings, so
+  // instead expire the row immediately. It drops out of loadPendingOutRatings'
+  // expires_at filter and never nags again, without needing a new RLS grant.
+  const declinePendingOutRating = async row => {
+    if (!window.sb) return;
+    await window.sb.from('ratings').update({
+      expires_at: new Date(0).toISOString()
+    }).eq('id', row.id).catch(() => {});
+    setPendingOutRatings(prev => prev.filter(r => r.id !== row.id));
+    setRateNowTarget(null);
   };
 
   // Live jobs from Supabase — no demo/seed fallback, only real postings
@@ -2255,6 +2294,7 @@ function QuickPoolsScreen({
       target: rateNowTarget,
       lang: lang,
       onSubmit: submitPendingOutRating,
+      onDecline: declinePendingOutRating,
       onClose: () => setRateNowTarget(null)
     }));
   }
@@ -2801,6 +2841,7 @@ function QuickPoolsScreen({
     target: rateNowTarget,
     lang: lang,
     onSubmit: submitPendingOutRating,
+    onDecline: declinePendingOutRating,
     onClose: () => setRateNowTarget(null)
   }), notifHelpOpen && (() => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -3160,8 +3201,11 @@ function QuickPoolDetails({
       // Always write my own row even when skipping (stars:null) — otherwise there's no
       // durable record that I still owe a rating, and it becomes unreachable once the
       // job card disappears from the list.
+      // No listing_id here — that column FKs to `marketplace`, and a Quick Pool job
+      // id isn't a marketplace row, so setting it made every one of these inserts
+      // fail with a foreign-key violation. connection_type/connection_id already
+      // identify the job generically, which is what the unique index keys off.
       await window.sb.from('ratings').upsert({
-        listing_id: job.id,
         listing_name: tr(job.title, lang),
         from_id: user.uid,
         to_id: job.poster_id,
@@ -3173,8 +3217,12 @@ function QuickPoolDetails({
         connection_id: String(job.id),
         expires_at: expiresAt
       }, {
-        onConflict: 'from_id,to_id'
-      }).then(() => {});
+        onConflict: 'connection_type,connection_id,from_id'
+      }).then(({
+        error
+      }) => {
+        if (error) console.error('[QuickPools] rating upsert failed', error);
+      });
       if (ownerRatingStars > 0) {
         window.sb.rpc('reveal_mutual_rating', {
           p_a: user.uid,
@@ -3182,7 +3230,6 @@ function QuickPoolDetails({
         }).catch(() => {});
       }
       await window.sb.from('ratings').insert({
-        listing_id: job.id,
         listing_name: tr(job.title, lang),
         from_id: job.poster_id,
         from_name: job.poster || '',
@@ -3193,7 +3240,9 @@ function QuickPoolDetails({
         connection_type: 'quickpool',
         connection_id: String(job.id),
         expires_at: expiresAt
-      }).catch(() => {}); // ignore duplicate-key — placeholder may already exist
+      }).catch(error => {
+        console.error('[QuickPools] rating placeholder insert failed', error);
+      }); // ignore duplicate-key — placeholder may already exist
     }
     // Mark pool_guy_done; also re-save submitted_photos atomically (in case first save failed)
     if (myApp && window.sb) {
@@ -3304,8 +3353,8 @@ function QuickPoolDetails({
       // finished the job), or creates the row if it doesn't — blind mutual rating.
       // Always write my own row even when skipping (stars:null) so there's a durable
       // record I still owe a rating, instead of it vanishing once the job is finalized.
+      // No listing_id — see the matching comment in submitOwnerRatingAndFinishPoolGuy.
       await window.sb.from('ratings').upsert({
-        listing_id: job.id,
         listing_name: tr(job.title, lang),
         from_id: user.uid,
         to_id: acceptedApp.applicant_id,
@@ -3317,8 +3366,12 @@ function QuickPoolDetails({
         connection_id: String(job.id),
         expires_at: expiresAt
       }, {
-        onConflict: 'from_id,to_id'
-      }).then(() => {});
+        onConflict: 'connection_type,connection_id,from_id'
+      }).then(({
+        error
+      }) => {
+        if (error) console.error('[QuickPools] rating upsert failed', error);
+      });
       if (ratingStars > 0) {
         window.sb.rpc('reveal_mutual_rating', {
           p_a: user.uid,
@@ -3326,7 +3379,6 @@ function QuickPoolDetails({
         }).catch(() => {});
       }
       await window.sb.from('ratings').insert({
-        listing_id: job.id,
         listing_name: tr(job.title, lang),
         from_id: acceptedApp.applicant_id,
         from_name: acceptedApp.applicant_name || '',
@@ -3337,7 +3389,9 @@ function QuickPoolDetails({
         connection_type: 'quickpool',
         connection_id: String(job.id),
         expires_at: expiresAt
-      }).catch(() => {}); // ignore duplicate-key — placeholder may already exist
+      }).catch(error => {
+        console.error('[QuickPools] rating placeholder insert failed', error);
+      }); // ignore duplicate-key — placeholder may already exist
     }
     setRatingSubmitting(false);
     setShowRating(false);
