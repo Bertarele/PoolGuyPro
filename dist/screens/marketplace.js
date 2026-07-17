@@ -1220,7 +1220,7 @@ function ViewListingSheet({
       if (data?.photo_url) setAuthorPhotoUrl(data.photo_url);
       if (data?.verified) setAuthorVerified(true);
     }).catch(() => {});
-    window.sb.from('ratings').select('stars').eq('to_id', item.author_id).then(({
+    window.sb.from('ratings').select('stars').eq('to_id', item.author_id).eq('pending', false).then(({
       data
     }) => {
       const stars = (data || []).map(r => r.stars).filter(s => s != null);
@@ -7344,7 +7344,7 @@ function MarketplaceScreen({
   React.useEffect(() => {
     if (!window.sb || !authorIdsKey) return;
     const ids = authorIdsKey.split(',');
-    window.sb.from('ratings').select('to_id, stars').in('to_id', ids).then(({
+    window.sb.from('ratings').select('to_id, stars').in('to_id', ids).eq('pending', false).then(({
       data
     }) => {
       const map = {};

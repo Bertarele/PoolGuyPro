@@ -902,7 +902,7 @@ function App() {
       if (tc.data) {
         const techAuthorIds = tc.data.map(r => r.author_id).filter(Boolean);
         if (techAuthorIds.length > 0) {
-          const { data: ratingRows } = await window.sb.from('ratings').select('to_id, stars').in('to_id', techAuthorIds);
+          const { data: ratingRows } = await window.sb.from('ratings').select('to_id, stars').in('to_id', techAuthorIds).eq('pending', false);
           const ratingMap = {};
           (ratingRows || []).forEach(r => {
             if (!ratingMap[r.to_id]) ratingMap[r.to_id] = { sum: 0, count: 0 };

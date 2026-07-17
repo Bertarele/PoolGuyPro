@@ -1211,7 +1211,7 @@ function App() {
         if (techAuthorIds.length > 0) {
           const {
             data: ratingRows
-          } = await window.sb.from('ratings').select('to_id, stars').in('to_id', techAuthorIds);
+          } = await window.sb.from('ratings').select('to_id, stars').in('to_id', techAuthorIds).eq('pending', false);
           const ratingMap = {};
           (ratingRows || []).forEach(r => {
             if (!ratingMap[r.to_id]) ratingMap[r.to_id] = {
