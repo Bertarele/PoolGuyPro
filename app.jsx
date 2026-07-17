@@ -1379,7 +1379,7 @@ function App() {
               else setChatOpen(true);
             } else if (type==='warning') {
               switchTab('profile');
-            } else if (type==='quick_pool_new' || type==='quick_pool_done') {
+            } else if (type==='quick_pool_new' || type==='quick_pool_done' || type==='quick_pool_application') {
               // Open the specific quick pool job if we have an ID, else just go to tab
               if (linkId) ctx.openQuickJobById(linkId);
               else switchTab('quick');

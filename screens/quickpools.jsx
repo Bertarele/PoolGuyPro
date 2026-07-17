@@ -303,6 +303,30 @@ function QuickPoolsScreen({ ctx }) {
     return () => window.removeEventListener('pgQuickPoolRatingChanged', handler);
   }, [loadPendingOutRatings]);
 
+  // Applicant counts for jobs the current user posted — shown directly on the
+  // card so the poster doesn't have to open the listing to know if anyone applied.
+  const [qpApplicantCounts, setQpApplicantCounts] = React.useState({}); // job_id -> count
+  const myJobIdsKey = jobs.filter(j => j.poster_id === user?.uid).map(j => j.id).sort().join(',');
+  const loadQpApplicantCounts = React.useCallback(() => {
+    if (!window.sb || !myJobIdsKey) { setQpApplicantCounts({}); return; }
+    const ids = myJobIdsKey.split(',');
+    window.sb.from('quick_pool_applications').select('job_id').neq('status', 'withdrawn').in('job_id', ids)
+      .then(({ data }) => {
+        const counts = {};
+        (data || []).forEach(a => { counts[a.job_id] = (counts[a.job_id] || 0) + 1; });
+        setQpApplicantCounts(counts);
+      })
+      .catch(() => {});
+  }, [myJobIdsKey]);
+  React.useEffect(() => { loadQpApplicantCounts(); }, [loadQpApplicantCounts]);
+  React.useEffect(() => {
+    if (!window.sb || !user?.uid) return;
+    const ch = window.sb.channel('qp-app-counts-' + user.uid)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'quick_pool_applications' }, () => loadQpApplicantCounts())
+      .subscribe();
+    return () => window.sb.removeChannel(ch);
+  }, [user?.uid, loadQpApplicantCounts]);
+
   const EXTEND_WINDOW_MS = 4 * 60 * 60 * 1000; // extend option only offered once <4h remain
   const formatRemaining = (expiresAt) => {
     const ms = new Date(expiresAt).getTime() - Date.now();
@@ -520,6 +544,19 @@ function QuickPoolsScreen({ ctx }) {
         applicant_phone: sharePhone ? (user.phone || null) : null,
         status: 'pending',
       });
+      // Notify the poster — in-app (guaranteed) + push (best-effort) — so they
+      // see "has an applicant" without having to reopen the job to check.
+      const job = jobs.find(j => String(j.id) === String(jobId));
+      if (job?.poster_id && job.poster_id !== user.uid) {
+        const title = lang==='pt'?'👤 Novo candidato':lang==='es'?'👤 Nuevo candidato':'👤 New applicant';
+        const applicantName = user.name || user.email || 'Pool Guy';
+        const body = `${applicantName} — ${job.title?.[lang] || job.title?.pt || job.loc}`;
+        window.sb.from('notifications').insert({
+          user_id: job.poster_id, type: 'quick_pool_application',
+          title, body, link_id: String(jobId), read: false,
+        }).catch(()=>{});
+        window.sendPush && window.sendPush(job.poster_id, title, body, `/#quick?job=${jobId}`, 'quick_pool_application');
+      }
     } catch {}
   };
 
@@ -684,6 +721,18 @@ function QuickPoolsScreen({ ctx }) {
               </div>
             ) : isOwn ? (
               <div style={{display:'flex', alignItems:'center', gap:6}}>
+                {qpApplicantCounts[j.id] > 0 && (
+                  <button onClick={(e)=>{ e.stopPropagation(); setSelected(j); }} style={{
+                    height:36, padding:'0 12px', borderRadius:999, border:'1px solid var(--pg-blue-200)',
+                    background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', cursor:'pointer',
+                    display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, fontFamily:'inherit',
+                  }}>
+                    {Icon.briefcase(13,'var(--pg-blue-700)')}
+                    {qpApplicantCounts[j.id]} {qpApplicantCounts[j.id]===1
+                      ? (lang==='pt'?'candidato':lang==='es'?'candidato':'applicant')
+                      : (lang==='pt'?'candidatos':lang==='es'?'candidatos':'applicants')}
+                  </button>
+                )}
                 {j.status === 'open' && j.expires_at && (
                   (new Date(j.expires_at).getTime() - Date.now()) < EXTEND_WINDOW_MS ? (
                     <button onClick={(e)=>{ e.stopPropagation(); setExtendDialog(j.id); }} title={lang==='pt'?'Estender':lang==='es'?'Extender':'Extend'} style={{

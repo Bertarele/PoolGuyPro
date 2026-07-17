@@ -4032,6 +4032,7 @@ function NotificationsSheet({
     if (type === 'job_accepted') return Icon.check(17, '#fff');
     if (type === 'job_rejected') return Icon.x(17, '#fff');
     if (type === 'quick_pool_new') return Icon.bolt(17, '#fff');
+    if (type === 'quick_pool_application') return Icon.briefcase(17, '#fff');
     if (type === 'quick_pool_done') return Icon.check(17, '#fff');
     if (type === 'market') return Icon.briefcase(17, '#fff');
     if (type === 'verification_approved') return /*#__PURE__*/React.createElement("span", {
@@ -4053,6 +4054,7 @@ function NotificationsSheet({
     if (type === 'job_accepted') return '#22C55E';
     if (type === 'job_rejected') return '#EF4444';
     if (type === 'quick_pool_new') return '#0EBAC7';
+    if (type === 'quick_pool_application') return '#0077B6';
     if (type === 'quick_pool_done') return '#16A34A';
     if (type === 'market') return '#6366F1';
     if (type === 'verification_approved') return '#22C55E';
