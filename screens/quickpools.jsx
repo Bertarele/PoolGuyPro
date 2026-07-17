@@ -654,6 +654,19 @@ function QuickPoolsScreen({ ctx }) {
                     {Icon.lock(9,'var(--pg-ink-400)')} Premium
                   </span>
                 )}
+                {isOwn && qpApplicantCounts[j.id] > 0 && (
+                  <button onClick={(e)=>{ e.stopPropagation(); setSelected(j); }} style={{
+                    fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:999,
+                    border:'1px solid var(--pg-blue-200)', background:'var(--pg-blue-50)', color:'var(--pg-blue-700)',
+                    letterSpacing:'0.04em', display:'inline-flex', alignItems:'center', gap:3,
+                    cursor:'pointer', fontFamily:'inherit',
+                  }}>
+                    {Icon.briefcase(9,'var(--pg-blue-700)')}
+                    {qpApplicantCounts[j.id]} {qpApplicantCounts[j.id]===1
+                      ? (lang==='pt'?'candidato':lang==='es'?'candidato':'applicant')
+                      : (lang==='pt'?'candidatos':lang==='es'?'candidatos':'applicants')}
+                  </button>
+                )}
               </div>
               {/* Title */}
               <h3 style={{
@@ -701,8 +714,8 @@ function QuickPoolsScreen({ ctx }) {
               <div style={{filter: locked ? 'blur(5px)' : 'none'}}>
                 <AvatarFetch uid={j.poster_id} name={j.poster} size={32}/>
               </div>
-              <div style={{filter: locked ? 'blur(4px)' : 'none', userSelect: locked ? 'none' : 'auto'}}>
-                <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)', lineHeight:1.2}}>{locked ? 'Pool Guy' : j.poster}</div>
+              <div style={{filter: locked ? 'blur(4px)' : 'none', userSelect: locked ? 'none' : 'auto', minWidth:0}}>
+                <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)', lineHeight:1.2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{locked ? 'Pool Guy' : j.poster}</div>
                 <div style={{display:'flex', alignItems:'center', gap:4, marginTop:2}}>
                   <Stars rating={j.rating} size={10}/>
                   <span style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:500}}>{j.rating}</span>
@@ -721,18 +734,6 @@ function QuickPoolsScreen({ ctx }) {
               </div>
             ) : isOwn ? (
               <div style={{display:'flex', alignItems:'center', gap:6}}>
-                {qpApplicantCounts[j.id] > 0 && (
-                  <button onClick={(e)=>{ e.stopPropagation(); setSelected(j); }} style={{
-                    height:36, padding:'0 12px', borderRadius:999, border:'1px solid var(--pg-blue-200)',
-                    background:'var(--pg-blue-50)', color:'var(--pg-blue-700)', cursor:'pointer',
-                    display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, fontFamily:'inherit',
-                  }}>
-                    {Icon.briefcase(13,'var(--pg-blue-700)')}
-                    {qpApplicantCounts[j.id]} {qpApplicantCounts[j.id]===1
-                      ? (lang==='pt'?'candidato':lang==='es'?'candidato':'applicant')
-                      : (lang==='pt'?'candidatos':lang==='es'?'candidatos':'applicants')}
-                  </button>
-                )}
                 {j.status === 'open' && j.expires_at && (
                   (new Date(j.expires_at).getTime() - Date.now()) < EXTEND_WINDOW_MS ? (
                     <button onClick={(e)=>{ e.stopPropagation(); setExtendDialog(j.id); }} title={lang==='pt'?'Estender':lang==='es'?'Extender':'Extend'} style={{

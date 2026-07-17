@@ -1023,7 +1023,27 @@ function QuickPoolsScreen({
         alignItems: 'center',
         gap: 3
       }
-    }, Icon.lock(9, 'var(--pg-ink-400)'), " Premium")), /*#__PURE__*/React.createElement("h3", {
+    }, Icon.lock(9, 'var(--pg-ink-400)'), " Premium"), isOwn && qpApplicantCounts[j.id] > 0 && /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        setSelected(j);
+      },
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        padding: '2px 8px',
+        borderRadius: 999,
+        border: '1px solid var(--pg-blue-200)',
+        background: 'var(--pg-blue-50)',
+        color: 'var(--pg-blue-700)',
+        letterSpacing: '0.04em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        cursor: 'pointer',
+        fontFamily: 'inherit'
+      }
+    }, Icon.briefcase(9, 'var(--pg-blue-700)'), qpApplicantCounts[j.id], " ", qpApplicantCounts[j.id] === 1 ? lang === 'pt' ? 'candidato' : lang === 'es' ? 'candidato' : 'applicant' : lang === 'pt' ? 'candidatos' : lang === 'es' ? 'candidatos' : 'applicants')), /*#__PURE__*/React.createElement("h3", {
       style: {
         margin: '0 0 6px',
         fontFamily: 'var(--pg-font-display)',
@@ -1118,14 +1138,18 @@ function QuickPoolsScreen({
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         filter: locked ? 'blur(4px)' : 'none',
-        userSelect: locked ? 'none' : 'auto'
+        userSelect: locked ? 'none' : 'auto',
+        minWidth: 0
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 600,
         color: 'var(--pg-ink-800)',
-        lineHeight: 1.2
+        lineHeight: 1.2,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
       }
     }, locked ? 'Pool Guy' : j.poster), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -1163,27 +1187,7 @@ function QuickPoolsScreen({
         alignItems: 'center',
         gap: 6
       }
-    }, qpApplicantCounts[j.id] > 0 && /*#__PURE__*/React.createElement("button", {
-      onClick: e => {
-        e.stopPropagation();
-        setSelected(j);
-      },
-      style: {
-        height: 36,
-        padding: '0 12px',
-        borderRadius: 999,
-        border: '1px solid var(--pg-blue-200)',
-        background: 'var(--pg-blue-50)',
-        color: 'var(--pg-blue-700)',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 5,
-        fontSize: 12,
-        fontWeight: 700,
-        fontFamily: 'inherit'
-      }
-    }, Icon.briefcase(13, 'var(--pg-blue-700)'), qpApplicantCounts[j.id], " ", qpApplicantCounts[j.id] === 1 ? lang === 'pt' ? 'candidato' : lang === 'es' ? 'candidato' : 'applicant' : lang === 'pt' ? 'candidatos' : lang === 'es' ? 'candidatos' : 'applicants'), j.status === 'open' && j.expires_at && (new Date(j.expires_at).getTime() - Date.now() < EXTEND_WINDOW_MS ? /*#__PURE__*/React.createElement("button", {
+    }, j.status === 'open' && j.expires_at && (new Date(j.expires_at).getTime() - Date.now() < EXTEND_WINDOW_MS ? /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         setExtendDialog(j.id);
