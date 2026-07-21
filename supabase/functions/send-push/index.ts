@@ -77,19 +77,36 @@ Deno.serve(async (req) => {
   }
 
   let sent = 0;
+  const deadEndpoints: string[] = [];
   await Promise.allSettled(subs.map(async sub => {
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify({ title: safeTitle, body: safeBody, url: safeUrl, icon: '/icone.png', badge: '/icone.png', vibrate: [150, 80, 150] })
+        JSON.stringify({ title: safeTitle, body: safeBody, url: safeUrl, icon: '/icone.png', badge: '/icone.png', vibrate: [150, 80, 150] }),
+        // TTL: how long the push service should keep retrying delivery to an
+        // offline/unreachable device before giving up. Left unset this defaults
+        // to 0 on some services, which silently drops the push for anyone not
+        // immediately reachable — exactly the "works in foreground, never
+        // arrives when the app is closed" symptom. urgency:high asks iOS/APNs
+        // to wake the device rather than coalesce/defer it.
+        { TTL: 60 * 60 * 24 * 3, urgency: 'high' }
       );
       sent++;
-    } catch(e) {
+    } catch(e: any) {
       console.error('Push error:', e);
+      // 404/410 = the push service has permanently discarded this subscription
+      // (uninstalled, permission revoked, endpoint rotated) — stop retrying it.
+      if (e?.statusCode === 404 || e?.statusCode === 410) deadEndpoints.push(sub.endpoint);
     }
   }));
 
-  return new Response(JSON.stringify({ sent }), {
+  if (deadEndpoints.length > 0) {
+    fetch(`${SB_URL}/rest/v1/push_subscriptions?endpoint=in.(${deadEndpoints.map(e => `"${e}"`).join(',')})`, {
+      method: 'DELETE', headers,
+    }).catch(() => {});
+  }
+
+  return new Response(JSON.stringify({ sent, attempted: subs.length, pruned: deadEndpoints.length }), {
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
   });
 });

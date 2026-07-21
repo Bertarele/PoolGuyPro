@@ -888,6 +888,29 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       item._id);
     setReqStatus('pending');
     showToast && showToast(lang==='pt'?'✓ Pedido enviado! Converse com o dono pela inbox.':'✓ Request sent! Chat with the owner via inbox.');
+    // Auto-post the proposal into the chat itself — the owner needs to see exactly
+    // what's being requested right in the conversation, not just an empty thread.
+    if (window.sb && item.author_id) {
+      const convoId = makeConvoId(currentUser.uid, item.author_id, item._id || null);
+      const periodLabel = getPeriodLabel(reqPeriod, reqQty);
+      const script = lang==='pt'
+        ? `📦 Quero alugar "${item.name||''}" por ${periodLabel} — total estimado $${fmtN(totalPrice, lang)}.`
+        : lang==='es'
+          ? `📦 Quiero alquilar "${item.name||''}" por ${periodLabel} — total estimado $${fmtN(totalPrice, lang)}.`
+          : `📦 I'd like to rent "${item.name||''}" for ${periodLabel} — estimated total $${fmtN(totalPrice, lang)}.`;
+      window.sb.rpc('send_chat_message', {
+        p_convo_id:   convoId,
+        p_body:       script,
+        p_other_id:   item.author_id,
+        p_my_name:    _renterName,
+        p_other_name: item.author || 'Owner',
+      }).then(() => {
+        window.sb.from('conversations').update({
+          listing_id: item._id || null, listing_name: item.name || null,
+          listing_photo_url: (item.photoUrls && item.photoUrls[0]) || item.photoUrl || null,
+        }).eq('id', convoId).catch(()=>{});
+      }).catch(()=>{});
+    }
     if (openChat && item.author_id) {
       // Open chat on top — listing stays open behind it (Sheet zIndex 9999 > listing zIndex 200)
       openChat({ id: item.author_id, name: item.author || 'Owner', listingId: item._id || null, listingContext: _listingCtx() });
@@ -1507,12 +1530,14 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     );
     if (reqStatus === 'pending') return (
       <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(245,158,11,0.4)'}}>
-        <div style={{padding:'13px 16px',background:'rgba(245,158,11,0.10)',display:'flex',alignItems:'center',gap:10}}>
+        <div onClick={()=>{ if(openChat && item.author_id) openChat({ id: item.author_id, name: item.author || 'Owner', listingId: item._id || null, listingContext: _listingCtx() }); }}
+          style={{padding:'13px 16px',background:'rgba(245,158,11,0.10)',display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
           <span style={{fontSize:16,flexShrink:0}}>⏳</span>
           <div style={{flex:1}}>
             <div style={{fontSize:13,fontWeight:700,color:'#F59E0B'}}>{lang==='pt'?'Pedido enviado!':'Request sent!'}</div>
-            <div style={{fontSize:11.5,color:'#F59E0B',opacity:0.8,marginTop:1}}>{lang==='pt'?'Aguardando resposta do dono.':'Waiting for owner\'s response.'}</div>
+            <div style={{fontSize:11.5,color:'#F59E0B',opacity:0.8,marginTop:1}}>{lang==='pt'?'Toque para ver o que foi enviado.':'Tap to see what was sent.'}</div>
           </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <button onClick={handleCancelRequest} disabled={cancelLoading} style={{
           width:'100%',padding:'10px',border:'none',borderTop:'1px solid rgba(245,158,11,0.2)',
@@ -3477,8 +3502,9 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
               </button>
             </div>
 
-            {/* Mark as Sold — only for equipment (not routes), not yet sold */}
-            {item.type !== 'route' && item.status !== 'sold' && (
+            {/* Mark as Sold — only for equipment-for-sale (not routes/pools, not rentals — those
+                are owned/managed through ViewListingSheet's rental-requests panel), not yet sold */}
+            {item.type !== 'route' && item.type !== 'pool' && item.type !== 'rent' && item.status !== 'sold' && (
               <button onClick={()=>setMarkSoldOpen(true)} style={{
                 width:'100%', marginTop:10, padding:'13px', borderRadius:14,
                 border:'none', cursor:'pointer', fontFamily:'inherit',
@@ -3695,6 +3721,13 @@ function MarketplaceScreen({ ctx }) {
     (!m.author_id && user.name && m.author === user.name) ||
     (!m.author_id && user.email && m.author === user.email.split('@')[0])
   );
+  // Rental owners need ViewListingSheet — it already has the full owner-side
+  // rental-requests approve/decline UI (isOwner && isRent branches). Only
+  // route to the plain edit/delete MyPostDetailSheet for non-rent own posts.
+  const openMyOrOthersListing = (item) => {
+    if (isMyPost(item) && item.type !== 'rent') setMyPostDetail(item);
+    else openListing(item);
+  };
   const t = STRINGS[lang];
   const [view,         setView]        = React.useState(() => {
     try {
@@ -4092,7 +4125,7 @@ function MarketplaceScreen({ ctx }) {
     const photoSrc = (item.photoUrls&&item.photoUrls[0]) || item.photoUrl || null;
     return (
       <button key={item._id}
-        onClick={()=> isMyPost(item) ? setMyPostDetail(item) : openListing(item)}
+        onClick={()=> openMyOrOthersListing(item)}
         className={isSoldItem ? '' : 'pg-press'}
         style={{
           padding:0, overflow:'hidden', position:'relative', cursor: isSoldItem ? (isMyPost(item) ? 'pointer' : 'default') : 'pointer',
@@ -5034,7 +5067,7 @@ function MarketplaceScreen({ ctx }) {
                 };
                 return (
                   <button key={item._id}
-                    onClick={()=> isMyPost(item) ? setMyPostDetail(item) : openListing(item)}
+                    onClick={()=> openMyOrOthersListing(item)}
                     className={isSoldItem ? '' : 'pg-press'}
                     style={{
                       padding:0, overflow:'hidden', position:'relative',

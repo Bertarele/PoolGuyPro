@@ -1433,6 +1433,26 @@ function ViewListingSheet({
     }, item._id);
     setReqStatus('pending');
     showToast && showToast(lang === 'pt' ? '✓ Pedido enviado! Converse com o dono pela inbox.' : '✓ Request sent! Chat with the owner via inbox.');
+    // Auto-post the proposal into the chat itself — the owner needs to see exactly
+    // what's being requested right in the conversation, not just an empty thread.
+    if (window.sb && item.author_id) {
+      const convoId = makeConvoId(currentUser.uid, item.author_id, item._id || null);
+      const periodLabel = getPeriodLabel(reqPeriod, reqQty);
+      const script = lang === 'pt' ? `📦 Quero alugar "${item.name || ''}" por ${periodLabel} — total estimado $${fmtN(totalPrice, lang)}.` : lang === 'es' ? `📦 Quiero alquilar "${item.name || ''}" por ${periodLabel} — total estimado $${fmtN(totalPrice, lang)}.` : `📦 I'd like to rent "${item.name || ''}" for ${periodLabel} — estimated total $${fmtN(totalPrice, lang)}.`;
+      window.sb.rpc('send_chat_message', {
+        p_convo_id: convoId,
+        p_body: script,
+        p_other_id: item.author_id,
+        p_my_name: _renterName,
+        p_other_name: item.author || 'Owner'
+      }).then(() => {
+        window.sb.from('conversations').update({
+          listing_id: item._id || null,
+          listing_name: item.name || null,
+          listing_photo_url: item.photoUrls && item.photoUrls[0] || item.photoUrl || null
+        }).eq('id', convoId).catch(() => {});
+      }).catch(() => {});
+    }
     if (openChat && item.author_id) {
       // Open chat on top — listing stays open behind it (Sheet zIndex 9999 > listing zIndex 200)
       openChat({
@@ -2687,12 +2707,21 @@ function ViewListingSheet({
         border: '1.5px solid rgba(245,158,11,0.4)'
       }
     }, /*#__PURE__*/React.createElement("div", {
+      onClick: () => {
+        if (openChat && item.author_id) openChat({
+          id: item.author_id,
+          name: item.author || 'Owner',
+          listingId: item._id || null,
+          listingContext: _listingCtx()
+        });
+      },
       style: {
         padding: '13px 16px',
         background: 'rgba(245,158,11,0.10)',
         display: 'flex',
         alignItems: 'center',
-        gap: 10
+        gap: 10,
+        cursor: 'pointer'
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
@@ -2716,7 +2745,20 @@ function ViewListingSheet({
         opacity: 0.8,
         marginTop: 1
       }
-    }, lang === 'pt' ? 'Aguardando resposta do dono.' : 'Waiting for owner\'s response.'))), /*#__PURE__*/React.createElement("button", {
+    }, lang === 'pt' ? 'Toque para ver o que foi enviado.' : 'Tap to see what was sent.')), /*#__PURE__*/React.createElement("svg", {
+      width: "14",
+      height: "14",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#F59E0B",
+      strokeWidth: "2.5",
+      strokeLinecap: "round",
+      style: {
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "9 18 15 12 9 6"
+    }))), /*#__PURE__*/React.createElement("button", {
       onClick: handleCancelRequest,
       disabled: cancelLoading,
       style: {
@@ -6720,7 +6762,7 @@ function MyPostDetailSheet({
     d: "M14 11v6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-  })))), item.type !== 'route' && item.status !== 'sold' && /*#__PURE__*/React.createElement("button", {
+  })))), item.type !== 'route' && item.type !== 'pool' && item.type !== 'rent' && item.status !== 'sold' && /*#__PURE__*/React.createElement("button", {
     onClick: () => setMarkSoldOpen(true),
     style: {
       width: '100%',
@@ -7054,6 +7096,12 @@ function MarketplaceScreen({
   // Name/email fallbacks ONLY for legacy posts that have no author_id
   // (prevents false-match when two users share the same display name)
   !m.author_id && myAuthor && m.author === myAuthor || !m.author_id && user.name && m.author === user.name || !m.author_id && user.email && m.author === user.email.split('@')[0];
+  // Rental owners need ViewListingSheet — it already has the full owner-side
+  // rental-requests approve/decline UI (isOwner && isRent branches). Only
+  // route to the plain edit/delete MyPostDetailSheet for non-rent own posts.
+  const openMyOrOthersListing = item => {
+    if (isMyPost(item) && item.type !== 'rent') setMyPostDetail(item);else openListing(item);
+  };
   const t = STRINGS[lang];
   const [view, setView] = React.useState(() => {
     try {
@@ -7566,7 +7614,7 @@ function MarketplaceScreen({
     const photoSrc = item.photoUrls && item.photoUrls[0] || item.photoUrl || null;
     return /*#__PURE__*/React.createElement("button", {
       key: item._id,
-      onClick: () => isMyPost(item) ? setMyPostDetail(item) : openListing(item),
+      onClick: () => openMyOrOthersListing(item),
       className: isSoldItem ? '' : 'pg-press',
       style: {
         padding: 0,
@@ -9601,7 +9649,7 @@ function MarketplaceScreen({
     };
     return /*#__PURE__*/React.createElement("button", {
       key: item._id,
-      onClick: () => isMyPost(item) ? setMyPostDetail(item) : openListing(item),
+      onClick: () => openMyOrOthersListing(item),
       className: isSoldItem ? '' : 'pg-press',
       style: {
         padding: 0,
