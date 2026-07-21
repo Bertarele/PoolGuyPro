@@ -7493,22 +7493,39 @@ function MarketplaceScreen({
   const tabIcons = {
     buy: (s, c) => Icon.cart(s, c),
     rent: (s, c) => Icon.key(s, c),
-    routes: (s, c) => Icon.pin(s, c)
+    routes: (s, c) => Icon.pin(s, c),
+    pools: (s, c) => Icon.pool(s, c)
   };
   const tabLabels = {
     buy: lang === 'pt' ? 'Comprar' : lang === 'es' ? 'Comprar' : 'Buy',
     rent: lang === 'pt' ? 'Alugar' : lang === 'es' ? 'Rentar' : 'Rent',
-    routes: lang === 'pt' ? 'Rotas' : lang === 'es' ? 'Rutas' : 'Routes'
+    routes: lang === 'pt' ? 'Rotas' : lang === 'es' ? 'Rutas' : 'Routes',
+    pools: lang === 'pt' ? 'Piscinas' : lang === 'es' ? 'Piscinas' : 'Pools'
   };
   const tabSubs = {
     buy: lang === 'pt' ? 'Equipamentos à venda' : lang === 'es' ? 'Equipo en venta' : 'Equipment for sale',
     rent: lang === 'pt' ? 'Para alugar' : lang === 'es' ? 'Para rentar' : 'For rent',
-    routes: lang === 'pt' ? 'Rotas · Piscinas avulsas' : lang === 'es' ? 'Rutas · Piscinas sueltas' : 'Routes · Single pools'
+    routes: lang === 'pt' ? 'Rotas de negócio' : lang === 'es' ? 'Rutas de negocio' : 'Business routes',
+    pools: lang === 'pt' ? 'Piscinas avulsas' : lang === 'es' ? 'Piscinas sueltas' : 'Single pools'
   };
   const sellForView = {
     buy: 'sell',
     rent: 'rent',
-    routes: 'route'
+    routes: 'route',
+    pools: 'route'
+  };
+
+  // Per-tab counts shown on the header pills
+  const approvedOrOwn = m => m.status === 'approved' || m.status === 'pending' && isMyPost(m);
+  const buyCount = marketByCounty.filter(m => m.type === 'sell' && approvedOrOwn(m)).length + EQUIPMENT.filter(e => e.mode === 'sell').length;
+  const rentCount = marketByCounty.filter(m => m.type === 'rent' && approvedOrOwn(m)).length + EQUIPMENT.filter(e => e.mode === 'rent').length;
+  const routesCount = allRoutes.length;
+  const poolsCount = allPools.length;
+  const tabCounts = {
+    buy: buyCount,
+    rent: rentCount,
+    routes: routesCount,
+    pools: poolsCount
   };
   const totalItems = marketByCounty.filter(m => (m.type === 'sell' || m.type === 'rent') && (m.status === 'approved' || m.status === 'pending' && isMyPost(m))).length + EQUIPMENT.length;
   const totalRoutes = allRoutes.length;
@@ -8248,17 +8265,21 @@ function MarketplaceScreen({
           id: 'routes',
           icon: Icon.pin,
           label: lang === 'pt' ? 'Rotas' : lang === 'es' ? 'Rutas' : 'Routes'
+        }, {
+          id: 'pools',
+          icon: Icon.pool,
+          label: lang === 'pt' ? 'Piscinas' : lang === 'es' ? 'Piscinas' : 'Pools'
         }].map(tb => {
-          const on = view === tb.id;
+          const on = tb.id === 'pools' ? view === 'routes' && routeSub === 'pools' : tb.id === 'routes' ? view === 'routes' && routeSub === 'routes' : view === tb.id;
           return /*#__PURE__*/React.createElement("button", {
             key: tb.id,
             onClick: () => {
-              setView(tb.id);
+              setView(tb.id === 'pools' ? 'routes' : tb.id);
+              setRouteSub(tb.id === 'pools' ? 'pools' : 'routes');
               setCat('All');
               setPriceRange('all');
               setRouteRegion('all');
               setRoutePrice('all');
-              setRouteSub('routes');
               setPoolPrice('all');
               setQ('');
             },
@@ -8266,7 +8287,7 @@ function MarketplaceScreen({
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              padding: '10px 30px',
+              padding: '10px 22px',
               borderRadius: 15,
               border: 'none',
               cursor: 'pointer',
@@ -8280,7 +8301,16 @@ function MarketplaceScreen({
               letterSpacing: '-0.01em',
               whiteSpace: 'nowrap'
             }
-          }, tb.icon(16, on ? '#fff' : _inactTx), tb.label);
+          }, tb.icon(16, on ? '#fff' : _inactTx), tb.label, /*#__PURE__*/React.createElement("span", {
+            style: {
+              fontSize: 11,
+              fontWeight: 700,
+              padding: '1px 7px',
+              borderRadius: 999,
+              background: on ? 'rgba(255,255,255,0.25)' : darkMode ? 'rgba(255,255,255,0.10)' : 'rgba(10,40,64,0.08)',
+              color: on ? '#fff' : _inactTx
+            }
+          }, tabCounts[tb.id]));
         })));
       })());
     }(), pendingRatings.length > 0 && /*#__PURE__*/React.createElement("div", {
@@ -8745,36 +8775,7 @@ function MarketplaceScreen({
         fontSize: 14,
         fontFamily: 'inherit'
       }
-    }, lang === 'pt' ? 'Ver planos — a partir de $14.99/mês' : lang === 'es' ? 'Ver planes — desde $14.99/mes' : 'See plans — from $14.99/mo')), user.tier !== 'free' && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: 10,
-        marginBottom: 24
-      }
-    }, [{
-      id: 'routes',
-      label: lang === 'pt' ? 'Rotas (5+ piscinas)' : 'Routes (5+ pools)'
-    }, {
-      id: 'pools',
-      label: lang === 'pt' ? 'Piscinas avulsas' : 'Individual Pools'
-    }].map(s => /*#__PURE__*/React.createElement("button", {
-      key: s.id,
-      onClick: () => setRouteSub(s.id),
-      style: {
-        padding: '10px 20px',
-        borderRadius: 12,
-        border: 'none',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        background: routeSub === s.id ? 'var(--pg-blue-500)' : 'var(--pg-white)',
-        color: routeSub === s.id ? '#fff' : 'var(--pg-ink-600)',
-        fontSize: 13,
-        fontWeight: 700,
-        border: `1.5px solid ${routeSub === s.id ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)'}`,
-        boxShadow: routeSub === s.id ? '0 4px 12px rgba(0,119,182,0.25)' : 'none',
-        transition: 'all .15s'
-      }
-    }, s.label))), user.tier === 'free' ? null : /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'Ver planos — a partir de $14.99/mês' : lang === 'es' ? 'Ver planes — desde $14.99/mes' : 'See plans — from $14.99/mo')), user.tier === 'free' ? null : /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(360px,1fr))',
@@ -9495,17 +9496,17 @@ function MarketplaceScreen({
       background: 'var(--pg-ink-100)',
       borderRadius: 14
     }
-  }, ['buy', 'rent', 'routes'].map(v => {
-    const on = view === v;
+  }, ['buy', 'rent', 'routes', 'pools'].map(v => {
+    const on = v === 'pools' ? view === 'routes' && routeSub === 'pools' : v === 'routes' ? view === 'routes' && routeSub === 'routes' : view === v;
     return /*#__PURE__*/React.createElement("button", {
       key: v,
       onClick: () => {
-        setView(v);
+        setView(v === 'pools' ? 'routes' : v);
+        setRouteSub(v === 'pools' ? 'pools' : 'routes');
         setCat('All');
         setPriceRange('all');
         setRouteRegion('all');
         setRoutePrice('all');
-        setRouteSub('routes');
         setPoolPrice('all');
       },
       style: {
@@ -9513,8 +9514,8 @@ function MarketplaceScreen({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 3,
-        padding: '9px 4px',
+        gap: 2,
+        padding: '8px 2px',
         borderRadius: 10,
         border: 'none',
         cursor: 'pointer',
@@ -9524,13 +9525,20 @@ function MarketplaceScreen({
         color: on ? 'var(--pg-blue-600)' : 'var(--pg-ink-400)',
         boxShadow: on ? '0 2px 10px rgba(0,0,0,0.10)' : 'none'
       }
-    }, tabIcons[v](16, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)'), /*#__PURE__*/React.createElement("span", {
+    }, tabIcons[v](15, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)'), /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 11.5,
+        fontSize: 10.5,
         fontWeight: on ? 700 : 500,
-        letterSpacing: '-0.01em'
+        letterSpacing: '-0.01em',
+        whiteSpace: 'nowrap'
       }
-    }, tabLabels[v]));
+    }, tabLabels[v]), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 9.5,
+        fontWeight: 700,
+        color: on ? 'var(--pg-blue-400)' : 'var(--pg-ink-300)'
+      }
+    }, tabCounts[v]));
   })), isEquipment && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "pg-search"
   }, Icon.search(18), /*#__PURE__*/React.createElement("input", {
@@ -10301,110 +10309,6 @@ function MarketplaceScreen({
       gap: 12
     }
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: 6
-    }
-  }, [{
-    id: 'routes',
-    icon: Icon.pin,
-    label: lang === 'pt' ? 'Rotas' : lang === 'es' ? 'Rutas' : 'Routes',
-    sub: lang === 'pt' ? '5+ piscinas' : lang === 'es' ? '5+ piscinas' : '5+ pools',
-    count: allRoutes.length
-  }, {
-    id: 'pools',
-    icon: (s, c) => /*#__PURE__*/React.createElement("svg", {
-      width: s,
-      height: s,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: c,
-      strokeWidth: "1.8",
-      strokeLinecap: "round",
-      strokeLinejoin: "round"
-    }, /*#__PURE__*/React.createElement("path", {
-      d: "M2 12 Q6 8 10 12 Q14 16 18 12 Q20 10 22 12"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M2 18 Q6 14 10 18 Q14 22 18 18 Q20 16 22 18"
-    }), /*#__PURE__*/React.createElement("circle", {
-      cx: "12",
-      cy: "5",
-      r: "2.5"
-    })),
-    label: lang === 'pt' ? 'Piscinas' : lang === 'es' ? 'Piscinas' : 'Pools',
-    sub: lang === 'pt' ? 'Piscinas avulsas' : lang === 'es' ? 'Piscinas sueltas' : 'Individual pools',
-    count: allPools.length
-  }].map(tab => {
-    const on = routeSub === tab.id;
-    return /*#__PURE__*/React.createElement("button", {
-      key: tab.id,
-      onClick: () => {
-        setRouteSub(tab.id);
-        setRouteRegion('all');
-        setRoutePrice('all');
-        setPoolPrice('all');
-      },
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '11px 12px',
-        borderRadius: 12,
-        border: on ? 'none' : '1px solid var(--pg-ink-200)',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        textAlign: 'left',
-        background: on ? 'var(--pg-blue-500)' : 'var(--pg-white)',
-        boxShadow: on ? '0 4px 12px rgba(0,119,182,0.25)' : 'none',
-        transition: 'all .15s ease'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 34,
-        height: 34,
-        borderRadius: 9,
-        flexShrink: 0,
-        background: on ? 'rgba(255,255,255,0.20)' : 'var(--pg-blue-50)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }
-    }, tab.icon(17, on ? '#fff' : 'var(--pg-blue-700)')), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 5
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 14,
-        fontWeight: 700,
-        color: on ? '#fff' : 'var(--pg-ink-900)',
-        letterSpacing: '-0.01em'
-      }
-    }, tab.label), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 10,
-        fontWeight: 700,
-        padding: '1px 6px',
-        borderRadius: 999,
-        background: on ? 'rgba(255,255,255,0.22)' : 'var(--pg-ink-100)',
-        color: on ? '#fff' : 'var(--pg-ink-500)'
-      }
-    }, tab.count)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10.5,
-        color: on ? 'rgba(255,255,255,0.70)' : 'var(--pg-ink-400)',
-        marginTop: 2
-      }
-    }, tab.sub)));
-  })), /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
     style: {
       padding: '12px 14px',
