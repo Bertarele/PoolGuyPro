@@ -858,7 +858,7 @@ function WorkScreen({ ctx }) {
                     {Icon.briefcase(14,H.iconC)}
                   </div>
                   <div>
-                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{HIRING.length}</div>
+                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{HIRING.length + liveJobs.length}</div>
                     <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'vagas':lang==='es'?'empleos':'openings'}</div>
                   </div>
                 </div>
@@ -886,7 +886,7 @@ function WorkScreen({ ctx }) {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg>
                   </div>
                   <div>
-                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{TECHS.length}</div>
+                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{TECHS.length + liveTechs.length}</div>
                     <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'técnicos':lang==='es'?'técnicos':'techs'}</div>
                   </div>
                 </div>
@@ -904,7 +904,7 @@ function WorkScreen({ ctx }) {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>
                   </div>
                   <div>
-                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{VACATION_LISTINGS.length}</div>
+                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{VACATION_LISTINGS.length + liveVacations.length}</div>
                     <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'coberturas':lang==='es'?'coberturas':'covers'}</div>
                   </div>
                 </div>
@@ -915,7 +915,7 @@ function WorkScreen({ ctx }) {
                   </div>
                   <div>
                     <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>
-                      {VACATIONS_APPLIED ? VACATIONS_APPLIED.length : 0}
+                      {myAppsVac.length}
                     </div>
                     <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'aplicadas':lang==='es'?'aplicadas':'applied'}</div>
                   </div>

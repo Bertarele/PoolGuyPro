@@ -1767,7 +1767,7 @@ function WorkScreen({
         lineHeight: 1,
         color: H.text
       }
-    }, HIRING.length), /*#__PURE__*/React.createElement("div", {
+    }, HIRING.length + liveJobs.length), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         opacity: 0.55,
@@ -1900,7 +1900,7 @@ function WorkScreen({
         lineHeight: 1,
         color: H.text
       }
-    }, TECHS.length), /*#__PURE__*/React.createElement("div", {
+    }, TECHS.length + liveTechs.length), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         opacity: 0.55,
@@ -1996,7 +1996,7 @@ function WorkScreen({
         lineHeight: 1,
         color: H.text
       }
-    }, VACATION_LISTINGS.length), /*#__PURE__*/React.createElement("div", {
+    }, VACATION_LISTINGS.length + liveVacations.length), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         opacity: 0.55,
@@ -2035,7 +2035,7 @@ function WorkScreen({
         lineHeight: 1,
         color: H.text
       }
-    }, VACATIONS_APPLIED ? VACATIONS_APPLIED.length : 0), /*#__PURE__*/React.createElement("div", {
+    }, myAppsVac.length), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         opacity: 0.55,
