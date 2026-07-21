@@ -885,10 +885,13 @@ function App() {
       status: r.status || 'pending',
       createdAt: r.created_at || null,
       soldAt: r.sold_at || null,
-      boostedUntil: r.boosted_until || null });
+      boostedUntil: r.boosted_until || null,
+      expiresAt: r.expires_at || null });
 
     // Clean up sold listings older than 1 day (fire-and-forget)
     window.sb.rpc('cleanup_old_sold_listings').then(() => {}).catch(() => {});
+    // Expire marketplace listings past their 30-day window (fire-and-forget)
+    window.sb.rpc('cleanup_expired_marketplace').then(() => {}).catch(() => {});
 
     // Data fetch — runs AFTER auth is ready (authReady gate above)
     const doFetch = async () => {
@@ -1168,6 +1171,7 @@ function App() {
       rent_period: data.rentPeriod || null,
       rent_prices: data.rentPrices || null,
       status: 'pending',
+      expires_at: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
     } : { ...data, author: authorName };
 
     return window.sb.from(col).insert(row)

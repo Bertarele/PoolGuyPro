@@ -635,6 +635,78 @@ function PhotoCarousel({
   }));
 }
 
+// ── Expiring listing prompt — "still available?" ──────────────────────────
+function ExpiringListingPrompt({
+  item,
+  lang,
+  onClose,
+  onRenew,
+  onNotAvailable
+}) {
+  if (!item) return null;
+  return /*#__PURE__*/React.createElement(Sheet, {
+    open: !!item,
+    onClose: onClose,
+    height: "auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '20px 18px 32px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      background: 'var(--pg-ink-200)',
+      margin: '-6px auto 20px'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: 'var(--pg-ink-900)',
+      fontFamily: 'var(--pg-font-display)',
+      marginBottom: 6
+    }
+  }, "\u23F3 ", lang === 'pt' ? 'Seu anúncio expira em breve' : lang === 'es' ? 'Tu anuncio expira pronto' : 'Your listing expires soon'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: 'var(--pg-ink-500)',
+      marginBottom: 20,
+      lineHeight: 1.4
+    }
+  }, lang === 'pt' ? `"${item.name}" ainda está disponível?` : lang === 'es' ? `¿"${item.name}" sigue disponible?` : `Is "${item.name}" still available?`), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onRenew(item),
+    style: {
+      width: '100%',
+      padding: '15px',
+      borderRadius: 14,
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 15,
+      fontWeight: 700,
+      color: '#fff',
+      background: 'linear-gradient(135deg,#16A34A,#15803D)',
+      marginBottom: 10
+    }
+  }, "\u2713 ", lang === 'pt' ? 'Sim, renovar por 30 dias' : lang === 'es' ? 'Sí, renovar por 30 días' : 'Yes, renew for 30 more days'), /*#__PURE__*/React.createElement("button", {
+    onClick: onNotAvailable,
+    style: {
+      width: '100%',
+      padding: '13px',
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 14,
+      fontWeight: 600,
+      background: 'var(--pg-ink-50)',
+      color: 'var(--pg-ink-600)'
+    }
+  }, lang === 'pt' ? 'Não está mais disponível' : lang === 'es' ? 'Ya no está disponible' : 'Not available anymore')));
+}
+
 // ── Mark as Sold Sheet ───────────────────────────────────────────────────────
 function MarkSoldSheet({
   item,
@@ -642,6 +714,7 @@ function MarkSoldSheet({
   currentUser,
   onClose,
   onSold,
+  onSkip,
   showToast
 }) {
   const [contacts, setContacts] = React.useState([]);
@@ -873,7 +946,22 @@ function MarkSoldSheet({
     strokeLinecap: "round"
   }, /*#__PURE__*/React.createElement("polyline", {
     points: "20 6 9 17 4 12"
-  })), confirming ? '...' : lang === 'pt' ? 'Confirmar venda' : 'Confirm Sale'), /*#__PURE__*/React.createElement("button", {
+  })), confirming ? '...' : lang === 'pt' ? 'Confirmar venda' : 'Confirm Sale'), onSkip && /*#__PURE__*/React.createElement("button", {
+    onClick: onSkip,
+    style: {
+      display: 'block',
+      width: '100%',
+      marginTop: 12,
+      padding: '4px 0',
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-ink-400)',
+      fontSize: 12.5,
+      fontWeight: 600,
+      cursor: 'pointer',
+      textDecoration: 'underline'
+    }
+  }, lang === 'pt' ? 'Não vendi pelo app — pular' : lang === 'es' ? 'No lo vendí en la app — omitir' : "I didn't sell through the app — skip"), /*#__PURE__*/React.createElement("button", {
     onClick: onClose,
     style: {
       width: '100%',
@@ -6943,7 +7031,8 @@ function MarketplaceScreen({
     status: r.status || 'pending',
     createdAt: r.created_at || null,
     soldAt: r.sold_at || null,
-    boostedUntil: r.boosted_until || null
+    boostedUntil: r.boosted_until || null,
+    expiresAt: r.expires_at || null
   });
 
   // Show sold items for 1 day only, then they get auto-deleted from marketplace (archived to history)
@@ -7019,6 +7108,40 @@ function MarketplaceScreen({
   const [poolPrice, setPoolPrice] = React.useState('all'); // individual pools price filter
   const [savedIds, setSavedIds] = React.useState(new Set());
   const [shareItem, setShareItem] = React.useState(null);
+
+  // Proactively ask the owner about their own soon-expiring listings (still
+  // available → renew 30 more days, or not → pick the buyer from chat / skip).
+  const [expiringItem, setExpiringItem] = React.useState(null); // item being prompted about
+  const [notAvailableItem, setNotAvailableItem] = React.useState(null); // item in the buyer-picker sheet
+  const EXPIRY_PROMPT_WINDOW_MS = 3 * 24 * 60 * 60 * 1000; // prompt once <3 days remain
+  const promptedMktExpiryRef = React.useRef(new Set());
+  React.useEffect(() => {
+    if (!user?.uid || expiringItem || notAvailableItem) return;
+    const soon = liveMarket.find(m => {
+      if (m.status !== 'approved' || m.author_id !== user.uid || !m.expiresAt) return false;
+      if (promptedMktExpiryRef.current.has(m._id)) return false;
+      const remainingMs = new Date(m.expiresAt).getTime() - Date.now();
+      return remainingMs > 0 && remainingMs < EXPIRY_PROMPT_WINDOW_MS;
+    });
+    if (soon) {
+      promptedMktExpiryRef.current.add(soon._id);
+      setExpiringItem(soon);
+    }
+  }, [liveMarket, user?.uid, expiringItem, notAvailableItem]);
+  const renewListing = async item => {
+    if (!window.sb) return;
+    const {
+      error
+    } = await window.sb.from('marketplace').update({
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    }).eq('id', item._id);
+    setExpiringItem(null);
+    if (error) {
+      showToast && showToast('❌ ' + error.message);
+      return;
+    }
+    showToast && showToast(lang === 'pt' ? '✓ Anúncio renovado por mais 30 dias' : lang === 'es' ? '✓ Anuncio renovado por 30 días más' : '✓ Listing renewed for 30 more days');
+  };
 
   // Sync view to URL hash
   React.useEffect(() => {
@@ -8954,6 +9077,44 @@ function MarketplaceScreen({
             if (showToast) showToast(lang === 'pt' ? '✓ Anúncio enviado para revisão' : '✓ Listing sent for review');
           }
         }
+      }
+    })), /*#__PURE__*/React.createElement(ExpiringListingPrompt, {
+      item: expiringItem,
+      lang: lang,
+      onClose: () => setExpiringItem(null),
+      onRenew: renewListing,
+      onNotAvailable: () => {
+        setNotAvailableItem(expiringItem);
+        setExpiringItem(null);
+      }
+    }), /*#__PURE__*/React.createElement(Sheet, {
+      open: !!notAvailableItem,
+      onClose: () => setNotAvailableItem(null),
+      height: "auto"
+    }, notAvailableItem && /*#__PURE__*/React.createElement(MarkSoldSheet, {
+      item: notAvailableItem,
+      lang: lang,
+      currentUser: user,
+      showToast: showToast,
+      onClose: () => setNotAvailableItem(null),
+      onSold: sellerRating => {
+        const id = notAvailableItem._id;
+        setNotAvailableItem(null);
+        if (ctx && ctx.updateMarketItem) ctx.updateMarketItem(id, {
+          status: 'sold'
+        });
+        openRating && sellerRating && openRating(sellerRating);
+      },
+      onSkip: async () => {
+        const id = notAvailableItem._id;
+        if (window.sb) await window.sb.from('marketplace').update({
+          status: 'expired'
+        }).eq('id', id);
+        setNotAvailableItem(null);
+        if (ctx && ctx.updateMarketItem) ctx.updateMarketItem(id, {
+          status: 'expired'
+        });
+        showToast && showToast(lang === 'pt' ? 'Anúncio removido' : lang === 'es' ? 'Anuncio eliminado' : 'Listing removed');
       }
     })), /*#__PURE__*/React.createElement(FullPage, {
       open: postOpen && postMode === 'route',
@@ -11041,6 +11202,44 @@ function MarketplaceScreen({
           if (showToast) showToast(lang === 'pt' ? '✓ Anúncio enviado para revisão' : lang === 'es' ? '✓ Anuncio enviado a revisión' : '✓ Listing sent for review');
         }
       }
+    }
+  })), /*#__PURE__*/React.createElement(ExpiringListingPrompt, {
+    item: expiringItem,
+    lang: lang,
+    onClose: () => setExpiringItem(null),
+    onRenew: renewListing,
+    onNotAvailable: () => {
+      setNotAvailableItem(expiringItem);
+      setExpiringItem(null);
+    }
+  }), /*#__PURE__*/React.createElement(Sheet, {
+    open: !!notAvailableItem,
+    onClose: () => setNotAvailableItem(null),
+    height: "auto"
+  }, notAvailableItem && /*#__PURE__*/React.createElement(MarkSoldSheet, {
+    item: notAvailableItem,
+    lang: lang,
+    currentUser: user,
+    showToast: showToast,
+    onClose: () => setNotAvailableItem(null),
+    onSold: sellerRating => {
+      const id = notAvailableItem._id;
+      setNotAvailableItem(null);
+      if (ctx && ctx.updateMarketItem) ctx.updateMarketItem(id, {
+        status: 'sold'
+      });
+      openRating && sellerRating && openRating(sellerRating);
+    },
+    onSkip: async () => {
+      const id = notAvailableItem._id;
+      if (window.sb) await window.sb.from('marketplace').update({
+        status: 'expired'
+      }).eq('id', id);
+      setNotAvailableItem(null);
+      if (ctx && ctx.updateMarketItem) ctx.updateMarketItem(id, {
+        status: 'expired'
+      });
+      showToast && showToast(lang === 'pt' ? 'Anúncio removido' : lang === 'es' ? 'Anuncio eliminado' : 'Listing removed');
     }
   })), /*#__PURE__*/React.createElement(FullPage, {
     open: postOpen && postMode === 'route',
