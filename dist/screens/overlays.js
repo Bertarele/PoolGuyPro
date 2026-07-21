@@ -4769,10 +4769,12 @@ function PostMenuSheet({
 // ── Toast ─────────────────────────────────────────────────────
 function Toast({
   message,
-  kind = 'success'
+  kind = 'success',
+  onClick
 }) {
   if (!message) return null;
   return /*#__PURE__*/React.createElement("div", {
+    onClick: onClick,
     style: {
       position: 'absolute',
       left: 18,
@@ -4787,7 +4789,8 @@ function Toast({
       alignItems: 'center',
       gap: 10,
       boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-      animation: 'pg-sheet-up 0.28s cubic-bezier(.22,1,.36,1)'
+      animation: 'pg-sheet-up 0.28s cubic-bezier(.22,1,.36,1)',
+      cursor: onClick ? 'pointer' : 'default'
     }
   }, kind === 'success' && Icon.check(18, '#fff'), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4796,7 +4799,20 @@ function Toast({
       lineHeight: 1.4,
       flex: 1
     }
-  }, message));
+  }, message), onClick && /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "2.5",
+    strokeLinecap: "round",
+    style: {
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "9 18 15 12 9 6"
+  })));
 }
 
 // ── Wallet Sheet ──────────────────────────────────────────────

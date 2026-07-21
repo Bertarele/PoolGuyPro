@@ -956,42 +956,60 @@ function App() {
       setTab(pendingDeepLink.tab);
     }
   }, [pendingDeepLink, user?.uid, openChatFromDeepLink]);
-  // Listen for service worker postMessage (notification click while app is open)
+  // Shared deep-link navigation — used both when a notification is tapped
+  // (OPEN_JOB) and from the in-app toast shown while the app is foregrounded
+  // (PUSH_RECEIVED, see below).
+  const navigateFromDeepLinkUrl = React.useCallback(url => {
+    const hashIdx = url.indexOf('#');
+    const hash = hashIdx >= 0 ? url.slice(hashIdx) : '';
+    if (hash.startsWith('#chat')) {
+      const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+      const params = new URLSearchParams(qs);
+      const userId = params.get('user') || null;
+      const userName = params.get('name') || null;
+      if (userId) {
+        openChatFromDeepLink(userId, userName);
+      }
+    } else if (hash.startsWith('#quick')) {
+      const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+      const jobId = new URLSearchParams(qs).get('job') || null;
+      if (jobId) {
+        window.history.replaceState(null, '', '#quick');
+        setPendingQuickJobId(jobId);
+        setTab('quick');
+      } else {
+        setTab('quick');
+      }
+    } else if (hash.startsWith('#market')) {
+      setTab('market');
+    } else if (hash.startsWith('#work')) {
+      setTab('work');
+    }
+  }, [openChatFromDeepLink]);
+
+  // Listen for service worker postMessage — either a notification tap while
+  // the app was already open (OPEN_JOB, navigates right away since the user
+  // already expressed intent by tapping), or a push arriving while the app
+  // is foregrounded (PUSH_RECEIVED — tapping the OS banner is unreliable on
+  // iOS PWAs in that state, so show a clickable in-app toast instead).
   React.useEffect(() => {
     if (!navigator.serviceWorker) return;
     const handler = event => {
-      if (event.data?.type !== 'OPEN_JOB') return;
-      window.playNotifSound && window.playNotifSound();
-      const url = event.data.url || '';
-      const hashIdx = url.indexOf('#');
-      const hash = hashIdx >= 0 ? url.slice(hashIdx) : '';
-      if (hash.startsWith('#chat')) {
-        const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-        const params = new URLSearchParams(qs);
-        const userId = params.get('user') || null;
-        const userName = params.get('name') || null;
-        if (userId) {
-          openChatFromDeepLink(userId, userName);
-        }
-      } else if (hash.startsWith('#quick')) {
-        const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-        const jobId = new URLSearchParams(qs).get('job') || null;
-        if (jobId) {
-          window.history.replaceState(null, '', '#quick');
-          setPendingQuickJobId(jobId);
-          setTab('quick');
-        } else {
-          setTab('quick');
-        }
-      } else if (hash.startsWith('#market')) {
-        setTab('market');
-      } else if (hash.startsWith('#work')) {
-        setTab('work');
+      if (event.data?.type === 'OPEN_JOB') {
+        window.playNotifSound && window.playNotifSound();
+        navigateFromDeepLinkUrl(event.data.url || '');
+      } else if (event.data?.type === 'PUSH_RECEIVED') {
+        const url = event.data.url || '';
+        if (!url.includes('#chat')) return; // other types already surface via the bell/realtime
+        window.playNotifSound && window.playNotifSound();
+        const title = event.data.title || '';
+        const body = event.data.body || '';
+        showToast(`${title}${body ? ': ' + body : ''}`, () => navigateFromDeepLinkUrl(url));
       }
     };
     navigator.serviceWorker.addEventListener('message', handler);
     return () => navigator.serviceWorker.removeEventListener('message', handler);
-  }, [openChatFromDeepLink]);
+  }, [navigateFromDeepLinkUrl]);
   const [notifOpen, setNotifOpen] = React.useState(false);
   // Unread badges — derived from real Supabase data
   const [hasUnreadChat, setHasUnreadChat] = React.useState(false);
@@ -1007,6 +1025,7 @@ function App() {
   const [verifyOpen, setVerifyOpen] = React.useState(false);
   const [pushNotifOpen, setPushNotifOpen] = React.useState(false);
   const [toast, setToast] = React.useState(null);
+  const [toastClick, setToastClick] = React.useState(null);
   const [walletOpen, setWalletOpen] = React.useState(false);
   const [feedbackOpen, setFeedbackOpen] = React.useState(false);
   const [jobDetailApp, setJobDetailApp] = React.useState(null);
@@ -1605,9 +1624,13 @@ function App() {
       localStorage.setItem('pg_lang', l);
     } catch (e) {}
   };
-  const showToast = msg => {
+  const showToast = (msg, onClick) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 2400);
+    setToastClick(() => onClick || null);
+    setTimeout(() => {
+      setToast(null);
+      setToastClick(null);
+    }, onClick ? 5000 : 2400);
   };
 
   // ── Responsive: detect desktop vs mobile (must be BEFORE ctx) ──
@@ -2262,7 +2285,12 @@ function App() {
       }
     }
   })), /*#__PURE__*/React.createElement(Toast, {
-    message: toast
+    message: toast,
+    onClick: toastClick ? () => {
+      toastClick();
+      setToast(null);
+      setToastClick(null);
+    } : undefined
   }), /*#__PURE__*/React.createElement(RegionEditorSheet, {
     open: regionOpen,
     onClose: () => setRegionOpen(false),

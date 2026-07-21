@@ -2550,19 +2550,21 @@ function PostMenuSheet({ open, onClose, onPickQuickPool, lang='en' }) {
 }
 
 // ── Toast ─────────────────────────────────────────────────────
-function Toast({ message, kind='success' }) {
+function Toast({ message, kind='success', onClick }) {
   if (!message) return null;
   return (
-    <div style={{
+    <div onClick={onClick} style={{
       position:'absolute', left:18, right:18, bottom:108, zIndex:200,
       padding:'12px 14px', borderRadius:14,
       background:kind==='success'?'var(--pg-aqua-700)':'var(--pg-ink-900)',
       color:'#fff', display:'flex', alignItems:'center', gap:10,
       boxShadow:'0 8px 24px rgba(0,0,0,0.2)',
       animation:'pg-sheet-up 0.28s cubic-bezier(.22,1,.36,1)',
+      cursor: onClick ? 'pointer' : 'default',
     }}>
       {kind==='success' && Icon.check(18,'#fff')}
       <div style={{fontSize:13, fontWeight:500, lineHeight:1.4, flex:1}}>{message}</div>
+      {onClick && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}><polyline points="9 18 15 12 9 6"/></svg>}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 // PoolGuyPro Service Worker — Push Notifications + Offline Cache
 
 const APP_ICON  = '/icone.png';
-const CACHE_VER = 'pgp-v10';
+const CACHE_VER = 'pgp-v11';
 
 // Static assets to pre-cache on install (only files that actually exist in dist/)
 // HTML is intentionally excluded so it's always fetched fresh (network-first)
@@ -69,15 +69,24 @@ self.addEventListener('fetch', e => {
 // ── Receive push and show notification ─────────────────────────
 self.addEventListener('push', e => {
   const data = e.data?.json() || {};
-  e.waitUntil(
-    self.registration.showNotification(data.title || 'PoolGuyPro', {
+  e.waitUntil((async () => {
+    // If the app is already open and in the foreground, also deliver the
+    // payload directly to the page so it can show its own clickable in-app
+    // toast — tapping the OS banner while the app is foregrounded is
+    // unreliable on iOS PWAs, so this gives a guaranteed way to open it.
+    try {
+      const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const visible = list.find(c => c.visibilityState === 'visible');
+      if (visible) visible.postMessage({ type: 'PUSH_RECEIVED', title: data.title || '', body: data.body || '', url: data.url || '/' });
+    } catch (e) {}
+    return self.registration.showNotification(data.title || 'PoolGuyPro', {
       body:    data.body  || '',
       icon:    APP_ICON,
       badge:   APP_ICON,
       vibrate: [150, 80, 150],
       data:    { url: data.url || '/' },
-    })
-  );
+    });
+  })());
 });
 
 // ── Tap notification → open/focus the app and deep-link ───────
