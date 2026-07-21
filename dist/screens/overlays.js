@@ -8448,9 +8448,7 @@ function RatingSheet({
     try {
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const myName = currentUser.name || currentUser.displayName || '';
-      const {
-        error
-      } = await window.sb.from('ratings').upsert({
+      const payload = {
         from_id: currentUser.uid,
         to_id: rating.to_id,
         from_name: myName,
@@ -8462,8 +8460,17 @@ function RatingSheet({
         connection_type: rating.connection_type || null,
         connection_id: rating.connection_id || null,
         expires_at: expiresAt
-      }, {
-        onConflict: 'from_id,to_id'
+      };
+      // "from_id,to_id" was never a real constraint on this table — every
+      // upsert with that onConflict target hard-failed (42P10: no matching
+      // unique/exclusion constraint), so no seller-rates-buyer submission
+      // through this sheet ever actually saved. Target the row we already
+      // know (from a pre-created placeholder) when we have its id; otherwise
+      // upsert against the connection-based unique index.
+      const {
+        error
+      } = rating.id ? await window.sb.from('ratings').update(payload).eq('id', rating.id) : await window.sb.from('ratings').upsert(payload, {
+        onConflict: 'connection_type,connection_id,from_id'
       });
       if (error) throw error;
       // Reveals both ratings to each other if the other side already submitted theirs
