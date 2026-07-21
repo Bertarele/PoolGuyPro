@@ -147,7 +147,7 @@ function HomeScreen({
     }).limit(10).then(({
       data
     }) => {
-      if (data && data.length > 0) setFeaturedListings(data);
+      setFeaturedListings(data || []);
     });
   }, []);
 
@@ -1165,7 +1165,7 @@ function HomeScreen({
     strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("polyline", {
     points: "9 18 15 12 9 6"
-  })))))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+  })))))), featuredListings.length > 0 && /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',
@@ -1199,7 +1199,7 @@ function HomeScreen({
       marginRight: -18,
       padding: '2px 18px 8px'
     }
-  }, featuredListings.length > 0 ? featuredListings.map(f => {
+  }, featuredListings.map(f => {
     // Real DB item
     const typeTag = f.type === 'sell' ? 'SALE' : f.type === 'rent' ? 'RENT' : f.type === 'route' ? 'ROUTE' : 'NEW';
     const tagBg = typeTag === 'SALE' || typeTag === 'RENT' ? '#EFF6FF' : typeTag === 'ROUTE' ? '#F0FDF4' : '#F0FDF4';
@@ -1336,139 +1336,6 @@ function HomeScreen({
         overflow: 'hidden'
       }
     }, f.loc || f.area || f.description || '')));
-  }) : FEATURED.map(f => {
-    // Fallback static data (shown while no featured items are configured)
-    const isUrgent = f.tag === 'URGENT';
-    const isHiring = f.tag === 'HIRING';
-    const isSale = f.tag === 'SALE';
-    const isRent = f.tag === 'RENT';
-    const tagBg = isUrgent ? '#FEE2E2' : isHiring ? '#ECFDF5' : isSale || isRent ? '#EFF6FF' : '#F0FDF4';
-    const tagColor = isUrgent ? '#DC2626' : isHiring ? '#059669' : isSale || isRent ? '#1D4ED8' : '#16A34A';
-    const tagLabel = isUrgent ? lang === 'pt' ? '🔥 URGENTE' : lang === 'es' ? '🔥 URGENTE' : '🔥 URGENT' : isHiring ? lang === 'pt' ? '✦ CONTRATANDO' : lang === 'es' ? '✦ CONTRATANDO' : '✦ HIRING' : isSale ? lang === 'pt' ? '🏷 VENDA' : lang === 'es' ? '🏷 VENTA' : '🏷 SALE' : isRent ? lang === 'pt' ? '🔑 ALUGUEL' : lang === 'es' ? '🔑 ALQUILER' : '🔑 RENT' : '✦ NEW';
-    return /*#__PURE__*/React.createElement("div", {
-      key: f.id,
-      onClick: () => setSelectedFeatured(f),
-      style: {
-        minWidth: 170,
-        maxWidth: 170,
-        flexShrink: 0,
-        cursor: 'pointer',
-        borderRadius: 16,
-        overflow: 'hidden',
-        background: 'var(--pg-white)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        border: '1px solid var(--pg-ink-100)',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'transform .12s, box-shadow .12s'
-      },
-      onMouseDown: e => e.currentTarget.style.transform = 'scale(0.97)',
-      onMouseUp: e => e.currentTarget.style.transform = '',
-      onTouchStart: e => e.currentTarget.style.transform = 'scale(0.97)',
-      onTouchEnd: e => e.currentTarget.style.transform = ''
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'relative',
-        paddingTop: '66%',
-        background: 'var(--pg-ink-200)',
-        overflow: 'hidden',
-        flexShrink: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        inset: 0
-      }
-    }, /*#__PURE__*/React.createElement(EquipImg, {
-      category: f.category,
-      height: '100%'
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 40%, rgba(0,0,0,0.25) 100%)',
-        pointerEvents: 'none'
-      }
-    }), /*#__PURE__*/React.createElement("span", {
-      style: {
-        position: 'absolute',
-        bottom: 8,
-        right: 8,
-        fontSize: 8.5,
-        fontWeight: 700,
-        padding: '2px 7px',
-        borderRadius: 5,
-        background: 'rgba(0,0,0,0.55)',
-        color: '#fff',
-        letterSpacing: '0.07em',
-        backdropFilter: 'blur(3px)',
-        textTransform: 'uppercase'
-      }
-    }, catLabel(f.category))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '10px 11px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        flex: 1
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 4,
-        marginBottom: 6
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 9,
-        fontWeight: 800,
-        padding: '3px 7px',
-        borderRadius: 5,
-        background: tagBg,
-        color: tagColor,
-        letterSpacing: '0.04em',
-        flexShrink: 0,
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        maxWidth: 90
-      }
-    }, tagLabel), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: 'var(--pg-font-display)',
-        fontSize: 13,
-        fontWeight: 800,
-        color: 'var(--pg-blue-500)',
-        letterSpacing: '-0.01em',
-        flexShrink: 0,
-        whiteSpace: 'nowrap'
-      }
-    }, tr(f.price, lang))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 700,
-        lineHeight: 1.3,
-        letterSpacing: '-0.01em',
-        color: 'var(--pg-ink-900)',
-        flex: 1,
-        display: '-webkit-box',
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: 'vertical',
-        overflow: 'hidden'
-      }
-    }, tr(f.title, lang)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: 'var(--pg-ink-500)',
-        marginTop: 5,
-        lineHeight: 1.3,
-        display: '-webkit-box',
-        WebkitLineClamp: 1,
-        WebkitBoxOrient: 'vertical',
-        overflow: 'hidden'
-      }
-    }, tr(f.sub, lang))));
   }))), sponsoredCard && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative'
