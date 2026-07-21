@@ -7527,8 +7527,6 @@ function MarketplaceScreen({
     routes: routesCount,
     pools: poolsCount
   };
-  const totalItems = marketByCounty.filter(m => (m.type === 'sell' || m.type === 'rent') && (m.status === 'approved' || m.status === 'pending' && isMyPost(m))).length + EQUIPMENT.length;
-  const totalRoutes = allRoutes.length;
   const locationLbl = lang === 'pt' ? 'Sul da Flórida' : lang === 'es' ? 'Sur de Florida' : 'South Florida';
 
   // Desktop detection
@@ -8042,46 +8040,44 @@ function MarketplaceScreen({
         style: {
           display: 'flex',
           alignItems: 'center',
-          gap: 16,
+          gap: 14,
           flex: 1
         }
       }, [{
         icon: Icon.cart(13, _sub2),
-        value: totalItems,
-        label: lang === 'pt' ? 'itens' : 'items'
+        value: buyCount
+      }, {
+        icon: Icon.key(13, _sub2),
+        value: rentCount
       }, {
         icon: Icon.pin(13, _sub2),
-        value: totalRoutes,
-        label: lang === 'pt' ? 'rotas' : 'routes'
+        value: routesCount
+      }, {
+        icon: Icon.pool(13, _sub2),
+        value: poolsCount
       }].map((s, i) => /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
           display: 'flex',
           alignItems: 'center',
-          gap: 6
+          gap: 5
         }
       }, i > 0 && /*#__PURE__*/React.createElement("div", {
         style: {
           width: 1,
-          height: 18,
+          height: 16,
           background: darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(10,40,64,0.10)',
-          marginRight: 10
+          marginRight: 9
         }
       }), s.icon, /*#__PURE__*/React.createElement("span", {
         style: {
           fontFamily: 'var(--pg-font-display)',
-          fontSize: 15,
+          fontSize: 14,
           fontWeight: 800,
           color: _tx,
           letterSpacing: '-0.02em'
         }
-      }, s.value), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 11,
-          color: _sub,
-          fontWeight: 500
-        }
-      }, s.label)))), /*#__PURE__*/React.createElement("div", {
+      }, s.value)))), /*#__PURE__*/React.createElement("div", {
         style: {
           display: 'flex',
           alignItems: 'center',
@@ -8301,16 +8297,7 @@ function MarketplaceScreen({
               letterSpacing: '-0.01em',
               whiteSpace: 'nowrap'
             }
-          }, tb.icon(16, on ? '#fff' : _inactTx), tb.label, /*#__PURE__*/React.createElement("span", {
-            style: {
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '1px 7px',
-              borderRadius: 999,
-              background: on ? 'rgba(255,255,255,0.25)' : darkMode ? 'rgba(255,255,255,0.10)' : 'rgba(10,40,64,0.08)',
-              color: on ? '#fff' : _inactTx
-            }
-          }, tabCounts[tb.id]));
+          }, tb.icon(16, on ? '#fff' : _inactTx), tb.label);
         })));
       })());
     }(), pendingRatings.length > 0 && /*#__PURE__*/React.createElement("div", {
@@ -9299,83 +9286,34 @@ function MarketplaceScreen({
         paddingTop: 10,
         borderTop: `1px solid ${H.border}`
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, [{
+      icon: Icon.cart,
+      value: buyCount
+    }, {
+      icon: Icon.key,
+      value: rentCount
+    }, {
+      icon: Icon.pin,
+      value: routesCount
+    }, {
+      icon: Icon.pool,
+      value: poolsCount
+    }].map((s, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
       style: {
         display: 'flex',
         alignItems: 'center',
-        gap: 7
+        gap: 5
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, s.icon(15, H.iconC), /*#__PURE__*/React.createElement("span", {
       style: {
-        width: 30,
-        height: 30,
-        borderRadius: 9,
-        background: H.iconBg,
-        border: `0.5px solid ${H.border}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }
-    }, Icon.cart(14, H.iconC)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 17,
+        fontSize: 14,
         fontWeight: 800,
         fontFamily: 'var(--pg-font-display)',
-        lineHeight: 1,
         letterSpacing: '-0.02em',
         color: H.text
       }
-    }, totalItems), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        opacity: 0.55,
-        lineHeight: 1,
-        marginTop: 1.5,
-        fontWeight: 500,
-        color: H.text
-      }
-    }, lang === 'pt' ? 'itens' : lang === 'es' ? 'artículos' : 'items'))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 1,
-        height: 30,
-        background: H.divider
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 30,
-        height: 30,
-        borderRadius: 9,
-        background: H.iconBg,
-        border: `0.5px solid ${H.border}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }
-    }, Icon.pin(14, H.iconC)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 17,
-        fontWeight: 800,
-        fontFamily: 'var(--pg-font-display)',
-        lineHeight: 1,
-        letterSpacing: '-0.02em',
-        color: H.text
-      }
-    }, totalRoutes), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        opacity: 0.55,
-        lineHeight: 1,
-        marginTop: 1.5,
-        fontWeight: 500,
-        color: H.text
-      }
-    }, lang === 'pt' ? 'rotas' : lang === 'es' ? 'rutas' : 'routes'))), /*#__PURE__*/React.createElement("div", {
+    }, s.value))), /*#__PURE__*/React.createElement("div", {
       style: {
         width: 1,
         height: 30,
@@ -9514,8 +9452,8 @@ function MarketplaceScreen({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
-        padding: '8px 2px',
+        gap: 3,
+        padding: '9px 2px',
         borderRadius: 10,
         border: 'none',
         cursor: 'pointer',
@@ -9525,20 +9463,14 @@ function MarketplaceScreen({
         color: on ? 'var(--pg-blue-600)' : 'var(--pg-ink-400)',
         boxShadow: on ? '0 2px 10px rgba(0,0,0,0.10)' : 'none'
       }
-    }, tabIcons[v](15, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)'), /*#__PURE__*/React.createElement("span", {
+    }, tabIcons[v](16, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)'), /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 10.5,
+        fontSize: 11.5,
         fontWeight: on ? 700 : 500,
         letterSpacing: '-0.01em',
         whiteSpace: 'nowrap'
       }
-    }, tabLabels[v]), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 9.5,
-        fontWeight: 700,
-        color: on ? 'var(--pg-blue-400)' : 'var(--pg-ink-300)'
-      }
-    }, tabCounts[v]));
+    }, tabLabels[v]));
   })), isEquipment && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "pg-search"
   }, Icon.search(18), /*#__PURE__*/React.createElement("input", {

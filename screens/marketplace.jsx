@@ -4058,11 +4058,6 @@ function MarketplaceScreen({ ctx }) {
   const poolsCount  = allPools.length;
   const tabCounts = { buy: buyCount, rent: rentCount, routes: routesCount, pools: poolsCount };
 
-  const totalItems = marketByCounty.filter(m =>
-    (m.type === 'sell' || m.type === 'rent') &&
-    (m.status === 'approved' || (m.status === 'pending' && isMyPost(m)))
-  ).length + EQUIPMENT.length;
-  const totalRoutes = allRoutes.length;
   const locationLbl = lang==='pt'?'Sul da Flórida':lang==='es'?'Sur de Florida':'South Florida';
 
   // Desktop detection
@@ -4296,17 +4291,18 @@ function MarketplaceScreen({ ctx }) {
                 {/* Divider */}
                 <div style={{width:1, height:32, background: darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)', flexShrink:0}}/>
 
-                {/* Stats inline */}
-                <div style={{display:'flex', alignItems:'center', gap:16, flex:1}}>
+                {/* Stats inline — icon + count per category, no labels */}
+                <div style={{display:'flex', alignItems:'center', gap:14, flex:1}}>
                   {[
-                    { icon: Icon.cart(13,_sub2), value: totalItems,  label: lang==='pt'?'itens':'items' },
-                    { icon: Icon.pin(13,_sub2),  value: totalRoutes, label: lang==='pt'?'rotas':'routes' },
+                    { icon: Icon.cart(13,_sub2), value: buyCount },
+                    { icon: Icon.key(13,_sub2),  value: rentCount },
+                    { icon: Icon.pin(13,_sub2),  value: routesCount },
+                    { icon: Icon.pool(13,_sub2), value: poolsCount },
                   ].map((s,i) => (
-                    <div key={i} style={{display:'flex', alignItems:'center', gap:6}}>
-                      {i > 0 && <div style={{width:1, height:18, background: darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)', marginRight:10}}/>}
+                    <div key={i} style={{display:'flex', alignItems:'center', gap:5}}>
+                      {i > 0 && <div style={{width:1, height:16, background: darkMode?'rgba(255,255,255,0.12)':'rgba(10,40,64,0.10)', marginRight:9}}/>}
                       {s.icon}
-                      <span style={{fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:800, color:_tx, letterSpacing:'-0.02em'}}>{s.value}</span>
-                      <span style={{fontSize:11, color:_sub, fontWeight:500}}>{s.label}</span>
+                      <span style={{fontFamily:'var(--pg-font-display)', fontSize:14, fontWeight:800, color:_tx, letterSpacing:'-0.02em'}}>{s.value}</span>
                     </div>
                   ))}
                 </div>
@@ -4407,11 +4403,6 @@ function MarketplaceScreen({ ctx }) {
                             }}>
                             {tb.icon(16, on ? '#fff' : _inactTx)}
                             {tb.label}
-                            <span style={{
-                              fontSize:11, fontWeight:700, padding:'1px 7px', borderRadius:999,
-                              background: on ? 'rgba(255,255,255,0.25)' : (darkMode?'rgba(255,255,255,0.10)':'rgba(10,40,64,0.08)'),
-                              color: on ? '#fff' : _inactTx,
-                            }}>{tabCounts[tb.id]}</span>
                           </button>
                         );
                       })}
@@ -4850,29 +4841,19 @@ function MarketplaceScreen({ ctx }) {
               </div>
             )}
           >
-            {/* Stats strip below title */}
+            {/* Stats strip below title — icon + count per category, no labels */}
             <div style={{display:'flex', alignItems:'center', gap:12, marginTop:10, paddingTop:10, borderTop:`1px solid ${H.border}`}}>
-              <div style={{display:'flex', alignItems:'center', gap:7}}>
-                <div style={{
-                  width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`,
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                }}>{Icon.cart(14,H.iconC)}</div>
-                <div>
-                  <div style={{fontSize:17, fontWeight:800, fontFamily:'var(--pg-font-display)', lineHeight:1, letterSpacing:'-0.02em', color:H.text}}>{totalItems}</div>
-                  <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1.5, fontWeight:500, color:H.text}}>{lang==='pt'?'itens':lang==='es'?'artículos':'items'}</div>
+              {[
+                { icon: Icon.cart, value: buyCount },
+                { icon: Icon.key,  value: rentCount },
+                { icon: Icon.pin,  value: routesCount },
+                { icon: Icon.pool, value: poolsCount },
+              ].map((s,i) => (
+                <div key={i} style={{display:'flex', alignItems:'center', gap:5}}>
+                  {s.icon(15, H.iconC)}
+                  <span style={{fontSize:14, fontWeight:800, fontFamily:'var(--pg-font-display)', letterSpacing:'-0.02em', color:H.text}}>{s.value}</span>
                 </div>
-              </div>
-              <div style={{width:1, height:30, background:H.divider}}/>
-              <div style={{display:'flex', alignItems:'center', gap:7}}>
-                <div style={{
-                  width:30, height:30, borderRadius:9, background:H.iconBg, border:`0.5px solid ${H.border}`,
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                }}>{Icon.pin(14,H.iconC)}</div>
-                <div>
-                  <div style={{fontSize:17, fontWeight:800, fontFamily:'var(--pg-font-display)', lineHeight:1, letterSpacing:'-0.02em', color:H.text}}>{totalRoutes}</div>
-                  <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1.5, fontWeight:500, color:H.text}}>{lang==='pt'?'rotas':lang==='es'?'rutas':'routes'}</div>
-                </div>
-              </div>
+              ))}
               <div style={{width:1, height:30, background:H.divider}}/>
               {/* County selector */}
               <button onClick={()=>setLocationFilterOpen(true)}
@@ -4943,16 +4924,15 @@ function MarketplaceScreen({ ctx }) {
                     setCat('All'); setPriceRange('all'); setRouteRegion('all'); setRoutePrice('all'); setPoolPrice('all');
                   }}
                   style={{
-                    flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2,
-                    padding:'8px 2px', borderRadius:10, border:'none', cursor:'pointer',
+                    flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+                    padding:'9px 2px', borderRadius:10, border:'none', cursor:'pointer',
                     fontFamily:'inherit', transition:'all .18s ease',
                     background: on ? 'var(--pg-white)' : 'transparent',
                     color: on ? 'var(--pg-blue-600)' : 'var(--pg-ink-400)',
                     boxShadow: on ? '0 2px 10px rgba(0,0,0,0.10)' : 'none',
                   }}>
-                  {tabIcons[v](15, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)')}
-                  <span style={{fontSize:10.5, fontWeight: on?700:500, letterSpacing:'-0.01em', whiteSpace:'nowrap'}}>{tabLabels[v]}</span>
-                  <span style={{fontSize:9.5, fontWeight:700, color: on?'var(--pg-blue-400)':'var(--pg-ink-300)'}}>{tabCounts[v]}</span>
+                  {tabIcons[v](16, on ? 'var(--pg-blue-500)' : 'var(--pg-ink-400)')}
+                  <span style={{fontSize:11.5, fontWeight: on?700:500, letterSpacing:'-0.01em', whiteSpace:'nowrap'}}>{tabLabels[v]}</span>
                 </button>
               );
             })}
