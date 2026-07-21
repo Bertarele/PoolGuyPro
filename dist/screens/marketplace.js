@@ -7791,8 +7791,7 @@ function MarketplaceScreen({
       style: {
         padding: desktopMode ? '14px 16px 16px' : '12px 13px 14px',
         display: 'flex',
-        flexDirection: 'column',
-        flex: 1
+        flexDirection: 'column'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -7801,6 +7800,7 @@ function MarketplaceScreen({
         letterSpacing: '-0.01em',
         lineHeight: 1.3,
         color: 'var(--pg-ink-900)',
+        minHeight: (desktopMode ? 15 : 14) * 1.3 * 2,
         display: '-webkit-box',
         WebkitLineClamp: 2,
         WebkitBoxOrient: 'vertical',
@@ -7814,7 +7814,7 @@ function MarketplaceScreen({
         color: 'var(--pg-ink-500)',
         marginTop: 5,
         lineHeight: 1.4,
-        flex: 1,
+        minHeight: 11.5 * 1.4 * 2,
         display: '-webkit-box',
         WebkitLineClamp: 2,
         WebkitBoxOrient: 'vertical',
@@ -9840,8 +9840,7 @@ function MarketplaceScreen({
       style: {
         padding: '12px 13px 14px',
         display: 'flex',
-        flexDirection: 'column',
-        flex: 1
+        flexDirection: 'column'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -9850,6 +9849,7 @@ function MarketplaceScreen({
         letterSpacing: '-0.01em',
         lineHeight: 1.3,
         color: 'var(--pg-ink-900)',
+        minHeight: 14 * 1.3 * 2,
         display: '-webkit-box',
         WebkitLineClamp: 2,
         WebkitBoxOrient: 'vertical',
@@ -9863,7 +9863,7 @@ function MarketplaceScreen({
         color: 'var(--pg-ink-500)',
         marginTop: 5,
         lineHeight: 1.4,
-        flex: 1,
+        minHeight: 11.5 * 1.4 * 2,
         display: '-webkit-box',
         WebkitLineClamp: 2,
         WebkitBoxOrient: 'vertical',

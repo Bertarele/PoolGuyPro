@@ -4215,12 +4215,13 @@ function MarketplaceScreen({ ctx }) {
           </span>
         </div>
         {/* Content */}
-        <div style={{padding: desktopMode ? '14px 16px 16px' : '12px 13px 14px', display:'flex', flexDirection:'column', flex:1}}>
+        <div style={{padding: desktopMode ? '14px 16px 16px' : '12px 13px 14px', display:'flex', flexDirection:'column'}}>
           <div style={{fontSize: desktopMode?15:14, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3, color:'var(--pg-ink-900)',
+            minHeight: (desktopMode?15:14)*1.3*2,
             display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
             <Tx lang={lang}>{item.name}</Tx>
           </div>
-          <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.4, flex:1,
+          <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.4, minHeight:11.5*1.4*2,
             display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
             <Tx lang={lang}>{item.description||([item.condition,item.loc].filter(Boolean).join(' · ')||'—')}</Tx>
           </div>
@@ -5178,14 +5179,15 @@ function MarketplaceScreen({ ctx }) {
                       }}>{item.cat || 'Tools'}</span>
                     </div>
                     {/* Content — same structure as static cards */}
-                    <div style={{padding:'12px 13px 14px', display:'flex', flexDirection:'column', flex:1}}>
+                    <div style={{padding:'12px 13px 14px', display:'flex', flexDirection:'column'}}>
                       {/* Title */}
                       <div style={{fontSize:14, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.3, color:'var(--pg-ink-900)',
+                        minHeight:14*1.3*2,
                         display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
                         <Tx lang={lang}>{item.name}</Tx>
                       </div>
                       {/* Description — show text if available, else condition · location */}
-                      <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.4, flex:1,
+                      <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:5, lineHeight:1.4, minHeight:11.5*1.4*2,
                         display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>
                         {item.description
                           ? item.description
