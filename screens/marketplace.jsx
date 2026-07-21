@@ -1155,6 +1155,29 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     });
     setRatingLoading(false);
     if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    // Also mirror into the generic ratings table — that's what the app-wide
+    // realtime subscription and instant "you've been rated, rate back" popup
+    // key off, so without this the other party only ever finds out by
+    // manually reopening the listing (the exact "só dá pra avaliar quando eu
+    // entro na publicação" gap this closes). Same connection_type/connection_id
+    // pattern already used for quickpool/hiring/vacation ratings.
+    const connId = String(ratingSheet.requestId);
+    window.sb.from('ratings').upsert({
+      from_id: currentUser.uid, to_id: ratingSheet.rateeId,
+      from_name: currentUser.name || (currentUser.email||'').split('@')[0] || '',
+      listing_name: item.name || '', stars: ratingStars, comment: ratingComment.trim() || null,
+      pending: true, connection_type: 'rental', connection_id: connId,
+      expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+    }, { onConflict: 'connection_type,connection_id,from_id' }).then(({error:e2}) => {
+      if (e2) { console.error('[Rental rating mirror] upsert failed', e2); return; }
+      window.sb.rpc('reveal_mutual_rating', { p_a: currentUser.uid, p_b: ratingSheet.rateeId }).catch(()=>{});
+    });
+    window.sb.from('ratings').insert({
+      from_id: ratingSheet.rateeId, to_id: currentUser.uid,
+      from_name: ratingSheet.rateeName || '', listing_name: item.name || '',
+      stars: null, comment: '', pending: true, connection_type: 'rental', connection_id: connId,
+      expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+    }).catch(()=>{}); // ignore duplicate-key — placeholder may already exist
     showToast && showToast(lang==='pt' ? '⭐ Avaliação enviada! Obrigado.' : '⭐ Rating submitted! Thank you.');
     setHasRated(true);
     // Track owner rating for resolved requests
@@ -4060,6 +4083,19 @@ function MarketplaceScreen({ ctx }) {
       .catch(() => {});
   }, [authorIdsKey]);
 
+  // Batch-fetch which rental listings currently have an approved (in-progress)
+  // request, so the feed can show "Em andamento" instead of letting other
+  // people request an item that's already out.
+  const [activeRentalIds, setActiveRentalIds] = React.useState(new Set());
+  const rentListingIdsKey = [...new Set(list.filter(x => x.type === 'rent').map(x => x._id).filter(Boolean))].sort().join(',');
+  React.useEffect(() => {
+    if (!window.sb || !rentListingIdsKey) { setActiveRentalIds(new Set()); return; }
+    const ids = rentListingIdsKey.split(',');
+    window.sb.from('rental_requests').select('listing_id').eq('status', 'approved').in('listing_id', ids)
+      .then(({ data }) => setActiveRentalIds(new Set((data || []).map(r => r.listing_id))))
+      .catch(() => {});
+  }, [rentListingIdsKey]);
+
   const tabIcons = {
     buy:    (s,c)=> Icon.cart(s, c),
     rent:   (s,c)=> Icon.key(s, c),
@@ -4113,6 +4149,7 @@ function MarketplaceScreen({ ctx }) {
   const renderLiveCard = (item, desktopMode=false) => {
     const isPending   = item.status === 'pending';
     const isSoldItem  = item.status === 'sold';
+    const isActiveRental = item.type === 'rent' && activeRentalIds.has(item._id);
     const canDel      = user.role === 'admin' || isMyPost(item);
     const handleQuickDelete = async (e) => {
       e.stopPropagation();
@@ -4164,6 +4201,12 @@ function MarketplaceScreen({ ctx }) {
             <span style={{position:'absolute', top:10, left:10, fontSize:9.5, fontWeight:800, padding:'3px 10px', borderRadius:6,
               background:'rgba(100,100,100,0.90)', color:'#fff', backdropFilter:'blur(4px)', letterSpacing:'0.08em'}}>
               SOLD
+            </span>
+          )}
+          {isActiveRental && (
+            <span style={{position:'absolute', top:10, left:10, fontSize:9.5, fontWeight:800, padding:'3px 10px', borderRadius:6,
+              background:'rgba(217,119,6,0.92)', color:'#fff', backdropFilter:'blur(4px)', letterSpacing:'0.08em'}}>
+              ⏳ {lang==='pt'?'EM ANDAMENTO':lang==='es'?'EN CURSO':'IN PROGRESS'}
             </span>
           )}
           <span style={{position:'absolute', top:10, right:10, fontSize:9, fontWeight:700, padding:'3px 8px', borderRadius:6,
@@ -5053,6 +5096,7 @@ function MarketplaceScreen({ ctx }) {
               .map(item => {
                 const isPending = item.status === 'pending';
                 const isSoldItem = item.status === 'sold';
+                const isActiveRental = item.type === 'rent' && activeRentalIds.has(item._id);
                 const canAdminDelete = user.role === 'admin' || isMyPost(item);
                 const handleQuickDelete = async (e) => {
                   e.stopPropagation();
@@ -5101,6 +5145,16 @@ function MarketplaceScreen({ ctx }) {
                           backdropFilter:'blur(4px)',
                         }}>
                           {lang==='pt'?'VENDIDO':lang==='es'?'VENDIDO':'SOLD'}
+                        </span>
+                      ) : isActiveRental ? (
+                        <span style={{
+                          position:'absolute', top:10, left:10,
+                          fontSize:9.5, fontWeight:800, padding:'3px 10px', borderRadius:6,
+                          letterSpacing:'0.08em',
+                          background:'rgba(217,119,6,0.92)', color:'#fff',
+                          backdropFilter:'blur(4px)',
+                        }}>
+                          ⏳ {lang==='pt'?'EM ANDAMENTO':lang==='es'?'EN CURSO':'IN PROGRESS'}
                         </span>
                       ) : isMyPost(item) && (
                         <span style={{
