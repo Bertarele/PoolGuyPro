@@ -681,7 +681,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   React.useEffect(() => {
     if (!isRent || !currentUser?.uid || !window.sb) return;
     window.sb.from('rental_requests')
-      .select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified')
+      .select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified, owner_kept_active')
       .eq('listing_id', item._id)
       .then(({ data }) => {
         if (!data) return;
@@ -1782,8 +1782,10 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 </div>
               )}
 
-              {/* Keep or Remove prompt — only for completed, not yet dismissed */}
-              {isComp && !dismissedDecisions.has(req.id) && (
+              {/* Keep or Remove prompt — only for completed, not yet dismissed.
+                  owner_kept_active is persisted to the DB (not just local state) so
+                  the choice survives a page refresh instead of reappearing every time. */}
+              {isComp && !req.owner_kept_active && !dismissedDecisions.has(req.id) && (
                 <div style={{marginTop:10,borderRadius:12,overflow:'hidden',border:'1px solid rgba(22,163,74,0.30)'}}>
                   <div style={{padding:'10px 13px',background:'rgba(22,163,74,0.08)'}}>
                     <div style={{fontSize:12.5,fontWeight:700,color:'#15803D',marginBottom:2}}>
@@ -1797,7 +1799,11 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                   </div>
                   <div style={{display:'flex',gap:0}}>
                     <button
-                      onClick={()=> setDismissedDecisions(prev => { const s = new Set(prev); s.add(req.id); return s; })}
+                      onClick={async ()=>{
+                        setDismissedDecisions(prev => { const s = new Set(prev); s.add(req.id); return s; });
+                        setOwnerRequests(prev => prev.map(r => r.id === req.id ? {...r, owner_kept_active:true} : r));
+                        if (window.sb) await window.sb.from('rental_requests').update({ owner_kept_active: true }).eq('id', req.id).catch(()=>{});
+                      }}
                       style={{flex:1,padding:'10px 6px',border:'none',borderTop:'1px solid rgba(22,163,74,0.20)',borderRight:'1px solid rgba(22,163,74,0.20)',
                         cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,
                         background:'rgba(22,163,74,0.10)',color:'#15803D',
@@ -3885,7 +3891,7 @@ function MarketplaceScreen({ ctx }) {
       .then(({ data }) => {
         if (!data) return;
         const normalized = normMktItem(data);
-        if (isMyPost(normalized)) { setMyPostDetail(normalized); }
+        if (isMyPost(normalized) && normalized.type !== 'rent') { setMyPostDetail(normalized); }
         else { setViewListing(normalized); historyPushed.current = true; }
       })
       .catch(() => {})

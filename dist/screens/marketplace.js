@@ -1201,7 +1201,7 @@ function ViewListingSheet({
   // Load rental requests (for rent items)
   React.useEffect(() => {
     if (!isRent || !currentUser?.uid || !window.sb) return;
-    window.sb.from('rental_requests').select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified').eq('listing_id', item._id).then(({
+    window.sb.from('rental_requests').select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified, owner_kept_active').eq('listing_id', item._id).then(({
       data
     }) => {
       if (!data) return;
@@ -3282,7 +3282,7 @@ function ViewListingSheet({
           border: '1px solid rgba(22,163,74,0.3)',
           marginLeft: 'auto'
         }
-      }, "$", fmtN(req.total_price, lang))), isComp && !dismissedDecisions.has(req.id) && /*#__PURE__*/React.createElement("div", {
+      }, "$", fmtN(req.total_price, lang))), isComp && !req.owner_kept_active && !dismissedDecisions.has(req.id) && /*#__PURE__*/React.createElement("div", {
         style: {
           marginTop: 10,
           borderRadius: 12,
@@ -3313,11 +3313,20 @@ function ViewListingSheet({
           gap: 0
         }
       }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => setDismissedDecisions(prev => {
-          const s = new Set(prev);
-          s.add(req.id);
-          return s;
-        }),
+        onClick: async () => {
+          setDismissedDecisions(prev => {
+            const s = new Set(prev);
+            s.add(req.id);
+            return s;
+          });
+          setOwnerRequests(prev => prev.map(r => r.id === req.id ? {
+            ...r,
+            owner_kept_active: true
+          } : r));
+          if (window.sb) await window.sb.from('rental_requests').update({
+            owner_kept_active: true
+          }).eq('id', req.id).catch(() => {});
+        },
         style: {
           flex: 1,
           padding: '10px 6px',
@@ -7317,7 +7326,7 @@ function MarketplaceScreen({
     }) => {
       if (!data) return;
       const normalized = normMktItem(data);
-      if (isMyPost(normalized)) {
+      if (isMyPost(normalized) && normalized.type !== 'rent') {
         setMyPostDetail(normalized);
       } else {
         setViewListing(normalized);
