@@ -375,7 +375,7 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
         user_id: convo.receiverId, type: decision === 'approved' ? 'rental_approved' : 'rental_declined',
         title: JSON.stringify(title), body: msg, link_id: convo.listingId,
       }).catch(()=>{});
-      window.sendPush && window.sendPush(convo.receiverId, title[lang] || title.en, msg, '/#market', 'market');
+      window.sendPush && window.sendPush(convo.receiverId, title[lang] || title.en, msg, `/#market?listing=${convo.listingId}`, 'market');
     }
   };
 

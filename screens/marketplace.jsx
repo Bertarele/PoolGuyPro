@@ -863,7 +863,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
   // Helper: insert notification silently (fire-and-forget)
   // title/body can be {en,pt,es} objects → stored as JSON for multilingual rendering
-  const _notify = (userId, type, title, body, linkId=null, pushUrl='/#market') => {
+  const _notify = (userId, type, title, body, linkId=null, pushUrl=null) => {
     if (!window.sb || !userId) return;
     const titleStr = typeof title === 'object' ? JSON.stringify(title) : title;
     const bodyStr  = typeof body  === 'object' ? JSON.stringify(body)  : body;
@@ -873,7 +873,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     // Push notification (extract readable text from multilingual object)
     const pushTitle = typeof title === 'object' ? (title.pt || title.en || '') : title;
     const pushBody  = typeof body  === 'object' ? (body.pt  || body.en  || '') : body;
-    window.sendPush && window.sendPush(userId, pushTitle, pushBody, pushUrl, 'market');
+    // The in-app bell click uses linkId straight from the notifications row, but
+    // the OS push banner only has whatever URL we hand it here — without the
+    // listing id baked in, tapping the banner can only switch tabs, never open
+    // the specific listing. rental_* types carry the listing id as linkId, so
+    // build that URL automatically unless the caller passed one explicitly.
+    const url = pushUrl || (type.startsWith('rental_') && linkId ? `/#market?listing=${linkId}` : '/#market');
+    window.sendPush && window.sendPush(userId, pushTitle, pushBody, url, 'market');
   };
 
   const handleRequestRental = async () => {
@@ -4195,13 +4201,16 @@ function MarketplaceScreen({ ctx }) {
 
   // Batch-fetch which rental listings currently have an approved (in-progress)
   // request, so the feed can show "Em andamento" instead of letting other
-  // people request an item that's already out.
+  // people request an item that's already out. rental_requests itself is
+  // locked down to the owner/requester (it holds prices and contact info),
+  // so this reads a public view that only exposes the listing_id — nothing
+  // else — for anyone to check "is this occupied right now".
   const [activeRentalIds, setActiveRentalIds] = React.useState(new Set());
   const rentListingIdsKey = [...new Set(list.filter(x => x.type === 'rent').map(x => x._id).filter(Boolean))].sort().join(',');
   React.useEffect(() => {
     if (!window.sb || !rentListingIdsKey) { setActiveRentalIds(new Set()); return; }
     const ids = rentListingIdsKey.split(',');
-    window.sb.from('rental_requests').select('listing_id').eq('status', 'approved').in('listing_id', ids)
+    window.sb.from('active_rental_listing_ids').select('listing_id').in('listing_id', ids)
       .then(({ data }) => setActiveRentalIds(new Set((data || []).map(r => r.listing_id))))
       .catch(() => {});
   }, [rentListingIdsKey]);

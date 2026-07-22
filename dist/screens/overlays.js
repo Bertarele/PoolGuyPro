@@ -590,7 +590,7 @@ function ChatConversation({
         body: msg,
         link_id: convo.listingId
       }).catch(() => {});
-      window.sendPush && window.sendPush(convo.receiverId, title[lang] || title.en, msg, '/#market', 'market');
+      window.sendPush && window.sendPush(convo.receiverId, title[lang] || title.en, msg, `/#market?listing=${convo.listingId}`, 'market');
     }
   };
 

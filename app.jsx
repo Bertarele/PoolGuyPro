@@ -696,7 +696,10 @@ function App() {
         const userName = params.get('name') || null;
         if (userId) { window.history.replaceState(null, '', '#home'); return { type: 'chat', userId, userName }; }
       } else if (hash.startsWith('#market')) {
-        return { type: 'tab', tab: 'market' };
+        const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+        const listingId = new URLSearchParams(qs).get('listing') || null;
+        window.history.replaceState(null, '', '#home');
+        return listingId ? { type: 'listing', id: listingId } : { type: 'tab', tab: 'market' };
       }
     } catch {}
     return null;
@@ -709,6 +712,9 @@ function App() {
       openChatFromDeepLink(pendingDeepLink.userId, pendingDeepLink.userName);
     } else if (pendingDeepLink.type === 'tab') {
       setTab(pendingDeepLink.tab);
+    } else if (pendingDeepLink.type === 'listing') {
+      setDeepLinkListingId(pendingDeepLink.id);
+      setTab('market');
     }
   }, [pendingDeepLink, user?.uid, openChatFromDeepLink]);
   // Shared deep-link navigation — used both when a notification is tapped
@@ -734,7 +740,10 @@ function App() {
         setTab('quick');
       }
     } else if (hash.startsWith('#market')) {
-      setTab('market');
+      const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+      const listingId = new URLSearchParams(qs).get('listing') || null;
+      if (listingId) ctx.openListingById(listingId);
+      else setTab('market');
     } else if (hash.startsWith('#work')) {
       setTab('work');
     }
