@@ -519,6 +519,74 @@ function ChatConversation({
     };
   }, [convoId]); // eslint-disable-line
 
+  // ── Approve/decline a pending rental request right from the chat ──────────
+  // Lets the owner act on it mid-conversation instead of having to leave the
+  // chat and go find the listing's requests panel.
+  const [pendingRentalReq, setPendingRentalReq] = React.useState(null);
+  const [rentalActionBusy, setRentalActionBusy] = React.useState(false);
+  const [rentalActionErr, setRentalActionErr] = React.useState('');
+  const [rentalActionDone, setRentalActionDone] = React.useState(null); // 'approved'|'declined'|null
+
+  const loadPendingRentalReq = React.useCallback(() => {
+    if (!window.sb || !currentUser?.uid || !convo.receiverId || !convo.listingId || convo.listingContext?.type !== 'rent') {
+      setPendingRentalReq(null);
+      return;
+    }
+    window.sb.from('rental_requests').select('id,status,period,quantity,total_price').eq('listing_id', convo.listingId).eq('owner_id', currentUser.uid).eq('requester_id', convo.receiverId).eq('status', 'pending').limit(1).maybeSingle().then(({
+      data
+    }) => setPendingRentalReq(data || null)).catch(() => setPendingRentalReq(null));
+  }, [currentUser?.uid, convo.receiverId, convo.listingId, convo.listingContext?.type]);
+  React.useEffect(() => {
+    loadPendingRentalReq();
+  }, [loadPendingRentalReq]);
+  const handleRentalDecision = async decision => {
+    if (!pendingRentalReq || !window.sb || rentalActionBusy) return;
+    setRentalActionBusy(true);
+    setRentalActionErr('');
+    const {
+      error
+    } = await window.sb.from('rental_requests').update({
+      status: decision,
+      responded_at: new Date().toISOString()
+    }).eq('id', pendingRentalReq.id);
+    setRentalActionBusy(false);
+    if (error) {
+      setRentalActionErr((error.message || '').includes('rental_requests_one_approved_per_listing') ? lang === 'pt' ? 'Já existe um pedido aprovado para este item.' : 'Another request for this item is already approved.' : lang === 'pt' ? 'Erro — tente de novo.' : 'Error — please try again.');
+      return;
+    }
+    setRentalActionDone(decision);
+    setPendingRentalReq(null);
+    const msg = decision === 'approved' ? lang === 'pt' ? '✅ Pedido de aluguel aprovado!' : '✅ Rental request approved!' : lang === 'pt' ? '❌ Pedido de aluguel recusado.' : '❌ Rental request declined.';
+    if (isLive) {
+      window.sb.rpc('send_chat_message', {
+        p_convo_id: convoId,
+        p_body: msg,
+        p_other_id: convo.receiverId,
+        p_my_name: currentUser.name || (currentUser.email || '').split('@')[0] || 'Owner',
+        p_other_name: convo.name || ''
+      }).catch(() => {});
+    }
+    if (window.sb && convo.receiverId) {
+      const title = decision === 'approved' ? {
+        en: 'Rental approved!',
+        pt: 'Aluguel aprovado!',
+        es: 'Alquiler aprobado!'
+      } : {
+        en: 'Rental declined',
+        pt: 'Aluguel recusado',
+        es: 'Alquiler rechazado'
+      };
+      window.sb.from('notifications').insert({
+        user_id: convo.receiverId,
+        type: decision === 'approved' ? 'rental_approved' : 'rental_declined',
+        title: JSON.stringify(title),
+        body: msg,
+        link_id: convo.listingId
+      }).catch(() => {});
+      window.sendPush && window.sendPush(convo.receiverId, title[lang] || title.en, msg, '/#market', 'market');
+    }
+  };
+
   // Initial scroll to bottom
   React.useEffect(() => {
     if (messages.length > 0 && scroller.current) {
@@ -821,7 +889,104 @@ function ChatConversation({
     strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("path", {
     d: "M9 18l6-6-6-6"
-  })))), /*#__PURE__*/React.createElement("div", {
+  })))), pendingRentalReq && /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: '8px 12px 0',
+      flexShrink: 0
+    }
+  }, rentalActionErr && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: '#DC2626',
+      marginBottom: 6,
+      textAlign: 'center'
+    }
+  }, rentalActionErr), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => handleRentalDecision('approved'),
+    disabled: rentalActionBusy,
+    style: {
+      flex: 1,
+      height: 38,
+      borderRadius: 11,
+      border: 'none',
+      cursor: rentalActionBusy ? 'default' : 'pointer',
+      background: '#16A34A',
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: 700,
+      fontFamily: 'inherit',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      opacity: rentalActionBusy ? 0.7 : 1
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "3",
+    strokeLinecap: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "20 6 9 17 4 12"
+  })), lang === 'pt' ? 'Aprovar aluguel' : lang === 'es' ? 'Aprobar alquiler' : 'Approve rental'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => handleRentalDecision('declined'),
+    disabled: rentalActionBusy,
+    style: {
+      flex: 1,
+      height: 38,
+      borderRadius: 11,
+      border: 'none',
+      cursor: rentalActionBusy ? 'default' : 'pointer',
+      background: '#EF4444',
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: 700,
+      fontFamily: 'inherit',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      opacity: rentalActionBusy ? 0.7 : 1
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "3",
+    strokeLinecap: "round"
+  }, /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "6",
+    x2: "6",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "6",
+    x2: "18",
+    y2: "18"
+  })), lang === 'pt' ? 'Recusar' : lang === 'es' ? 'Rechazar' : 'Decline'))), rentalActionDone && /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: '8px 12px 0',
+      padding: '8px 12px',
+      borderRadius: 11,
+      flexShrink: 0,
+      textAlign: 'center',
+      background: rentalActionDone === 'approved' ? 'rgba(22,163,74,0.10)' : 'rgba(239,68,68,0.10)',
+      color: rentalActionDone === 'approved' ? '#16A34A' : '#EF4444',
+      fontSize: 12.5,
+      fontWeight: 700
+    }
+  }, rentalActionDone === 'approved' ? lang === 'pt' ? '✅ Aluguel aprovado' : '✅ Rental approved' : lang === 'pt' ? '❌ Aluguel recusado' : '❌ Rental declined'), /*#__PURE__*/React.createElement("div", {
     ref: scroller,
     style: {
       flex: 1,
