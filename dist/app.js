@@ -721,13 +721,19 @@ function App() {
   // Global helper: fire-and-forget push to another user via Edge Function
   window.sendPush = async function (userId, title, body, url, notifType, convoId) {
     try {
+      // getSession() reads a cached token with no freshness check — if it's stale,
+      // the platform's verify_jwt gate 401s the request before our function code
+      // (or even its logging) ever runs, so every push call silently no-ops with
+      // zero trace anywhere. Refresh first, same fix already applied to the other
+      // authenticated Edge Function calls in this file.
+      if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(() => {});
       const {
         data: {
           session
         }
       } = await window.sb.auth.getSession();
       const token = session?.access_token || '';
-      await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/send-push', {
+      const res = await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/send-push', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -742,7 +748,10 @@ function App() {
           convo_id: convoId || null
         })
       });
-    } catch (e) {}
+      if (!res.ok) console.error('[sendPush] failed', res.status, await res.text().catch(() => ''));
+    } catch (e) {
+      console.error('[sendPush] error', e);
+    }
   };
 
   // Play a short notification beep using Web Audio API (in-app only)
