@@ -532,9 +532,9 @@ function ChatConversation({
       setPendingRentalReq(null);
       return;
     }
-    window.sb.from('rental_requests').select('id,status,period,quantity,total_price').eq('listing_id', convo.listingId).eq('owner_id', currentUser.uid).eq('requester_id', convo.receiverId).eq('status', 'pending').limit(1).maybeSingle().then(({
+    window.sb.from('rental_requests').select('id,status,period,quantity,total_price').eq('listing_id', convo.listingId).eq('owner_id', currentUser.uid).eq('requester_id', convo.receiverId).eq('status', 'pending').limit(1).then(({
       data
-    }) => setPendingRentalReq(data || null)).catch(() => setPendingRentalReq(null));
+    }) => setPendingRentalReq(data && data[0] || null)).catch(() => setPendingRentalReq(null));
   }, [currentUser?.uid, convo.receiverId, convo.listingId, convo.listingContext?.type]);
   React.useEffect(() => {
     loadPendingRentalReq();

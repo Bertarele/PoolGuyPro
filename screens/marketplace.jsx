@@ -702,9 +702,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             setMyRequestId(mine.id);
             if (mine.status === 'completed' && window.sb) {
               window.sb.from('rental_ratings')
-                .select('id').eq('request_id', mine.id).eq('rater_id', currentUser.uid)
-                .maybeSingle()
-                .then(({ data: rd }) => { if (rd) setHasRated(true); })
+                .select('id').eq('request_id', mine.id).eq('rater_id', currentUser.uid).limit(1)
+                .then(({ data: rd }) => { if (rd && rd.length > 0) setHasRated(true); })
                 .catch(() => {});
             }
             if (mine.status === 'resolved' && window.sb) {
