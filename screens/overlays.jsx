@@ -277,10 +277,20 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
     pollRef.current = setInterval(loadMessages, 2500);
 
     // Mark this conversation as actively open — send-push checks this to skip
-    // notifying the recipient about messages they're already looking at.
-    if (currentUser?.uid) {
-      window.sb.from('profiles').update({ active_conversation_id: convoId }).eq('id', currentUser.uid).catch(()=>{});
-    }
+    // notifying the recipient about messages they're already looking at. Also
+    // stamped with a timestamp and refreshed on a heartbeat: if the app gets
+    // force-closed instead of properly navigated away from, this unmount
+    // cleanup never runs and the flag would otherwise stay stuck forever,
+    // silently suppressing every future push for that conversation. The
+    // server only honors this flag while the stamp is fresh (see send-push),
+    // so a stale one self-heals within ~90s instead of blocking pushes for good.
+    const markActive = () => {
+      if (currentUser?.uid) {
+        window.sb.from('profiles').update({ active_conversation_id: convoId, active_conversation_set_at: new Date().toISOString() }).eq('id', currentUser.uid).catch(()=>{});
+      }
+    };
+    markActive();
+    const heartbeatRef = setInterval(markActive, 30000);
 
     // Typing broadcast channel — one channel per conversation pair
     const typingCh = window.sb.channel('typing-' + convoId)
@@ -295,10 +305,11 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
 
     return () => {
       clearInterval(pollRef.current);
+      clearInterval(heartbeatRef);
       clearTimeout(typingTimer.current);
       window.sb.removeChannel(typingCh);
       if (currentUser?.uid) {
-        window.sb.from('profiles').update({ active_conversation_id: null }).eq('id', currentUser.uid).catch(()=>{});
+        window.sb.from('profiles').update({ active_conversation_id: null, active_conversation_set_at: null }).eq('id', currentUser.uid).catch(()=>{});
       }
     };
   }, [convoId]); // eslint-disable-line

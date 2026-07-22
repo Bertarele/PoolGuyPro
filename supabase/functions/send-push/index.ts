@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
   // this exact conversation, before sending
   if (notif_type) {
     const prefRes = await fetch(
-      `${SB_URL}/rest/v1/profiles?select=notif_prefs,active_conversation_id&id=eq.${user_id}&limit=1`,
+      `${SB_URL}/rest/v1/profiles?select=notif_prefs,active_conversation_id,active_conversation_set_at&id=eq.${user_id}&limit=1`,
       { headers }
     );
     const [prof] = await prefRes.json();
@@ -57,7 +57,14 @@ Deno.serve(async (req) => {
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
-    if (notif_type === 'chat' && convo_id && prof?.active_conversation_id === convo_id) {
+    // The client stamps active_conversation_set_at and refreshes it every 30s
+    // while the chat is open, clearing both fields on a clean close. If the
+    // app gets force-closed instead, that cleanup never runs — only trust the
+    // flag while the stamp is fresh (~90s) so a stuck value can't silently
+    // suppress every future push for that conversation forever.
+    const isFresh = prof?.active_conversation_set_at
+      && (Date.now() - new Date(prof.active_conversation_set_at).getTime()) < 90_000;
+    if (notif_type === 'chat' && convo_id && prof?.active_conversation_id === convo_id && isFresh) {
       return new Response(JSON.stringify({ sent: 0, reason: 'viewing conversation' }), {
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
