@@ -703,6 +703,7 @@ function PersonalInfoCard({ user, setUser, lang }) {
     const E164 = '+1' + digits;
     setOtpLoading(true); setOtpError('');
     try {
+      if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(()=>{});
       const s = await window.sb.auth.getSession();
       const jwt = s?.data?.session?.access_token;
       if (!jwt) throw new Error(lang==='pt'?'Sessão expirada — faça login novamente':'Session expired — please log in again');
