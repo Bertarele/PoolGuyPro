@@ -323,7 +323,14 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
   const [rentalActionDone, setRentalActionDone] = React.useState(null); // 'approved'|'declined'|null
 
   const loadPendingRentalReq = React.useCallback(() => {
-    if (!window.sb || !currentUser?.uid || !convo.receiverId || !convo.listingId || convo.listingContext?.type !== 'rent') {
+    // Don't gate on convo.listingContext.type==='rent' — conversations opened via
+    // a notification deep link (openChatFromDeepLink) only ever populate
+    // {name, photoUrl} for listingContext, never `type` (the conversations table
+    // has no listing_type column to read it from), so that check silently killed
+    // this for every chat opened by tapping the notification instead of the chat
+    // button on the listing itself. The rental_requests query below is already a
+    // sufficient filter — a sell listing simply never has a matching row.
+    if (!window.sb || !currentUser?.uid || !convo.receiverId || !convo.listingId) {
       setPendingRentalReq(null); return;
     }
     window.sb.from('rental_requests').select('id,status,period,quantity,total_price')
@@ -331,7 +338,7 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
       .eq('status', 'pending').limit(1)
       .then(({ data }) => setPendingRentalReq((data && data[0]) || null))
       .catch(() => setPendingRentalReq(null));
-  }, [currentUser?.uid, convo.receiverId, convo.listingId, convo.listingContext?.type]);
+  }, [currentUser?.uid, convo.receiverId, convo.listingId]);
   React.useEffect(() => { loadPendingRentalReq(); }, [loadPendingRentalReq]);
 
   const handleRentalDecision = async (decision) => {
