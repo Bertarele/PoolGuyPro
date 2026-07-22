@@ -4466,11 +4466,13 @@ function PublicProfileSheet({ open, onClose, profile, lang='en', onChat }) {
           )}
 
           {/* Action */}
-          <button onClick={()=>{ onClose(); onChat && onChat(profile.uid ? { id: profile.uid, name } : name); }}
-            className="pg-btn pg-btn-primary" style={{width:'100%', height:50, fontSize:15, borderRadius:14, marginTop:4}}>
-            {Icon.msg(16,'#fff')}
-            <span style={{marginLeft:6}}>{msgLbl}</span>
-          </button>
+          {!profile.isSelf && (
+            <button onClick={()=>{ onClose(); onChat && onChat(profile.uid ? { id: profile.uid, name } : name); }}
+              className="pg-btn pg-btn-primary" style={{width:'100%', height:50, fontSize:15, borderRadius:14, marginTop:4}}>
+              {Icon.msg(16,'#fff')}
+              <span style={{marginLeft:6}}>{msgLbl}</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

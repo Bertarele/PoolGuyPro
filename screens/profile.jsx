@@ -6,7 +6,7 @@ function ProfileScreen({ ctx }) {
           openEditProfile, onLogout, openHelp, openPrivacy,
           darkMode, toggleDark, openChat, hasUnreadChat, openNotifications, hasUnreadNotif, requestVerification,
           openWallet, isDesktop=false, retryPush, pushLog='',
-          notifPrefs, saveNotifPrefs, openListingById } = ctx;
+          notifPrefs, saveNotifPrefs, openListingById, openPublicProfile } = ctx;
   const t = STRINGS[lang];
 
   const typeIcon = (type) => {
@@ -106,13 +106,14 @@ function ProfileScreen({ ctx }) {
                   {user.tier==='premium' && <span className="pg-badge pg-badge-premium" style={{fontSize:10}}>{Icon.crown(10,'#92400E')} PREMIUM</span>}
                   <ReputationBadge jobs={user.reviews} lang={lang} size="lg"/>
                 </div>
-                <div style={{display:'flex', alignItems:'center', gap:6, marginTop:6}}>
+                <button onClick={()=>openPublicProfile && openPublicProfile({ uid: user.uid, name: user.name, photo: user.photoUrl, isSelf: true })}
+                  style={{display:'flex', alignItems:'center', gap:6, marginTop:6, border:'none', background:'none', padding:0, cursor:'pointer'}}>
                   <Stars rating={user.rating||0} size={13}/>
                   {user.rating != null
-                    ? <span style={{fontSize:13, fontWeight:600, color:H.mid}}>{user.rating}</span>
-                    : <span style={{fontSize:12, color:H.faint, fontStyle:'italic'}}>{lang==='pt'?'Novo':lang==='es'?'Nuevo':'New'}</span>}
-                  <span style={{fontSize:12, color:H.faint}}>({user.reviews} {lang==='pt'?'avaliações':lang==='es'?'reseñas':'reviews'})</span>
-                </div>
+                    ? <span style={{fontSize:13, fontWeight:700, color:H.text}}>{user.rating}</span>
+                    : <span style={{fontSize:12, color:H.mid, fontStyle:'italic'}}>{lang==='pt'?'Novo':lang==='es'?'Nuevo':'New'}</span>}
+                  <span style={{fontSize:12, color:H.mid, fontWeight:600, textDecoration:'underline'}}>({user.reviews} {lang==='pt'?'avaliações':lang==='es'?'reseñas':'reviews'})</span>
+                </button>
                 <div style={{marginTop:5, display:'flex', alignItems:'center', gap:5}}>
                   {Icon.pin(10,H.faint)}
                   <span style={{fontSize:11, color:H.faint}}>Broward County, FL</span>
@@ -126,9 +127,12 @@ function ProfileScreen({ ctx }) {
                 { val: user.rating != null ? user.rating : '—', lbl: lang==='pt'?'Avaliação':lang==='es'?'Calificación':'Rating' },
                 { val: user.reviews, lbl: lang==='pt'?'Trabalhos':lang==='es'?'Trabajos':'Jobs Done' },
                 { val: EQUIPMENT.filter(e=>e).length + POOL_ROUTES.length, lbl: lang==='pt'?'Anúncios':lang==='es'?'Anuncios':'Listings' },
-              ].map((s, i, arr) => (
+              ].map((s, i, arr) => {
+                const clickable = i === 0 && !!openPublicProfile;
+                return (
                 <React.Fragment key={i}>
-                  <div style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3}}>
+                  <div onClick={clickable ? ()=>openPublicProfile({ uid: user.uid, name: user.name, photo: user.photoUrl, isSelf: true }) : undefined}
+                    style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor: clickable?'pointer':'default'}}>
                     <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, lineHeight:1, color:H.text, letterSpacing:'-0.02em'}}>
                       {s.val}
                     </div>
@@ -138,7 +142,8 @@ function ProfileScreen({ ctx }) {
                   </div>
                   {i < arr.length - 1 && <div style={{width:1, background:H.divider, margin:'0 4px'}}/>}
                 </React.Fragment>
-              ))}
+                );
+              })}
             </div>
           </NavyBar>
         );

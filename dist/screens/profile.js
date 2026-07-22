@@ -32,7 +32,8 @@ function ProfileScreen({
     pushLog = '',
     notifPrefs,
     saveNotifPrefs,
-    openListingById
+    openListingById,
+    openPublicProfile
   } = ctx;
   const t = STRINGS[lang];
   const typeIcon = type => {
@@ -333,12 +334,22 @@ function ProfileScreen({
       jobs: user.reviews,
       lang: lang,
       size: "lg"
-    })), /*#__PURE__*/React.createElement("div", {
+    })), /*#__PURE__*/React.createElement("button", {
+      onClick: () => openPublicProfile && openPublicProfile({
+        uid: user.uid,
+        name: user.name,
+        photo: user.photoUrl,
+        isSelf: true
+      }),
       style: {
         display: 'flex',
         alignItems: 'center',
         gap: 6,
-        marginTop: 6
+        marginTop: 6,
+        border: 'none',
+        background: 'none',
+        padding: 0,
+        cursor: 'pointer'
       }
     }, /*#__PURE__*/React.createElement(Stars, {
       rating: user.rating || 0,
@@ -346,19 +357,21 @@ function ProfileScreen({
     }), user.rating != null ? /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 13,
-        fontWeight: 600,
-        color: H.mid
+        fontWeight: 700,
+        color: H.text
       }
     }, user.rating) : /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
-        color: H.faint,
+        color: H.mid,
         fontStyle: 'italic'
       }
     }, lang === 'pt' ? 'Novo' : lang === 'es' ? 'Nuevo' : 'New'), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
-        color: H.faint
+        color: H.mid,
+        fontWeight: 600,
+        textDecoration: 'underline'
       }
     }, "(", user.reviews, " ", lang === 'pt' ? 'avaliações' : lang === 'es' ? 'reseñas' : 'reviews', ")")), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -388,40 +401,50 @@ function ProfileScreen({
     }, {
       val: EQUIPMENT.filter(e => e).length + POOL_ROUTES.length,
       lbl: lang === 'pt' ? 'Anúncios' : lang === 'es' ? 'Anuncios' : 'Listings'
-    }].map((s, i, arr) => /*#__PURE__*/React.createElement(React.Fragment, {
-      key: i
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'var(--pg-font-display)',
-        fontSize: 20,
-        fontWeight: 700,
-        lineHeight: 1,
-        color: H.text,
-        letterSpacing: '-0.02em'
-      }
-    }, s.val), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 9.5,
-        color: H.sub,
-        fontWeight: 600,
-        letterSpacing: '0.05em',
-        textTransform: 'uppercase'
-      }
-    }, s.lbl)), i < arr.length - 1 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 1,
-        background: H.divider,
-        margin: '0 4px'
-      }
-    })))));
+    }].map((s, i, arr) => {
+      const clickable = i === 0 && !!openPublicProfile;
+      return /*#__PURE__*/React.createElement(React.Fragment, {
+        key: i
+      }, /*#__PURE__*/React.createElement("div", {
+        onClick: clickable ? () => openPublicProfile({
+          uid: user.uid,
+          name: user.name,
+          photo: user.photoUrl,
+          isSelf: true
+        }) : undefined,
+        style: {
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 3,
+          cursor: clickable ? 'pointer' : 'default'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontFamily: 'var(--pg-font-display)',
+          fontSize: 20,
+          fontWeight: 700,
+          lineHeight: 1,
+          color: H.text,
+          letterSpacing: '-0.02em'
+        }
+      }, s.val), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 9.5,
+          color: H.sub,
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase'
+        }
+      }, s.lbl)), i < arr.length - 1 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 1,
+          background: H.divider,
+          margin: '0 4px'
+        }
+      }));
+    })));
   })(), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 18px',

@@ -8385,7 +8385,7 @@ function PublicProfileSheet({
       color: 'var(--pg-ink-400)',
       marginTop: 4
     }
-  }, "\uD83C\uDFF7 ", r.listing_name))))), /*#__PURE__*/React.createElement("button", {
+  }, "\uD83C\uDFF7 ", r.listing_name))))), !profile.isSelf && /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       onClose();
       onChat && onChat(profile.uid ? {
