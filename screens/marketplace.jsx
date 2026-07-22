@@ -884,7 +884,11 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     const periodEntry = availablePeriods.find(p => p.period === reqPeriod);
     const totalPrice  = periodEntry ? periodEntry.price * reqQty : 0;
     setReqLoading(true);
-    const { data: inserted, error } = await window.sb.from('rental_requests').insert({
+    // A renter can only ever have one rental_requests row per listing (unique on
+    // listing_id+requester_id) — re-requesting after a cancelled/declined request
+    // hits that same row, so this must upsert (resetting it back to pending) rather
+    // than insert, which would otherwise always fail with a duplicate-key error.
+    const { data: inserted, error } = await window.sb.from('rental_requests').upsert({
       listing_id:     item._id,
       listing_name:   item.name || '',
       requester_id:   currentUser.uid,
@@ -894,7 +898,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       quantity:           reqQty,
       total_price:        totalPrice,
       requester_verified: currentUser.verified || false,
-    }).select().single();
+      status:             'pending',
+      responded_at:       null,
+    }, { onConflict: 'listing_id,requester_id' }).select().single();
     setReqLoading(false);
     if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
     if (inserted?.id) setMyRequestId(inserted.id);
