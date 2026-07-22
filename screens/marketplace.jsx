@@ -768,6 +768,24 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     }).catch(() => {});
   }, [ownerRequests.length]); // eslint-disable-line
 
+  // Load before/after photos for the renter's own request too — previously only
+  // the owner could ever see these, leaving the renter with no visibility into
+  // the documentation protecting both sides of the rental.
+  React.useEffect(() => {
+    if (!myRequestId || !window.sb || isOwner) return;
+    window.sb.from('rental_photos').select('type, photo_url').eq('request_id', myRequestId)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return;
+        setRequestPhotos(prev => ({
+          ...prev,
+          [myRequestId]: {
+            before: data.filter(p => p.type === 'before').map(p => p.photo_url),
+            after:  data.filter(p => p.type === 'after').map(p => p.photo_url),
+          },
+        }));
+      }).catch(() => {});
+  }, [myRequestId, reqStatus]); // eslint-disable-line
+
   // Fetch author profile photo when listing opens
   React.useEffect(() => {
     setAuthorPhotoUrl(null); setAuthorVerified(false); setAuthorRating(null);
@@ -1007,7 +1025,12 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       setAfterStep({ requestId, req });
       return;
     }
-    // No before photos → complete directly
+    // No before photos on file — this is the documentation step being skipped
+    // entirely, so make sure that's a deliberate choice, not an oversight.
+    const skipOk = window.confirm(lang==='pt'
+      ? 'Você não tirou fotos do estado inicial do item. Sem elas, não há como provar dano em caso de disputa. Marcar como devolvido mesmo assim?'
+      : "You didn't take initial condition photos. Without them there's no proof in case of a damage dispute. Mark as returned anyway?");
+    if (!skipOk) return;
     if (!window.sb) return;
     const { error } = await window.sb.from('rental_requests')
       .update({ status: 'completed' })
@@ -1451,18 +1474,45 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
     );
 
     // Status cards (same for static/live)
-    if (reqStatus === 'approved') return (
-      <div style={{padding:'13px 16px',borderRadius:14,background:'rgba(14,186,199,0.10)',border:'1.5px solid rgba(14,186,199,0.40)',display:'flex',alignItems:'center',gap:10}}>
-        <div style={{width:30,height:30,borderRadius:'50%',background:'#0EBAC7',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+    if (reqStatus === 'approved') {
+      const beforePics = requestPhotos[myRequestId]?.before || [];
+      return (
+      <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(14,186,199,0.40)'}}>
+        <div style={{padding:'13px 16px',background:'rgba(14,186,199,0.10)',display:'flex',alignItems:'center',gap:10}}>
+          <div style={{width:30,height:30,borderRadius:'50%',background:'#0EBAC7',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:'#0EBAC7'}}>{lang==='pt'?'🔄 Em andamento!':'🔄 In progress!'}</div>
+            <div style={{fontSize:11.5,color:'#0EBAC7',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou. Aproveite!':'The owner approved. Enjoy!'}</div>
+          </div>
         </div>
-        <div>
-          <div style={{fontSize:13,fontWeight:800,color:'#0EBAC7'}}>{lang==='pt'?'🔄 Em andamento!':'🔄 In progress!'}</div>
-          <div style={{fontSize:11.5,color:'#0EBAC7',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou. Aproveite!':'The owner approved. Enjoy!'}</div>
+        <div style={{padding:'10px 16px',background:'var(--pg-white)',borderTop:'1px solid rgba(14,186,199,0.20)'}}>
+          {beforePics.length > 0 ? (
+            <>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--pg-ink-500)',marginBottom:6}}>
+                {lang==='pt'?'📷 Estado do item documentado pelo dono antes da entrega:':"📷 Item's condition documented by the owner before handoff:"}
+              </div>
+              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                {beforePics.map((url,i)=>(
+                  <img key={i} src={url} alt="" style={{width:52,height:52,objectFit:'cover',borderRadius:8,border:'1.5px solid rgba(14,186,199,0.4)'}}/>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{fontSize:11.5,color:'var(--pg-ink-400)'}}>
+              {lang==='pt'
+                ? '⏳ O dono ainda não documentou o estado inicial do item.'
+                : "⏳ The owner hasn't documented the item's initial condition yet."}
+            </div>
+          )}
         </div>
       </div>
-    );
-    if (reqStatus === 'completed') return (
+    );}
+    if (reqStatus === 'completed') {
+      const beforePics = requestPhotos[myRequestId]?.before || [];
+      const afterPics  = requestPhotos[myRequestId]?.after  || [];
+      return (
       <div style={{borderRadius:14,overflow:'hidden',border:'1.5px solid rgba(22,163,74,0.4)'}}>
         <div style={{padding:'13px 16px',background:'rgba(22,163,74,0.12)',display:'flex',alignItems:'center',gap:10}}>
           <div style={{width:30,height:30,borderRadius:'50%',background:'#16A34A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
@@ -1475,6 +1525,26 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             </div>
           </div>
         </div>
+        {(beforePics.length > 0 || afterPics.length > 0) && (
+          <div style={{padding:'10px 16px',background:'var(--pg-white)',borderTop:'1px solid rgba(22,163,74,0.20)',display:'flex',flexDirection:'column',gap:8}}>
+            {beforePics.length > 0 && (
+              <div>
+                <div style={{fontSize:10.5,fontWeight:700,color:'var(--pg-ink-500)',marginBottom:5}}>{lang==='pt'?'📷 Antes':'📷 Before'}</div>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                  {beforePics.map((url,i)=>(<img key={i} src={url} alt="" style={{width:48,height:48,objectFit:'cover',borderRadius:8,border:'1.5px solid var(--pg-ink-200)'}}/>))}
+                </div>
+              </div>
+            )}
+            {afterPics.length > 0 && (
+              <div>
+                <div style={{fontSize:10.5,fontWeight:700,color:'var(--pg-ink-500)',marginBottom:5}}>{lang==='pt'?'📷 Depois':'📷 After'}</div>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                  {afterPics.map((url,i)=>(<img key={i} src={url} alt="" style={{width:48,height:48,objectFit:'cover',borderRadius:8,border:'1.5px solid var(--pg-ink-200)'}}/>))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {!hasRated && (
           <button
             onClick={()=>{ setRatingStars(0); setRatingComment(''); setRatingSheet({ requestId: myRequestId, rateeId: item.author_id, rateeName: item.author || 'Owner' }); }}
@@ -1485,7 +1555,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           </button>
         )}
       </div>
-    );
+    );}
     if (reqStatus === 'disputed') return (
       <div style={{padding:'12px 14px',borderRadius:14,background:'rgba(245,158,11,0.10)',border:'1.5px solid rgba(245,158,11,0.40)',display:'flex',alignItems:'center',gap:10}}>
         <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
@@ -1881,29 +1951,54 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               {/* Mark Returned / Report Problem — only for in-progress (approved) */}
               {isAppr && (
                 <>
-                  {/* Before photos row */}
-                  {(requestPhotos[req.id]?.before||[]).length > 0 && (
-                    <div style={{display:'flex',gap:6,marginTop:9,alignItems:'center',flexWrap:'wrap'}}>
-                      {(requestPhotos[req.id].before).map((url,i)=>(
-                        <img key={i} src={url} alt="" style={{width:46,height:46,objectFit:'cover',borderRadius:8,border:'1.5px solid rgba(14,186,199,0.5)'}}/>
-                      ))}
-                      <span style={{fontSize:10,color:'#0EBAC7',fontWeight:700,marginLeft:2}}>
-                        {lang==='pt'?'📷 fotos antes':'📷 before photos'}
-                      </span>
-                    </div>
-                  )}
+                  {(() => {
+                    const beforePics = requestPhotos[req.id]?.before || [];
+                    const hasBefore = beforePics.length > 0;
+                    return (
+                      <div style={{marginTop:9,borderRadius:12,overflow:'hidden',
+                        border:`1.5px solid ${hasBefore?'rgba(14,186,199,0.35)':'rgba(245,158,11,0.45)'}`}}>
+                        <div style={{padding:'9px 11px',background:hasBefore?'rgba(14,186,199,0.08)':'rgba(245,158,11,0.10)'}}>
+                          <div style={{fontSize:11.5,fontWeight:800,color:hasBefore?'#0EBAC7':'#D97706'}}>
+                            {hasBefore
+                              ? (lang==='pt'?'📸 Estado inicial documentado':'📸 Initial condition documented')
+                              : (lang==='pt'?'📸 Etapa obrigatória: fotos do estado inicial':'📸 Required step: initial condition photos')}
+                          </div>
+                          {!hasBefore && (
+                            <div style={{fontSize:10.5,color:'#B45309',marginTop:2,lineHeight:1.4}}>
+                              {lang==='pt'
+                                ? 'Tire fotos do item antes de entregar — protege você em caso de dano.'
+                                : 'Photograph the item before handing it over — protects you if it comes back damaged.'}
+                            </div>
+                          )}
+                        </div>
+                        {hasBefore && (
+                          <div style={{display:'flex',gap:6,padding:'8px 11px',alignItems:'center',flexWrap:'wrap',background:'var(--pg-white)'}}>
+                            {beforePics.map((url,i)=>(
+                              <img key={i} src={url} alt="" style={{width:46,height:46,objectFit:'cover',borderRadius:8,border:'1.5px solid rgba(14,186,199,0.5)'}}/>
+                            ))}
+                          </div>
+                        )}
+                        {beforePics.length < 3 && (
+                          <button
+                            onClick={()=>{ setAddingPhotoFor(req.id); if(beforePhotoRef.current) beforePhotoRef.current.click(); }}
+                            disabled={photoUploading && addingPhotoFor===req.id}
+                            style={{width:'100%',padding:'9px',border:'none',
+                              borderTop: hasBefore ? '1px solid rgba(14,186,199,0.20)' : 'none',
+                              cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,
+                              background: hasBefore ? 'rgba(14,186,199,0.06)' : '#D97706',
+                              color: hasBefore ? '#0EBAC7' : '#fff',
+                              display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                            {photoUploading&&addingPhotoFor===req.id
+                              ? '⏳'
+                              : <>📷 {hasBefore
+                                  ? (lang==='pt'?'Adicionar mais':'Add more')
+                                  : (lang==='pt'?'Tirar fotos agora':'Take photos now')}</>}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div style={{display:'flex',gap:6,marginTop:9}}>
-                    {/* Before photo button */}
-                    {(requestPhotos[req.id]?.before||[]).length < 3 && (
-                      <button
-                        onClick={()=>{ setAddingPhotoFor(req.id); if(beforePhotoRef.current) beforePhotoRef.current.click(); }}
-                        disabled={photoUploading && addingPhotoFor===req.id}
-                        style={{width:36,height:36,flexShrink:0,borderRadius:10,cursor:'pointer',fontFamily:'inherit',
-                          border:'1.5px solid var(--pg-ink-300)',background:'var(--pg-ink-100)',
-                          display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>
-                        {photoUploading&&addingPhotoFor===req.id ? '⏳' : '📷'}
-                      </button>
-                    )}
                     <button onClick={()=>handleMarkReturned(req.id, req)} style={{
                       flex:2,height:36,borderRadius:10,border:'none',cursor:'pointer',
                       background:'#16A34A',color:'#fff',fontSize:12,fontWeight:700,fontFamily:'inherit',
