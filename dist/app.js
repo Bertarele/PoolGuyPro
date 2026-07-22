@@ -1920,7 +1920,12 @@ function App() {
           if (linkId) ctx.openQuickJobById(linkId);else switchTab('quick');
         } else if (type === 'job_new_application' || type === 'job_accepted' || type === 'job_rejected') {
           switchTab('work');
-        } else if (type === 'rental_request' || type === 'rental_approved' || type === 'rental_declined' || type === 'rental_cancelled' || type === 'rental_completed' || type === 'rental_resolved') {
+        } else if (type === 'rental_request') {
+          // link_id is the requester's uid here (not a listing id) — the
+          // actionable next step is the chat, where the proposal was
+          // auto-posted and where approve/decline happens from.
+          if (linkId) openChatFromDeepLink(linkId, null);else switchTab('market');
+        } else if (type === 'rental_approved' || type === 'rental_declined' || type === 'rental_cancelled' || type === 'rental_completed' || type === 'rental_resolved') {
           if (linkId) ctx.openListingById(linkId);else switchTab('market');
         } else if (type === 'market') {
           if (linkId) ctx.openListingById(linkId);else switchTab('market');

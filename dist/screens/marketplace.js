@@ -1395,7 +1395,7 @@ function ViewListingSheet({
 
   // Helper: insert notification silently (fire-and-forget)
   // title/body can be {en,pt,es} objects → stored as JSON for multilingual rendering
-  const _notify = (userId, type, title, body, linkId = null) => {
+  const _notify = (userId, type, title, body, linkId = null, pushUrl = '/#market') => {
     if (!window.sb || !userId) return;
     const titleStr = typeof title === 'object' ? JSON.stringify(title) : title;
     const bodyStr = typeof body === 'object' ? JSON.stringify(body) : body;
@@ -1410,7 +1410,7 @@ function ViewListingSheet({
     // Push notification (extract readable text from multilingual object)
     const pushTitle = typeof title === 'object' ? title.pt || title.en || '' : title;
     const pushBody = typeof body === 'object' ? body.pt || body.en || '' : body;
-    window.sendPush && window.sendPush(userId, pushTitle, pushBody, '/#market', 'market');
+    window.sendPush && window.sendPush(userId, pushTitle, pushBody, pushUrl, 'market');
   };
   const handleRequestRental = async () => {
     // Allow re-request after cancelled or declined — those are terminal but recoverable states
@@ -1449,6 +1449,10 @@ function ViewListingSheet({
     if (inserted?.id) setMyRequestId(inserted.id);
     // Notify owner (multilingual — receiver sees in their own language)
     const _renterName = currentUser.name || (currentUser.email || '').split('@')[0] || 'Someone';
+    // link_id is the requester's uid (not the listing id, unlike other rental_*
+    // notification types) so tapping this notification jumps straight into the
+    // chat with them — that's where the actual proposal now lives (auto-posted
+    // above) and where the owner approves/declines from, not the listing page.
     _notify(item.author_id, 'rental_request', {
       en: 'New rental request',
       pt: 'Novo pedido de aluguel',
@@ -1457,7 +1461,7 @@ function ViewListingSheet({
       en: `${_renterName} wants to rent "${item.name || ''}"`,
       pt: `${_renterName} quer alugar "${item.name || ''}"`,
       es: `${_renterName} quiere alquilar "${item.name || ''}"`
-    }, item._id);
+    }, currentUser.uid, `/#chat?user=${currentUser.uid}&name=${encodeURIComponent(_renterName)}`);
     setReqStatus('pending');
     showToast && showToast(lang === 'pt' ? '✓ Pedido enviado! Converse com o dono pela inbox.' : '✓ Request sent! Chat with the owner via inbox.');
     // Auto-post the proposal into the chat itself — the owner needs to see exactly
