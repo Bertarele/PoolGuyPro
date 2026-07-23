@@ -621,12 +621,16 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [resolvedMessage,    setResolvedMessage]    = React.useState(''); // admin's public resolution message
   const [listingOccupied,    setListingOccupied]    = React.useState(false); // another user has an approved rental
   const [dismissedDecisions, setDismissedDecisions] = React.useState(new Set()); // reqIds owner dismissed keep/remove prompt
+  const [meetupEditingId, setMeetupEditingId] = React.useState(null); // reqId whose address field is open for editing
+  const [meetupDraft,     setMeetupDraft]     = React.useState('');
+  const [meetupSavingId,  setMeetupSavingId]  = React.useState(null);
   const [reqLoading,    setReqLoading]   = React.useState(false);
   const [cancelLoading, setCancelLoading]= React.useState(false);
   const [ownerRequests, setOwnerRequests]= React.useState([]); // for owner — list of requests
   const [reqPeriod,     setReqPeriod]    = React.useState(null); // 'day'|'week'|'month'
   const [reqQty,        setReqQty]       = React.useState(1);
   const [myRequestId,   setMyRequestId]  = React.useState(null); // renter's own request id
+  const [myMeetupAddress, setMyMeetupAddress] = React.useState(null); // address the owner set for pickup
   // Rating state
   const [ratingSheet,   setRatingSheet]   = React.useState(null); // null | {requestId,rateeId,rateeName}
   const [ratingStars,   setRatingStars]   = React.useState(0);
@@ -681,7 +685,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   React.useEffect(() => {
     if (!isRent || !currentUser?.uid || !window.sb) return;
     window.sb.from('rental_requests')
-      .select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified, owner_kept_active')
+      .select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified, owner_kept_active, meetup_address')
       .eq('listing_id', item._id)
       .then(({ data }) => {
         if (!data) return;
@@ -700,6 +704,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
           if (mine) {
             setReqStatus(mine.status);
             setMyRequestId(mine.id);
+            setMyMeetupAddress(mine.meetup_address || null);
             if (mine.status === 'completed' && window.sb) {
               window.sb.from('rental_ratings')
                 .select('id').eq('request_id', mine.id).eq('rater_id', currentUser.uid).limit(1)
@@ -1028,6 +1033,24 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
       _notify(cancelledReq.requester_id, 'rental_cancelled',
         { en:'Rental cancelled by owner', pt:'Aluguel cancelado pelo dono', es:'Alquiler cancelado por el propietario' },
         { en:`"${item.name||''}" — The owner cancelled the active rental.`, pt:`"${item.name||''}" — O dono cancelou o aluguel em andamento.`, es:`"${item.name||''}" — El propietario canceló el alquiler en curso.` },
+        item._id);
+    }
+  };
+
+  const handleSaveMeetupAddress = async (requestId, req) => {
+    if (!window.sb || meetupSavingId) return;
+    const addr = meetupDraft.trim();
+    setMeetupSavingId(requestId);
+    const { error } = await window.sb.from('rental_requests').update({ meetup_address: addr || null }).eq('id', requestId);
+    setMeetupSavingId(null);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, meetup_address: addr || null} : r));
+    setMeetupEditingId(null);
+    showToast && showToast(lang==='pt'?'✓ Endereço salvo!':'✓ Address saved!');
+    if (addr && req?.requester_id) {
+      _notify(req.requester_id, 'rental_approved',
+        { en:'Meetup location added', pt:'Local de encontro adicionado', es:'Ubicación de encuentro agregada' },
+        { en:`The owner added a meetup address for "${item.name||''}"`, pt:`O dono adicionou um endereço de encontro para "${item.name||''}"`, es:`El propietario agregó una dirección de encuentro para "${item.name||''}"` },
         item._id);
     }
   };
@@ -1502,6 +1525,24 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
             <div style={{fontSize:11.5,color:'#0EBAC7',opacity:0.8,marginTop:1}}>{lang==='pt'?'O dono aprovou. Aproveite!':'The owner approved. Enjoy!'}</div>
           </div>
         </div>
+        {myMeetupAddress && (
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(myMeetupAddress)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{display:'flex',alignItems:'center',gap:10,padding:'11px 16px',background:'var(--pg-white)',
+              borderTop:'1px solid rgba(14,186,199,0.20)',textDecoration:'none'}}>
+            <div style={{width:30,height:30,borderRadius:'50%',background:'var(--pg-ink-100)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              {Icon.pin(14,'#0EBAC7')}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--pg-ink-500)'}}>{lang==='pt'?'Local de encontro':'Meetup location'}</div>
+              <div style={{fontSize:12.5,fontWeight:600,color:'var(--pg-ink-800)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{myMeetupAddress}</div>
+            </div>
+            <span style={{fontSize:11,fontWeight:700,color:'#0EBAC7',flexShrink:0,display:'flex',alignItems:'center',gap:3}}>
+              {lang==='pt'?'Abrir mapa':'Open map'}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0EBAC7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </span>
+          </a>
+        )}
         <div style={{padding:'10px 16px',background:'var(--pg-white)',borderTop:'1px solid rgba(14,186,199,0.20)'}}>
           {beforePics.length > 0 ? (
             <>
@@ -1966,6 +2007,39 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
               {/* Mark Returned / Report Problem — only for in-progress (approved) */}
               {isAppr && (
                 <>
+                  {/* Meetup address — the renter sees this as a tap-to-open-in-maps link */}
+                  <div style={{marginTop:9,borderRadius:12,overflow:'hidden',border:'1.5px solid var(--pg-ink-200)'}}>
+                    <div style={{padding:'9px 11px',background:'var(--pg-ink-50)'}}>
+                      <div style={{fontSize:11.5,fontWeight:800,color:'var(--pg-ink-700)',display:'flex',alignItems:'center',gap:5}}>
+                        {Icon.pin(12,'var(--pg-ink-500)')}
+                        {lang==='pt'?'Local de encontro':'Meetup location'}
+                      </div>
+                      {meetupEditingId === req.id ? (
+                        <div style={{marginTop:7,display:'flex',gap:6}}>
+                          <input value={meetupDraft} onChange={e=>setMeetupDraft(e.target.value)}
+                            placeholder={lang==='pt'?'Ex: 123 Main St, Fort Lauderdale, FL':'E.g. 123 Main St, Fort Lauderdale, FL'}
+                            style={{flex:1,height:34,borderRadius:8,border:'1px solid var(--pg-ink-200)',padding:'0 10px',fontSize:12.5,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
+                          <button onClick={()=>handleSaveMeetupAddress(req.id, req)} disabled={meetupSavingId===req.id} style={{
+                            height:34,padding:'0 12px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',
+                            background:'#0EBAC7',color:'#fff',fontSize:12,fontWeight:700}}>
+                            {meetupSavingId===req.id ? '…' : (lang==='pt'?'Salvar':'Save')}
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{marginTop:6,display:'flex',alignItems:'center',gap:8}}>
+                          <div style={{flex:1,fontSize:12.5,color: req.meetup_address ? 'var(--pg-ink-700)' : 'var(--pg-ink-400)',
+                            fontStyle: req.meetup_address ? 'normal' : 'italic'}}>
+                            {req.meetup_address || (lang==='pt'?'Ainda não definido':'Not set yet')}
+                          </div>
+                          <button onClick={()=>{ setMeetupEditingId(req.id); setMeetupDraft(req.meetup_address || ''); }} style={{
+                            flexShrink:0,height:30,padding:'0 10px',borderRadius:8,border:'1px solid var(--pg-ink-200)',cursor:'pointer',fontFamily:'inherit',
+                            background:'var(--pg-white)',color:'var(--pg-ink-600)',fontSize:11.5,fontWeight:700}}>
+                            {req.meetup_address ? (lang==='pt'?'Editar':'Edit') : (lang==='pt'?'Adicionar':'Add')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   {(() => {
                     const beforePics = requestPhotos[req.id]?.before || [];
                     const hasBefore = beforePics.length > 0;
@@ -4282,24 +4356,24 @@ function MarketplaceScreen({ ctx }) {
     return (
       <button key={item._id}
         onClick={()=> openMyOrOthersListing(item)}
-        className={isSoldItem ? '' : 'pg-press'}
+        className={(isSoldItem || isActiveRental) ? '' : 'pg-press'}
         style={{
-          padding:0, overflow:'hidden', position:'relative', cursor: isSoldItem ? (isMyPost(item) ? 'pointer' : 'default') : 'pointer',
+          padding:0, overflow:'hidden', position:'relative', cursor: (isSoldItem || isActiveRental) ? (isMyPost(item) ? 'pointer' : 'default') : 'pointer',
           border: (desktopMode && darkMode)
-            ? `1.5px solid ${isSoldItem ? '#30363D' : '#21262D'}`
-            : isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
+            ? `1.5px solid ${(isSoldItem || isActiveRental) ? '#30363D' : '#21262D'}`
+            : isPending ? '1.5px solid var(--pg-ink-200)' : (isSoldItem || isActiveRental) ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
           display:'flex', flexDirection:'column',
           borderRadius:16,
           background: (desktopMode && darkMode)
-            ? (isSoldItem ? '#161B22' : '#1C2128')
-            : (isSoldItem ? 'var(--pg-ink-50)' : 'var(--pg-white)'),
+            ? ((isSoldItem || isActiveRental) ? '#161B22' : '#1C2128')
+            : ((isSoldItem || isActiveRental) ? 'var(--pg-ink-50)' : 'var(--pg-white)'),
           textAlign:'left', fontFamily:'inherit',
           boxShadow: desktopMode
             ? (darkMode ? '0 2px 16px rgba(0,0,0,0.45), 0 0 0 0 transparent' : '0 2px 12px rgba(0,0,0,0.08), 0 0 0 0 transparent')
             : '0 1px 3px rgba(0,0,0,0.08)',
           transition:'box-shadow .18s, transform .12s',
         }}>
-        <div style={{opacity: isPending ? 0.82 : isSoldItem ? 0.70 : 1, filter: isSoldItem ? 'grayscale(0.65)' : 'none', display:'flex', flexDirection:'column', flex:1}}>
+        <div style={{opacity: isPending ? 0.82 : isSoldItem ? 0.70 : isActiveRental ? 0.75 : 1, filter: (isSoldItem || isActiveRental) ? 'grayscale(0.65)' : 'none', display:'flex', flexDirection:'column', flex:1}}>
         {/* Photo */}
         <div style={{position:'relative', paddingTop: desktopMode ? '62%' : '72%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
           <div style={{position:'absolute', inset:0}}>
@@ -5232,18 +5306,18 @@ function MarketplaceScreen({ ctx }) {
                 return (
                   <button key={item._id}
                     onClick={()=> openMyOrOthersListing(item)}
-                    className={isSoldItem ? '' : 'pg-press'}
+                    className={(isSoldItem || isActiveRental) ? '' : 'pg-press'}
                     style={{
                       padding:0, overflow:'hidden', position:'relative',
-                      cursor: isSoldItem ? (isMyPost(item) ? 'pointer' : 'default') : 'pointer',
-                      border: isPending ? '1.5px solid var(--pg-ink-200)' : isSoldItem ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
+                      cursor: (isSoldItem || isActiveRental) ? (isMyPost(item) ? 'pointer' : 'default') : 'pointer',
+                      border: isPending ? '1.5px solid var(--pg-ink-200)' : (isSoldItem || isActiveRental) ? '1.5px solid var(--pg-ink-200)' : '1.5px solid var(--pg-blue-100)',
                       display:'flex', flexDirection:'column',
                       borderRadius:14,
-                      background: isSoldItem ? 'var(--pg-ink-50)' : 'var(--pg-white)',
+                      background: (isSoldItem || isActiveRental) ? 'var(--pg-ink-50)' : 'var(--pg-white)',
                       textAlign:'left', fontFamily:'inherit',
                       boxShadow:'0 1px 3px rgba(0,0,0,0.08)',
                     }}>
-                    <div style={{opacity: isPending ? 0.82 : isSoldItem ? 0.65 : 1, filter: isSoldItem ? 'grayscale(0.6)' : 'none', display:'flex', flexDirection:'column', flex:1}}>
+                    <div style={{opacity: isPending ? 0.82 : isSoldItem ? 0.65 : isActiveRental ? 0.72 : 1, filter: (isSoldItem || isActiveRental) ? 'grayscale(0.6)' : 'none', display:'flex', flexDirection:'column', flex:1}}>
                     {/* Photo area — enforced 4:3 ratio */}
                     <div style={{position:'relative', paddingTop:'72%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
                       <div style={{position:'absolute', inset:0}}>
