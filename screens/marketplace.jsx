@@ -650,16 +650,21 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [disputeDesc,     setDisputeDesc]     = React.useState('');
   const [disputeLoading,  setDisputeLoading]  = React.useState(false);
   const [disputePhotos,   setDisputePhotos]   = React.useState([]); // [{file, preview}]
-  // Lock background scroll while the dispute sheet is open — DisputeFormSheet
+  // Lock background scroll while the dispute sheet is open. DisputeFormSheet
   // is called as a plain function ({DisputeFormSheet()}), not rendered as its
   // own <Component/>, so a hook declared inside it would attach to whichever
   // fiber happens to be rendering at that point instead of tracking reliably;
   // keeping this effect up here with the rest of this component's hooks avoids
-  // that problem entirely.
+  // that problem entirely. Uses touch/wheel interception rather than the
+  // shared _lockScreen (which toggles overflow:hidden) — this listing view is
+  // itself a position:fixed overlay, and setting overflow on a fixed ancestor
+  // creates a new containing block for fixed descendants, which silently
+  // breaks their positioning (this broke the dispute dialog's own layout the
+  // first time around).
   React.useEffect(() => {
     if (!disputeForm) return;
-    _lockScreen();
-    return () => _unlockScreen();
+    const unlock = _lockScrollWithin(document.querySelector('[data-pg-listing-scroll]'));
+    return unlock;
   }, [!!disputeForm]);
   // Rental photos (before/after)
   const [requestPhotos,  setRequestPhotos]  = React.useState({}); // {reqId:{before:[],after:[]}}
@@ -4992,7 +4997,7 @@ function MarketplaceScreen({ ctx }) {
 
       {/* ── OVERLAY SHEETS (same as mobile) ───────────────────── */}
       {viewListing && (
-        <div data-pg-screen style={{position:'fixed', inset:0, zIndex:200, overflowY:'auto', background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
+        <div data-pg-listing-scroll style={{position:'fixed', inset:0, zIndex:200, overflowY:'auto', background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
           <ViewListingSheet
             item={viewListing} lang={lang}
             openChat={openChat} openPublicProfile={openPublicProfile}
@@ -5950,7 +5955,7 @@ function MarketplaceScreen({ ctx }) {
 
       {/* Other user's listing — full-screen view */}
       {viewListing && (
-        <div data-pg-screen style={{
+        <div data-pg-listing-scroll style={{
           position:'fixed', inset:0, zIndex:200, overflowY:'auto',
           background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease',
         }}>

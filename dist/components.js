@@ -636,30 +636,48 @@ function ReputationBadge({
 }
 
 // ── Scroll lock (prevents background scroll while any sheet is open) ──
-// Locks every [data-pg-screen] element currently in the DOM, not just the
-// first — a listing/post detail overlay is its own independently-scrollable
-// [data-pg-screen] stacked on top of the tab's, and a sheet opened from
-// inside it (e.g. the dispute report form) needs both frozen, or the one
-// underneath keeps scrolling behind the "fixed" dialog.
+// Only ever touches the single outer [data-pg-screen] tab container — setting
+// overflow:hidden on a position:fixed ancestor establishes a new containing
+// block for any position:fixed descendants (like a dialog rendered inside a
+// listing overlay), which silently reparents their positioning and breaks
+// them. Don't add data-pg-screen to fixed-position overlays for this reason;
+// see _lockScrollWithin below for locking scroll on those instead.
 let _sheetDepth = 0;
-let _savedOverflows = null; // Map<Element, string> captured on the outermost lock
+let _savedOverflow = null;
 function _lockScreen() {
   _sheetDepth++;
-  const els = document.querySelectorAll('[data-pg-screen]');
-  if (_sheetDepth === 1) _savedOverflows = new Map();
-  els.forEach(el => {
-    if (_savedOverflows && !_savedOverflows.has(el)) _savedOverflows.set(el, el.style.overflow);
+  const el = document.querySelector('[data-pg-screen]');
+  if (el) {
+    if (_sheetDepth === 1) _savedOverflow = el.style.overflow;
     el.style.overflow = 'hidden';
-  });
+  }
 }
 function _unlockScreen() {
   _sheetDepth = Math.max(0, _sheetDepth - 1);
-  if (_sheetDepth === 0 && _savedOverflows) {
-    _savedOverflows.forEach((overflow, el) => {
-      el.style.overflow = overflow || 'auto';
-    });
-    _savedOverflows = null;
+  if (_sheetDepth === 0) {
+    const el = document.querySelector('[data-pg-screen]');
+    if (el) {
+      el.style.overflow = _savedOverflow !== null ? _savedOverflow : 'auto';
+      _savedOverflow = null;
+    }
   }
+}
+// Locks scroll on an arbitrary scrollable element via touch/wheel interception
+// instead of the CSS overflow property, so it's safe to use on a position:fixed
+// container without breaking fixed-position descendants inside it (see above).
+function _lockScrollWithin(el) {
+  if (!el) return () => {};
+  const prevent = e => e.preventDefault();
+  el.addEventListener('touchmove', prevent, {
+    passive: false
+  });
+  el.addEventListener('wheel', prevent, {
+    passive: false
+  });
+  return () => {
+    el.removeEventListener('touchmove', prevent);
+    el.removeEventListener('wheel', prevent);
+  };
 }
 
 // ── Full-screen page (replaces Sheet for tall forms to avoid iOS pull-to-refresh) ──
