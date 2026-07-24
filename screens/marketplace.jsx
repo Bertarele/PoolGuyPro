@@ -4992,7 +4992,7 @@ function MarketplaceScreen({ ctx }) {
 
       {/* ── OVERLAY SHEETS (same as mobile) ───────────────────── */}
       {viewListing && (
-        <div style={{position:'fixed', inset:0, zIndex:200, overflowY:'auto', background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
+        <div data-pg-screen style={{position:'fixed', inset:0, zIndex:200, overflowY:'auto', background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
           <ViewListingSheet
             item={viewListing} lang={lang}
             openChat={openChat} openPublicProfile={openPublicProfile}
@@ -5950,7 +5950,7 @@ function MarketplaceScreen({ ctx }) {
 
       {/* Other user's listing — full-screen view */}
       {viewListing && (
-        <div style={{
+        <div data-pg-screen style={{
           position:'fixed', inset:0, zIndex:200, overflowY:'auto',
           background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease',
         }}>

@@ -9449,6 +9449,7 @@ function MarketplaceScreen({
         boxShadow: '0 3px 10px rgba(0,119,182,0.30)'
       }
     }, t.contact))))))))))), viewListing && /*#__PURE__*/React.createElement("div", {
+      "data-pg-screen": true,
       style: {
         position: 'fixed',
         inset: 0,
@@ -11431,6 +11432,7 @@ function MarketplaceScreen({
   }), /*#__PURE__*/React.createElement("path", {
     d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
   })))))))), viewListing && /*#__PURE__*/React.createElement("div", {
+    "data-pg-screen": true,
     style: {
       position: 'fixed',
       inset: 0,

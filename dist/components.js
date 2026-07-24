@@ -636,24 +636,29 @@ function ReputationBadge({
 }
 
 // ── Scroll lock (prevents background scroll while any sheet is open) ──
+// Locks every [data-pg-screen] element currently in the DOM, not just the
+// first — a listing/post detail overlay is its own independently-scrollable
+// [data-pg-screen] stacked on top of the tab's, and a sheet opened from
+// inside it (e.g. the dispute report form) needs both frozen, or the one
+// underneath keeps scrolling behind the "fixed" dialog.
 let _sheetDepth = 0;
-let _savedOverflow = null;
+let _savedOverflows = null; // Map<Element, string> captured on the outermost lock
 function _lockScreen() {
   _sheetDepth++;
-  const el = document.querySelector('[data-pg-screen]');
-  if (el) {
-    if (_sheetDepth === 1) _savedOverflow = el.style.overflow;
+  const els = document.querySelectorAll('[data-pg-screen]');
+  if (_sheetDepth === 1) _savedOverflows = new Map();
+  els.forEach(el => {
+    if (_savedOverflows && !_savedOverflows.has(el)) _savedOverflows.set(el, el.style.overflow);
     el.style.overflow = 'hidden';
-  }
+  });
 }
 function _unlockScreen() {
   _sheetDepth = Math.max(0, _sheetDepth - 1);
-  if (_sheetDepth === 0) {
-    const el = document.querySelector('[data-pg-screen]');
-    if (el) {
-      el.style.overflow = _savedOverflow !== null ? _savedOverflow : 'auto';
-      _savedOverflow = null;
-    }
+  if (_sheetDepth === 0 && _savedOverflows) {
+    _savedOverflows.forEach((overflow, el) => {
+      el.style.overflow = overflow || 'auto';
+    });
+    _savedOverflows = null;
   }
 }
 
