@@ -622,8 +622,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [listingOccupied,    setListingOccupied]    = React.useState(false); // another user has an approved rental
   const [dismissedDecisions, setDismissedDecisions] = React.useState(new Set()); // reqIds owner dismissed keep/remove prompt
   const [meetupEditingId, setMeetupEditingId] = React.useState(null); // reqId whose address field is open for editing
-  const [meetupDraft,     setMeetupDraft]     = React.useState('');
   const [meetupSavingId,  setMeetupSavingId]  = React.useState(null);
+  // Uncontrolled on purpose: OwnerRequestsBlock is a component defined inside
+  // this render (a new function identity every time), so a controlled input
+  // tied to state here would force a remount — and thus lose focus — on
+  // every single keystroke. Reading the value via ref on save sidesteps that
+  // without needing to restructure the component tree.
+  const meetupInputRef = React.useRef(null);
   const [reqLoading,    setReqLoading]   = React.useState(false);
   const [cancelLoading, setCancelLoading]= React.useState(false);
   const [ownerRequests, setOwnerRequests]= React.useState([]); // for owner — list of requests
@@ -645,6 +650,17 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
   const [disputeDesc,     setDisputeDesc]     = React.useState('');
   const [disputeLoading,  setDisputeLoading]  = React.useState(false);
   const [disputePhotos,   setDisputePhotos]   = React.useState([]); // [{file, preview}]
+  // Lock background scroll while the dispute sheet is open — DisputeFormSheet
+  // is called as a plain function ({DisputeFormSheet()}), not rendered as its
+  // own <Component/>, so a hook declared inside it would attach to whichever
+  // fiber happens to be rendering at that point instead of tracking reliably;
+  // keeping this effect up here with the rest of this component's hooks avoids
+  // that problem entirely.
+  React.useEffect(() => {
+    if (!disputeForm) return;
+    _lockScreen();
+    return () => _unlockScreen();
+  }, [!!disputeForm]);
   // Rental photos (before/after)
   const [requestPhotos,  setRequestPhotos]  = React.useState({}); // {reqId:{before:[],after:[]}}
   const [addingPhotoFor, setAddingPhotoFor] = React.useState(null); // reqId being photo'd
@@ -1039,7 +1055,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
 
   const handleSaveMeetupAddress = async (requestId, req) => {
     if (!window.sb || meetupSavingId) return;
-    const addr = meetupDraft.trim();
+    const addr = (meetupInputRef.current?.value || '').trim();
     setMeetupSavingId(requestId);
     const { error } = await window.sb.from('rental_requests').update({ meetup_address: addr || null }).eq('id', requestId);
     setMeetupSavingId(null);
@@ -2016,7 +2032,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                       </div>
                       {meetupEditingId === req.id ? (
                         <div style={{marginTop:7,display:'flex',gap:6}}>
-                          <input value={meetupDraft} onChange={e=>setMeetupDraft(e.target.value)}
+                          <input ref={meetupInputRef} defaultValue={req.meetup_address || ''} autoFocus
                             placeholder={lang==='pt'?'Ex: 123 Main St, Fort Lauderdale, FL':'E.g. 123 Main St, Fort Lauderdale, FL'}
                             style={{flex:1,height:34,borderRadius:8,border:'1px solid var(--pg-ink-200)',padding:'0 10px',fontSize:12.5,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
                           <button onClick={()=>handleSaveMeetupAddress(req.id, req)} disabled={meetupSavingId===req.id} style={{
@@ -2031,7 +2047,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                             fontStyle: req.meetup_address ? 'normal' : 'italic'}}>
                             {req.meetup_address || (lang==='pt'?'Ainda não definido':'Not set yet')}
                           </div>
-                          <button onClick={()=>{ setMeetupEditingId(req.id); setMeetupDraft(req.meetup_address || ''); }} style={{
+                          <button onClick={()=>setMeetupEditingId(req.id)} style={{
                             flexShrink:0,height:30,padding:'0 10px',borderRadius:8,border:'1px solid var(--pg-ink-200)',cursor:'pointer',fontFamily:'inherit',
                             background:'var(--pg-white)',color:'var(--pg-ink-600)',fontSize:11.5,fontWeight:700}}>
                             {req.meetup_address ? (lang==='pt'?'Editar':'Edit') : (lang==='pt'?'Adicionar':'Add')}

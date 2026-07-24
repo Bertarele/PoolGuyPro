@@ -1139,8 +1139,13 @@ function ViewListingSheet({
   const [listingOccupied, setListingOccupied] = React.useState(false); // another user has an approved rental
   const [dismissedDecisions, setDismissedDecisions] = React.useState(new Set()); // reqIds owner dismissed keep/remove prompt
   const [meetupEditingId, setMeetupEditingId] = React.useState(null); // reqId whose address field is open for editing
-  const [meetupDraft, setMeetupDraft] = React.useState('');
   const [meetupSavingId, setMeetupSavingId] = React.useState(null);
+  // Uncontrolled on purpose: OwnerRequestsBlock is a component defined inside
+  // this render (a new function identity every time), so a controlled input
+  // tied to state here would force a remount — and thus lose focus — on
+  // every single keystroke. Reading the value via ref on save sidesteps that
+  // without needing to restructure the component tree.
+  const meetupInputRef = React.useRef(null);
   const [reqLoading, setReqLoading] = React.useState(false);
   const [cancelLoading, setCancelLoading] = React.useState(false);
   const [ownerRequests, setOwnerRequests] = React.useState([]); // for owner — list of requests
@@ -1162,6 +1167,17 @@ function ViewListingSheet({
   const [disputeDesc, setDisputeDesc] = React.useState('');
   const [disputeLoading, setDisputeLoading] = React.useState(false);
   const [disputePhotos, setDisputePhotos] = React.useState([]); // [{file, preview}]
+  // Lock background scroll while the dispute sheet is open — DisputeFormSheet
+  // is called as a plain function ({DisputeFormSheet()}), not rendered as its
+  // own <Component/>, so a hook declared inside it would attach to whichever
+  // fiber happens to be rendering at that point instead of tracking reliably;
+  // keeping this effect up here with the rest of this component's hooks avoids
+  // that problem entirely.
+  React.useEffect(() => {
+    if (!disputeForm) return;
+    _lockScreen();
+    return () => _unlockScreen();
+  }, [!!disputeForm]);
   // Rental photos (before/after)
   const [requestPhotos, setRequestPhotos] = React.useState({}); // {reqId:{before:[],after:[]}}
   const [addingPhotoFor, setAddingPhotoFor] = React.useState(null); // reqId being photo'd
@@ -1615,7 +1631,7 @@ function ViewListingSheet({
   };
   const handleSaveMeetupAddress = async (requestId, req) => {
     if (!window.sb || meetupSavingId) return;
-    const addr = meetupDraft.trim();
+    const addr = (meetupInputRef.current?.value || '').trim();
     setMeetupSavingId(requestId);
     const {
       error
@@ -3793,8 +3809,9 @@ function ViewListingSheet({
           gap: 6
         }
       }, /*#__PURE__*/React.createElement("input", {
-        value: meetupDraft,
-        onChange: e => setMeetupDraft(e.target.value),
+        ref: meetupInputRef,
+        defaultValue: req.meetup_address || '',
+        autoFocus: true,
         placeholder: lang === 'pt' ? 'Ex: 123 Main St, Fort Lauderdale, FL' : 'E.g. 123 Main St, Fort Lauderdale, FL',
         style: {
           flex: 1,
@@ -3837,10 +3854,7 @@ function ViewListingSheet({
           fontStyle: req.meetup_address ? 'normal' : 'italic'
         }
       }, req.meetup_address || (lang === 'pt' ? 'Ainda não definido' : 'Not set yet')), /*#__PURE__*/React.createElement("button", {
-        onClick: () => {
-          setMeetupEditingId(req.id);
-          setMeetupDraft(req.meetup_address || '');
-        },
+        onClick: () => setMeetupEditingId(req.id),
         style: {
           flexShrink: 0,
           height: 30,

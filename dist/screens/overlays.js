@@ -47,6 +47,12 @@ function makeConvoId(uidA, uidB, listingId) {
   const base = [uidA, uidB].sort().join('_');
   return listingId ? base + '_lst_' + listingId : base;
 }
+// Matches the auto-posted "rental request approved" chat message (see
+// handleRentalDecision) so it can render as a tap target into the listing,
+// where the owner takes handoff photos and sets the meetup address.
+function isRentalApprovedMsg(text) {
+  return typeof text === 'string' && text.includes('✅') && /aprovad|approved/i.test(text);
+}
 // Relative time formatter — module-scope so all sheets can use it
 function relTimeGlobal(iso) {
   if (!iso) return '';
@@ -1065,7 +1071,51 @@ function ChatConversation({
       borderBottomRightRadius: m.from === 'me' ? 4 : 14,
       borderBottomLeftRadius: m.from === 'me' ? 14 : 4
     }
-  }, "\uD83D\uDDD1 ", deletedLbl) : /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDDD1 ", deletedLbl) : isRentalApprovedMsg(m.text) && onOpenListing && convo.listingId ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      onClose();
+      onOpenListing(convo.listingId);
+    },
+    style: {
+      padding: '9px 13px',
+      borderRadius: 16,
+      fontSize: 14,
+      lineHeight: 1.4,
+      background: m.from === 'me' ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+      color: m.from === 'me' ? '#fff' : 'var(--pg-ink-900)',
+      borderBottomRightRadius: m.from === 'me' ? 4 : 16,
+      borderBottomLeftRadius: m.from === 'me' ? 16 : 4,
+      wordBreak: 'break-word',
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      textAlign: 'left',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      width: '100%',
+      opacity: String(m.id).startsWith('tmp_') ? 0.65 : 1
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1
+    }
+  }, m.text), /*#__PURE__*/React.createElement("svg", {
+    width: "13",
+    height: "13",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      flexShrink: 0,
+      opacity: 0.8
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M9 18l6-6-6-6"
+  }))) : /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '9px 13px',
       borderRadius: 16,
