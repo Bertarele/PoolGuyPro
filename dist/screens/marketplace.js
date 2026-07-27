@@ -1107,6 +1107,8 @@ function ViewListingSheet({
   onClose,
   openChat,
   openPublicProfile,
+  goTab,
+  openEditProfile,
   isAdmin,
   canDelete,
   onEdit,
@@ -2435,16 +2437,38 @@ function ViewListingSheet({
             color: '#F59E0B',
             marginBottom: 3
           }
-        }, "\u2022 ", m)))), /*#__PURE__*/React.createElement("div", {
+        }, "\u2022 ", m)))), /*#__PURE__*/React.createElement("button", {
+          onClick: () => {
+            if (openEditProfile) openEditProfile();else if (goTab) goTab('profile');
+          },
           style: {
-            padding: '10px 16px',
-            background: 'rgba(245,158,11,0.04)',
+            width: '100%',
+            padding: '11px',
+            border: 'none',
             borderTop: '1px solid rgba(245,158,11,0.2)',
-            fontSize: 12,
-            color: 'var(--pg-ink-500)',
-            textAlign: 'center'
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: 13,
+            fontWeight: 700,
+            background: '#F59E0B',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6
           }
-        }, lang === 'pt' ? 'Vá em ⚙ Perfil no menu para completar seus dados.' : 'Go to ⚙ Profile in the menu to complete your info.'));
+        }, lang === 'pt' ? 'Completar perfil' : 'Complete profile', /*#__PURE__*/React.createElement("svg", {
+          width: "13",
+          height: "13",
+          viewBox: "0 0 24 24",
+          fill: "none",
+          stroke: "#fff",
+          strokeWidth: "3",
+          strokeLinecap: "round",
+          strokeLinejoin: "round"
+        }, /*#__PURE__*/React.createElement("path", {
+          d: "M9 18l6-6-6-6"
+        }))));
       }
     }
 
@@ -7454,6 +7478,7 @@ function MarketplaceScreen({
     user = {},
     openChat,
     goTab,
+    openEditProfile,
     openPublicProfile,
     liveMarket = [],
     dbWrite,
@@ -9468,6 +9493,8 @@ function MarketplaceScreen({
       lang: lang,
       openChat: openChat,
       openPublicProfile: openPublicProfile,
+      goTab: goTab,
+      openEditProfile: openEditProfile,
       onClose: closeListing,
       isAdmin: user.role === 'admin',
       canDelete: user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id),
@@ -11451,6 +11478,8 @@ function MarketplaceScreen({
     lang: lang,
     openChat: openChat,
     openPublicProfile: openPublicProfile,
+    goTab: goTab,
+    openEditProfile: openEditProfile,
     onClose: closeListing,
     isAdmin: user.role === 'admin',
     canDelete: user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id),

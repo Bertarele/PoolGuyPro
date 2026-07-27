@@ -602,7 +602,7 @@ function RouteNoPhotoHero({ item, lang }) {
 
 // ── View Listing Sheet (other users' posts — read-only + contact) ─────────
 // canDelete = isAdmin (qualquer post) OR isAuthor (próprio post que chegou aqui sem isMyPost)
-function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, isAdmin, canDelete, onEdit, currentUser, showToast, onDeleted, isSaved, onToggleSave, onShare, liveMarket=[], onOpenListing, onAfterSold }) {
+function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, goTab, openEditProfile, isAdmin, canDelete, onEdit, currentUser, showToast, onDeleted, isSaved, onToggleSave, onShare, liveMarket=[], onOpenListing, onAfterSold }) {
   if (!item) return null;
   const [deleting,      setDeleting]     = React.useState(false);
   const [markSoldOpen,  setMarkSoldOpen] = React.useState(false);
@@ -1495,10 +1495,14 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, is
                 ))}
               </div>
             </div>
-            <div style={{padding:'10px 16px',background:'rgba(245,158,11,0.04)',borderTop:'1px solid rgba(245,158,11,0.2)',
-              fontSize:12,color:'var(--pg-ink-500)',textAlign:'center'}}>
-              {lang==='pt'?'Vá em ⚙ Perfil no menu para completar seus dados.':'Go to ⚙ Profile in the menu to complete your info.'}
-            </div>
+            <button onClick={()=>{ if(openEditProfile) openEditProfile(); else if(goTab) goTab('profile'); }} style={{
+              width:'100%',padding:'11px',border:'none',borderTop:'1px solid rgba(245,158,11,0.2)',
+              cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700,
+              background:'#F59E0B',color:'#fff',
+              display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              {lang==='pt'?'Completar perfil':'Complete profile'}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
           </div>
         );
       }
@@ -3909,7 +3913,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
 }
 
 function MarketplaceScreen({ ctx }) {
-  const { lang, user={}, openChat, goTab, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating, openBuyerRatingPrompt, loadPendingRatings, darkMode=false, openNotifications, hasUnreadNotif, isDesktop=false } = ctx;
+  const { lang, user={}, openChat, goTab, openEditProfile, openPublicProfile, liveMarket=[], dbWrite, showToast, hasUnreadChat, deepLinkListingId, clearDeepLink, pendingRatings=[], openRating, openBuyerRatingPrompt, loadPendingRatings, darkMode=false, openNotifications, hasUnreadNotif, isDesktop=false } = ctx;
 
   // Normalize a raw Supabase marketplace row to app format
   const normMktItem = (r) => ({ _id:r.id, _live:true, type:r.type, name:r.name, cat:r.cat,
@@ -5001,6 +5005,7 @@ function MarketplaceScreen({ ctx }) {
           <ViewListingSheet
             item={viewListing} lang={lang}
             openChat={openChat} openPublicProfile={openPublicProfile}
+            goTab={goTab} openEditProfile={openEditProfile}
             onClose={closeListing}
             isAdmin={user.role==='admin'}
             canDelete={user.role==='admin'||!!(user.uid&&viewListing.author_id&&user.uid===viewListing.author_id)}
@@ -5963,6 +5968,7 @@ function MarketplaceScreen({ ctx }) {
             item={viewListing} lang={lang}
             openChat={openChat}
             openPublicProfile={openPublicProfile}
+            goTab={goTab} openEditProfile={openEditProfile}
             onClose={closeListing}
             isAdmin={user.role === 'admin'}
             canDelete={user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id)}
