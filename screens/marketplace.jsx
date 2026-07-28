@@ -1060,7 +1060,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
 
   const handleSaveMeetupAddress = async (requestId, req) => {
     if (!window.sb || meetupSavingId) return;
-    const addr = (meetupInputRef.current?.value || '').trim();
+    const addr = (typeof meetupInputRef.current === 'string' ? meetupInputRef.current : '').trim();
     setMeetupSavingId(requestId);
     const { error } = await window.sb.from('rental_requests').update({ meetup_address: addr || null }).eq('id', requestId);
     setMeetupSavingId(null);
@@ -2041,12 +2041,13 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
                       </div>
                       {meetupEditingId === req.id ? (
                         <div style={{marginTop:7,display:'flex',gap:6}}>
-                          <input ref={meetupInputRef} defaultValue={req.meetup_address || ''} autoFocus
-                            placeholder={lang==='pt'?'Ex: 123 Main St, Fort Lauderdale, FL':'E.g. 123 Main St, Fort Lauderdale, FL'}
-                            style={{flex:1,height:34,borderRadius:8,border:'1px solid var(--pg-ink-200)',padding:'0 10px',fontSize:12.5,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
+                          <StreetAddressAutocomplete
+                            value={req.meetup_address || ''}
+                            onChange={v => { meetupInputRef.current = v; }}
+                            lang={lang}/>
                           <button onClick={()=>handleSaveMeetupAddress(req.id, req)} disabled={meetupSavingId===req.id} style={{
                             height:34,padding:'0 12px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',
-                            background:'#0EBAC7',color:'#fff',fontSize:12,fontWeight:700}}>
+                            background:'#0EBAC7',color:'#fff',fontSize:12,fontWeight:700,flexShrink:0}}>
                             {meetupSavingId===req.id ? '…' : (lang==='pt'?'Salvar':'Save')}
                           </button>
                         </div>
@@ -2056,7 +2057,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
                             fontStyle: req.meetup_address ? 'normal' : 'italic'}}>
                             {req.meetup_address || (lang==='pt'?'Ainda não definido':'Not set yet')}
                           </div>
-                          <button onClick={()=>setMeetupEditingId(req.id)} style={{
+                          <button onClick={()=>{ meetupInputRef.current = req.meetup_address || ''; setMeetupEditingId(req.id); }} style={{
                             flexShrink:0,height:30,padding:'0 10px',borderRadius:8,border:'1px solid var(--pg-ink-200)',cursor:'pointer',fontFamily:'inherit',
                             background:'var(--pg-white)',color:'var(--pg-ink-600)',fontSize:11.5,fontWeight:700}}>
                             {req.meetup_address ? (lang==='pt'?'Editar':'Edit') : (lang==='pt'?'Adicionar':'Add')}
@@ -7577,6 +7578,102 @@ function CityAutocomplete({ value, onChange, lang }) {
           </span>
         </>
       )}
+      {dropdown}
+    </div>
+  );
+}
+
+// ── Street address autocomplete (GPS-style: type, pick from a live list) ──
+// Same street name exists in multiple South Florida cities, and typing a full
+// address by hand invites typos a delivery driver/GPS won't forgive — this
+// queries OpenStreetMap's free Nominatim search (already used elsewhere in
+// this file for geocoding) as the user types, so they pick the exact address
+// instead of typing the whole thing.
+function StreetAddressAutocomplete({ value, onChange, lang, placeholder }) {
+  const [q,       setQ]       = React.useState(value || '');
+  const [results, setResults] = React.useState([]);
+  const [open,    setOpen]    = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [dropPos, setDropPos] = React.useState({ top:0, left:0, width:0 });
+  const inputRef  = React.useRef(null);
+  const debounceRef = React.useRef(null);
+  const reqIdRef  = React.useRef(0);
+
+  React.useEffect(() => { setQ(value || ''); }, [value]);
+
+  const updatePos = () => {
+    if (!inputRef.current) return;
+    const stage = document.getElementById('stage');
+    const sr = stage ? stage.getBoundingClientRect() : { top:0, left:0 };
+    const ir = inputRef.current.getBoundingClientRect();
+    setDropPos({ top: ir.bottom - sr.top + 4, left: ir.left - sr.left, width: ir.width });
+  };
+
+  const search = (text) => {
+    clearTimeout(debounceRef.current);
+    if (text.trim().length < 4) { setResults([]); setLoading(false); return; }
+    setLoading(true);
+    const myReqId = ++reqIdRef.current;
+    debounceRef.current = setTimeout(() => {
+      // Bias to South Florida (viewbox) without hard-excluding elsewhere (bounded=0)
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&countrycodes=us&limit=6&viewbox=-80.9,26.9,-79.9,25.6&bounded=0&email=feedback@poolguyx.com`)
+        .then(r => r.json())
+        .then(data => {
+          if (myReqId !== reqIdRef.current) return; // stale response — a newer keystroke already fired
+          setResults(Array.isArray(data) ? data : []);
+        })
+        .catch(() => { if (myReqId === reqIdRef.current) setResults([]); })
+        .finally(() => { if (myReqId === reqIdRef.current) setLoading(false); });
+    }, 400);
+  };
+
+  const pick = (r) => { onChange(r.display_name); setQ(r.display_name); setResults([]); setOpen(false); };
+  const typeChange = (v) => { setQ(v); onChange(v); };
+
+  const stage = document.getElementById('stage');
+  const dropdown = open && (results.length > 0 || loading) && stage
+    ? ReactDOM.createPortal(
+        <div style={{
+          position:'absolute', top: dropPos.top, left: dropPos.left, width: dropPos.width,
+          zIndex: 2000, background:'var(--pg-white)', borderRadius:12, padding:6,
+          border:'0.5px solid var(--pg-ink-200)', maxHeight:260, overflowY:'auto',
+          boxShadow:'0 8px 24px rgba(15,30,60,0.14)',
+        }}>
+          {loading && results.length === 0 ? (
+            <div style={{padding:'12px 10px', fontSize:12.5, color:'var(--pg-ink-400)', textAlign:'center'}}>
+              {lang==='pt'?'Buscando…':lang==='es'?'Buscando…':'Searching…'}
+            </div>
+          ) : results.map((r, i) => (
+            <button key={r.place_id || i}
+              onMouseDown={e => { e.preventDefault(); pick(r); }}
+              onTouchStart={e => { e.preventDefault(); pick(r); }}
+              style={{
+                width:'100%', textAlign:'left', padding:'9px 10px', border:'none',
+                background:'transparent', cursor:'pointer', borderRadius:8,
+                display:'flex', alignItems:'flex-start', gap:8,
+                fontFamily:'inherit', fontSize:13,
+              }}
+              onMouseEnter={e=>e.currentTarget.style.background='var(--pg-blue-50)'}
+              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+              <span style={{marginTop:1, flexShrink:0}}>{Icon.pin(13, 'var(--pg-blue-500)')}</span>
+              <span style={{color:'var(--pg-ink-800)', lineHeight:1.35}}>{r.display_name}</span>
+            </button>
+          ))}
+        </div>,
+        stage
+      )
+    : null;
+
+  return (
+    <div style={{position:'relative', flex:1}}>
+      <input ref={inputRef}
+        placeholder={placeholder || (lang==='pt'?'Digite o endereço…':lang==='es'?'Escribe la dirección…':'Type the address…')}
+        value={q}
+        onChange={e => { const v = e.target.value; typeChange(v); updatePos(); setOpen(true); search(v); }}
+        onFocus={() => { updatePos(); setOpen(true); }}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
+        style={{width:'100%',height:34,borderRadius:8,border:'1px solid var(--pg-ink-200)',padding:'0 10px',
+          fontSize:12.5,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
       {dropdown}
     </div>
   );
