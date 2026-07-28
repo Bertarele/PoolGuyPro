@@ -480,6 +480,117 @@ function PhotoViewer({
   }))));
 }
 
+// ── Maps-app chooser (Apple Maps / Google Maps / Waze) ────────
+function MapChooserSheet({
+  address,
+  lang,
+  onClose
+}) {
+  const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent);
+  const q = encodeURIComponent(address);
+  const options = [isIOS && {
+    key: 'apple',
+    label: 'Apple Maps',
+    href: `https://maps.apple.com/?q=${q}`,
+    color: '#0EBAC7'
+  }, {
+    key: 'google',
+    label: 'Google Maps',
+    href: `https://www.google.com/maps/search/?api=1&query=${q}`,
+    color: '#0EBAC7'
+  }, {
+    key: 'waze',
+    label: 'Waze',
+    href: `https://waze.com/ul?q=${q}&navigate=yes`,
+    color: '#0EBAC7'
+  }].filter(Boolean);
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 9998,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      width: '100%',
+      maxWidth: 480,
+      background: 'var(--pg-white)',
+      borderRadius: '20px 20px 0 0',
+      padding: '8px 0 max(12px, env(safe-area-inset-bottom)) 0',
+      boxShadow: '0 -8px 30px rgba(0,0,0,0.25)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      background: 'var(--pg-ink-200)',
+      margin: '6px auto 12px'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '0 18px 12px',
+      fontSize: 12,
+      fontWeight: 700,
+      color: 'var(--pg-ink-500)',
+      textTransform: 'uppercase',
+      letterSpacing: '.06em'
+    }
+  }, lang === 'pt' ? 'Abrir endereço em' : lang === 'es' ? 'Abrir dirección en' : 'Open address in'), options.map(opt => /*#__PURE__*/React.createElement("a", {
+    key: opt.key,
+    href: opt.href,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    onClick: onClose,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '13px 18px',
+      textDecoration: 'none',
+      borderTop: '1px solid var(--pg-ink-100)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 34,
+      height: 34,
+      borderRadius: '50%',
+      background: 'rgba(14,186,199,0.12)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, Icon.pin(15, opt.color)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, opt.label))), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      width: 'calc(100% - 32px)',
+      margin: '12px 16px 0',
+      padding: '13px',
+      borderRadius: 12,
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 14,
+      fontWeight: 700,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, lang === 'pt' ? 'Cancelar' : lang === 'es' ? 'Cancelar' : 'Cancel')));
+}
+
 // ── Photo Carousel ────────────────────────────────────────────
 function PhotoCarousel({
   urls = [],
@@ -1157,6 +1268,7 @@ function ViewListingSheet({
   const [myRequestId, setMyRequestId] = React.useState(null); // renter's own request id
   const [myMeetupAddress, setMyMeetupAddress] = React.useState(null); // address the owner set for pickup
   const [myEndDate, setMyEndDate] = React.useState(null); // exact return-by date, set when owner approves
+  const [mapChooserAddr, setMapChooserAddr] = React.useState(null); // address string | null — shows the maps-app picker
   // Rating state
   const [ratingSheet, setRatingSheet] = React.useState(null); // null | {requestId,rateeId,rateeName}
   const [ratingStars, setRatingStars] = React.useState(0);
@@ -1276,6 +1388,31 @@ function ViewListingSheet({
         }
       }
     }).catch(() => {});
+  }, [item._id, isRent, currentUser?.uid]); // eslint-disable-line
+
+  // Live-update the renter's own request row (status/meetup address/dates) —
+  // the sheet may already be mounted (behind chat, or reopened on the same
+  // listing) when the owner makes a change, so the id-keyed fetch above won't
+  // rerun; without this, tapping the "address added" notification opened a
+  // stale page until a manual refresh.
+  React.useEffect(() => {
+    if (!isRent || !currentUser?.uid || !window.sb || !item._id) return;
+    const isOwnerLocal = item.author_id && item.author_id === currentUser.uid;
+    if (isOwnerLocal) return;
+    const ch = window.sb.channel(`rental-req-live-${item._id}-${currentUser.uid}`).on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'rental_requests',
+      filter: `listing_id=eq.${item._id}`
+    }, payload => {
+      const row = payload.new;
+      if (!row || row.requester_id !== currentUser.uid) return;
+      setReqStatus(row.status);
+      setMyRequestId(row.id);
+      setMyMeetupAddress(row.meetup_address || null);
+      setMyEndDate(row.end_date || null);
+    }).subscribe();
+    return () => window.sb.removeChannel(ch);
   }, [item._id, isRent, currentUser?.uid]); // eslint-disable-line
 
   // Compress photo helper (same as PhotoPicker)
@@ -2715,18 +2852,20 @@ function ViewListingSheet({
           fontWeight: 800,
           color: '#0891A8'
         }
-      }, fmtDate(myEndDate)))), myMeetupAddress && /*#__PURE__*/React.createElement("a", {
-        href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(myMeetupAddress)}`,
-        target: "_blank",
-        rel: "noopener noreferrer",
+      }, fmtDate(myEndDate)))), myMeetupAddress && /*#__PURE__*/React.createElement("button", {
+        onClick: () => setMapChooserAddr(myMeetupAddress),
         style: {
           display: 'flex',
           alignItems: 'center',
           gap: 10,
           padding: '11px 16px',
           background: 'var(--pg-white)',
+          border: 'none',
           borderTop: '1px solid rgba(14,186,199,0.20)',
-          textDecoration: 'none'
+          width: '100%',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: 'left'
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -5892,6 +6031,10 @@ function ViewListingSheet({
       photos: rentalPhotoViewer.photos,
       startIdx: rentalPhotoViewer.idx,
       onClose: () => setRentalPhotoViewer(null)
+    }), mapChooserAddr && /*#__PURE__*/React.createElement(MapChooserSheet, {
+      address: mapChooserAddr,
+      lang: lang,
+      onClose: () => setMapChooserAddr(null)
     }), MarkSoldSheetSlot(), RatingOverlay(), DisputeFormSheet(), AfterPhotoSheet(), /*#__PURE__*/React.createElement("input", {
       type: "file",
       accept: "image/*",
@@ -6811,6 +6954,10 @@ function ViewListingSheet({
     photos: rentalPhotoViewer.photos,
     startIdx: rentalPhotoViewer.idx,
     onClose: () => setRentalPhotoViewer(null)
+  }), mapChooserAddr && /*#__PURE__*/React.createElement(MapChooserSheet, {
+    address: mapChooserAddr,
+    lang: lang,
+    onClose: () => setMapChooserAddr(null)
   }), /*#__PURE__*/React.createElement(Sheet, {
     open: markSoldOpen,
     onClose: () => setMarkSoldOpen(false),
