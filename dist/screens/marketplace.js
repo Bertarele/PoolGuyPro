@@ -14603,9 +14603,22 @@ function StreetAddressAutocomplete({
       });
     }, 400);
   };
+
+  // Nominatim's display_name is the full administrative chain (county, state,
+  // country, ...) — way more than anyone needs to find a meetup spot. Build a
+  // short "street, city, zip" string from the structured address fields
+  // (already requested via addressdetails=1) instead.
+  const shortAddress = r => {
+    const a = r.address || {};
+    const street = [a.house_number, a.road].filter(Boolean).join(' ');
+    const city = a.city || a.town || a.village || a.suburb || a.county || '';
+    const parts = [street || a.road || '', city, a.postcode].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : r.display_name;
+  };
   const pick = r => {
-    onChange(r.display_name);
-    setQ(r.display_name);
+    const s = shortAddress(r);
+    onChange(s);
+    setQ(s);
     setResults([]);
     setOpen(false);
   };
@@ -14672,7 +14685,7 @@ function StreetAddressAutocomplete({
       color: 'var(--pg-ink-800)',
       lineHeight: 1.35
     }
-  }, r.display_name)))), stage) : null;
+  }, shortAddress(r))))), stage) : null;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',

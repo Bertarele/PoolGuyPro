@@ -7627,7 +7627,18 @@ function StreetAddressAutocomplete({ value, onChange, lang, placeholder }) {
     }, 400);
   };
 
-  const pick = (r) => { onChange(r.display_name); setQ(r.display_name); setResults([]); setOpen(false); };
+  // Nominatim's display_name is the full administrative chain (county, state,
+  // country, ...) — way more than anyone needs to find a meetup spot. Build a
+  // short "street, city, zip" string from the structured address fields
+  // (already requested via addressdetails=1) instead.
+  const shortAddress = (r) => {
+    const a = r.address || {};
+    const street = [a.house_number, a.road].filter(Boolean).join(' ');
+    const city = a.city || a.town || a.village || a.suburb || a.county || '';
+    const parts = [street || a.road || '', city, a.postcode].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : r.display_name;
+  };
+  const pick = (r) => { const s = shortAddress(r); onChange(s); setQ(s); setResults([]); setOpen(false); };
   const typeChange = (v) => { setQ(v); onChange(v); };
 
   const stage = document.getElementById('stage');
@@ -7656,7 +7667,7 @@ function StreetAddressAutocomplete({ value, onChange, lang, placeholder }) {
               onMouseEnter={e=>e.currentTarget.style.background='var(--pg-blue-50)'}
               onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
               <span style={{marginTop:1, flexShrink:0}}>{Icon.pin(13, 'var(--pg-blue-500)')}</span>
-              <span style={{color:'var(--pg-ink-800)', lineHeight:1.35}}>{r.display_name}</span>
+              <span style={{color:'var(--pg-ink-800)', lineHeight:1.35}}>{shortAddress(r)}</span>
             </button>
           ))}
         </div>,
