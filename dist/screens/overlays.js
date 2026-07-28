@@ -4213,6 +4213,16 @@ function NotificationsSheet({
       en: 'Application not selected',
       pt: 'Candidatura não selecionada',
       es: 'Postulación no seleccionada'
+    },
+    rating: {
+      en: 'You were rated! ⭐',
+      pt: 'Você foi avaliado! ⭐',
+      es: '¡Te calificaron! ⭐'
+    },
+    rating_revealed: {
+      en: 'Ratings revealed! ⭐',
+      pt: 'Avaliações reveladas! ⭐',
+      es: '¡Calificaciones reveladas! ⭐'
     }
   };
   const renderTitle = n => {
@@ -4276,6 +4286,11 @@ function NotificationsSheet({
       }
     }, "\u2705");
     if (type === 'chat') return Icon.msg(16, '#fff');
+    if (type === 'rating' || type === 'rating_revealed') return /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 16
+      }
+    }, "\u2B50");
     return Icon.bolt(17, '#fff');
   };
   const colorFor = type => {
@@ -4294,6 +4309,7 @@ function NotificationsSheet({
     if (type === 'market') return '#6366F1';
     if (type === 'verification_approved') return '#22C55E';
     if (type === 'chat') return '#38BDF8';
+    if (type === 'rating' || type === 'rating_revealed') return '#F59E0B';
     return '#3B82F6';
   };
   const fmtTime = d => {
@@ -8713,9 +8729,23 @@ function RatingSheet({
         p_a: currentUser.uid,
         p_b: rating.to_id
       }).catch(() => {});
-      if (window.sendPush && rating.to_id) {
-        const msg = lang === 'pt' ? `${myName} avaliou você! Avalie-o também.` : `${myName} rated you! Rate them back.`;
-        window.sendPush(rating.to_id, myName, msg, '/#home', 'rating');
+      if (rating.to_id) {
+        const bodyObj = {
+          en: `${myName} rated you! Rate them back.`,
+          pt: `${myName} avaliou você! Avalie-o também.`,
+          es: `${myName} te calificó! Califícalo también.`
+        };
+        window.sb.from('notifications').insert({
+          user_id: rating.to_id,
+          type: 'rating',
+          title: JSON.stringify({
+            en: 'You were rated! ⭐',
+            pt: 'Você foi avaliado! ⭐',
+            es: '¡Te calificaron! ⭐'
+          }),
+          body: JSON.stringify(bodyObj)
+        }).catch(() => {});
+        if (window.sendPush) window.sendPush(rating.to_id, myName, bodyObj[lang] || bodyObj.en, '/#home?rate=1', 'rating');
       }
       showToast && showToast('⭐ ' + (lang === 'pt' ? 'Avaliação enviada!' : 'Rating submitted!'));
       onDone && onDone(rating.id);
@@ -9252,9 +9282,23 @@ function BuyerRatingPromptModal({
         p_a: currentUser.uid,
         p_b: rating.from_id
       }).catch(() => {});
-      if (window.sendPush && rating.from_id) {
-        const msg = lang === 'pt' ? `${myName} também te avaliou! Ambas as avaliações agora estão visíveis.` : `${myName} also rated you! Both ratings are now visible.`;
-        window.sendPush(rating.from_id, myName, msg, '/#home', 'rating');
+      if (rating.from_id) {
+        const bodyObj = {
+          en: `${myName} also rated you! Both ratings are now visible.`,
+          pt: `${myName} também te avaliou! Ambas as avaliações agora estão visíveis.`,
+          es: `${myName} también te calificó! Ambas calificaciones ya son visibles.`
+        };
+        window.sb.from('notifications').insert({
+          user_id: rating.from_id,
+          type: 'rating_revealed',
+          title: JSON.stringify({
+            en: 'Ratings revealed! ⭐',
+            pt: 'Avaliações reveladas! ⭐',
+            es: '¡Calificaciones reveladas! ⭐'
+          }),
+          body: JSON.stringify(bodyObj)
+        }).catch(() => {});
+        if (window.sendPush) window.sendPush(rating.from_id, myName, bodyObj[lang] || bodyObj.en, '/#home', 'rating_revealed');
       }
       showToast && showToast('⭐ ' + (lang === 'pt' ? 'Avaliação enviada!' : 'Rating submitted!'));
       onRateNow && onRateNow(null);

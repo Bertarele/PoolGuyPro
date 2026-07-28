@@ -1342,22 +1342,18 @@ function ViewListingSheet({
   // Load rental requests (for rent items)
   React.useEffect(() => {
     if (!isRent || !currentUser?.uid || !window.sb) return;
-    window.sb.from('rental_requests').select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified, owner_kept_active, meetup_address, start_date, end_date').eq('listing_id', item._id).then(({
+    window.sb.from('rental_requests').select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified, owner_kept_active, meetup_address, start_date, end_date, owner_rated, renter_rated').eq('listing_id', item._id).then(({
       data
     }) => {
       if (!data) return;
       const isOwnerLocal = item.author_id && item.author_id === currentUser.uid;
       if (isOwnerLocal) {
         setOwnerRequests(data);
-        // Check which resolved requests the owner has already rated
-        const resolvedIds = data.filter(r => r.status === 'resolved' || r.status === 'completed').map(r => r.id);
-        if (resolvedIds.length > 0 && window.sb) {
-          window.sb.from('rental_ratings').select('request_id').eq('rater_id', currentUser.uid).then(({
-            data: rd
-          }) => {
-            if (rd) setOwnerRatedRequests(new Set(rd.map(r => r.request_id)));
-          }).catch(() => {});
-        }
+        // "Already rated?" is read straight off the row (owner_rated) instead of a
+        // separate rental_ratings query — that second query could silently fail
+        // (swallowed by .catch) and leave the "Avaliar" button reappearing forever
+        // even after a rating was actually submitted.
+        setOwnerRatedRequests(new Set(data.filter(r => r.owner_rated).map(r => r.id)));
       } else {
         const mine = data.find(r => r.requester_id === currentUser.uid);
         if (mine) {
@@ -1365,13 +1361,7 @@ function ViewListingSheet({
           setMyRequestId(mine.id);
           setMyMeetupAddress(mine.meetup_address || null);
           setMyEndDate(mine.end_date || null);
-          if (mine.status === 'completed' && window.sb) {
-            window.sb.from('rental_ratings').select('id').eq('request_id', mine.id).eq('rater_id', currentUser.uid).limit(1).then(({
-              data: rd
-            }) => {
-              if (rd && rd.length > 0) setHasRated(true);
-            }).catch(() => {});
-          }
+          setHasRated(!!mine.renter_rated);
           if (mine.status === 'resolved' && window.sb) {
             window.sb.from('dispute_reports').select('resolution_message').eq('rental_request_id', mine.id).order('created_at', {
               ascending: false
@@ -2125,6 +2115,17 @@ function ViewListingSheet({
       showToast && showToast('❌ ' + (error.message || 'Error'));
       return;
     }
+    // Persist "already rated" straight on the request row (not just a rental_ratings
+    // row) so the button-hide check on reload is a single reliable read, not a
+    // second query that can silently fail.
+    const amOwner = item.author_id && item.author_id === currentUser.uid;
+    if (ratingSheet.requestId) {
+      window.sb.from('rental_requests').update(amOwner ? {
+        owner_rated: true
+      } : {
+        renter_rated: true
+      }).eq('id', ratingSheet.requestId).catch(() => {});
+    }
     // Also mirror into the generic ratings table — that's what the app-wide
     // realtime subscription and instant "you've been rated, rate back" popup
     // key off, so without this the other party only ever finds out by
@@ -2157,6 +2158,26 @@ function ViewListingSheet({
         p_b: ratingSheet.rateeId
       }).catch(() => {});
     });
+    // Notify the person being rated — same "must have an action" bell/push pattern
+    // used everywhere else; previously rental ratings sent nothing at all, so the
+    // other party only found out by happening to reopen the listing.
+    const rateMyName = currentUser.name || (currentUser.email || '').split('@')[0] || '';
+    const rateBodyObj = {
+      en: `${rateMyName} rated you! Rate them back.`,
+      pt: `${rateMyName} avaliou você! Avalie-o também.`,
+      es: `${rateMyName} te calificó! Califícalo también.`
+    };
+    window.sb.from('notifications').insert({
+      user_id: ratingSheet.rateeId,
+      type: 'rating',
+      title: JSON.stringify({
+        en: 'You were rated! ⭐',
+        pt: 'Você foi avaliado! ⭐',
+        es: '¡Te calificaron! ⭐'
+      }),
+      body: JSON.stringify(rateBodyObj)
+    }).catch(() => {});
+    window.sendPush && window.sendPush(ratingSheet.rateeId, rateMyName, rateBodyObj[lang] || rateBodyObj.en, '/#home?rate=1', 'rating');
     window.sb.from('ratings').insert({
       from_id: ratingSheet.rateeId,
       to_id: currentUser.uid,

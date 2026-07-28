@@ -700,6 +700,10 @@ function App() {
         const listingId = new URLSearchParams(qs).get('listing') || null;
         window.history.replaceState(null, '', '#home');
         return listingId ? { type: 'listing', id: listingId } : { type: 'tab', tab: 'market' };
+      } else if (hash.startsWith('#home')) {
+        const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+        window.history.replaceState(null, '', '#home');
+        if (new URLSearchParams(qs).get('rate') === '1') return { type: 'rate' };
       }
     } catch {}
     return null;
@@ -715,8 +719,11 @@ function App() {
     } else if (pendingDeepLink.type === 'listing') {
       setDeepLinkListingId(pendingDeepLink.id);
       setTab('market');
+    } else if (pendingDeepLink.type === 'rate') {
+      loadPendingRatings();
+      setRatingPromptOpen(true);
     }
-  }, [pendingDeepLink, user?.uid, openChatFromDeepLink]);
+  }, [pendingDeepLink, user?.uid, openChatFromDeepLink, loadPendingRatings]);
   // Shared deep-link navigation — used both when a notification is tapped
   // (OPEN_JOB) and from the in-app toast shown while the app is foregrounded
   // (PUSH_RECEIVED, see below).
@@ -746,8 +753,15 @@ function App() {
       else setTab('market');
     } else if (hash.startsWith('#work')) {
       setTab('work');
+    } else if (hash.startsWith('#home')) {
+      const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+      if (new URLSearchParams(qs).get('rate') === '1') {
+        loadPendingRatings();
+        setRatingPromptOpen(true);
+      }
+      setTab('home');
     }
-  }, [openChatFromDeepLink]);
+  }, [openChatFromDeepLink, loadPendingRatings]);
 
   // Listen for service worker postMessage — either a notification tap while
   // the app was already open (OPEN_JOB, navigates right away since the user
@@ -1437,6 +1451,12 @@ function App() {
             } else if (type==='market') {
               if (linkId) ctx.openListingById(linkId);
               else switchTab('market');
+            } else if (type==='rating') {
+              switchTab('home');
+              loadPendingRatings();
+              setRatingPromptOpen(true);
+            } else if (type==='rating_revealed') {
+              switchTab('home');
             } else if (linkId) {
               ctx.openListingById(linkId);
             } else {
