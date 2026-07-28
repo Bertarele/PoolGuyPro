@@ -1156,6 +1156,7 @@ function ViewListingSheet({
   const [reqQty, setReqQty] = React.useState(1);
   const [myRequestId, setMyRequestId] = React.useState(null); // renter's own request id
   const [myMeetupAddress, setMyMeetupAddress] = React.useState(null); // address the owner set for pickup
+  const [myEndDate, setMyEndDate] = React.useState(null); // exact return-by date, set when owner approves
   // Rating state
   const [ratingSheet, setRatingSheet] = React.useState(null); // null | {requestId,rateeId,rateeName}
   const [ratingStars, setRatingStars] = React.useState(0);
@@ -1229,7 +1230,7 @@ function ViewListingSheet({
   // Load rental requests (for rent items)
   React.useEffect(() => {
     if (!isRent || !currentUser?.uid || !window.sb) return;
-    window.sb.from('rental_requests').select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified, owner_kept_active, meetup_address').eq('listing_id', item._id).then(({
+    window.sb.from('rental_requests').select('id, status, requester_id, requester_name, created_at, period, quantity, total_price, requester_verified, owner_kept_active, meetup_address, start_date, end_date').eq('listing_id', item._id).then(({
       data
     }) => {
       if (!data) return;
@@ -1251,6 +1252,7 @@ function ViewListingSheet({
           setReqStatus(mine.status);
           setMyRequestId(mine.id);
           setMyMeetupAddress(mine.meetup_address || null);
+          setMyEndDate(mine.end_date || null);
           if (mine.status === 'completed' && window.sb) {
             window.sb.from('rental_ratings').select('id').eq('request_id', mine.id).eq('rater_id', currentUser.uid).limit(1).then(({
               data: rd
@@ -1391,6 +1393,21 @@ function ViewListingSheet({
     if (p === 'week') return n + (lang === 'pt' ? qty > 1 ? 'semanas' : 'semana' : qty > 1 ? 'weeks' : 'week');
     if (p === 'month') return n + (lang === 'pt' ? qty > 1 ? 'meses' : 'mês' : qty > 1 ? 'months' : 'month');
     return n + (lang === 'pt' ? qty > 1 ? 'dias' : 'dia' : qty > 1 ? 'days' : 'day');
+  };
+  // Exact end date given a start date + period/qty — e.g. "2 weeks starting today"
+  const addPeriodToDate = (startDate, p, qty = 1) => {
+    const d = new Date(startDate);
+    if (p === 'week') d.setDate(d.getDate() + 7 * qty);else if (p === 'month') d.setMonth(d.getMonth() + qty);else d.setDate(d.getDate() + qty);
+    return d;
+  };
+  const fmtDate = d => {
+    if (!d) return '';
+    const dt = d instanceof Date ? d : new Date(d + 'T00:00:00');
+    if (isNaN(dt.getTime())) return '';
+    return dt.toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-ES' : 'en-US', {
+      day: 'numeric',
+      month: 'long'
+    });
   };
 
   // For card/header price display: cheapest period if multi, else single
@@ -1535,29 +1552,45 @@ function ViewListingSheet({
       showToast && showToast(lang === 'pt' ? '❌ Já existe um pedido aprovado para este item' : '❌ Another request for this item is already approved');
       return;
     }
-    const {
-      error
-    } = await window.sb.from('rental_requests').update({
+    const req = ownerRequests.find(r => r.id === requestId);
+    // Approval starts the rental clock now — compute the exact return date from
+    // the requested period/qty so both sides have a hard date to hold onto.
+    let startDateStr = null,
+      endDateStr = null;
+    if (newStatus === 'approved') {
+      const start = new Date();
+      const end = addPeriodToDate(start, req?.period || 'day', req?.quantity || 1);
+      startDateStr = start.toISOString().slice(0, 10);
+      endDateStr = end.toISOString().slice(0, 10);
+    }
+    const updatePayload = {
       status: newStatus,
       responded_at: new Date().toISOString()
-    }).eq('id', requestId);
+    };
+    if (startDateStr) {
+      updatePayload.start_date = startDateStr;
+      updatePayload.end_date = endDateStr;
+    }
+    const {
+      error
+    } = await window.sb.from('rental_requests').update(updatePayload).eq('id', requestId);
     if (error) {
       const msg = (error.message || '').includes('duplicate key') || (error.message || '').includes('rental_requests_one_approved_per_listing') ? lang === 'pt' ? '❌ Já existe um pedido aprovado para este item' : '❌ Another request for this item is already approved' : '❌ ' + (error.message || 'Error');
       showToast && showToast(msg);
       return;
     }
     // Notify renter
-    const req = ownerRequests.find(r => r.id === requestId);
     if (req?.requester_id) {
       if (newStatus === 'approved') {
+        const dateLabel = fmtDate(endDateStr);
         _notify(req.requester_id, 'rental_approved', {
           en: 'Rental approved! 🎉',
           pt: 'Aluguel aprovado! 🎉',
           es: '¡Alquiler aprobado! 🎉'
         }, {
-          en: `The owner approved your request for "${item.name || ''}"`,
-          pt: `O dono aprovou seu pedido para "${item.name || ''}"`,
-          es: `El propietario aprobó tu solicitud para "${item.name || ''}"`
+          en: `The owner approved your request for "${item.name || ''}". Return by ${dateLabel}.`,
+          pt: `O dono aprovou seu pedido para "${item.name || ''}". Devolver até ${dateLabel}.`,
+          es: `El propietario aprobó tu solicitud para "${item.name || ''}". Devolver antes del ${dateLabel}.`
         }, item._id);
       } else {
         _notify(req.requester_id, 'rental_declined', {
@@ -1598,7 +1631,9 @@ function ViewListingSheet({
       // list with "Recusado" rows) and mark the approved one.
       setOwnerRequests(prev => prev.filter(r => r.id === requestId || r.status !== 'pending').map(r => r.id === requestId ? {
         ...r,
-        status: newStatus
+        status: newStatus,
+        start_date: startDateStr,
+        end_date: endDateStr
       } : r));
     } else {
       setOwnerRequests(prev => prev.map(r => r.id === requestId ? {
@@ -2613,7 +2648,74 @@ function ViewListingSheet({
           opacity: 0.8,
           marginTop: 1
         }
-      }, lang === 'pt' ? 'O dono aprovou. Aproveite!' : 'The owner approved. Enjoy!'))), myMeetupAddress && /*#__PURE__*/React.createElement("a", {
+      }, lang === 'pt' ? 'O dono aprovou. Aproveite!' : 'The owner approved. Enjoy!'))), myEndDate && /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '11px 16px',
+          background: 'rgba(14,186,199,0.06)',
+          borderTop: '1px solid rgba(14,186,199,0.20)'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 30,
+          height: 30,
+          borderRadius: '50%',
+          background: 'var(--pg-ink-100)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "14",
+        height: "14",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "#0EBAC7",
+        strokeWidth: "2.5",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }, /*#__PURE__*/React.createElement("rect", {
+        x: "3",
+        y: "4",
+        width: "18",
+        height: "18",
+        rx: "2"
+      }), /*#__PURE__*/React.createElement("line", {
+        x1: "16",
+        y1: "2",
+        x2: "16",
+        y2: "6"
+      }), /*#__PURE__*/React.createElement("line", {
+        x1: "8",
+        y1: "2",
+        x2: "8",
+        y2: "6"
+      }), /*#__PURE__*/React.createElement("line", {
+        x1: "3",
+        y1: "10",
+        x2: "21",
+        y2: "10"
+      }))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          minWidth: 0
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          fontWeight: 700,
+          color: 'var(--pg-ink-500)'
+        }
+      }, lang === 'pt' ? 'Devolver até' : lang === 'es' ? 'Devolver antes del' : 'Return by'), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 13.5,
+          fontWeight: 800,
+          color: '#0891A8'
+        }
+      }, fmtDate(myEndDate)))), myMeetupAddress && /*#__PURE__*/React.createElement("a", {
         href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(myMeetupAddress)}`,
         target: "_blank",
         rel: "noopener noreferrer",
@@ -3380,7 +3482,13 @@ function ViewListingSheet({
         color: 'var(--pg-ink-500)',
         marginLeft: 4
       }
-    }, selPeriodEntry ? getPeriodLabel(selPeriodEntry.period, reqQty) : ''))), /*#__PURE__*/React.createElement("div", {
+    }, selPeriodEntry ? getPeriodLabel(selPeriodEntry.period, reqQty) : '')), selPeriodEntry && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        color: 'var(--pg-ink-400)',
+        marginTop: 6
+      }
+    }, lang === 'pt' ? `📅 Se aprovado hoje, devolução prevista até ${fmtDate(addPeriodToDate(new Date(), selPeriodEntry.period, reqQty))}` : lang === 'es' ? `📅 Si se aprueba hoy, devolución prevista antes del ${fmtDate(addPeriodToDate(new Date(), selPeriodEntry.period, reqQty))}` : `📅 If approved today, expected return by ${fmtDate(addPeriodToDate(new Date(), selPeriodEntry.period, reqQty))}`)), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '10px 12px',
         borderRadius: 12,
@@ -3617,9 +3725,20 @@ function ViewListingSheet({
           background: 'rgba(22,163,74,0.12)',
           color: '#22C55E',
           border: '1px solid rgba(22,163,74,0.3)',
+          marginLeft: req.end_date ? 0 : 'auto'
+        }
+      }, "$", fmtN(req.total_price, lang)), req.end_date && req.status === 'approved' && /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 11,
+          fontWeight: 800,
+          padding: '3px 9px',
+          borderRadius: 999,
+          background: 'rgba(245,158,11,0.12)',
+          color: '#D97706',
+          border: '1px solid rgba(245,158,11,0.3)',
           marginLeft: 'auto'
         }
-      }, "$", fmtN(req.total_price, lang))), isComp && !req.owner_kept_active && !dismissedDecisions.has(req.id) && /*#__PURE__*/React.createElement("div", {
+      }, lang === 'pt' ? 'Devolver até ' : lang === 'es' ? 'Devolver: ' : 'Return by ', fmtDate(req.end_date))), isComp && !req.owner_kept_active && !dismissedDecisions.has(req.id) && /*#__PURE__*/React.createElement("div", {
         style: {
           marginTop: 10,
           borderRadius: 12,
