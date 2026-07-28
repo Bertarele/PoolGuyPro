@@ -622,6 +622,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
   const [listingOccupied,    setListingOccupied]    = React.useState(false); // another user has an approved rental
   const [dismissedDecisions, setDismissedDecisions] = React.useState(new Set()); // reqIds owner dismissed keep/remove prompt
   const [meetupEditingId, setMeetupEditingId] = React.useState(null); // reqId whose address field is open for editing
+  const [rentalPhotoViewer, setRentalPhotoViewer] = React.useState(null); // {photos, idx} | null — before/after thumbnails weren't clickable at all
   const [meetupSavingId,  setMeetupSavingId]  = React.useState(null);
   // Uncontrolled on purpose: OwnerRequestsBlock is a component defined inside
   // this render (a new function identity every time), so a controlled input
@@ -992,10 +993,6 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
       showToast && showToast(msg);
       return;
     }
-    setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: newStatus} : r));
-    showToast && showToast(newStatus === 'approved'
-      ? (lang==='pt'?'✓ Aluguel aprovado!':'✓ Rental approved!')
-      : (lang==='pt'?'Pedido recusado':'Request declined'));
     // Notify renter
     const req = ownerRequests.find(r => r.id === requestId);
     if (req?.requester_id) {
@@ -1011,6 +1008,35 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
           item._id);
       }
     }
+
+    if (newStatus === 'approved') {
+      // Auto-decline every other still-pending request for this same listing —
+      // only one rental can be active at a time, so the rest are moot.
+      const others = ownerRequests.filter(r => r.id !== requestId && r.status === 'pending');
+      if (others.length > 0) {
+        const otherIds = others.map(r => r.id);
+        window.sb.from('rental_requests')
+          .update({ status: 'declined', responded_at: new Date().toISOString() })
+          .in('id', otherIds).catch(()=>{});
+        others.forEach(r => {
+          if (!r.requester_id) return;
+          _notify(r.requester_id, 'rental_declined',
+            { en:'Item already rented', pt:'Item já foi alugado', es:'Artículo ya alquilado' },
+            { en:`"${item.name||''}" was rented to someone else.`, pt:`"${item.name||''}" foi alugado para outra pessoa.`, es:`"${item.name||''}" fue alquilado a otra persona.` },
+            item._id);
+        });
+      }
+      // Remove the auto-declined siblings from view entirely (don't clutter the
+      // list with "Recusado" rows) and mark the approved one.
+      setOwnerRequests(prev => prev
+        .filter(r => r.id === requestId || r.status !== 'pending')
+        .map(r => r.id === requestId ? {...r, status: newStatus} : r));
+    } else {
+      setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: newStatus} : r));
+    }
+    showToast && showToast(newStatus === 'approved'
+      ? (lang==='pt'?'✓ Aluguel aprovado!':'✓ Rental approved!')
+      : (lang==='pt'?'Pedido recusado':'Request declined'));
   };
 
   const handleCancelRequest = async () => {
@@ -1576,7 +1602,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
               </div>
               <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                 {beforePics.map((url,i)=>(
-                  <img key={i} src={url} alt="" style={{width:52,height:52,objectFit:'cover',borderRadius:8,border:'1.5px solid rgba(14,186,199,0.4)'}}/>
+                  <img key={i} src={url} alt="" onClick={()=>setRentalPhotoViewer({photos:beforePics, idx:i})}
+                    style={{width:52,height:52,objectFit:'cover',borderRadius:8,border:'1.5px solid rgba(14,186,199,0.4)',cursor:'pointer'}}/>
                 ))}
               </div>
             </>
@@ -1612,7 +1639,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
               <div>
                 <div style={{fontSize:10.5,fontWeight:700,color:'var(--pg-ink-500)',marginBottom:5}}>{lang==='pt'?'📷 Antes':'📷 Before'}</div>
                 <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                  {beforePics.map((url,i)=>(<img key={i} src={url} alt="" style={{width:48,height:48,objectFit:'cover',borderRadius:8,border:'1.5px solid var(--pg-ink-200)'}}/>))}
+                  {beforePics.map((url,i)=>(<img key={i} src={url} alt="" onClick={()=>setRentalPhotoViewer({photos:beforePics, idx:i})} style={{width:48,height:48,objectFit:'cover',borderRadius:8,border:'1.5px solid var(--pg-ink-200)',cursor:'pointer'}}/>))}
                 </div>
               </div>
             )}
@@ -1620,7 +1647,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
               <div>
                 <div style={{fontSize:10.5,fontWeight:700,color:'var(--pg-ink-500)',marginBottom:5}}>{lang==='pt'?'📷 Depois':'📷 After'}</div>
                 <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                  {afterPics.map((url,i)=>(<img key={i} src={url} alt="" style={{width:48,height:48,objectFit:'cover',borderRadius:8,border:'1.5px solid var(--pg-ink-200)'}}/>))}
+                  {afterPics.map((url,i)=>(<img key={i} src={url} alt="" onClick={()=>setRentalPhotoViewer({photos:afterPics, idx:i})} style={{width:48,height:48,objectFit:'cover',borderRadius:8,border:'1.5px solid var(--pg-ink-200)',cursor:'pointer'}}/>))}
                 </div>
               </div>
             )}
@@ -2089,7 +2116,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
                         {hasBefore && (
                           <div style={{display:'flex',gap:6,padding:'8px 11px',alignItems:'center',flexWrap:'wrap',background:'var(--pg-white)'}}>
                             {beforePics.map((url,i)=>(
-                              <img key={i} src={url} alt="" style={{width:46,height:46,objectFit:'cover',borderRadius:8,border:'1.5px solid rgba(14,186,199,0.5)'}}/>
+                              <img key={i} src={url} alt="" onClick={()=>setRentalPhotoViewer({photos:beforePics, idx:i})}
+                                style={{width:46,height:46,objectFit:'cover',borderRadius:8,border:'1.5px solid rgba(14,186,199,0.5)',cursor:'pointer'}}/>
                             ))}
                           </div>
                         )}
@@ -2547,7 +2575,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
           </div>
           <div style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}>
             {beforePics.map((url,i)=>(
-              <img key={i} src={url} alt="" style={{width:64,height:64,objectFit:'cover',borderRadius:10,border:'2px solid rgba(14,186,199,0.5)'}}/>
+              <img key={i} src={url} alt="" onClick={()=>setRentalPhotoViewer({photos:beforePics, idx:i})}
+                style={{width:64,height:64,objectFit:'cover',borderRadius:10,border:'2px solid rgba(14,186,199,0.5)',cursor:'pointer'}}/>
             ))}
           </div>
           <div style={{fontSize:11,fontWeight:700,color:'var(--pg-ink-500)',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:8}}>
@@ -2556,7 +2585,8 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
           <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
             {afterPhotos.map((url,i)=>(
               <div key={i} style={{position:'relative',flexShrink:0}}>
-                <img src={url} alt="" style={{width:64,height:64,objectFit:'cover',borderRadius:10,border:'2px solid rgba(22,163,74,0.5)'}}/>
+                <img src={url} alt="" onClick={()=>setRentalPhotoViewer({photos:afterPhotos, idx:i})}
+                  style={{width:64,height:64,objectFit:'cover',borderRadius:10,border:'2px solid rgba(22,163,74,0.5)',cursor:'pointer'}}/>
                 <button onClick={()=>setAfterPhotos(p=>p.filter((_,j)=>j!==i))}
                   style={{position:'absolute',top:-6,right:-6,width:20,height:20,borderRadius:'50%',border:'none',
                     background:'#EF4444',color:'#fff',fontSize:12,cursor:'pointer',padding:0,
@@ -3004,6 +3034,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
         {viewerOpen && allPhotos.length > 0 && (
           <PhotoViewer photos={allPhotos} startIdx={imgIdx} onClose={()=>setViewerOpen(false)}/>
         )}
+        {rentalPhotoViewer && rentalPhotoViewer.photos && rentalPhotoViewer.photos.length > 0 && (
+          <PhotoViewer photos={rentalPhotoViewer.photos} startIdx={rentalPhotoViewer.idx} onClose={()=>setRentalPhotoViewer(null)}/>
+        )}
         {MarkSoldSheetSlot()}
         {RatingOverlay()}
         {DisputeFormSheet()}
@@ -3443,6 +3476,9 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
       {/* Fullscreen photo viewer */}
       {viewerOpen && allPhotos.length > 0 && (
         <PhotoViewer photos={allPhotos} startIdx={imgIdx} onClose={() => setViewerOpen(false)}/>
+      )}
+      {rentalPhotoViewer && rentalPhotoViewer.photos && rentalPhotoViewer.photos.length > 0 && (
+        <PhotoViewer photos={rentalPhotoViewer.photos} startIdx={rentalPhotoViewer.idx} onClose={()=>setRentalPhotoViewer(null)}/>
       )}
 
       {/* Mark as Sold sheet */}

@@ -1141,6 +1141,7 @@ function ViewListingSheet({
   const [listingOccupied, setListingOccupied] = React.useState(false); // another user has an approved rental
   const [dismissedDecisions, setDismissedDecisions] = React.useState(new Set()); // reqIds owner dismissed keep/remove prompt
   const [meetupEditingId, setMeetupEditingId] = React.useState(null); // reqId whose address field is open for editing
+  const [rentalPhotoViewer, setRentalPhotoViewer] = React.useState(null); // {photos, idx} | null — before/after thumbnails weren't clickable at all
   const [meetupSavingId, setMeetupSavingId] = React.useState(null);
   // Uncontrolled on purpose: OwnerRequestsBlock is a component defined inside
   // this render (a new function identity every time), so a controlled input
@@ -1545,11 +1546,6 @@ function ViewListingSheet({
       showToast && showToast(msg);
       return;
     }
-    setOwnerRequests(prev => prev.map(r => r.id === requestId ? {
-      ...r,
-      status: newStatus
-    } : r));
-    showToast && showToast(newStatus === 'approved' ? lang === 'pt' ? '✓ Aluguel aprovado!' : '✓ Rental approved!' : lang === 'pt' ? 'Pedido recusado' : 'Request declined');
     // Notify renter
     const req = ownerRequests.find(r => r.id === requestId);
     if (req?.requester_id) {
@@ -1575,6 +1571,42 @@ function ViewListingSheet({
         }, item._id);
       }
     }
+    if (newStatus === 'approved') {
+      // Auto-decline every other still-pending request for this same listing —
+      // only one rental can be active at a time, so the rest are moot.
+      const others = ownerRequests.filter(r => r.id !== requestId && r.status === 'pending');
+      if (others.length > 0) {
+        const otherIds = others.map(r => r.id);
+        window.sb.from('rental_requests').update({
+          status: 'declined',
+          responded_at: new Date().toISOString()
+        }).in('id', otherIds).catch(() => {});
+        others.forEach(r => {
+          if (!r.requester_id) return;
+          _notify(r.requester_id, 'rental_declined', {
+            en: 'Item already rented',
+            pt: 'Item já foi alugado',
+            es: 'Artículo ya alquilado'
+          }, {
+            en: `"${item.name || ''}" was rented to someone else.`,
+            pt: `"${item.name || ''}" foi alugado para outra pessoa.`,
+            es: `"${item.name || ''}" fue alquilado a otra persona.`
+          }, item._id);
+        });
+      }
+      // Remove the auto-declined siblings from view entirely (don't clutter the
+      // list with "Recusado" rows) and mark the approved one.
+      setOwnerRequests(prev => prev.filter(r => r.id === requestId || r.status !== 'pending').map(r => r.id === requestId ? {
+        ...r,
+        status: newStatus
+      } : r));
+    } else {
+      setOwnerRequests(prev => prev.map(r => r.id === requestId ? {
+        ...r,
+        status: newStatus
+      } : r));
+    }
+    showToast && showToast(newStatus === 'approved' ? lang === 'pt' ? '✓ Aluguel aprovado!' : '✓ Rental approved!' : lang === 'pt' ? 'Pedido recusado' : 'Request declined');
   };
   const handleCancelRequest = async () => {
     if (!window.sb || !myRequestId) return;
@@ -2669,12 +2701,17 @@ function ViewListingSheet({
         key: i,
         src: url,
         alt: "",
+        onClick: () => setRentalPhotoViewer({
+          photos: beforePics,
+          idx: i
+        }),
         style: {
           width: 52,
           height: 52,
           objectFit: 'cover',
           borderRadius: 8,
-          border: '1.5px solid rgba(14,186,199,0.4)'
+          border: '1.5px solid rgba(14,186,199,0.4)',
+          cursor: 'pointer'
         }
       })))) : /*#__PURE__*/React.createElement("div", {
         style: {
@@ -2764,12 +2801,17 @@ function ViewListingSheet({
         key: i,
         src: url,
         alt: "",
+        onClick: () => setRentalPhotoViewer({
+          photos: beforePics,
+          idx: i
+        }),
         style: {
           width: 48,
           height: 48,
           objectFit: 'cover',
           borderRadius: 8,
-          border: '1.5px solid var(--pg-ink-200)'
+          border: '1.5px solid var(--pg-ink-200)',
+          cursor: 'pointer'
         }
       })))), afterPics.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -2788,12 +2830,17 @@ function ViewListingSheet({
         key: i,
         src: url,
         alt: "",
+        onClick: () => setRentalPhotoViewer({
+          photos: afterPics,
+          idx: i
+        }),
         style: {
           width: 48,
           height: 48,
           objectFit: 'cover',
           borderRadius: 8,
-          border: '1.5px solid var(--pg-ink-200)'
+          border: '1.5px solid var(--pg-ink-200)',
+          cursor: 'pointer'
         }
       }))))), !hasRated && /*#__PURE__*/React.createElement("button", {
         onClick: () => {
@@ -3932,12 +3979,17 @@ function ViewListingSheet({
           key: i,
           src: url,
           alt: "",
+          onClick: () => setRentalPhotoViewer({
+            photos: beforePics,
+            idx: i
+          }),
           style: {
             width: 46,
             height: 46,
             objectFit: 'cover',
             borderRadius: 8,
-            border: '1.5px solid rgba(14,186,199,0.5)'
+            border: '1.5px solid rgba(14,186,199,0.5)',
+            cursor: 'pointer'
           }
         }))), beforePics.length < 3 && /*#__PURE__*/React.createElement("button", {
           onClick: () => {
@@ -4878,12 +4930,17 @@ function ViewListingSheet({
       key: i,
       src: url,
       alt: "",
+      onClick: () => setRentalPhotoViewer({
+        photos: beforePics,
+        idx: i
+      }),
       style: {
         width: 64,
         height: 64,
         objectFit: 'cover',
         borderRadius: 10,
-        border: '2px solid rgba(14,186,199,0.5)'
+        border: '2px solid rgba(14,186,199,0.5)',
+        cursor: 'pointer'
       }
     }))), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -4910,12 +4967,17 @@ function ViewListingSheet({
     }, /*#__PURE__*/React.createElement("img", {
       src: url,
       alt: "",
+      onClick: () => setRentalPhotoViewer({
+        photos: afterPhotos,
+        idx: i
+      }),
       style: {
         width: 64,
         height: 64,
         objectFit: 'cover',
         borderRadius: 10,
-        border: '2px solid rgba(22,163,74,0.5)'
+        border: '2px solid rgba(22,163,74,0.5)',
+        cursor: 'pointer'
       }
     }), /*#__PURE__*/React.createElement("button", {
       onClick: () => setAfterPhotos(p => p.filter((_, j) => j !== i)),
@@ -5707,6 +5769,10 @@ function ViewListingSheet({
       photos: allPhotos,
       startIdx: imgIdx,
       onClose: () => setViewerOpen(false)
+    }), rentalPhotoViewer && rentalPhotoViewer.photos && rentalPhotoViewer.photos.length > 0 && /*#__PURE__*/React.createElement(PhotoViewer, {
+      photos: rentalPhotoViewer.photos,
+      startIdx: rentalPhotoViewer.idx,
+      onClose: () => setRentalPhotoViewer(null)
     }), MarkSoldSheetSlot(), RatingOverlay(), DisputeFormSheet(), AfterPhotoSheet(), /*#__PURE__*/React.createElement("input", {
       type: "file",
       accept: "image/*",
@@ -6622,6 +6688,10 @@ function ViewListingSheet({
     photos: allPhotos,
     startIdx: imgIdx,
     onClose: () => setViewerOpen(false)
+  }), rentalPhotoViewer && rentalPhotoViewer.photos && rentalPhotoViewer.photos.length > 0 && /*#__PURE__*/React.createElement(PhotoViewer, {
+    photos: rentalPhotoViewer.photos,
+    startIdx: rentalPhotoViewer.idx,
+    onClose: () => setRentalPhotoViewer(null)
   }), /*#__PURE__*/React.createElement(Sheet, {
     open: markSoldOpen,
     onClose: () => setMarkSoldOpen(false),
