@@ -4223,6 +4223,11 @@ function NotificationsSheet({
       en: 'Ratings revealed! ⭐',
       pt: 'Avaliações reveladas! ⭐',
       es: '¡Calificaciones reveladas! ⭐'
+    },
+    listing_reminder: {
+      en: 'Still for sale?',
+      pt: 'Ainda está à venda?',
+      es: '¿Sigue en venta?'
     }
   };
   const renderTitle = n => {
@@ -4291,6 +4296,11 @@ function NotificationsSheet({
         fontSize: 16
       }
     }, "\u2B50");
+    if (type === 'listing_reminder') return /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 16
+      }
+    }, "\uD83C\uDFF7\uFE0F");
     return Icon.bolt(17, '#fff');
   };
   const colorFor = type => {
@@ -4310,6 +4320,7 @@ function NotificationsSheet({
     if (type === 'verification_approved') return '#22C55E';
     if (type === 'chat') return '#38BDF8';
     if (type === 'rating' || type === 'rating_revealed') return '#F59E0B';
+    if (type === 'listing_reminder') return '#6366F1';
     return '#3B82F6';
   };
   const fmtTime = d => {

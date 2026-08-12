@@ -2241,6 +2241,7 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
     job_rejected:         { en:'Application not selected',   pt:'Candidatura não selecionada',         es:'Postulación no seleccionada' },
     rating:               { en:'You were rated! ⭐',          pt:'Você foi avaliado! ⭐',                es:'¡Te calificaron! ⭐' },
     rating_revealed:      { en:'Ratings revealed! ⭐',        pt:'Avaliações reveladas! ⭐',             es:'¡Calificaciones reveladas! ⭐' },
+    listing_reminder:     { en:'Still for sale?',             pt:'Ainda está à venda?',                  es:'¿Sigue en venta?' },
   };
   const renderTitle = (n) => {
     const entry = NOTIF_TITLES[n.type];
@@ -2306,6 +2307,7 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
     if (type==='verification_approved')  return <span style={{fontSize:16}}>✅</span>;
     if (type==='chat')                   return Icon.msg(16,'#fff');
     if (type==='rating' || type==='rating_revealed') return <span style={{fontSize:16}}>⭐</span>;
+    if (type==='listing_reminder')       return <span style={{fontSize:16}}>🏷️</span>;
     return Icon.bolt(17,'#fff');
   };
   const colorFor = (type) => {
@@ -2325,6 +2327,7 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
     if (type==='verification_approved')   return '#22C55E';
     if (type==='chat')                    return '#38BDF8';
     if (type==='rating' || type==='rating_revealed') return '#F59E0B';
+    if (type==='listing_reminder')        return '#6366F1';
     return '#3B82F6';
   };
   const fmtTime = (d) => {
