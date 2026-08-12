@@ -758,6 +758,23 @@ function App() {
     sat: [],
     sun: []
   });
+  // Refs so the realtime effect below (which only mounts once, on authReady) can
+  // always read the LATEST user/regionsByDay instead of a stale closure from
+  // whatever they were at initial mount (regionsByDay loads async, after login).
+  const userRef = React.useRef(user);
+  React.useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+  const regionsByDayRef = React.useRef(regionsByDay);
+  React.useEffect(() => {
+    regionsByDayRef.current = regionsByDay;
+  }, [regionsByDay]);
+  // Broadcast channel (not postgres_changes) for the QuickPools "ride request"
+  // alert — quick_pool_jobs' SELECT policy only allows the poster/an accepted
+  // applicant to read a row, so table-replication realtime never reaches other
+  // matching poolguys. A broadcast carries only the safe/redacted summary
+  // fields already shown pre-acceptance, same as notify-quick-pool's push body.
+  const qpBroadcastRef = React.useRef(null);
   const saveRegionsByDay = React.useCallback(async rbd => {
     if (!window.sb || !user?.uid) return;
     try {
@@ -1629,8 +1646,43 @@ function App() {
     }).subscribe(status => {
       if (status === 'SUBSCRIBED') console.log('[Supabase] real-time ativo ✓');
     });
+
+    // ── QuickPool "ride request" alert — broadcast, not table replication ──
+    const dayLabels = {
+      mon: 'Segunda',
+      tue: 'Terça',
+      wed: 'Quarta',
+      thu: 'Quinta',
+      fri: 'Sexta',
+      sat: 'Sábado',
+      sun: 'Domingo'
+    };
+    const qpChannel = window.sb.channel('quickpool-broadcast').on('broadcast', {
+      event: 'new_job'
+    }, ({
+      payload: job
+    }) => {
+      const uid = userRef.current?.uid;
+      if (!job || !uid || job.poster_id === uid) return;
+      const dayCities = regionsByDayRef.current?.[job.day_of_week] || [];
+      if (!dayCities.includes(job.city)) return;
+      const title = `💧 Piscina em ${job.city}`;
+      const body = `${dayLabels[job.day_of_week] || job.day_of_week} · ${job.pools_count ?? 1} piscina${(job.pools_count ?? 1) > 1 ? 's' : ''} · ${job.price_per_pool ? `$${job.price_per_pool}/piscina` : 'Negociável'}`;
+      window.playNotifSound && window.playNotifSound();
+      if (navigator.vibrate) try {
+        navigator.vibrate([120, 60, 120]);
+      } catch (e) {}
+      setRideAlert({
+        title,
+        body,
+        url: `/#quick?job=${job.id}`
+      });
+    }).subscribe();
+    qpBroadcastRef.current = qpChannel;
     return () => {
       window.sb.removeChannel(channel);
+      window.sb.removeChannel(qpChannel);
+      qpBroadcastRef.current = null;
       document.removeEventListener('visibilitychange', onVisible);
       clearInterval(pollTimer);
       clearInterval(countTimer);
@@ -2401,6 +2453,20 @@ function App() {
         let notifyCount = 0;
         let notifyFailed = false;
         if (!scheduledFor) {
+          // Instant "ride request" alert for matching poolguys with the app open —
+          // safe/redacted summary fields only, same as the push notification body.
+          qpBroadcastRef.current?.send({
+            type: 'broadcast',
+            event: 'new_job',
+            payload: {
+              id: inserted.id,
+              city: inserted.city,
+              day_of_week: inserted.day_of_week,
+              poster_id: inserted.poster_id,
+              pools_count: inserted.pools_count,
+              price_per_pool: inserted.price_per_pool
+            }
+          }).catch(() => {});
           try {
             // getSession() reads a cached token with no freshness check — if it's
             // stale, the Edge Function's platform-level JWT check 401s before our
