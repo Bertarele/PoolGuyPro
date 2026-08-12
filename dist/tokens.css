@@ -148,6 +148,15 @@ button { font-family: inherit; }
   from { transform: translateY(0);    opacity: 1; }
   to   { transform: translateY(100%); opacity: 0; }
 }
+/* Ride-request style alert (QuickPools new-job broadcast) */
+@keyframes pg-ride-drop {
+  from { transform: translateY(-120%); opacity: 0.4; }
+  to   { transform: translateY(0);     opacity: 1;   }
+}
+@keyframes pg-ride-drain {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
 @keyframes pg-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }

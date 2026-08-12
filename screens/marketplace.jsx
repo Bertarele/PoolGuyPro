@@ -4108,7 +4108,7 @@ function MarketplaceScreen({ ctx }) {
     photoUrls:(r.photo_urls&&r.photo_urls.length>0)?r.photo_urls:(r.photo_url?[r.photo_url]:[]),
     rentPeriod:r.rent_period||null, rentPrices:r.rent_prices||null, status:r.status||'pending',
     createdAt:r.created_at||null, soldAt:r.sold_at||null, boostedUntil:r.boosted_until||null,
-    expiresAt:r.expires_at||null });
+    expiresAt:r.expires_at||null, lastReminderAt:r.last_reminder_at||null });
 
   // Show sold items for 1 day only, then they get auto-deleted from marketplace (archived to history)
   const isSoldVisible = (item) =>
@@ -4147,6 +4147,21 @@ function MarketplaceScreen({ ctx }) {
     else openListing(item);
   };
   const t = STRINGS[lang];
+  // Own "sell" listings live 15+ days with no sale — surfaced right on the
+  // marketplace screen itself (not just as a notification), same 15-day
+  // repeat cadence as the scheduled reminder (last_reminder_at).
+  const DAY_MS = 24*60*60*1000;
+  const overdueSellListings = liveMarket.filter(m =>
+    isMyPost(m) && m.type === 'sell' && m.status === 'approved' && m.createdAt &&
+    (Date.now() - new Date(m.createdAt).getTime()) >= 15*DAY_MS &&
+    (!m.lastReminderAt || (Date.now() - new Date(m.lastReminderAt).getTime()) >= 15*DAY_MS)
+  );
+  const [dismissedReminderIds, setDismissedReminderIds] = React.useState(() => new Set());
+  const visibleOverdue = overdueSellListings.filter(m => !dismissedReminderIds.has(m._id));
+  const snoozeReminder = (item) => {
+    setDismissedReminderIds(prev => new Set(prev).add(item._id));
+    if (window.sb) window.sb.from('marketplace').update({ last_reminder_at: new Date().toISOString() }).eq('id', item._id).catch(()=>{});
+  };
   const [view,         setView]        = React.useState(() => {
     try {
       const hash = window.location.hash.replace(/^#\/?/, '');
@@ -4906,6 +4921,35 @@ function MarketplaceScreen({ ctx }) {
           </div>
         )}
 
+        {/* "Still for sale?" pill (floating, top-right) — own sell listings idle 15+ days */}
+        {visibleOverdue.length > 0 && (
+          <div style={{display:'flex', justifyContent:'flex-end', padding:'10px 32px 0', gap:8}}>
+            <div style={{
+              display:'inline-flex', alignItems:'center', gap:8,
+              background:'linear-gradient(135deg,#EEF2FF,#E0E7FF)',
+              border:'1.5px solid #C7D2FE', borderRadius:999, padding:'8px 8px 8px 16px',
+            }}>
+              <span style={{fontSize:16}}>🏷️</span>
+              <div onClick={()=>openMyOrOthersListing(visibleOverdue[0])} style={{cursor:'pointer', fontSize:12, fontWeight:700, color:'#3730A3', lineHeight:1}}>
+                {visibleOverdue.length>1
+                  ? (lang==='pt'?`${visibleOverdue.length} anúncios parados`:lang==='es'?`${visibleOverdue.length} anuncios sin movimiento`:`${visibleOverdue.length} listings idle`)
+                  : (lang==='pt'?'Ainda está à venda?':lang==='es'?'¿Sigue en venta?':'Still for sale?')}
+              </div>
+              <button onClick={()=>openMyOrOthersListing(visibleOverdue[0])} style={{
+                height:26, padding:'0 10px', borderRadius:999, border:'none', cursor:'pointer', fontFamily:'inherit',
+                background:'#4F46E5', color:'#fff', fontSize:11, fontWeight:700}}>
+                {lang==='pt'?'Ver':lang==='es'?'Ver':'View'}
+              </button>
+              <button onClick={()=>snoozeReminder(visibleOverdue[0])} title={lang==='pt'?'Manter anúncio':lang==='es'?'Mantener anuncio':'Keep listing'} style={{
+                width:26, height:26, borderRadius:'50%', border:'1.5px solid #C7D2FE', cursor:'pointer', fontFamily:'inherit',
+                background:'transparent', color:'#4338CA', fontSize:14, fontWeight:700, lineHeight:1,
+                display:'flex', alignItems:'center', justifyContent:'center'}}>
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── CONTENT AREA ──────────────────────────────────────── */}
         <div style={{display:'flex', gap:0, maxWidth:'100%', minHeight:'calc(100vh - 280px)', paddingTop:36}}>
 
@@ -5379,6 +5423,46 @@ function MarketplaceScreen({ ctx }) {
             </div>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      )}
+
+      {/* ── "Still for sale?" banner — own sell listings idle 15+ days ── */}
+      {visibleOverdue.length > 0 && (
+        <div style={{margin:'12px 18px 0', padding:'12px 14px', borderRadius:14,
+          background:'linear-gradient(135deg,#EEF2FF,#E0E7FF)', border:'1.5px solid #C7D2FE'}}>
+          <div style={{display:'flex', alignItems:'center', gap:12, cursor:'pointer'}}
+            onClick={()=>openMyOrOthersListing(visibleOverdue[0])}>
+            <div style={{fontSize:24, lineHeight:1, flexShrink:0}}>🏷️</div>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:13, fontWeight:700, color:'#3730A3'}}>
+                {lang==='pt'
+                  ? (visibleOverdue.length>1 ? `${visibleOverdue.length} anúncios parados há 15+ dias` : 'Ainda está à venda?')
+                  : lang==='es'
+                    ? (visibleOverdue.length>1 ? `${visibleOverdue.length} anuncios sin movimiento hace 15+ días` : '¿Sigue en venta?')
+                    : (visibleOverdue.length>1 ? `${visibleOverdue.length} listings idle 15+ days` : 'Still for sale?')}
+              </div>
+              <div style={{fontSize:12, color:'#4338CA', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                {lang==='pt'
+                  ? `"${visibleOverdue[0].name||''}" ainda não foi vendido`
+                  : lang==='es'
+                    ? `"${visibleOverdue[0].name||''}" todavía no se vendió`
+                    : `"${visibleOverdue[0].name||''}" hasn't sold yet`}
+              </div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3730A3" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div style={{display:'flex', gap:8, marginTop:10}}>
+            <button onClick={()=>openMyOrOthersListing(visibleOverdue[0])} style={{
+              flex:1, height:34, borderRadius:9, border:'none', cursor:'pointer', fontFamily:'inherit',
+              background:'#4F46E5', color:'#fff', fontSize:12, fontWeight:700}}>
+              {lang==='pt'?'Marcar como vendido':lang==='es'?'Marcar como vendido':'Mark as sold'}
+            </button>
+            <button onClick={()=>snoozeReminder(visibleOverdue[0])} style={{
+              flex:1, height:34, borderRadius:9, border:'1.5px solid #C7D2FE', cursor:'pointer', fontFamily:'inherit',
+              background:'transparent', color:'#4338CA', fontSize:12, fontWeight:700}}>
+              {lang==='pt'?'Manter anúncio':lang==='es'?'Mantener anuncio':'Keep listing'}
+            </button>
+          </div>
         </div>
       )}
 

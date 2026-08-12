@@ -249,6 +249,160 @@ function FeedbackSheet({
     }
   }, sendLbl))));
 }
+
+// ── "Ride request" style alert — new QuickPool job matching the user's
+// city/day, broadcast to every matching poolguy at once (see notify-quick-pool
+// edge function). Slides down from the top like a driver-app trip request.
+function RideRequestCard({
+  alert,
+  lang = 'pt',
+  onAccept,
+  onDismiss
+}) {
+  if (!alert) return null;
+  const parts = (alert.body || '').split(' · ');
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 10000,
+      display: 'flex',
+      justifyContent: 'center',
+      paddingTop: 'max(12px, env(safe-area-inset-top))',
+      pointerEvents: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: onAccept,
+    style: {
+      pointerEvents: 'auto',
+      width: 'calc(100% - 24px)',
+      maxWidth: 440,
+      margin: '0 12px',
+      borderRadius: 18,
+      overflow: 'hidden',
+      cursor: 'pointer',
+      background: 'linear-gradient(135deg,#0A2840,#0077B6)',
+      boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
+      animation: 'pg-ride-drop 0.35s cubic-bezier(.22,1,.36,1)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 16px 12px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 44,
+      height: 44,
+      borderRadius: '50%',
+      flexShrink: 0,
+      background: 'rgba(255,255,255,0.15)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 22
+    }
+  }, "\uD83D\uDCA7"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      fontWeight: 800,
+      color: 'rgba(255,255,255,0.65)',
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Nova vaga disponível' : lang === 'es' ? 'Nuevo trabajo disponible' : 'New job available'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      color: '#fff',
+      lineHeight: 1.25
+    }
+  }, alert.title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: 'rgba(255,255,255,0.80)',
+      marginTop: 3,
+      lineHeight: 1.4
+    }
+  }, parts.join(' · '))), /*#__PURE__*/React.createElement("button", {
+    onClick: e => {
+      e.stopPropagation();
+      onDismiss();
+    },
+    style: {
+      width: 26,
+      height: 26,
+      borderRadius: '50%',
+      border: 'none',
+      cursor: 'pointer',
+      flexShrink: 0,
+      background: 'rgba(255,255,255,0.15)',
+      color: '#fff',
+      fontSize: 14,
+      lineHeight: 1,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, "\xD7")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 0,
+      borderTop: '1px solid rgba(255,255,255,0.15)'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: e => {
+      e.stopPropagation();
+      onDismiss();
+    },
+    style: {
+      flex: 1,
+      padding: '12px',
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      background: 'transparent',
+      color: 'rgba(255,255,255,0.75)',
+      fontSize: 13,
+      fontWeight: 700,
+      borderRight: '1px solid rgba(255,255,255,0.15)'
+    }
+  }, lang === 'pt' ? 'Ignorar' : lang === 'es' ? 'Ignorar' : 'Ignore'), /*#__PURE__*/React.createElement("button", {
+    onClick: onAccept,
+    style: {
+      flex: 1.4,
+      padding: '12px',
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      background: '#16A34A',
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: 800
+    }
+  }, lang === 'pt' ? 'Ver e candidatar-se' : lang === 'es' ? 'Ver y postularme' : 'View & apply')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 3,
+      background: 'rgba(255,255,255,0.15)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '100%',
+      background: '#fff',
+      animation: 'pg-ride-drain 18s linear forwards'
+    }
+  }))));
+}
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "tier": "free",
   "lang": "en",
@@ -1036,16 +1190,39 @@ function App() {
         navigateFromDeepLinkUrl(event.data.url || '');
       } else if (event.data?.type === 'PUSH_RECEIVED') {
         const url = event.data.url || '';
-        if (!url.includes('#chat')) return; // other types already surface via the bell/realtime
-        window.playNotifSound && window.playNotifSound();
         const title = event.data.title || '';
         const body = event.data.body || '';
+        if (url.includes('#quick?job=')) {
+          // New pool job broadcast, matching-city poolguys only — full-screen
+          // "ride request" style alert instead of a small toast, same idea as
+          // the driver-request card on Uber (see rideAlert state below).
+          window.playNotifSound && window.playNotifSound();
+          if (navigator.vibrate) try {
+            navigator.vibrate([120, 60, 120]);
+          } catch (e) {}
+          setRideAlert({
+            title,
+            body,
+            url
+          });
+          return;
+        }
+        if (!url.includes('#chat')) return; // other types already surface via the bell/realtime
+        window.playNotifSound && window.playNotifSound();
         showToast(`${title}${body ? ': ' + body : ''}`, () => navigateFromDeepLinkUrl(url));
       }
     };
     navigator.serviceWorker.addEventListener('message', handler);
     return () => navigator.serviceWorker.removeEventListener('message', handler);
   }, [navigateFromDeepLinkUrl]);
+
+  // ── "Ride request" style alert for new matching QuickPool jobs ─────────
+  const [rideAlert, setRideAlert] = React.useState(null); // {title, body, url} | null
+  React.useEffect(() => {
+    if (!rideAlert) return;
+    const timer = setTimeout(() => setRideAlert(null), 18000);
+    return () => clearTimeout(timer);
+  }, [rideAlert]);
   const [notifOpen, setNotifOpen] = React.useState(false);
   // Unread badges — derived from real Supabase data
   const [hasUnreadChat, setHasUnreadChat] = React.useState(false);
@@ -1244,7 +1421,8 @@ function App() {
       createdAt: r.created_at || null,
       soldAt: r.sold_at || null,
       boostedUntil: r.boosted_until || null,
-      expiresAt: r.expires_at || null
+      expiresAt: r.expires_at || null,
+      lastReminderAt: r.last_reminder_at || null
     });
 
     // Clean up sold listings older than 1 day (fire-and-forget)
@@ -2338,6 +2516,15 @@ function App() {
       setToast(null);
       setToastClick(null);
     } : undefined
+  }), /*#__PURE__*/React.createElement(RideRequestCard, {
+    alert: rideAlert,
+    lang: lang,
+    onAccept: () => {
+      const url = rideAlert?.url;
+      setRideAlert(null);
+      if (url) navigateFromDeepLinkUrl(url);
+    },
+    onDismiss: () => setRideAlert(null)
   }), /*#__PURE__*/React.createElement(RegionEditorSheet, {
     open: regionOpen,
     onClose: () => setRegionOpen(false),
