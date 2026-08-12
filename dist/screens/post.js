@@ -41,7 +41,6 @@ function PostQuickPool({
         showPhone: !!initialData.poster_phone,
         phone: initialData.poster_phone || '',
         pool_address: initialData.pool_address || '',
-        pool_zip: '',
         requiredPhotos: initialData.required_photos || [],
         customPhotoText: ''
       };
@@ -56,7 +55,6 @@ function PostQuickPool({
       showPhone: false,
       phone: '',
       pool_address: '',
-      pool_zip: '',
       requiredPhotos: [],
       customPhotoText: ''
     };
@@ -404,30 +402,11 @@ function PostQuickPool({
       color: 'var(--pg-ink-500)',
       marginBottom: 10
     }
-  }, lang === 'pt' ? 'Visível apenas para o candidato aceito. Opcional.' : lang === 'es' ? 'Visible solo al candidato aceptado. Opcional.' : 'Visible only to the accepted candidate. Optional.'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "pg-field",
-    value: form.pool_zip,
-    onChange: e => upd('pool_zip', e.target.value.replace(/\D/g, '').slice(0, 5)),
-    placeholder: "ZIP",
-    inputMode: "numeric",
-    style: {
-      width: 90,
-      flexShrink: 0
-    }
-  }), /*#__PURE__*/React.createElement("input", {
-    className: "pg-field",
+  }, lang === 'pt' ? 'Visível apenas para o candidato aceito. Opcional.' : lang === 'es' ? 'Visible solo al candidato aceptado. Opcional.' : 'Visible only to the accepted candidate. Optional.'), /*#__PURE__*/React.createElement(StreetAddressAutocomplete, {
     value: form.pool_address,
-    onChange: e => upd('pool_address', e.target.value),
-    placeholder: lang === 'pt' ? 'Ex: 123 Palm Ave, Davie' : 'E.g. 123 Palm Ave, Davie',
-    style: {
-      flex: 1
-    }
-  }))), /*#__PURE__*/React.createElement("div", {
+    onChange: v => upd('pool_address', v),
+    lang: lang
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
       border: '1px solid var(--pg-ink-200)',
