@@ -769,12 +769,6 @@ function App() {
   React.useEffect(() => {
     regionsByDayRef.current = regionsByDay;
   }, [regionsByDay]);
-  // Broadcast channel (not postgres_changes) for the QuickPools "ride request"
-  // alert — quick_pool_jobs' SELECT policy only allows the poster/an accepted
-  // applicant to read a row, so table-replication realtime never reaches other
-  // matching poolguys. A broadcast carries only the safe/redacted summary
-  // fields already shown pre-acceptance, same as notify-quick-pool's push body.
-  const qpBroadcastRef = React.useRef(null);
   const saveRegionsByDay = React.useCallback(async rbd => {
     if (!window.sb || !user?.uid) return;
     try {
@@ -1647,7 +1641,14 @@ function App() {
       if (status === 'SUBSCRIBED') console.log('[Supabase] real-time ativo ✓');
     });
 
-    // ── QuickPool "ride request" alert — broadcast, not table replication ──
+    // ── QuickPool "ride request" alert — polling, not realtime ──────────
+    // window.sb.channel() (see index.html) is a hand-rolled stub with no real
+    // WebSocket connection — .on()/.subscribe() never actually fire, and it
+    // has no .send() at all. Every table in this app that looked "realtime"
+    // relies on that same stub and is therefore inert. Polling against the
+    // real REST client (.from(), which genuinely works) is the only thing
+    // that can actually deliver this while the app is open.
+    let qpLastCheck = new Date().toISOString();
     const dayLabels = {
       mon: 'Segunda',
       tue: 'Terça',
@@ -1657,17 +1658,25 @@ function App() {
       sat: 'Sábado',
       sun: 'Domingo'
     };
-    const qpChannel = window.sb.channel('quickpool-broadcast').on('broadcast', {
-      event: 'new_job'
-    }, ({
-      payload: job
-    }) => {
+    const pollNewQuickPools = async () => {
       const uid = userRef.current?.uid;
-      if (!job || !uid || job.poster_id === uid) return;
-      const dayCities = regionsByDayRef.current?.[job.day_of_week] || [];
-      if (!dayCities.includes(job.city)) return;
-      const title = `💧 Piscina em ${job.city}`;
-      const body = `${dayLabels[job.day_of_week] || job.day_of_week} · ${job.pools_count ?? 1} piscina${(job.pools_count ?? 1) > 1 ? 's' : ''} · ${job.price_per_pool ? `$${job.price_per_pool}/piscina` : 'Negociável'}`;
+      const rbd = regionsByDayRef.current;
+      if (!uid || !rbd || !window.sb) return;
+      const since = qpLastCheck;
+      qpLastCheck = new Date().toISOString();
+      // The lightweight REST shim (see index.html) only supports eq/neq/in/or —
+      // no gt/lt — so the "since" cutoff is applied client-side below instead
+      // of as a query filter.
+      const {
+        data
+      } = await window.sb.from('quick_pool_jobs_feed').select('id,city,day_of_week,poster_id,pools_count,price_per_pool,status,created_at').eq('status', 'open').catch(() => ({
+        data: null
+      }));
+      if (!data || !data.length) return;
+      const match = data.find(job => job.poster_id !== uid && job.created_at > since && (rbd[job.day_of_week] || []).includes(job.city));
+      if (!match) return;
+      const title = `💧 Piscina em ${match.city}`;
+      const body = `${dayLabels[match.day_of_week] || match.day_of_week} · ${match.pools_count ?? 1} piscina${(match.pools_count ?? 1) > 1 ? 's' : ''} · ${match.price_per_pool ? `$${match.price_per_pool}/piscina` : 'Negociável'}`;
       window.playNotifSound && window.playNotifSound();
       if (navigator.vibrate) try {
         navigator.vibrate([120, 60, 120]);
@@ -1675,18 +1684,17 @@ function App() {
       setRideAlert({
         title,
         body,
-        url: `/#quick?job=${job.id}`
+        url: `/#quick?job=${match.id}`
       });
-    }).subscribe();
-    qpBroadcastRef.current = qpChannel;
+    };
+    const qpPollTimer = setInterval(pollNewQuickPools, 15000);
     return () => {
       window.sb.removeChannel(channel);
-      window.sb.removeChannel(qpChannel);
-      qpBroadcastRef.current = null;
       document.removeEventListener('visibilitychange', onVisible);
       clearInterval(pollTimer);
       clearInterval(countTimer);
       clearInterval(appsTimer);
+      clearInterval(qpPollTimer);
     };
   }, [authReady]); // runs once authReady flips true — guaranteed after token refresh + loadProfile
 
@@ -2453,20 +2461,6 @@ function App() {
         let notifyCount = 0;
         let notifyFailed = false;
         if (!scheduledFor) {
-          // Instant "ride request" alert for matching poolguys with the app open —
-          // safe/redacted summary fields only, same as the push notification body.
-          qpBroadcastRef.current?.send({
-            type: 'broadcast',
-            event: 'new_job',
-            payload: {
-              id: inserted.id,
-              city: inserted.city,
-              day_of_week: inserted.day_of_week,
-              poster_id: inserted.poster_id,
-              pools_count: inserted.pools_count,
-              price_per_pool: inserted.price_per_pool
-            }
-          }).catch(() => {});
           try {
             // getSession() reads a cached token with no freshness check — if it's
             // stale, the Edge Function's platform-level JWT check 401s before our
