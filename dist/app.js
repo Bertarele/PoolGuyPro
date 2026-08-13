@@ -260,7 +260,12 @@ function RideRequestCard({
   onDismiss
 }) {
   if (!alert) return null;
-  const parts = (alert.body || '').split(' · ');
+  // Structured shape (from the poll) has city/dayLabel/poolsCount/price; the
+  // postMessage path (app backgrounded, push arrives) only has flat title/body
+  // strings — fall back to those when structured fields aren't present.
+  const hasStructured = !!alert.city;
+  const priceLabel = alert.price ? `$${alert.price}` : lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable';
+  const poolsLabel = `${alert.poolsCount ?? 1} ${(alert.poolsCount ?? 1) > 1 ? lang === 'pt' ? 'piscinas' : lang === 'es' ? 'piscinas' : 'pools' : lang === 'pt' ? 'piscina' : lang === 'es' ? 'piscina' : 'pool'}`;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
@@ -280,61 +285,128 @@ function RideRequestCard({
       width: 'calc(100% - 24px)',
       maxWidth: 440,
       margin: '0 12px',
-      borderRadius: 18,
+      borderRadius: 20,
       overflow: 'hidden',
       cursor: 'pointer',
-      background: 'linear-gradient(135deg,#0A2840,#0077B6)',
-      boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
-      animation: 'pg-ride-drop 0.35s cubic-bezier(.22,1,.36,1)'
+      background: 'linear-gradient(160deg,#0A2840 0%,#0D5C8C 55%,#0EBAC7 130%)',
+      boxShadow: '0 16px 40px rgba(4,13,24,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset',
+      animation: 'pg-ride-drop 0.4s cubic-bezier(.22,1,.36,1)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '14px 16px 12px',
+      padding: '16px 16px 14px',
       display: 'flex',
       alignItems: 'flex-start',
-      gap: 12
+      gap: 13
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 44,
-      height: 44,
+      position: 'relative',
+      width: 48,
+      height: 48,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      inset: 0,
       borderRadius: '50%',
-      flexShrink: 0,
-      background: 'rgba(255,255,255,0.15)',
+      background: 'rgba(14,186,199,0.35)',
+      animation: 'pg-ride-pulse 1.6s ease-out infinite'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      width: 48,
+      height: 48,
+      borderRadius: '50%',
+      background: 'linear-gradient(135deg,#0EBAC7,#0891A8)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: 22
+      fontSize: 22,
+      boxShadow: '0 4px 12px rgba(14,186,199,0.5)'
     }
-  }, "\uD83D\uDCA7"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCA7")), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
-      minWidth: 0
+      minWidth: 0,
+      paddingTop: 1
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 5,
+      marginBottom: 3
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 6,
+      height: 6,
+      borderRadius: '50%',
+      background: '#4ADE80',
+      flexShrink: 0,
+      animation: 'pg-ride-blink 1.2s ease-in-out infinite'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
       fontSize: 10.5,
       fontWeight: 800,
-      color: 'rgba(255,255,255,0.65)',
+      color: 'rgba(255,255,255,0.75)',
       letterSpacing: '0.08em',
-      textTransform: 'uppercase',
-      marginBottom: 2
+      textTransform: 'uppercase'
     }
-  }, lang === 'pt' ? 'Nova vaga disponível' : lang === 'es' ? 'Nuevo trabajo disponible' : 'New job available'), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Nova vaga disponível' : lang === 'es' ? 'Nuevo trabajo disponible' : 'New job available')), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 15,
+      fontSize: 17,
       fontWeight: 800,
       color: '#fff',
-      lineHeight: 1.25
+      lineHeight: 1.2,
+      fontFamily: 'var(--pg-font-display)'
     }
-  }, alert.title), /*#__PURE__*/React.createElement("div", {
+  }, hasStructured ? alert.city : alert.title), hasStructured ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'rgba(255,255,255,0.16)',
+      color: '#fff'
+    }
+  }, alert.dayLabel), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'rgba(255,255,255,0.16)',
+      color: '#fff'
+    }
+  }, poolsLabel), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 800,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'rgba(74,222,128,0.22)',
+      color: '#4ADE80'
+    }
+  }, priceLabel)) : /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12.5,
       color: 'rgba(255,255,255,0.80)',
       marginTop: 3,
       lineHeight: 1.4
     }
-  }, parts.join(' · '))), /*#__PURE__*/React.createElement("button", {
+  }, alert.body)), /*#__PURE__*/React.createElement("button", {
     onClick: e => {
       e.stopPropagation();
       onDismiss();
@@ -367,11 +439,11 @@ function RideRequestCard({
     },
     style: {
       flex: 1,
-      padding: '12px',
+      padding: '13px',
       border: 'none',
       cursor: 'pointer',
       fontFamily: 'inherit',
-      background: 'transparent',
+      background: 'rgba(0,0,0,0.12)',
       color: 'rgba(255,255,255,0.75)',
       fontSize: 13,
       fontWeight: 700,
@@ -380,17 +452,32 @@ function RideRequestCard({
   }, lang === 'pt' ? 'Ignorar' : lang === 'es' ? 'Ignorar' : 'Ignore'), /*#__PURE__*/React.createElement("button", {
     onClick: onAccept,
     style: {
-      flex: 1.4,
-      padding: '12px',
+      flex: 1.5,
+      padding: '13px',
       border: 'none',
       cursor: 'pointer',
       fontFamily: 'inherit',
-      background: '#16A34A',
+      background: 'linear-gradient(135deg,#22C55E,#16A34A)',
       color: '#fff',
-      fontSize: 13,
-      fontWeight: 800
+      fontSize: 13.5,
+      fontWeight: 800,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6
     }
-  }, lang === 'pt' ? 'Ver e candidatar-se' : lang === 'es' ? 'Ver y postularme' : 'View & apply')), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Ver e candidatar-se' : lang === 'es' ? 'Ver y postularme' : 'View & apply', /*#__PURE__*/React.createElement("svg", {
+    width: "13",
+    height: "13",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "3",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M9 18l6-6-6-6"
+  })))), /*#__PURE__*/React.createElement("div", {
     style: {
       height: 3,
       background: 'rgba(255,255,255,0.15)'
@@ -398,7 +485,7 @@ function RideRequestCard({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: '100%',
-      background: '#fff',
+      background: 'linear-gradient(90deg,#0EBAC7,#4ADE80)',
       animation: 'pg-ride-drain 18s linear forwards'
     }
   }))));
@@ -946,6 +1033,28 @@ function App() {
       o.stop(ac.currentTime + 0.25);
     } catch (e) {}
   };
+
+  // Distinct two-tone chime for the "ride request" style QuickPool alert —
+  // more attention-grabbing than the single-beep generic notification sound.
+  window.playRideAlertSound = function () {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      [[660, 0], [880, 0.11]].forEach(([freq, delay]) => {
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.connect(g);
+        g.connect(ac.destination);
+        o.type = 'sine';
+        o.frequency.value = freq;
+        const t0 = ac.currentTime + delay;
+        g.gain.setValueAtTime(0, t0);
+        g.gain.linearRampToValueAtTime(0.28, t0 + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+        o.start(t0);
+        o.stop(t0 + 0.22);
+      });
+    } catch (e) {}
+  };
   const [pushLog, setPushLog] = React.useState(() => {
     try {
       const stored = localStorage.getItem('pg_push_log') || '';
@@ -1217,7 +1326,7 @@ function App() {
           // New pool job broadcast, matching-city poolguys only — full-screen
           // "ride request" style alert instead of a small toast, same idea as
           // the driver-request card on Uber (see rideAlert state below).
-          window.playNotifSound && window.playNotifSound();
+          window.playRideAlertSound && window.playRideAlertSound();
           if (navigator.vibrate) try {
             navigator.vibrate([120, 60, 120]);
           } catch (e) {}
@@ -1601,15 +1710,16 @@ function App() {
       if (!data || !data.length) return;
       const match = data.find(job => job.poster_id !== uid && job.created_at > since && (rbd[job.day_of_week] || []).includes(job.city));
       if (!match) return;
-      const title = `💧 Piscina em ${match.city}`;
-      const body = `${dayLabels[match.day_of_week] || match.day_of_week} · ${match.pools_count ?? 1} piscina${(match.pools_count ?? 1) > 1 ? 's' : ''} · ${match.price_per_pool ? `$${match.price_per_pool}/piscina` : 'Negociável'}`;
-      window.playNotifSound && window.playNotifSound();
+      const poolsCount = match.pools_count ?? 1;
+      window.playRideAlertSound && window.playRideAlertSound();
       if (navigator.vibrate) try {
         navigator.vibrate([120, 60, 120]);
       } catch (e) {}
       setRideAlert({
-        title,
-        body,
+        city: match.city,
+        dayLabel: dayLabels[match.day_of_week] || match.day_of_week,
+        poolsCount,
+        price: match.price_per_pool || null,
         url: `/#quick?job=${match.id}`
       });
     };
