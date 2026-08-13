@@ -1384,25 +1384,25 @@ function ViewListingSheet({
   // the sheet may already be mounted (behind chat, or reopened on the same
   // listing) when the owner makes a change, so the id-keyed fetch above won't
   // rerun; without this, tapping the "address added" notification opened a
-  // stale page until a manual refresh.
+  // stale page until a manual refresh. Polled, not realtime — window.sb.channel()
+  // (see index.html) is a hand-rolled stub with no real WebSocket connection,
+  // so postgres_changes handlers never actually fire.
   React.useEffect(() => {
     if (!isRent || !currentUser?.uid || !window.sb || !item._id) return;
     const isOwnerLocal = item.author_id && item.author_id === currentUser.uid;
     if (isOwnerLocal) return;
-    const ch = window.sb.channel(`rental-req-live-${item._id}-${currentUser.uid}`).on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'rental_requests',
-      filter: `listing_id=eq.${item._id}`
-    }, payload => {
-      const row = payload.new;
-      if (!row || row.requester_id !== currentUser.uid) return;
+    const check = () => window.sb.from('rental_requests').select('id, status, requester_id, meetup_address, end_date').eq('listing_id', item._id).then(({
+      data
+    }) => {
+      const row = (data || []).find(r => r.requester_id === currentUser.uid);
+      if (!row) return;
       setReqStatus(row.status);
       setMyRequestId(row.id);
       setMyMeetupAddress(row.meetup_address || null);
       setMyEndDate(row.end_date || null);
-    }).subscribe();
-    return () => window.sb.removeChannel(ch);
+    }).catch(() => {});
+    const timer = setInterval(check, 10000);
+    return () => clearInterval(timer);
   }, [item._id, isRent, currentUser?.uid]); // eslint-disable-line
 
   // Compress photo helper (same as PhotoPicker)

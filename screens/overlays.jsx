@@ -2192,15 +2192,26 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
     if (onUnreadChange) onUnreadChange(next.filter(n => !n.read).length);
   };
 
-  // Real-time new notifications
+  // New notifications while the sheet is open — polled, not realtime (window.sb.channel()
+  // is a hand-rolled stub with no real WebSocket connection, so postgres_changes never fires)
   React.useEffect(() => {
-    if (!user?.uid || !window.sb) return;
-    const ch = window.sb.channel('notifs-ui-' + user.uid)
-      .on('postgres_changes', { event:'INSERT', schema:'public', table:'notifications', filter:`user_id=eq.${user.uid}` },
-        p => { setNotifs(prev => prev ? [p.new, ...prev] : [p.new]); if (onUnreadChange) onUnreadChange(1); })
-      .subscribe();
-    return () => window.sb.removeChannel(ch);
-  }, [user?.uid]);
+    if (!open || !user?.uid || !window.sb) return;
+    const check = () => window.sb.from('notifications')
+      .select('*').eq('user_id', user.uid)
+      .order('created_at', { ascending: false }).limit(10)
+      .then(({ data }) => {
+        if (!data || !data.length) return;
+        setNotifs(prev => {
+          const knownIds = new Set((prev || []).map(n => n.id));
+          const fresh = data.filter(n => !knownIds.has(n.id));
+          if (!fresh.length) return prev;
+          if (onUnreadChange) onUnreadChange(fresh.filter(n => !n.read).length);
+          return prev ? [...fresh, ...prev] : fresh;
+        });
+      }).catch(() => {});
+    const timer = setInterval(check, 15000);
+    return () => clearInterval(timer);
+  }, [open, user?.uid]);
 
   // Mark all read when sheet opens (with a short delay so user sees the unread state first)
   React.useEffect(() => {

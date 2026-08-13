@@ -570,21 +570,26 @@ function App() {
     }
   }, [isLoggedIn, user?.uid, loadPendingRatings]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Real-time: someone rated me → surface the rating popup instantly, on
-  // whatever tab I'm on, instead of waiting for the next Home-tab visit. ──
+  // ── Poll: someone rated me → surface the rating popup, on whatever tab I'm
+  // on, instead of waiting for the next Home-tab visit. window.sb.channel()
+  // (see index.html) is a hand-rolled stub with no real WebSocket connection —
+  // .on()/.subscribe() never actually fire — so this has to be a poll, not a
+  // realtime subscription, to actually work.
+  const pendingRatingIdsRef = React.useRef(new Set());
   React.useEffect(() => {
     if (!isLoggedIn || !user?.uid || !window.sb) return;
-    const ch = window.sb.channel('ratings-live-' + user.uid)
-      .on('postgres_changes',
-        { event:'*', schema:'public', table:'ratings', filter:`to_id=eq.${user.uid}` },
-        p => {
-          if (p.new && p.new.stars != null) {
-            loadPendingRatings();
-            setRatingPromptOpen(true);
-          }
-        })
-      .subscribe();
-    return () => window.sb.removeChannel(ch);
+    const check = async () => {
+      if (!window.sb || !user?.uid) return;
+      const { data: received } = await window.sb.from('ratings')
+        .select('id').eq('to_id', user.uid).neq('stars', 0).catch(() => ({ data: null }));
+      if (!received) return;
+      const newOnes = received.some(r => !pendingRatingIdsRef.current.has(r.id));
+      pendingRatingIdsRef.current = new Set(received.map(r => r.id));
+      if (newOnes) { loadPendingRatings(); setRatingPromptOpen(true); }
+    };
+    check();
+    const timer = setInterval(check, 20000);
+    return () => clearInterval(timer);
   }, [isLoggedIn, user?.uid, loadPendingRatings]);
 
   // ── Push notification subscription ─────────────────────────────
@@ -1101,80 +1106,28 @@ function App() {
       setJobApplicantCounts(counts);
     };
 
-    // Refresh marketplace when tab regains focus (catches deletes/updates from other devices/tabs)
-    const doMarketRefresh = async () => {
-      if (!window.sb) return;
-      const { data } = await window.sb.from('marketplace').select('*').order('created_at', { ascending: false });
-      if (data) setLiveMarket(data.map(normMkt));
-    };
+    // Refresh jobs/techs/vacations/marketplace when tab regains focus (catches
+    // inserts/updates/deletes from other devices/tabs) and on a plain interval —
+    // window.sb.channel() (see index.html) is a hand-rolled stub with no real
+    // WebSocket connection, so the postgres_changes handlers below never fire;
+    // doFetch() (the same full refetch used on mount) is the only thing that
+    // actually keeps these lists current while the app stays open.
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;
-      doMarketRefresh();
+      doFetch().catch(()=>{});
       doCountsRefresh(); // also refresh applicant counts on tab focus
       if (user?.uid) loadLiveApplications(user.uid); // refresh candidate application statuses
     };
     document.addEventListener('visibilitychange', onVisible);
 
-    // Poll marketplace every 60s + applicant counts every 30s + applications every 30s
-    const pollTimer  = setInterval(doMarketRefresh, 60000);
+    // Poll jobs/techs/vacations/marketplace every 60s + applicant counts every 30s + applications every 30s
+    const pollTimer  = setInterval(() => doFetch().catch(()=>{}), 60000);
     const countTimer = setInterval(doCountsRefresh, 30000);
     const appsTimer  = setInterval(() => { if (user?.uid) loadLiveApplications(user.uid); }, 30000);
 
-    // Real-time subscriptions
-    const channel = window.sb.channel('app-realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jobs' },
-        p => setLiveJobs(prev => [normJob(p.new), ...prev]))
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'jobs' },
-        p => setLiveJobs(prev => prev.map(j => j._id === p.new.id ? normJob(p.new) : j)))
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'jobs' },
-        p => setLiveJobs(prev => prev.filter(j => j._id !== p.old.id)))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'techs' },
-        p => setLiveTechs(prev => [normTech(p.new), ...prev]))
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'techs' },
-        p => setLiveTechs(prev => prev.map(tc => tc._id === p.new.id ? normTech(p.new) : tc)))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vacations' },
-        p => setLiveVacations(prev => [normVac(p.new), ...prev]))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'marketplace' },
-        p => setLiveMarket(prev => [normMkt(p.new), ...prev]))
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'marketplace' },
-        p => setLiveMarket(prev => prev.map(m => m._id === p.new.id ? normMkt(p.new) : m)))
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'marketplace' },
-        p => setLiveMarket(prev => prev.filter(m => m._id !== p.old.id)))
-      // Update applicant counts in real-time when someone applies to (or updates) a job
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'job_applications' },
-        p => {
-          if (!p.new || !p.new.job_id) return;
-          setJobApplicantCounts(prev => {
-            const curr = prev[p.new.job_id] || { total: 0, pending: 0, withInterview: 0 };
-            return { ...prev, [p.new.job_id]: {
-              total:         curr.total + 1,
-              pending:       p.new.status === 'pending' ? curr.pending + 1 : curr.pending,
-              withInterview: p.new.interview_day ? curr.withInterview + 1 : curr.withInterview,
-            }};
-          });
-        })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'job_applications' },
-        p => {
-          if (!p.new || !p.new.job_id || !window.sb) return;
-          // Re-query counts for this job to get accurate state after status change
-          window.sb.from('job_applications')
-            .select('job_id, status, interview_day')
-            .eq('job_id', p.new.job_id)
-            .then(({ data }) => {
-              if (!data) return;
-              setJobApplicantCounts(prev => ({
-                ...prev,
-                [p.new.job_id]: {
-                  total:         data.length,
-                  pending:       data.filter(r => r.status === 'pending').length,
-                  withInterview: data.filter(r => r.interview_day).length,
-                }
-              }));
-            });
-        })
-      .subscribe(status => {
-        if (status === 'SUBSCRIBED') console.log('[Supabase] real-time ativo ✓');
-      });
+    // (No realtime subscription here — window.sb.channel() is a stub, see the
+    // comment above the poll timers. doFetch()/doCountsRefresh() polling above
+    // is what actually keeps jobs/techs/vacations/marketplace/counts current.)
 
     // ── QuickPool "ride request" alert — polling, not realtime ──────────
     // window.sb.channel() (see index.html) is a hand-rolled stub with no real
@@ -1213,7 +1166,6 @@ function App() {
     const qpPollTimer = setInterval(pollNewQuickPools, 15000);
 
     return () => {
-      window.sb.removeChannel(channel);
       document.removeEventListener('visibilitychange', onVisible);
       clearInterval(pollTimer);
       clearInterval(countTimer);
@@ -1246,16 +1198,15 @@ function App() {
     };
   }, [authReady, user?.uid]);
 
-  // Notifications unread badge — fetch count + real-time
+  // Notifications unread badge — fetch count + poll (window.sb.channel() is a
+  // stub with no real WebSocket connection, see comment near pollTimer above)
   React.useEffect(() => {
     if (!authReady || !user?.uid || !window.sb) return;
-    window.sb.from('notifications').select('id').eq('user_id', user.uid).eq('read', false)
-      .then(({ data }) => { if (data) setHasUnreadNotif(data.length > 0); });
-    const ch = window.sb.channel('notif-badge-' + user.uid)
-      .on('postgres_changes', { event:'INSERT', schema:'public', table:'notifications', filter:`user_id=eq.${user.uid}` },
-        () => setHasUnreadNotif(true))
-      .subscribe();
-    return () => window.sb.removeChannel(ch);
+    const check = () => window.sb.from('notifications').select('id').eq('user_id', user.uid).eq('read', false)
+      .then(({ data }) => { if (data) setHasUnreadNotif(data.length > 0); }).catch(()=>{});
+    check();
+    const timer = setInterval(check, 30000);
+    return () => clearInterval(timer);
   }, [authReady, user?.uid]);
 
   const loadLiveJobs = React.useCallback(async () => {
@@ -1288,18 +1239,8 @@ function App() {
   React.useEffect(() => {
     if (!authReady || !user?.uid || !window.sb) return;
     loadLiveApplications(user.uid);
-    // Real-time: refresh whenever a status update arrives for our applications
-    const ch = window.sb.channel('my-apps-' + user.uid)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'job_applications',
-        filter: `applicant_id=eq.${user.uid}`,
-      }, () => loadLiveApplications(user.uid))
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'job_applications',
-        filter: `applicant_id=eq.${user.uid}`,
-      }, () => loadLiveApplications(user.uid))
-      .subscribe();
-    return () => window.sb.removeChannel(ch);
+    // Kept current via appsTimer (30s poll, see above) + onVisible — no realtime
+    // subscription here, window.sb.channel() is a stub with no real connection.
   }, [authReady, user?.uid]);
 
   // Helper: insert row into Supabase

@@ -344,12 +344,12 @@ function QuickPoolsScreen({ ctx }) {
       .catch(() => {});
   }, [myJobIdsKey]);
   React.useEffect(() => { loadQpApplicantCounts(); }, [loadQpApplicantCounts]);
+  // Polled, not realtime — window.sb.channel() is a hand-rolled stub with no
+  // real WebSocket connection, so postgres_changes handlers never fire.
   React.useEffect(() => {
     if (!window.sb || !user?.uid) return;
-    const ch = window.sb.channel('qp-app-counts-' + user.uid)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'quick_pool_applications' }, () => loadQpApplicantCounts())
-      .subscribe();
-    return () => window.sb.removeChannel(ch);
+    const timer = setInterval(loadQpApplicantCounts, 20000);
+    return () => clearInterval(timer);
   }, [user?.uid, loadQpApplicantCounts]);
 
   const EXTEND_WINDOW_MS = 4 * 60 * 60 * 1000; // extend option only offered once <4h remain
