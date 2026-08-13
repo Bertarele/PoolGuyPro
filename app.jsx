@@ -183,13 +183,11 @@ function RideRequestCard({ alert, lang='pt', onAccept, onDismiss }) {
         animation:'pg-ride-drop 0.4s cubic-bezier(.22,1,.36,1)',
       }}>
         <div style={{padding:'16px 16px 14px', display:'flex', alignItems:'flex-start', gap:13}}>
-          <div style={{position:'relative', width:48, height:48, flexShrink:0}}>
+          <div style={{position:'relative', width:60, height:60, flexShrink:0}}>
             <div style={{position:'absolute', inset:0, borderRadius:'50%', background:'rgba(14,186,199,0.35)', animation:'pg-ride-pulse 1.6s ease-out infinite'}}/>
-            <div style={{position:'relative', width:48, height:48, borderRadius:'50%',
-              background:'rgba(255,255,255,0.14)', display:'flex', alignItems:'center', justifyContent:'center',
-              padding:9, boxShadow:'0 4px 12px rgba(4,13,24,0.35)'}}>
-              <img src="/icone.png" alt="" style={{width:'100%', height:'100%', objectFit:'contain'}}/>
-            </div>
+            <img src="/icone.png" alt="" style={{
+              position:'relative', width:60, height:60, borderRadius:'50%', objectFit:'cover',
+              boxShadow:'0 4px 14px rgba(4,13,24,0.4), 0 0 0 2px rgba(255,255,255,0.25)'}}/>
           </div>
           <div style={{flex:1, minWidth:0, paddingTop:1}}>
             <div style={{display:'flex', alignItems:'center', gap:5, marginBottom:3}}>

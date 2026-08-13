@@ -316,8 +316,8 @@ function RideRequestCard({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
-      width: 48,
-      height: 48,
+      width: 60,
+      height: 60,
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -328,28 +328,18 @@ function RideRequestCard({
       background: 'rgba(14,186,199,0.35)',
       animation: 'pg-ride-pulse 1.6s ease-out infinite'
     }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative',
-      width: 48,
-      height: 48,
-      borderRadius: '50%',
-      background: 'rgba(255,255,255,0.14)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 9,
-      boxShadow: '0 4px 12px rgba(4,13,24,0.35)'
-    }
-  }, /*#__PURE__*/React.createElement("img", {
+  }), /*#__PURE__*/React.createElement("img", {
     src: "/icone.png",
     alt: "",
     style: {
-      width: '100%',
-      height: '100%',
-      objectFit: 'contain'
+      position: 'relative',
+      width: 60,
+      height: 60,
+      borderRadius: '50%',
+      objectFit: 'cover',
+      boxShadow: '0 4px 14px rgba(4,13,24,0.4), 0 0 0 2px rgba(255,255,255,0.25)'
     }
-  }))), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0,
