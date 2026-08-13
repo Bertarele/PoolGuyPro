@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
   }
 
   // Find all users who have this city on this day_of_week
-  const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,name,regions_by_day`, { headers });
+  const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,name,regions_by_day,is_online,last_seen`, { headers });
   const profiles: any[] = await profilesRes.json();
 
   const matching = profiles.filter(p => {
@@ -68,12 +68,27 @@ Deno.serve(async (req) => {
 
   const matchingIds = matching.map(p => p.id);
 
-  // Get push subscriptions for matching users
-  const subRes = await fetch(
-    `${SB_URL}/rest/v1/push_subscriptions?select=endpoint,p256dh,auth,user_id&user_id=in.(${matchingIds.map(id=>`"${id}"`).join(',')})`,
-    { headers }
+  // Users with the app genuinely open right now get the in-app "ride request"
+  // alert (client-side poll, see app.jsx) instead — an OS push on top would be
+  // redundant. is_online is a heartbeat (see app.jsx's presence effect), so
+  // gate on last_seen freshness too: a stale "online" flag from a crashed tab
+  // must not silently swallow the only notification that would reach them.
+  const ONLINE_FRESHNESS_MS = 60_000;
+  const onlineIds = new Set(
+    profiles
+      .filter(p => p.is_online && p.last_seen && (Date.now() - new Date(p.last_seen).getTime()) < ONLINE_FRESHNESS_MS)
+      .map(p => p.id)
   );
-  const subs: any[] = await subRes.json();
+  const pushTargetIds = matchingIds.filter(id => !onlineIds.has(id));
+
+  // Get push subscriptions for matching users who aren't currently online
+  const subs: any[] = pushTargetIds.length ? await (async () => {
+    const subRes = await fetch(
+      `${SB_URL}/rest/v1/push_subscriptions?select=endpoint,p256dh,auth,user_id&user_id=in.(${pushTargetIds.map(id=>`"${id}"`).join(',')})`,
+      { headers }
+    );
+    return subRes.json();
+  })() : [];
 
   const dayLabel = DAY_LABELS[job.day_of_week] || job.day_of_week;
   const title = `💧 Piscina em ${job.city}`;
