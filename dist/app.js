@@ -266,6 +266,20 @@ function RideRequestCard({
   const hasStructured = !!alert.city;
   const priceLabel = alert.price ? `$${alert.price}` : lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable';
   const poolsLabel = `${alert.poolsCount ?? 1} ${(alert.poolsCount ?? 1) > 1 ? lang === 'pt' ? 'piscinas' : lang === 'es' ? 'piscinas' : 'pools' : lang === 'pt' ? 'piscina' : lang === 'es' ? 'piscina' : 'pool'}`;
+  // Everything the pool guy needs to decide without opening the job — property
+  // type + access/hazard flags — instead of the day of week, which they
+  // already implicitly know (this alert only fires for days they cover).
+  const infoChips = hasStructured ? [{
+    label: alert.isCondo ? lang === 'pt' ? '🏢 Condomínio' : lang === 'es' ? '🏢 Condominio' : '🏢 Condo' : lang === 'pt' ? '🏠 Casa' : lang === 'es' ? '🏠 Casa' : '🏠 House'
+  }, alert.saltwater && {
+    label: lang === 'pt' ? '🧂 Piscina de sal' : lang === 'es' ? '🧂 Piscina de sal' : '🧂 Saltwater'
+  }, alert.hasDog && {
+    label: lang === 'pt' ? '🐕 Tem cachorro' : lang === 'es' ? '🐕 Hay perro' : '🐕 Dog on property'
+  }, alert.gateCode && {
+    label: lang === 'pt' ? '🔑 Código do portão' : lang === 'es' ? '🔑 Código del portón' : '🔑 Gate code'
+  }, alert.doorman && {
+    label: lang === 'pt' ? '🛎️ Portaria' : lang === 'es' ? '🛎️ Portería' : '🛎️ Doorman'
+  }].filter(Boolean) : [];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
@@ -320,14 +334,22 @@ function RideRequestCard({
       width: 48,
       height: 48,
       borderRadius: '50%',
-      background: 'linear-gradient(135deg,#0EBAC7,#0891A8)',
+      background: 'rgba(255,255,255,0.14)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: 22,
-      boxShadow: '0 4px 12px rgba(14,186,199,0.5)'
+      padding: 9,
+      boxShadow: '0 4px 12px rgba(4,13,24,0.35)'
     }
-  }, "\uD83D\uDCA7")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "/icone.png",
+    alt: "",
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain'
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0,
@@ -375,31 +397,32 @@ function RideRequestCard({
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11.5,
-      fontWeight: 700,
-      padding: '3px 9px',
-      borderRadius: 999,
-      background: 'rgba(255,255,255,0.16)',
-      color: '#fff'
-    }
-  }, alert.dayLabel), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11.5,
-      fontWeight: 700,
-      padding: '3px 9px',
-      borderRadius: 999,
-      background: 'rgba(255,255,255,0.16)',
-      color: '#fff'
-    }
-  }, poolsLabel), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11.5,
       fontWeight: 800,
       padding: '3px 9px',
       borderRadius: 999,
       background: 'rgba(74,222,128,0.22)',
       color: '#4ADE80'
     }
-  }, priceLabel)) : /*#__PURE__*/React.createElement("div", {
+  }, priceLabel), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'rgba(255,255,255,0.16)',
+      color: '#fff'
+    }
+  }, poolsLabel), infoChips.map((chip, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'rgba(255,255,255,0.16)',
+      color: '#fff'
+    }
+  }, chip.label))) : /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12.5,
       color: 'rgba(255,255,255,0.80)',
@@ -1704,13 +1727,14 @@ function App() {
       // of as a query filter.
       const {
         data
-      } = await window.sb.from('quick_pool_jobs_feed').select('id,city,day_of_week,poster_id,pools_count,price_per_pool,status,created_at').eq('status', 'open').catch(() => ({
+      } = await window.sb.from('quick_pool_jobs_feed').select('id,city,day_of_week,poster_id,pools_count,price_per_pool,status,created_at,pool_type,extras').eq('status', 'open').catch(() => ({
         data: null
       }));
       if (!data || !data.length) return;
       const match = data.find(job => job.poster_id !== uid && job.created_at > since && (rbd[job.day_of_week] || []).includes(job.city));
       if (!match) return;
       const poolsCount = match.pools_count ?? 1;
+      const extras = match.extras || {};
       window.playRideAlertSound && window.playRideAlertSound();
       if (navigator.vibrate) try {
         navigator.vibrate([120, 60, 120]);
@@ -1720,6 +1744,11 @@ function App() {
         dayLabel: dayLabels[match.day_of_week] || match.day_of_week,
         poolsCount,
         price: match.price_per_pool || null,
+        isCondo: match.pool_type === 'condo',
+        saltwater: !!extras.saltwater,
+        hasDog: !!extras.dog,
+        gateCode: !!extras.gate_code,
+        doorman: !!extras.doorman,
         url: `/#quick?job=${match.id}`
       });
     };

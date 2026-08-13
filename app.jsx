@@ -157,6 +157,16 @@ function RideRequestCard({ alert, lang='pt', onAccept, onDismiss }) {
   const hasStructured = !!alert.city;
   const priceLabel = alert.price ? `$${alert.price}` : (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable');
   const poolsLabel = `${alert.poolsCount ?? 1} ${(alert.poolsCount??1) > 1 ? (lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools') : (lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}`;
+  // Everything the pool guy needs to decide without opening the job — property
+  // type + access/hazard flags — instead of the day of week, which they
+  // already implicitly know (this alert only fires for days they cover).
+  const infoChips = hasStructured ? [
+    { label: alert.isCondo ? (lang==='pt'?'🏢 Condomínio':lang==='es'?'🏢 Condominio':'🏢 Condo') : (lang==='pt'?'🏠 Casa':lang==='es'?'🏠 Casa':'🏠 House') },
+    alert.saltwater && { label: lang==='pt'?'🧂 Piscina de sal':lang==='es'?'🧂 Piscina de sal':'🧂 Saltwater' },
+    alert.hasDog && { label: lang==='pt'?'🐕 Tem cachorro':lang==='es'?'🐕 Hay perro':'🐕 Dog on property' },
+    alert.gateCode && { label: lang==='pt'?'🔑 Código do portão':lang==='es'?'🔑 Código del portón':'🔑 Gate code' },
+    alert.doorman && { label: lang==='pt'?'🛎️ Portaria':lang==='es'?'🛎️ Portería':'🛎️ Doorman' },
+  ].filter(Boolean) : [];
   return (
     <div style={{
       position:'fixed', top:0, left:0, right:0, zIndex:10000,
@@ -176,9 +186,9 @@ function RideRequestCard({ alert, lang='pt', onAccept, onDismiss }) {
           <div style={{position:'relative', width:48, height:48, flexShrink:0}}>
             <div style={{position:'absolute', inset:0, borderRadius:'50%', background:'rgba(14,186,199,0.35)', animation:'pg-ride-pulse 1.6s ease-out infinite'}}/>
             <div style={{position:'relative', width:48, height:48, borderRadius:'50%',
-              background:'linear-gradient(135deg,#0EBAC7,#0891A8)', display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:22, boxShadow:'0 4px 12px rgba(14,186,199,0.5)'}}>
-              💧
+              background:'rgba(255,255,255,0.14)', display:'flex', alignItems:'center', justifyContent:'center',
+              padding:9, boxShadow:'0 4px 12px rgba(4,13,24,0.35)'}}>
+              <img src="/icone.png" alt="" style={{width:'100%', height:'100%', objectFit:'contain'}}/>
             </div>
           </div>
           <div style={{flex:1, minWidth:0, paddingTop:1}}>
@@ -193,15 +203,17 @@ function RideRequestCard({ alert, lang='pt', onAccept, onDismiss }) {
             </div>
             {hasStructured ? (
               <div style={{display:'flex', flexWrap:'wrap', gap:6, marginTop:8}}>
-                <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'rgba(255,255,255,0.16)', color:'#fff'}}>
-                  {alert.dayLabel}
+                <span style={{fontSize:11.5, fontWeight:800, padding:'3px 9px', borderRadius:999, background:'rgba(74,222,128,0.22)', color:'#4ADE80'}}>
+                  {priceLabel}
                 </span>
                 <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'rgba(255,255,255,0.16)', color:'#fff'}}>
                   {poolsLabel}
                 </span>
-                <span style={{fontSize:11.5, fontWeight:800, padding:'3px 9px', borderRadius:999, background:'rgba(74,222,128,0.22)', color:'#4ADE80'}}>
-                  {priceLabel}
-                </span>
+                {infoChips.map((chip, i) => (
+                  <span key={i} style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'rgba(255,255,255,0.16)', color:'#fff'}}>
+                    {chip.label}
+                  </span>
+                ))}
               </div>
             ) : (
               <div style={{fontSize:12.5, color:'rgba(255,255,255,0.80)', marginTop:3, lineHeight:1.4}}>
@@ -1197,7 +1209,7 @@ function App() {
       // no gt/lt — so the "since" cutoff is applied client-side below instead
       // of as a query filter.
       const { data } = await window.sb.from('quick_pool_jobs_feed')
-        .select('id,city,day_of_week,poster_id,pools_count,price_per_pool,status,created_at')
+        .select('id,city,day_of_week,poster_id,pools_count,price_per_pool,status,created_at,pool_type,extras')
         .eq('status', 'open')
         .catch(() => ({ data: null }));
       if (!data || !data.length) return;
@@ -1207,6 +1219,7 @@ function App() {
       );
       if (!match) return;
       const poolsCount = match.pools_count ?? 1;
+      const extras = match.extras || {};
       window.playRideAlertSound && window.playRideAlertSound();
       if (navigator.vibrate) try { navigator.vibrate([120, 60, 120]); } catch(e) {}
       setRideAlert({
@@ -1214,6 +1227,11 @@ function App() {
         dayLabel: dayLabels[match.day_of_week] || match.day_of_week,
         poolsCount,
         price: match.price_per_pool || null,
+        isCondo: match.pool_type === 'condo',
+        saltwater: !!extras.saltwater,
+        hasDog: !!extras.dog,
+        gateCode: !!extras.gate_code,
+        doorman: !!extras.doorman,
         url: `/#quick?job=${match.id}`,
       });
     };
