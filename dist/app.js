@@ -2411,8 +2411,9 @@ function App() {
         }
         const toastMsg = notifyFailed ? lang === 'pt' ? '⚠️ Vaga publicada, mas o alerta pode não ter chegado a todos' : lang === 'es' ? '⚠️ Vacante publicada, pero la alerta puede no haber llegado a todos' : '⚠️ Job posted, but the alert may not have reached everyone' : lang === 'pt' ? `Piscina Rápida publicada — ${notifyCount} piscineiros notificados` : lang === 'es' ? `Piscina Rápida publicada — ${notifyCount} técnicos notificados` : `Quick Pool posted — ${notifyCount} pool guys notified`;
         showToast(toastMsg);
-      } catch {
-        showToast(lang === 'pt' ? '❌ Erro ao publicar' : '❌ Error posting');
+      } catch (e) {
+        console.error('[QuickPools] post error', e);
+        showToast('❌ ' + (e?.message || (lang === 'pt' ? 'Erro ao publicar' : 'Error posting')));
       }
     }
   })), /*#__PURE__*/React.createElement(Sheet, {

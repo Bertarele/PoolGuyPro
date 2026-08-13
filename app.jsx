@@ -1690,7 +1690,10 @@ function App() {
                     ? `Piscina Rápida publicada — ${notifyCount} técnicos notificados`
                     : `Quick Pool posted — ${notifyCount} pool guys notified`;
               showToast(toastMsg);
-            } catch { showToast(lang==='pt'?'❌ Erro ao publicar':'❌ Error posting'); }
+            } catch(e) {
+              console.error('[QuickPools] post error', e);
+              showToast('❌ ' + (e?.message || (lang==='pt'?'Erro ao publicar':'Error posting')));
+            }
           }}
         />
       </Sheet>
