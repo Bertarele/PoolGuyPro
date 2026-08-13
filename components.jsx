@@ -880,7 +880,15 @@ function Tx({ children, lang, src }) {
       .then(d => {
         if (!live) return;
         const t = d?.responseData?.translatedText;
-        const res = (t && d.responseStatus === 200) ? t : txt;
+        const match = parseFloat(d?.responseData?.match);
+        // MyMemory is a crowdsourced translation-memory lookup, not real machine
+        // translation — for input it has no real match for (gibberish, very
+        // short strings, typos), it falls back to the closest fuzzy match in
+        // its shared public corpus, which can be a completely unrelated
+        // sentence in any language from anyone who ever used the API. Low
+        // match confidence (<0.7) means "not actually a translation of this
+        // text" — show the original instead of random unrelated content.
+        const res = (t && d.responseStatus === 200 && (isNaN(match) || match >= 0.7)) ? t : txt;
         window._txCache.set(key, res);
         setOut(res);
       })
