@@ -413,6 +413,36 @@ function QuickPoolsScreen({
   const t = STRINGS[lang];
   const [selected, setSelected] = React.useState(null);
   const [highlighted, setHighlighted] = React.useState(null);
+  // Job detail didn't push a history entry, so an edge-swipe/browser-back
+  // gesture skipped straight past it to whatever real history entry came
+  // before this screen (e.g. all the way back to login) instead of just
+  // closing the detail — same pushState/popstate pattern already used by
+  // marketplace.jsx's listing view.
+  const jobHistoryPushed = React.useRef(false);
+  const openJobDetail = React.useCallback(j => {
+    setSelected(j);
+    window.history.pushState({
+      pgQpJob: j.id
+    }, '', window.location.href);
+    jobHistoryPushed.current = true;
+  }, []);
+  const closeJobDetail = React.useCallback(() => {
+    setSelected(null);
+    if (jobHistoryPushed.current) {
+      jobHistoryPushed.current = false;
+      window.history.replaceState({}, '', window.location.href);
+    }
+  }, []);
+  React.useEffect(() => {
+    const handler = () => {
+      if (jobHistoryPushed.current) {
+        jobHistoryPushed.current = false;
+        setSelected(null);
+      }
+    };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []);
   const [applied, setApplied] = React.useState({});
   const [isDesktop, setIsDesktop] = React.useState(() => window.innerWidth >= 900);
   const [myAcceptedJobIds, setMyAcceptedJobIds] = React.useState(new Set());
@@ -782,7 +812,7 @@ function QuickPoolsScreen({
   React.useEffect(() => {
     if (!deepLinkJobId || !jobs.length) return;
     const j = jobs.find(x => String(x.id) === String(deepLinkJobId));
-    if (j) setSelected(j);
+    if (j) openJobDetail(j);
   }, [jobs, deepLinkJobId]);
 
   // Open job from pendingQuickJobId (set by notification deep link or chat card click)
@@ -792,7 +822,7 @@ function QuickPoolsScreen({
     // Try the already-loaded list first
     const j = jobs.find(x => String(x.id) === String(id));
     if (j) {
-      setSelected(j);
+      openJobDetail(j);
       ctx.clearPendingQuickJob();
       return;
     }
@@ -802,7 +832,7 @@ function QuickPoolsScreen({
       data
     }) => {
       if (!data) return;
-      setSelected({
+      openJobDetail({
         id: data.id,
         _live: true,
         title: {
@@ -884,7 +914,7 @@ function QuickPoolsScreen({
       status: 'cancelled'
     }).eq('id', jobId);
     setJobs(prev => prev.filter(j => String(j.id) !== String(jobId)));
-    if (selected && String(selected.id) === String(jobId)) setSelected(null);
+    if (selected && String(selected.id) === String(jobId)) closeJobDetail();
   };
 
   // ── Extend a job's expiration (owner only) ──────────────────
@@ -929,7 +959,7 @@ function QuickPoolsScreen({
       status: 'completed'
     }).eq('id', jobId);
     setJobs(prev => prev.filter(j => String(j.id) !== String(jobId)));
-    setSelected(null);
+    closeJobDetail();
   };
 
   // ── Apply to a live job ───────────────────────────────────────
@@ -987,7 +1017,7 @@ function QuickPoolsScreen({
       ref: el => {
         cardRefs.current[j.id] = el;
       },
-      onClick: () => setSelected(j),
+      onClick: () => openJobDetail(j),
       style: {
         background: isDone ? 'var(--pg-ink-100,#F1F5F9)' : 'var(--pg-white)',
         borderRadius: 16,
@@ -1077,7 +1107,7 @@ function QuickPoolsScreen({
     }, Icon.lock(9, 'var(--pg-ink-400)'), " Premium"), isOwn && qpApplicantCounts[j.id] > 0 && /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
-        setSelected(j);
+        openJobDetail(j);
       },
       style: {
         fontSize: 10,
@@ -1413,7 +1443,7 @@ function QuickPoolsScreen({
     }, Icon.check(13, '#15803D'), " ", t.applied) : /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
-        setSelected(j);
+        openJobDetail(j);
       },
       style: {
         height: 36,
@@ -1519,7 +1549,7 @@ function QuickPoolsScreen({
       flexDirection: 'column'
     }
   }, /*#__PURE__*/React.createElement(JobDetailBoundary, {
-    onClose: () => setSelected(null)
+    onClose: closeJobDetail
   }, /*#__PURE__*/React.createElement(QuickPoolDetails, {
     job: selected,
     user: user,
@@ -1529,7 +1559,7 @@ function QuickPoolsScreen({
     onApply: sharePhone => applyToJob(selected.id, sharePhone),
     onUnlock: () => openPaywall('quickpools'),
     onChat: openChat,
-    onClose: () => setSelected(null),
+    onClose: closeJobDetail,
     onDelete: deleteJob,
     onComplete: finalizeJob,
     openPublicProfile: openPublicProfile,
@@ -1612,7 +1642,7 @@ function QuickPoolsScreen({
     }
   }, historyJobs.map(j => /*#__PURE__*/React.createElement("div", {
     key: j.id,
-    onClick: () => setSelected(j),
+    onClick: () => openJobDetail(j),
     style: {
       borderRadius: 12,
       border: '1px solid var(--pg-ink-200)',

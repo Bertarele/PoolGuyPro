@@ -5,7 +5,7 @@ function ProfileScreen({ ctx }) {
           openLanguagePicker, openApplicants, openVerification, openPushNotif, openFeedback,
           openEditProfile, onLogout, openHelp, openPrivacy,
           darkMode, toggleDark, openChat, hasUnreadChat, openNotifications, hasUnreadNotif, requestVerification,
-          openWallet, isDesktop=false, retryPush, pushLog='',
+          isDesktop=false, retryPush, pushLog='',
           notifPrefs, saveNotifPrefs, openListingById, openPublicProfile } = ctx;
   const t = STRINGS[lang];
 
@@ -150,31 +150,6 @@ function ProfileScreen({ ctx }) {
       })()}
 
       <div style={{padding:'0 18px', marginTop:-2, display:'flex', flexDirection:'column', gap:14}}>
-        {/* Wallet quick-access */}
-        <div className="pg-card" style={{padding:'13px 14px', display:'flex', alignItems:'center', gap:14}}>
-          <div style={{
-            width:44, height:44, borderRadius:12, flexShrink:0,
-            background:'linear-gradient(135deg, var(--pg-blue-900), oklch(0.38 0.16 245))',
-            display:'flex', alignItems:'center', justifyContent:'center',
-          }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="oklch(0.82 0.12 178)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23"/>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-            </svg>
-          </div>
-          <div style={{flex:1, minWidth:0}}>
-            <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, letterSpacing:'0.02em'}}>
-              {lang==='pt'?'ESTA SEMANA':lang==='es'?'ESTA SEMANA':'THIS WEEK'}
-            </div>
-            <div style={{fontFamily:'var(--pg-font-display)', fontSize:24, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.03em', lineHeight:1.1}}>
-              ${WALLET_DATA.weekEarnings}
-            </div>
-          </div>
-          <button onClick={openWallet} className="pg-btn pg-btn-ghost" style={{height:36, padding:'0 14px', fontSize:13, borderRadius:999, flexShrink:0}}>
-            {lang==='pt'?'Carteira':lang==='es'?'Cartera':'Wallet'} {Icon.chev(13,'var(--pg-blue-700)')}
-          </button>
-        </div>
-
         {/* Subscription */}
         <SubscriptionCard user={user} setUser={setUser} openPaywall={openPaywall} t={t} lang={lang} isDesktop={isDesktop}/>
 
