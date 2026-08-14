@@ -3605,10 +3605,10 @@ function QuickPoolDetails({
   }, Icon.pin(14), " ", job.loc, " \xB7 ", tr(job.dist, lang)), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14,
-      padding: '14px 16px',
-      borderRadius: 14,
-      background: 'var(--pg-blue-50)',
-      border: '0.5px solid var(--pg-blue-100)',
+      padding: '16px 18px',
+      borderRadius: 16,
+      background: 'linear-gradient(135deg, var(--pg-blue-900) 0%, #0D5C8C 60%, #0891A8 130%)',
+      boxShadow: '0 8px 24px rgba(10,40,64,0.25)',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center'
@@ -3616,31 +3616,33 @@ function QuickPoolDetails({
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: 'var(--pg-ink-500)',
+      color: 'rgba(255,255,255,0.65)',
       letterSpacing: '0.05em',
-      fontWeight: 600
+      fontWeight: 700,
+      textTransform: 'uppercase'
     }
   }, t.offer), job.price === 'neg' ? /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
-      fontWeight: 700,
-      marginTop: 2,
+      fontWeight: 800,
+      marginTop: 3,
+      color: '#fff',
       fontFamily: 'var(--pg-font-display)'
     }
   }, t.negotiable) : /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'var(--pg-font-display)',
-      fontSize: 26,
-      fontWeight: 700,
-      color: 'var(--pg-blue-500)',
+      fontSize: 28,
+      fontWeight: 800,
+      color: '#4ADE80',
       letterSpacing: '-0.02em',
-      marginTop: 2
+      marginTop: 3
     }
   }, "$", job.price, " ", /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
-      color: 'var(--pg-ink-500)',
-      fontWeight: 500
+      color: 'rgba(255,255,255,0.75)',
+      fontWeight: 600
     }
   }, "\xB7 ", t.perPool))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3649,16 +3651,18 @@ function QuickPoolDetails({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: 'var(--pg-ink-500)',
+      color: 'rgba(255,255,255,0.65)',
       letterSpacing: '0.05em',
-      fontWeight: 600
+      fontWeight: 700,
+      textTransform: 'uppercase'
     }
   }, t.whenLabel), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 13,
-      fontWeight: 600,
-      marginTop: 2,
-      maxWidth: 90
+      fontSize: 13.5,
+      fontWeight: 700,
+      marginTop: 3,
+      maxWidth: 100,
+      color: '#fff'
     }
   }, tr(job.when, lang)))), job.extras && /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
@@ -3681,19 +3685,19 @@ function QuickPoolDetails({
       gap: 10
     }
   }, job.type === 'condo' && job.extras.gate_code && /*#__PURE__*/React.createElement(DetailPill, {
-    icon: Icon.key(14, 'var(--pg-blue-700)'),
+    icon: Icon.key(14, '#fff'),
     label: t.gateCode,
     value: locked ? '••••' : job.extras.gate_code
   }), job.type === 'condo' && /*#__PURE__*/React.createElement(DetailPill, {
-    icon: Icon.user(14, 'var(--pg-blue-700)'),
+    icon: Icon.user(14, '#fff'),
     label: t.doorman,
     value: job.extras.doorman ? t.yes : t.no
   }), /*#__PURE__*/React.createElement(DetailPill, {
-    icon: Icon.dog(14, 'var(--pg-blue-700)'),
+    icon: Icon.dog(14, '#fff'),
     label: t.dogLbl,
     value: job.extras.dog ? t.yes : t.no
   }), /*#__PURE__*/React.createElement(DetailPill, {
-    icon: Icon.pool(14, 'var(--pg-blue-700)'),
+    icon: Icon.pool(14, '#fff'),
     label: t.saltwater,
     value: job.extras.saltwater ? t.yes : t.no
   }))), job.required_photos && job.required_photos.length > 0 && /*#__PURE__*/React.createElement("div", {
@@ -3701,13 +3705,13 @@ function QuickPoolDetails({
       marginTop: 14,
       padding: '12px 14px',
       borderRadius: 12,
-      background: 'var(--pg-ink-50)',
-      border: '1px solid var(--pg-ink-200)'
+      background: 'var(--pg-aqua-50)',
+      borderLeft: '3px solid var(--pg-aqua-500)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: 'var(--pg-ink-500)',
+      color: 'var(--pg-aqua-700)',
       fontWeight: 700,
       letterSpacing: '0.05em',
       textTransform: 'uppercase',
@@ -3735,7 +3739,7 @@ function QuickPoolDetails({
       height: "14",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: "var(--pg-blue-500)",
+      stroke: "var(--pg-aqua-500)",
       strokeWidth: "2.5",
       strokeLinecap: "round",
       strokeLinejoin: "round"
@@ -3749,7 +3753,7 @@ function QuickPoolDetails({
       cx: "12",
       cy: "12",
       r: "3",
-      fill: "var(--pg-blue-500)",
+      fill: "var(--pg-aqua-500)",
       stroke: "none"
     })), label);
   }))), tr(job.body, 'pt') ? /*#__PURE__*/React.createElement("div", {
@@ -5098,12 +5102,24 @@ function DetailPill({
     style: {
       display: 'flex',
       alignItems: 'center',
-      gap: 8,
-      padding: '8px 10px',
+      gap: 9,
+      padding: '9px 10px',
       borderRadius: 10,
-      background: 'var(--pg-blue-50)'
+      background: 'var(--pg-ink-50)',
+      border: '1px solid var(--pg-ink-100)'
     }
-  }, icon, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 28,
+      height: 28,
+      borderRadius: 9,
+      flexShrink: 0,
+      background: 'linear-gradient(135deg, var(--pg-blue-500), var(--pg-aqua-500))',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, icon), /*#__PURE__*/React.createElement("div", {
     style: {
       minWidth: 0
     }
@@ -5112,13 +5128,15 @@ function DetailPill({
       fontSize: 10,
       color: 'var(--pg-ink-500)',
       textTransform: 'uppercase',
-      letterSpacing: '0.04em'
+      letterSpacing: '0.04em',
+      fontWeight: 600
     }
   }, label), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
-      fontWeight: 600,
-      marginTop: 1
+      fontWeight: 700,
+      marginTop: 1,
+      color: 'var(--pg-ink-900)'
     }
   }, value)));
 }

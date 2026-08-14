@@ -2091,23 +2091,24 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
         </div>
 
         <div style={{
-          marginTop:14, padding:'14px 16px', borderRadius:14,
-          background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-100)',
+          marginTop:14, padding:'16px 18px', borderRadius:16,
+          background:'linear-gradient(135deg, var(--pg-blue-900) 0%, #0D5C8C 60%, #0891A8 130%)',
+          boxShadow:'0 8px 24px rgba(10,40,64,0.25)',
           display:'flex', justifyContent:'space-between', alignItems:'center',
         }}>
           <div>
-            <div style={{fontSize:11, color:'var(--pg-ink-500)', letterSpacing:'0.05em', fontWeight:600}}>{t.offer}</div>
+            <div style={{fontSize:11, color:'rgba(255,255,255,0.65)', letterSpacing:'0.05em', fontWeight:700, textTransform:'uppercase'}}>{t.offer}</div>
             {job.price === 'neg' ? (
-              <div style={{fontSize:22, fontWeight:700, marginTop:2, fontFamily:'var(--pg-font-display)'}}>{t.negotiable}</div>
+              <div style={{fontSize:22, fontWeight:800, marginTop:3, color:'#fff', fontFamily:'var(--pg-font-display)'}}>{t.negotiable}</div>
             ) : (
-              <div style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', marginTop:2}}>
-                ${job.price} <span style={{fontSize:13, color:'var(--pg-ink-500)', fontWeight:500}}>· {t.perPool}</span>
+              <div style={{fontFamily:'var(--pg-font-display)', fontSize:28, fontWeight:800, color:'#4ADE80', letterSpacing:'-0.02em', marginTop:3}}>
+                ${job.price} <span style={{fontSize:13, color:'rgba(255,255,255,0.75)', fontWeight:600}}>· {t.perPool}</span>
               </div>
             )}
           </div>
           <div style={{textAlign:'right'}}>
-            <div style={{fontSize:11, color:'var(--pg-ink-500)', letterSpacing:'0.05em', fontWeight:600}}>{t.whenLabel}</div>
-            <div style={{fontSize:13, fontWeight:600, marginTop:2, maxWidth:90}}>{tr(job.when, lang)}</div>
+            <div style={{fontSize:11, color:'rgba(255,255,255,0.65)', letterSpacing:'0.05em', fontWeight:700, textTransform:'uppercase'}}>{t.whenLabel}</div>
+            <div style={{fontSize:13.5, fontWeight:700, marginTop:3, maxWidth:100, color:'#fff'}}>{tr(job.when, lang)}</div>
           </div>
         </div>
 
@@ -2117,22 +2118,22 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
             <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, letterSpacing:'0.05em', marginBottom:8}}>{t.accessDetails}</div>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
               {job.type === 'condo' && job.extras.gate_code && (
-                <DetailPill icon={Icon.key(14, 'var(--pg-blue-700)')} label={t.gateCode}
+                <DetailPill icon={Icon.key(14, '#fff')} label={t.gateCode}
                   value={locked ? '••••' : job.extras.gate_code}/>
               )}
               {job.type === 'condo' && (
-                <DetailPill icon={Icon.user(14, 'var(--pg-blue-700)')} label={t.doorman} value={job.extras.doorman ? t.yes : t.no}/>
+                <DetailPill icon={Icon.user(14, '#fff')} label={t.doorman} value={job.extras.doorman ? t.yes : t.no}/>
               )}
-              <DetailPill icon={Icon.dog(14, 'var(--pg-blue-700)')} label={t.dogLbl} value={job.extras.dog ? t.yes : t.no}/>
-              <DetailPill icon={Icon.pool(14, 'var(--pg-blue-700)')} label={t.saltwater} value={job.extras.saltwater ? t.yes : t.no}/>
+              <DetailPill icon={Icon.dog(14, '#fff')} label={t.dogLbl} value={job.extras.dog ? t.yes : t.no}/>
+              <DetailPill icon={Icon.pool(14, '#fff')} label={t.saltwater} value={job.extras.saltwater ? t.yes : t.no}/>
             </div>
           </div>
         )}
 
         {/* Required photos list */}
         {job.required_photos && job.required_photos.length > 0 && (
-          <div style={{marginTop:14, padding:'12px 14px', borderRadius:12, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-200)'}}>
-            <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:8}}>
+          <div style={{marginTop:14, padding:'12px 14px', borderRadius:12, background:'var(--pg-aqua-50)', borderLeft:'3px solid var(--pg-aqua-500)'}}>
+            <div style={{fontSize:11, color:'var(--pg-aqua-700)', fontWeight:700, letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:8}}>
               {lang==='pt'?'📸 FOTOS OBRIGATÓRIAS':lang==='es'?'📸 FOTOS OBLIGATORIAS':'📸 REQUIRED PHOTOS'}
             </div>
             <div style={{display:'flex', flexDirection:'column', gap:6}}>
@@ -2144,7 +2145,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
                   : p==='chemical' ? (lang==='pt'?'Foto químico':'Chemical photo') : p;
                 return (
                   <div key={i} style={{display:'flex', alignItems:'center', gap:8, fontSize:13, color:'var(--pg-ink-700)'}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/><circle cx="12" cy="12" r="3" fill="var(--pg-blue-500)" stroke="none"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-aqua-500)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/><circle cx="12" cy="12" r="3" fill="var(--pg-aqua-500)" stroke="none"/></svg>
                     {label}
                   </div>
                 );
@@ -2792,11 +2793,14 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
 
 function DetailPill({ icon, label, value }) {
   return (
-    <div style={{display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderRadius:10, background:'var(--pg-blue-50)'}}>
-      {icon}
+    <div style={{display:'flex', alignItems:'center', gap:9, padding:'9px 10px', borderRadius:10, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-100)'}}>
+      <div style={{width:28, height:28, borderRadius:9, flexShrink:0, background:'linear-gradient(135deg, var(--pg-blue-500), var(--pg-aqua-500))',
+        display:'flex', alignItems:'center', justifyContent:'center'}}>
+        {icon}
+      </div>
       <div style={{minWidth:0}}>
-        <div style={{fontSize:10, color:'var(--pg-ink-500)', textTransform:'uppercase', letterSpacing:'0.04em'}}>{label}</div>
-        <div style={{fontSize:13, fontWeight:600, marginTop:1}}>{value}</div>
+        <div style={{fontSize:10, color:'var(--pg-ink-500)', textTransform:'uppercase', letterSpacing:'0.04em', fontWeight:600}}>{label}</div>
+        <div style={{fontSize:13, fontWeight:700, marginTop:1, color:'var(--pg-ink-900)'}}>{value}</div>
       </div>
     </div>
   );
