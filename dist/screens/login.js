@@ -616,7 +616,7 @@ function LoginScreen({
     onClick: () => {
       const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
       const redirect = window.location.origin || 'https://poolguyx.com';
-      window.location.href = base + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(redirect);
+      window.location.href = base + '/auth/v1/authorize?provider=google&prompt=select_account&redirect_to=' + encodeURIComponent(redirect);
     },
     style: {
       width: '100%',
@@ -1135,7 +1135,7 @@ function LoginScreen({
       onClick: () => {
         const b = 'https://xiszfqghizqzlwyrfjol.supabase.co';
         const r = window.location.origin || 'https://poolguyx.com';
-        window.location.href = b + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(r);
+        window.location.href = b + '/auth/v1/authorize?provider=google&prompt=select_account&redirect_to=' + encodeURIComponent(r);
       },
       style: {
         width: '100%',
@@ -2042,7 +2042,7 @@ function LoginScreen({
     onClick: () => {
       const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
       const redirect = window.location.origin || 'https://poolguyx.com';
-      window.location.href = base + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(redirect);
+      window.location.href = base + '/auth/v1/authorize?provider=google&prompt=select_account&redirect_to=' + encodeURIComponent(redirect);
     },
     style: {
       width: '100%',
