@@ -1147,15 +1147,15 @@ function LoginScreen({
         fontFamily: 'inherit',
         fontWeight: 600,
         fontSize: 14,
-        color: '#0A2840',
+        color: '#3c4043',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10
       }
     }, /*#__PURE__*/React.createElement("svg", {
-      width: "18",
-      height: "18",
+      width: "19",
+      height: "19",
       viewBox: "0 0 48 48"
     }, /*#__PURE__*/React.createElement("path", {
       fill: "#EA4335",
@@ -1169,7 +1169,36 @@ function LoginScreen({
     }), /*#__PURE__*/React.createElement("path", {
       fill: "#34A853",
       d: "M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-    })), "Continue with Google"), /*#__PURE__*/React.createElement("button", {
+    })), lang === 'pt' ? 'Continuar com Google' : lang === 'es' ? 'Continuar con Google' : 'Continue with Google'), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        const b = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+        const r = window.location.origin || 'https://poolguyx.com';
+        window.location.href = b + '/auth/v1/authorize?provider=apple&redirect_to=' + encodeURIComponent(r);
+      },
+      style: {
+        width: '100%',
+        height: 50,
+        borderRadius: 12,
+        border: 'none',
+        background: '#000',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontWeight: 600,
+        fontSize: 14,
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 9
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "17",
+      height: "17",
+      viewBox: "0 0 384 512",
+      fill: "#fff"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"
+    })), lang === 'pt' ? 'Continuar com a Apple' : lang === 'es' ? 'Continuar con Apple' : 'Continue with Apple'), /*#__PURE__*/React.createElement("button", {
       onClick: () => onLogin(),
       style: {
         border: 'none',
@@ -1676,7 +1705,7 @@ function LoginScreen({
     style: {
       position: 'absolute',
       inset: 0,
-      background: 'linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.10) 38%, rgba(0,0,0,0.08) 52%, rgba(0,0,0,0.48) 100%)',
+      background: 'linear-gradient(180deg, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.06) 52%, rgba(0,0,0,0.22) 100%)',
       zIndex: 1
     }
   }), /*#__PURE__*/React.createElement("div", {
@@ -1774,10 +1803,10 @@ function LoginScreen({
       position: 'relative',
       zIndex: 2,
       flex: 1,
-      background: 'rgba(255,255,255,0.10)',
+      background: 'rgba(255,255,255,0.20)',
       backdropFilter: 'blur(18px)',
       WebkitBackdropFilter: 'blur(18px)',
-      borderTop: '1px solid rgba(255,255,255,0.20)',
+      borderTop: '1px solid rgba(255,255,255,0.30)',
       padding: '24px 24px 28px',
       display: 'flex',
       flexDirection: 'column',
@@ -2003,7 +2032,13 @@ function LoginScreen({
       height: 1,
       background: 'rgba(255,255,255,0.25)'
     }
-  })), /*#__PURE__*/React.createElement("button", {
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
       const redirect = window.location.origin || 'https://poolguyx.com';
@@ -2011,24 +2046,24 @@ function LoginScreen({
     },
     style: {
       width: '100%',
-      height: 48,
+      height: 50,
       borderRadius: 12,
-      border: '1px solid rgba(255,255,255,0.30)',
-      background: 'rgba(255,255,255,0.18)',
-      backdropFilter: 'blur(8px)',
+      border: 'none',
+      background: '#fff',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
       cursor: 'pointer',
       fontFamily: 'inherit',
       fontWeight: 600,
-      fontSize: 13.5,
-      color: '#fff',
+      fontSize: 14,
+      color: '#3c4043',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 9
+      gap: 10
     }
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "18",
-    height: "18",
+    width: "19",
+    height: "19",
     viewBox: "0 0 48 48"
   }, /*#__PURE__*/React.createElement("path", {
     fill: "#EA4335",
@@ -2042,7 +2077,37 @@ function LoginScreen({
   }), /*#__PURE__*/React.createElement("path", {
     fill: "#34A853",
     d: "M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-  })), "Continue with Google"), /*#__PURE__*/React.createElement("button", {
+  })), lang === 'pt' ? 'Continuar com Google' : lang === 'es' ? 'Continuar con Google' : 'Continue with Google'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
+      const redirect = window.location.origin || 'https://poolguyx.com';
+      window.location.href = base + '/auth/v1/authorize?provider=apple&redirect_to=' + encodeURIComponent(redirect);
+    },
+    style: {
+      width: '100%',
+      height: 50,
+      borderRadius: 12,
+      border: 'none',
+      background: '#000',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontWeight: 600,
+      fontSize: 14,
+      color: '#fff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 9
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "17",
+    height: "17",
+    viewBox: "0 0 384 512",
+    fill: "#fff"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"
+  })), lang === 'pt' ? 'Continuar com a Apple' : lang === 'es' ? 'Continuar con Apple' : 'Continue with Apple')), /*#__PURE__*/React.createElement("button", {
     onClick: () => onLogin(),
     style: {
       border: 'none',
