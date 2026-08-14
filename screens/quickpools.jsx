@@ -321,6 +321,17 @@ function QuickPoolsScreen({ ctx }) {
     return () => window.removeEventListener('pgQuickPoolPosted', handler);
   }, [loadJobs]);
 
+  // Reflect an application submitted directly from the ride-request alert
+  // (app.jsx) — same "already applied" badge as applying from inside this screen.
+  React.useEffect(() => {
+    const handler = (e) => {
+      const jobId = e.detail?.jobId;
+      if (jobId) setApplied(prev => ({ ...prev, [jobId]: true }));
+    };
+    window.addEventListener('pgQuickPoolApplied', handler);
+    return () => window.removeEventListener('pgQuickPoolApplied', handler);
+  }, []);
+
   // Refresh outstanding-rating banner whenever a job finishes/finalizes (rated or skipped)
   React.useEffect(() => {
     const handler = () => loadPendingOutRatings();

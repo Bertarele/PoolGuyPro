@@ -256,8 +256,10 @@ function FeedbackSheet({
 function RideRequestCard({
   alert,
   lang = 'pt',
-  onAccept,
-  onDismiss
+  onView,
+  onApply,
+  onDismiss,
+  applying
 }) {
   if (!alert) return null;
   // Structured shape (from the poll) has city/dayLabel/poolsCount/price; the
@@ -271,6 +273,8 @@ function RideRequestCard({
   // already implicitly know (this alert only fires for days they cover).
   const infoChips = hasStructured ? [{
     label: alert.isCondo ? lang === 'pt' ? '🏢 Condomínio' : lang === 'es' ? '🏢 Condominio' : '🏢 Condo' : lang === 'pt' ? '🏠 Casa' : lang === 'es' ? '🏠 Casa' : '🏠 House'
+  }, {
+    label: poolsLabel
   }, alert.saltwater && {
     label: lang === 'pt' ? '🧂 Piscina de sal' : lang === 'es' ? '🧂 Piscina de sal' : '🧂 Saltwater'
   }, alert.hasDog && {
@@ -293,7 +297,6 @@ function RideRequestCard({
       pointerEvents: 'none'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    onClick: onAccept,
     style: {
       pointerEvents: 'auto',
       width: 'calc(100% - 24px)',
@@ -301,7 +304,6 @@ function RideRequestCard({
       margin: '0 12px',
       borderRadius: 20,
       overflow: 'hidden',
-      cursor: 'pointer',
       background: 'linear-gradient(160deg,#0A2840 0%,#0D5C8C 55%,#0EBAC7 130%)',
       boxShadow: '0 16px 40px rgba(4,13,24,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset',
       animation: 'pg-ride-drop 0.4s cubic-bezier(.22,1,.36,1)'
@@ -377,32 +379,43 @@ function RideRequestCard({
       lineHeight: 1.2,
       fontFamily: 'var(--pg-font-display)'
     }
-  }, hasStructured ? alert.city : alert.title), hasStructured ? /*#__PURE__*/React.createElement("div", {
+  }, hasStructured ? alert.city : alert.title), !hasStructured && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: 'rgba(255,255,255,0.80)',
+      marginTop: 3,
+      lineHeight: 1.4
+    }
+  }, alert.body)), hasStructured && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'right',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 24,
+      fontWeight: 800,
+      color: '#4ADE80',
+      lineHeight: 1,
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }, priceLabel), alert.price && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9.5,
+      fontWeight: 700,
+      color: 'rgba(74,222,128,0.75)',
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      marginTop: 2
+    }
+  }, lang === 'pt' ? 'por serviço' : lang === 'es' ? 'por servicio' : 'per job'))), hasStructured && infoChips.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexWrap: 'wrap',
       gap: 6,
-      marginTop: 8
+      padding: '0 16px 14px'
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11.5,
-      fontWeight: 800,
-      padding: '3px 9px',
-      borderRadius: 999,
-      background: 'rgba(74,222,128,0.22)',
-      color: '#4ADE80'
-    }
-  }, priceLabel), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11.5,
-      fontWeight: 700,
-      padding: '3px 9px',
-      borderRadius: 999,
-      background: 'rgba(255,255,255,0.16)',
-      color: '#fff'
-    }
-  }, poolsLabel), infoChips.map((chip, i) => /*#__PURE__*/React.createElement("span", {
+  }, infoChips.map((chip, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
     style: {
       fontSize: 11.5,
@@ -412,85 +425,60 @@ function RideRequestCard({
       background: 'rgba(255,255,255,0.16)',
       color: '#fff'
     }
-  }, chip.label))) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12.5,
-      color: 'rgba(255,255,255,0.80)',
-      marginTop: 3,
-      lineHeight: 1.4
-    }
-  }, alert.body)), /*#__PURE__*/React.createElement("button", {
-    onClick: e => {
-      e.stopPropagation();
-      onDismiss();
-    },
-    style: {
-      width: 26,
-      height: 26,
-      borderRadius: '50%',
-      border: 'none',
-      cursor: 'pointer',
-      flexShrink: 0,
-      background: 'rgba(255,255,255,0.15)',
-      color: '#fff',
-      fontSize: 14,
-      lineHeight: 1,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, "\xD7")), /*#__PURE__*/React.createElement("div", {
+  }, chip.label))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 0,
       borderTop: '1px solid rgba(255,255,255,0.15)'
     }
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: e => {
-      e.stopPropagation();
-      onDismiss();
-    },
+    onClick: onDismiss,
     style: {
       flex: 1,
-      padding: '13px',
+      padding: '13px 6px',
       border: 'none',
       cursor: 'pointer',
       fontFamily: 'inherit',
       background: 'rgba(0,0,0,0.12)',
       color: 'rgba(255,255,255,0.75)',
-      fontSize: 13,
+      fontSize: 12.5,
       fontWeight: 700,
       borderRight: '1px solid rgba(255,255,255,0.15)'
     }
   }, lang === 'pt' ? 'Ignorar' : lang === 'es' ? 'Ignorar' : 'Ignore'), /*#__PURE__*/React.createElement("button", {
-    onClick: onAccept,
+    onClick: onView,
     style: {
-      flex: 1.5,
-      padding: '13px',
+      flex: 1.1,
+      padding: '13px 6px',
       border: 'none',
       cursor: 'pointer',
       fontFamily: 'inherit',
+      background: 'rgba(255,255,255,0.10)',
+      color: '#fff',
+      fontSize: 12.5,
+      fontWeight: 700,
+      borderRight: '1px solid rgba(255,255,255,0.15)'
+    }
+  }, lang === 'pt' ? 'Ver anúncio' : lang === 'es' ? 'Ver anuncio' : 'View listing'), /*#__PURE__*/React.createElement("button", {
+    onClick: onApply,
+    disabled: applying,
+    style: {
+      flex: 1.3,
+      padding: '13px 6px',
+      border: 'none',
+      cursor: applying ? 'default' : 'pointer',
+      fontFamily: 'inherit',
       background: 'linear-gradient(135deg,#22C55E,#16A34A)',
       color: '#fff',
-      fontSize: 13.5,
+      fontSize: 12.5,
       fontWeight: 800,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 6
+      gap: 5,
+      opacity: applying ? 0.7 : 1
     }
-  }, lang === 'pt' ? 'Ver e candidatar-se' : lang === 'es' ? 'Ver y postularme' : 'View & apply', /*#__PURE__*/React.createElement("svg", {
-    width: "13",
-    height: "13",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "#fff",
-    strokeWidth: "3",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M9 18l6-6-6-6"
-  })))), /*#__PURE__*/React.createElement("div", {
+  }, applying ? lang === 'pt' ? 'Enviando…' : lang === 'es' ? 'Enviando…' : 'Sending…' : lang === 'pt' ? 'Candidatar-se' : lang === 'es' ? 'Postularme' : 'Apply')), /*#__PURE__*/React.createElement("div", {
     style: {
       height: 3,
       background: 'rgba(255,255,255,0.15)'
@@ -1361,11 +1349,54 @@ function App() {
 
   // ── "Ride request" style alert for new matching QuickPool jobs ─────────
   const [rideAlert, setRideAlert] = React.useState(null); // {title, body, url} | null
+  const [rideApplying, setRideApplying] = React.useState(false);
   React.useEffect(() => {
     if (!rideAlert) return;
     const timer = setTimeout(() => setRideAlert(null), 18000);
     return () => clearTimeout(timer);
   }, [rideAlert]);
+
+  // Apply directly from the alert card — mirrors quickpools.jsx's applyToJob,
+  // duplicated here (small and self-contained) since that function lives
+  // inside the QuickPools screen component, not reachable from the app shell.
+  const handleRideApply = React.useCallback(async () => {
+    const jobId = rideAlert?.jobId;
+    const posterId = rideAlert?.posterId;
+    if (!jobId || !user?.uid || !window.sb || rideApplying) return;
+    setRideApplying(true);
+    try {
+      await window.sb.from('quick_pool_applications').insert({
+        job_id: jobId,
+        applicant_id: user.uid,
+        applicant_name: user.name || user.email || 'Pool Guy',
+        status: 'pending'
+      });
+      window.dispatchEvent(new CustomEvent('pgQuickPoolApplied', {
+        detail: {
+          jobId
+        }
+      }));
+      if (posterId && posterId !== user.uid) {
+        const applicantName = user.name || user.email || 'Pool Guy';
+        const title = lang === 'pt' ? '👤 Novo candidato' : lang === 'es' ? '👤 Nuevo candidato' : '👤 New applicant';
+        const body = `${applicantName} — ${rideAlert.city || ''}`;
+        window.sb.from('notifications').insert({
+          user_id: posterId,
+          type: 'quick_pool_application',
+          title,
+          body,
+          link_id: String(jobId),
+          read: false
+        }).catch(() => {});
+        window.sendPush && window.sendPush(posterId, title, body, `/#quick?job=${jobId}`, 'quick_pool_application');
+      }
+      showToast(lang === 'pt' ? '✓ Candidatura enviada!' : lang === 'es' ? '✓ ¡Postulación enviada!' : '✓ Application sent!');
+    } catch (e) {
+      showToast('❌ ' + (e?.message || (lang === 'pt' ? 'Erro ao candidatar' : 'Error applying')));
+    }
+    setRideApplying(false);
+    setRideAlert(null);
+  }, [rideAlert, user?.uid, user?.name, user?.email, lang]);
   const [notifOpen, setNotifOpen] = React.useState(false);
   // Unread badges — derived from real Supabase data
   const [hasUnreadChat, setHasUnreadChat] = React.useState(false);
@@ -1730,6 +1761,8 @@ function App() {
         navigator.vibrate([120, 60, 120]);
       } catch (e) {}
       setRideAlert({
+        jobId: match.id,
+        posterId: match.poster_id,
         city: match.city,
         dayLabel: dayLabels[match.day_of_week] || match.day_of_week,
         poolsCount,
@@ -2608,11 +2641,13 @@ function App() {
   }), /*#__PURE__*/React.createElement(RideRequestCard, {
     alert: rideAlert,
     lang: lang,
-    onAccept: () => {
+    applying: rideApplying,
+    onView: () => {
       const url = rideAlert?.url;
       setRideAlert(null);
       if (url) navigateFromDeepLinkUrl(url);
     },
+    onApply: handleRideApply,
     onDismiss: () => setRideAlert(null)
   }), /*#__PURE__*/React.createElement(RegionEditorSheet, {
     open: regionOpen,
