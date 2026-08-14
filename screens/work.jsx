@@ -265,7 +265,13 @@ function WorkScreen({ ctx }) {
       type:         'hiring',
       company:      a.job_company || a.job_role || '?',
       title:        { en: a.job_role || a.job_company || '', pt: a.job_role || a.job_company || '', es: a.job_role || a.job_company || '' },
-      pay:          { en:'', pt:'', es:'' },
+      // Was always {en:'',pt:'',es:''} — never actually filled in from the job,
+      // so every real application showed a bare "· " with nothing after it.
+      pay:          relatedJob?.payMode === 'neg'
+        ? { en:'Negotiable', pt:'Negociável', es:'Negociable' }
+        : relatedJob?.pay
+          ? { en:`$${relatedJob.pay}${relatedJob.payMode==='weekly'?'/wk':'/pool'}`, pt:`$${relatedJob.pay}${relatedJob.payMode==='weekly'?'/sem':'/pool'}`, es:`$${relatedJob.pay}${relatedJob.payMode==='weekly'?'/sem':'/pool'}` }
+          : null,
       loc:          relatedJob?.loc || relatedJob?.region || a.job_loc || '',
       status:       completedAppIds.has(a.id) ? 'completed' : (a.status || 'pending'),
       when:         relTime(a.created_at),
@@ -574,7 +580,7 @@ function WorkScreen({ ctx }) {
                                 <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{app.company}</div>
                                 <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginTop:2}}>
                                   <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:statusCfg.bg,color:statusCfg.color}}>{statusCfg.label}</span>
-                                  <span style={{fontSize:11,color:'var(--pg-ink-400)'}}>· {tr(app.pay,lang)}</span>
+                                  {tr(app.pay,lang) && <span style={{fontSize:11,color:'var(--pg-ink-400)'}}>· {tr(app.pay,lang)}</span>}
                                 </div>
                               </div>
                               {isAccepted ? (
@@ -1047,7 +1053,7 @@ function WorkScreen({ ctx }) {
                                 <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
                                   <span style={{fontSize:10.5, fontWeight:700, padding:'2px 6px', borderRadius:6,
                                     background:statusCfg.bg, color:statusCfg.color}}>{statusCfg.label}</span>
-                                  <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>· {tr(app.pay, lang)}</span>
+                                  {tr(app.pay, lang) && <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>· {tr(app.pay, lang)}</span>}
                                 </div>
                               </div>
                               {isPending && Icon.chev(14,'var(--pg-ink-300)')}

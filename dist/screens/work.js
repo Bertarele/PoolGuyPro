@@ -418,11 +418,17 @@ function WorkScreen({
         pt: a.job_role || a.job_company || '',
         es: a.job_role || a.job_company || ''
       },
-      pay: {
-        en: '',
-        pt: '',
-        es: ''
-      },
+      // Was always {en:'',pt:'',es:''} — never actually filled in from the job,
+      // so every real application showed a bare "· " with nothing after it.
+      pay: relatedJob?.payMode === 'neg' ? {
+        en: 'Negotiable',
+        pt: 'Negociável',
+        es: 'Negociable'
+      } : relatedJob?.pay ? {
+        en: `$${relatedJob.pay}${relatedJob.payMode === 'weekly' ? '/wk' : '/pool'}`,
+        pt: `$${relatedJob.pay}${relatedJob.payMode === 'weekly' ? '/sem' : '/pool'}`,
+        es: `$${relatedJob.pay}${relatedJob.payMode === 'weekly' ? '/sem' : '/pool'}`
+      } : null,
       loc: relatedJob?.loc || relatedJob?.region || a.job_loc || '',
       status: completedAppIds.has(a.id) ? 'completed' : a.status || 'pending',
       when: relTime(a.created_at),
@@ -1101,7 +1107,7 @@ function WorkScreen({
             background: statusCfg.bg,
             color: statusCfg.color
           }
-        }, statusCfg.label), /*#__PURE__*/React.createElement("span", {
+        }, statusCfg.label), tr(app.pay, lang) && /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 11,
             color: 'var(--pg-ink-400)'
@@ -2318,7 +2324,7 @@ function WorkScreen({
             background: statusCfg.bg,
             color: statusCfg.color
           }
-        }, statusCfg.label), /*#__PURE__*/React.createElement("span", {
+        }, statusCfg.label), tr(app.pay, lang) && /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 11,
             color: 'var(--pg-ink-400)'
