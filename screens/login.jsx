@@ -540,7 +540,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         zIndex:0,
       }}/>
       {/* Overlay: escurece topo (tagline) e base (form) mantendo o centro vivo */}
-      <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.06) 52%, rgba(0,0,0,0.22) 100%)', zIndex:1}}/>
+      <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.04) 38%, rgba(0,0,0,0.03) 52%, rgba(0,0,0,0.12) 100%)', zIndex:1}}/>
 
       {/* ── Language switcher ── */}
       <div style={{position:'absolute', top:18, right:16, display:'flex', gap:5, zIndex:10}}>
@@ -581,7 +581,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           <span style={{
             fontSize:12, fontWeight:700, color:'#ffffff',
             letterSpacing:'0.06em', textTransform:'uppercase',
-            textShadow:'0 1px 8px rgba(0,0,0,0.80), 0 2px 16px rgba(0,0,0,0.60)',
+            textShadow:'0 1px 4px rgba(0,0,0,0.35)',
           }}>{t.tagline}</span>
           <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
         </div>
@@ -590,17 +590,17 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         <p style={{
           margin:'0', fontSize:13, fontWeight:500, color:'#ffffff',
           textAlign:'center', lineHeight:1.5, maxWidth:240, padding:'0 20px',
-          textShadow:'0 1px 8px rgba(0,0,0,0.80), 0 2px 16px rgba(0,0,0,0.60)',
+          textShadow:'0 1px 4px rgba(0,0,0,0.35)',
         }}>{t.loginSub}</p>
       </div>
 
       {/* ── Form card — glass over photo ── */}
       <div style={{
         position:'relative', zIndex:2, flex:1,
-        background:'rgba(255,255,255,0.20)',
+        background:'rgba(255,255,255,0.34)',
         backdropFilter:'blur(18px)',
         WebkitBackdropFilter:'blur(18px)',
-        borderTop:'1px solid rgba(255,255,255,0.30)',
+        borderTop:'1px solid rgba(255,255,255,0.45)',
         padding:'24px 24px 28px',
         display:'flex', flexDirection:'column', gap:12,
         overflowY:'auto',
@@ -645,8 +645,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
           {/* Esqueceu a senha */}
           <div style={{textAlign:'right', marginTop:-6}}>
-            <button style={{border:'none', background:'transparent', color:'#ffffff',
-              fontSize:12, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.forgotPw}</button>
+            <button style={{border:'none', background:'transparent', color:'#0A2840',
+              fontSize:12, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.forgotPw}</button>
           </div>
 
           {error ? <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div> : null}
@@ -664,9 +664,9 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           </button>
 
           <div style={{display:'flex', alignItems:'center', gap:10, margin:'2px 0'}}>
-            <div style={{flex:1, height:1, background:'rgba(255,255,255,0.25)'}}/>
-            <span style={{fontSize:11, color:'#ffffff', fontWeight:500}}>{t.orLbl}</span>
-            <div style={{flex:1, height:1, background:'rgba(255,255,255,0.25)'}}/>
+            <div style={{flex:1, height:1, background:'rgba(10,40,64,0.20)'}}/>
+            <span style={{fontSize:11, color:'#0A2840', fontWeight:600}}>{t.orLbl}</span>
+            <div style={{flex:1, height:1, background:'rgba(10,40,64,0.20)'}}/>
           </div>
 
           <div style={{display:'flex', flexDirection:'column', gap:10}}>
@@ -698,14 +698,14 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             </button>
           </div>
 
-          <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'#ffffff',
-            fontSize:13, cursor:'pointer', padding:'2px 0', fontFamily:'inherit',
-            textDecoration:'underline', textDecorationColor:'rgba(255,255,255,0.60)'}}>{t.continueGuest}</button>
+          <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'#0A2840',
+            fontSize:13, fontWeight:600, cursor:'pointer', padding:'2px 0', fontFamily:'inherit',
+            textDecoration:'underline', textDecorationColor:'rgba(10,40,64,0.45)'}}>{t.continueGuest}</button>
 
           <div style={{textAlign:'center', marginTop:'auto', paddingBottom:4}}>
-            <span style={{fontSize:12.5, color:'#ffffff'}}>{t.noAccount} </span>
-            <button onClick={goSignup} style={{border:'none', background:'transparent', color:'#fff',
-              fontSize:12.5, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.signUp}</button>
+            <span style={{fontSize:12.5, color:'#0A2840', fontWeight:500}}>{t.noAccount} </span>
+            <button onClick={goSignup} style={{border:'none', background:'transparent', color:'#1565E8',
+              fontSize:12.5, fontWeight:800, cursor:'pointer', padding:0, fontFamily:'inherit'}}>{t.signUp}</button>
           </div>
         </>)}
 

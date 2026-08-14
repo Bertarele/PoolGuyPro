@@ -1705,7 +1705,7 @@ function LoginScreen({
     style: {
       position: 'absolute',
       inset: 0,
-      background: 'linear-gradient(180deg, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.06) 52%, rgba(0,0,0,0.22) 100%)',
+      background: 'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.04) 38%, rgba(0,0,0,0.03) 52%, rgba(0,0,0,0.12) 100%)',
       zIndex: 1
     }
   }), /*#__PURE__*/React.createElement("div", {
@@ -1777,7 +1777,7 @@ function LoginScreen({
       color: '#ffffff',
       letterSpacing: '0.06em',
       textTransform: 'uppercase',
-      textShadow: '0 1px 8px rgba(0,0,0,0.80), 0 2px 16px rgba(0,0,0,0.60)'
+      textShadow: '0 1px 4px rgba(0,0,0,0.35)'
     }
   }, t.tagline), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1796,17 +1796,17 @@ function LoginScreen({
       lineHeight: 1.5,
       maxWidth: 240,
       padding: '0 20px',
-      textShadow: '0 1px 8px rgba(0,0,0,0.80), 0 2px 16px rgba(0,0,0,0.60)'
+      textShadow: '0 1px 4px rgba(0,0,0,0.35)'
     }
   }, t.loginSub)), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
       zIndex: 2,
       flex: 1,
-      background: 'rgba(255,255,255,0.20)',
+      background: 'rgba(255,255,255,0.34)',
       backdropFilter: 'blur(18px)',
       WebkitBackdropFilter: 'blur(18px)',
-      borderTop: '1px solid rgba(255,255,255,0.30)',
+      borderTop: '1px solid rgba(255,255,255,0.45)',
       padding: '24px 24px 28px',
       display: 'flex',
       flexDirection: 'column',
@@ -1956,9 +1956,9 @@ function LoginScreen({
     style: {
       border: 'none',
       background: 'transparent',
-      color: '#ffffff',
+      color: '#0A2840',
       fontSize: 12,
-      fontWeight: 600,
+      fontWeight: 700,
       cursor: 'pointer',
       padding: 0,
       fontFamily: 'inherit'
@@ -2018,19 +2018,19 @@ function LoginScreen({
     style: {
       flex: 1,
       height: 1,
-      background: 'rgba(255,255,255,0.25)'
+      background: 'rgba(10,40,64,0.20)'
     }
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
-      color: '#ffffff',
-      fontWeight: 500
+      color: '#0A2840',
+      fontWeight: 600
     }
   }, t.orLbl), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       height: 1,
-      background: 'rgba(255,255,255,0.25)'
+      background: 'rgba(10,40,64,0.20)'
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2112,13 +2112,14 @@ function LoginScreen({
     style: {
       border: 'none',
       background: 'transparent',
-      color: '#ffffff',
+      color: '#0A2840',
       fontSize: 13,
+      fontWeight: 600,
       cursor: 'pointer',
       padding: '2px 0',
       fontFamily: 'inherit',
       textDecoration: 'underline',
-      textDecorationColor: 'rgba(255,255,255,0.60)'
+      textDecorationColor: 'rgba(10,40,64,0.45)'
     }
   }, t.continueGuest), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2129,16 +2130,17 @@ function LoginScreen({
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 12.5,
-      color: '#ffffff'
+      color: '#0A2840',
+      fontWeight: 500
     }
   }, t.noAccount, " "), /*#__PURE__*/React.createElement("button", {
     onClick: goSignup,
     style: {
       border: 'none',
       background: 'transparent',
-      color: '#fff',
+      color: '#1565E8',
       fontSize: 12.5,
-      fontWeight: 700,
+      fontWeight: 800,
       cursor: 'pointer',
       padding: 0,
       fontFamily: 'inherit'
