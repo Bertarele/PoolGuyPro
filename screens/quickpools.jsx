@@ -1402,8 +1402,13 @@ function QuickPoolsScreen({ ctx }) {
                     ? notifCities.slice(0,3).join(' · ')+(notifCities.length>3?` +${notifCities.length-3}`:'')
                     : (lang==='pt'?'Nenhuma cidade':lang==='es'?'Ninguna ciudad':'No cities')}
                 </span>
-                <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} style={{background:'transparent',border:'none',color:H.sub,fontSize:11,fontWeight:700,cursor:'pointer',padding:0,flexShrink:0,display:'flex',alignItems:'center',gap:3}}>
-                  {Icon.cal(11,H.sub)} {lang==='pt'?'Editar':'Edit'}
+                <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} style={{
+                  background:'linear-gradient(135deg,#0077B6,#023E8A)', border:'none', color:'#fff',
+                  fontSize:11, fontWeight:800, cursor:'pointer', padding:'5px 10px', borderRadius:8,
+                  flexShrink:0, display:'flex', alignItems:'center', gap:4,
+                  boxShadow:'0 2px 6px rgba(0,119,182,0.45)',
+                }}>
+                  {Icon.cal(11,'#fff')} {lang==='pt'?'Editar':'Edit'}
                 </button>
               </div>
             </div>
