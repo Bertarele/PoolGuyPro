@@ -2768,7 +2768,11 @@ function WorkScreen({
         e.stopPropagation();
         openChat && openChat({
           id: h.poster_id,
-          name: h.poster
+          name: h.poster,
+          listingContext: {
+            name: `${(h.cities || []).join(' · ')} · ${h.splitTakerPct}/${100 - h.splitTakerPct}`,
+            photoUrl: h.photoUrls && h.photoUrls[0] || null
+          }
         });
       },
       style: {
@@ -3218,7 +3222,11 @@ function HandoffDetailPanel({
   }, lang === 'pt' ? 'Marcar como preenchido' : lang === 'es' ? 'Marcar como cubierto' : 'Mark as filled') : /*#__PURE__*/React.createElement("button", {
     onClick: () => onChat && onChat({
       id: handoff.poster_id,
-      name: handoff.poster
+      name: handoff.poster,
+      listingContext: {
+        name: `${(handoff.cities || []).join(' · ')} · ${handoff.splitTakerPct}/${100 - handoff.splitTakerPct}`,
+        photoUrl: handoff.photoUrls && handoff.photoUrls[0] || null
+      }
     }),
     className: "pg-btn pg-btn-primary",
     style: {

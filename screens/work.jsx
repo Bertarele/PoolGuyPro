@@ -1259,7 +1259,8 @@ function WorkScreen({ ctx }) {
                         {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}
                       </span>
                     ) : (
-                      <button onClick={(e)=>{ e.stopPropagation(); openChat && openChat({ id: h.poster_id, name: h.poster }); }} style={{
+                      <button onClick={(e)=>{ e.stopPropagation(); openChat && openChat({ id: h.poster_id, name: h.poster,
+                        listingContext: { name: `${(h.cities||[]).join(' · ')} · ${h.splitTakerPct}/${100-h.splitTakerPct}`, photoUrl: (h.photoUrls&&h.photoUrls[0])||null } }); }} style={{
                         display:'flex', alignItems:'center', gap:6, height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
                         background:'linear-gradient(135deg,#0077B6,#023E8A)', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:700,
                         boxShadow:'0 3px 10px rgba(0,119,182,0.30)',
@@ -1438,7 +1439,8 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
             </button>
           )
         ) : (
-          <button onClick={()=>onChat && onChat({ id: handoff.poster_id, name: handoff.poster })} className="pg-btn pg-btn-primary" style={{width:'100%', height:52, fontSize:16}}>
+          <button onClick={()=>onChat && onChat({ id: handoff.poster_id, name: handoff.poster,
+            listingContext: { name: `${(handoff.cities||[]).join(' · ')} · ${handoff.splitTakerPct}/${100-handoff.splitTakerPct}`, photoUrl: (handoff.photoUrls&&handoff.photoUrls[0])||null } })} className="pg-btn pg-btn-primary" style={{width:'100%', height:52, fontSize:16}}>
             {Icon.msg ? Icon.msg(17,'#fff') : null} {lang==='pt'?'Contato':lang==='es'?'Contacto':'Contact'}
           </button>
         )}
