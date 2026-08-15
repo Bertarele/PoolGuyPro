@@ -23,6 +23,19 @@ function WorkScreen({ ctx }) {
   });
   const [vacTab, setVacTab] = React.useState('applied');
 
+  // Open a handoff straight to its full detail — reached via the listing-context
+  // card in chat (tapping it calls ctx.openListingById('handoff_<id>')).
+  React.useEffect(() => {
+    const id = ctx.pendingHandoffId;
+    if (!id) return;
+    const h = liveHandoffs.find(x => String(x._id) === String(id));
+    if (h) {
+      setSub('hiring');
+      setHandoffDetail(h);
+      ctx.clearPendingHandoff && ctx.clearPendingHandoff();
+    }
+  }, [ctx.pendingHandoffId, liveHandoffs]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sync sub-tab to URL hash
   React.useEffect(() => {
     try {
@@ -1260,6 +1273,7 @@ function WorkScreen({ ctx }) {
                       </span>
                     ) : (
                       <button onClick={(e)=>{ e.stopPropagation(); openChat && openChat({ id: h.poster_id, name: h.poster,
+                        listingId: 'handoff_' + h._id,
                         listingContext: { name: `${(h.cities||[]).join(' · ')} · ${h.splitTakerPct}/${100-h.splitTakerPct}`, photoUrl: (h.photoUrls&&h.photoUrls[0])||null } }); }} style={{
                         display:'flex', alignItems:'center', gap:6, height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
                         background:'linear-gradient(135deg,#0077B6,#023E8A)', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:700,
@@ -1440,6 +1454,7 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
           )
         ) : (
           <button onClick={()=>onChat && onChat({ id: handoff.poster_id, name: handoff.poster,
+            listingId: 'handoff_' + handoff._id,
             listingContext: { name: `${(handoff.cities||[]).join(' · ')} · ${handoff.splitTakerPct}/${100-handoff.splitTakerPct}`, photoUrl: (handoff.photoUrls&&handoff.photoUrls[0])||null } })} className="pg-btn pg-btn-primary" style={{width:'100%', height:52, fontSize:16}}>
             {Icon.msg ? Icon.msg(17,'#fff') : null} {lang==='pt'?'Contato':lang==='es'?'Contacto':'Contact'}
           </button>

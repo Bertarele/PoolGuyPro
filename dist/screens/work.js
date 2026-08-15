@@ -52,6 +52,19 @@ function WorkScreen({
   });
   const [vacTab, setVacTab] = React.useState('applied');
 
+  // Open a handoff straight to its full detail — reached via the listing-context
+  // card in chat (tapping it calls ctx.openListingById('handoff_<id>')).
+  React.useEffect(() => {
+    const id = ctx.pendingHandoffId;
+    if (!id) return;
+    const h = liveHandoffs.find(x => String(x._id) === String(id));
+    if (h) {
+      setSub('hiring');
+      setHandoffDetail(h);
+      ctx.clearPendingHandoff && ctx.clearPendingHandoff();
+    }
+  }, [ctx.pendingHandoffId, liveHandoffs]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sync sub-tab to URL hash
   React.useEffect(() => {
     try {
@@ -2769,6 +2782,7 @@ function WorkScreen({
         openChat && openChat({
           id: h.poster_id,
           name: h.poster,
+          listingId: 'handoff_' + h._id,
           listingContext: {
             name: `${(h.cities || []).join(' · ')} · ${h.splitTakerPct}/${100 - h.splitTakerPct}`,
             photoUrl: h.photoUrls && h.photoUrls[0] || null
@@ -3223,6 +3237,7 @@ function HandoffDetailPanel({
     onClick: () => onChat && onChat({
       id: handoff.poster_id,
       name: handoff.poster,
+      listingId: 'handoff_' + handoff._id,
       listingContext: {
         name: `${(handoff.cities || []).join(' · ')} · ${handoff.splitTakerPct}/${100 - handoff.splitTakerPct}`,
         photoUrl: handoff.photoUrls && handoff.photoUrls[0] || null

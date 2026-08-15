@@ -830,6 +830,7 @@ function App() {
       return jobId;
     } catch { return null; }
   });
+  const [pendingHandoffId, setPendingHandoffId] = React.useState(null);
   // Parse deep link from URL on startup (e.g. notification click when app was closed)
   const [pendingDeepLink, setPendingDeepLink] = React.useState(() => {
     try {
@@ -1476,6 +1477,9 @@ function App() {
       if (typeof id === 'string' && id.startsWith('qp_')) {
         setPendingQuickJobId(id.slice(3));
         switchTab('quick');
+      } else if (typeof id === 'string' && id.startsWith('handoff_')) {
+        setPendingHandoffId(id.slice(8));
+        switchTab('work');
       } else {
         setDeepLinkListingId(id);
         switchTab('market');
@@ -1484,6 +1488,8 @@ function App() {
     pendingQuickJobId,
     clearPendingQuickJob: () => setPendingQuickJobId(null),
     openQuickJobById: (id) => { setPendingQuickJobId(String(id)); switchTab('quick'); },
+    pendingHandoffId,
+    clearPendingHandoff: () => setPendingHandoffId(null),
     goTab:              switchTab,
     openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },
