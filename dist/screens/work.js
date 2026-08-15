@@ -3234,15 +3234,20 @@ function HandoffDetailPanel({
       fontSize: 14
     }
   }, lang === 'pt' ? 'Marcar como preenchido' : lang === 'es' ? 'Marcar como cubierto' : 'Mark as filled') : /*#__PURE__*/React.createElement("button", {
-    onClick: () => onChat && onChat({
-      id: handoff.poster_id,
-      name: handoff.poster,
-      listingId: 'handoff_' + handoff._id,
-      listingContext: {
-        name: `${(handoff.cities || []).join(' · ')} · ${handoff.splitTakerPct}/${100 - handoff.splitTakerPct}`,
-        photoUrl: handoff.photoUrls && handoff.photoUrls[0] || null
-      }
-    }),
+    onClick: () => {
+      // FullPage (z-index 1002) sits above the chat Sheet (1001) — opening
+      // chat without closing this first left it hidden underneath.
+      onClose && onClose();
+      onChat && onChat({
+        id: handoff.poster_id,
+        name: handoff.poster,
+        listingId: 'handoff_' + handoff._id,
+        listingContext: {
+          name: `${(handoff.cities || []).join(' · ')} · ${handoff.splitTakerPct}/${100 - handoff.splitTakerPct}`,
+          photoUrl: handoff.photoUrls && handoff.photoUrls[0] || null
+        }
+      });
+    },
     className: "pg-btn pg-btn-primary",
     style: {
       width: '100%',

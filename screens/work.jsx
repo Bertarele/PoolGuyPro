@@ -1453,9 +1453,14 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
             </button>
           )
         ) : (
-          <button onClick={()=>onChat && onChat({ id: handoff.poster_id, name: handoff.poster,
-            listingId: 'handoff_' + handoff._id,
-            listingContext: { name: `${(handoff.cities||[]).join(' · ')} · ${handoff.splitTakerPct}/${100-handoff.splitTakerPct}`, photoUrl: (handoff.photoUrls&&handoff.photoUrls[0])||null } })} className="pg-btn pg-btn-primary" style={{width:'100%', height:52, fontSize:16}}>
+          <button onClick={()=>{
+            // FullPage (z-index 1002) sits above the chat Sheet (1001) — opening
+            // chat without closing this first left it hidden underneath.
+            onClose && onClose();
+            onChat && onChat({ id: handoff.poster_id, name: handoff.poster,
+              listingId: 'handoff_' + handoff._id,
+              listingContext: { name: `${(handoff.cities||[]).join(' · ')} · ${handoff.splitTakerPct}/${100-handoff.splitTakerPct}`, photoUrl: (handoff.photoUrls&&handoff.photoUrls[0])||null } });
+          }} className="pg-btn pg-btn-primary" style={{width:'100%', height:52, fontSize:16}}>
             {Icon.msg ? Icon.msg(17,'#fff') : null} {lang==='pt'?'Contato':lang==='es'?'Contacto':'Contact'}
           </button>
         )}
