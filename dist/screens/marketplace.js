@@ -9974,8 +9974,18 @@ function MarketplaceScreen({
         inset: 0,
         zIndex: 200,
         overflowY: 'auto',
+        background: 'var(--pg-ink-50)',
+        animation: 'pg-fade-in 0.18s ease',
+        display: 'flex',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: '100%',
+        maxWidth: 560,
+        minHeight: '100%',
         background: 'var(--pg-bg)',
-        animation: 'pg-fade-in 0.18s ease'
+        boxShadow: '0 0 40px rgba(0,0,0,0.10)'
       }
     }, /*#__PURE__*/React.createElement(ViewListingSheet, {
       item: viewListing,
@@ -10018,7 +10028,7 @@ function MarketplaceScreen({
         });
         if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
       }
-    })), shareItem && /*#__PURE__*/React.createElement(ShareSheet, {
+    }))), shareItem && /*#__PURE__*/React.createElement(ShareSheet, {
       item: shareItem,
       lang: lang,
       onClose: () => setShareItem(null),
@@ -10046,8 +10056,18 @@ function MarketplaceScreen({
         position: 'fixed',
         inset: 0,
         zIndex: 200,
+        background: 'var(--pg-ink-50)',
+        animation: 'pg-fade-in 0.18s ease',
+        display: 'flex',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: '100%',
+        maxWidth: 560,
+        minHeight: '100%',
         background: 'var(--pg-bg)',
-        animation: 'pg-fade-in 0.18s ease'
+        boxShadow: '0 0 40px rgba(0,0,0,0.10)'
       }
     }, /*#__PURE__*/React.createElement(ListingDetail, {
       selected: selected,
@@ -10060,7 +10080,7 @@ function MarketplaceScreen({
         if (window.location.search.includes('listing=route-') || window.location.search.includes('listing=pool-')) window.history.back();
       },
       openPublicProfile: openPublicProfile
-    })), /*#__PURE__*/React.createElement(Sheet, {
+    }))), /*#__PURE__*/React.createElement(Sheet, {
       open: postOpen && !postMode,
       onClose: () => setPostOpen(false),
       height: "auto"

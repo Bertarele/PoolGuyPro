@@ -5259,7 +5259,8 @@ function MarketplaceScreen({ ctx }) {
 
       {/* ── OVERLAY SHEETS (same as mobile) ───────────────────── */}
       {viewListing && (
-        <div data-pg-listing-scroll style={{position:'fixed', inset:0, zIndex:200, overflowY:'auto', background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
+        <div data-pg-listing-scroll style={{position:'fixed', inset:0, zIndex:200, overflowY:'auto', background:'var(--pg-ink-50)', animation:'pg-fade-in 0.18s ease', display:'flex', justifyContent:'center'}}>
+        <div style={{width:'100%', maxWidth:560, minHeight:'100%', background:'var(--pg-bg)', boxShadow:'0 0 40px rgba(0,0,0,0.10)'}}>
           <ViewListingSheet
             item={viewListing} lang={lang}
             openChat={openChat} openPublicProfile={openPublicProfile}
@@ -5286,6 +5287,7 @@ function MarketplaceScreen({ ctx }) {
             onDeleted={(id)=>{ closeListing(); setSavedIds(prev=>{const s=new Set(prev);s.delete(id);return s;}); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}
           />
         </div>
+        </div>
       )}
       {shareItem && <ShareSheet item={shareItem} lang={lang} onClose={()=>setShareItem(null)} showToast={showToast}/>}
       <FullPage open={!!myPostDetail} onClose={()=>setMyPostDetail(null)}>
@@ -5295,10 +5297,12 @@ function MarketplaceScreen({ ctx }) {
           onDeleted={(id)=>{ setMyPostDetail(null); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}/>}
       </FullPage>
       {selected && (
-        <div style={{position:'fixed', inset:0, zIndex:200, background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
+        <div style={{position:'fixed', inset:0, zIndex:200, background:'var(--pg-ink-50)', animation:'pg-fade-in 0.18s ease', display:'flex', justifyContent:'center'}}>
+        <div style={{width:'100%', maxWidth:560, minHeight:'100%', background:'var(--pg-bg)', boxShadow:'0 0 40px rgba(0,0,0,0.10)'}}>
           <ListingDetail selected={selected} lang={lang} t={t} catLabels={catLabels} openChat={openChat}
             onClose={()=>{ setSelected(null); if(window.location.search.includes('listing=route-')||window.location.search.includes('listing=pool-')) window.history.back(); }}
             openPublicProfile={openPublicProfile}/>
+        </div>
         </div>
       )}
       <Sheet open={postOpen&&!postMode} onClose={()=>setPostOpen(false)} height="auto">

@@ -1557,15 +1557,31 @@ function QuickPoolsScreen({
   };
 
   // ── Sheet (mobile + desktop share the same) ───────────────────
+  // On desktop this used to stretch the detail (including the footer's
+  // Contato/Candidatar buttons) across the entire browser width — centering
+  // it into a phone-app-width column, same as the FullPage component does
+  // elsewhere, keeps it readable and the buttons a sane size instead of
+  // ballooning to fill a wide monitor.
   const jobDetailPanel = selected ? /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
       inset: 0,
       zIndex: 500,
-      background: 'var(--pg-bg)',
+      background: isDesktop ? 'var(--pg-ink-50)' : 'var(--pg-bg)',
       overflowY: 'auto',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '100%',
+      maxWidth: isDesktop ? 560 : '100%',
+      minHeight: '100%',
+      background: 'var(--pg-bg)',
+      display: 'flex',
+      flexDirection: 'column',
+      boxShadow: isDesktop ? '0 0 40px rgba(0,0,0,0.10)' : 'none'
     }
   }, /*#__PURE__*/React.createElement(JobDetailBoundary, {
     onClose: closeJobDetail
@@ -1596,7 +1612,7 @@ function QuickPoolsScreen({
     onMyJobAccepted: jobId => {
       setMyAcceptedJobIds(prev => new Set([...prev, String(jobId)]));
     }
-  }))) : null;
+  })))) : null;
 
   // ── Job list helpers (used by both desktop and mobile) ────────
   const now24 = Date.now();

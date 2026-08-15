@@ -945,32 +945,43 @@ function QuickPoolsScreen({ ctx }) {
   };
 
   // ── Sheet (mobile + desktop share the same) ───────────────────
+  // On desktop this used to stretch the detail (including the footer's
+  // Contato/Candidatar buttons) across the entire browser width — centering
+  // it into a phone-app-width column, same as the FullPage component does
+  // elsewhere, keeps it readable and the buttons a sane size instead of
+  // ballooning to fill a wide monitor.
   const jobDetailPanel = selected ? (
     <div style={{
       position:'fixed', inset:0, zIndex:500,
-      background:'var(--pg-bg)', overflowY:'auto',
-      display:'flex', flexDirection:'column',
+      background: isDesktop ? 'var(--pg-ink-50)' : 'var(--pg-bg)', overflowY:'auto',
+      display:'flex', flexDirection:'column', alignItems:'center',
     }}>
-      <JobDetailBoundary onClose={closeJobDetail}>
-        <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
-          applied={!!applied[selected.id]}
-          onApply={(sharePhone)=>applyToJob(selected.id, sharePhone)}
-          onUnlock={()=>openPaywall('quickpools')}
-          onChat={openChat}
-          onClose={closeJobDetail}
-          onDelete={deleteJob}
-          onComplete={finalizeJob}
-          openPublicProfile={openPublicProfile}
-          openEditPost={openEditPost}
-          onStatusChange={(status) => {
-            setJobs(prev => prev.map(j => String(j.id)===String(selected.id) ? {...j, status} : j));
-            setSelected(prev => prev ? {...prev, status} : prev);
-          }}
-          onMyJobAccepted={(jobId) => {
-            setMyAcceptedJobIds(prev => new Set([...prev, String(jobId)]));
-          }}
-        />
-      </JobDetailBoundary>
+      <div style={{
+        width:'100%', maxWidth: isDesktop ? 560 : '100%', minHeight:'100%',
+        background:'var(--pg-bg)', display:'flex', flexDirection:'column',
+        boxShadow: isDesktop ? '0 0 40px rgba(0,0,0,0.10)' : 'none',
+      }}>
+        <JobDetailBoundary onClose={closeJobDetail}>
+          <QuickPoolDetails job={selected} user={user} t={t} lang={lang}
+            applied={!!applied[selected.id]}
+            onApply={(sharePhone)=>applyToJob(selected.id, sharePhone)}
+            onUnlock={()=>openPaywall('quickpools')}
+            onChat={openChat}
+            onClose={closeJobDetail}
+            onDelete={deleteJob}
+            onComplete={finalizeJob}
+            openPublicProfile={openPublicProfile}
+            openEditPost={openEditPost}
+            onStatusChange={(status) => {
+              setJobs(prev => prev.map(j => String(j.id)===String(selected.id) ? {...j, status} : j));
+              setSelected(prev => prev ? {...prev, status} : prev);
+            }}
+            onMyJobAccepted={(jobId) => {
+              setMyAcceptedJobIds(prev => new Set([...prev, String(jobId)]));
+            }}
+          />
+        </JobDetailBoundary>
+      </div>
     </div>
   ) : null;
 
