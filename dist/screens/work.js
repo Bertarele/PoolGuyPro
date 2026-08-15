@@ -3298,7 +3298,7 @@ function HandoffDetailPanel({
       color: 'var(--pg-ink-700)',
       marginTop: 3
     }
-  }, "$", handoff.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool'))), handoff.photoUrls && handoff.photoUrls.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "$", handoff.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool'))), !(handoff.pools && handoff.pools.length > 0) && handoff.photoUrls && handoff.photoUrls.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
       overflow: 'hidden'
@@ -3338,7 +3338,16 @@ function HandoffDetailPanel({
       fontWeight: 800,
       color: '#D97706'
     }
-  }, "$", p.price, "/", lang === 'pt' ? 'piscina' : 'pool')), /*#__PURE__*/React.createElement("div", {
+  }, "$", p.price, "/", lang === 'pt' ? 'piscina' : 'pool')), p.photos && p.photos.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 10,
+      overflow: 'hidden',
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement(PhotoCarousel, {
+    urls: p.photos,
+    height: 160
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexWrap: 'wrap',
@@ -8833,7 +8842,8 @@ function blankPool() {
     dog: false,
     saltwater: false,
     gateCode: false,
-    doorman: false
+    doorman: false,
+    photos: []
   };
 }
 function poolsFromInitialValues(initialValues) {
@@ -8847,13 +8857,18 @@ function poolsFromInitialValues(initialValues) {
       dog: !!p.dog,
       saltwater: !!p.saltwater,
       gateCode: !!p.gateCode,
-      doorman: !!p.doorman
+      doorman: !!p.doorman,
+      photos: (p.photos || []).map(url => ({
+        url,
+        uploading: false,
+        error: null
+      }))
     }));
   }
-  // Legacy rows (pre-per-pool schema) — one shared set of days/price/type/extras
-  // applied to every city, so rebuild one pool entry per city.
+  // Legacy rows (pre-per-pool schema) — one shared set of days/price/type/extras/photos
+  // applied to every city, so rebuild one pool entry per city (photos land on the first).
   const cities = initialValues.cities && initialValues.cities.length > 0 ? initialValues.cities : [''];
-  return cities.map(city => ({
+  return cities.map((city, i) => ({
     city,
     days: initialValues.daysOfWeek || [],
     price: initialValues.pricePerPool != null ? String(initialValues.pricePerPool) : '',
@@ -8861,7 +8876,12 @@ function poolsFromInitialValues(initialValues) {
     dog: !!initialValues.extras?.dog,
     saltwater: !!initialValues.extras?.saltwater,
     gateCode: !!initialValues.extras?.gate_code,
-    doorman: !!initialValues.extras?.doorman
+    doorman: !!initialValues.extras?.doorman,
+    photos: i === 0 ? (initialValues.photoUrls || []).map(url => ({
+      url,
+      uploading: false,
+      error: null
+    })) : []
   }));
 }
 function PostPoolHandoffSheet({
@@ -8874,12 +8894,7 @@ function PostPoolHandoffSheet({
   const isEdit = !!initialValues;
   const [pools, setPools] = React.useState(() => poolsFromInitialValues(initialValues));
   const [description, setDescription] = React.useState(initialValues?.description || '');
-  const [photos, setPhotos] = React.useState((initialValues?.photoUrls || []).map(url => ({
-    url,
-    uploading: false,
-    error: null
-  }))); // [{url, uploading, error}]
-  const photoInputRef = React.useRef(null);
+  const photoInputRefs = React.useRef({});
   const addPool = () => {
     if (pools.length < 20) setPools(prev => [...prev, blankPool()]);
   };
@@ -8890,16 +8905,23 @@ function PostPoolHandoffSheet({
     ...p,
     ...patch
   } : p));
-  const handlePhotoPick = async e => {
+  const handlePhotoPick = async (poolIdx, e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
     if (!file || !window.sb) return;
-    const idx = photos.length;
-    setPhotos(prev => [...prev, {
-      url: URL.createObjectURL(file),
-      uploading: true,
-      error: null
-    }]);
+    const photoIdx = pools[poolIdx].photos.length;
+    setPools(prev => prev.map((p, j) => j === poolIdx ? {
+      ...p,
+      photos: [...p.photos, {
+        url: URL.createObjectURL(file),
+        uploading: true,
+        error: null
+      }]
+    } : p));
+    const setPhoto = patchFn => setPools(prev => prev.map((p, j) => j !== poolIdx ? p : {
+      ...p,
+      photos: p.photos.map((ph, k) => k === photoIdx ? patchFn(ph) : ph)
+    }));
     try {
       const img = new Image();
       const blob = await new Promise(resolve => {
@@ -8934,20 +8956,23 @@ function PostPoolHandoffSheet({
       const {
         data: pub
       } = window.sb.storage.from('post-images').getPublicUrl(path);
-      setPhotos(prev => prev.map((p, i) => i === idx ? {
+      setPhoto(() => ({
         url: pub.publicUrl,
         uploading: false,
         error: null
-      } : p));
+      }));
     } catch (err) {
-      setPhotos(prev => prev.map((p, i) => i === idx ? {
-        ...p,
+      setPhoto(ph => ({
+        ...ph,
         uploading: false,
         error: err.message || 'Error'
-      } : p));
+      }));
     }
   };
-  const removePhoto = i => setPhotos(prev => prev.filter((_, j) => j !== i));
+  const removePhoto = (poolIdx, i) => setPools(prev => prev.map((p, j) => j !== poolIdx ? p : {
+    ...p,
+    photos: p.photos.filter((_, k) => k !== i)
+  }));
   const headLbl = isEdit ? lang === 'pt' ? 'Editar repasse' : lang === 'es' ? 'Editar traspaso' : 'Edit handoff' : lang === 'pt' ? 'Repassar piscina' : lang === 'es' ? 'Traspasar piscina' : 'Hand off a pool';
   const countLbl = lang === 'pt' ? 'Quantas piscinas' : lang === 'es' ? 'Cuántas piscinas' : 'How many pools';
   const descLbl = lang === 'pt' ? 'Detalhes gerais (opcional)' : lang === 'es' ? 'Detalles generales (opcional)' : 'General details (optional)';
@@ -8979,7 +9004,7 @@ function PostPoolHandoffSheet({
   const toggleDay = (i, id) => updatePool(i, {
     days: pools[i].days.includes(id) ? pools[i].days.filter(d => d !== id) : [...pools[i].days, id]
   });
-  const isValid = pools.length > 0 && pools.every(p => p.city && p.days.length > 0) && !photos.some(p => p.uploading);
+  const isValid = pools.length > 0 && pools.every(p => p.city && p.days.length > 0) && !pools.some(p => p.photos.some(ph => ph.uploading));
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -9258,16 +9283,16 @@ function PostPoolHandoffSheet({
     setOn: v => updatePool(i, {
       doorman: v
     })
-  })))))), /*#__PURE__*/React.createElement(HiringFormSection, {
-    label: lang === 'pt' ? 'Fotos da piscina (opcional)' : lang === 'es' ? 'Fotos de la piscina (opcional)' : 'Pool photos (optional)'
+  })))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Fotos desta piscina (opcional)' : lang === 'es' ? 'Fotos de esta piscina (opcional)' : 'Photos of this pool (optional)'
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 8,
       flexWrap: 'wrap'
     }
-  }, photos.map((p, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
+  }, p.photos.map((ph, k) => /*#__PURE__*/React.createElement("div", {
+    key: k,
     style: {
       position: 'relative',
       width: 64,
@@ -9275,7 +9300,7 @@ function PostPoolHandoffSheet({
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: p.url,
+    src: ph.url,
     alt: "",
     style: {
       width: 64,
@@ -9283,9 +9308,9 @@ function PostPoolHandoffSheet({
       objectFit: 'cover',
       borderRadius: 10,
       border: '1.5px solid var(--pg-ink-200)',
-      opacity: p.uploading ? 0.5 : 1
+      opacity: ph.uploading ? 0.5 : 1
     }
-  }), p.uploading && /*#__PURE__*/React.createElement("div", {
+  }), ph.uploading && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       inset: 0,
@@ -9303,7 +9328,7 @@ function PostPoolHandoffSheet({
       animation: 'pgSpin .7s linear infinite'
     }
   })), /*#__PURE__*/React.createElement("button", {
-    onClick: () => removePhoto(i),
+    onClick: () => removePhoto(i, k),
     style: {
       position: 'absolute',
       top: -6,
@@ -9323,8 +9348,8 @@ function PostPoolHandoffSheet({
       fontWeight: 700,
       lineHeight: '20px'
     }
-  }, "\xD7"))), photos.length < 6 && /*#__PURE__*/React.createElement("button", {
-    onClick: () => photoInputRef.current?.click(),
+  }, "\xD7"))), p.photos.length < 6 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => photoInputRefs.current[i]?.click(),
     style: {
       width: 64,
       height: 64,
@@ -9356,14 +9381,14 @@ function PostPoolHandoffSheet({
     x2: "19",
     y2: "12"
   })))), /*#__PURE__*/React.createElement("input", {
-    ref: photoInputRef,
+    ref: el => photoInputRefs.current[i] = el,
     type: "file",
     accept: "image/*",
-    onChange: handlePhotoPick,
+    onChange: e => handlePhotoPick(i, e),
     style: {
       display: 'none'
     }
-  })), /*#__PURE__*/React.createElement(HiringFormSection, {
+  })))), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: descLbl
   }, /*#__PURE__*/React.createElement("textarea", {
     className: "pg-field",
@@ -9402,14 +9427,15 @@ function PostPoolHandoffSheet({
         dog: p.dog,
         saltwater: p.saltwater,
         gateCode: p.gateCode,
-        doorman: p.doorman
+        doorman: p.doorman,
+        photos: p.photos.filter(ph => !ph.uploading && !ph.error).map(ph => ph.url)
       })),
       poolsCount: pools.length,
       splitTakerPct: 70,
       cities: pools.map(p => p.city),
       daysOfWeek: [...new Set(pools.flatMap(p => p.days))],
       description,
-      photoUrls: photos.filter(p => !p.uploading && !p.error).map(p => p.url)
+      photoUrls: pools.flatMap(p => p.photos.filter(ph => !ph.uploading && !ph.error).map(ph => ph.url))
     }),
     disabled: !isValid,
     className: "pg-btn pg-btn-primary",

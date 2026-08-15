@@ -1496,7 +1496,7 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
           </div>
         </div>
 
-        {handoff.photoUrls && handoff.photoUrls.length > 0 && (
+        {!(handoff.pools && handoff.pools.length > 0) && handoff.photoUrls && handoff.photoUrls.length > 0 && (
           <div style={{borderRadius:14, overflow:'hidden'}}>
             <PhotoCarousel urls={handoff.photoUrls} height={200}/>
           </div>
@@ -1514,6 +1514,11 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
                     <div style={{fontSize:13, fontWeight:800, color:'#D97706'}}>${p.price}/{lang==='pt'?'piscina':'pool'}</div>
                   )}
                 </div>
+                {p.photos && p.photos.length > 0 && (
+                  <div style={{borderRadius:10, overflow:'hidden', marginBottom:8}}>
+                    <PhotoCarousel urls={p.photos} height={160}/>
+                  </div>
+                )}
                 <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
                   <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
                     {(p.days||[]).map(d=>dayLbls[d]||d).join(', ')}
@@ -4274,7 +4279,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
 // with other companies/route owners too since it's not exclusive.
 // One entry per pool: { city, days:[...], price:'', poolType, dog, saltwater, gateCode, doorman }
 function blankPool() {
-  return { city:'', days:[], price:'', poolType:'residential', dog:false, saltwater:false, gateCode:false, doorman:false };
+  return { city:'', days:[], price:'', poolType:'residential', dog:false, saltwater:false, gateCode:false, doorman:false, photos:[] };
 }
 function poolsFromInitialValues(initialValues) {
   if (!initialValues) return [blankPool()];
@@ -4283,17 +4288,19 @@ function poolsFromInitialValues(initialValues) {
       city: p.city || '', days: p.days || [], price: p.price != null ? String(p.price) : '',
       poolType: p.poolType || 'residential', dog: !!p.dog, saltwater: !!p.saltwater,
       gateCode: !!p.gateCode, doorman: !!p.doorman,
+      photos: (p.photos || []).map(url => ({ url, uploading:false, error:null })),
     }));
   }
-  // Legacy rows (pre-per-pool schema) — one shared set of days/price/type/extras
-  // applied to every city, so rebuild one pool entry per city.
+  // Legacy rows (pre-per-pool schema) — one shared set of days/price/type/extras/photos
+  // applied to every city, so rebuild one pool entry per city (photos land on the first).
   const cities = initialValues.cities && initialValues.cities.length > 0 ? initialValues.cities : [''];
-  return cities.map(city => ({
+  return cities.map((city, i) => ({
     city, days: initialValues.daysOfWeek || [],
     price: initialValues.pricePerPool != null ? String(initialValues.pricePerPool) : '',
     poolType: initialValues.poolType || 'residential',
     dog: !!initialValues.extras?.dog, saltwater: !!initialValues.extras?.saltwater,
     gateCode: !!initialValues.extras?.gate_code, doorman: !!initialValues.extras?.doorman,
+    photos: i === 0 ? (initialValues.photoUrls || []).map(url => ({ url, uploading:false, error:null })) : [],
   }));
 }
 
@@ -4302,19 +4309,19 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
   const isEdit = !!initialValues;
   const [pools,        setPools]       = React.useState(() => poolsFromInitialValues(initialValues));
   const [description,  setDescription] = React.useState(initialValues?.description || '');
-  const [photos,       setPhotos]      = React.useState((initialValues?.photoUrls || []).map(url => ({ url, uploading:false, error:null }))); // [{url, uploading, error}]
-  const photoInputRef = React.useRef(null);
+  const photoInputRefs = React.useRef({});
 
   const addPool = () => { if (pools.length < 20) setPools(prev => [...prev, blankPool()]); };
   const removePool = () => { if (pools.length > 1) setPools(prev => prev.slice(0, -1)); };
   const updatePool = (i, patch) => setPools(prev => prev.map((p, j) => j===i ? { ...p, ...patch } : p));
 
-  const handlePhotoPick = async (e) => {
+  const handlePhotoPick = async (poolIdx, e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
     if (!file || !window.sb) return;
-    const idx = photos.length;
-    setPhotos(prev => [...prev, { url: URL.createObjectURL(file), uploading: true, error: null }]);
+    const photoIdx = pools[poolIdx].photos.length;
+    setPools(prev => prev.map((p, j) => j===poolIdx ? { ...p, photos: [...p.photos, { url: URL.createObjectURL(file), uploading: true, error: null }] } : p));
+    const setPhoto = (patchFn) => setPools(prev => prev.map((p, j) => j!==poolIdx ? p : { ...p, photos: p.photos.map((ph,k) => k===photoIdx ? patchFn(ph) : ph) }));
     try {
       const img = new Image();
       const blob = await new Promise((resolve) => {
@@ -4332,12 +4339,12 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
       const { error: upErr } = await window.sb.storage.from('post-images').upload(path, blob, { contentType:'image/jpeg' });
       if (upErr) throw upErr;
       const { data: pub } = window.sb.storage.from('post-images').getPublicUrl(path);
-      setPhotos(prev => prev.map((p,i) => i===idx ? { url: pub.publicUrl, uploading:false, error:null } : p));
+      setPhoto(() => ({ url: pub.publicUrl, uploading:false, error:null }));
     } catch (err) {
-      setPhotos(prev => prev.map((p,i) => i===idx ? { ...p, uploading:false, error:err.message||'Error' } : p));
+      setPhoto(ph => ({ ...ph, uploading:false, error:err.message||'Error' }));
     }
   };
-  const removePhoto = (i) => setPhotos(prev => prev.filter((_,j)=>j!==i));
+  const removePhoto = (poolIdx, i) => setPools(prev => prev.map((p, j) => j!==poolIdx ? p : { ...p, photos: p.photos.filter((_,k)=>k!==i) }));
 
   const headLbl  = isEdit ? (lang==='pt'?'Editar repasse':lang==='es'?'Editar traspaso':'Edit handoff') : (lang==='pt'?'Repassar piscina':lang==='es'?'Traspasar piscina':'Hand off a pool');
   const countLbl = lang==='pt'?'Quantas piscinas':lang==='es'?'Cuántas piscinas':'How many pools';
@@ -4357,7 +4364,7 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
   ];
 
   const toggleDay = (i, id) => updatePool(i, { days: pools[i].days.includes(id) ? pools[i].days.filter(d=>d!==id) : [...pools[i].days, id] });
-  const isValid = pools.length > 0 && pools.every(p => p.city && p.days.length > 0) && !photos.some(p=>p.uploading);
+  const isValid = pools.length > 0 && pools.every(p => p.city && p.days.length > 0) && !pools.some(p => p.photos.some(ph=>ph.uploading));
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
@@ -4463,39 +4470,39 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
                 )}
               </div>
             </HiringFormSection>
+
+            <HiringFormSection label={lang==='pt'?'Fotos desta piscina (opcional)':lang==='es'?'Fotos de esta piscina (opcional)':'Photos of this pool (optional)'}>
+              <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                {p.photos.map((ph,k) => (
+                  <div key={k} style={{position:'relative', width:64, height:64, flexShrink:0}}>
+                    <img src={ph.url} alt="" style={{width:64, height:64, objectFit:'cover', borderRadius:10,
+                      border:'1.5px solid var(--pg-ink-200)', opacity:ph.uploading?0.5:1}}/>
+                    {ph.uploading && (
+                      <div style={{position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                        <span style={{width:16, height:16, borderRadius:'50%', border:'2px solid rgba(0,0,0,0.15)', borderTopColor:'var(--pg-blue-500)', animation:'pgSpin .7s linear infinite'}}/>
+                      </div>
+                    )}
+                    <button onClick={()=>removePhoto(i, k)} style={{
+                      position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', border:'none',
+                      background:'#EF4444', color:'#fff', fontSize:12, cursor:'pointer', padding:0,
+                      display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, lineHeight:'20px',
+                    }}>×</button>
+                  </div>
+                ))}
+                {p.photos.length < 6 && (
+                  <button onClick={()=>photoInputRefs.current[i]?.click()} style={{
+                    width:64, height:64, borderRadius:10, border:'1.5px dashed var(--pg-ink-300)',
+                    background:'var(--pg-ink-50)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                    flexShrink:0,
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                )}
+              </div>
+              <input ref={el=>photoInputRefs.current[i]=el} type="file" accept="image/*" onChange={e=>handlePhotoPick(i, e)} style={{display:'none'}}/>
+            </HiringFormSection>
           </div>
         ))}
-
-        <HiringFormSection label={lang==='pt'?'Fotos da piscina (opcional)':lang==='es'?'Fotos de la piscina (opcional)':'Pool photos (optional)'}>
-          <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-            {photos.map((p,i) => (
-              <div key={i} style={{position:'relative', width:64, height:64, flexShrink:0}}>
-                <img src={p.url} alt="" style={{width:64, height:64, objectFit:'cover', borderRadius:10,
-                  border:'1.5px solid var(--pg-ink-200)', opacity:p.uploading?0.5:1}}/>
-                {p.uploading && (
-                  <div style={{position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                    <span style={{width:16, height:16, borderRadius:'50%', border:'2px solid rgba(0,0,0,0.15)', borderTopColor:'var(--pg-blue-500)', animation:'pgSpin .7s linear infinite'}}/>
-                  </div>
-                )}
-                <button onClick={()=>removePhoto(i)} style={{
-                  position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', border:'none',
-                  background:'#EF4444', color:'#fff', fontSize:12, cursor:'pointer', padding:0,
-                  display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, lineHeight:'20px',
-                }}>×</button>
-              </div>
-            ))}
-            {photos.length < 6 && (
-              <button onClick={()=>photoInputRef.current?.click()} style={{
-                width:64, height:64, borderRadius:10, border:'1.5px dashed var(--pg-ink-300)',
-                background:'var(--pg-ink-50)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-                flexShrink:0,
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              </button>
-            )}
-          </div>
-          <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoPick} style={{display:'none'}}/>
-        </HiringFormSection>
 
         <HiringFormSection label={descLbl}>
           <textarea className="pg-field" value={description} onChange={e=>setDescription(e.target.value)}
@@ -4515,12 +4522,13 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
           pools: pools.map(p => ({
             city: p.city, days: p.days, price: p.price ? parseInt(p.price) : null,
             poolType: p.poolType, dog: p.dog, saltwater: p.saltwater, gateCode: p.gateCode, doorman: p.doorman,
+            photos: p.photos.filter(ph=>!ph.uploading && !ph.error).map(ph=>ph.url),
           })),
           poolsCount: pools.length, splitTakerPct: 70,
           cities: pools.map(p => p.city),
           daysOfWeek: [...new Set(pools.flatMap(p => p.days))],
           description,
-          photoUrls: photos.filter(p=>!p.uploading && !p.error).map(p=>p.url),
+          photoUrls: pools.flatMap(p => p.photos.filter(ph=>!ph.uploading && !ph.error).map(ph=>ph.url)),
         })} disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45,
             background: isValid ? 'linear-gradient(135deg,#F59E0B,#D97706)' : undefined}}>
