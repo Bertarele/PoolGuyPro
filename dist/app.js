@@ -1421,6 +1421,7 @@ function App() {
   const [vacSheetOpen, setVacSheetOpen] = React.useState(false);
   const [editingVac, setEditingVac] = React.useState(null); // vac object being edited
   const [hiringSheetOpen, setHiringSheetOpen] = React.useState(false);
+  const [handoffSheetOpen, setHandoffSheetOpen] = React.useState(false);
   const [techSheetOpen, setTechSheetOpen] = React.useState(false);
   const [dayPickerVac, setDayPickerVac] = React.useState(null);
   const [scheduleApp, setScheduleApp] = React.useState(null);
@@ -1491,6 +1492,7 @@ function App() {
   const [liveTechs, setLiveTechs] = React.useState([]);
   const [liveVacations, setLiveVacations] = React.useState([]);
   const [liveMarket, setLiveMarket] = React.useState([]);
+  const [liveHandoffs, setLiveHandoffs] = React.useState([]); // "Repasse de Piscina" postings
   const [liveApplications, setLiveApplications] = React.useState([]); // current user's job applications
   // { [job_id]: { total, pending, withInterview } } — applicant counts for jobs the current user owns
   const [jobApplicantCounts, setJobApplicantCounts] = React.useState({});
@@ -1605,8 +1607,24 @@ function App() {
     window.sb.rpc('cleanup_expired_marketplace').then(() => {}).catch(() => {});
 
     // Data fetch — runs AFTER auth is ready (authReady gate above)
+    const normHandoff = r => ({
+      _id: r.id,
+      _live: true,
+      poster_id: r.poster_id,
+      poster: r.poster_name || 'Pool Guy',
+      poster_phone: r.poster_phone,
+      city: r.city,
+      daysOfWeek: r.days_of_week || [],
+      poolsCount: r.pools_count || 1,
+      splitTakerPct: r.split_taker_pct || 70,
+      poolType: r.pool_type || 'residential',
+      extras: r.extras || {},
+      description: r.description || '',
+      status: r.status || 'open',
+      createdAt: r.created_at
+    });
     const doFetch = async () => {
-      const [j, tc, v, m] = await Promise.all([window.sb.from('jobs').select('*').order('created_at', {
+      const [j, tc, v, m, ho] = await Promise.all([window.sb.from('jobs').select('*').order('created_at', {
         ascending: false
       }), window.sb.from('techs_public').select('*').order('created_at', {
         ascending: false
@@ -1614,7 +1632,10 @@ function App() {
         ascending: false
       }), window.sb.from('marketplace').select('*').order('created_at', {
         ascending: false
+      }), window.sb.from('pool_handoffs').select('*').eq('status', 'open').order('created_at', {
+        ascending: false
       })]);
+      if (ho.data) setLiveHandoffs(ho.data.map(normHandoff));
       if (j.data) setLiveJobs(j.data.map(normJob));
       if (tc.data) {
         const techAuthorIds = tc.data.map(r => r.author_id).filter(Boolean);
@@ -1845,6 +1866,30 @@ function App() {
       author: r.author,
       author_id: r.author_id || null,
       hiredAt: r.hired_at || null
+    })));
+  }, []);
+  const loadLiveHandoffs = React.useCallback(async () => {
+    if (!window.sb) return;
+    const {
+      data
+    } = await window.sb.from('pool_handoffs').select('*').eq('status', 'open').order('created_at', {
+      ascending: false
+    });
+    if (data) setLiveHandoffs(data.map(r => ({
+      _id: r.id,
+      _live: true,
+      poster_id: r.poster_id,
+      poster: r.poster_name || 'Pool Guy',
+      poster_phone: r.poster_phone,
+      city: r.city,
+      daysOfWeek: r.days_of_week || [],
+      poolsCount: r.pools_count || 1,
+      splitTakerPct: r.split_taker_pct || 70,
+      poolType: r.pool_type || 'residential',
+      extras: r.extras || {},
+      description: r.description || '',
+      status: r.status || 'open',
+      createdAt: r.created_at
     })));
   }, []);
 
@@ -2101,6 +2146,7 @@ function App() {
       setVacSheetOpen(true);
     },
     openHiringSheet: () => setHiringSheetOpen(true),
+    openHandoffSheet: () => setHandoffSheetOpen(true),
     openTechSheet: () => setTechSheetOpen(true),
     openDayPicker: vac => setDayPickerVac(vac),
     openSchedule: app => setScheduleApp(app),
@@ -2155,6 +2201,8 @@ function App() {
     liveTechs,
     liveVacations,
     liveMarket,
+    liveHandoffs,
+    loadLiveHandoffs,
     liveApplications,
     jobApplicantCounts,
     refreshLiveApplications: () => loadLiveApplications(user?.uid),
@@ -2840,6 +2888,39 @@ function App() {
       setHiringSheetOpen(false);
       if (data) dbWrite('jobs', data).then(() => loadLiveJobs());
       showToast(lang === 'pt' ? 'Vaga publicada ✓' : lang === 'es' ? 'Empleo publicado ✓' : 'Job posted ✓');
+    }
+  })), /*#__PURE__*/React.createElement(FullPage, {
+    open: handoffSheetOpen,
+    onClose: () => setHandoffSheetOpen(false)
+  }, /*#__PURE__*/React.createElement(PostPoolHandoffSheet, {
+    lang: lang,
+    onClose: () => setHandoffSheetOpen(false),
+    onSubmit: async data => {
+      setHandoffSheetOpen(false);
+      if (!data || !window.sb || !user?.uid) return;
+      if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(() => {});
+      const {
+        error
+      } = await window.sb.from('pool_handoffs').insert({
+        poster_id: user.uid,
+        poster_name: user.name || user.email || 'Pool Guy',
+        poster_phone: user.phone || null,
+        city: data.city,
+        days_of_week: data.daysOfWeek,
+        pools_count: data.poolsCount,
+        split_taker_pct: data.splitTakerPct,
+        pool_type: data.poolType,
+        extras: data.extras,
+        description: data.description || null,
+        status: 'open'
+      });
+      if (error) {
+        console.error('[Handoff] insert failed', error);
+        showToast('❌ ' + (error.message || 'Error'));
+        return;
+      }
+      loadLiveHandoffs();
+      showToast(lang === 'pt' ? 'Repasse publicado ✓' : lang === 'es' ? 'Traspaso publicado ✓' : 'Handoff posted ✓');
     }
   })), /*#__PURE__*/React.createElement(FullPage, {
     open: techSheetOpen,

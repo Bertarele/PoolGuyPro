@@ -1,14 +1,17 @@
 ﻿// work.jsx — Hiring / Technicians (matching layout) / Vacation with month+weekday+region
 
 function WorkScreen({ ctx }) {
-  const { lang, openChat, goTab, openPostMenu, openApplicants, openJobDetail,
+  const { lang, user: ctxUser, openChat, goTab, openPostMenu, openApplicants, openJobDetail,
           openHiringAppDetail, openApplyJob,
-          openVacSheet, openEditVacSheet, openHiringSheet, openTechSheet, openDayPicker, openSchedule,
+          openVacSheet, openEditVacSheet, openHiringSheet, openTechSheet, openHandoffSheet,
+          openDayPicker, openSchedule,
           openPublicProfile, showToast, openRating,
           removeJob, removeTech, removeVacation,
-          liveJobs=[], liveTechs=[], liveVacations=[],
+          liveJobs=[], liveTechs=[], liveVacations=[], liveHandoffs=[], loadLiveHandoffs,
           liveApplications=[], jobApplicantCounts={},
           hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, isDesktop=false } = ctx;
+  const [postPickerOpen, setPostPickerOpen] = React.useState(false);
+  const [handoffDetail,  setHandoffDetail]  = React.useState(null);
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState(() => {
     try {
@@ -71,7 +74,7 @@ function WorkScreen({ ctx }) {
 
   const handlePostBtn = () => {
     if (sub === 'vac')         openVacSheet();
-    else if (sub === 'hiring') openHiringSheet();
+    else if (sub === 'hiring') setPostPickerOpen(true);
     else if (sub === 'techs')  openTechSheet();
   };
 
@@ -1212,6 +1215,52 @@ function WorkScreen({ ctx }) {
         );
       })()}
 
+      {/* ── Repasse de Piscina — visually distinct from regular job posts ── */}
+      {sub === 'hiring' && liveHandoffs.length > 0 && (
+        <div style={{padding:'14px 18px 0'}}>
+          <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:10}}>
+            <div style={{width:3, height:16, borderRadius:2, background:'#F59E0B', flexShrink:0}}/>
+            <span style={{fontSize:11.5, fontWeight:700, letterSpacing:'0.06em', color:'var(--pg-ink-700)', textTransform:'uppercase'}}>
+              {lang==='pt'?'Repasses de piscina':lang==='es'?'Traspasos de piscina':'Pool handoffs'}
+            </span>
+          </div>
+          <div style={{display:'flex', flexDirection:'column', gap:10}}>
+            {liveHandoffs.map(h => {
+              const isOwn = ctxUser?.uid && h.poster_id === ctxUser.uid;
+              const dayLbls = { mon:'Seg',tue:'Ter',wed:'Qua',thu:'Qui',fri:'Sex',sat:'Sáb',sun:'Dom' };
+              return (
+                <div key={h._id} onClick={()=>setHandoffDetail(h)} style={{
+                  borderRadius:14, cursor:'pointer', padding:'13px 15px',
+                  background:'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(245,158,11,0.02))',
+                  border:'1.5px solid rgba(245,158,11,0.35)',
+                }}>
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                    <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999,
+                      background:'#F59E0B', color:'#fff', letterSpacing:'0.04em'}}>
+                      {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
+                    </span>
+                    <span style={{fontSize:14, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>
+                      {h.splitTakerPct}/{100-h.splitTakerPct}
+                    </span>
+                  </div>
+                  <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{h.city}</div>
+                  <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginTop:5}}>
+                    <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>
+                      {h.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
+                    </span>
+                    <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>·</span>
+                    <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>
+                      {h.poolsCount} {h.poolsCount>1?(lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'):(lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}
+                    </span>
+                    {isOwn && <span style={{fontSize:11, color:'var(--pg-blue-600)', fontWeight:700}}>· {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Content panels ── */}
       <div style={{padding:'14px 18px 0'}}>
         {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts}/>}
@@ -1227,6 +1276,179 @@ function WorkScreen({ ctx }) {
 
     </div>
     {FabBtn}
+
+    {/* "+" picker on Vagas: regular job vs pool handoff */}
+    <Sheet open={postPickerOpen} onClose={()=>setPostPickerOpen(false)} height="auto">
+      <div style={{padding:'8px 18px calc(18px + env(safe-area-inset-bottom, 0px))', display:'flex', flexDirection:'column', gap:10}}>
+        <div style={{fontSize:15, fontWeight:700, textAlign:'center', margin:'6px 0 4px', color:'var(--pg-ink-900)'}}>
+          {lang==='pt'?'O que você quer publicar?':lang==='es'?'¿Qué querés publicar?':'What do you want to post?'}
+        </div>
+        <button onClick={()=>{ setPostPickerOpen(false); openHiringSheet(); }} style={{
+          display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:14,
+          border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)', cursor:'pointer', textAlign:'left',
+        }}>
+          <div style={{width:40, height:40, borderRadius:11, flexShrink:0, background:'var(--pg-blue-50)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+            {Icon.briefcase(19,'var(--pg-blue-600)')}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{lang==='pt'?'Vaga de emprego':lang==='es'?'Empleo':'Job posting'}</div>
+            <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>{lang==='pt'?'Contratação fixa, pagamento em $':lang==='es'?'Contratación fija, pago en $':'Fixed hire, paid in $'}</div>
+          </div>
+        </button>
+        <button onClick={()=>{ setPostPickerOpen(false); openHandoffSheet && openHandoffSheet(); }} style={{
+          display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:14,
+          border:'1.5px solid rgba(245,158,11,0.4)', background:'rgba(245,158,11,0.06)', cursor:'pointer', textAlign:'left',
+        }}>
+          <div style={{width:40, height:40, borderRadius:11, flexShrink:0, background:'rgba(245,158,11,0.15)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+            {Icon.pool(19,'#D97706')}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{lang==='pt'?'Repasse de piscina':lang==='es'?'Traspaso de piscina':'Pool handoff'}</div>
+            <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>{lang==='pt'?'Repasse 1+ piscinas da sua rota, pagamento em split':lang==='es'?'Traspasa piscinas de tu ruta, pago en split':'Hand off route pools, paid as a split'}</div>
+          </div>
+        </button>
+      </div>
+    </Sheet>
+
+    {/* Handoff detail / apply / accept */}
+    <Sheet open={!!handoffDetail} onClose={()=>setHandoffDetail(null)} height="auto">
+      {handoffDetail && (
+        <HandoffDetailPanel handoff={handoffDetail} user={ctxUser} lang={lang} showToast={showToast}
+          onClose={()=>setHandoffDetail(null)}
+          onChanged={()=>{ loadLiveHandoffs && loadLiveHandoffs(); }}/>
+      )}
+    </Sheet>
+    </div>
+  );
+}
+
+function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChanged }) {
+  const isOwn = user?.uid && handoff.poster_id === user.uid;
+  const [applicants, setApplicants] = React.useState([]);
+  const [loading,    setLoading]    = React.useState(false);
+  const [myApp,      setMyApp]      = React.useState(null);
+  const [busy,       setBusy]       = React.useState(false);
+  const dayLbls = { mon:'Segunda',tue:'Terça',wed:'Quarta',thu:'Quinta',fri:'Sexta',sat:'Sábado',sun:'Domingo' };
+
+  React.useEffect(() => {
+    if (!window.sb || !user?.uid) return;
+    if (isOwn) {
+      setLoading(true);
+      window.sb.from('pool_handoff_applications').select('*').eq('handoff_id', handoff._id)
+        .neq('status', 'withdrawn').order('created_at', { ascending: true })
+        .then(({ data }) => { setApplicants(data || []); setLoading(false); }).catch(()=>setLoading(false));
+    } else {
+      window.sb.from('pool_handoff_applications').select('*').eq('handoff_id', handoff._id).eq('applicant_id', user.uid)
+        .then(({ data }) => { if (data && data[0]) setMyApp(data[0]); }).catch(()=>{});
+    }
+  }, [handoff._id, isOwn, user?.uid]);
+
+  const apply = async () => {
+    if (!window.sb || !user?.uid || busy) return;
+    setBusy(true);
+    const { error } = await window.sb.from('pool_handoff_applications').insert({
+      handoff_id: handoff._id, applicant_id: user.uid,
+      applicant_name: user.name || user.email || 'Pool Guy', applicant_phone: user.phone || null,
+      status: 'pending',
+    });
+    setBusy(false);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    setMyApp({ status: 'pending' });
+    showToast && showToast(lang==='pt'?'✓ Candidatura enviada':lang==='es'?'✓ Solicitud enviada':'✓ Application sent');
+  };
+
+  const accept = async (app) => {
+    if (!window.sb || busy) return;
+    setBusy(true);
+    await window.sb.from('pool_handoff_applications').update({ status:'accepted' }).eq('id', app.id);
+    await window.sb.from('pool_handoff_applications').update({ status:'rejected' }).eq('handoff_id', handoff._id).neq('id', app.id);
+    await window.sb.from('pool_handoffs').update({ status:'filled' }).eq('id', handoff._id);
+    setBusy(false);
+    showToast && showToast(lang==='pt'?'✓ Repasse confirmado':lang==='es'?'✓ Traspaso confirmado':'✓ Handoff confirmed');
+    onChanged && onChanged();
+    onClose && onClose();
+  };
+
+  return (
+    <div style={{padding:'8px 18px calc(18px + env(safe-area-inset-bottom, 0px))', display:'flex', flexDirection:'column', gap:14}}>
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+        <div>
+          <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999, background:'#F59E0B', color:'#fff', letterSpacing:'0.04em'}}>
+            {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
+          </span>
+          <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', marginTop:6}}>{handoff.city}</div>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <div style={{fontSize:22, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>{handoff.splitTakerPct}/{100-handoff.splitTakerPct}</div>
+          <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600}}>{lang==='pt'?'seu / repassador':lang==='es'?'tuyo / traspasador':'you / poster'}</div>
+        </div>
+      </div>
+
+      <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+        <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+          {handoff.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
+        </span>
+        <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+          {handoff.poolsCount} {handoff.poolsCount>1?(lang==='pt'?'piscinas':'pools'):(lang==='pt'?'piscina':'pool')}
+        </span>
+        <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+          {handoff.poolType==='condo'?(lang==='pt'?'Condomínio':'Condo'):(lang==='pt'?'Casa':'House')}
+        </span>
+        {handoff.extras?.dog && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🐕 {lang==='pt'?'Cachorro':'Dog'}</span>}
+        {handoff.extras?.saltwater && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🧂 {lang==='pt'?'Sal':'Salt'}</span>}
+      </div>
+
+      {handoff.description && (
+        <p style={{margin:0, fontSize:13.5, lineHeight:1.55, color:'var(--pg-ink-700)'}}>{handoff.description}</p>
+      )}
+
+      <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:12, background:'var(--pg-ink-50)'}}>
+        <Avatar name={handoff.poster} size={36}/>
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{handoff.poster}</div>
+          <div style={{fontSize:11, color:'var(--pg-ink-500)'}}>{lang==='pt'?'Dono da rota':lang==='es'?'Dueño de la ruta':'Route owner'}</div>
+        </div>
+      </div>
+
+      {isOwn ? (
+        <div>
+          <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.06em', color:'var(--pg-ink-500)', textTransform:'uppercase', marginBottom:8}}>
+            {lang==='pt'?'Candidatos':lang==='es'?'Candidatos':'Applicants'} {applicants.length>0 && `(${applicants.length})`}
+          </div>
+          {loading ? (
+            <div style={{fontSize:12.5, color:'var(--pg-ink-400)', textAlign:'center', padding:'10px 0'}}>{lang==='pt'?'Carregando…':'Loading…'}</div>
+          ) : applicants.length === 0 ? (
+            <div style={{fontSize:12.5, color:'var(--pg-ink-400)', textAlign:'center', padding:'10px 0'}}>{lang==='pt'?'Nenhum candidato ainda':lang==='es'?'Sin candidatos aún':'No applicants yet'}</div>
+          ) : (
+            <div style={{display:'flex', flexDirection:'column', gap:8}}>
+              {applicants.map(app => (
+                <div key={app.id} style={{display:'flex', alignItems:'center', gap:10, padding:'9px 10px', borderRadius:10, border:'1px solid var(--pg-ink-200)'}}>
+                  <Avatar name={app.applicant_name} size={32}/>
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{app.applicant_name}</div>
+                    {app.status==='accepted' && <div style={{fontSize:11, color:'#16A34A', fontWeight:700}}>✓ {lang==='pt'?'Aceito':'Accepted'}</div>}
+                  </div>
+                  {handoff.status==='open' && app.status==='pending' && (
+                    <button onClick={()=>accept(app)} disabled={busy} style={{
+                      height:32, padding:'0 14px', borderRadius:9, border:'none', cursor:'pointer',
+                      background:'#16A34A', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:700,
+                    }}>{lang==='pt'?'Aceitar':'Accept'}</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : myApp ? (
+        <div style={{textAlign:'center', padding:'10px 0', fontSize:13.5, fontWeight:700, color:'#16A34A'}}>
+          ✓ {lang==='pt'?'Candidatura enviada — aguardando resposta':lang==='es'?'Solicitud enviada — esperando respuesta':'Application sent — awaiting response'}
+        </div>
+      ) : (
+        <button onClick={apply} disabled={busy} style={{
+          width:'100%', height:50, borderRadius:14, border:'none', cursor:'pointer', fontFamily:'inherit',
+          background:'linear-gradient(135deg,#F59E0B,#D97706)', color:'#fff', fontSize:15, fontWeight:800,
+        }}>{busy?'…':(lang==='pt'?'Candidatar-se':lang==='es'?'Postularme':'Apply')}</button>
+      )}
     </div>
   );
 }
@@ -3910,6 +4132,177 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.briefcase(17, '#fff')} {submitLbl}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Post "Repasse de Piscina" sheet — route owner hands off one or more
+// pools to an independent pool guy who already covers that area, paid as a
+// revenue split instead of a flat rate. Distinct from Vagas (permanent
+// employment) — this is per-pool, recurring, and the poster keeps working
+// with other companies/route owners too since it's not exclusive.
+function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
+  const t = STRINGS[lang];
+  const [city,        setCity]        = React.useState('');
+  const [days,         setDays]        = React.useState([]); // ['mon','wed',...]
+  const [poolsCount,   setPoolsCount]  = React.useState(1);
+  const [splitTaker,   setSplitTaker]  = React.useState(70); // % the pool guy keeps
+  const [poolType,     setPoolType]    = React.useState('residential');
+  const [dog,          setDog]         = React.useState(false);
+  const [saltwater,    setSaltwater]   = React.useState(false);
+  const [gateCode,     setGateCode]    = React.useState(false);
+  const [doorman,      setDoorman]     = React.useState(false);
+  const [description,  setDescription] = React.useState('');
+
+  const headLbl  = lang==='pt'?'Repassar piscina':lang==='es'?'Traspasar piscina':'Hand off a pool';
+  const cityLbl  = lang==='pt'?'Cidade / área':lang==='es'?'Ciudad / área':'City / area';
+  const daysLbl  = lang==='pt'?'Dias da semana':lang==='es'?'Días de la semana':'Days of week';
+  const countLbl = lang==='pt'?'Quantas piscinas':lang==='es'?'Cuántas piscinas':'How many pools';
+  const splitLbl = lang==='pt'?'Divisão do pagamento':lang==='es'?'División del pago':'Payment split';
+  const splitSub = lang==='pt'?'% que fica com quem faz o serviço':lang==='es'?'% para quien hace el servicio':'% that goes to the pool guy doing the work';
+  const typeLbl  = lang==='pt'?'Tipo de propriedade':lang==='es'?'Tipo de propiedad':'Property type';
+  const descLbl  = lang==='pt'?'Detalhes (opcional)':lang==='es'?'Detalles (opcional)':'Details (optional)';
+  const descPh   = lang==='pt'?'Endereço aproximado, horário, particularidades…':lang==='es'?'Dirección aproximada, horario, detalles…':'Approximate address, schedule, quirks…';
+  const submitLbl= lang==='pt'?'Publicar repasse':lang==='es'?'Publicar traspaso':'Post handoff';
+
+  const dayDefs = [
+    { id:'mon', label: lang==='pt'?'Seg':lang==='es'?'Lun':'Mon' },
+    { id:'tue', label: lang==='pt'?'Ter':lang==='es'?'Mar':'Tue' },
+    { id:'wed', label: lang==='pt'?'Qua':lang==='es'?'Mié':'Wed' },
+    { id:'thu', label: lang==='pt'?'Qui':lang==='es'?'Jue':'Thu' },
+    { id:'fri', label: lang==='pt'?'Sex':lang==='es'?'Vie':'Fri' },
+    { id:'sat', label: lang==='pt'?'Sáb':lang==='es'?'Sáb':'Sat' },
+    { id:'sun', label: lang==='pt'?'Dom':lang==='es'?'Dom':'Sun' },
+  ];
+  const splitPresets = [70, 60, 50];
+
+  const toggleDay = (id) => setDays(prev => prev.includes(id) ? prev.filter(d=>d!==id) : [...prev, id]);
+  const isValid = city.trim().length > 0 && days.length > 0;
+
+  return (
+    <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
+      <div style={{padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'0.5px solid var(--pg-ink-200)', flexShrink:0}}>
+        <button onClick={onClose} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:15, fontWeight:600, cursor:'pointer', padding:0}}>
+          {t.cancel}
+        </button>
+        <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, letterSpacing:'-0.01em'}}>
+          {headLbl}
+        </h2>
+        <div style={{width:60}}/>
+      </div>
+
+      <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'20px 18px', display:'flex', flexDirection:'column', gap:20}}>
+
+        <HiringFormSection label={cityLbl}>
+          <CityAutocomplete value={city} onChange={setCity} lang={lang}/>
+        </HiringFormSection>
+
+        <HiringFormSection label={daysLbl}>
+          <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+            {dayDefs.map(d => {
+              const on = days.includes(d.id);
+              return (
+                <button key={d.id} onClick={()=>toggleDay(d.id)} style={{
+                  width:44, height:44, borderRadius:12, border:on?'none':'1.5px solid var(--pg-ink-200)',
+                  background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+                  color: on ? '#fff' : 'var(--pg-ink-700)', fontFamily:'inherit', fontSize:12, fontWeight:700,
+                  cursor:'pointer',
+                }}>{d.label}</button>
+              );
+            })}
+          </div>
+        </HiringFormSection>
+
+        <HiringFormSection label={countLbl}>
+          <div style={{display:'flex', alignItems:'center', gap:14}}>
+            <button onClick={()=>setPoolsCount(n=>Math.max(1,n-1))} style={{
+              width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
+              background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:20, color:'var(--pg-ink-900)',
+            }}>−</button>
+            <span style={{fontSize:20, fontWeight:800, minWidth:24, textAlign:'center'}}>{poolsCount}</span>
+            <button onClick={()=>setPoolsCount(n=>Math.min(20,n+1))} style={{
+              width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
+              background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:20, color:'var(--pg-ink-900)',
+            }}>+</button>
+          </div>
+        </HiringFormSection>
+
+        <HiringFormSection label={splitLbl}>
+          <div style={{display:'flex', gap:8, marginBottom:8}}>
+            {splitPresets.map(p => {
+              const on = splitTaker === p;
+              return (
+                <button key={p} onClick={()=>setSplitTaker(p)} style={{
+                  flex:1, padding:'10px 6px', borderRadius:12, border:'none', cursor:'pointer', fontFamily:'inherit',
+                  background: on ? '#16A34A' : 'var(--pg-ink-100)', color: on ? '#fff' : 'var(--pg-ink-900)',
+                  fontSize:14, fontWeight:800,
+                }}>{p}/{100-p}</button>
+              );
+            })}
+          </div>
+          <div style={{display:'flex', alignItems:'center', gap:8}}>
+            <input type="range" min="10" max="90" step="5" value={splitTaker}
+              onChange={e=>setSplitTaker(parseInt(e.target.value))}
+              style={{flex:1, accentColor:'#16A34A'}}/>
+            <span style={{fontSize:13, fontWeight:700, minWidth:56, textAlign:'right', color:'var(--pg-ink-700)'}}>
+              {splitTaker}/{100-splitTaker}
+            </span>
+          </div>
+          <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:4}}>{splitSub}</div>
+        </HiringFormSection>
+
+        <HiringFormSection label={typeLbl}>
+          <div style={{display:'flex', gap:8}}>
+            {[{id:'residential',label:lang==='pt'?'Casa':lang==='es'?'Casa':'House'},{id:'condo',label:lang==='pt'?'Condomínio':lang==='es'?'Condominio':'Condo'}].map(o=>{
+              const on = poolType===o.id;
+              return (
+                <button key={o.id} onClick={()=>setPoolType(o.id)} style={{
+                  flex:1, height:42, borderRadius:11, border: on?'none':'1.5px solid var(--pg-ink-200)',
+                  background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+                  color: on ? '#fff' : 'var(--pg-ink-700)', fontFamily:'inherit', fontSize:13, fontWeight:700, cursor:'pointer',
+                }}>{o.label}</button>
+              );
+            })}
+          </div>
+        </HiringFormSection>
+
+        <HiringFormSection label={lang==='pt'?'Detalhes de acesso':lang==='es'?'Detalles de acceso':'Access details'}>
+          <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'4px 16px'}}>
+            <ToggleRow icon={Icon.dog(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem cachorro':lang==='es'?'Hay perro':'Has dog on property'} on={dog} setOn={setDog}/>
+            <ToggleRow icon={Icon.pool(15,'var(--pg-ink-700)')} label={lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool'} on={saltwater} setOn={setSaltwater}/>
+            {poolType==='condo' && (
+              <>
+                <ToggleRow icon={Icon.key(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem código de portão':lang==='es'?'Tiene código de portón':'Has gate code'} on={gateCode} setOn={setGateCode}/>
+                <ToggleRow icon={Icon.user(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem portaria':lang==='es'?'Tiene portería':'Has doorman'} on={doorman} setOn={setDoorman}/>
+              </>
+            )}
+          </div>
+        </HiringFormSection>
+
+        <HiringFormSection label={descLbl}>
+          <textarea className="pg-field" value={description} onChange={e=>setDescription(e.target.value)}
+            placeholder={descPh} rows={4}
+            style={{resize:'none', lineHeight:1.55, paddingTop:12, paddingBottom:12, height:'auto'}}/>
+        </HiringFormSection>
+
+      </div>
+
+      <div style={{padding:'12px 18px', flexShrink:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
+        {!isValid && (
+          <div style={{fontSize:11.5, color:'var(--pg-ink-400)', textAlign:'center', marginBottom:10}}>
+            {lang==='pt'?'Informe a cidade e pelo menos um dia':lang==='es'?'Ingresa la ciudad y al menos un día':'Enter a city and at least one day'}
+          </div>
+        )}
+        <button onClick={()=>onSubmit && onSubmit({
+          city, daysOfWeek: days, poolsCount, splitTakerPct: splitTaker, poolType,
+          extras: { dog, saltwater, gate_code: gateCode, doorman },
+          description,
+        })} disabled={!isValid} className="pg-btn pg-btn-primary"
+          style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45,
+            background: isValid ? 'linear-gradient(135deg,#F59E0B,#D97706)' : undefined}}>
+          {Icon.check ? Icon.check(17,'#fff') : null} {submitLbl}
         </button>
       </div>
     </div>

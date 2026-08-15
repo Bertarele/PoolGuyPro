@@ -5,6 +5,7 @@ function WorkScreen({
 }) {
   const {
     lang,
+    user: ctxUser,
     openChat,
     goTab,
     openPostMenu,
@@ -16,6 +17,7 @@ function WorkScreen({
     openEditVacSheet,
     openHiringSheet,
     openTechSheet,
+    openHandoffSheet,
     openDayPicker,
     openSchedule,
     openPublicProfile,
@@ -27,6 +29,8 @@ function WorkScreen({
     liveJobs = [],
     liveTechs = [],
     liveVacations = [],
+    liveHandoffs = [],
+    loadLiveHandoffs,
     liveApplications = [],
     jobApplicantCounts = {},
     hasUnreadChat,
@@ -35,6 +39,8 @@ function WorkScreen({
     darkMode = false,
     isDesktop = false
   } = ctx;
+  const [postPickerOpen, setPostPickerOpen] = React.useState(false);
+  const [handoffDetail, setHandoffDetail] = React.useState(null);
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState(() => {
     try {
@@ -140,7 +146,7 @@ function WorkScreen({
     }))
   };
   const handlePostBtn = () => {
-    if (sub === 'vac') openVacSheet();else if (sub === 'hiring') openHiringSheet();else if (sub === 'techs') openTechSheet();
+    if (sub === 'vac') openVacSheet();else if (sub === 'hiring') setPostPickerOpen(true);else if (sub === 'techs') openTechSheet();
   };
 
   // Contextual "+ " button label & icon per sub-tab
@@ -2622,7 +2628,121 @@ function WorkScreen({
         }
       }, totalApplicants, " ", lang === 'pt' ? 'cands.' : lang === 'es' ? 'cands.' : 'apps'), Icon.chev(14, 'var(--pg-ink-300)')));
     }))));
-  })(), /*#__PURE__*/React.createElement("div", {
+  })(), sub === 'hiring' && liveHandoffs.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 18px 0'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 7,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 3,
+      height: 16,
+      borderRadius: 2,
+      background: '#F59E0B',
+      flexShrink: 0
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      letterSpacing: '0.06em',
+      color: 'var(--pg-ink-700)',
+      textTransform: 'uppercase'
+    }
+  }, lang === 'pt' ? 'Repasses de piscina' : lang === 'es' ? 'Traspasos de piscina' : 'Pool handoffs')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10
+    }
+  }, liveHandoffs.map(h => {
+    const isOwn = ctxUser?.uid && h.poster_id === ctxUser.uid;
+    const dayLbls = {
+      mon: 'Seg',
+      tue: 'Ter',
+      wed: 'Qua',
+      thu: 'Qui',
+      fri: 'Sex',
+      sat: 'Sáb',
+      sun: 'Dom'
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: h._id,
+      onClick: () => setHandoffDetail(h),
+      style: {
+        borderRadius: 14,
+        cursor: 'pointer',
+        padding: '13px 15px',
+        background: 'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(245,158,11,0.02))',
+        border: '1.5px solid rgba(245,158,11,0.35)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        fontWeight: 800,
+        padding: '2px 8px',
+        borderRadius: 999,
+        background: '#F59E0B',
+        color: '#fff',
+        letterSpacing: '0.04em'
+      }
+    }, lang === 'pt' ? 'REPASSE' : lang === 'es' ? 'TRASPASO' : 'HANDOFF'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 14,
+        fontWeight: 800,
+        color: '#D97706',
+        fontFamily: 'var(--pg-font-display)'
+      }
+    }, h.splitTakerPct, "/", 100 - h.splitTakerPct)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 700,
+        color: 'var(--pg-ink-900)'
+      }
+    }, h.city), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        flexWrap: 'wrap',
+        marginTop: 5
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-ink-500)'
+      }
+    }, h.daysOfWeek.map(d => dayLbls[d] || d).join(', ')), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-ink-400)'
+      }
+    }, "\xB7"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-ink-500)'
+      }
+    }, h.poolsCount, " ", h.poolsCount > 1 ? lang === 'pt' ? 'piscinas' : lang === 'es' ? 'piscinas' : 'pools' : lang === 'pt' ? 'piscina' : lang === 'es' ? 'piscina' : 'pool'), isOwn && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-blue-600)',
+        fontWeight: 700
+      }
+    }, "\xB7 ", lang === 'pt' ? 'Sua publicação' : lang === 'es' ? 'Tu publicación' : 'Your post')));
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '14px 18px 0'
     }
@@ -2669,7 +2789,438 @@ function WorkScreen({
     user: ctx.user,
     showToast: showToast,
     onDeleteVac: removeVacation
-  }))), FabBtn);
+  }))), FabBtn, /*#__PURE__*/React.createElement(Sheet, {
+    open: postPickerOpen,
+    onClose: () => setPostPickerOpen(false),
+    height: "auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '8px 18px calc(18px + env(safe-area-inset-bottom, 0px))',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 700,
+      textAlign: 'center',
+      margin: '6px 0 4px',
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'O que você quer publicar?' : lang === 'es' ? '¿Qué querés publicar?' : 'What do you want to post?'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setPostPickerOpen(false);
+      openHiringSheet();
+    },
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '14px 16px',
+      borderRadius: 14,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-white)',
+      cursor: 'pointer',
+      textAlign: 'left'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 40,
+      borderRadius: 11,
+      flexShrink: 0,
+      background: 'var(--pg-blue-50)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, Icon.briefcase(19, 'var(--pg-blue-600)')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Vaga de emprego' : lang === 'es' ? 'Empleo' : 'Job posting'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-ink-500)',
+      marginTop: 1
+    }
+  }, lang === 'pt' ? 'Contratação fixa, pagamento em $' : lang === 'es' ? 'Contratación fija, pago en $' : 'Fixed hire, paid in $'))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setPostPickerOpen(false);
+      openHandoffSheet && openHandoffSheet();
+    },
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '14px 16px',
+      borderRadius: 14,
+      border: '1.5px solid rgba(245,158,11,0.4)',
+      background: 'rgba(245,158,11,0.06)',
+      cursor: 'pointer',
+      textAlign: 'left'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 40,
+      borderRadius: 11,
+      flexShrink: 0,
+      background: 'rgba(245,158,11,0.15)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, Icon.pool(19, '#D97706')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Repasse de piscina' : lang === 'es' ? 'Traspaso de piscina' : 'Pool handoff'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-ink-500)',
+      marginTop: 1
+    }
+  }, lang === 'pt' ? 'Repasse 1+ piscinas da sua rota, pagamento em split' : lang === 'es' ? 'Traspasa piscinas de tu ruta, pago en split' : 'Hand off route pools, paid as a split'))))), /*#__PURE__*/React.createElement(Sheet, {
+    open: !!handoffDetail,
+    onClose: () => setHandoffDetail(null),
+    height: "auto"
+  }, handoffDetail && /*#__PURE__*/React.createElement(HandoffDetailPanel, {
+    handoff: handoffDetail,
+    user: ctxUser,
+    lang: lang,
+    showToast: showToast,
+    onClose: () => setHandoffDetail(null),
+    onChanged: () => {
+      loadLiveHandoffs && loadLiveHandoffs();
+    }
+  })));
+}
+function HandoffDetailPanel({
+  handoff,
+  user,
+  lang,
+  showToast,
+  onClose,
+  onChanged
+}) {
+  const isOwn = user?.uid && handoff.poster_id === user.uid;
+  const [applicants, setApplicants] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [myApp, setMyApp] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  const dayLbls = {
+    mon: 'Segunda',
+    tue: 'Terça',
+    wed: 'Quarta',
+    thu: 'Quinta',
+    fri: 'Sexta',
+    sat: 'Sábado',
+    sun: 'Domingo'
+  };
+  React.useEffect(() => {
+    if (!window.sb || !user?.uid) return;
+    if (isOwn) {
+      setLoading(true);
+      window.sb.from('pool_handoff_applications').select('*').eq('handoff_id', handoff._id).neq('status', 'withdrawn').order('created_at', {
+        ascending: true
+      }).then(({
+        data
+      }) => {
+        setApplicants(data || []);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    } else {
+      window.sb.from('pool_handoff_applications').select('*').eq('handoff_id', handoff._id).eq('applicant_id', user.uid).then(({
+        data
+      }) => {
+        if (data && data[0]) setMyApp(data[0]);
+      }).catch(() => {});
+    }
+  }, [handoff._id, isOwn, user?.uid]);
+  const apply = async () => {
+    if (!window.sb || !user?.uid || busy) return;
+    setBusy(true);
+    const {
+      error
+    } = await window.sb.from('pool_handoff_applications').insert({
+      handoff_id: handoff._id,
+      applicant_id: user.uid,
+      applicant_name: user.name || user.email || 'Pool Guy',
+      applicant_phone: user.phone || null,
+      status: 'pending'
+    });
+    setBusy(false);
+    if (error) {
+      showToast && showToast('❌ ' + (error.message || 'Error'));
+      return;
+    }
+    setMyApp({
+      status: 'pending'
+    });
+    showToast && showToast(lang === 'pt' ? '✓ Candidatura enviada' : lang === 'es' ? '✓ Solicitud enviada' : '✓ Application sent');
+  };
+  const accept = async app => {
+    if (!window.sb || busy) return;
+    setBusy(true);
+    await window.sb.from('pool_handoff_applications').update({
+      status: 'accepted'
+    }).eq('id', app.id);
+    await window.sb.from('pool_handoff_applications').update({
+      status: 'rejected'
+    }).eq('handoff_id', handoff._id).neq('id', app.id);
+    await window.sb.from('pool_handoffs').update({
+      status: 'filled'
+    }).eq('id', handoff._id);
+    setBusy(false);
+    showToast && showToast(lang === 'pt' ? '✓ Repasse confirmado' : lang === 'es' ? '✓ Traspaso confirmado' : '✓ Handoff confirmed');
+    onChanged && onChanged();
+    onClose && onClose();
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '8px 18px calc(18px + env(safe-area-inset-bottom, 0px))',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 800,
+      padding: '2px 8px',
+      borderRadius: 999,
+      background: '#F59E0B',
+      color: '#fff',
+      letterSpacing: '0.04em'
+    }
+  }, lang === 'pt' ? 'REPASSE' : lang === 'es' ? 'TRASPASO' : 'HANDOFF'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: 'var(--pg-ink-900)',
+      marginTop: 6
+    }
+  }, handoff.city)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'right'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: 800,
+      color: '#D97706',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }, handoff.splitTakerPct, "/", 100 - handoff.splitTakerPct), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: 'var(--pg-ink-500)',
+      fontWeight: 600
+    }
+  }, lang === 'pt' ? 'seu / repassador' : lang === 'es' ? 'tuyo / traspasador' : 'you / poster'))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      padding: '4px 10px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, handoff.daysOfWeek.map(d => dayLbls[d] || d).join(', ')), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      padding: '4px 10px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, handoff.poolsCount, " ", handoff.poolsCount > 1 ? lang === 'pt' ? 'piscinas' : 'pools' : lang === 'pt' ? 'piscina' : 'pool'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      padding: '4px 10px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, handoff.poolType === 'condo' ? lang === 'pt' ? 'Condomínio' : 'Condo' : lang === 'pt' ? 'Casa' : 'House'), handoff.extras?.dog && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      padding: '4px 10px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, "\uD83D\uDC15 ", lang === 'pt' ? 'Cachorro' : 'Dog'), handoff.extras?.saltwater && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      padding: '4px 10px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, "\uD83E\uDDC2 ", lang === 'pt' ? 'Sal' : 'Salt')), handoff.description && /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: 0,
+      fontSize: 13.5,
+      lineHeight: 1.55,
+      color: 'var(--pg-ink-700)'
+    }
+  }, handoff.description), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '10px 12px',
+      borderRadius: 12,
+      background: 'var(--pg-ink-50)'
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: handoff.poster,
+    size: 36
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, handoff.poster), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)'
+    }
+  }, lang === 'pt' ? 'Dono da rota' : lang === 'es' ? 'Dueño de la ruta' : 'Route owner'))), isOwn ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: '0.06em',
+      color: 'var(--pg-ink-500)',
+      textTransform: 'uppercase',
+      marginBottom: 8
+    }
+  }, lang === 'pt' ? 'Candidatos' : lang === 'es' ? 'Candidatos' : 'Applicants', " ", applicants.length > 0 && `(${applicants.length})`), loading ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: 'var(--pg-ink-400)',
+      textAlign: 'center',
+      padding: '10px 0'
+    }
+  }, lang === 'pt' ? 'Carregando…' : 'Loading…') : applicants.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: 'var(--pg-ink-400)',
+      textAlign: 'center',
+      padding: '10px 0'
+    }
+  }, lang === 'pt' ? 'Nenhum candidato ainda' : lang === 'es' ? 'Sin candidatos aún' : 'No applicants yet') : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
+    }
+  }, applicants.map(app => /*#__PURE__*/React.createElement("div", {
+    key: app.id,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '9px 10px',
+      borderRadius: 10,
+      border: '1px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: app.applicant_name,
+    size: 32
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, app.applicant_name), app.status === 'accepted' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: '#16A34A',
+      fontWeight: 700
+    }
+  }, "\u2713 ", lang === 'pt' ? 'Aceito' : 'Accepted')), handoff.status === 'open' && app.status === 'pending' && /*#__PURE__*/React.createElement("button", {
+    onClick: () => accept(app),
+    disabled: busy,
+    style: {
+      height: 32,
+      padding: '0 14px',
+      borderRadius: 9,
+      border: 'none',
+      cursor: 'pointer',
+      background: '#16A34A',
+      color: '#fff',
+      fontFamily: 'inherit',
+      fontSize: 12.5,
+      fontWeight: 700
+    }
+  }, lang === 'pt' ? 'Aceitar' : 'Accept'))))) : myApp ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '10px 0',
+      fontSize: 13.5,
+      fontWeight: 700,
+      color: '#16A34A'
+    }
+  }, "\u2713 ", lang === 'pt' ? 'Candidatura enviada — aguardando resposta' : lang === 'es' ? 'Solicitud enviada — esperando respuesta' : 'Application sent — awaiting response') : /*#__PURE__*/React.createElement("button", {
+    onClick: apply,
+    disabled: busy,
+    style: {
+      width: '100%',
+      height: 50,
+      borderRadius: 14,
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      background: 'linear-gradient(135deg,#F59E0B,#D97706)',
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: 800
+    }
+  }, busy ? '…' : lang === 'pt' ? 'Candidatar-se' : lang === 'es' ? 'Postularme' : 'Apply'));
 }
 
 // ── Shared "My Applications" tracking section ─────────────────
@@ -7963,6 +8514,355 @@ function PostHiringSheet({
       opacity: isValid ? 1 : 0.45
     }
   }, Icon.briefcase(17, '#fff'), " ", submitLbl)));
+}
+
+// ── Post "Repasse de Piscina" sheet — route owner hands off one or more
+// pools to an independent pool guy who already covers that area, paid as a
+// revenue split instead of a flat rate. Distinct from Vagas (permanent
+// employment) — this is per-pool, recurring, and the poster keeps working
+// with other companies/route owners too since it's not exclusive.
+function PostPoolHandoffSheet({
+  onClose,
+  lang = 'en',
+  onSubmit
+}) {
+  const t = STRINGS[lang];
+  const [city, setCity] = React.useState('');
+  const [days, setDays] = React.useState([]); // ['mon','wed',...]
+  const [poolsCount, setPoolsCount] = React.useState(1);
+  const [splitTaker, setSplitTaker] = React.useState(70); // % the pool guy keeps
+  const [poolType, setPoolType] = React.useState('residential');
+  const [dog, setDog] = React.useState(false);
+  const [saltwater, setSaltwater] = React.useState(false);
+  const [gateCode, setGateCode] = React.useState(false);
+  const [doorman, setDoorman] = React.useState(false);
+  const [description, setDescription] = React.useState('');
+  const headLbl = lang === 'pt' ? 'Repassar piscina' : lang === 'es' ? 'Traspasar piscina' : 'Hand off a pool';
+  const cityLbl = lang === 'pt' ? 'Cidade / área' : lang === 'es' ? 'Ciudad / área' : 'City / area';
+  const daysLbl = lang === 'pt' ? 'Dias da semana' : lang === 'es' ? 'Días de la semana' : 'Days of week';
+  const countLbl = lang === 'pt' ? 'Quantas piscinas' : lang === 'es' ? 'Cuántas piscinas' : 'How many pools';
+  const splitLbl = lang === 'pt' ? 'Divisão do pagamento' : lang === 'es' ? 'División del pago' : 'Payment split';
+  const splitSub = lang === 'pt' ? '% que fica com quem faz o serviço' : lang === 'es' ? '% para quien hace el servicio' : '% that goes to the pool guy doing the work';
+  const typeLbl = lang === 'pt' ? 'Tipo de propriedade' : lang === 'es' ? 'Tipo de propiedad' : 'Property type';
+  const descLbl = lang === 'pt' ? 'Detalhes (opcional)' : lang === 'es' ? 'Detalles (opcional)' : 'Details (optional)';
+  const descPh = lang === 'pt' ? 'Endereço aproximado, horário, particularidades…' : lang === 'es' ? 'Dirección aproximada, horario, detalles…' : 'Approximate address, schedule, quirks…';
+  const submitLbl = lang === 'pt' ? 'Publicar repasse' : lang === 'es' ? 'Publicar traspaso' : 'Post handoff';
+  const dayDefs = [{
+    id: 'mon',
+    label: lang === 'pt' ? 'Seg' : lang === 'es' ? 'Lun' : 'Mon'
+  }, {
+    id: 'tue',
+    label: lang === 'pt' ? 'Ter' : lang === 'es' ? 'Mar' : 'Tue'
+  }, {
+    id: 'wed',
+    label: lang === 'pt' ? 'Qua' : lang === 'es' ? 'Mié' : 'Wed'
+  }, {
+    id: 'thu',
+    label: lang === 'pt' ? 'Qui' : lang === 'es' ? 'Jue' : 'Thu'
+  }, {
+    id: 'fri',
+    label: lang === 'pt' ? 'Sex' : lang === 'es' ? 'Vie' : 'Fri'
+  }, {
+    id: 'sat',
+    label: lang === 'pt' ? 'Sáb' : lang === 'es' ? 'Sáb' : 'Sat'
+  }, {
+    id: 'sun',
+    label: lang === 'pt' ? 'Dom' : lang === 'es' ? 'Dom' : 'Sun'
+  }];
+  const splitPresets = [70, 60, 50];
+  const toggleDay = id => setDays(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
+  const isValid = city.trim().length > 0 && days.length > 0;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 18px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottom: '0.5px solid var(--pg-ink-200)',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-blue-500)',
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, t.cancel), /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontFamily: 'var(--pg-font-display)',
+      fontSize: 17,
+      fontWeight: 700,
+      letterSpacing: '-0.01em'
+    }
+  }, headLbl), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 60
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflow: 'auto',
+      touchAction: 'pan-y',
+      padding: '20px 18px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 20
+    }
+  }, /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: cityLbl
+  }, /*#__PURE__*/React.createElement(CityAutocomplete, {
+    value: city,
+    onChange: setCity,
+    lang: lang
+  })), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: daysLbl
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      flexWrap: 'wrap'
+    }
+  }, dayDefs.map(d => {
+    const on = days.includes(d.id);
+    return /*#__PURE__*/React.createElement("button", {
+      key: d.id,
+      onClick: () => toggleDay(d.id),
+      style: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
+        background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+        color: on ? '#fff' : 'var(--pg-ink-700)',
+        fontFamily: 'inherit',
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: 'pointer'
+      }
+    }, d.label);
+  }))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: countLbl
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPoolsCount(n => Math.max(1, n - 1)),
+    style: {
+      width: 38,
+      height: 38,
+      borderRadius: 10,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-100)',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 20,
+      color: 'var(--pg-ink-900)'
+    }
+  }, "\u2212"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 20,
+      fontWeight: 800,
+      minWidth: 24,
+      textAlign: 'center'
+    }
+  }, poolsCount), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPoolsCount(n => Math.min(20, n + 1)),
+    style: {
+      width: 38,
+      height: 38,
+      borderRadius: 10,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-100)',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 20,
+      color: 'var(--pg-ink-900)'
+    }
+  }, "+"))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: splitLbl
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      marginBottom: 8
+    }
+  }, splitPresets.map(p => {
+    const on = splitTaker === p;
+    return /*#__PURE__*/React.createElement("button", {
+      key: p,
+      onClick: () => setSplitTaker(p),
+      style: {
+        flex: 1,
+        padding: '10px 6px',
+        borderRadius: 12,
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        background: on ? '#16A34A' : 'var(--pg-ink-100)',
+        color: on ? '#fff' : 'var(--pg-ink-900)',
+        fontSize: 14,
+        fontWeight: 800
+      }
+    }, p, "/", 100 - p);
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "range",
+    min: "10",
+    max: "90",
+    step: "5",
+    value: splitTaker,
+    onChange: e => setSplitTaker(parseInt(e.target.value)),
+    style: {
+      flex: 1,
+      accentColor: '#16A34A'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      minWidth: 56,
+      textAlign: 'right',
+      color: 'var(--pg-ink-700)'
+    }
+  }, splitTaker, "/", 100 - splitTaker)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-400)',
+      marginTop: 4
+    }
+  }, splitSub)), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: typeLbl
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8
+    }
+  }, [{
+    id: 'residential',
+    label: lang === 'pt' ? 'Casa' : lang === 'es' ? 'Casa' : 'House'
+  }, {
+    id: 'condo',
+    label: lang === 'pt' ? 'Condomínio' : lang === 'es' ? 'Condominio' : 'Condo'
+  }].map(o => {
+    const on = poolType === o.id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: o.id,
+      onClick: () => setPoolType(o.id),
+      style: {
+        flex: 1,
+        height: 42,
+        borderRadius: 11,
+        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
+        background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+        color: on ? '#fff' : 'var(--pg-ink-700)',
+        fontFamily: 'inherit',
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: 'pointer'
+      }
+    }, o.label);
+  }))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Detalhes de acesso' : lang === 'es' ? 'Detalles de acceso' : 'Access details'
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      padding: '4px 16px'
+    }
+  }, /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.dog(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Tem cachorro' : lang === 'es' ? 'Hay perro' : 'Has dog on property',
+    on: dog,
+    setOn: setDog
+  }), /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.pool(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Piscina de sal' : lang === 'es' ? 'Piscina de sal' : 'Salt pool',
+    on: saltwater,
+    setOn: setSaltwater
+  }), poolType === 'condo' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.key(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Tem código de portão' : lang === 'es' ? 'Tiene código de portón' : 'Has gate code',
+    on: gateCode,
+    setOn: setGateCode
+  }), /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.user(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Tem portaria' : lang === 'es' ? 'Tiene portería' : 'Has doorman',
+    on: doorman,
+    setOn: setDoorman
+  })))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: descLbl
+  }, /*#__PURE__*/React.createElement("textarea", {
+    className: "pg-field",
+    value: description,
+    onChange: e => setDescription(e.target.value),
+    placeholder: descPh,
+    rows: 4,
+    style: {
+      resize: 'none',
+      lineHeight: 1.55,
+      paddingTop: 12,
+      paddingBottom: 12,
+      height: 'auto'
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 18px',
+      flexShrink: 0,
+      background: 'var(--pg-white)',
+      borderTop: '0.5px solid var(--pg-ink-200)'
+    }
+  }, !isValid && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-ink-400)',
+      textAlign: 'center',
+      marginBottom: 10
+    }
+  }, lang === 'pt' ? 'Informe a cidade e pelo menos um dia' : lang === 'es' ? 'Ingresa la ciudad y al menos un día' : 'Enter a city and at least one day'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onSubmit && onSubmit({
+      city,
+      daysOfWeek: days,
+      poolsCount,
+      splitTakerPct: splitTaker,
+      poolType,
+      extras: {
+        dog,
+        saltwater,
+        gate_code: gateCode,
+        doorman
+      },
+      description
+    }),
+    disabled: !isValid,
+    className: "pg-btn pg-btn-primary",
+    style: {
+      width: '100%',
+      height: 52,
+      fontSize: 16,
+      opacity: isValid ? 1 : 0.45,
+      background: isValid ? 'linear-gradient(135deg,#F59E0B,#D97706)' : undefined
+    }
+  }, Icon.check ? Icon.check(17, '#fff') : null, " ", submitLbl)));
 }
 
 // ── Post Tech profile sheet ───────────────────────────────────
