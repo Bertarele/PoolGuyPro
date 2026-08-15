@@ -2839,20 +2839,37 @@ function WorkScreen({
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: 6
+      }
+    }, priceLbl ? /*#__PURE__*/React.createElement("span", {
+      style: {
         fontFamily: 'var(--pg-font-display)',
         fontSize: 16,
-        fontWeight: 700,
+        fontWeight: 800,
         color: '#D97706',
         letterSpacing: '-0.01em'
       }
-    }, h.splitTakerPct, "/", 100 - h.splitTakerPct, priceLbl && /*#__PURE__*/React.createElement("span", {
+    }, priceLbl, /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 12,
+        fontSize: 11.5,
         fontWeight: 600,
-        color: 'var(--pg-ink-500)',
-        marginLeft: 6
+        color: 'var(--pg-ink-400)'
       }
-    }, "\xB7 ", priceLbl, "/", lang === 'pt' ? 'piscina' : 'pool')), isOwn ? /*#__PURE__*/React.createElement("span", {
+    }, "/", lang === 'pt' ? 'piscina' : 'pool')) : /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12.5,
+        fontWeight: 600,
+        color: 'var(--pg-ink-400)'
+      }
+    }, lang === 'pt' ? 'Preço a combinar' : lang === 'es' ? 'Precio a acordar' : 'Price TBD'), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10.5,
+        fontWeight: 700,
+        color: 'var(--pg-ink-400)'
+      }
+    }, "\xB7 ", h.splitTakerPct, "/", 100 - h.splitTakerPct)), isOwn ? /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -3114,6 +3131,8 @@ function HandoffDetailPanel({
     sat: 'Sábado',
     sun: 'Domingo'
   };
+  const poolPrices = (handoff.pools || []).map(p => p.price).filter(p => p != null);
+  const priceLbl = poolPrices.length > 0 ? Math.min(...poolPrices) === Math.max(...poolPrices) ? `$${poolPrices[0]}` : `$${Math.min(...poolPrices)}–$${Math.max(...poolPrices)}` : handoff.pricePerPool != null ? `$${handoff.pricePerPool}` : null;
   const markFilled = async () => {
     if (!window.sb || busy) return;
     setBusy(true);
@@ -3278,27 +3297,33 @@ function HandoffDetailPanel({
     style: {
       textAlign: 'right'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, priceLbl ? /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: 800,
       color: '#D97706',
       fontFamily: 'var(--pg-font-display)'
     }
-  }, handoff.splitTakerPct, "/", 100 - handoff.splitTakerPct), /*#__PURE__*/React.createElement("div", {
+  }, priceLbl, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 10,
-      color: 'var(--pg-ink-500)',
-      fontWeight: 600
+      fontSize: 12,
+      fontWeight: 600,
+      color: 'var(--pg-ink-400)'
     }
-  }, lang === 'pt' ? 'seu / repassador' : lang === 'es' ? 'tuyo / traspasador' : 'you / poster'), !(handoff.pools && handoff.pools.length > 0) && handoff.pricePerPool != null && /*#__PURE__*/React.createElement("div", {
+  }, "/", lang === 'pt' ? 'piscina' : 'pool')) : /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 12.5,
+      fontSize: 13,
+      fontWeight: 600,
+      color: 'var(--pg-ink-400)'
+    }
+  }, lang === 'pt' ? 'Preço a combinar' : lang === 'es' ? 'Precio a acordar' : 'Price TBD'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-400)',
       fontWeight: 700,
-      color: 'var(--pg-ink-700)',
       marginTop: 3
     }
-  }, "$", handoff.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool'))), !(handoff.pools && handoff.pools.length > 0) && handoff.photoUrls && handoff.photoUrls.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, handoff.splitTakerPct, "/", 100 - handoff.splitTakerPct, " ", lang === 'pt' ? 'split' : lang === 'es' ? 'split' : 'split'))), !(handoff.pools && handoff.pools.length > 0) && handoff.photoUrls && handoff.photoUrls.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
       overflow: 'hidden'

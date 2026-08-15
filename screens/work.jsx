@@ -1304,9 +1304,17 @@ function WorkScreen({ ctx }) {
                   <div className="pg-divider" style={{margin:'12px 0'}}/>
                   {/* Split/price + status */}
                   <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, color:'#D97706', letterSpacing:'-0.01em'}}>
-                      {h.splitTakerPct}/{100-h.splitTakerPct}
-                      {priceLbl && <span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-500)', marginLeft:6}}>· {priceLbl}/{lang==='pt'?'piscina':'pool'}</span>}
+                    <div style={{display:'flex', alignItems:'baseline', gap:6}}>
+                      {priceLbl ? (
+                        <span style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:800, color:'#D97706', letterSpacing:'-0.01em'}}>
+                          {priceLbl}<span style={{fontSize:11.5, fontWeight:600, color:'var(--pg-ink-400)'}}>/{lang==='pt'?'piscina':'pool'}</span>
+                        </span>
+                      ) : (
+                        <span style={{fontSize:12.5, fontWeight:600, color:'var(--pg-ink-400)'}}>
+                          {lang==='pt'?'Preço a combinar':lang==='es'?'Precio a acordar':'Price TBD'}
+                        </span>
+                      )}
+                      <span style={{fontSize:10.5, fontWeight:700, color:'var(--pg-ink-400)'}}>· {h.splitTakerPct}/{100-h.splitTakerPct}</span>
                     </div>
                     {isOwn ? (
                       <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(0,119,182,0.12)', color:'var(--pg-blue-600)', border:'1px solid rgba(0,119,182,0.25)'}}>
@@ -1421,6 +1429,10 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
   const canManage = isOwn || isAdmin;
   const [busy, setBusy] = React.useState(false);
   const dayLbls = { mon:'Segunda',tue:'Terça',wed:'Quarta',thu:'Quinta',fri:'Sexta',sat:'Sábado',sun:'Domingo' };
+  const poolPrices = (handoff.pools||[]).map(p=>p.price).filter(p=>p!=null);
+  const priceLbl = poolPrices.length > 0
+    ? (Math.min(...poolPrices)===Math.max(...poolPrices) ? `$${poolPrices[0]}` : `$${Math.min(...poolPrices)}–$${Math.max(...poolPrices)}`)
+    : (handoff.pricePerPool != null ? `$${handoff.pricePerPool}` : null);
 
   const markFilled = async () => {
     if (!window.sb || busy) return;
@@ -1488,11 +1500,16 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
             <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', marginTop:6}}>{(handoff.cities||[]).join(' · ')}</div>
           </div>
           <div style={{textAlign:'right'}}>
-            <div style={{fontSize:22, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>{handoff.splitTakerPct}/{100-handoff.splitTakerPct}</div>
-            <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600}}>{lang==='pt'?'seu / repassador':lang==='es'?'tuyo / traspasador':'you / poster'}</div>
-            {!(handoff.pools && handoff.pools.length > 0) && handoff.pricePerPool != null && (
-              <div style={{fontSize:12.5, fontWeight:700, color:'var(--pg-ink-700)', marginTop:3}}>${handoff.pricePerPool}/{lang==='pt'?'piscina':'pool'}</div>
+            {priceLbl ? (
+              <div style={{fontSize:20, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>
+                {priceLbl}<span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-400)'}}>/{lang==='pt'?'piscina':'pool'}</span>
+              </div>
+            ) : (
+              <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-400)'}}>
+                {lang==='pt'?'Preço a combinar':lang==='es'?'Precio a acordar':'Price TBD'}
+              </div>
             )}
+            <div style={{fontSize:11, color:'var(--pg-ink-400)', fontWeight:700, marginTop:3}}>{handoff.splitTakerPct}/{100-handoff.splitTakerPct} {lang==='pt'?'split':lang==='es'?'split':'split'}</div>
           </div>
         </div>
 
