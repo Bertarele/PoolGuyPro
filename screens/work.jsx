@@ -1215,60 +1215,60 @@ function WorkScreen({ ctx }) {
         );
       })()}
 
-      {/* ── Repasse de Piscina — visually distinct from regular job posts ── */}
-      {sub === 'hiring' && liveHandoffs.length > 0 && (
-        <div style={{padding:'14px 18px 0'}}>
-          <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:10}}>
-            <div style={{width:3, height:16, borderRadius:2, background:'#F59E0B', flexShrink:0}}/>
-            <span style={{fontSize:11.5, fontWeight:700, letterSpacing:'0.06em', color:'var(--pg-ink-700)', textTransform:'uppercase'}}>
-              {lang==='pt'?'Repasses de piscina':lang==='es'?'Traspasos de piscina':'Pool handoffs'}
-            </span>
-          </div>
-          <div style={{display:'flex', flexDirection:'column', gap:10}}>
+      {/* ── Content panels ── */}
+      <div style={{padding:'14px 18px 0'}}>
+        {sub === 'hiring' && liveHandoffs.length > 0 && (
+          <div style={{display:'flex', flexDirection:'column', gap:12, marginBottom:12}}>
             {liveHandoffs.map(h => {
               const isOwn = ctxUser?.uid && h.poster_id === ctxUser.uid;
               const dayLbls = { mon:'Seg',tue:'Ter',wed:'Qua',thu:'Qui',fri:'Sex',sat:'Sáb',sun:'Dom' };
+              const thumb = h.photoUrls && h.photoUrls[0];
               return (
-                <div key={h._id} onClick={()=>setHandoffDetail(h)} style={{
-                  borderRadius:14, cursor:'pointer', padding:'13px 15px',
-                  background:'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(245,158,11,0.02))',
-                  border:'1.5px solid rgba(245,158,11,0.35)',
-                  display:'flex', gap:12, alignItems:'flex-start',
-                }}>
-                  {h.photoUrls && h.photoUrls.length > 0 && (
-                    <img src={h.photoUrls[0]} alt="" style={{width:52, height:52, borderRadius:10, objectFit:'cover', flexShrink:0, border:'1px solid rgba(245,158,11,0.3)'}}/>
-                  )}
-                  <div style={{flex:1, minWidth:0}}>
-                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                      <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999,
-                        background:'#F59E0B', color:'#fff', letterSpacing:'0.04em'}}>
-                        {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
-                      </span>
-                      <span style={{fontSize:14, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>
-                        {h.splitTakerPct}/{100-h.splitTakerPct}
-                      </span>
-                    </div>
-                    <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{(h.cities||[]).join(' · ')}</div>
-                    <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginTop:5}}>
-                      <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>
-                        {h.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
-                      </span>
-                      <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>·</span>
-                      <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>
-                        {h.poolsCount} {h.poolsCount>1?(lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'):(lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}
-                      </span>
-                      {isOwn && <span style={{fontSize:11, color:'var(--pg-blue-600)', fontWeight:700}}>· {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}</span>}
-                    </div>
+                <article key={h._id} className="pg-card pg-press" onClick={()=>setHandoffDetail(h)}
+                  style={{padding:'14px 16px', cursor:'pointer', position:'relative'}}>
+                  {/* Header row — same shape as a regular job card, amber accent instead of blue */}
+                  <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
+                    {thumb ? (
+                      <img src={thumb} alt="" style={{width:28, height:28, borderRadius:7, objectFit:'cover', flexShrink:0}}/>
+                    ) : (
+                      <div style={{width:28, height:28, borderRadius:7, background:'rgba(245,158,11,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                        {Icon.pool ? Icon.pool(15,'#D97706') : null}
+                      </div>
+                    )}
+                    <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                      {(h.cities||[]).join(' · ')}
+                    </h3>
+                    <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'rgba(245,158,11,0.15)', color:'#D97706', flexShrink:0, letterSpacing:'0.05em'}}>
+                      {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
+                    </span>
                   </div>
-                </div>
+                  {/* Info rows */}
+                  <div style={{display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', fontSize:12.5, color:'var(--pg-ink-500)'}}>
+                    <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Icon.cal(13,'var(--pg-ink-500)')} {h.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}</span>
+                    <span>{h.poolsCount} {h.poolsCount>1?(lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'):(lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}</span>
+                  </div>
+                  <div className="pg-divider" style={{margin:'12px 0'}}/>
+                  {/* Split/price + status */}
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, color:'#D97706', letterSpacing:'-0.01em'}}>
+                      {h.splitTakerPct}/{100-h.splitTakerPct}
+                      {h.pricePerPool != null && <span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-500)', marginLeft:6}}>· ${h.pricePerPool}/{lang==='pt'?'piscina':'pool'}</span>}
+                    </div>
+                    {isOwn ? (
+                      <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(0,119,182,0.12)', color:'var(--pg-blue-600)', border:'1px solid rgba(0,119,182,0.25)'}}>
+                        {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}
+                      </span>
+                    ) : (
+                      <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(245,158,11,0.12)', color:'#D97706', border:'1px solid rgba(245,158,11,0.25)'}}>
+                        {lang==='pt'?'Ver detalhes':lang==='es'?'Ver detalles':'View details'}
+                      </span>
+                    )}
+                  </div>
+                </article>
               );
             })}
           </div>
-        </div>
-      )}
-
-      {/* ── Content panels ── */}
-      <div style={{padding:'14px 18px 0'}}>
+        )}
         {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts}/>}
         {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}

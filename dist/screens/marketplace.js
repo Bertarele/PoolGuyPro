@@ -331,12 +331,34 @@ function PhotoViewer({
 }) {
   const [idx, setIdx] = React.useState(startIdx);
   const prev = e => {
-    e.stopPropagation();
+    e?.stopPropagation();
     setIdx(i => (i - 1 + photos.length) % photos.length);
   };
   const next = e => {
-    e.stopPropagation();
+    e?.stopPropagation();
     setIdx(i => (i + 1) % photos.length);
+  };
+
+  // Swipe left/right to change photo — same 50px threshold used everywhere
+  // else in the app that supports a horizontal swipe gesture.
+  const touchRef = React.useRef(null);
+  const onTouchStart = e => {
+    touchRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  };
+  const onTouchEnd = e => {
+    if (!touchRef.current || photos.length < 2) {
+      touchRef.current = null;
+      return;
+    }
+    const dx = e.changedTouches[0].clientX - touchRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchRef.current.y;
+    touchRef.current = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      dx < 0 ? next() : prev();
+    }
   };
 
   // Fechar com ESC
@@ -358,6 +380,8 @@ function PhotoViewer({
   }, []);
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClose,
+    onTouchStart: onTouchStart,
+    onTouchEnd: onTouchEnd,
     style: {
       position: 'fixed',
       inset: 0,
@@ -601,14 +625,35 @@ function PhotoCarousel({
   const [idx, setIdx] = React.useState(0);
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const prev = e => {
-    e.stopPropagation();
+    e?.stopPropagation();
     setIdx(i => (i - 1 + photos.length) % photos.length);
   };
   const next = e => {
-    e.stopPropagation();
+    e?.stopPropagation();
     setIdx(i => (i + 1) % photos.length);
   };
+  const touchRef = React.useRef(null);
+  const onTouchStart = e => {
+    touchRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  };
+  const onTouchEnd = e => {
+    if (!touchRef.current || photos.length < 2) {
+      touchRef.current = null;
+      return;
+    }
+    const dx = e.changedTouches[0].clientX - touchRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchRef.current.y;
+    touchRef.current = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      dx < 0 ? next() : prev();
+    }
+  };
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    onTouchStart: onTouchStart,
+    onTouchEnd: onTouchEnd,
     style: {
       position: 'relative',
       height,

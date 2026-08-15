@@ -156,8 +156,20 @@ function ShareSheet({ item, lang, onClose, showToast }) {
 // ── Fullscreen Photo Viewer ───────────────────────────────────
 function PhotoViewer({ photos, startIdx=0, onClose }) {
   const [idx, setIdx] = React.useState(startIdx);
-  const prev = (e) => { e.stopPropagation(); setIdx(i => (i - 1 + photos.length) % photos.length); };
-  const next = (e) => { e.stopPropagation(); setIdx(i => (i + 1) % photos.length); };
+  const prev = (e) => { e?.stopPropagation(); setIdx(i => (i - 1 + photos.length) % photos.length); };
+  const next = (e) => { e?.stopPropagation(); setIdx(i => (i + 1) % photos.length); };
+
+  // Swipe left/right to change photo — same 50px threshold used everywhere
+  // else in the app that supports a horizontal swipe gesture.
+  const touchRef = React.useRef(null);
+  const onTouchStart = (e) => { touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+  const onTouchEnd = (e) => {
+    if (!touchRef.current || photos.length < 2) { touchRef.current = null; return; }
+    const dx = e.changedTouches[0].clientX - touchRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchRef.current.y;
+    touchRef.current = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); }
+  };
 
   // Fechar com ESC
   React.useEffect(() => {
@@ -174,7 +186,7 @@ function PhotoViewer({ photos, startIdx=0, onClose }) {
   }, []);
 
   return (
-    <div onClick={onClose} style={{
+    <div onClick={onClose} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{
       position:'fixed', inset:0, zIndex:9999,
       background:'rgba(0,0,0,0.96)',
       display:'flex', alignItems:'center', justifyContent:'center',
@@ -297,12 +309,22 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
   const photos = urls.filter(Boolean);
   const [idx, setIdx] = React.useState(0);
   const [viewerOpen, setViewerOpen] = React.useState(false);
-  const prev = (e) => { e.stopPropagation(); setIdx(i => (i - 1 + photos.length) % photos.length); };
-  const next = (e) => { e.stopPropagation(); setIdx(i => (i + 1) % photos.length); };
+  const prev = (e) => { e?.stopPropagation(); setIdx(i => (i - 1 + photos.length) % photos.length); };
+  const next = (e) => { e?.stopPropagation(); setIdx(i => (i + 1) % photos.length); };
+
+  const touchRef = React.useRef(null);
+  const onTouchStart = (e) => { touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+  const onTouchEnd = (e) => {
+    if (!touchRef.current || photos.length < 2) { touchRef.current = null; return; }
+    const dx = e.changedTouches[0].clientX - touchRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchRef.current.y;
+    touchRef.current = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); }
+  };
 
   return (
     <>
-      <div style={{position:'relative', height, background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
+      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{position:'relative', height, background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
         {photos.length > 0
           ? <img
               src={photos[idx]} alt=""
