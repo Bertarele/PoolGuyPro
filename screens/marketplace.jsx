@@ -212,12 +212,12 @@ function PhotoViewer({ photos, startIdx=0, onClose }) {
 
       {/* Foto principal */}
       <img
-        src={photos[idx]} alt=""
+        src={photos[idx]} alt="" draggable={false}
         onClick={e => e.stopPropagation()}
         style={{
           maxWidth:'100%', maxHeight:'100%',
           objectFit:'contain', display:'block',
-          userSelect:'none', borderRadius:4,
+          userSelect:'none', WebkitUserDrag:'none', borderRadius:4,
         }}
       />
 
@@ -327,9 +327,9 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
       <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{position:'relative', height, background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
         {photos.length > 0
           ? <img
-              src={photos[idx]} alt=""
+              src={photos[idx]} alt="" draggable={false}
               onClick={() => setViewerOpen(true)}
-              style={{width:'100%', height:'100%', objectFit:'cover', display:'block', cursor:'zoom-in'}}
+              style={{width:'100%', height:'100%', objectFit:'cover', display:'block', cursor:'zoom-in', WebkitUserDrag:'none', userSelect:'none'}}
             />
           : <NoPhotoPlaceholder height={height}/>
         }

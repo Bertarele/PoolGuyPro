@@ -431,6 +431,7 @@ function PhotoViewer({
   }, "\xD7")), /*#__PURE__*/React.createElement("img", {
     src: photos[idx],
     alt: "",
+    draggable: false,
     onClick: e => e.stopPropagation(),
     style: {
       maxWidth: '100%',
@@ -438,6 +439,7 @@ function PhotoViewer({
       objectFit: 'contain',
       display: 'block',
       userSelect: 'none',
+      WebkitUserDrag: 'none',
       borderRadius: 4
     }
   }), photos.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
@@ -664,13 +666,16 @@ function PhotoCarousel({
   }, photos.length > 0 ? /*#__PURE__*/React.createElement("img", {
     src: photos[idx],
     alt: "",
+    draggable: false,
     onClick: () => setViewerOpen(true),
     style: {
       width: '100%',
       height: '100%',
       objectFit: 'cover',
       display: 'block',
-      cursor: 'zoom-in'
+      cursor: 'zoom-in',
+      WebkitUserDrag: 'none',
+      userSelect: 'none'
     }
   }) : /*#__PURE__*/React.createElement(NoPhotoPlaceholder, {
     height: height
