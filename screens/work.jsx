@@ -164,6 +164,189 @@ function WorkScreen({ ctx }) {
     </button>
   );
 
+  // "Repasse de Piscina" listing cards — shared between desktop and mobile
+  // layouts (the desktop branch below has its own early `return`, so
+  // anything not reused via a variable here silently never renders there).
+  const handoffCardsList = sub === 'hiring' && liveHandoffs.length > 0 && (
+    <div style={{display:'flex', flexDirection:'column', gap:12, marginBottom:12}}>
+      {liveHandoffs.map(h => {
+        const isOwn = ctxUser?.uid && h.poster_id === ctxUser.uid;
+        const isAdminHere = ctxUser?.role === 'admin';
+        const canManageHere = isOwn || isAdminHere;
+        const dayLbls = { mon:'Seg',tue:'Ter',wed:'Qua',thu:'Qui',fri:'Sex',sat:'Sáb',sun:'Dom' };
+        const thumb = h.photoUrls && h.photoUrls[0];
+        const poolPrices = (h.pools||[]).map(p=>p.price).filter(p=>p!=null);
+        const priceLbl = poolPrices.length > 0
+          ? (Math.min(...poolPrices)===Math.max(...poolPrices) ? `$${poolPrices[0]}` : `$${Math.min(...poolPrices)}–$${Math.max(...poolPrices)}`)
+          : (h.pricePerPool != null ? `$${h.pricePerPool}` : null);
+        const deleteHandoffFromCard = async (e) => {
+          e.stopPropagation();
+          const msg = lang==='pt'?'Excluir este repasse?':lang==='es'?'¿Eliminar este traspaso?':'Delete this handoff?';
+          if (!window.confirm(msg)) return;
+          const { error } = await window.sb.from('pool_handoffs').delete().eq('id', h._id);
+          if (error) { showToast && showToast('❌ ' + error.message); return; }
+          showToast && showToast('🗑️ ' + (lang==='pt'?'Repasse excluído':lang==='es'?'Traspaso eliminado':'Handoff deleted'));
+          loadLiveHandoffs && loadLiveHandoffs();
+        };
+        return (
+          <article key={h._id} className="pg-card pg-press" onClick={()=>setHandoffDetail(h)}
+            style={{padding:'14px 16px', cursor:'pointer', position:'relative'}}>
+            {/* Edit/delete — same top-right icon-button pattern as a regular job card */}
+            {canManageHere && (
+              <div style={{position:'absolute', top:10, right:10, display:'flex', gap:6, zIndex:2}}>
+                <button onClick={(e)=>{ e.stopPropagation(); setEditingHandoff(h); }} style={{
+                  width:28, height:28, borderRadius:7, border:'1px solid var(--pg-ink-200)',
+                  background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', cursor:'pointer',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button onClick={deleteHandoffFromCard} style={{
+                  width:28, height:28, borderRadius:7,
+                  background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
+                  color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  </svg>
+                </button>
+              </div>
+            )}
+            {/* Header row — same shape as a regular job card, amber accent instead of blue */}
+            <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, paddingRight:canManageHere?68:0}}>
+              {thumb ? (
+                <img src={thumb} alt="" style={{width:28, height:28, borderRadius:7, objectFit:'cover', flexShrink:0}}/>
+              ) : (
+                <div style={{width:28, height:28, borderRadius:7, background:'rgba(245,158,11,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                  {Icon.pool ? Icon.pool(15,'#D97706') : null}
+                </div>
+              )}
+              <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                {(h.cities||[]).join(' · ')}
+              </h3>
+              <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'rgba(245,158,11,0.15)', color:'#D97706', flexShrink:0, letterSpacing:'0.05em'}}>
+                {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
+              </span>
+            </div>
+            {/* Info rows */}
+            <div style={{display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', fontSize:12.5, color:'var(--pg-ink-500)'}}>
+              <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Icon.cal(13,'var(--pg-ink-500)')} {h.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}</span>
+              <span>{h.poolsCount} {h.poolsCount>1?(lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'):(lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}</span>
+            </div>
+            <div className="pg-divider" style={{margin:'12px 0'}}/>
+            {/* Split/price + status */}
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+              <div style={{display:'flex', alignItems:'baseline', gap:6}}>
+                {priceLbl ? (
+                  <span style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:800, color:'#D97706', letterSpacing:'-0.01em'}}>
+                    {priceLbl}<span style={{fontSize:11.5, fontWeight:600, color:'var(--pg-ink-400)'}}>/{lang==='pt'?'piscina':'pool'}</span>
+                  </span>
+                ) : (
+                  <span style={{fontSize:12.5, fontWeight:600, color:'var(--pg-ink-400)'}}>
+                    {lang==='pt'?'Preço a combinar':lang==='es'?'Precio a acordar':'Price TBD'}
+                  </span>
+                )}
+                <span style={{fontSize:10.5, fontWeight:700, color:'var(--pg-ink-400)'}}>· {h.splitTakerPct}/{100-h.splitTakerPct}</span>
+              </div>
+              {isOwn ? (
+                <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(0,119,182,0.12)', color:'var(--pg-blue-600)', border:'1px solid rgba(0,119,182,0.25)'}}>
+                  {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}
+                </span>
+              ) : (
+                <button onClick={(e)=>{ e.stopPropagation(); openChat && openChat({ id: h.poster_id, name: h.poster,
+                  listingId: 'handoff_' + h._id,
+                  listingContext: { name: `${(h.cities||[]).join(' · ')} · ${h.splitTakerPct}/${100-h.splitTakerPct}`, photoUrl: (h.photoUrls&&h.photoUrls[0])||null } }); }} style={{
+                  display:'flex', alignItems:'center', gap:6, height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
+                  background:'linear-gradient(135deg,#0077B6,#023E8A)', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:700,
+                  boxShadow:'0 3px 10px rgba(0,119,182,0.30)',
+                }}>
+                  {Icon.msg ? Icon.msg(13,'#fff') : null}
+                  {lang==='pt'?'Contato':lang==='es'?'Contacto':'Contact'}
+                </button>
+              )}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+
+  // Handoff overlays (post-type picker, detail full page, edit full page) —
+  // also shared between desktop and mobile for the same reason as above.
+  const handoffOverlays = (
+    <>
+      <Sheet open={postPickerOpen} onClose={()=>setPostPickerOpen(false)} height="auto">
+        <div style={{padding:'8px 18px calc(18px + env(safe-area-inset-bottom, 0px))', display:'flex', flexDirection:'column', gap:10}}>
+          <div style={{fontSize:15, fontWeight:700, textAlign:'center', margin:'6px 0 4px', color:'var(--pg-ink-900)'}}>
+            {lang==='pt'?'O que você quer publicar?':lang==='es'?'¿Qué querés publicar?':'What do you want to post?'}
+          </div>
+          <button onClick={()=>{ setPostPickerOpen(false); openHiringSheet(); }} style={{
+            display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:14,
+            border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)', cursor:'pointer', textAlign:'left',
+          }}>
+            <div style={{width:40, height:40, borderRadius:11, flexShrink:0, background:'var(--pg-blue-50)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+              {Icon.briefcase(19,'var(--pg-blue-600)')}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{lang==='pt'?'Vaga de emprego':lang==='es'?'Empleo':'Job posting'}</div>
+              <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>{lang==='pt'?'Contratação fixa, pagamento em $':lang==='es'?'Contratación fija, pago en $':'Fixed hire, paid in $'}</div>
+            </div>
+          </button>
+          <button onClick={()=>{ setPostPickerOpen(false); openHandoffSheet && openHandoffSheet(); }} style={{
+            display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:14,
+            border:'1.5px solid rgba(245,158,11,0.4)', background:'rgba(245,158,11,0.06)', cursor:'pointer', textAlign:'left',
+          }}>
+            <div style={{width:40, height:40, borderRadius:11, flexShrink:0, background:'rgba(245,158,11,0.15)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+              {Icon.pool(19,'#D97706')}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{lang==='pt'?'Repasse de piscina':lang==='es'?'Traspaso de piscina':'Pool handoff'}</div>
+              <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>{lang==='pt'?'Repasse 1+ piscinas da sua rota, pagamento em split':lang==='es'?'Traspasa piscinas de tu ruta, pago en split':'Hand off route pools, paid as a split'}</div>
+            </div>
+          </button>
+        </div>
+      </Sheet>
+
+      {/* Handoff detail — true full screen, same as PostHiringSheet/PostTechSheet
+          (Sheet, even at height 92%, still shows a rounded-corner gap at the
+          top that reads as a card rather than a page). */}
+      <FullPage open={!!handoffDetail} onClose={()=>setHandoffDetail(null)}>
+        {handoffDetail && (
+          <HandoffDetailPanel handoff={handoffDetail} user={ctxUser} lang={lang} showToast={showToast}
+            onClose={()=>setHandoffDetail(null)}
+            onChat={openChat}
+            onEdit={(h)=>{ setHandoffDetail(null); setTimeout(()=>setEditingHandoff(h), 50); }}
+            onChanged={()=>{ loadLiveHandoffs && loadLiveHandoffs(); }}/>
+        )}
+      </FullPage>
+
+      {/* Edit a handoff — same form as posting, pre-filled */}
+      <FullPage open={!!editingHandoff} onClose={()=>setEditingHandoff(null)}>
+        {editingHandoff && (
+          <PostPoolHandoffSheet lang={lang} initialValues={editingHandoff}
+            onClose={()=>setEditingHandoff(null)}
+            onSubmit={async (data) => {
+              if (!data || !window.sb) { setEditingHandoff(null); return; }
+              setHandoffBusy(true);
+              const { error } = await window.sb.from('pool_handoffs').update({
+                pools: data.pools, cities: data.cities, days_of_week: data.daysOfWeek, pools_count: data.poolsCount,
+                description: data.description || null,
+                photo_urls: data.photoUrls && data.photoUrls.length > 0 ? data.photoUrls : null,
+              }).eq('id', editingHandoff._id);
+              setHandoffBusy(false);
+              setEditingHandoff(null);
+              if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+              showToast && showToast(lang==='pt'?'✓ Repasse atualizado':lang==='es'?'✓ Traspaso atualizado':'✓ Handoff updated');
+              loadLiveHandoffs && loadLiveHandoffs();
+            }}/>
+        )}
+      </FullPage>
+    </>
+  );
+
   // ── My Activity data (shared between desktop + mobile) ────────
   const user = ctx.user || {};
 
@@ -808,6 +991,7 @@ function WorkScreen({ ctx }) {
 
             {/* Panel content */}
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
+              {handoffCardsList}
               {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
               {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
@@ -818,6 +1002,7 @@ function WorkScreen({ ctx }) {
       <LocationFilterSheet open={workLocationFilterOpen} onClose={()=>setWorkLocationFilterOpen(false)}
         userLocation={workUserLocation} setUserLocation={setWorkUserLocation}
         radiusMiles={workRadiusMiles} setRadiusMiles={setWorkRadiusMiles} lang={lang}/>
+      {handoffOverlays}
       </div>
     );
   }
@@ -1232,112 +1417,7 @@ function WorkScreen({ ctx }) {
 
       {/* ── Content panels ── */}
       <div style={{padding:'14px 18px 0'}}>
-        {sub === 'hiring' && liveHandoffs.length > 0 && (
-          <div style={{display:'flex', flexDirection:'column', gap:12, marginBottom:12}}>
-            {liveHandoffs.map(h => {
-              const isOwn = ctxUser?.uid && h.poster_id === ctxUser.uid;
-              const isAdminHere = ctxUser?.role === 'admin';
-              const canManageHere = isOwn || isAdminHere;
-              const dayLbls = { mon:'Seg',tue:'Ter',wed:'Qua',thu:'Qui',fri:'Sex',sat:'Sáb',sun:'Dom' };
-              const thumb = h.photoUrls && h.photoUrls[0];
-              const poolPrices = (h.pools||[]).map(p=>p.price).filter(p=>p!=null);
-              const priceLbl = poolPrices.length > 0
-                ? (Math.min(...poolPrices)===Math.max(...poolPrices) ? `$${poolPrices[0]}` : `$${Math.min(...poolPrices)}–$${Math.max(...poolPrices)}`)
-                : (h.pricePerPool != null ? `$${h.pricePerPool}` : null);
-              const deleteHandoffFromCard = async (e) => {
-                e.stopPropagation();
-                const msg = lang==='pt'?'Excluir este repasse?':lang==='es'?'¿Eliminar este traspaso?':'Delete this handoff?';
-                if (!window.confirm(msg)) return;
-                const { error } = await window.sb.from('pool_handoffs').delete().eq('id', h._id);
-                if (error) { showToast && showToast('❌ ' + error.message); return; }
-                showToast && showToast('🗑️ ' + (lang==='pt'?'Repasse excluído':lang==='es'?'Traspaso eliminado':'Handoff deleted'));
-                loadLiveHandoffs && loadLiveHandoffs();
-              };
-              return (
-                <article key={h._id} className="pg-card pg-press" onClick={()=>setHandoffDetail(h)}
-                  style={{padding:'14px 16px', cursor:'pointer', position:'relative'}}>
-                  {/* Edit/delete — same top-right icon-button pattern as a regular job card */}
-                  {canManageHere && (
-                    <div style={{position:'absolute', top:10, right:10, display:'flex', gap:6, zIndex:2}}>
-                      <button onClick={(e)=>{ e.stopPropagation(); setEditingHandoff(h); }} style={{
-                        width:28, height:28, borderRadius:7, border:'1px solid var(--pg-ink-200)',
-                        background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', cursor:'pointer',
-                        display:'flex', alignItems:'center', justifyContent:'center',
-                      }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                      <button onClick={deleteHandoffFromCard} style={{
-                        width:28, height:28, borderRadius:7,
-                        background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
-                        color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-                      }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                  {/* Header row — same shape as a regular job card, amber accent instead of blue */}
-                  <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, paddingRight:canManageHere?68:0}}>
-                    {thumb ? (
-                      <img src={thumb} alt="" style={{width:28, height:28, borderRadius:7, objectFit:'cover', flexShrink:0}}/>
-                    ) : (
-                      <div style={{width:28, height:28, borderRadius:7, background:'rgba(245,158,11,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
-                        {Icon.pool ? Icon.pool(15,'#D97706') : null}
-                      </div>
-                    )}
-                    <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.015em', flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                      {(h.cities||[]).join(' · ')}
-                    </h3>
-                    <span style={{fontSize:9.5, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'rgba(245,158,11,0.15)', color:'#D97706', flexShrink:0, letterSpacing:'0.05em'}}>
-                      {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
-                    </span>
-                  </div>
-                  {/* Info rows */}
-                  <div style={{display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', fontSize:12.5, color:'var(--pg-ink-500)'}}>
-                    <span style={{display:'inline-flex', alignItems:'center', gap:5}}>{Icon.cal(13,'var(--pg-ink-500)')} {h.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}</span>
-                    <span>{h.poolsCount} {h.poolsCount>1?(lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'):(lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}</span>
-                  </div>
-                  <div className="pg-divider" style={{margin:'12px 0'}}/>
-                  {/* Split/price + status */}
-                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-                    <div style={{display:'flex', alignItems:'baseline', gap:6}}>
-                      {priceLbl ? (
-                        <span style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:800, color:'#D97706', letterSpacing:'-0.01em'}}>
-                          {priceLbl}<span style={{fontSize:11.5, fontWeight:600, color:'var(--pg-ink-400)'}}>/{lang==='pt'?'piscina':'pool'}</span>
-                        </span>
-                      ) : (
-                        <span style={{fontSize:12.5, fontWeight:600, color:'var(--pg-ink-400)'}}>
-                          {lang==='pt'?'Preço a combinar':lang==='es'?'Precio a acordar':'Price TBD'}
-                        </span>
-                      )}
-                      <span style={{fontSize:10.5, fontWeight:700, color:'var(--pg-ink-400)'}}>· {h.splitTakerPct}/{100-h.splitTakerPct}</span>
-                    </div>
-                    {isOwn ? (
-                      <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(0,119,182,0.12)', color:'var(--pg-blue-600)', border:'1px solid rgba(0,119,182,0.25)'}}>
-                        {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}
-                      </span>
-                    ) : (
-                      <button onClick={(e)=>{ e.stopPropagation(); openChat && openChat({ id: h.poster_id, name: h.poster,
-                        listingId: 'handoff_' + h._id,
-                        listingContext: { name: `${(h.cities||[]).join(' · ')} · ${h.splitTakerPct}/${100-h.splitTakerPct}`, photoUrl: (h.photoUrls&&h.photoUrls[0])||null } }); }} style={{
-                        display:'flex', alignItems:'center', gap:6, height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
-                        background:'linear-gradient(135deg,#0077B6,#023E8A)', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:700,
-                        boxShadow:'0 3px 10px rgba(0,119,182,0.30)',
-                      }}>
-                        {Icon.msg ? Icon.msg(13,'#fff') : null}
-                        {lang==='pt'?'Contato':lang==='es'?'Contacto':'Contact'}
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+        {handoffCardsList}
         {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts}/>}
         {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
@@ -1352,73 +1432,7 @@ function WorkScreen({ ctx }) {
     </div>
     {FabBtn}
 
-    {/* "+" picker on Vagas: regular job vs pool handoff */}
-    <Sheet open={postPickerOpen} onClose={()=>setPostPickerOpen(false)} height="auto">
-      <div style={{padding:'8px 18px calc(18px + env(safe-area-inset-bottom, 0px))', display:'flex', flexDirection:'column', gap:10}}>
-        <div style={{fontSize:15, fontWeight:700, textAlign:'center', margin:'6px 0 4px', color:'var(--pg-ink-900)'}}>
-          {lang==='pt'?'O que você quer publicar?':lang==='es'?'¿Qué querés publicar?':'What do you want to post?'}
-        </div>
-        <button onClick={()=>{ setPostPickerOpen(false); openHiringSheet(); }} style={{
-          display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:14,
-          border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)', cursor:'pointer', textAlign:'left',
-        }}>
-          <div style={{width:40, height:40, borderRadius:11, flexShrink:0, background:'var(--pg-blue-50)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-            {Icon.briefcase(19,'var(--pg-blue-600)')}
-          </div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{lang==='pt'?'Vaga de emprego':lang==='es'?'Empleo':'Job posting'}</div>
-            <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>{lang==='pt'?'Contratação fixa, pagamento em $':lang==='es'?'Contratación fija, pago en $':'Fixed hire, paid in $'}</div>
-          </div>
-        </button>
-        <button onClick={()=>{ setPostPickerOpen(false); openHandoffSheet && openHandoffSheet(); }} style={{
-          display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:14,
-          border:'1.5px solid rgba(245,158,11,0.4)', background:'rgba(245,158,11,0.06)', cursor:'pointer', textAlign:'left',
-        }}>
-          <div style={{width:40, height:40, borderRadius:11, flexShrink:0, background:'rgba(245,158,11,0.15)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-            {Icon.pool(19,'#D97706')}
-          </div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{lang==='pt'?'Repasse de piscina':lang==='es'?'Traspaso de piscina':'Pool handoff'}</div>
-            <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>{lang==='pt'?'Repasse 1+ piscinas da sua rota, pagamento em split':lang==='es'?'Traspasa piscinas de tu ruta, pago en split':'Hand off route pools, paid as a split'}</div>
-          </div>
-        </button>
-      </div>
-    </Sheet>
-
-    {/* Handoff detail — true full screen, same as PostHiringSheet/PostTechSheet
-        (Sheet, even at height 92%, still shows a rounded-corner gap at the
-        top that reads as a card rather than a page). */}
-    <FullPage open={!!handoffDetail} onClose={()=>setHandoffDetail(null)}>
-      {handoffDetail && (
-        <HandoffDetailPanel handoff={handoffDetail} user={ctxUser} lang={lang} showToast={showToast}
-          onClose={()=>setHandoffDetail(null)}
-          onChat={openChat}
-          onEdit={(h)=>{ setHandoffDetail(null); setTimeout(()=>setEditingHandoff(h), 50); }}
-          onChanged={()=>{ loadLiveHandoffs && loadLiveHandoffs(); }}/>
-      )}
-    </FullPage>
-
-    {/* Edit a handoff — same form as posting, pre-filled */}
-    <FullPage open={!!editingHandoff} onClose={()=>setEditingHandoff(null)}>
-      {editingHandoff && (
-        <PostPoolHandoffSheet lang={lang} initialValues={editingHandoff}
-          onClose={()=>setEditingHandoff(null)}
-          onSubmit={async (data) => {
-            if (!data || !window.sb) { setEditingHandoff(null); return; }
-            setHandoffBusy(true);
-            const { error } = await window.sb.from('pool_handoffs').update({
-              pools: data.pools, cities: data.cities, days_of_week: data.daysOfWeek, pools_count: data.poolsCount,
-              description: data.description || null,
-              photo_urls: data.photoUrls && data.photoUrls.length > 0 ? data.photoUrls : null,
-            }).eq('id', editingHandoff._id);
-            setHandoffBusy(false);
-            setEditingHandoff(null);
-            if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
-            showToast && showToast(lang==='pt'?'✓ Repasse atualizado':lang==='es'?'✓ Traspaso actualizado':'✓ Handoff updated');
-            loadLiveHandoffs && loadLiveHandoffs();
-          }}/>
-      )}
-    </FullPage>
+    {handoffOverlays}
     </div>
   );
 }
