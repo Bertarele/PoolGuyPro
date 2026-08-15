@@ -1311,7 +1311,7 @@ function QuickPoolsScreen({
         fontWeight: 600,
         whiteSpace: 'nowrap'
       }
-    }, formatRemaining(j.expires_at))), /*#__PURE__*/React.createElement("button", {
+    }, formatRemaining(j.expires_at))), !j.sourceRouteId && /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         openEditPost && openEditPost({
@@ -1868,7 +1868,9 @@ function QuickPoolsScreen({
         detail: inserted
       }));
       let notifyCount = 0,
-        notifyFailed = false;
+        notifyFailed = false,
+        throttled = false,
+        retryAfterSeconds = 0;
       try {
         if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(() => {});
         const {
@@ -1893,13 +1895,20 @@ function QuickPoolsScreen({
         if (res.ok) {
           const r = await res.json().catch(() => ({}));
           notifyCount = r?.matched ?? r?.sent ?? 0;
+          // Same server-side cooldown as regular Quick Pools postings — stops
+          // delete+repost (or a trivial edit+reactivate) from re-spamming.
+          if (r?.throttled) {
+            throttled = true;
+            retryAfterSeconds = r.retryAfterSeconds || 0;
+          }
         } else notifyFailed = true;
       } catch (e) {
         notifyFailed = true;
       }
       setRouteBusy(false);
       setRoutesOpen(false);
-      showToast && showToast(notifyFailed ? lang === 'pt' ? '⚠️ Rota ativada, mas o alerta pode não ter chegado a todos' : lang === 'es' ? '⚠️ Ruta activada, pero la alerta puede no haber llegado a todos' : '⚠️ Route activated, but the alert may not have reached everyone' : lang === 'pt' ? `✓ Rota ativada — ${notifyCount} piscineiros notificados` : lang === 'es' ? `✓ Ruta activada — ${notifyCount} técnicos notificados` : `✓ Route activated — ${notifyCount} pool guys notified`);
+      const retryMin = Math.ceil(retryAfterSeconds / 60);
+      showToast && showToast(throttled ? lang === 'pt' ? `✅ Rota ativada — alerta pulado (você já notificou há pouco, tente de novo em ${retryMin} min)` : lang === 'es' ? `✅ Ruta activada — alerta omitida (ya notificaste hace poco, intenta de nuevo en ${retryMin} min)` : `✅ Route activated — alert skipped (you already notified recently, try again in ${retryMin} min)` : notifyFailed ? lang === 'pt' ? '⚠️ Rota ativada, mas o alerta pode não ter chegado a todos' : lang === 'es' ? '⚠️ Ruta activada, pero la alerta puede no haber llegado a todos' : '⚠️ Route activated, but the alert may not have reached everyone' : lang === 'pt' ? `✓ Rota ativada — ${notifyCount} piscineiros notificados` : lang === 'es' ? `✓ Ruta activada — ${notifyCount} técnicos notificados` : `✓ Route activated — ${notifyCount} pool guys notified`);
       loadJobs();
     } catch (e) {
       setRouteBusy(false);
@@ -3387,7 +3396,7 @@ function RouteManagerPanel({
       background: 'rgba(14,186,199,0.08)',
       border: '1px solid rgba(14,186,199,0.25)'
     }
-  }, lang === 'pt' ? 'Cadastre as piscinas de cada dia da semana. Se o pool guy daquele dia faltar, ative a rota e ela vira uma vaga urgente de Piscinas Rápidas — pago 70/30, endereço só aparece pra quem for aceito.' : lang === 'es' ? 'Registra las piscinas de cada día de la semana. Si el pool guy de ese día falta, activa la ruta y se convierte en un puesto urgente de Piscinas Rápidas — pago 70/30, la dirección solo aparece para quien sea aceptado.' : 'Register each weekday\'s pools ahead of time. If that day\'s pool guy is out, activate the route and it becomes an urgent Quick Pools job — paid 70/30, address only shown to whoever is accepted.'), loading ? /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Cadastre as piscinas de cada dia da semana. Se o pool guy daquele dia faltar, ative a rota e ela vira uma vaga urgente de Piscinas Rápidas.' : lang === 'es' ? 'Registra las piscinas de cada día de la semana. Si el pool guy de ese día falta, activa la ruta y se convierte en un puesto urgente de Piscinas Rápidas.' : 'Register each weekday\'s pools ahead of time. If that day\'s pool guy is out, activate the route and it becomes an urgent Quick Pools job.'), loading ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       padding: '40px 0',
@@ -3596,7 +3605,7 @@ function RoutePostForm({
     id,
     label: (ROUTE_DAY_LABELS[id][lang] || ROUTE_DAY_LABELS[id].en).slice(0, 3)
   }));
-  const isValid = pools.length > 0 && pools.every(p => p.city && p.address.trim().length > 0);
+  const isValid = pools.length > 0 && pools.every(p => p.city) && priceValue.trim().length > 0;
   const submitLbl = isEdit ? lang === 'pt' ? 'Salvar alterações' : lang === 'es' ? 'Guardar cambios' : 'Save changes' : lang === 'pt' ? 'Cadastrar rota' : lang === 'es' ? 'Registrar ruta' : 'Save route';
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3679,27 +3688,8 @@ function RoutePostForm({
     value: name,
     onChange: e => setName(e.target.value),
     placeholder: lang === 'pt' ? 'ex: Rota Boca Raton' : lang === 'es' ? 'ej: Ruta Boca Raton' : 'e.g. Boca Raton route'
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '12px 14px',
-      borderRadius: 12,
-      background: 'var(--pg-ink-50)',
-      border: '1px solid var(--pg-ink-200)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 800,
-      color: 'var(--pg-ink-900)'
-    }
-  }, lang === 'pt' ? 'Preço fixo' : lang === 'es' ? 'Precio fijo' : 'Fixed price'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: 'var(--pg-ink-400)',
-      marginTop: 1
-    }
-  }, "(70/30)")), /*#__PURE__*/React.createElement(HiringFormSection, {
-    label: lang === 'pt' ? 'Valor por piscina (opcional)' : lang === 'es' ? 'Valor por piscina (opcional)' : 'Price per pool (optional)'
+  })), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Valor por piscina' : lang === 'es' ? 'Valor por piscina' : 'Price per pool'
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative'
@@ -3817,7 +3807,7 @@ function RoutePostForm({
     }),
     lang: lang
   })), /*#__PURE__*/React.createElement(HiringFormSection, {
-    label: lang === 'pt' ? 'Endereço' : lang === 'es' ? 'Dirección' : 'Address'
+    label: lang === 'pt' ? 'Endereço (opcional)' : lang === 'es' ? 'Dirección (opcional)' : 'Address (optional)'
   }, /*#__PURE__*/React.createElement(StreetAddressAutocomplete, {
     value: p.address,
     onChange: v => updatePool(i, {
@@ -3830,7 +3820,7 @@ function RoutePostForm({
       color: 'var(--pg-ink-400)',
       marginTop: 6
     }
-  }, lang === 'pt' ? 'Só aparece pro pool guy depois de aceito na vaga.' : lang === 'es' ? 'Solo aparece para el pool guy después de ser aceptado.' : 'Only shown to the pool guy once accepted.')), /*#__PURE__*/React.createElement(HiringFormSection, {
+  }, lang === 'pt' ? 'Se informado, só aparece pro pool guy depois de aceito na vaga.' : lang === 'es' ? 'Si se indica, solo aparece para el pool guy después de ser aceptado.' : 'If provided, only shown to the pool guy once accepted.')), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: lang === 'pt' ? 'Tipo de propriedade' : lang === 'es' ? 'Tipo de propiedad' : 'Property type'
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3930,7 +3920,7 @@ function RoutePostForm({
       textAlign: 'center',
       marginBottom: 10
     }
-  }, lang === 'pt' ? 'Informe cidade e endereço de cada piscina' : lang === 'es' ? 'Ingresa ciudad y dirección de cada piscina' : 'Enter a city and address for each pool'), /*#__PURE__*/React.createElement("button", {
+  }, lang === 'pt' ? 'Informe a cidade de cada piscina e o valor por piscina' : lang === 'es' ? 'Ingresa la ciudad de cada piscina y el valor por piscina' : 'Enter each pool\'s city and the price per pool'), /*#__PURE__*/React.createElement("button", {
     onClick: () => onSubmit && onSubmit({
       id: initialValues?.id,
       dayOfWeek,
@@ -5746,7 +5736,7 @@ function QuickPoolDetails({
       flexDirection: 'column',
       gap: 8
     }
-  }, job.status === 'open' && openEditPost && /*#__PURE__*/React.createElement("button", {
+  }, job.status === 'open' && !job.sourceRouteId && openEditPost && /*#__PURE__*/React.createElement("button", {
     onClick: () => openEditPost({
       id: job.id,
       title: typeof job.title === 'object' ? job.title[lang] || job.title.pt || job.title.en : job.title,

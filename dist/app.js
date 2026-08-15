@@ -2608,6 +2608,8 @@ function App() {
         }));
         let notifyCount = 0;
         let notifyFailed = false;
+        let throttled = false,
+          retryAfterSeconds = 0;
         if (!scheduledFor) {
           try {
             // getSession() reads a cached token with no freshness check — if it's
@@ -2637,6 +2639,14 @@ function App() {
               // "sent" only counts best-effort push deliveries, which can be 0
               // even when everyone was notified in-app (e.g. stale push subs).
               notifyCount = result?.matched ?? result?.sent ?? 0;
+              // Server-side anti-spam cooldown (shared with Rotas Rápidas) — skips
+              // sending when this poster already triggered a notify blast recently,
+              // so deleting+reposting (or a trivial edit+republish) can't be used to
+              // re-spam the same pool guys.
+              if (result?.throttled) {
+                throttled = true;
+                retryAfterSeconds = result.retryAfterSeconds || 0;
+              }
             } else {
               notifyFailed = true;
               console.error('[QuickPools] notify-quick-pool failed', res.status, await res.text().catch(() => ''));
@@ -2646,7 +2656,8 @@ function App() {
             console.error('[QuickPools] notify-quick-pool error', e);
           }
         }
-        const toastMsg = notifyFailed ? lang === 'pt' ? '⚠️ Vaga publicada, mas o alerta pode não ter chegado a todos' : lang === 'es' ? '⚠️ Vacante publicada, pero la alerta puede no haber llegado a todos' : '⚠️ Job posted, but the alert may not have reached everyone' : lang === 'pt' ? `Piscina Rápida publicada — ${notifyCount} piscineiros notificados` : lang === 'es' ? `Piscina Rápida publicada — ${notifyCount} técnicos notificados` : `Quick Pool posted — ${notifyCount} pool guys notified`;
+        const retryMin = Math.ceil(retryAfterSeconds / 60);
+        const toastMsg = throttled ? lang === 'pt' ? `✅ Vaga publicada — alerta pulado (você já notificou há pouco, tente de novo em ${retryMin} min)` : lang === 'es' ? `✅ Vacante publicada — alerta omitida (ya notificaste hace poco, intenta de nuevo en ${retryMin} min)` : `✅ Job posted — alert skipped (you already notified recently, try again in ${retryMin} min)` : notifyFailed ? lang === 'pt' ? '⚠️ Vaga publicada, mas o alerta pode não ter chegado a todos' : lang === 'es' ? '⚠️ Vacante publicada, pero la alerta puede no haber llegado a todos' : '⚠️ Job posted, but the alert may not have reached everyone' : lang === 'pt' ? `Piscina Rápida publicada — ${notifyCount} piscineiros notificados` : lang === 'es' ? `Piscina Rápida publicada — ${notifyCount} técnicos notificados` : `Quick Pool posted — ${notifyCount} pool guys notified`;
         showToast(toastMsg);
       } catch (e) {
         console.error('[QuickPools] post error', e);

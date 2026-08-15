@@ -822,19 +822,24 @@ function QuickPoolsScreen({ ctx }) {
                     </span>
                   )
                 )}
-                <button onClick={(e)=>{ e.stopPropagation(); openEditPost && openEditPost({
-                  id: j.id, title: typeof j.title==='object' ? (j.title[lang]||j.title.pt||j.title.en) : j.title,
-                  description: typeof j.body==='object' ? (j.body[lang]||j.body.pt||j.body.en) : '',
-                  city: j.loc, pool_type: j.type, extras: j.extras,
-                  price_negotiable: j.price==='neg', price_per_pool: j.price==='neg' ? null : j.price,
-                  poster_phone: j.poster_phone, pool_address: j.pool_address,
-                  required_photos: j.required_photos || [],
-                }); }} style={{
-                  width:36, height:36, borderRadius:10, border:'1px solid var(--pg-ink-300)',
-                  background:'var(--pg-ink-100)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-                }}>
-                  {Icon.edit(14,'var(--pg-ink-700)')}
-                </button>
+                {/* Rotas Rápidas jobs are a one-shot snapshot pushed from the saved
+                    route template — editing happens on the route itself (Rotas
+                    Rápidas panel), not on this already-published posting. */}
+                {!j.sourceRouteId && (
+                  <button onClick={(e)=>{ e.stopPropagation(); openEditPost && openEditPost({
+                    id: j.id, title: typeof j.title==='object' ? (j.title[lang]||j.title.pt||j.title.en) : j.title,
+                    description: typeof j.body==='object' ? (j.body[lang]||j.body.pt||j.body.en) : '',
+                    city: j.loc, pool_type: j.type, extras: j.extras,
+                    price_negotiable: j.price==='neg', price_per_pool: j.price==='neg' ? null : j.price,
+                    poster_phone: j.poster_phone, pool_address: j.pool_address,
+                    required_photos: j.required_photos || [],
+                  }); }} style={{
+                    width:36, height:36, borderRadius:10, border:'1px solid var(--pg-ink-300)',
+                    background:'var(--pg-ink-100)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                  }}>
+                    {Icon.edit(14,'var(--pg-ink-700)')}
+                  </button>
+                )}
                 <button onClick={(e)=>{ e.stopPropagation(); setConfirmDialog({
                   message: lang==='pt'?'Remover publicação?':lang==='es'?'¿Eliminar publicación?':'Remove posting?',
                   subMessage: lang==='pt'?'Essa vaga será removida e os candidatos não poderão mais se candidatar.':'This job will be removed and applicants will no longer be able to apply.',
@@ -1154,7 +1159,7 @@ function QuickPoolsScreen({ ctx }) {
       }).eq('id', route.id);
       window.dispatchEvent(new CustomEvent('pgQuickPoolPosted', { detail: inserted }));
 
-      let notifyCount = 0, notifyFailed = false;
+      let notifyCount = 0, notifyFailed = false, throttled = false, retryAfterSeconds = 0;
       try {
         if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(()=>{});
         const { data: { session } } = await window.sb.auth.getSession();
@@ -1163,13 +1168,22 @@ function QuickPoolsScreen({ ctx }) {
           method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
           body: JSON.stringify({ job: { ...inserted, cities } }),
         });
-        if (res.ok) { const r = await res.json().catch(()=>({})); notifyCount = r?.matched ?? r?.sent ?? 0; }
+        if (res.ok) {
+          const r = await res.json().catch(()=>({}));
+          notifyCount = r?.matched ?? r?.sent ?? 0;
+          // Same server-side cooldown as regular Quick Pools postings — stops
+          // delete+repost (or a trivial edit+reactivate) from re-spamming.
+          if (r?.throttled) { throttled = true; retryAfterSeconds = r.retryAfterSeconds || 0; }
+        }
         else notifyFailed = true;
       } catch(e) { notifyFailed = true; }
 
       setRouteBusy(false);
       setRoutesOpen(false);
-      showToast && showToast(notifyFailed
+      const retryMin = Math.ceil(retryAfterSeconds / 60);
+      showToast && showToast(throttled
+        ? (lang==='pt'?`✅ Rota ativada — alerta pulado (você já notificou há pouco, tente de novo em ${retryMin} min)`:lang==='es'?`✅ Ruta activada — alerta omitida (ya notificaste hace poco, intenta de nuevo en ${retryMin} min)`:`✅ Route activated — alert skipped (you already notified recently, try again in ${retryMin} min)`)
+        : notifyFailed
         ? (lang==='pt'?'⚠️ Rota ativada, mas o alerta pode não ter chegado a todos':lang==='es'?'⚠️ Ruta activada, pero la alerta puede no haber llegado a todos':'⚠️ Route activated, but the alert may not have reached everyone')
         : (lang==='pt'?`✓ Rota ativada — ${notifyCount} piscineiros notificados`:lang==='es'?`✓ Ruta activada — ${notifyCount} técnicos notificados`:`✓ Route activated — ${notifyCount} pool guys notified`));
       loadJobs();
@@ -1873,10 +1887,10 @@ function RouteManagerPanel({ lang, routes, loading, busy, onClose, onCreate, onE
       <div style={{flex:1, overflow:'auto', padding:'16px 18px'}}>
         <div style={{fontSize:12.5, color:'var(--pg-ink-500)', lineHeight:1.5, marginBottom:16, padding:'10px 12px', borderRadius:12, background:'rgba(14,186,199,0.08)', border:'1px solid rgba(14,186,199,0.25)'}}>
           {lang==='pt'
-            ? 'Cadastre as piscinas de cada dia da semana. Se o pool guy daquele dia faltar, ative a rota e ela vira uma vaga urgente de Piscinas Rápidas — pago 70/30, endereço só aparece pra quem for aceito.'
+            ? 'Cadastre as piscinas de cada dia da semana. Se o pool guy daquele dia faltar, ative a rota e ela vira uma vaga urgente de Piscinas Rápidas.'
             : lang==='es'
-              ? 'Registra las piscinas de cada día de la semana. Si el pool guy de ese día falta, activa la ruta y se convierte en un puesto urgente de Piscinas Rápidas — pago 70/30, la dirección solo aparece para quien sea aceptado.'
-              : 'Register each weekday\'s pools ahead of time. If that day\'s pool guy is out, activate the route and it becomes an urgent Quick Pools job — paid 70/30, address only shown to whoever is accepted.'}
+              ? 'Registra las piscinas de cada día de la semana. Si el pool guy de ese día falta, activa la ruta y se convierte en un puesto urgente de Piscinas Rápidas.'
+              : 'Register each weekday\'s pools ahead of time. If that day\'s pool guy is out, activate the route and it becomes an urgent Quick Pools job.'}
         </div>
 
         {loading ? (
@@ -1994,7 +2008,7 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
 
   const dayDefs = ROUTE_DAY_ORDER.map(id => ({ id, label: (ROUTE_DAY_LABELS[id][lang] || ROUTE_DAY_LABELS[id].en).slice(0,3) }));
 
-  const isValid = pools.length > 0 && pools.every(p => p.city && p.address.trim().length > 0);
+  const isValid = pools.length > 0 && pools.every(p => p.city) && priceValue.trim().length > 0;
   const submitLbl = isEdit ? (lang==='pt'?'Salvar alterações':lang==='es'?'Guardar cambios':'Save changes') : (lang==='pt'?'Cadastrar rota':lang==='es'?'Registrar ruta':'Save route');
 
   return (
@@ -2032,14 +2046,7 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
             placeholder={lang==='pt'?'ex: Rota Boca Raton':lang==='es'?'ej: Ruta Boca Raton':'e.g. Boca Raton route'}/>
         </HiringFormSection>
 
-        <div style={{padding:'12px 14px', borderRadius:12, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-200)'}}>
-          <div style={{fontSize:14, fontWeight:800, color:'var(--pg-ink-900)'}}>
-            {lang==='pt'?'Preço fixo':lang==='es'?'Precio fijo':'Fixed price'}
-          </div>
-          <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:1}}>(70/30)</div>
-        </div>
-
-        <HiringFormSection label={lang==='pt'?'Valor por piscina (opcional)':lang==='es'?'Valor por piscina (opcional)':'Price per pool (optional)'}>
+        <HiringFormSection label={lang==='pt'?'Valor por piscina':lang==='es'?'Valor por piscina':'Price per pool'}>
           <div style={{position:'relative'}}>
             <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
             <input className="pg-field" value={priceValue}
@@ -2079,10 +2086,10 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
               <CityAutocomplete value={p.city} onChange={v=>updatePool(i, { city: v })} lang={lang}/>
             </HiringFormSection>
 
-            <HiringFormSection label={lang==='pt'?'Endereço':lang==='es'?'Dirección':'Address'}>
+            <HiringFormSection label={lang==='pt'?'Endereço (opcional)':lang==='es'?'Dirección (opcional)':'Address (optional)'}>
               <StreetAddressAutocomplete value={p.address} onChange={v=>updatePool(i, { address: v })} lang={lang}/>
               <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:6}}>
-                {lang==='pt'?'Só aparece pro pool guy depois de aceito na vaga.':lang==='es'?'Solo aparece para el pool guy después de ser aceptado.':'Only shown to the pool guy once accepted.'}
+                {lang==='pt'?'Se informado, só aparece pro pool guy depois de aceito na vaga.':lang==='es'?'Si se indica, solo aparece para el pool guy después de ser aceptado.':'If provided, only shown to the pool guy once accepted.'}
               </div>
             </HiringFormSection>
 
@@ -2128,7 +2135,7 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
       <div style={{padding:'12px 18px', flexShrink:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         {!isValid && (
           <div style={{fontSize:11.5, color:'var(--pg-ink-400)', textAlign:'center', marginBottom:10}}>
-            {lang==='pt'?'Informe cidade e endereço de cada piscina':lang==='es'?'Ingresa ciudad y dirección de cada piscina':'Enter a city and address for each pool'}
+            {lang==='pt'?'Informe a cidade de cada piscina e o valor por piscina':lang==='es'?'Ingresa la ciudad de cada piscina y el valor por piscina':'Enter each pool\'s city and the price per pool'}
           </div>
         )}
         <button onClick={()=>onSubmit && onSubmit({
@@ -3081,7 +3088,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
               </div>
             ) : (
               <div style={{display:'flex', flexDirection:'column', gap:8}}>
-                {job.status === 'open' && openEditPost && (
+                {job.status === 'open' && !job.sourceRouteId && openEditPost && (
                   <button onClick={()=>openEditPost({
                     id: job.id,
                     title: typeof job.title==='object' ? (job.title[lang]||job.title.pt||job.title.en) : job.title,

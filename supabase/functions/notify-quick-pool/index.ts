@@ -48,6 +48,25 @@ Deno.serve(async (req) => {
     });
   }
 
+  // ── Anti-spam throttle ─────────────────────────────────────────────
+  // Nothing stops a poster from deleting+reposting the same job, or making a
+  // trivial edit and "publishing" again, purely to re-blast a notification.
+  // One cooldown per poster, shared by every Quick Pools/Rotas Rápidas post,
+  // is far more robust than trying to detect "is this basically the same
+  // content" — enforced here (the single chokepoint every posting path
+  // already calls through) rather than trusted to the client.
+  const NOTIFY_COOLDOWN_MS = 15 * 60 * 1000;
+  const callerProfileRes = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${caller.id}&select=last_qp_notified_at`, { headers });
+  const callerProfileRows = await callerProfileRes.json();
+  const lastNotifiedAt = callerProfileRows?.[0]?.last_qp_notified_at ? new Date(callerProfileRows[0].last_qp_notified_at).getTime() : 0;
+  const msSinceLast = Date.now() - lastNotifiedAt;
+  if (msSinceLast < NOTIFY_COOLDOWN_MS) {
+    return new Response(JSON.stringify({
+      sent: 0, matched: 0, throttled: true,
+      retryAfterSeconds: Math.ceil((NOTIFY_COOLDOWN_MS - msSinceLast) / 1000),
+    }), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+  }
+
   // Rotas Rápidas can span more than one city (each pool has its own address/
   // city) — job.cities carries the full list when present; every other job
   // shape is still just the single job.city.
@@ -64,6 +83,13 @@ Deno.serve(async (req) => {
     const dayCities: string[] = rbd[job.day_of_week] || [];
     return jobCities.some(c => dayCities.includes(c));
   });
+
+  // Every call that gets this far (even a zero-match one) consumes the
+  // cooldown window — it's still one "notification attempt" by this poster.
+  await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${caller.id}`, {
+    method: 'PATCH', headers: { ...headers, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ last_qp_notified_at: new Date().toISOString() }),
+  }).catch(() => {});
 
   if (!matching.length) {
     return new Response(JSON.stringify({ sent: 0, matched: 0 }), {
