@@ -1548,6 +1548,9 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
                   {p.gateCode && <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🔑 {lang==='pt'?'Portão':'Gate'}</span>}
                   {p.doorman && <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🧑‍💼 {lang==='pt'?'Portaria':'Doorman'}</span>}
                 </div>
+                {p.description && (
+                  <p style={{margin:'8px 0 0', fontSize:12.5, lineHeight:1.5, color:'var(--pg-ink-600)'}}>{p.description}</p>
+                )}
               </div>
             ))}
           </div>
@@ -4296,7 +4299,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
 // with other companies/route owners too since it's not exclusive.
 // One entry per pool: { city, days:[...], price:'', poolType, dog, saltwater, gateCode, doorman }
 function blankPool() {
-  return { city:'', days:[], price:'', poolType:'residential', dog:false, saltwater:false, gateCode:false, doorman:false, photos:[] };
+  return { city:'', days:[], price:'', poolType:'residential', dog:false, saltwater:false, gateCode:false, doorman:false, photos:[], description:'' };
 }
 function poolsFromInitialValues(initialValues) {
   if (!initialValues) return [blankPool()];
@@ -4306,10 +4309,11 @@ function poolsFromInitialValues(initialValues) {
       poolType: p.poolType || 'residential', dog: !!p.dog, saltwater: !!p.saltwater,
       gateCode: !!p.gateCode, doorman: !!p.doorman,
       photos: (p.photos || []).map(url => ({ url, uploading:false, error:null })),
+      description: p.description || '',
     }));
   }
   // Legacy rows (pre-per-pool schema) — one shared set of days/price/type/extras/photos
-  // applied to every city, so rebuild one pool entry per city (photos land on the first).
+  // applied to every city, so rebuild one pool entry per city (photos + description land on the first).
   const cities = initialValues.cities && initialValues.cities.length > 0 ? initialValues.cities : [''];
   return cities.map((city, i) => ({
     city, days: initialValues.daysOfWeek || [],
@@ -4318,6 +4322,7 @@ function poolsFromInitialValues(initialValues) {
     dog: !!initialValues.extras?.dog, saltwater: !!initialValues.extras?.saltwater,
     gateCode: !!initialValues.extras?.gate_code, doorman: !!initialValues.extras?.doorman,
     photos: i === 0 ? (initialValues.photoUrls || []).map(url => ({ url, uploading:false, error:null })) : [],
+    description: i === 0 ? (initialValues.description || '') : '',
   }));
 }
 
@@ -4518,6 +4523,13 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
               </div>
               <input ref={el=>photoInputRefs.current[i]=el} type="file" accept="image/*" onChange={e=>handlePhotoPick(i, e)} style={{display:'none'}}/>
             </HiringFormSection>
+
+            <HiringFormSection label={lang==='pt'?'Detalhes desta piscina (opcional)':lang==='es'?'Detalles de esta piscina (opcional)':'Details of this pool (optional)'}>
+              <textarea className="pg-field" value={p.description} onChange={e=>updatePool(i, { description: e.target.value })}
+                placeholder={lang==='pt'?'Particularidades desta piscina — equipamento, acesso, observações…':lang==='es'?'Particularidades de esta piscina — equipo, acceso, observaciones…':'This pool\'s quirks — equipment, access, notes…'}
+                rows={3}
+                style={{resize:'none', lineHeight:1.55, paddingTop:12, paddingBottom:12, height:'auto'}}/>
+            </HiringFormSection>
           </div>
         ))}
 
@@ -4540,6 +4552,7 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
             city: p.city, days: p.days, price: p.price ? parseInt(p.price) : null,
             poolType: p.poolType, dog: p.dog, saltwater: p.saltwater, gateCode: p.gateCode, doorman: p.doorman,
             photos: p.photos.filter(ph=>!ph.uploading && !ph.error).map(ph=>ph.url),
+            description: p.description || null,
           })),
           poolsCount: pools.length, splitTakerPct: 70,
           cities: pools.map(p => p.city),

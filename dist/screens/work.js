@@ -3432,7 +3432,14 @@ function HandoffDetailPanel({
       background: 'var(--pg-ink-100)',
       color: 'var(--pg-ink-700)'
     }
-  }, "\uD83E\uDDD1\u200D\uD83D\uDCBC ", lang === 'pt' ? 'Portaria' : 'Doorman'))))) : /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDD1\u200D\uD83D\uDCBC ", lang === 'pt' ? 'Portaria' : 'Doorman')), p.description && /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: '8px 0 0',
+      fontSize: 12.5,
+      lineHeight: 1.5,
+      color: 'var(--pg-ink-600)'
+    }
+  }, p.description)))) : /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexWrap: 'wrap',
@@ -8868,7 +8875,8 @@ function blankPool() {
     saltwater: false,
     gateCode: false,
     doorman: false,
-    photos: []
+    photos: [],
+    description: ''
   };
 }
 function poolsFromInitialValues(initialValues) {
@@ -8887,11 +8895,12 @@ function poolsFromInitialValues(initialValues) {
         url,
         uploading: false,
         error: null
-      }))
+      })),
+      description: p.description || ''
     }));
   }
   // Legacy rows (pre-per-pool schema) — one shared set of days/price/type/extras/photos
-  // applied to every city, so rebuild one pool entry per city (photos land on the first).
+  // applied to every city, so rebuild one pool entry per city (photos + description land on the first).
   const cities = initialValues.cities && initialValues.cities.length > 0 ? initialValues.cities : [''];
   return cities.map((city, i) => ({
     city,
@@ -8906,7 +8915,8 @@ function poolsFromInitialValues(initialValues) {
       url,
       uploading: false,
       error: null
-    })) : []
+    })) : [],
+    description: i === 0 ? initialValues.description || '' : ''
   }));
 }
 function PostPoolHandoffSheet({
@@ -9413,6 +9423,23 @@ function PostPoolHandoffSheet({
     style: {
       display: 'none'
     }
+  })), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Detalhes desta piscina (opcional)' : lang === 'es' ? 'Detalles de esta piscina (opcional)' : 'Details of this pool (optional)'
+  }, /*#__PURE__*/React.createElement("textarea", {
+    className: "pg-field",
+    value: p.description,
+    onChange: e => updatePool(i, {
+      description: e.target.value
+    }),
+    placeholder: lang === 'pt' ? 'Particularidades desta piscina — equipamento, acesso, observações…' : lang === 'es' ? 'Particularidades de esta piscina — equipo, acceso, observaciones…' : 'This pool\'s quirks — equipment, access, notes…',
+    rows: 3,
+    style: {
+      resize: 'none',
+      lineHeight: 1.55,
+      paddingTop: 12,
+      paddingBottom: 12,
+      height: 'auto'
+    }
   })))), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: descLbl
   }, /*#__PURE__*/React.createElement("textarea", {
@@ -9453,7 +9480,8 @@ function PostPoolHandoffSheet({
         saltwater: p.saltwater,
         gateCode: p.gateCode,
         doorman: p.doorman,
-        photos: p.photos.filter(ph => !ph.uploading && !ph.error).map(ph => ph.url)
+        photos: p.photos.filter(ph => !ph.uploading && !ph.error).map(ph => ph.url),
+        description: p.description || null
       })),
       poolsCount: pools.length,
       splitTakerPct: 70,
