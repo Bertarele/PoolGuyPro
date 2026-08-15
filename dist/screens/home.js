@@ -141,6 +141,9 @@ function HomeScreen({
   // fires the card's onClick on release, so scrolling felt like it randomly
   // triggered a tap instead of sliding.
   const myAdsTouch = React.useRef(null);
+  // Same fix for "Anúncios em Destaque" — another horizontal scroller of
+  // clickable cards with the identical swipe-vs-tap ambiguity.
+  const featuredTouch = React.useRef(null);
   const sponsoredCard = sponsoredCards[sponsoredIdx] || null;
 
   // Featured marketplace listings — admin-picked (featured=true) OR user-paid boost still active
@@ -1227,7 +1230,10 @@ function HomeScreen({
     const priceStr = f.price_mode === 'neg' ? '🤝 Neg.' : f.price ? '$' + f.price : '—';
     return /*#__PURE__*/React.createElement("div", {
       key: f.id,
-      onClick: () => openListingById(f.id),
+      onClick: () => {
+        if (featuredTouch.current?.swiped) return;
+        openListingById(f.id);
+      },
       style: {
         minWidth: 170,
         maxWidth: 170,
@@ -1244,7 +1250,20 @@ function HomeScreen({
       },
       onMouseDown: e => e.currentTarget.style.transform = 'scale(0.97)',
       onMouseUp: e => e.currentTarget.style.transform = '',
-      onTouchStart: e => e.currentTarget.style.transform = 'scale(0.97)',
+      onTouchStart: e => {
+        e.currentTarget.style.transform = 'scale(0.97)';
+        featuredTouch.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          swiped: false
+        };
+      },
+      onTouchMove: e => {
+        if (!featuredTouch.current) return;
+        const dx = e.touches[0].clientX - featuredTouch.current.x;
+        const dy = e.touches[0].clientY - featuredTouch.current.y;
+        if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) featuredTouch.current.swiped = true;
+      },
       onTouchEnd: e => e.currentTarget.style.transform = ''
     }, /*#__PURE__*/React.createElement("div", {
       style: {
