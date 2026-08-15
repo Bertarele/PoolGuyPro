@@ -312,7 +312,10 @@ function MapChooserSheet({ address, lang, onClose }) {
 }
 
 // ── Photo Carousel ────────────────────────────────────────────
-function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
+// `interactive=false` renders a fully static image — no zoom, no swipe, no
+// arrows/dots — for photos that belong to something no longer actionable
+// (e.g. a handoff pool already marked as filled/grayed-out).
+function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220, interactive=true }) {
   const photos = urls.filter(Boolean);
   const [idx, setIdx] = React.useState(0);
   const [viewerOpen, setViewerOpen] = React.useState(false);
@@ -331,19 +334,19 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
 
   return (
     <>
-      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{position:'relative', height, background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
+      <div onTouchStart={interactive ? onTouchStart : undefined} onTouchEnd={interactive ? onTouchEnd : undefined} style={{position:'relative', height, background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
         {photos.length > 0
           ? <img
               src={photos[idx]} alt="" draggable={false}
-              onClick={() => setViewerOpen(true)}
-              style={{width:'100%', height:'100%', objectFit:'cover', display:'block', cursor:'zoom-in', WebkitUserDrag:'none', userSelect:'none'}}
+              onClick={interactive ? () => setViewerOpen(true) : undefined}
+              style={{width:'100%', height:'100%', objectFit:'cover', display:'block', cursor: interactive ? 'zoom-in' : 'default', WebkitUserDrag:'none', userSelect:'none'}}
             />
           : <NoPhotoPlaceholder height={height}/>
         }
         <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.18) 0%,transparent 45%,rgba(0,0,0,0.25) 100%)',pointerEvents:'none'}}/>
 
         {/* Ícone de zoom (hint visual) */}
-        {photos.length > 0 && (
+        {interactive && photos.length > 0 && (
           <div onClick={() => setViewerOpen(true)} style={{
             position:'absolute', bottom:10, right:10, zIndex:2,
             width:28, height:28, borderRadius:8, cursor:'zoom-in',
@@ -358,7 +361,7 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
         )}
 
         {/* Arrows — only if multiple photos */}
-        {photos.length > 1 && (
+        {interactive && photos.length > 1 && (
           <>
             <button onClick={prev} style={{
               position:'absolute', left:10, top:'50%', transform:'translateY(-50%)',
@@ -385,7 +388,7 @@ function PhotoCarousel({ urls=[], fallbackCat='Tools', height=220 }) {
       </div>
 
       {/* Fullscreen viewer */}
-      {viewerOpen && photos.length > 0 && (
+      {interactive && viewerOpen && photos.length > 0 && (
         <PhotoViewer
           photos={photos}
           startIdx={idx}

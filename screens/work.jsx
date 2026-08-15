@@ -1568,7 +1568,7 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
                 </div>
                 {p.photos && p.photos.length > 0 && (
                   <div style={{borderRadius:10, overflow:'hidden', marginBottom:8}}>
-                    <PhotoCarousel urls={p.photos} height={160}/>
+                    <PhotoCarousel urls={p.photos} height={160} interactive={!p.filled}/>
                   </div>
                 )}
                 <div style={{display:'flex', flexWrap:'wrap', gap:6}}>

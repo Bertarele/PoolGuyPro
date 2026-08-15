@@ -3415,7 +3415,8 @@ function HandoffDetailPanel({
     }
   }, /*#__PURE__*/React.createElement(PhotoCarousel, {
     urls: p.photos,
-    height: 160
+    height: 160,
+    interactive: !p.filled
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',

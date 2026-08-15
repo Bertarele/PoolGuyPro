@@ -625,10 +625,14 @@ function MapChooserSheet({
 }
 
 // ── Photo Carousel ────────────────────────────────────────────
+// `interactive=false` renders a fully static image — no zoom, no swipe, no
+// arrows/dots — for photos that belong to something no longer actionable
+// (e.g. a handoff pool already marked as filled/grayed-out).
 function PhotoCarousel({
   urls = [],
   fallbackCat = 'Tools',
-  height = 220
+  height = 220,
+  interactive = true
 }) {
   const photos = urls.filter(Boolean);
   const [idx, setIdx] = React.useState(0);
@@ -661,8 +665,8 @@ function PhotoCarousel({
     }
   };
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    onTouchStart: onTouchStart,
-    onTouchEnd: onTouchEnd,
+    onTouchStart: interactive ? onTouchStart : undefined,
+    onTouchEnd: interactive ? onTouchEnd : undefined,
     style: {
       position: 'relative',
       height,
@@ -674,13 +678,13 @@ function PhotoCarousel({
     src: photos[idx],
     alt: "",
     draggable: false,
-    onClick: () => setViewerOpen(true),
+    onClick: interactive ? () => setViewerOpen(true) : undefined,
     style: {
       width: '100%',
       height: '100%',
       objectFit: 'cover',
       display: 'block',
-      cursor: 'zoom-in',
+      cursor: interactive ? 'zoom-in' : 'default',
       WebkitUserDrag: 'none',
       userSelect: 'none'
     }
@@ -693,7 +697,7 @@ function PhotoCarousel({
       background: 'linear-gradient(to bottom,rgba(0,0,0,0.18) 0%,transparent 45%,rgba(0,0,0,0.25) 100%)',
       pointerEvents: 'none'
     }
-  }), photos.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }), interactive && photos.length > 0 && /*#__PURE__*/React.createElement("div", {
     onClick: () => setViewerOpen(true),
     style: {
       position: 'absolute',
@@ -737,7 +741,7 @@ function PhotoCarousel({
     y1: "11",
     x2: "14",
     y2: "11"
-  }))), photos.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }))), interactive && photos.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     onClick: prev,
     style: {
       position: 'absolute',
@@ -796,7 +800,7 @@ function PhotoCarousel({
       background: i === idx ? '#fff' : 'rgba(255,255,255,0.5)',
       transition: 'width .2s, background .2s'
     }
-  }))))), viewerOpen && photos.length > 0 && /*#__PURE__*/React.createElement(PhotoViewer, {
+  }))))), interactive && viewerOpen && photos.length > 0 && /*#__PURE__*/React.createElement(PhotoViewer, {
     photos: photos,
     startIdx: idx,
     onClose: () => setViewerOpen(false)
