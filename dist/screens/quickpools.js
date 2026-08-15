@@ -2677,9 +2677,9 @@ function QuickPoolsScreen({
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          width: 44,
-          height: 44,
-          borderRadius: 13,
+          width: 40,
+          height: 40,
+          borderRadius: 12,
           flexShrink: 0,
           background: H.iconBg,
           border: `0.5px solid ${H.border}`,
@@ -2689,27 +2689,42 @@ function QuickPoolsScreen({
         }
       }, poolIcon), /*#__PURE__*/React.createElement("div", {
         style: {
-          paddingTop: 2
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 10.5,
-          fontWeight: 600,
-          color: H.sub,
-          letterSpacing: '0.10em',
-          marginBottom: 3,
-          textTransform: 'uppercase'
-        }
-      }, lang === 'pt' ? 'ALERTAS EM TEMPO REAL' : lang === 'es' ? 'ALERTAS EN TIEMPO REAL' : 'REAL-TIME ALERTS'), /*#__PURE__*/React.createElement("div", {
-        style: {
           fontFamily: 'var(--pg-font-display)',
           fontSize: 19,
           fontWeight: 800,
           letterSpacing: '-0.025em',
           lineHeight: 1.1,
-          color: H.text
+          color: H.text,
+          whiteSpace: 'nowrap'
         }
-      }, lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'))),
+      }, lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'), /*#__PURE__*/React.createElement("span", {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '3px 8px',
+          borderRadius: 999,
+          background: H.iconBg,
+          border: `0.5px solid ${H.border}`,
+          flexShrink: 0
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          width: 5,
+          height: 5,
+          borderRadius: '50%',
+          background: '#34D399',
+          animation: 'pg-ride-blink 1.2s ease-in-out infinite'
+        }
+      }), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 9,
+          fontWeight: 700,
+          color: H.sub,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase'
+        }
+      }, lang === 'pt' ? 'tempo real' : lang === 'es' ? 'tiempo real' : 'live'))),
       right: /*#__PURE__*/React.createElement("div", {
         style: {
           display: 'flex',

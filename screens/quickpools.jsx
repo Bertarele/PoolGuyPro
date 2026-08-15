@@ -1553,17 +1553,21 @@ function QuickPoolsScreen({ ctx }) {
             onBack={()=>goTab&&goTab('home')}
             title={
               <div style={{display:'flex', alignItems:'center', gap:10}}>
-                <div style={{width:44, height:44, borderRadius:13, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                <div style={{width:40, height:40, borderRadius:12, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
                   {poolIcon}
                 </div>
-                <div style={{paddingTop:2}}>
-                  <div style={{fontSize:10.5, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase'}}>
-                    {lang==='pt'?'ALERTAS EM TEMPO REAL':lang==='es'?'ALERTAS EN TIEMPO REAL':'REAL-TIME ALERTS'}
-                  </div>
-                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:19, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>
-                    {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
-                  </div>
+                <div style={{fontFamily:'var(--pg-font-display)', fontSize:19, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text, whiteSpace:'nowrap'}}>
+                  {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
                 </div>
+                {/* "Real-time alerts" used to be its own stacked line above the
+                    title, pushing the header taller — folded into a small live
+                    chip next to the title instead. */}
+                <span style={{display:'inline-flex', alignItems:'center', gap:4, padding:'3px 8px', borderRadius:999, background:H.iconBg, border:`0.5px solid ${H.border}`, flexShrink:0}}>
+                  <span style={{width:5, height:5, borderRadius:'50%', background:'#34D399', animation:'pg-ride-blink 1.2s ease-in-out infinite'}}/>
+                  <span style={{fontSize:9, fontWeight:700, color:H.sub, letterSpacing:'0.06em', textTransform:'uppercase'}}>
+                    {lang==='pt'?'tempo real':lang==='es'?'tiempo real':'live'}
+                  </span>
+                </span>
               </div>
             }
             right={
