@@ -12,6 +12,8 @@ function WorkScreen({ ctx }) {
           hasUnreadChat, openNotifications, hasUnreadNotif, darkMode=false, isDesktop=false } = ctx;
   const [postPickerOpen, setPostPickerOpen] = React.useState(false);
   const [handoffDetail,  setHandoffDetail]  = React.useState(null);
+  const [editingHandoff, setEditingHandoff] = React.useState(null);
+  const [handoffBusy,    setHandoffBusy]    = React.useState(false);
   const t = STRINGS[lang];
   const [sub, setSub] = React.useState(() => {
     try {
@@ -1344,15 +1346,41 @@ function WorkScreen({ ctx }) {
         <HandoffDetailPanel handoff={handoffDetail} user={ctxUser} lang={lang} showToast={showToast}
           onClose={()=>setHandoffDetail(null)}
           onChat={openChat}
+          onEdit={(h)=>{ setHandoffDetail(null); setTimeout(()=>setEditingHandoff(h), 50); }}
           onChanged={()=>{ loadLiveHandoffs && loadLiveHandoffs(); }}/>
+      )}
+    </FullPage>
+
+    {/* Edit a handoff — same form as posting, pre-filled */}
+    <FullPage open={!!editingHandoff} onClose={()=>setEditingHandoff(null)}>
+      {editingHandoff && (
+        <PostPoolHandoffSheet lang={lang} initialValues={editingHandoff}
+          onClose={()=>setEditingHandoff(null)}
+          onSubmit={async (data) => {
+            if (!data || !window.sb) { setEditingHandoff(null); return; }
+            setHandoffBusy(true);
+            const { error } = await window.sb.from('pool_handoffs').update({
+              cities: data.cities, days_of_week: data.daysOfWeek, pools_count: data.poolsCount,
+              price_per_pool: data.pricePerPool ?? null, pool_type: data.poolType,
+              extras: data.extras, description: data.description || null,
+              photo_urls: data.photoUrls && data.photoUrls.length > 0 ? data.photoUrls : null,
+            }).eq('id', editingHandoff._id);
+            setHandoffBusy(false);
+            setEditingHandoff(null);
+            if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+            showToast && showToast(lang==='pt'?'✓ Repasse atualizado':lang==='es'?'✓ Traspaso actualizado':'✓ Handoff updated');
+            loadLiveHandoffs && loadLiveHandoffs();
+          }}/>
       )}
     </FullPage>
     </div>
   );
 }
 
-function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, onChanged }) {
-  const isOwn = user?.uid && handoff.poster_id === user.uid;
+function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, onEdit, onChanged }) {
+  const isOwn   = user?.uid && handoff.poster_id === user.uid;
+  const isAdmin = user?.role === 'admin';
+  const canManage = isOwn || isAdmin;
   const [busy, setBusy] = React.useState(false);
   const dayLbls = { mon:'Segunda',tue:'Terça',wed:'Quarta',thu:'Quinta',fri:'Sexta',sat:'Sábado',sun:'Domingo' };
 
@@ -1388,10 +1416,15 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
         <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, letterSpacing:'-0.01em'}}>
           {lang==='pt'?'Repasse de Piscina':lang==='es'?'Traspaso de Piscina':'Pool Handoff'}
         </h2>
-        {isOwn ? (
-          <button onClick={deleteHandoff} disabled={busy} style={{border:'none', background:'transparent', color:'#EF4444', fontSize:14, fontWeight:600, cursor:'pointer', padding:0}}>
-            {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
-          </button>
+        {canManage ? (
+          <div style={{display:'flex', alignItems:'center', gap:14}}>
+            <button onClick={()=>onEdit && onEdit(handoff)} disabled={busy} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:14, fontWeight:600, cursor:'pointer', padding:0}}>
+              {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
+            </button>
+            <button onClick={deleteHandoff} disabled={busy} style={{border:'none', background:'transparent', color:'#EF4444', fontSize:14, fontWeight:600, cursor:'pointer', padding:0}}>
+              {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+            </button>
+          </div>
         ) : <div style={{width:60}}/>}
       </div>
 
@@ -4159,20 +4192,21 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
 // revenue split instead of a flat rate. Distinct from Vagas (permanent
 // employment) — this is per-pool, recurring, and the poster keeps working
 // with other companies/route owners too since it's not exclusive.
-function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
+function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
   const t = STRINGS[lang];
-  const [cities,       setCities]      = React.useState([]); // one city per pool, max = poolsCount
+  const isEdit = !!initialValues;
+  const [cities,       setCities]      = React.useState(initialValues?.cities || []); // one city per pool, max = poolsCount
   const [cityKey,      setCityKey]     = React.useState(0);
-  const [days,         setDays]        = React.useState([]); // ['mon','wed',...]
-  const [poolsCount,   setPoolsCount]  = React.useState(1);
-  const [priceValue,   setPriceValue]  = React.useState(''); // optional $ per pool — split itself is fixed at 70/30
-  const [poolType,     setPoolType]    = React.useState('residential');
-  const [dog,          setDog]         = React.useState(false);
-  const [saltwater,    setSaltwater]   = React.useState(false);
-  const [gateCode,     setGateCode]    = React.useState(false);
-  const [doorman,      setDoorman]     = React.useState(false);
-  const [description,  setDescription] = React.useState('');
-  const [photos,       setPhotos]      = React.useState([]); // [{url, uploading, error}]
+  const [days,         setDays]        = React.useState(initialValues?.daysOfWeek || []); // ['mon','wed',...]
+  const [poolsCount,   setPoolsCount]  = React.useState(initialValues?.poolsCount || 1);
+  const [priceValue,   setPriceValue]  = React.useState(initialValues?.pricePerPool != null ? String(initialValues.pricePerPool) : ''); // optional $ per pool — split itself is fixed at 70/30
+  const [poolType,     setPoolType]    = React.useState(initialValues?.poolType || 'residential');
+  const [dog,          setDog]         = React.useState(initialValues?.extras?.dog || false);
+  const [saltwater,    setSaltwater]   = React.useState(initialValues?.extras?.saltwater || false);
+  const [gateCode,     setGateCode]    = React.useState(initialValues?.extras?.gate_code || false);
+  const [doorman,      setDoorman]     = React.useState(initialValues?.extras?.doorman || false);
+  const [description,  setDescription] = React.useState(initialValues?.description || '');
+  const [photos,       setPhotos]      = React.useState((initialValues?.photoUrls || []).map(url => ({ url, uploading:false, error:null }))); // [{url, uploading, error}]
   const photoInputRef = React.useRef(null);
 
   const handlePhotoPick = async (e) => {
@@ -4211,7 +4245,7 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
     setCities(prev => prev.slice(0, poolsCount));
   }, [poolsCount]);
 
-  const headLbl  = lang==='pt'?'Repassar piscina':lang==='es'?'Traspasar piscina':'Hand off a pool';
+  const headLbl  = isEdit ? (lang==='pt'?'Editar repasse':lang==='es'?'Editar traspaso':'Edit handoff') : (lang==='pt'?'Repassar piscina':lang==='es'?'Traspasar piscina':'Hand off a pool');
   const cityLbl  = lang==='pt'?'Cidades / áreas':lang==='es'?'Ciudades / áreas':'Cities / areas';
   const daysLbl  = lang==='pt'?'Dias da semana':lang==='es'?'Días de la semana':'Days of week';
   const countLbl = lang==='pt'?'Quantas piscinas':lang==='es'?'Cuántas piscinas':'How many pools';
@@ -4219,7 +4253,7 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
   const typeLbl  = lang==='pt'?'Tipo de propriedade':lang==='es'?'Tipo de propiedad':'Property type';
   const descLbl  = lang==='pt'?'Detalhes (opcional)':lang==='es'?'Detalles (opcional)':'Details (optional)';
   const descPh   = lang==='pt'?'Endereço aproximado, horário, particularidades…':lang==='es'?'Dirección aproximada, horario, detalles…':'Approximate address, schedule, quirks…';
-  const submitLbl= lang==='pt'?'Publicar repasse':lang==='es'?'Publicar traspaso':'Post handoff';
+  const submitLbl= isEdit ? (lang==='pt'?'Salvar alterações':lang==='es'?'Guardar cambios':'Save changes') : (lang==='pt'?'Publicar repasse':lang==='es'?'Publicar traspaso':'Post handoff');
 
   const dayDefs = [
     { id:'mon', label: lang==='pt'?'Seg':lang==='es'?'Lun':'Mon' },
