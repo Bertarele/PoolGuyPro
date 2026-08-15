@@ -614,7 +614,10 @@ function QuickPoolsScreen({
           },
           created_at: j.created_at,
           expires_at: j.expires_at,
-          status: j.status
+          status: j.status,
+          routePools: j.pools || null,
+          splitTakerPct: j.split_taker_pct || null,
+          sourceRouteId: j.source_route_id || null
         })));
       }
     } catch {}
@@ -745,7 +748,7 @@ function QuickPoolsScreen({
       });
     });
     // Load history: accepted apps where pool_guy_done=true, fetch full job details
-    window.sb.from('quick_pool_applications').select('job_id,pool_guy_done_at,submitted_photos,quick_pool_jobs!inner(id,title,city,price_per_pool,price_negotiable,poster_name,poster_id,poster_phone,pool_address,status,created_at,day_of_week,time_slot,when_label,pools_count,pool_type,extras,required_photos,description)').eq('applicant_id', user.uid).eq('status', 'accepted').eq('pool_guy_done', true).order('pool_guy_done_at', {
+    window.sb.from('quick_pool_applications').select('job_id,pool_guy_done_at,submitted_photos,quick_pool_jobs!inner(id,title,city,price_per_pool,price_negotiable,poster_name,poster_id,poster_phone,pool_address,status,created_at,day_of_week,time_slot,when_label,pools_count,pool_type,extras,required_photos,description,pools,split_taker_pct,source_route_id)').eq('applicant_id', user.uid).eq('status', 'accepted').eq('pool_guy_done', true).order('pool_guy_done_at', {
       ascending: false
     }).limit(20).then(({
       data
@@ -791,7 +794,10 @@ function QuickPoolsScreen({
           created_at: j.created_at,
           status: j.status,
           pool_guy_done_at: r.pool_guy_done_at,
-          submitted_photos: r.submitted_photos || []
+          submitted_photos: r.submitted_photos || [],
+          routePools: j.pools || null,
+          splitTakerPct: j.split_taker_pct || null,
+          sourceRouteId: j.source_route_id || null
         };
       }));
     });
@@ -869,7 +875,10 @@ function QuickPoolsScreen({
           es: data.description || ''
         },
         created_at: data.created_at,
-        status: data.status
+        status: data.status,
+        routePools: data.pools || null,
+        splitTakerPct: data.split_taker_pct || null,
+        sourceRouteId: data.source_route_id || null
       });
       ctx.clearPendingQuickJob();
     });
@@ -1068,7 +1077,17 @@ function QuickPoolsScreen({
         fontWeight: 600,
         color: 'var(--pg-ink-500)'
       }
-    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), !isAccepted && j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
+    }, Icon.clock(11, 'var(--pg-ink-400)'), " ", tr(j.when, lang)), j.sourceRouteId && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        fontWeight: 800,
+        padding: '2px 8px',
+        borderRadius: 999,
+        background: 'rgba(14,186,199,0.14)',
+        color: '#0D7280',
+        letterSpacing: '0.04em'
+      }
+    }, "\uD83D\uDEA8 ", lang === 'pt' ? 'ROTA' : lang === 'es' ? 'RUTA' : 'ROUTE'), !isAccepted && j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         fontWeight: 700,
@@ -1706,6 +1725,211 @@ function QuickPoolsScreen({
   })))))));
 
   // ══════════════════════════════════════════════════════════════
+  // ── ROTAS RÁPIDAS — saved weekly route templates ───────────────
+  // A route owner registers each weekday's pools once (city, address,
+  // access details) and later "activates" whichever day's route lost its
+  // regular pool guy (sick, no-show, etc.) — that turns it into a real
+  // quick_pool_jobs posting, reusing 100% of the existing apply/accept/
+  // chat/push pipeline instead of a parallel one. Paid via a 70/30 split,
+  // same model as Repasse de Piscina.
+  // ══════════════════════════════════════════════════════════════
+  const [routesOpen, setRoutesOpen] = React.useState(false); // manager list FullPage
+  const [routeForm, setRouteForm] = React.useState(null); // {} = new, {...route} = editing
+  const [myRoutes, setMyRoutes] = React.useState([]);
+  const [routesLoading, setRoutesLoading] = React.useState(false);
+  const [routeBusy, setRouteBusy] = React.useState(false);
+  const loadMyRoutes = React.useCallback(async () => {
+    if (!window.sb || !user?.uid) return;
+    setRoutesLoading(true);
+    const {
+      data
+    } = await window.sb.from('quick_routes').select('*').eq('owner_id', user.uid).eq('status', 'active').order('day_of_week');
+    setMyRoutes(data || []);
+    setRoutesLoading(false);
+  }, [user?.uid]);
+  React.useEffect(() => {
+    if (routesOpen) loadMyRoutes();
+  }, [routesOpen, loadMyRoutes]);
+  const saveRoute = async data => {
+    if (!window.sb || !user?.uid || routeBusy) return;
+    setRouteBusy(true);
+    const row = {
+      owner_id: user.uid,
+      owner_name: user.name || user.email || 'Pool Guy',
+      owner_phone: user.phone || null,
+      name: data.name || null,
+      day_of_week: data.dayOfWeek,
+      pools: data.pools,
+      price_per_pool: data.pricePerPool ?? null,
+      split_taker_pct: 70
+    };
+    const isEdit = !!data.id;
+    const {
+      error
+    } = isEdit ? await window.sb.from('quick_routes').update(row).eq('id', data.id) : await window.sb.from('quick_routes').insert(row);
+    setRouteBusy(false);
+    if (error) {
+      showToast && showToast('❌ ' + (error.message || 'Error'));
+      return;
+    }
+    showToast && showToast(isEdit ? lang === 'pt' ? '✓ Rota atualizada' : lang === 'es' ? '✓ Ruta actualizada' : '✓ Route updated' : lang === 'pt' ? '✓ Rota cadastrada' : lang === 'es' ? '✓ Ruta registrada' : '✓ Route saved');
+    setRouteForm(null);
+    loadMyRoutes();
+  };
+  const deleteRoute = async route => {
+    if (!window.sb || routeBusy) return;
+    const msg = lang === 'pt' ? 'Excluir esta rota cadastrada?' : lang === 'es' ? '¿Eliminar esta ruta registrada?' : 'Delete this saved route?';
+    if (!window.confirm(msg)) return;
+    setRouteBusy(true);
+    const {
+      error
+    } = await window.sb.from('quick_routes').delete().eq('id', route.id);
+    setRouteBusy(false);
+    if (error) {
+      showToast && showToast('❌ ' + (error.message || 'Error'));
+      return;
+    }
+    showToast && showToast('🗑️ ' + (lang === 'pt' ? 'Rota excluída' : lang === 'es' ? 'Ruta eliminada' : 'Route deleted'));
+    loadMyRoutes();
+  };
+
+  // "Ativar hoje" — publishes the route's pools as a real quick_pool_jobs
+  // posting (address redacted until someone's accepted, exactly like any
+  // other Quick Pool job) and fires the same push-notification pipeline.
+  const activateRoute = async route => {
+    if (!window.sb || !user?.uid || routeBusy) return;
+    const pools = route.pools || [];
+    if (pools.length === 0) {
+      showToast && showToast(lang === 'pt' ? '❌ Essa rota não tem piscinas cadastradas' : '❌ This route has no pools registered');
+      return;
+    }
+    setRouteBusy(true);
+    // Guard against double-activating: if the last job this route created is
+    // still open, jump to it instead of creating a duplicate posting.
+    if (route.last_activated_job_id) {
+      const {
+        data: existing
+      } = await window.sb.from('quick_pool_jobs').select('id,status').eq('id', route.last_activated_job_id).single();
+      if (existing && existing.status === 'open') {
+        setRouteBusy(false);
+        setRoutesOpen(false);
+        showToast && showToast(lang === 'pt' ? 'Essa rota já está ativa hoje' : lang === 'es' ? 'Esta ruta ya está activa hoy' : 'This route is already active today');
+        ctx.openQuickJobById && ctx.openQuickJobById(String(existing.id));
+        return;
+      }
+    }
+    const cities = [...new Set(pools.map(p => p.city).filter(Boolean))];
+    const isCondo = pools[0]?.poolType === 'condo';
+    const today = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
+    const job = {
+      poster_id: user.uid,
+      poster_name: user.name || user.email || 'Pool Guy',
+      poster_phone: user.phone || null,
+      city: cities[0] || 'Florida',
+      day_of_week: today,
+      when_label: lang === 'pt' ? 'Hoje' : lang === 'es' ? 'Hoy' : 'Today',
+      pools_count: pools.length,
+      price_per_pool: route.price_per_pool ?? null,
+      price_negotiable: route.price_per_pool == null,
+      split_taker_pct: route.split_taker_pct || 70,
+      title: lang === 'pt' ? `Rota Rápida — ${pools.length} piscina${pools.length > 1 ? 's' : ''}` : lang === 'es' ? `Ruta Rápida — ${pools.length} piscina${pools.length > 1 ? 's' : ''}` : `Quick Route — ${pools.length} pool${pools.length > 1 ? 's' : ''}`,
+      description: route.name || null,
+      pool_type: isCondo ? 'condo' : 'residential',
+      pools: pools.map(p => ({
+        city: p.city,
+        address: p.address || null,
+        poolType: p.poolType,
+        dog: !!p.dog,
+        saltwater: !!p.saltwater,
+        gateCode: !!p.gateCode,
+        doorman: !!p.doorman,
+        notes: p.notes || null
+      })),
+      source_route_id: route.id,
+      required_photos: [],
+      status: 'open'
+    };
+    try {
+      if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(() => {});
+      const {
+        data: inserted,
+        error: insertErr
+      } = await window.sb.from('quick_pool_jobs').insert(job).select().single();
+      if (insertErr || !inserted) {
+        setRouteBusy(false);
+        showToast && showToast(lang === 'pt' ? '❌ Erro ao ativar a rota' : lang === 'es' ? '❌ Error al activar la ruta' : '❌ Error activating the route');
+        return;
+      }
+      await window.sb.from('quick_routes').update({
+        last_activated_job_id: inserted.id,
+        last_activated_at: new Date().toISOString()
+      }).eq('id', route.id);
+      window.dispatchEvent(new CustomEvent('pgQuickPoolPosted', {
+        detail: inserted
+      }));
+      let notifyCount = 0,
+        notifyFailed = false;
+      try {
+        if (window.sb.auth.refresh) await window.sb.auth.refresh().catch(() => {});
+        const {
+          data: {
+            session
+          }
+        } = await window.sb.auth.getSession();
+        const token = session?.access_token || '';
+        const res = await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/notify-quick-pool', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            job: {
+              ...inserted,
+              cities
+            }
+          })
+        });
+        if (res.ok) {
+          const r = await res.json().catch(() => ({}));
+          notifyCount = r?.matched ?? r?.sent ?? 0;
+        } else notifyFailed = true;
+      } catch (e) {
+        notifyFailed = true;
+      }
+      setRouteBusy(false);
+      setRoutesOpen(false);
+      showToast && showToast(notifyFailed ? lang === 'pt' ? '⚠️ Rota ativada, mas o alerta pode não ter chegado a todos' : lang === 'es' ? '⚠️ Ruta activada, pero la alerta puede no haber llegado a todos' : '⚠️ Route activated, but the alert may not have reached everyone' : lang === 'pt' ? `✓ Rota ativada — ${notifyCount} piscineiros notificados` : lang === 'es' ? `✓ Ruta activada — ${notifyCount} técnicos notificados` : `✓ Route activated — ${notifyCount} pool guys notified`);
+      loadJobs();
+    } catch (e) {
+      setRouteBusy(false);
+      showToast && showToast('❌ ' + (e?.message || 'Error'));
+    }
+  };
+  const routesOverlay = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(FullPage, {
+    open: routesOpen,
+    onClose: () => setRoutesOpen(false)
+  }, /*#__PURE__*/React.createElement(RouteManagerPanel, {
+    lang: lang,
+    routes: myRoutes,
+    loading: routesLoading,
+    busy: routeBusy,
+    onClose: () => setRoutesOpen(false),
+    onCreate: () => setRouteForm({}),
+    onEdit: r => setRouteForm(r),
+    onDelete: deleteRoute,
+    onActivate: activateRoute
+  })), /*#__PURE__*/React.createElement(FullPage, {
+    open: !!routeForm,
+    onClose: () => setRouteForm(null)
+  }, routeForm && /*#__PURE__*/React.createElement(RoutePostForm, {
+    lang: lang,
+    initialValues: routeForm.id ? routeForm : null,
+    onClose: () => setRouteForm(null),
+    onSubmit: saveRoute
+  })));
+
+  // ══════════════════════════════════════════════════════════════
   // ── DESKTOP LAYOUT ────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════
   if (isDesktop) {
@@ -2005,6 +2229,45 @@ function QuickPoolsScreen({
           transition: 'all .15s'
         }
       }, Icon.cal(13, '#fff'), " ", lang === 'pt' ? 'Editar' : 'Edit'), /*#__PURE__*/React.createElement("button", {
+        onClick: () => setRoutesOpen(true),
+        title: lang === 'pt' ? 'Rotas Rápidas' : lang === 'es' ? 'Rutas Rápidas' : 'Quick Routes',
+        style: {
+          height: 38,
+          padding: '0 14px',
+          borderRadius: 11,
+          border: 'none',
+          background: 'linear-gradient(135deg,#0EBAC7,#0D7280)',
+          color: '#fff',
+          fontFamily: 'inherit',
+          fontSize: 12,
+          fontWeight: 800,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          boxShadow: '0 2px 8px rgba(14,186,199,0.40)',
+          transition: 'all .15s'
+        }
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "13",
+        height: "13",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "#fff",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }, /*#__PURE__*/React.createElement("circle", {
+        cx: "6",
+        cy: "19",
+        r: "2.5"
+      }), /*#__PURE__*/React.createElement("circle", {
+        cx: "18",
+        cy: "5",
+        r: "2.5"
+      }), /*#__PURE__*/React.createElement("path", {
+        d: "M8.3 17.7 15.7 6.3"
+      })), lang === 'pt' ? 'Rotas' : lang === 'es' ? 'Rutas' : 'Routes'), /*#__PURE__*/React.createElement("button", {
         onClick: () => openChat && openChat(),
         style: {
           width: 38,
@@ -2322,7 +2585,7 @@ function QuickPoolsScreen({
     }, sortedJobs.map(j => /*#__PURE__*/React.createElement(JobCard, {
       key: j.id,
       j: j
-    }))), /*#__PURE__*/React.createElement(HistorySection, null)))), jobDetailPanel, confirmDialog && /*#__PURE__*/React.createElement(ConfirmModal, {
+    }))), /*#__PURE__*/React.createElement(HistorySection, null)))), jobDetailPanel, routesOverlay, confirmDialog && /*#__PURE__*/React.createElement(ConfirmModal, {
       message: confirmDialog.message,
       subMessage: confirmDialog.subMessage,
       confirmLabel: confirmDialog.confirmLabel,
@@ -2425,7 +2688,30 @@ function QuickPoolsScreen({
           gap: 6,
           alignItems: 'center'
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/React.createElement(IconButton, {
+        dark: darkMode,
+        onClick: () => setRoutesOpen(true),
+        title: lang === 'pt' ? 'Rotas Rápidas' : lang === 'es' ? 'Rutas Rápidas' : 'Quick Routes'
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "19",
+        height: "19",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: H.text,
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }, /*#__PURE__*/React.createElement("circle", {
+        cx: "6",
+        cy: "19",
+        r: "2.5"
+      }), /*#__PURE__*/React.createElement("circle", {
+        cx: "18",
+        cy: "5",
+        r: "2.5"
+      }), /*#__PURE__*/React.createElement("path", {
+        d: "M8.3 17.7 15.7 6.3"
+      }))), /*#__PURE__*/React.createElement("div", {
         style: {
           position: 'relative',
           display: 'inline-flex'
@@ -2871,7 +3157,7 @@ function QuickPoolsScreen({
     key: j.id,
     j: j,
     compact: true
-  }))), /*#__PURE__*/React.createElement(HistorySection, null)), jobDetailPanel, confirmDialog && /*#__PURE__*/React.createElement(ConfirmModal, {
+  }))), /*#__PURE__*/React.createElement(HistorySection, null)), jobDetailPanel, routesOverlay, confirmDialog && /*#__PURE__*/React.createElement(ConfirmModal, {
     message: confirmDialog.message,
     subMessage: confirmDialog.subMessage,
     confirmLabel: confirmDialog.confirmLabel,
@@ -2982,6 +3268,695 @@ function QuickPoolsScreen({
       }
     }, pt ? 'Entendido' : 'Got it')));
   })());
+}
+
+// ── Rotas Rápidas — saved weekly route templates ───────────────
+const ROUTE_DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const ROUTE_DAY_LABELS = {
+  mon: {
+    pt: 'Segunda',
+    es: 'Lunes',
+    en: 'Monday'
+  },
+  tue: {
+    pt: 'Terça',
+    es: 'Martes',
+    en: 'Tuesday'
+  },
+  wed: {
+    pt: 'Quarta',
+    es: 'Miércoles',
+    en: 'Wednesday'
+  },
+  thu: {
+    pt: 'Quinta',
+    es: 'Jueves',
+    en: 'Thursday'
+  },
+  fri: {
+    pt: 'Sexta',
+    es: 'Viernes',
+    en: 'Friday'
+  },
+  sat: {
+    pt: 'Sábado',
+    es: 'Sábado',
+    en: 'Saturday'
+  },
+  sun: {
+    pt: 'Domingo',
+    es: 'Domingo',
+    en: 'Sunday'
+  }
+};
+function todayDayKey() {
+  return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
+}
+function RouteManagerPanel({
+  lang,
+  routes,
+  loading,
+  busy,
+  onClose,
+  onCreate,
+  onEdit,
+  onDelete,
+  onActivate
+}) {
+  const today = todayDayKey();
+  const sorted = [...routes].sort((a, b) => ROUTE_DAY_ORDER.indexOf(a.day_of_week) - ROUTE_DAY_ORDER.indexOf(b.day_of_week));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 18px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottom: '0.5px solid var(--pg-ink-200)',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-blue-500)',
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, lang === 'pt' ? 'Fechar' : lang === 'es' ? 'Cerrar' : 'Close'), /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontFamily: 'var(--pg-font-display)',
+      fontSize: 17,
+      fontWeight: 700,
+      letterSpacing: '-0.01em'
+    }
+  }, lang === 'pt' ? 'Rotas Rápidas' : lang === 'es' ? 'Rutas Rápidas' : 'Quick Routes'), /*#__PURE__*/React.createElement("button", {
+    onClick: onCreate,
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-blue-500)',
+      fontSize: 15,
+      fontWeight: 700,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, lang === 'pt' ? '+ Nova' : lang === 'es' ? '+ Nueva' : '+ New')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflow: 'auto',
+      padding: '16px 18px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: 'var(--pg-ink-500)',
+      lineHeight: 1.5,
+      marginBottom: 16,
+      padding: '10px 12px',
+      borderRadius: 12,
+      background: 'rgba(14,186,199,0.08)',
+      border: '1px solid rgba(14,186,199,0.25)'
+    }
+  }, lang === 'pt' ? 'Cadastre as piscinas de cada dia da semana. Se o pool guy daquele dia faltar, ative a rota e ela vira uma vaga urgente de Piscinas Rápidas — pago 70/30, endereço só aparece pra quem for aceito.' : lang === 'es' ? 'Registra las piscinas de cada día de la semana. Si el pool guy de ese día falta, activa la ruta y se convierte en un puesto urgente de Piscinas Rápidas — pago 70/30, la dirección solo aparece para quien sea aceptado.' : 'Register each weekday\'s pools ahead of time. If that day\'s pool guy is out, activate the route and it becomes an urgent Quick Pools job — paid 70/30, address only shown to whoever is accepted.'), loading ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '40px 0',
+      color: 'var(--pg-ink-400)',
+      fontSize: 13
+    }
+  }, lang === 'pt' ? 'Carregando…' : lang === 'es' ? 'Cargando…' : 'Loading…') : sorted.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '40px 16px',
+      color: 'var(--pg-ink-400)',
+      fontSize: 13.5
+    }
+  }, lang === 'pt' ? 'Nenhuma rota cadastrada ainda. Toque em "+ Nova" para começar.' : lang === 'es' ? 'Ninguna ruta registrada todavía. Toca "+ Nueva" para empezar.' : 'No routes registered yet. Tap "+ New" to get started.') : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12
+    }
+  }, sorted.map(route => {
+    const isToday = route.day_of_week === today;
+    const pools = route.pools || [];
+    const cities = [...new Set(pools.map(p => p.city).filter(Boolean))];
+    const isActive = route.last_activated_job_id && route.last_activated_at && new Date(route.last_activated_at).toDateString() === new Date().toDateString();
+    return /*#__PURE__*/React.createElement("div", {
+      key: route.id,
+      style: {
+        borderRadius: 16,
+        border: isToday ? '1.5px solid #0EBAC7' : '1px solid var(--pg-ink-200)',
+        background: isToday ? 'rgba(14,186,199,0.05)' : 'var(--pg-white)',
+        padding: '14px 16px',
+        position: 'relative'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        fontWeight: 800,
+        padding: '3px 9px',
+        borderRadius: 999,
+        background: isToday ? '#0EBAC7' : 'var(--pg-ink-100)',
+        color: isToday ? '#fff' : 'var(--pg-ink-600)',
+        letterSpacing: '0.04em'
+      }
+    }, (ROUTE_DAY_LABELS[route.day_of_week]?.[lang] || route.day_of_week).toUpperCase()), isToday && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        color: '#0D7280'
+      }
+    }, lang === 'pt' ? '· hoje' : lang === 'es' ? '· hoy' : '· today'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: () => onEdit(route),
+      disabled: busy,
+      title: lang === 'pt' ? 'Editar' : 'Edit',
+      style: {
+        width: 28,
+        height: 28,
+        borderRadius: 7,
+        border: '1px solid var(--pg-ink-200)',
+        background: 'var(--pg-ink-50)',
+        color: 'var(--pg-ink-600)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+    }))), /*#__PURE__*/React.createElement("button", {
+      onClick: () => onDelete(route),
+      disabled: busy,
+      title: lang === 'pt' ? 'Excluir' : 'Delete',
+      style: {
+        width: 28,
+        height: 28,
+        borderRadius: 7,
+        background: 'rgba(239,68,68,0.08)',
+        border: '1px solid rgba(239,68,68,0.22)',
+        color: '#EF4444',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.2",
+      strokeLinecap: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "3 6 5 6 21 6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+    })))), route.name && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 700,
+        color: 'var(--pg-ink-900)',
+        marginBottom: 4
+      }
+    }, route.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12.5,
+        color: 'var(--pg-ink-600)',
+        marginBottom: 2
+      }
+    }, cities.join(' · ') || (lang === 'pt' ? 'Sem cidades' : 'No cities')), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: 'var(--pg-ink-400)',
+        marginBottom: 12
+      }
+    }, pools.length, " ", pools.length === 1 ? lang === 'pt' ? 'piscina' : 'pool' : lang === 'pt' ? 'piscinas' : 'pools', ' · 70/30', route.price_per_pool != null && ` · $${route.price_per_pool}/${lang === 'pt' ? 'piscina' : 'pool'}`), /*#__PURE__*/React.createElement("button", {
+      onClick: () => onActivate(route),
+      disabled: busy || pools.length === 0,
+      style: {
+        width: '100%',
+        height: 44,
+        borderRadius: 12,
+        border: 'none',
+        cursor: pools.length === 0 ? 'not-allowed' : 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 13.5,
+        fontWeight: 700,
+        background: isActive ? 'var(--pg-ink-100)' : 'linear-gradient(135deg,#0EBAC7,#0D7280)',
+        color: isActive ? 'var(--pg-ink-600)' : '#fff',
+        opacity: pools.length === 0 ? 0.5 : 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        boxShadow: isActive ? 'none' : '0 3px 10px rgba(14,186,199,0.35)'
+      }
+    }, isActive ? /*#__PURE__*/React.createElement(React.Fragment, null, lang === 'pt' ? '✓ Ativa hoje — ver vaga' : lang === 'es' ? '✓ Activa hoy — ver puesto' : '✓ Active today — view job') : /*#__PURE__*/React.createElement(React.Fragment, null, "\uD83D\uDEA8 ", lang === 'pt' ? 'Ativar hoje' : lang === 'es' ? 'Activar hoy' : 'Activate today')));
+  }))));
+}
+
+// One entry per pool in a route: { city, address, poolType, dog, saltwater, gateCode, doorman, notes }
+function blankRoutePool() {
+  return {
+    city: '',
+    address: '',
+    poolType: 'residential',
+    dog: false,
+    saltwater: false,
+    gateCode: false,
+    doorman: false,
+    notes: ''
+  };
+}
+function RoutePostForm({
+  onClose,
+  lang = 'en',
+  onSubmit,
+  initialValues = null
+}) {
+  const isEdit = !!initialValues;
+  const [dayOfWeek, setDayOfWeek] = React.useState(initialValues?.day_of_week || todayDayKey());
+  const [name, setName] = React.useState(initialValues?.name || '');
+  const [priceValue, setPriceValue] = React.useState(initialValues?.price_per_pool != null ? String(initialValues.price_per_pool) : '');
+  const [pools, setPools] = React.useState(() => initialValues?.pools?.length > 0 ? initialValues.pools.map(p => ({
+    city: p.city || '',
+    address: p.address || '',
+    poolType: p.poolType || 'residential',
+    dog: !!p.dog,
+    saltwater: !!p.saltwater,
+    gateCode: !!p.gateCode,
+    doorman: !!p.doorman,
+    notes: p.notes || ''
+  })) : [blankRoutePool()]);
+  const addPool = () => {
+    if (pools.length < 30) setPools(prev => [...prev, blankRoutePool()]);
+  };
+  const removePool = () => {
+    if (pools.length > 1) setPools(prev => prev.slice(0, -1));
+  };
+  const updatePool = (i, patch) => setPools(prev => prev.map((p, j) => j === i ? {
+    ...p,
+    ...patch
+  } : p));
+  const dayDefs = ROUTE_DAY_ORDER.map(id => ({
+    id,
+    label: (ROUTE_DAY_LABELS[id][lang] || ROUTE_DAY_LABELS[id].en).slice(0, 3)
+  }));
+  const isValid = pools.length > 0 && pools.every(p => p.city && p.address.trim().length > 0);
+  const submitLbl = isEdit ? lang === 'pt' ? 'Salvar alterações' : lang === 'es' ? 'Guardar cambios' : 'Save changes' : lang === 'pt' ? 'Cadastrar rota' : lang === 'es' ? 'Registrar ruta' : 'Save route';
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 18px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottom: '0.5px solid var(--pg-ink-200)',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-blue-500)',
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, lang === 'pt' ? 'Cancelar' : lang === 'es' ? 'Cancelar' : 'Cancel'), /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontFamily: 'var(--pg-font-display)',
+      fontSize: 17,
+      fontWeight: 700,
+      letterSpacing: '-0.01em'
+    }
+  }, isEdit ? lang === 'pt' ? 'Editar rota' : lang === 'es' ? 'Editar ruta' : 'Edit route' : lang === 'pt' ? 'Nova rota' : lang === 'es' ? 'Nueva ruta' : 'New route'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 60
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflow: 'auto',
+      touchAction: 'pan-y',
+      padding: '20px 18px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 20
+    }
+  }, /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Dia da semana' : lang === 'es' ? 'Día de la semana' : 'Day of week'
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      flexWrap: 'wrap'
+    }
+  }, dayDefs.map(d => {
+    const on = dayOfWeek === d.id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: d.id,
+      onClick: () => setDayOfWeek(d.id),
+      style: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
+        background: on ? 'linear-gradient(135deg,#0EBAC7,#0D7280)' : 'var(--pg-ink-50)',
+        color: on ? '#fff' : 'var(--pg-ink-700)',
+        fontFamily: 'inherit',
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: 'pointer'
+      }
+    }, d.label);
+  }))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Nome da rota (opcional)' : lang === 'es' ? 'Nombre de la ruta (opcional)' : 'Route name (optional)'
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: name,
+    onChange: e => setName(e.target.value),
+    placeholder: lang === 'pt' ? 'ex: Rota Boca Raton' : lang === 'es' ? 'ej: Ruta Boca Raton' : 'e.g. Boca Raton route'
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 14px',
+      borderRadius: 12,
+      background: 'var(--pg-ink-50)',
+      border: '1px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 800,
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Preço fixo' : lang === 'es' ? 'Precio fijo' : 'Fixed price'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-400)',
+      marginTop: 1
+    }
+  }, "(70/30)")), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Valor por piscina (opcional)' : lang === 'es' ? 'Valor por piscina (opcional)' : 'Price per pool (optional)'
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: 16,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: 20,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }, "$"), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: priceValue,
+    onChange: e => setPriceValue(e.target.value.replace(/[^0-9]/g, '').replace(/^0+(?!$)/, '')),
+    inputMode: "numeric",
+    pattern: "[0-9]*",
+    style: {
+      height: 56,
+      paddingLeft: 34,
+      fontSize: 26,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      letterSpacing: '-0.02em',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      right: 16,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: 13,
+      color: 'var(--pg-ink-500)'
+    }
+  }, "/", lang === 'pt' ? 'piscina' : lang === 'es' ? 'piscina' : 'pool'))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: 'var(--pg-ink-700)'
+    }
+  }, lang === 'pt' ? 'Piscinas desta rota' : lang === 'es' ? 'Piscinas de esta ruta' : 'Pools on this route'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: removePool,
+    style: {
+      width: 32,
+      height: 32,
+      borderRadius: 9,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-100)',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 17,
+      color: 'var(--pg-ink-900)'
+    }
+  }, "\u2212"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      minWidth: 18,
+      textAlign: 'center'
+    }
+  }, pools.length), /*#__PURE__*/React.createElement("button", {
+    onClick: addPool,
+    style: {
+      width: 32,
+      height: 32,
+      borderRadius: 9,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-100)',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 17,
+      color: 'var(--pg-ink-900)'
+    }
+  }, "+"))), pools.map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 14,
+      padding: '14px',
+      borderRadius: 16,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-white)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      fontWeight: 800,
+      color: '#0D7280',
+      letterSpacing: '0.02em'
+    }
+  }, lang === 'pt' ? 'Piscina' : lang === 'es' ? 'Piscina' : 'Pool', " ", i + 1), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City'
+  }, /*#__PURE__*/React.createElement(CityAutocomplete, {
+    value: p.city,
+    onChange: v => updatePool(i, {
+      city: v
+    }),
+    lang: lang
+  })), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Endereço' : lang === 'es' ? 'Dirección' : 'Address'
+  }, /*#__PURE__*/React.createElement(StreetAddressAutocomplete, {
+    value: p.address,
+    onChange: v => updatePool(i, {
+      address: v
+    }),
+    lang: lang
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-400)',
+      marginTop: 6
+    }
+  }, lang === 'pt' ? 'Só aparece pro pool guy depois de aceito na vaga.' : lang === 'es' ? 'Solo aparece para el pool guy después de ser aceptado.' : 'Only shown to the pool guy once accepted.')), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Tipo de propriedade' : lang === 'es' ? 'Tipo de propiedad' : 'Property type'
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8
+    }
+  }, [{
+    id: 'residential',
+    label: lang === 'pt' ? 'Casa' : lang === 'es' ? 'Casa' : 'House'
+  }, {
+    id: 'condo',
+    label: lang === 'pt' ? 'Condomínio' : lang === 'es' ? 'Condominio' : 'Condo'
+  }].map(o => {
+    const on = p.poolType === o.id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: o.id,
+      onClick: () => updatePool(i, {
+        poolType: o.id
+      }),
+      style: {
+        flex: 1,
+        height: 40,
+        borderRadius: 11,
+        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
+        background: on ? 'linear-gradient(135deg,#0EBAC7,#0D7280)' : 'var(--pg-ink-50)',
+        color: on ? '#fff' : 'var(--pg-ink-700)',
+        fontFamily: 'inherit',
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: 'pointer'
+      }
+    }, o.label);
+  }))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Detalhes de acesso' : lang === 'es' ? 'Detalles de acceso' : 'Access details'
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      padding: '4px 16px'
+    }
+  }, /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.dog(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Tem cachorro' : lang === 'es' ? 'Hay perro' : 'Has dog on property',
+    on: p.dog,
+    setOn: v => updatePool(i, {
+      dog: v
+    })
+  }), /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.pool(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Piscina de sal' : lang === 'es' ? 'Piscina de sal' : 'Salt pool',
+    on: p.saltwater,
+    setOn: v => updatePool(i, {
+      saltwater: v
+    })
+  }), p.poolType === 'condo' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.key(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Tem código de portão' : lang === 'es' ? 'Tiene código de portón' : 'Has gate code',
+    on: p.gateCode,
+    setOn: v => updatePool(i, {
+      gateCode: v
+    })
+  }), /*#__PURE__*/React.createElement(ToggleRow, {
+    icon: Icon.user(15, 'var(--pg-ink-700)'),
+    label: lang === 'pt' ? 'Tem portaria' : lang === 'es' ? 'Tiene portería' : 'Has doorman',
+    on: p.doorman,
+    setOn: v => updatePool(i, {
+      doorman: v
+    })
+  })))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Observações desta piscina (opcional)' : lang === 'es' ? 'Notas de esta piscina (opcional)' : 'Notes for this pool (optional)'
+  }, /*#__PURE__*/React.createElement("textarea", {
+    className: "pg-field",
+    value: p.notes,
+    onChange: e => updatePool(i, {
+      notes: e.target.value
+    }),
+    placeholder: lang === 'pt' ? 'Equipamento, particularidades…' : lang === 'es' ? 'Equipo, particularidades…' : 'Equipment, quirks…',
+    rows: 2,
+    style: {
+      resize: 'none',
+      lineHeight: 1.55,
+      paddingTop: 12,
+      paddingBottom: 12,
+      height: 'auto'
+    }
+  }))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 18px',
+      flexShrink: 0,
+      background: 'var(--pg-white)',
+      borderTop: '0.5px solid var(--pg-ink-200)'
+    }
+  }, !isValid && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-ink-400)',
+      textAlign: 'center',
+      marginBottom: 10
+    }
+  }, lang === 'pt' ? 'Informe cidade e endereço de cada piscina' : lang === 'es' ? 'Ingresa ciudad y dirección de cada piscina' : 'Enter a city and address for each pool'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onSubmit && onSubmit({
+      id: initialValues?.id,
+      dayOfWeek,
+      name: name.trim(),
+      pricePerPool: priceValue ? parseInt(priceValue) : null,
+      pools: pools.map(p => ({
+        city: p.city,
+        address: p.address.trim(),
+        poolType: p.poolType,
+        dog: p.dog,
+        saltwater: p.saltwater,
+        gateCode: p.gateCode,
+        doorman: p.doorman,
+        notes: p.notes || null
+      }))
+    }),
+    disabled: !isValid,
+    className: "pg-btn pg-btn-primary",
+    style: {
+      width: '100%',
+      height: 52,
+      fontSize: 16,
+      opacity: isValid ? 1 : 0.45,
+      background: isValid ? 'linear-gradient(135deg,#0EBAC7,#0D7280)' : undefined
+    }
+  }, Icon.check ? Icon.check(17, '#fff') : null, " ", submitLbl)));
 }
 
 // ── Real interactive map with Leaflet ────────────────────────
@@ -3624,7 +4599,29 @@ function QuickPoolDetails({
       fontWeight: 700,
       textTransform: 'uppercase'
     }
-  }, t.offer), job.price === 'neg' ? /*#__PURE__*/React.createElement("div", {
+  }, t.offer), job.splitTakerPct ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--pg-font-display)',
+      fontSize: 28,
+      fontWeight: 800,
+      color: '#4ADE80',
+      letterSpacing: '-0.02em',
+      marginTop: 3
+    }
+  }, job.splitTakerPct, "/", 100 - job.splitTakerPct, " ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: 'rgba(255,255,255,0.75)',
+      fontWeight: 600
+    }
+  }, "split"), job.price !== 'neg' && job.price != null && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      color: 'rgba(255,255,255,0.85)',
+      fontWeight: 700,
+      marginLeft: 8
+    }
+  }, "\xB7 $", job.price, "/", lang === 'pt' ? 'piscina' : 'pool')) : job.price === 'neg' ? /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
       fontWeight: 800,
@@ -3667,7 +4664,128 @@ function QuickPoolDetails({
       maxWidth: 100,
       color: '#fff'
     }
-  }, tr(job.when, lang)))), job.extras && /*#__PURE__*/React.createElement("div", {
+  }, tr(job.when, lang)))), job.routePools && job.routePools.length > 0 && (() => {
+    const dayLbls = {
+      mon: 'Segunda',
+      tue: 'Terça',
+      wed: 'Quarta',
+      thu: 'Quinta',
+      fri: 'Sexta',
+      sat: 'Sábado',
+      sun: 'Domingo'
+    };
+    const canSeeAddress = isOwn || myApp?.status === 'accepted';
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 14,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-ink-500)',
+        fontWeight: 600,
+        letterSpacing: '0.05em'
+      }
+    }, lang === 'pt' ? 'PISCINAS DESTA ROTA' : lang === 'es' ? 'PISCINAS DE ESTA RUTA' : 'POOLS ON THIS ROUTE'), job.routePools.map((p, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "pg-card",
+      style: {
+        padding: '12px 14px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13.5,
+        fontWeight: 800,
+        color: 'var(--pg-ink-900)'
+      }
+    }, lang === 'pt' ? 'Piscina' : lang === 'es' ? 'Piscina' : 'Pool', " ", i + 1, " \xB7 ", p.city), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10.5,
+        fontWeight: 700,
+        padding: '2px 8px',
+        borderRadius: 999,
+        background: 'var(--pg-ink-100)',
+        color: 'var(--pg-ink-600)'
+      }
+    }, p.poolType === 'condo' ? lang === 'pt' ? 'Condomínio' : 'Condo' : lang === 'pt' ? 'Casa' : 'House')), canSeeAddress && p.address && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        fontSize: 12.5,
+        color: 'var(--pg-blue-700)',
+        fontWeight: 600,
+        marginBottom: 8
+      }
+    }, Icon.pin(12, 'var(--pg-blue-700)'), " ", p.address), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 6
+      }
+    }, p.dog && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '3px 9px',
+        borderRadius: 999,
+        background: 'var(--pg-ink-100)',
+        color: 'var(--pg-ink-700)'
+      }
+    }, "\uD83D\uDC15 ", lang === 'pt' ? 'Cachorro' : 'Dog'), p.saltwater && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '3px 9px',
+        borderRadius: 999,
+        background: 'var(--pg-ink-100)',
+        color: 'var(--pg-ink-700)'
+      }
+    }, "\uD83E\uDDC2 ", lang === 'pt' ? 'Sal' : 'Salt'), p.gateCode && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '3px 9px',
+        borderRadius: 999,
+        background: 'var(--pg-ink-100)',
+        color: 'var(--pg-ink-700)'
+      }
+    }, "\uD83D\uDD11 ", lang === 'pt' ? 'Portão' : 'Gate'), p.doorman && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '3px 9px',
+        borderRadius: 999,
+        background: 'var(--pg-ink-100)',
+        color: 'var(--pg-ink-700)'
+      }
+    }, "\uD83E\uDDD1\u200D\uD83D\uDCBC ", lang === 'pt' ? 'Portaria' : 'Doorman')), p.notes && /*#__PURE__*/React.createElement("p", {
+      style: {
+        margin: '8px 0 0',
+        fontSize: 12,
+        lineHeight: 1.5,
+        color: 'var(--pg-ink-600)'
+      }
+    }, p.notes))), !canSeeAddress && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        color: 'var(--pg-ink-400)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, Icon.lock ? Icon.lock(11, 'var(--pg-ink-400)') : null, lang === 'pt' ? 'Endereços aparecem depois que sua candidatura for aceita.' : lang === 'es' ? 'Las direcciones aparecen después de que tu solicitud sea aceptada.' : 'Addresses appear once your application is accepted.'));
+  })(), !job.routePools && job.extras && /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
     style: {
       padding: '12px 14px',

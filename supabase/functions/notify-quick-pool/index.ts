@@ -48,7 +48,12 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Find all users who have this city on this day_of_week
+  // Rotas Rápidas can span more than one city (each pool has its own address/
+  // city) — job.cities carries the full list when present; every other job
+  // shape is still just the single job.city.
+  const jobCities: string[] = Array.isArray(job.cities) && job.cities.length > 0 ? job.cities : [job.city];
+
+  // Find all users who have any of this job's cities on this day_of_week
   const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,name,regions_by_day,is_online,last_seen`, { headers });
   const profiles: any[] = await profilesRes.json();
 
@@ -57,7 +62,7 @@ Deno.serve(async (req) => {
     const rbd = p.regions_by_day;
     if (!rbd) return false;
     const dayCities: string[] = rbd[job.day_of_week] || [];
-    return dayCities.includes(job.city);
+    return jobCities.some(c => dayCities.includes(c));
   });
 
   if (!matching.length) {
@@ -91,8 +96,11 @@ Deno.serve(async (req) => {
   })() : [];
 
   const dayLabel = DAY_LABELS[job.day_of_week] || job.day_of_week;
-  const title = `💧 Piscina em ${job.city}`;
-  const body  = `${dayLabel} · ${job.pools_count ?? 1} piscina${(job.pools_count??1)>1?'s':''} · ${job.price_per_pool ? `$${job.price_per_pool}/piscina` : 'Negociável'}`;
+  const isRoute = !!job.source_route_id;
+  const citiesLabel = jobCities.slice(0, 2).join(', ') + (jobCities.length > 2 ? ` +${jobCities.length - 2}` : '');
+  const title = isRoute ? `🚨 Rota disponível em ${citiesLabel}` : `💧 Piscina em ${job.city}`;
+  const payLabel = job.split_taker_pct ? `${job.split_taker_pct}/${100 - job.split_taker_pct} split` : (job.price_per_pool ? `$${job.price_per_pool}/piscina` : 'Negociável');
+  const body  = `${dayLabel} · ${job.pools_count ?? 1} piscina${(job.pools_count??1)>1?'s':''} · ${payLabel}`;
   const url   = `/#quick?job=${job.id}`;
 
   // ── 1. Send push notifications ──────────────────────────────────

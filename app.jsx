@@ -155,7 +155,9 @@ function RideRequestCard({ alert, lang='pt', onView, onApply, onDismiss, applyin
   // postMessage path (app backgrounded, push arrives) only has flat title/body
   // strings — fall back to those when structured fields aren't present.
   const hasStructured = !!alert.city;
-  const priceLabel = alert.price ? `$${alert.price}` : (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable');
+  const priceLabel = alert.splitTakerPct
+    ? `${alert.splitTakerPct}/${100-alert.splitTakerPct}`
+    : (alert.price ? `$${alert.price}` : (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'));
   const poolsLabel = `${alert.poolsCount ?? 1} ${(alert.poolsCount??1) > 1 ? (lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools') : (lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}`;
   // Everything the pool guy needs to decide without opening the job — property
   // type + access/hazard flags — instead of the day of week, which they
@@ -194,7 +196,9 @@ function RideRequestCard({ alert, lang='pt', onView, onApply, onDismiss, applyin
             <div style={{display:'flex', alignItems:'center', gap:5, marginBottom:3}}>
               <span style={{width:6, height:6, borderRadius:'50%', background:'#4ADE80', flexShrink:0, animation:'pg-ride-blink 1.2s ease-in-out infinite'}}/>
               <span style={{fontSize:10.5, fontWeight:800, color:'rgba(255,255,255,0.75)', letterSpacing:'0.08em', textTransform:'uppercase'}}>
-                {lang==='pt'?'Nova vaga disponível':lang==='es'?'Nuevo trabajo disponible':'New job available'}
+                {alert.isRoute
+                  ? (lang==='pt'?'🚨 Rota disponível':lang==='es'?'🚨 Ruta disponible':'🚨 Route available')
+                  : (lang==='pt'?'Nova vaga disponível':lang==='es'?'Nuevo trabajo disponible':'New job available')}
               </span>
             </div>
             <div style={{fontSize:17, fontWeight:800, color:'#fff', lineHeight:1.2, fontFamily:'var(--pg-font-display)'}}>
@@ -211,7 +215,11 @@ function RideRequestCard({ alert, lang='pt', onView, onApply, onDismiss, applyin
               <div style={{fontSize:24, fontWeight:800, color:'#4ADE80', lineHeight:1, fontFamily:'var(--pg-font-display)'}}>
                 {priceLabel}
               </div>
-              {alert.price && (
+              {alert.splitTakerPct ? (
+                <div style={{fontSize:9.5, fontWeight:700, color:'rgba(74,222,128,0.75)', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:2}}>
+                  split
+                </div>
+              ) : alert.price && (
                 <div style={{fontSize:9.5, fontWeight:700, color:'rgba(74,222,128,0.75)', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:2}}>
                   {lang==='pt'?'por serviço':lang==='es'?'por servicio':'per job'}
                 </div>
@@ -1259,26 +1267,35 @@ function App() {
       // no gt/lt — so the "since" cutoff is applied client-side below instead
       // of as a query filter.
       const { data } = await window.sb.from('quick_pool_jobs_feed')
-        .select('id,city,day_of_week,poster_id,pools_count,price_per_pool,status,created_at,pool_type,extras')
+        .select('id,city,day_of_week,poster_id,pools_count,price_per_pool,status,created_at,pool_type,extras,pools,source_route_id,split_taker_pct')
         .eq('status', 'open')
         .catch(() => ({ data: null }));
       if (!data || !data.length) return;
+      // Rotas Rápidas can span more than one city — match if the tech covers
+      // ANY of the route's cities that day, not just the job's primary city.
+      const jobCitiesOf = (job) => (job.pools && job.pools.length > 0)
+        ? [...new Set(job.pools.map(p => p.city).filter(Boolean))]
+        : [job.city];
       const match = data.find(job =>
         job.poster_id !== uid && job.created_at > since &&
-        (rbd[job.day_of_week] || []).includes(job.city)
+        jobCitiesOf(job).some(c => (rbd[job.day_of_week] || []).includes(c))
       );
       if (!match) return;
       const poolsCount = match.pools_count ?? 1;
       const extras = match.extras || {};
+      const isRoute = !!match.source_route_id;
+      const jobCities = jobCitiesOf(match);
       window.playRideAlertSound && window.playRideAlertSound();
       if (navigator.vibrate) try { navigator.vibrate([120, 60, 120]); } catch(e) {}
       setRideAlert({
         jobId: match.id,
         posterId: match.poster_id,
-        city: match.city,
+        city: jobCities.slice(0,2).join(', ') + (jobCities.length>2 ? ` +${jobCities.length-2}` : ''),
         dayLabel: dayLabels[match.day_of_week] || match.day_of_week,
         poolsCount,
         price: match.price_per_pool || null,
+        isRoute,
+        splitTakerPct: match.split_taker_pct || null,
         isCondo: match.pool_type === 'condo',
         saltwater: !!extras.saltwater,
         hasDog: !!extras.dog,
