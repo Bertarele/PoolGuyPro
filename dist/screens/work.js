@@ -3507,14 +3507,15 @@ function HandoffDetailPanel({
     style: {
       fontSize: 13,
       fontWeight: 800,
-      color: '#D97706',
+      color: p.filled ? 'var(--pg-ink-400)' : '#D97706',
       flexShrink: 0
     }
   }, "$", p.price, "/", lang === 'pt' ? 'piscina' : 'pool')), p.photos && p.photos.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 10,
       overflow: 'hidden',
-      marginBottom: 8
+      marginBottom: 8,
+      filter: p.filled ? 'grayscale(0.85)' : 'none'
     }
   }, /*#__PURE__*/React.createElement(PhotoCarousel, {
     urls: p.photos,

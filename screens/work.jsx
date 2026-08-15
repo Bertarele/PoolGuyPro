@@ -1617,11 +1617,11 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
                     {(lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool')} {i+1} · {p.city}
                   </div>
                   {p.price != null && (
-                    <div style={{fontSize:13, fontWeight:800, color:'#D97706', flexShrink:0}}>${p.price}/{lang==='pt'?'piscina':'pool'}</div>
+                    <div style={{fontSize:13, fontWeight:800, color: p.filled ? 'var(--pg-ink-400)' : '#D97706', flexShrink:0}}>${p.price}/{lang==='pt'?'piscina':'pool'}</div>
                   )}
                 </div>
                 {p.photos && p.photos.length > 0 && (
-                  <div style={{borderRadius:10, overflow:'hidden', marginBottom:8}}>
+                  <div style={{borderRadius:10, overflow:'hidden', marginBottom:8, filter: p.filled ? 'grayscale(0.85)' : 'none'}}>
                     <PhotoCarousel urls={p.photos} height={160} interactive={!p.filled}/>
                   </div>
                 )}
