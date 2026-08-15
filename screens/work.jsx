@@ -288,7 +288,7 @@ function WorkScreen({ ctx }) {
       pay:          relatedJob?.payMode === 'neg'
         ? { en:'Negotiable', pt:'Negociável', es:'Negociable' }
         : relatedJob?.pay
-          ? { en:`$${relatedJob.pay}${relatedJob.payMode==='weekly'?'/wk':'/pool'}`, pt:`$${relatedJob.pay}${relatedJob.payMode==='weekly'?'/sem':'/pool'}`, es:`$${relatedJob.pay}${relatedJob.payMode==='weekly'?'/sem':'/pool'}` }
+          ? { en:`$${relatedJob.pay}${relatedJob.payMode==='weekly'?'/wk':'/pool'}`, pt:`$${relatedJob.pay}${relatedJob.payMode==='weekly'?'/sem':'/piscina'}`, es:`$${relatedJob.pay}${relatedJob.payMode==='weekly'?'/sem':'/piscina'}` }
           : null,
       loc:          relatedJob?.loc || relatedJob?.region || a.job_loc || '',
       status:       completedAppIds.has(a.id) ? 'completed' : (a.status || 'pending'),
@@ -639,7 +639,7 @@ function WorkScreen({ ctx }) {
                               <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{app.owner}</div>
                               <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginTop:2}}>
                                 <span style={{fontSize:10.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:sCfg.bg,color:sCfg.color}}>{sCfg.label}</span>
-                                <span style={{fontSize:11,color:'var(--pg-ink-400)'}}>· ${app.pricePerPool}{lang==='pt'?'/pisc':'/pool'}</span>
+                                <span style={{fontSize:11,color:'var(--pg-ink-400)'}}>· ${app.pricePerPool}{lang==='en'?'/pool':'/pisc'}</span>
                               </div>
                             </div>
                             {isAcc ? (
@@ -1865,7 +1865,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
               <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderRadius:12, background:'var(--pg-blue-50)', border:'1px solid var(--pg-blue-100)'}}>
                 <span style={{fontSize:13, color:'var(--pg-blue-700)', fontWeight:600}}>{lang==='pt'?'Remuneração':lang==='es'?'Pago':'Pay'}</span>
                 <span style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800, color:'var(--pg-blue-500)', letterSpacing:'-0.02em'}}>
-                  {job.payMode === 'neg' ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable') : `$${job.pay}${job.payMode==='weekly'?(lang==='pt'?'/sem':'/wk'):'/pool'}`}
+                  {job.payMode === 'neg' ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable') : `$${job.pay}${job.payMode==='weekly'?(lang==='en'?'/wk':'/sem'):(lang==='en'?'/pool':'/piscina')}`}
                 </span>
               </div>
             </div>
@@ -1981,7 +1981,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
           {/* Salary + action */}
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
             <div style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, color: job.payMode==='neg'?'var(--pg-aqua-700)':'var(--pg-blue-500)', letterSpacing:'-0.01em'}}>
-              {job.payMode === 'neg' ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable') : `$${job.pay}${job.payMode==='weekly'?(lang==='pt'?'/sem':'/wk'):'/pool'}`}
+              {job.payMode === 'neg' ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable') : `$${job.pay}${job.payMode==='weekly'?(lang==='en'?'/wk':'/sem'):(lang==='en'?'/pool':'/piscina')}`}
             </div>
             {isHired ? (
               <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(107,114,128,0.12)', color:'#6B7280', border:'1px solid rgba(107,114,128,0.25)'}}>
@@ -2640,7 +2640,7 @@ function AcceptedVacCard({ v, lang, onChat, onSchedule, openPublicProfile }) {
               ${earnings.toLocaleString()}
             </div>
             <div style={{fontSize:10.5, color:'var(--pg-ink-400)'}}>
-              {(v.selectedDays||v.days||[]).length} {lang==='pt'?'dias':lang==='es'?'días':'days'} · ${v.pricePerPool}/pool
+              {(v.selectedDays||v.days||[]).length} {lang==='pt'?'dias':lang==='es'?'días':'days'} · ${v.pricePerPool}{lang==='en'?'/pool':'/piscina'}
             </div>
           </div>
         </div>
@@ -3211,7 +3211,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                     <div style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:800,
                       color:'oklch(0.88 0.16 90)', letterSpacing:'-0.03em', lineHeight:1}}>
                       ${v.pricePerPool}
-                      <span style={{fontSize:11.5, fontWeight:500, color:'rgba(255,255,255,0.45)'}}>/pool</span>
+                      <span style={{fontSize:11.5, fontWeight:500, color:'rgba(255,255,255,0.45)'}}>{lang==='en'?'/pool':'/piscina'}</span>
                     </div>
                     <div style={{fontSize:11, color:'rgba(255,255,255,0.52)', marginTop:1}}>
                       {v.poolsPerDay} {t.poolsPerDay}
@@ -4107,7 +4107,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
   ];
 
   const payModes = [
-    { id:'perPool', label: lang==='pt'?'Por piscina':lang==='es'?'Por piscina':'Per pool',  suffix:'/pool' },
+    { id:'perPool', label: lang==='pt'?'Por piscina':lang==='es'?'Por piscina':'Per pool',  suffix: lang==='en'?'/pool':'/piscina' },
     { id:'weekly',  label: lang==='pt'?'Semanal':lang==='es'?'Semanal':'Weekly',             suffix: lang==='pt'?'/sem':lang==='es'?'/sem':'/wk' },
     { id:'neg',     label: lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable',   suffix:'' },
   ];
@@ -5008,10 +5008,10 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
                   color:      isSel ? '#fff' : 'var(--pg-ink-600)',
                 }}>
                   <span style={{fontWeight: isSel ? 700 : 400}}>
-                    {wd !== null ? wdShort[wd] : d} — {cnt} 🏊 × ${vac.pricePerPool}/pool
+                    {wd !== null ? wdShort[wd] : d} — {cnt} 🏊 × ${vac.pricePerPool}{lang==='en'?'/pool':'/piscina'}
                   </span>
                   <span style={{fontWeight:700}}>
-                    ${(cnt * vac.pricePerPool).toLocaleString()}/day
+                    ${(cnt * vac.pricePerPool).toLocaleString()}{lang==='en'?'/day':lang==='pt'?'/dia':'/día'}
                   </span>
                 </div>
               );
@@ -5019,7 +5019,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
           </div>
         ) : (
           <div style={{display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--pg-ink-600)'}}>
-            <span>{vac.poolsPerDay} {lang==='pt'?'piscinas/dia':lang==='es'?'piscinas/día':'pools/day'} × ${vac.pricePerPool}/pool</span>
+            <span>{vac.poolsPerDay} {lang==='pt'?'piscinas/dia':lang==='es'?'piscinas/día':'pools/day'} × ${vac.pricePerPool}{lang==='en'?'/pool':'/piscina'}</span>
             <span style={{fontWeight:700}}>${(vac.poolsPerDay * vac.pricePerPool).toLocaleString()}/{lang==='pt'?'dia':lang==='es'?'día':'day'}</span>
           </div>
         )}

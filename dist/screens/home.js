@@ -809,7 +809,7 @@ function HomeScreen({
     const isPending = item.status === 'pending';
     const isJob = item._isJob === true;
     const isQuick = item._isQuickPool === true;
-    const priceStr = item.priceMode === 'neg' || item.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : item.asking ? `$${Number(item.asking).toLocaleString()}` : item.price ? `$${item.price}${isJob ? item.payMode === 'weekly' ? '/sem' : '/pool' : isQuick ? '/pool' : ''}` : '—';
+    const priceStr = item.priceMode === 'neg' || item.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : item.asking ? `$${Number(item.asking).toLocaleString()}` : item.price ? `$${item.price}${isJob ? item.payMode === 'weekly' ? lang === 'en' ? '/wk' : '/sem' : lang === 'en' ? '/pool' : '/piscina' : isQuick ? lang === 'en' ? '/pool' : '/piscina' : ''}` : '—';
     return /*#__PURE__*/React.createElement("div", {
       key: item._id,
       onClick: () => {

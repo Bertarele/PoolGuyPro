@@ -1335,7 +1335,7 @@ function WorkJobHistory({ user, lang }) {
           const isLast = idx === visible.length - 1 && (jobs.length <= 3 || expanded);
           const payStr = job.pay_mode === 'neg'
             ? (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable')
-            : job.pay ? `$${job.pay}${job.pay_mode === 'weekly' ? (lang==='pt'?'/sem':'/wk') : '/pool'}` : '—';
+            : job.pay ? `$${job.pay}${job.pay_mode === 'weekly' ? (lang==='en'?'/wk':'/sem') : (lang==='en'?'/pool':'/piscina')}` : '—';
           return (
             <div key={job.id} style={{
               display:'flex', alignItems:'center', gap:12, padding:'12px 14px',

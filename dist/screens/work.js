@@ -447,8 +447,8 @@ function WorkScreen({
         es: 'Negociable'
       } : relatedJob?.pay ? {
         en: `$${relatedJob.pay}${relatedJob.payMode === 'weekly' ? '/wk' : '/pool'}`,
-        pt: `$${relatedJob.pay}${relatedJob.payMode === 'weekly' ? '/sem' : '/pool'}`,
-        es: `$${relatedJob.pay}${relatedJob.payMode === 'weekly' ? '/sem' : '/pool'}`
+        pt: `$${relatedJob.pay}${relatedJob.payMode === 'weekly' ? '/sem' : '/piscina'}`,
+        es: `$${relatedJob.pay}${relatedJob.payMode === 'weekly' ? '/sem' : '/piscina'}`
       } : null,
       loc: relatedJob?.loc || relatedJob?.region || a.job_loc || '',
       status: completedAppIds.has(a.id) ? 'completed' : a.status || 'pending',
@@ -1253,7 +1253,7 @@ function WorkScreen({
           fontSize: 11,
           color: 'var(--pg-ink-400)'
         }
-      }, "\xB7 $", app.pricePerPool, lang === 'pt' ? '/pisc' : '/pool'))), isAcc ? /*#__PURE__*/React.createElement("button", {
+      }, "\xB7 $", app.pricePerPool, lang === 'en' ? '/pool' : '/pisc'))), isAcc ? /*#__PURE__*/React.createElement("button", {
         onClick: () => completeVacApp(app),
         style: {
           flexShrink: 0,
@@ -4174,7 +4174,7 @@ function HiringPanel({
         color: 'var(--pg-blue-500)',
         letterSpacing: '-0.02em'
       }
-    }, job.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : `$${job.pay}${job.payMode === 'weekly' ? lang === 'pt' ? '/sem' : '/wk' : '/pool'}`))), /*#__PURE__*/React.createElement("div", {
+    }, job.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : `$${job.pay}${job.payMode === 'weekly' ? lang === 'en' ? '/wk' : '/sem' : lang === 'en' ? '/pool' : '/piscina'}`))), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '20px 18px 0',
         position: 'sticky',
@@ -4515,7 +4515,7 @@ function HiringPanel({
         color: job.payMode === 'neg' ? 'var(--pg-aqua-700)' : 'var(--pg-blue-500)',
         letterSpacing: '-0.01em'
       }
-    }, job.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : `$${job.pay}${job.payMode === 'weekly' ? lang === 'pt' ? '/sem' : '/wk' : '/pool'}`), isHired ? /*#__PURE__*/React.createElement("span", {
+    }, job.payMode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : `$${job.pay}${job.payMode === 'weekly' ? lang === 'en' ? '/wk' : '/sem' : lang === 'en' ? '/pool' : '/piscina'}`), isHired ? /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -5994,7 +5994,7 @@ function AcceptedVacCard({
       fontSize: 10.5,
       color: 'var(--pg-ink-400)'
     }
-  }, (v.selectedDays || v.days || []).length, " ", lang === 'pt' ? 'dias' : lang === 'es' ? 'días' : 'days', " \xB7 $", v.pricePerPool, "/pool"))), /*#__PURE__*/React.createElement("div", {
+  }, (v.selectedDays || v.days || []).length, " ", lang === 'pt' ? 'dias' : lang === 'es' ? 'días' : 'days', " \xB7 $", v.pricePerPool, lang === 'en' ? '/pool' : '/piscina'))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 10
     }
@@ -6956,7 +6956,7 @@ function VacationPanel({
         fontWeight: 500,
         color: 'rgba(255,255,255,0.45)'
       }
-    }, "/pool")), /*#__PURE__*/React.createElement("div", {
+    }, lang === 'en' ? '/pool' : '/piscina')), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: 'rgba(255,255,255,0.52)',
@@ -8409,7 +8409,7 @@ function PostHiringSheet({
   const payModes = [{
     id: 'perPool',
     label: lang === 'pt' ? 'Por piscina' : lang === 'es' ? 'Por piscina' : 'Per pool',
-    suffix: '/pool'
+    suffix: lang === 'en' ? '/pool' : '/piscina'
   }, {
     id: 'weekly',
     label: lang === 'pt' ? 'Semanal' : lang === 'es' ? 'Semanal' : 'Weekly',
@@ -10280,11 +10280,11 @@ function VacationDayPickerSheet({
       style: {
         fontWeight: isSel ? 700 : 400
       }
-    }, wd !== null ? wdShort[wd] : d, " \u2014 ", cnt, " \uD83C\uDFCA \xD7 $", vac.pricePerPool, "/pool"), /*#__PURE__*/React.createElement("span", {
+    }, wd !== null ? wdShort[wd] : d, " \u2014 ", cnt, " \uD83C\uDFCA \xD7 $", vac.pricePerPool, lang === 'en' ? '/pool' : '/piscina'), /*#__PURE__*/React.createElement("span", {
       style: {
         fontWeight: 700
       }
-    }, "$", (cnt * vac.pricePerPool).toLocaleString(), "/day"));
+    }, "$", (cnt * vac.pricePerPool).toLocaleString(), lang === 'en' ? '/day' : lang === 'pt' ? '/dia' : '/día'));
   })) : /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -10292,7 +10292,7 @@ function VacationDayPickerSheet({
       fontSize: 12,
       color: 'var(--pg-ink-600)'
     }
-  }, /*#__PURE__*/React.createElement("span", null, vac.poolsPerDay, " ", lang === 'pt' ? 'piscinas/dia' : lang === 'es' ? 'piscinas/día' : 'pools/day', " \xD7 $", vac.pricePerPool, "/pool"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, vac.poolsPerDay, " ", lang === 'pt' ? 'piscinas/dia' : lang === 'es' ? 'piscinas/día' : 'pools/day', " \xD7 $", vac.pricePerPool, lang === 'en' ? '/pool' : '/piscina'), /*#__PURE__*/React.createElement("span", {
     style: {
       fontWeight: 700
     }

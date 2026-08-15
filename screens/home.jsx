@@ -472,7 +472,7 @@ function HomeScreen({ ctx }) {
                   : item.asking
                     ? `$${Number(item.asking).toLocaleString()}`
                     : item.price
-                      ? `$${item.price}${isJob?(item.payMode==='weekly'?'/sem':'/pool'):isQuick?'/pool':''}`
+                      ? `$${item.price}${isJob?(item.payMode==='weekly'?(lang==='en'?'/wk':'/sem'):(lang==='en'?'/pool':'/piscina')):isQuick?(lang==='en'?'/pool':'/piscina'):''}`
                       : '—';
                 return (
                   <div key={item._id} onClick={()=>{

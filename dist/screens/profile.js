@@ -2812,7 +2812,7 @@ function WorkJobHistory({
     }
   }, visible.map((job, idx) => {
     const isLast = idx === visible.length - 1 && (jobs.length <= 3 || expanded);
-    const payStr = job.pay_mode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : job.pay ? `$${job.pay}${job.pay_mode === 'weekly' ? lang === 'pt' ? '/sem' : '/wk' : '/pool'}` : '—';
+    const payStr = job.pay_mode === 'neg' ? lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable' : job.pay ? `$${job.pay}${job.pay_mode === 'weekly' ? lang === 'en' ? '/wk' : '/sem' : lang === 'en' ? '/pool' : '/piscina'}` : '—';
     return /*#__PURE__*/React.createElement("div", {
       key: job.id,
       style: {
