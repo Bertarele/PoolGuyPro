@@ -210,7 +210,7 @@ function ShareSheet({
   showToast
 }) {
   if (!item) return null;
-  const listingUrl = item._id ? `https://poolguyx.com/?listing=${item._id}` : 'https://poolguyx.com';
+  const listingUrl = item._id ? `https://poolguyx.com/#market?listing=${item._id}` : 'https://poolguyx.com';
   const txt = `${item.name}${item.priceMode === 'neg' ? ' — Negotiable' : item.price ? ` — $${item.price}` : ''}  📍 ${item.loc || 'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
   const enc = encodeURIComponent(txt);
   const btn = (label, icon, href, color, onClick) => /*#__PURE__*/React.createElement("a", {
@@ -8101,7 +8101,7 @@ function MarketplaceScreen({
     if (item._live) {
       window.history.pushState({
         pgListing: item._id
-      }, '', '?listing=' + item._id);
+      }, '', '#market?listing=' + item._id);
       historyPushed.current = true;
     }
   }, []);
@@ -8131,7 +8131,7 @@ function MarketplaceScreen({
     setViewListing(null);
     if (historyPushed.current) {
       historyPushed.current = false;
-      window.history.replaceState({}, '', '/');
+      window.history.replaceState({}, '', '#market');
     }
   }, []);
 
@@ -8159,6 +8159,15 @@ function MarketplaceScreen({
         setMyPostDetail(normalized);
       } else {
         setViewListing(normalized);
+        // This path (ctx.openListingById → deepLinkListingId) previously only
+        // marked historyPushed as true without ever actually pushing — so the
+        // address bar never changed and the listing had no specific URL to
+        // share when opened this way (e.g. from the Home screen's featured
+        // card), unlike clicking it directly from the Marketplace grid via
+        // openListing() below, which did push. Same URL scheme either way now.
+        window.history.pushState({
+          pgListing: normalized._id
+        }, '', '#market?listing=' + normalized._id);
         historyPushed.current = true;
       }
     }).catch(() => {}).finally(() => {
@@ -8201,7 +8210,7 @@ function MarketplaceScreen({
   };
   const handleShare = async (e, item) => {
     if (e) e.stopPropagation();
-    const listingUrl = item._id ? `https://poolguyx.com/?listing=${item._id}` : 'https://poolguyx.com';
+    const listingUrl = item._id ? `https://poolguyx.com/#market?listing=${item._id}` : 'https://poolguyx.com';
     const txt = `${item.name}${item.priceMode === 'neg' ? ' — Negotiable' : item.price ? ` — $${item.price}` : ''}  📍 ${item.loc || 'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
     if (navigator.share) {
       // Try to share with photo

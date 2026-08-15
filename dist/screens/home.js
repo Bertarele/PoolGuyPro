@@ -816,8 +816,7 @@ function HomeScreen({
         if (isQuick) {
           ctx.openQuickJobById ? ctx.openQuickJobById(item._id) : goTab('quick');
         } else if (isJob) {
-          window.__pgOpenJobId = item._id;
-          goTab('work');
+          openListingById ? openListingById('job_' + item._id) : goTab('work');
         } else {
           openListingById ? openListingById(item._id) : goTab('market');
         }

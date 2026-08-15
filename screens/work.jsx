@@ -33,10 +33,39 @@ function WorkScreen({ ctx }) {
     const h = liveHandoffs.find(x => String(x._id) === String(id));
     if (h) {
       setSub('hiring');
-      setHandoffDetail(h);
+      openHandoffDetail(h);
       ctx.clearPendingHandoff && ctx.clearPendingHandoff();
     }
   }, [ctx.pendingHandoffId, liveHandoffs]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A shared job-card link (#work?job=<id>) lands here with sub still at
+  // whatever it was on last visit — HiringPanel only mounts (and can
+  // consume pendingJobCardId) once sub is 'hiring'.
+  React.useEffect(() => {
+    if (ctx.pendingJobCardId) setSub('hiring');
+  }, [ctx.pendingJobCardId]);
+
+  // Give a handoff its own shareable URL (#work?handoff=<id>) while its detail
+  // is open — same pushState/popstate pattern as the QuickPools job detail,
+  // so it gets a real link to share and swipe-back doesn't skip past it.
+  const handoffHistoryPushed = React.useRef(false);
+  const openHandoffDetail = React.useCallback((h) => {
+    setHandoffDetail(h);
+    window.history.pushState({ pgHandoff: h._id }, '', '#work?handoff=' + h._id);
+    handoffHistoryPushed.current = true;
+  }, []);
+  const closeHandoffDetail = React.useCallback(() => {
+    setHandoffDetail(null);
+    if (handoffHistoryPushed.current) {
+      handoffHistoryPushed.current = false;
+      window.history.replaceState({}, '', '#work');
+    }
+  }, []);
+  React.useEffect(() => {
+    const onPop = () => { if (handoffHistoryPushed.current) { handoffHistoryPushed.current = false; setHandoffDetail(null); } };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // Sync sub-tab to URL hash
   React.useEffect(() => {
@@ -189,7 +218,7 @@ function WorkScreen({ ctx }) {
           loadLiveHandoffs && loadLiveHandoffs();
         };
         return (
-          <article key={h._id} className="pg-card pg-press" onClick={()=>setHandoffDetail(h)}
+          <article key={h._id} className="pg-card pg-press" onClick={()=>openHandoffDetail(h)}
             style={{padding:'14px 16px', cursor:'pointer', position:'relative'}}>
             {/* Edit/delete — same top-right icon-button pattern as a regular job card */}
             {canManageHere && (
@@ -313,12 +342,12 @@ function WorkScreen({ ctx }) {
       {/* Handoff detail — true full screen, same as PostHiringSheet/PostTechSheet
           (Sheet, even at height 92%, still shows a rounded-corner gap at the
           top that reads as a card rather than a page). */}
-      <FullPage open={!!handoffDetail} onClose={()=>setHandoffDetail(null)}>
+      <FullPage open={!!handoffDetail} onClose={closeHandoffDetail}>
         {handoffDetail && (
           <HandoffDetailPanel handoff={handoffDetail} user={ctxUser} lang={lang} showToast={showToast}
-            onClose={()=>setHandoffDetail(null)}
+            onClose={closeHandoffDetail}
             onChat={openChat}
-            onEdit={(h)=>{ setHandoffDetail(null); setTimeout(()=>setEditingHandoff(h), 50); }}
+            onEdit={(h)=>{ closeHandoffDetail(); setTimeout(()=>setEditingHandoff(h), 50); }}
             onChanged={()=>{ loadLiveHandoffs && loadLiveHandoffs(); }}/>
         )}
       </FullPage>
@@ -992,7 +1021,7 @@ function WorkScreen({ ctx }) {
             {/* Panel content */}
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
               {handoffCardsList}
-              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts}/>}
+              {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts} highlightJobId={ctx.pendingJobCardId} onHighlightConsumed={()=>ctx.clearPendingJobCard&&ctx.clearPendingJobCard()}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
               {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
             </div>
@@ -1418,7 +1447,7 @@ function WorkScreen({ ctx }) {
       {/* ── Content panels ── */}
       <div style={{padding:'14px 18px 0'}}>
         {handoffCardsList}
-        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts}/>}
+        {sub === 'hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>setHiringSheetOpen(true)} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts} highlightJobId={ctx.pendingJobCardId} onHighlightConsumed={()=>ctx.clearPendingJobCard&&ctx.clearPendingJobCard()}/>}
         {sub === 'techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>setTechSheetOpen(true)} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
                               onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')}
@@ -1481,6 +1510,19 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
     if (allFilled) onClose && onClose();
   };
 
+  const shareHandoff = async () => {
+    const url = `https://poolguyx.com/#work?handoff=${handoff._id}`;
+    const cities = (handoff.cities||[]).join(', ');
+    const text = `${lang==='pt'?'Repasse de Piscina':lang==='es'?'Traspaso de Piscina':'Pool Handoff'} — ${cities}\n\n${url}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: lang==='pt'?'Repasse de Piscina':'Pool Handoff', text, url }); return; } catch(e) { return; }
+    }
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      showToast && showToast('✓ ' + (lang==='pt'?'Link copiado!':lang==='es'?'¡Enlace copiado!':'Link copied!'));
+    }
+  };
+
   const deleteHandoff = async () => {
     if (!window.sb || busy) return;
     const msg = lang==='pt'?'Excluir este repasse?':lang==='es'?'¿Eliminar este traspaso?':'Delete this handoff?';
@@ -1503,29 +1545,41 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
         <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, letterSpacing:'-0.01em'}}>
           {lang==='pt'?'Repasse de Piscina':lang==='es'?'Traspaso de Piscina':'Pool Handoff'}
         </h2>
-        {canManage ? (
-          <div style={{display:'flex', alignItems:'center', gap:8}}>
-            <button onClick={()=>onEdit && onEdit(handoff)} disabled={busy} title={lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'} style={{
-              width:32, height:32, borderRadius:9, border:'1px solid var(--pg-ink-200)',
-              background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', cursor:'pointer',
-              display:'flex', alignItems:'center', justifyContent:'center',
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
-            <button onClick={deleteHandoff} disabled={busy} title={lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'} style={{
-              width:32, height:32, borderRadius:9,
-              background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
-              color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              </svg>
-            </button>
-          </div>
-        ) : <div style={{width:60}}/>}
+        <div style={{display:'flex', alignItems:'center', gap:8}}>
+          <button onClick={shareHandoff} title={lang==='pt'?'Compartilhar':lang==='es'?'Compartir':'Share'} style={{
+            width:32, height:32, borderRadius:9, border:'1px solid var(--pg-ink-200)',
+            background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </button>
+          {canManage && (
+            <>
+              <button onClick={()=>onEdit && onEdit(handoff)} disabled={busy} title={lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'} style={{
+                width:32, height:32, borderRadius:9, border:'1px solid var(--pg-ink-200)',
+                background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', cursor:'pointer',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button onClick={deleteHandoff} disabled={busy} title={lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'} style={{
+                width:32, height:32, borderRadius:9,
+                background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
+                color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div style={{flex:1, overflow:'auto', padding:'0 18px', display:'flex', flexDirection:'column', gap:14}}>
@@ -1804,7 +1858,7 @@ function MyApplicationsSection({ apps, lang, onChat, type='hiring' }) {
 }
 
 // ── Card with company-style header ────────────────────────────
-function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile, liveJobs=[], showToast, onDeleteJob, onJobUpdated, liveApplications=[], jobApplicantCounts={} }) {
+function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onApply, hidePosted=false, openPublicProfile, liveJobs=[], showToast, onDeleteJob, onJobUpdated, liveApplications=[], jobApplicantCounts={}, highlightJobId=null, onHighlightConsumed }) {
   const Company = (s=20, c='var(--pg-blue-500)') => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="4" y="3" width="16" height="18" rx="2"/>
@@ -1830,13 +1884,36 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
   const [selectedJob, setSelectedJob] = React.useState(null);
   const [editingJob,  setEditingJob]  = React.useState(null);
 
-  React.useEffect(() => {
-    if (window.__pgOpenJobId && liveJobs.length > 0) {
-      const job = liveJobs.find(j => j._id === window.__pgOpenJobId);
-      window.__pgOpenJobId = null;
-      if (job) setSelectedJob(job);
+  // Give an open job its own shareable URL (#work?job=<id>) — same
+  // pushState/popstate pattern used for the pool-handoff detail page, so a
+  // job opened this way (from Home's featured card, a shared link, etc.)
+  // gets a real link back and swipe-back doesn't skip past it.
+  const jobHistoryPushed = React.useRef(false);
+  const openJobDetailSheet = React.useCallback((job) => {
+    setSelectedJob(job);
+    window.history.pushState({ pgJobCard: job._id }, '', '#work?job=' + job._id);
+    jobHistoryPushed.current = true;
+  }, []);
+  const closeJobDetailSheet = React.useCallback(() => {
+    setSelectedJob(null);
+    if (jobHistoryPushed.current) {
+      jobHistoryPushed.current = false;
+      window.history.replaceState({}, '', '#work');
     }
-  }, [liveJobs]);
+  }, []);
+  React.useEffect(() => {
+    const onPop = () => { if (jobHistoryPushed.current) { jobHistoryPushed.current = false; setSelectedJob(null); } };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  React.useEffect(() => {
+    if (highlightJobId && liveJobs.length > 0) {
+      const job = liveJobs.find(j => String(j._id) === String(highlightJobId));
+      if (job) openJobDetailSheet(job);
+      onHighlightConsumed && onHighlightConsumed();
+    }
+  }, [highlightJobId, liveJobs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -1863,32 +1940,52 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
       )}
     </Sheet>
     {/* ── Job detail sheet ── */}
-    <Sheet open={!!selectedJob} onClose={()=>setSelectedJob(null)} height="92%">
+    <Sheet open={!!selectedJob} onClose={closeJobDetailSheet} height="92%">
       {selectedJob && (() => {
         const job = selectedJob;
         const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
+        const shareJob = async () => {
+          const url = `https://poolguyx.com/#work?job=${job._id}`;
+          const text = `${job.author}${job.role ? ' — ' + job.role : ''}\n\n${url}`;
+          if (navigator.share) { try { await navigator.share({ title: job.author, text, url }); } catch(e) {} return; }
+          if (navigator.clipboard) {
+            await navigator.clipboard.writeText(url);
+            showToast && showToast('✓ ' + (lang==='pt'?'Link copiado!':lang==='es'?'¡Enlace copiado!':'Link copied!'));
+          }
+        };
         return (
           <div style={{padding:'0 0 32px', height:'100%', overflow:'auto', boxSizing:'border-box'}}>
             <div style={{padding:'8px 18px 16px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-              <button onClick={()=>setSelectedJob(null)} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:15, fontWeight:600, cursor:'pointer', padding:0}}>
+              <button onClick={closeJobDetailSheet} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:15, fontWeight:600, cursor:'pointer', padding:0}}>
                 {lang==='pt'?'Fechar':lang==='es'?'Cerrar':'Close'}
               </button>
               <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, letterSpacing:'-0.01em'}}>
                 {lang==='pt'?'Detalhes da Vaga':lang==='es'?'Detalle del Empleo':'Job Details'}
               </h2>
-              {user?.uid && job.author_id && user.uid === job.author_id ? (
-                <button onClick={()=>{ setSelectedJob(null); setTimeout(()=>setEditingJob(job), 50); }} style={{
-                  border:'none', background:'none', color:'var(--pg-blue-500)',
-                  fontSize:14, fontWeight:600, cursor:'pointer', padding:0,
-                  display:'flex', alignItems:'center', gap:5,
+              <div style={{display:'flex', alignItems:'center', gap:14}}>
+                <button onClick={shareJob} title={lang==='pt'?'Compartilhar':lang==='es'?'Compartir':'Share'} style={{
+                  border:'none', background:'none', color:'var(--pg-blue-500)', cursor:'pointer', padding:0,
+                  display:'flex', alignItems:'center',
                 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                   </svg>
-                  {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
                 </button>
-              ) : <div style={{width:60}}/>}
+                {user?.uid && job.author_id && user.uid === job.author_id && (
+                  <button onClick={()=>{ closeJobDetailSheet(); setTimeout(()=>setEditingJob(job), 50); }} style={{
+                    border:'none', background:'none', color:'var(--pg-blue-500)',
+                    fontSize:14, fontWeight:600, cursor:'pointer', padding:0,
+                    display:'flex', alignItems:'center', gap:5,
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
+                  </button>
+                )}
+              </div>
             </div>
             <div style={{padding:'0 18px', display:'flex', flexDirection:'column', gap:14}}>
               {/* Company */}
@@ -1950,7 +2047,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
                   {lang==='pt'?'Sua vaga':lang==='es'?'Tu oferta':'Your listing'}
                 </div>
               ) : (
-                <button onClick={()=>{ setSelectedJob(null); onApply && onApply(job); }} className="pg-btn pg-btn-primary" style={{width:'100%', height:52, fontSize:16, borderRadius:14}}>
+                <button onClick={()=>{ closeJobDetailSheet(); onApply && onApply(job); }} className="pg-btn pg-btn-primary" style={{width:'100%', height:52, fontSize:16, borderRadius:14}}>
                   {t.apply}
                 </button>
               )}
@@ -1972,7 +2069,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
         const myApp     = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
         const appCount  = (jobApplicantCounts[job._id] || {}).total || 0;
         return (
-        <article key={job._id} className={isHired ? 'pg-card' : 'pg-card pg-press'} onClick={()=>!isHired && setSelectedJob(job)}
+        <article key={job._id} className={isHired ? 'pg-card' : 'pg-card pg-press'} onClick={()=>!isHired && openJobDetailSheet(job)}
           style={{padding:'14px 16px', cursor: isHired?'default':'pointer', position:'relative',
             opacity: isHired ? 0.72 : 1,
             background: isHired ? 'var(--pg-ink-50)' : undefined,

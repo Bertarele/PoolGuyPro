@@ -477,7 +477,7 @@ function HomeScreen({ ctx }) {
                 return (
                   <div key={item._id} onClick={()=>{
                     if (isQuick) { ctx.openQuickJobById ? ctx.openQuickJobById(item._id) : goTab('quick'); }
-                    else if (isJob) { window.__pgOpenJobId = item._id; goTab('work'); }
+                    else if (isJob) { openListingById ? openListingById('job_' + item._id) : goTab('work'); }
                     else { openListingById ? openListingById(item._id) : goTab('market'); }
                   }} className="pg-press" style={{
                     display:'flex', flexDirection:'column', alignItems:'flex-start',

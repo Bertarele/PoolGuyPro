@@ -842,6 +842,7 @@ function App() {
     } catch { return null; }
   });
   const [pendingHandoffId, setPendingHandoffId] = React.useState(null);
+  const [pendingJobCardId, setPendingJobCardId] = React.useState(null);
   // Parse deep link from URL on startup (e.g. notification click when app was closed)
   const [pendingDeepLink, setPendingDeepLink] = React.useState(() => {
     try {
@@ -857,6 +858,14 @@ function App() {
         const listingId = new URLSearchParams(qs).get('listing') || null;
         window.history.replaceState(null, '', '#home');
         return listingId ? { type: 'listing', id: listingId } : { type: 'tab', tab: 'market' };
+      } else if (hash.startsWith('#work')) {
+        const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+        const params = new URLSearchParams(qs);
+        const handoffId = params.get('handoff') || null;
+        const jobId = params.get('job') || null;
+        window.history.replaceState(null, '', '#home');
+        if (handoffId) return { type: 'handoff', id: handoffId };
+        if (jobId) return { type: 'jobcard', id: jobId };
       } else if (hash.startsWith('#home')) {
         const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
         window.history.replaceState(null, '', '#home');
@@ -876,6 +885,12 @@ function App() {
     } else if (pendingDeepLink.type === 'listing') {
       setDeepLinkListingId(pendingDeepLink.id);
       setTab('market');
+    } else if (pendingDeepLink.type === 'handoff') {
+      setPendingHandoffId(pendingDeepLink.id);
+      setTab('work');
+    } else if (pendingDeepLink.type === 'jobcard') {
+      setPendingJobCardId(pendingDeepLink.id);
+      setTab('work');
     } else if (pendingDeepLink.type === 'rate') {
       loadPendingRatings();
       setRatingPromptOpen(true);
@@ -909,7 +924,13 @@ function App() {
       if (listingId) ctx.openListingById(listingId);
       else setTab('market');
     } else if (hash.startsWith('#work')) {
-      setTab('work');
+      const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+      const params = new URLSearchParams(qs);
+      const handoffId = params.get('handoff') || null;
+      const jobId = params.get('job') || null;
+      if (handoffId) ctx.openListingById('handoff_' + handoffId);
+      else if (jobId) ctx.openListingById('job_' + jobId);
+      else setTab('work');
     } else if (hash.startsWith('#home')) {
       const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
       if (new URLSearchParams(qs).get('rate') === '1') {
@@ -1500,6 +1521,9 @@ function App() {
       } else if (typeof id === 'string' && id.startsWith('handoff_')) {
         setPendingHandoffId(id.slice(8));
         switchTab('work');
+      } else if (typeof id === 'string' && id.startsWith('job_')) {
+        setPendingJobCardId(id.slice(4));
+        switchTab('work');
       } else {
         setDeepLinkListingId(id);
         switchTab('market');
@@ -1510,6 +1534,8 @@ function App() {
     openQuickJobById: (id) => { setPendingQuickJobId(String(id)); switchTab('quick'); },
     pendingHandoffId,
     clearPendingHandoff: () => setPendingHandoffId(null),
+    pendingJobCardId,
+    clearPendingJobCard: () => setPendingJobCardId(null),
     goTab:              switchTab,
     openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },

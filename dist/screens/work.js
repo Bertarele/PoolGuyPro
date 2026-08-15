@@ -62,10 +62,46 @@ function WorkScreen({
     const h = liveHandoffs.find(x => String(x._id) === String(id));
     if (h) {
       setSub('hiring');
-      setHandoffDetail(h);
+      openHandoffDetail(h);
       ctx.clearPendingHandoff && ctx.clearPendingHandoff();
     }
   }, [ctx.pendingHandoffId, liveHandoffs]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A shared job-card link (#work?job=<id>) lands here with sub still at
+  // whatever it was on last visit — HiringPanel only mounts (and can
+  // consume pendingJobCardId) once sub is 'hiring'.
+  React.useEffect(() => {
+    if (ctx.pendingJobCardId) setSub('hiring');
+  }, [ctx.pendingJobCardId]);
+
+  // Give a handoff its own shareable URL (#work?handoff=<id>) while its detail
+  // is open — same pushState/popstate pattern as the QuickPools job detail,
+  // so it gets a real link to share and swipe-back doesn't skip past it.
+  const handoffHistoryPushed = React.useRef(false);
+  const openHandoffDetail = React.useCallback(h => {
+    setHandoffDetail(h);
+    window.history.pushState({
+      pgHandoff: h._id
+    }, '', '#work?handoff=' + h._id);
+    handoffHistoryPushed.current = true;
+  }, []);
+  const closeHandoffDetail = React.useCallback(() => {
+    setHandoffDetail(null);
+    if (handoffHistoryPushed.current) {
+      handoffHistoryPushed.current = false;
+      window.history.replaceState({}, '', '#work');
+    }
+  }, []);
+  React.useEffect(() => {
+    const onPop = () => {
+      if (handoffHistoryPushed.current) {
+        handoffHistoryPushed.current = false;
+        setHandoffDetail(null);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // Sync sub-tab to URL hash
   React.useEffect(() => {
@@ -327,7 +363,7 @@ function WorkScreen({
     return /*#__PURE__*/React.createElement("article", {
       key: h._id,
       className: "pg-card pg-press",
-      onClick: () => setHandoffDetail(h),
+      onClick: () => openHandoffDetail(h),
       style: {
         padding: '14px 16px',
         cursor: 'pointer',
@@ -660,16 +696,16 @@ function WorkScreen({
     }
   }, lang === 'pt' ? 'Repasse 1+ piscinas da sua rota, pagamento em split' : lang === 'es' ? 'Traspasa piscinas de tu ruta, pago en split' : 'Hand off route pools, paid as a split'))))), /*#__PURE__*/React.createElement(FullPage, {
     open: !!handoffDetail,
-    onClose: () => setHandoffDetail(null)
+    onClose: closeHandoffDetail
   }, handoffDetail && /*#__PURE__*/React.createElement(HandoffDetailPanel, {
     handoff: handoffDetail,
     user: ctxUser,
     lang: lang,
     showToast: showToast,
-    onClose: () => setHandoffDetail(null),
+    onClose: closeHandoffDetail,
     onChat: openChat,
     onEdit: h => {
-      setHandoffDetail(null);
+      closeHandoffDetail();
       setTimeout(() => setEditingHandoff(h), 50);
     },
     onChanged: () => {
@@ -2036,7 +2072,9 @@ function WorkScreen({
       onDeleteJob: removeJob,
       onJobUpdated: ctx.loadLiveJobs,
       liveApplications: liveApplications,
-      jobApplicantCounts: jobApplicantCounts
+      jobApplicantCounts: jobApplicantCounts,
+      highlightJobId: ctx.pendingJobCardId,
+      onHighlightConsumed: () => ctx.clearPendingJobCard && ctx.clearPendingJobCard()
     }), sub === 'techs' && /*#__PURE__*/React.createElement(TechsPanel, {
       t: t,
       lang: lang,
@@ -3087,7 +3125,9 @@ function WorkScreen({
     onDeleteJob: removeJob,
     onJobUpdated: ctx.loadLiveJobs,
     liveApplications: liveApplications,
-    jobApplicantCounts: jobApplicantCounts
+    jobApplicantCounts: jobApplicantCounts,
+    highlightJobId: ctx.pendingJobCardId,
+    onHighlightConsumed: () => ctx.clearPendingJobCard && ctx.clearPendingJobCard()
   }), sub === 'techs' && /*#__PURE__*/React.createElement(TechsPanel, {
     t: t,
     lang: lang,
@@ -3184,6 +3224,27 @@ function HandoffDetailPanel({
     onChanged && onChanged();
     if (allFilled) onClose && onClose();
   };
+  const shareHandoff = async () => {
+    const url = `https://poolguyx.com/#work?handoff=${handoff._id}`;
+    const cities = (handoff.cities || []).join(', ');
+    const text = `${lang === 'pt' ? 'Repasse de Piscina' : lang === 'es' ? 'Traspaso de Piscina' : 'Pool Handoff'} — ${cities}\n\n${url}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: lang === 'pt' ? 'Repasse de Piscina' : 'Pool Handoff',
+          text,
+          url
+        });
+        return;
+      } catch (e) {
+        return;
+      }
+    }
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      showToast && showToast('✓ ' + (lang === 'pt' ? 'Link copiado!' : lang === 'es' ? '¡Enlace copiado!' : 'Link copied!'));
+    }
+  };
   const deleteHandoff = async () => {
     if (!window.sb || busy) return;
     const msg = lang === 'pt' ? 'Excluir este repasse?' : lang === 'es' ? '¿Eliminar este traspaso?' : 'Delete this handoff?';
@@ -3234,13 +3295,59 @@ function HandoffDetailPanel({
       fontWeight: 700,
       letterSpacing: '-0.01em'
     }
-  }, lang === 'pt' ? 'Repasse de Piscina' : lang === 'es' ? 'Traspaso de Piscina' : 'Pool Handoff'), canManage ? /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Repasse de Piscina' : lang === 'es' ? 'Traspaso de Piscina' : 'Pool Handoff'), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: 8
     }
   }, /*#__PURE__*/React.createElement("button", {
+    onClick: shareHandoff,
+    title: lang === 'pt' ? 'Compartilhar' : lang === 'es' ? 'Compartir' : 'Share',
+    style: {
+      width: 32,
+      height: 32,
+      borderRadius: 9,
+      border: '1px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-50)',
+      color: 'var(--pg-ink-600)',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "18",
+    cy: "5",
+    r: "3"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "6",
+    cy: "12",
+    r: "3"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "18",
+    cy: "19",
+    r: "3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "8.59",
+    y1: "13.51",
+    x2: "15.42",
+    y2: "17.49"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15.41",
+    y1: "6.51",
+    x2: "8.59",
+    y2: "10.49"
+  }))), canManage && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     onClick: () => onEdit && onEdit(handoff),
     disabled: busy,
     title: lang === 'pt' ? 'Editar' : lang === 'es' ? 'Editar' : 'Edit',
@@ -3297,11 +3404,7 @@ function HandoffDetailPanel({
     points: "3 6 5 6 21 6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-  })))) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 60
-    }
-  })), /*#__PURE__*/React.createElement("div", {
+  })))))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       overflow: 'auto',
@@ -3903,7 +4006,9 @@ function HiringPanel({
   onDeleteJob,
   onJobUpdated,
   liveApplications = [],
-  jobApplicantCounts = {}
+  jobApplicantCounts = {},
+  highlightJobId = null,
+  onHighlightConsumed
 }) {
   const Company = (s = 20, c = 'var(--pg-blue-500)') => /*#__PURE__*/React.createElement("svg", {
     width: s,
@@ -3952,13 +4057,44 @@ function HiringPanel({
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const [selectedJob, setSelectedJob] = React.useState(null);
   const [editingJob, setEditingJob] = React.useState(null);
-  React.useEffect(() => {
-    if (window.__pgOpenJobId && liveJobs.length > 0) {
-      const job = liveJobs.find(j => j._id === window.__pgOpenJobId);
-      window.__pgOpenJobId = null;
-      if (job) setSelectedJob(job);
+
+  // Give an open job its own shareable URL (#work?job=<id>) — same
+  // pushState/popstate pattern used for the pool-handoff detail page, so a
+  // job opened this way (from Home's featured card, a shared link, etc.)
+  // gets a real link back and swipe-back doesn't skip past it.
+  const jobHistoryPushed = React.useRef(false);
+  const openJobDetailSheet = React.useCallback(job => {
+    setSelectedJob(job);
+    window.history.pushState({
+      pgJobCard: job._id
+    }, '', '#work?job=' + job._id);
+    jobHistoryPushed.current = true;
+  }, []);
+  const closeJobDetailSheet = React.useCallback(() => {
+    setSelectedJob(null);
+    if (jobHistoryPushed.current) {
+      jobHistoryPushed.current = false;
+      window.history.replaceState({}, '', '#work');
     }
-  }, [liveJobs]);
+  }, []);
+  React.useEffect(() => {
+    const onPop = () => {
+      if (jobHistoryPushed.current) {
+        jobHistoryPushed.current = false;
+        setSelectedJob(null);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  React.useEffect(() => {
+    if (highlightJobId && liveJobs.length > 0) {
+      const job = liveJobs.find(j => String(j._id) === String(highlightJobId));
+      if (job) openJobDetailSheet(job);
+      onHighlightConsumed && onHighlightConsumed();
+    }
+  }, [highlightJobId, liveJobs]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sheet, {
     open: !!editingJob,
     onClose: () => setEditingJob(null),
@@ -3992,11 +4128,29 @@ function HiringPanel({
     }
   })), /*#__PURE__*/React.createElement(Sheet, {
     open: !!selectedJob,
-    onClose: () => setSelectedJob(null),
+    onClose: closeJobDetailSheet,
     height: "92%"
   }, selectedJob && (() => {
     const job = selectedJob;
     const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
+    const shareJob = async () => {
+      const url = `https://poolguyx.com/#work?job=${job._id}`;
+      const text = `${job.author}${job.role ? ' — ' + job.role : ''}\n\n${url}`;
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: job.author,
+            text,
+            url
+          });
+        } catch (e) {}
+        return;
+      }
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        showToast && showToast('✓ ' + (lang === 'pt' ? 'Link copiado!' : lang === 'es' ? '¡Enlace copiado!' : 'Link copied!'));
+      }
+    };
     return /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '0 0 32px',
@@ -4012,7 +4166,7 @@ function HiringPanel({
         justifyContent: 'space-between'
       }
     }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setSelectedJob(null),
+      onClick: closeJobDetailSheet,
       style: {
         border: 'none',
         background: 'transparent',
@@ -4030,9 +4184,58 @@ function HiringPanel({
         fontWeight: 700,
         letterSpacing: '-0.01em'
       }
-    }, lang === 'pt' ? 'Detalhes da Vaga' : lang === 'es' ? 'Detalle del Empleo' : 'Job Details'), user?.uid && job.author_id && user.uid === job.author_id ? /*#__PURE__*/React.createElement("button", {
+    }, lang === 'pt' ? 'Detalhes da Vaga' : lang === 'es' ? 'Detalle del Empleo' : 'Job Details'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: shareJob,
+      title: lang === 'pt' ? 'Compartilhar' : lang === 'es' ? 'Compartir' : 'Share',
+      style: {
+        border: 'none',
+        background: 'none',
+        color: 'var(--pg-blue-500)',
+        cursor: 'pointer',
+        padding: 0,
+        display: 'flex',
+        alignItems: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "16",
+      height: "16",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "18",
+      cy: "5",
+      r: "3"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "6",
+      cy: "12",
+      r: "3"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "18",
+      cy: "19",
+      r: "3"
+    }), /*#__PURE__*/React.createElement("line", {
+      x1: "8.59",
+      y1: "13.51",
+      x2: "15.42",
+      y2: "17.49"
+    }), /*#__PURE__*/React.createElement("line", {
+      x1: "15.41",
+      y1: "6.51",
+      x2: "8.59",
+      y2: "10.49"
+    }))), user?.uid && job.author_id && user.uid === job.author_id && /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        setSelectedJob(null);
+        closeJobDetailSheet();
         setTimeout(() => setEditingJob(job), 50);
       },
       style: {
@@ -4060,11 +4263,7 @@ function HiringPanel({
       d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-    })), lang === 'pt' ? 'Editar' : lang === 'es' ? 'Editar' : 'Edit') : /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 60
-      }
-    })), /*#__PURE__*/React.createElement("div", {
+    })), lang === 'pt' ? 'Editar' : lang === 'es' ? 'Editar' : 'Edit'))), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '0 18px',
         display: 'flex',
@@ -4313,7 +4512,7 @@ function HiringPanel({
       }
     }, lang === 'pt' ? 'Sua vaga' : lang === 'es' ? 'Tu oferta' : 'Your listing') : /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        setSelectedJob(null);
+        closeJobDetailSheet();
         onApply && onApply(job);
       },
       className: "pg-btn pg-btn-primary",
@@ -4343,7 +4542,7 @@ function HiringPanel({
     return /*#__PURE__*/React.createElement("article", {
       key: job._id,
       className: isHired ? 'pg-card' : 'pg-card pg-press',
-      onClick: () => !isHired && setSelectedJob(job),
+      onClick: () => !isHired && openJobDetailSheet(job),
       style: {
         padding: '14px 16px',
         cursor: isHired ? 'default' : 'pointer',
