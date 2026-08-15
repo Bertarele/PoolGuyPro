@@ -378,7 +378,14 @@ function PhotoViewer({
       document.body.style.overflow = prev;
     };
   }, []);
-  return /*#__PURE__*/React.createElement("div", {
+
+  // Rendered via a portal straight to <body>: PhotoViewer can be opened from
+  // inside a FullPage panel, and any CSS-animated ancestor (FullPage's own
+  // entrance transform) can turn into a containing block for `position:
+  // fixed` children — which would collapse this "fullscreen" overlay down to
+  // the panel's own (much smaller, translucent-looking) box instead of the
+  // real viewport. A portal sidesteps that entirely.
+  return ReactDOM.createPortal(/*#__PURE__*/React.createElement("div", {
     onClick: onClose,
     onTouchStart: onTouchStart,
     onTouchEnd: onTouchEnd,
@@ -503,7 +510,7 @@ function PhotoViewer({
       background: i === idx ? '#fff' : 'rgba(255,255,255,0.35)',
       transition: 'width .18s, background .18s'
     }
-  }))));
+  })))), document.body);
 }
 
 // ── Maps-app chooser (Apple Maps / Google Maps / Waze) ────────
