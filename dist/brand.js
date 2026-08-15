@@ -297,7 +297,7 @@ function NavyBar({
     style: {
       background: bg,
       color: H.text,
-      padding: compact ? '10px 18px 10px' : wave ? '2px 18px 14px' : '12px 18px 10px',
+      padding: compact ? '14px 18px 14px' : wave ? '2px 18px 14px' : '12px 18px 10px',
       position: 'relative',
       overflow: 'hidden'
     }
