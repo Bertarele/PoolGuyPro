@@ -116,6 +116,11 @@ function HomeScreen({ ctx }) {
     restartSponsoredTimer();
   };
   const sponsoredTouch = React.useRef(null);
+  // "Meus Anúncios" cards live inside a horizontal scroller — without this,
+  // a finger that moves even a couple pixels while starting to swipe still
+  // fires the card's onClick on release, so scrolling felt like it randomly
+  // triggered a tap instead of sliding.
+  const myAdsTouch = React.useRef(null);
   const sponsoredCard = sponsoredCards[sponsoredIdx] || null;
 
   // Featured marketplace listings — admin-picked (featured=true) OR user-paid boost still active
@@ -476,10 +481,19 @@ function HomeScreen({ ctx }) {
                       : '—';
                 return (
                   <div key={item._id} onClick={()=>{
+                    if (myAdsTouch.current?.swiped) return;
                     if (isQuick) { ctx.openQuickJobById ? ctx.openQuickJobById(item._id) : goTab('quick'); }
                     else if (isJob) { openListingById ? openListingById('job_' + item._id) : goTab('work'); }
                     else { openListingById ? openListingById(item._id) : goTab('market'); }
-                  }} className="pg-press" style={{
+                  }}
+                  onTouchStart={e=>{ myAdsTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, swiped: false }; }}
+                  onTouchMove={e=>{
+                    if (!myAdsTouch.current) return;
+                    const dx = e.touches[0].clientX - myAdsTouch.current.x;
+                    const dy = e.touches[0].clientY - myAdsTouch.current.y;
+                    if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) myAdsTouch.current.swiped = true;
+                  }}
+                  className="pg-press" style={{
                     display:'flex', flexDirection:'column', alignItems:'flex-start',
                     padding:'11px 11px 11px', borderRadius:14, flexShrink:0,
                     width:150,
