@@ -2716,7 +2716,8 @@ function QuickPoolsScreen({
         style: {
           display: 'flex',
           gap: 6,
-          alignItems: 'center'
+          alignItems: 'center',
+          marginTop: 4
         }
       }, /*#__PURE__*/React.createElement("button", {
         onClick: () => setRoutesOpen(true),
