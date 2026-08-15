@@ -1236,13 +1236,48 @@ function WorkScreen({ ctx }) {
           <div style={{display:'flex', flexDirection:'column', gap:12, marginBottom:12}}>
             {liveHandoffs.map(h => {
               const isOwn = ctxUser?.uid && h.poster_id === ctxUser.uid;
+              const isAdminHere = ctxUser?.role === 'admin';
+              const canManageHere = isOwn || isAdminHere;
               const dayLbls = { mon:'Seg',tue:'Ter',wed:'Qua',thu:'Qui',fri:'Sex',sat:'Sáb',sun:'Dom' };
               const thumb = h.photoUrls && h.photoUrls[0];
+              const deleteHandoffFromCard = async (e) => {
+                e.stopPropagation();
+                const msg = lang==='pt'?'Excluir este repasse?':lang==='es'?'¿Eliminar este traspaso?':'Delete this handoff?';
+                if (!window.confirm(msg)) return;
+                const { error } = await window.sb.from('pool_handoffs').delete().eq('id', h._id);
+                if (error) { showToast && showToast('❌ ' + error.message); return; }
+                showToast && showToast('🗑️ ' + (lang==='pt'?'Repasse excluído':lang==='es'?'Traspaso eliminado':'Handoff deleted'));
+                loadLiveHandoffs && loadLiveHandoffs();
+              };
               return (
                 <article key={h._id} className="pg-card pg-press" onClick={()=>setHandoffDetail(h)}
                   style={{padding:'14px 16px', cursor:'pointer', position:'relative'}}>
+                  {/* Edit/delete — same top-right icon-button pattern as a regular job card */}
+                  {canManageHere && (
+                    <div style={{position:'absolute', top:10, right:10, display:'flex', gap:6, zIndex:2}}>
+                      <button onClick={(e)=>{ e.stopPropagation(); setEditingHandoff(h); }} style={{
+                        width:28, height:28, borderRadius:7, border:'1px solid var(--pg-ink-200)',
+                        background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', cursor:'pointer',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                      }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      <button onClick={deleteHandoffFromCard} style={{
+                        width:28, height:28, borderRadius:7,
+                        background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
+                        color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                      }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                   {/* Header row — same shape as a regular job card, amber accent instead of blue */}
-                  <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
+                  <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8, paddingRight:canManageHere?68:0}}>
                     {thumb ? (
                       <img src={thumb} alt="" style={{width:28, height:28, borderRadius:7, objectFit:'cover', flexShrink:0}}/>
                     ) : (
@@ -1417,12 +1452,25 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
           {lang==='pt'?'Repasse de Piscina':lang==='es'?'Traspaso de Piscina':'Pool Handoff'}
         </h2>
         {canManage ? (
-          <div style={{display:'flex', alignItems:'center', gap:14}}>
-            <button onClick={()=>onEdit && onEdit(handoff)} disabled={busy} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:14, fontWeight:600, cursor:'pointer', padding:0}}>
-              {lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'}
+          <div style={{display:'flex', alignItems:'center', gap:8}}>
+            <button onClick={()=>onEdit && onEdit(handoff)} disabled={busy} title={lang==='pt'?'Editar':lang==='es'?'Editar':'Edit'} style={{
+              width:32, height:32, borderRadius:9, border:'1px solid var(--pg-ink-200)',
+              background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', cursor:'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
             </button>
-            <button onClick={deleteHandoff} disabled={busy} style={{border:'none', background:'transparent', color:'#EF4444', fontSize:14, fontWeight:600, cursor:'pointer', padding:0}}>
-              {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+            <button onClick={deleteHandoff} disabled={busy} title={lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'} style={{
+              width:32, height:32, borderRadius:9,
+              background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
+              color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              </svg>
             </button>
           </div>
         ) : <div style={{width:60}}/>}
