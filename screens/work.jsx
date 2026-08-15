@@ -1492,24 +1492,22 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
       </div>
 
       <div style={{flex:1, overflow:'auto', padding:'0 18px', display:'flex', flexDirection:'column', gap:14}}>
-        <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between'}}>
-          <div>
-            <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999, background:'rgba(245,158,11,0.15)', color:'#D97706', letterSpacing:'0.04em'}}>
-              {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
-            </span>
-            <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', marginTop:6}}>{(handoff.cities||[]).join(' · ')}</div>
-          </div>
-          <div style={{textAlign:'right'}}>
+        <div>
+          <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999, background:'rgba(245,158,11,0.15)', color:'#D97706', letterSpacing:'0.04em'}}>
+            {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
+          </span>
+          <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', marginTop:6, lineHeight:1.25}}>{(handoff.cities||[]).join(' · ')}</div>
+          <div style={{display:'flex', alignItems:'baseline', gap:8, marginTop:8, flexWrap:'wrap'}}>
             {priceLbl ? (
-              <div style={{fontSize:20, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>
+              <span style={{fontSize:19, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)', whiteSpace:'nowrap'}}>
                 {priceLbl}<span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-400)'}}>/{lang==='pt'?'piscina':'pool'}</span>
-              </div>
+              </span>
             ) : (
-              <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-400)'}}>
+              <span style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-400)'}}>
                 {lang==='pt'?'Preço a combinar':lang==='es'?'Precio a acordar':'Price TBD'}
-              </div>
+              </span>
             )}
-            <div style={{fontSize:11, color:'var(--pg-ink-400)', fontWeight:700, marginTop:3}}>{handoff.splitTakerPct}/{100-handoff.splitTakerPct} {lang==='pt'?'split':lang==='es'?'split':'split'}</div>
+            <span style={{fontSize:11, color:'var(--pg-ink-400)', fontWeight:700}}>· {handoff.splitTakerPct}/{100-handoff.splitTakerPct} {lang==='pt'?'split':lang==='es'?'split':'split'}</span>
           </div>
         </div>
 

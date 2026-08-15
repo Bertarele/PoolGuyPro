@@ -3270,12 +3270,6 @@ function HandoffDetailPanel({
       flexDirection: 'column',
       gap: 14
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between'
-    }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
@@ -3291,18 +3285,24 @@ function HandoffDetailPanel({
       fontSize: 18,
       fontWeight: 800,
       color: 'var(--pg-ink-900)',
-      marginTop: 6
+      marginTop: 6,
+      lineHeight: 1.25
     }
-  }, (handoff.cities || []).join(' · '))), /*#__PURE__*/React.createElement("div", {
+  }, (handoff.cities || []).join(' · ')), /*#__PURE__*/React.createElement("div", {
     style: {
-      textAlign: 'right'
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: 8,
+      marginTop: 8,
+      flexWrap: 'wrap'
     }
-  }, priceLbl ? /*#__PURE__*/React.createElement("div", {
+  }, priceLbl ? /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 20,
+      fontSize: 19,
       fontWeight: 800,
       color: '#D97706',
-      fontFamily: 'var(--pg-font-display)'
+      fontFamily: 'var(--pg-font-display)',
+      whiteSpace: 'nowrap'
     }
   }, priceLbl, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -3310,20 +3310,19 @@ function HandoffDetailPanel({
       fontWeight: 600,
       color: 'var(--pg-ink-400)'
     }
-  }, "/", lang === 'pt' ? 'piscina' : 'pool')) : /*#__PURE__*/React.createElement("div", {
+  }, "/", lang === 'pt' ? 'piscina' : 'pool')) : /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 600,
       color: 'var(--pg-ink-400)'
     }
-  }, lang === 'pt' ? 'Preço a combinar' : lang === 'es' ? 'Precio a acordar' : 'Price TBD'), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Preço a combinar' : lang === 'es' ? 'Precio a acordar' : 'Price TBD'), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: 'var(--pg-ink-400)',
-      fontWeight: 700,
-      marginTop: 3
+      fontWeight: 700
     }
-  }, handoff.splitTakerPct, "/", 100 - handoff.splitTakerPct, " ", lang === 'pt' ? 'split' : lang === 'es' ? 'split' : 'split'))), !(handoff.pools && handoff.pools.length > 0) && handoff.photoUrls && handoff.photoUrls.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "\xB7 ", handoff.splitTakerPct, "/", 100 - handoff.splitTakerPct, " ", lang === 'pt' ? 'split' : lang === 'es' ? 'split' : 'split'))), !(handoff.pools && handoff.pools.length > 0) && handoff.photoUrls && handoff.photoUrls.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
       overflow: 'hidden'
