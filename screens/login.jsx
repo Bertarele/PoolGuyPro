@@ -307,7 +307,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       <div style={{width:'100%', height:'100%', position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden'}}>
         {/* Background full screen */}
         <div style={{position:'absolute', inset:0, backgroundImage:'url(wallpaper.jpg)', backgroundSize:'cover', backgroundPosition:'center'}}/>
-        <div style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.08)'}}/>
+        <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.04) 38%, rgba(0,0,0,0.03) 52%, rgba(0,0,0,0.12) 100%)'}}/>
 
         {/* Language switcher */}
         <div style={{position:'absolute', top:20, right:24, display:'flex', gap:6, zIndex:10}}>

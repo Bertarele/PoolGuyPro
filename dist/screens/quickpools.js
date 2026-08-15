@@ -1991,19 +1991,20 @@ function QuickPoolsScreen({
           height: 38,
           padding: '0 14px',
           borderRadius: 11,
-          border: _ibr,
-          background: _ib,
-          color: _tx,
+          border: 'none',
+          background: 'linear-gradient(135deg,#0077B6,#023E8A)',
+          color: '#fff',
           fontFamily: 'inherit',
           fontSize: 12,
-          fontWeight: 700,
+          fontWeight: 800,
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           gap: 6,
+          boxShadow: '0 2px 8px rgba(0,119,182,0.40)',
           transition: 'all .15s'
         }
-      }, Icon.cal(13, _tx), " ", lang === 'pt' ? 'Editar' : 'Edit'), /*#__PURE__*/React.createElement("button", {
+      }, Icon.cal(13, '#fff'), " ", lang === 'pt' ? 'Editar' : 'Edit'), /*#__PURE__*/React.createElement("button", {
         onClick: () => openChat && openChat(),
         style: {
           width: 38,

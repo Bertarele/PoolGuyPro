@@ -829,7 +829,7 @@ function LoginScreen({
       style: {
         position: 'absolute',
         inset: 0,
-        background: 'rgba(0,0,0,0.08)'
+        background: 'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.04) 38%, rgba(0,0,0,0.03) 52%, rgba(0,0,0,0.12) 100%)'
       }
     }), /*#__PURE__*/React.createElement("div", {
       style: {

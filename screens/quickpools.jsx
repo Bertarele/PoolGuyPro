@@ -1110,8 +1110,8 @@ function QuickPoolsScreen({ ctx }) {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
                   </button>
-                  <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} style={{height:38,padding:'0 14px',borderRadius:11,border:_ibr,background:_ib,color:_tx,fontFamily:'inherit',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,transition:'all .15s'}}>
-                    {Icon.cal(13,_tx)} {lang==='pt'?'Editar':'Edit'}
+                  <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} style={{height:38,padding:'0 14px',borderRadius:11,border:'none',background:'linear-gradient(135deg,#0077B6,#023E8A)',color:'#fff',fontFamily:'inherit',fontSize:12,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',gap:6,boxShadow:'0 2px 8px rgba(0,119,182,0.40)',transition:'all .15s'}}>
+                    {Icon.cal(13,'#fff')} {lang==='pt'?'Editar':'Edit'}
                   </button>
                   <button onClick={()=>openChat&&openChat()} style={{width:38,height:38,borderRadius:11,background:_ib,border:_ibr,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
                     {Icon.msg(18,_tx)}
