@@ -2753,7 +2753,7 @@ function WorkScreen({
         color: 'var(--pg-ink-500)',
         marginLeft: 6
       }
-    }, "\xB7 $", h.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool')), isOwn && /*#__PURE__*/React.createElement("span", {
+    }, "\xB7 $", h.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool')), isOwn ? /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -2763,7 +2763,31 @@ function WorkScreen({
         color: 'var(--pg-blue-600)',
         border: '1px solid rgba(0,119,182,0.25)'
       }
-    }, lang === 'pt' ? 'Sua publicação' : lang === 'es' ? 'Tu publicación' : 'Your post')));
+    }, lang === 'pt' ? 'Sua publicação' : lang === 'es' ? 'Tu publicación' : 'Your post') : /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        openChat && openChat({
+          id: h.poster_id,
+          name: h.poster
+        });
+      },
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        height: 36,
+        padding: '0 16px',
+        borderRadius: 999,
+        border: 'none',
+        cursor: 'pointer',
+        background: 'linear-gradient(135deg,#0077B6,#023E8A)',
+        color: '#fff',
+        fontFamily: 'inherit',
+        fontSize: 12.5,
+        fontWeight: 700,
+        boxShadow: '0 3px 10px rgba(0,119,182,0.30)'
+      }
+    }, Icon.msg ? Icon.msg(13, '#fff') : null, lang === 'pt' ? 'Contato' : lang === 'es' ? 'Contacto' : 'Contact')));
   })), sub === 'hiring' && /*#__PURE__*/React.createElement(HiringPanel, {
     t: t,
     lang: lang,
@@ -2912,10 +2936,9 @@ function WorkScreen({
       color: 'var(--pg-ink-500)',
       marginTop: 1
     }
-  }, lang === 'pt' ? 'Repasse 1+ piscinas da sua rota, pagamento em split' : lang === 'es' ? 'Traspasa piscinas de tu ruta, pago en split' : 'Hand off route pools, paid as a split'))))), /*#__PURE__*/React.createElement(Sheet, {
+  }, lang === 'pt' ? 'Repasse 1+ piscinas da sua rota, pagamento em split' : lang === 'es' ? 'Traspasa piscinas de tu ruta, pago en split' : 'Hand off route pools, paid as a split'))))), /*#__PURE__*/React.createElement(FullPage, {
     open: !!handoffDetail,
-    onClose: () => setHandoffDetail(null),
-    height: "92%"
+    onClose: () => setHandoffDetail(null)
   }, handoffDetail && /*#__PURE__*/React.createElement(HandoffDetailPanel, {
     handoff: handoffDetail,
     user: ctxUser,

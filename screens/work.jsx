@@ -1254,10 +1254,19 @@ function WorkScreen({ ctx }) {
                       {h.splitTakerPct}/{100-h.splitTakerPct}
                       {h.pricePerPool != null && <span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-500)', marginLeft:6}}>· ${h.pricePerPool}/{lang==='pt'?'piscina':'pool'}</span>}
                     </div>
-                    {isOwn && (
+                    {isOwn ? (
                       <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(0,119,182,0.12)', color:'var(--pg-blue-600)', border:'1px solid rgba(0,119,182,0.25)'}}>
                         {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}
                       </span>
+                    ) : (
+                      <button onClick={(e)=>{ e.stopPropagation(); openChat && openChat({ id: h.poster_id, name: h.poster }); }} style={{
+                        display:'flex', alignItems:'center', gap:6, height:36, padding:'0 16px', borderRadius:999, border:'none', cursor:'pointer',
+                        background:'linear-gradient(135deg,#0077B6,#023E8A)', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:700,
+                        boxShadow:'0 3px 10px rgba(0,119,182,0.30)',
+                      }}>
+                        {Icon.msg ? Icon.msg(13,'#fff') : null}
+                        {lang==='pt'?'Contato':lang==='es'?'Contacto':'Contact'}
+                      </button>
                     )}
                   </div>
                 </article>
@@ -1312,15 +1321,17 @@ function WorkScreen({ ctx }) {
       </div>
     </Sheet>
 
-    {/* Handoff detail — full screen, same as a regular job listing */}
-    <Sheet open={!!handoffDetail} onClose={()=>setHandoffDetail(null)} height="92%">
+    {/* Handoff detail — true full screen, same as PostHiringSheet/PostTechSheet
+        (Sheet, even at height 92%, still shows a rounded-corner gap at the
+        top that reads as a card rather than a page). */}
+    <FullPage open={!!handoffDetail} onClose={()=>setHandoffDetail(null)}>
       {handoffDetail && (
         <HandoffDetailPanel handoff={handoffDetail} user={ctxUser} lang={lang} showToast={showToast}
           onClose={()=>setHandoffDetail(null)}
           onChat={openChat}
           onChanged={()=>{ loadLiveHandoffs && loadLiveHandoffs(); }}/>
       )}
-    </Sheet>
+    </FullPage>
     </div>
   );
 }
