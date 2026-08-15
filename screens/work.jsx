@@ -1254,13 +1254,9 @@ function WorkScreen({ ctx }) {
                       {h.splitTakerPct}/{100-h.splitTakerPct}
                       {h.pricePerPool != null && <span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-500)', marginLeft:6}}>· ${h.pricePerPool}/{lang==='pt'?'piscina':'pool'}</span>}
                     </div>
-                    {isOwn ? (
+                    {isOwn && (
                       <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(0,119,182,0.12)', color:'var(--pg-blue-600)', border:'1px solid rgba(0,119,182,0.25)'}}>
                         {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}
-                      </span>
-                    ) : (
-                      <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(245,158,11,0.12)', color:'#D97706', border:'1px solid rgba(245,158,11,0.25)'}}>
-                        {lang==='pt'?'Ver detalhes':lang==='es'?'Ver detalles':'View details'}
                       </span>
                     )}
                   </div>
@@ -1316,11 +1312,12 @@ function WorkScreen({ ctx }) {
       </div>
     </Sheet>
 
-    {/* Handoff detail / apply / accept */}
-    <Sheet open={!!handoffDetail} onClose={()=>setHandoffDetail(null)} height="auto">
+    {/* Handoff detail — full screen, same as a regular job listing */}
+    <Sheet open={!!handoffDetail} onClose={()=>setHandoffDetail(null)} height="92%">
       {handoffDetail && (
         <HandoffDetailPanel handoff={handoffDetail} user={ctxUser} lang={lang} showToast={showToast}
           onClose={()=>setHandoffDetail(null)}
+          onChat={openChat}
           onChanged={()=>{ loadLiveHandoffs && loadLiveHandoffs(); }}/>
       )}
     </Sheet>
@@ -1328,140 +1325,113 @@ function WorkScreen({ ctx }) {
   );
 }
 
-function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChanged }) {
+function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, onChanged }) {
   const isOwn = user?.uid && handoff.poster_id === user.uid;
-  const [applicants, setApplicants] = React.useState([]);
-  const [loading,    setLoading]    = React.useState(false);
-  const [myApp,      setMyApp]      = React.useState(null);
-  const [busy,       setBusy]       = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
   const dayLbls = { mon:'Segunda',tue:'Terça',wed:'Quarta',thu:'Quinta',fri:'Sexta',sat:'Sábado',sun:'Domingo' };
 
-  React.useEffect(() => {
-    if (!window.sb || !user?.uid) return;
-    if (isOwn) {
-      setLoading(true);
-      window.sb.from('pool_handoff_applications').select('*').eq('handoff_id', handoff._id)
-        .neq('status', 'withdrawn').order('created_at', { ascending: true })
-        .then(({ data }) => { setApplicants(data || []); setLoading(false); }).catch(()=>setLoading(false));
-    } else {
-      window.sb.from('pool_handoff_applications').select('*').eq('handoff_id', handoff._id).eq('applicant_id', user.uid)
-        .then(({ data }) => { if (data && data[0]) setMyApp(data[0]); }).catch(()=>{});
-    }
-  }, [handoff._id, isOwn, user?.uid]);
-
-  const apply = async () => {
-    if (!window.sb || !user?.uid || busy) return;
-    setBusy(true);
-    const { error } = await window.sb.from('pool_handoff_applications').insert({
-      handoff_id: handoff._id, applicant_id: user.uid,
-      applicant_name: user.name || user.email || 'Pool Guy', applicant_phone: user.phone || null,
-      status: 'pending',
-    });
-    setBusy(false);
-    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
-    setMyApp({ status: 'pending' });
-    showToast && showToast(lang==='pt'?'✓ Candidatura enviada':lang==='es'?'✓ Solicitud enviada':'✓ Application sent');
-  };
-
-  const accept = async (app) => {
+  const markFilled = async () => {
     if (!window.sb || busy) return;
     setBusy(true);
-    await window.sb.from('pool_handoff_applications').update({ status:'accepted' }).eq('id', app.id);
-    await window.sb.from('pool_handoff_applications').update({ status:'rejected' }).eq('handoff_id', handoff._id).neq('id', app.id);
     await window.sb.from('pool_handoffs').update({ status:'filled' }).eq('id', handoff._id);
     setBusy(false);
-    showToast && showToast(lang==='pt'?'✓ Repasse confirmado':lang==='es'?'✓ Traspaso confirmado':'✓ Handoff confirmed');
+    showToast && showToast(lang==='pt'?'✓ Marcado como preenchido':lang==='es'?'✓ Marcado como cubierto':'✓ Marked as filled');
+    onChanged && onChanged();
+    onClose && onClose();
+  };
+
+  const deleteHandoff = async () => {
+    if (!window.sb || busy) return;
+    const msg = lang==='pt'?'Excluir este repasse?':lang==='es'?'¿Eliminar este traspaso?':'Delete this handoff?';
+    if (!window.confirm(msg)) return;
+    setBusy(true);
+    const { error } = await window.sb.from('pool_handoffs').delete().eq('id', handoff._id);
+    setBusy(false);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    showToast && showToast('🗑️ ' + (lang==='pt'?'Repasse excluído':lang==='es'?'Traspaso eliminado':'Handoff deleted'));
     onChanged && onChanged();
     onClose && onClose();
   };
 
   return (
-    <div style={{padding:'8px 18px calc(18px + env(safe-area-inset-bottom, 0px))', display:'flex', flexDirection:'column', gap:14}}>
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-        <div>
-          <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999, background:'#F59E0B', color:'#fff', letterSpacing:'0.04em'}}>
-            {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
-          </span>
-          <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', marginTop:6}}>{(handoff.cities||[]).join(' · ')}</div>
-        </div>
-        <div style={{textAlign:'right'}}>
-          <div style={{fontSize:22, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>{handoff.splitTakerPct}/{100-handoff.splitTakerPct}</div>
-          <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600}}>{lang==='pt'?'seu / repassador':lang==='es'?'tuyo / traspasador':'you / poster'}</div>
-          {handoff.pricePerPool != null && (
-            <div style={{fontSize:12.5, fontWeight:700, color:'var(--pg-ink-700)', marginTop:3}}>${handoff.pricePerPool}/{lang==='pt'?'piscina':'pool'}</div>
-          )}
-        </div>
+    <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
+      <div style={{padding:'8px 18px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0}}>
+        <button onClick={onClose} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:15, fontWeight:600, cursor:'pointer', padding:0}}>
+          {lang==='pt'?'Fechar':lang==='es'?'Cerrar':'Close'}
+        </button>
+        <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:17, fontWeight:700, letterSpacing:'-0.01em'}}>
+          {lang==='pt'?'Repasse de Piscina':lang==='es'?'Traspaso de Piscina':'Pool Handoff'}
+        </h2>
+        {isOwn ? (
+          <button onClick={deleteHandoff} disabled={busy} style={{border:'none', background:'transparent', color:'#EF4444', fontSize:14, fontWeight:600, cursor:'pointer', padding:0}}>
+            {lang==='pt'?'Excluir':lang==='es'?'Eliminar':'Delete'}
+          </button>
+        ) : <div style={{width:60}}/>}
       </div>
 
-      {handoff.photoUrls && handoff.photoUrls.length > 0 && (
-        <PhotoCarousel urls={handoff.photoUrls} height={160}/>
-      )}
-
-      <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
-        <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
-          {handoff.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
-        </span>
-        <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
-          {handoff.poolsCount} {handoff.poolsCount>1?(lang==='pt'?'piscinas':'pools'):(lang==='pt'?'piscina':'pool')}
-        </span>
-        <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
-          {handoff.poolType==='condo'?(lang==='pt'?'Condomínio':'Condo'):(lang==='pt'?'Casa':'House')}
-        </span>
-        {handoff.extras?.dog && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🐕 {lang==='pt'?'Cachorro':'Dog'}</span>}
-        {handoff.extras?.saltwater && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🧂 {lang==='pt'?'Sal':'Salt'}</span>}
-      </div>
-
-      {handoff.description && (
-        <p style={{margin:0, fontSize:13.5, lineHeight:1.55, color:'var(--pg-ink-700)'}}>{handoff.description}</p>
-      )}
-
-      <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:12, background:'var(--pg-ink-50)'}}>
-        <Avatar name={handoff.poster} size={36}/>
-        <div style={{flex:1, minWidth:0}}>
-          <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{handoff.poster}</div>
-          <div style={{fontSize:11, color:'var(--pg-ink-500)'}}>{lang==='pt'?'Dono da rota':lang==='es'?'Dueño de la ruta':'Route owner'}</div>
-        </div>
-      </div>
-
-      {isOwn ? (
-        <div>
-          <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.06em', color:'var(--pg-ink-500)', textTransform:'uppercase', marginBottom:8}}>
-            {lang==='pt'?'Candidatos':lang==='es'?'Candidatos':'Applicants'} {applicants.length>0 && `(${applicants.length})`}
+      <div style={{flex:1, overflow:'auto', padding:'0 18px', display:'flex', flexDirection:'column', gap:14}}>
+        <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between'}}>
+          <div>
+            <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999, background:'rgba(245,158,11,0.15)', color:'#D97706', letterSpacing:'0.04em'}}>
+              {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
+            </span>
+            <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', marginTop:6}}>{(handoff.cities||[]).join(' · ')}</div>
           </div>
-          {loading ? (
-            <div style={{fontSize:12.5, color:'var(--pg-ink-400)', textAlign:'center', padding:'10px 0'}}>{lang==='pt'?'Carregando…':'Loading…'}</div>
-          ) : applicants.length === 0 ? (
-            <div style={{fontSize:12.5, color:'var(--pg-ink-400)', textAlign:'center', padding:'10px 0'}}>{lang==='pt'?'Nenhum candidato ainda':lang==='es'?'Sin candidatos aún':'No applicants yet'}</div>
-          ) : (
-            <div style={{display:'flex', flexDirection:'column', gap:8}}>
-              {applicants.map(app => (
-                <div key={app.id} style={{display:'flex', alignItems:'center', gap:10, padding:'9px 10px', borderRadius:10, border:'1px solid var(--pg-ink-200)'}}>
-                  <Avatar name={app.applicant_name} size={32}/>
-                  <div style={{flex:1, minWidth:0}}>
-                    <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{app.applicant_name}</div>
-                    {app.status==='accepted' && <div style={{fontSize:11, color:'#16A34A', fontWeight:700}}>✓ {lang==='pt'?'Aceito':'Accepted'}</div>}
-                  </div>
-                  {handoff.status==='open' && app.status==='pending' && (
-                    <button onClick={()=>accept(app)} disabled={busy} style={{
-                      height:32, padding:'0 14px', borderRadius:9, border:'none', cursor:'pointer',
-                      background:'#16A34A', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:700,
-                    }}>{lang==='pt'?'Aceitar':'Accept'}</button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <div style={{textAlign:'right'}}>
+            <div style={{fontSize:22, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>{handoff.splitTakerPct}/{100-handoff.splitTakerPct}</div>
+            <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600}}>{lang==='pt'?'seu / repassador':lang==='es'?'tuyo / traspasador':'you / poster'}</div>
+            {handoff.pricePerPool != null && (
+              <div style={{fontSize:12.5, fontWeight:700, color:'var(--pg-ink-700)', marginTop:3}}>${handoff.pricePerPool}/{lang==='pt'?'piscina':'pool'}</div>
+            )}
+          </div>
         </div>
-      ) : myApp ? (
-        <div style={{textAlign:'center', padding:'10px 0', fontSize:13.5, fontWeight:700, color:'#16A34A'}}>
-          ✓ {lang==='pt'?'Candidatura enviada — aguardando resposta':lang==='es'?'Solicitud enviada — esperando respuesta':'Application sent — awaiting response'}
+
+        {handoff.photoUrls && handoff.photoUrls.length > 0 && (
+          <div style={{borderRadius:14, overflow:'hidden'}}>
+            <PhotoCarousel urls={handoff.photoUrls} height={200}/>
+          </div>
+        )}
+
+        <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+          <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+            {handoff.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
+          </span>
+          <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+            {handoff.poolsCount} {handoff.poolsCount>1?(lang==='pt'?'piscinas':'pools'):(lang==='pt'?'piscina':'pool')}
+          </span>
+          <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+            {handoff.poolType==='condo'?(lang==='pt'?'Condomínio':'Condo'):(lang==='pt'?'Casa':'House')}
+          </span>
+          {handoff.extras?.dog && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🐕 {lang==='pt'?'Cachorro':'Dog'}</span>}
+          {handoff.extras?.saltwater && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🧂 {lang==='pt'?'Sal':'Salt'}</span>}
         </div>
-      ) : (
-        <button onClick={apply} disabled={busy} style={{
-          width:'100%', height:50, borderRadius:14, border:'none', cursor:'pointer', fontFamily:'inherit',
-          background:'linear-gradient(135deg,#F59E0B,#D97706)', color:'#fff', fontSize:15, fontWeight:800,
-        }}>{busy?'…':(lang==='pt'?'Candidatar-se':lang==='es'?'Postularme':'Apply')}</button>
-      )}
+
+        {handoff.description && (
+          <p style={{margin:0, fontSize:13.5, lineHeight:1.55, color:'var(--pg-ink-700)'}}>{handoff.description}</p>
+        )}
+
+        <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:12, background:'var(--pg-ink-50)', marginBottom:18}}>
+          <Avatar name={handoff.poster} size={36}/>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{handoff.poster}</div>
+            <div style={{fontSize:11, color:'var(--pg-ink-500)'}}>{lang==='pt'?'Dono da rota':lang==='es'?'Dueño de la ruta':'Route owner'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{padding:'12px 18px', flexShrink:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
+        {isOwn ? (
+          handoff.status === 'open' && (
+            <button onClick={markFilled} disabled={busy} className="pg-btn pg-btn-ghost" style={{width:'100%', height:50, fontSize:14}}>
+              {lang==='pt'?'Marcar como preenchido':lang==='es'?'Marcar como cubierto':'Mark as filled'}
+            </button>
+          )
+        ) : (
+          <button onClick={()=>onChat && onChat({ id: handoff.poster_id, name: handoff.poster })} className="pg-btn pg-btn-primary" style={{width:'100%', height:52, fontSize:16}}>
+            {Icon.msg ? Icon.msg(17,'#fff') : null} {lang==='pt'?'Contato':lang==='es'?'Contacto':'Contact'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

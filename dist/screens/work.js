@@ -2753,7 +2753,7 @@ function WorkScreen({
         color: 'var(--pg-ink-500)',
         marginLeft: 6
       }
-    }, "\xB7 $", h.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool')), isOwn ? /*#__PURE__*/React.createElement("span", {
+    }, "\xB7 $", h.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool')), isOwn && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -2763,17 +2763,7 @@ function WorkScreen({
         color: 'var(--pg-blue-600)',
         border: '1px solid rgba(0,119,182,0.25)'
       }
-    }, lang === 'pt' ? 'Sua publicação' : lang === 'es' ? 'Tu publicación' : 'Your post') : /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        fontWeight: 700,
-        padding: '4px 10px',
-        borderRadius: 999,
-        background: 'rgba(245,158,11,0.12)',
-        color: '#D97706',
-        border: '1px solid rgba(245,158,11,0.25)'
-      }
-    }, lang === 'pt' ? 'Ver detalhes' : lang === 'es' ? 'Ver detalles' : 'View details')));
+    }, lang === 'pt' ? 'Sua publicação' : lang === 'es' ? 'Tu publicación' : 'Your post')));
   })), sub === 'hiring' && /*#__PURE__*/React.createElement(HiringPanel, {
     t: t,
     lang: lang,
@@ -2925,13 +2915,14 @@ function WorkScreen({
   }, lang === 'pt' ? 'Repasse 1+ piscinas da sua rota, pagamento em split' : lang === 'es' ? 'Traspasa piscinas de tu ruta, pago en split' : 'Hand off route pools, paid as a split'))))), /*#__PURE__*/React.createElement(Sheet, {
     open: !!handoffDetail,
     onClose: () => setHandoffDetail(null),
-    height: "auto"
+    height: "92%"
   }, handoffDetail && /*#__PURE__*/React.createElement(HandoffDetailPanel, {
     handoff: handoffDetail,
     user: ctxUser,
     lang: lang,
     showToast: showToast,
     onClose: () => setHandoffDetail(null),
+    onChat: openChat,
     onChanged: () => {
       loadLiveHandoffs && loadLiveHandoffs();
     }
@@ -2943,12 +2934,10 @@ function HandoffDetailPanel({
   lang,
   showToast,
   onClose,
+  onChat,
   onChanged
 }) {
   const isOwn = user?.uid && handoff.poster_id === user.uid;
-  const [applicants, setApplicants] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const [myApp, setMyApp] = React.useState(null);
   const [busy, setBusy] = React.useState(false);
   const dayLbls = {
     mon: 'Segunda',
@@ -2959,68 +2948,88 @@ function HandoffDetailPanel({
     sat: 'Sábado',
     sun: 'Domingo'
   };
-  React.useEffect(() => {
-    if (!window.sb || !user?.uid) return;
-    if (isOwn) {
-      setLoading(true);
-      window.sb.from('pool_handoff_applications').select('*').eq('handoff_id', handoff._id).neq('status', 'withdrawn').order('created_at', {
-        ascending: true
-      }).then(({
-        data
-      }) => {
-        setApplicants(data || []);
-        setLoading(false);
-      }).catch(() => setLoading(false));
-    } else {
-      window.sb.from('pool_handoff_applications').select('*').eq('handoff_id', handoff._id).eq('applicant_id', user.uid).then(({
-        data
-      }) => {
-        if (data && data[0]) setMyApp(data[0]);
-      }).catch(() => {});
-    }
-  }, [handoff._id, isOwn, user?.uid]);
-  const apply = async () => {
-    if (!window.sb || !user?.uid || busy) return;
+  const markFilled = async () => {
+    if (!window.sb || busy) return;
+    setBusy(true);
+    await window.sb.from('pool_handoffs').update({
+      status: 'filled'
+    }).eq('id', handoff._id);
+    setBusy(false);
+    showToast && showToast(lang === 'pt' ? '✓ Marcado como preenchido' : lang === 'es' ? '✓ Marcado como cubierto' : '✓ Marked as filled');
+    onChanged && onChanged();
+    onClose && onClose();
+  };
+  const deleteHandoff = async () => {
+    if (!window.sb || busy) return;
+    const msg = lang === 'pt' ? 'Excluir este repasse?' : lang === 'es' ? '¿Eliminar este traspaso?' : 'Delete this handoff?';
+    if (!window.confirm(msg)) return;
     setBusy(true);
     const {
       error
-    } = await window.sb.from('pool_handoff_applications').insert({
-      handoff_id: handoff._id,
-      applicant_id: user.uid,
-      applicant_name: user.name || user.email || 'Pool Guy',
-      applicant_phone: user.phone || null,
-      status: 'pending'
-    });
+    } = await window.sb.from('pool_handoffs').delete().eq('id', handoff._id);
     setBusy(false);
     if (error) {
       showToast && showToast('❌ ' + (error.message || 'Error'));
       return;
     }
-    setMyApp({
-      status: 'pending'
-    });
-    showToast && showToast(lang === 'pt' ? '✓ Candidatura enviada' : lang === 'es' ? '✓ Solicitud enviada' : '✓ Application sent');
-  };
-  const accept = async app => {
-    if (!window.sb || busy) return;
-    setBusy(true);
-    await window.sb.from('pool_handoff_applications').update({
-      status: 'accepted'
-    }).eq('id', app.id);
-    await window.sb.from('pool_handoff_applications').update({
-      status: 'rejected'
-    }).eq('handoff_id', handoff._id).neq('id', app.id);
-    await window.sb.from('pool_handoffs').update({
-      status: 'filled'
-    }).eq('id', handoff._id);
-    setBusy(false);
-    showToast && showToast(lang === 'pt' ? '✓ Repasse confirmado' : lang === 'es' ? '✓ Traspaso confirmado' : '✓ Handoff confirmed');
+    showToast && showToast('🗑️ ' + (lang === 'pt' ? 'Repasse excluído' : lang === 'es' ? 'Traspaso eliminado' : 'Handoff deleted'));
     onChanged && onChanged();
     onClose && onClose();
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '8px 18px calc(18px + env(safe-area-inset-bottom, 0px))',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '8px 18px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-blue-500)',
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, lang === 'pt' ? 'Fechar' : lang === 'es' ? 'Cerrar' : 'Close'), /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontFamily: 'var(--pg-font-display)',
+      fontSize: 17,
+      fontWeight: 700,
+      letterSpacing: '-0.01em'
+    }
+  }, lang === 'pt' ? 'Repasse de Piscina' : lang === 'es' ? 'Traspaso de Piscina' : 'Pool Handoff'), isOwn ? /*#__PURE__*/React.createElement("button", {
+    onClick: deleteHandoff,
+    disabled: busy,
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: '#EF4444',
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete') : /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 60
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflow: 'auto',
+      padding: '0 18px',
       display: 'flex',
       flexDirection: 'column',
       gap: 14
@@ -3028,7 +3037,7 @@ function HandoffDetailPanel({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       justifyContent: 'space-between'
     }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
@@ -3037,8 +3046,8 @@ function HandoffDetailPanel({
       fontWeight: 800,
       padding: '2px 8px',
       borderRadius: 999,
-      background: '#F59E0B',
-      color: '#fff',
+      background: 'rgba(245,158,11,0.15)',
+      color: '#D97706',
       letterSpacing: '0.04em'
     }
   }, lang === 'pt' ? 'REPASSE' : lang === 'es' ? 'TRASPASO' : 'HANDOFF'), /*#__PURE__*/React.createElement("div", {
@@ -3072,10 +3081,15 @@ function HandoffDetailPanel({
       color: 'var(--pg-ink-700)',
       marginTop: 3
     }
-  }, "$", handoff.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool'))), handoff.photoUrls && handoff.photoUrls.length > 0 && /*#__PURE__*/React.createElement(PhotoCarousel, {
+  }, "$", handoff.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool'))), handoff.photoUrls && handoff.photoUrls.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement(PhotoCarousel, {
     urls: handoff.photoUrls,
-    height: 160
-  }), /*#__PURE__*/React.createElement("div", {
+    height: 200
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexWrap: 'wrap',
@@ -3140,7 +3154,8 @@ function HandoffDetailPanel({
       gap: 10,
       padding: '10px 12px',
       borderRadius: 12,
-      background: 'var(--pg-ink-50)'
+      background: 'var(--pg-ink-50)',
+      marginBottom: 18
     }
   }, /*#__PURE__*/React.createElement(Avatar, {
     name: handoff.poster,
@@ -3161,104 +3176,34 @@ function HandoffDetailPanel({
       fontSize: 11,
       color: 'var(--pg-ink-500)'
     }
-  }, lang === 'pt' ? 'Dono da rota' : lang === 'es' ? 'Dueño de la ruta' : 'Route owner'))), isOwn ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Dono da rota' : lang === 'es' ? 'Dueño de la ruta' : 'Route owner')))), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      fontWeight: 700,
-      letterSpacing: '0.06em',
-      color: 'var(--pg-ink-500)',
-      textTransform: 'uppercase',
-      marginBottom: 8
+      padding: '12px 18px',
+      flexShrink: 0,
+      background: 'var(--pg-white)',
+      borderTop: '0.5px solid var(--pg-ink-200)'
     }
-  }, lang === 'pt' ? 'Candidatos' : lang === 'es' ? 'Candidatos' : 'Applicants', " ", applicants.length > 0 && `(${applicants.length})`), loading ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12.5,
-      color: 'var(--pg-ink-400)',
-      textAlign: 'center',
-      padding: '10px 0'
-    }
-  }, lang === 'pt' ? 'Carregando…' : 'Loading…') : applicants.length === 0 ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12.5,
-      color: 'var(--pg-ink-400)',
-      textAlign: 'center',
-      padding: '10px 0'
-    }
-  }, lang === 'pt' ? 'Nenhum candidato ainda' : lang === 'es' ? 'Sin candidatos aún' : 'No applicants yet') : /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 8
-    }
-  }, applicants.map(app => /*#__PURE__*/React.createElement("div", {
-    key: app.id,
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      padding: '9px 10px',
-      borderRadius: 10,
-      border: '1px solid var(--pg-ink-200)'
-    }
-  }, /*#__PURE__*/React.createElement(Avatar, {
-    name: app.applicant_name,
-    size: 32
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700,
-      color: 'var(--pg-ink-900)'
-    }
-  }, app.applicant_name), app.status === 'accepted' && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: '#16A34A',
-      fontWeight: 700
-    }
-  }, "\u2713 ", lang === 'pt' ? 'Aceito' : 'Accepted')), handoff.status === 'open' && app.status === 'pending' && /*#__PURE__*/React.createElement("button", {
-    onClick: () => accept(app),
+  }, isOwn ? handoff.status === 'open' && /*#__PURE__*/React.createElement("button", {
+    onClick: markFilled,
     disabled: busy,
-    style: {
-      height: 32,
-      padding: '0 14px',
-      borderRadius: 9,
-      border: 'none',
-      cursor: 'pointer',
-      background: '#16A34A',
-      color: '#fff',
-      fontFamily: 'inherit',
-      fontSize: 12.5,
-      fontWeight: 700
-    }
-  }, lang === 'pt' ? 'Aceitar' : 'Accept'))))) : myApp ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: 'center',
-      padding: '10px 0',
-      fontSize: 13.5,
-      fontWeight: 700,
-      color: '#16A34A'
-    }
-  }, "\u2713 ", lang === 'pt' ? 'Candidatura enviada — aguardando resposta' : lang === 'es' ? 'Solicitud enviada — esperando respuesta' : 'Application sent — awaiting response') : /*#__PURE__*/React.createElement("button", {
-    onClick: apply,
-    disabled: busy,
+    className: "pg-btn pg-btn-ghost",
     style: {
       width: '100%',
       height: 50,
-      borderRadius: 14,
-      border: 'none',
-      cursor: 'pointer',
-      fontFamily: 'inherit',
-      background: 'linear-gradient(135deg,#F59E0B,#D97706)',
-      color: '#fff',
-      fontSize: 15,
-      fontWeight: 800
+      fontSize: 14
     }
-  }, busy ? '…' : lang === 'pt' ? 'Candidatar-se' : lang === 'es' ? 'Postularme' : 'Apply'));
+  }, lang === 'pt' ? 'Marcar como preenchido' : lang === 'es' ? 'Marcar como cubierto' : 'Mark as filled') : /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChat && onChat({
+      id: handoff.poster_id,
+      name: handoff.poster
+    }),
+    className: "pg-btn pg-btn-primary",
+    style: {
+      width: '100%',
+      height: 52,
+      fontSize: 16
+    }
+  }, Icon.msg ? Icon.msg(17, '#fff') : null, " ", lang === 'pt' ? 'Contato' : lang === 'es' ? 'Contacto' : 'Contact')));
 }
 
 // ── Shared "My Applications" tracking section ─────────────────
