@@ -4438,7 +4438,7 @@ function HiringPanel({
         flexShrink: 0,
         letterSpacing: '0.05em'
       }
-    }, "NEW")), isHired && /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'NOVA' : lang === 'es' ? 'NUEVA' : 'NEW')), isHired && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',

@@ -5259,8 +5259,7 @@ function MarketplaceScreen({ ctx }) {
 
       {/* ── OVERLAY SHEETS (same as mobile) ───────────────────── */}
       {viewListing && (
-        <div data-pg-listing-scroll style={{position:'fixed', inset:0, zIndex:200, overflowY:'auto', background:'var(--pg-ink-50)', animation:'pg-fade-in 0.18s ease', display:'flex', justifyContent:'center'}}>
-        <div style={{width:'100%', maxWidth:560, minHeight:'100%', background:'var(--pg-bg)', boxShadow:'0 0 40px rgba(0,0,0,0.10)'}}>
+        <div data-pg-listing-scroll style={{position:'fixed', inset:0, zIndex:200, overflowY:'auto', background:'var(--pg-bg)', animation:'pg-fade-in 0.18s ease'}}>
           <ViewListingSheet
             item={viewListing} lang={lang}
             openChat={openChat} openPublicProfile={openPublicProfile}
@@ -5286,7 +5285,6 @@ function MarketplaceScreen({ ctx }) {
             }}
             onDeleted={(id)=>{ closeListing(); setSavedIds(prev=>{const s=new Set(prev);s.delete(id);return s;}); if(ctx&&ctx.removeMarketItem)ctx.removeMarketItem(id); }}
           />
-        </div>
         </div>
       )}
       {shareItem && <ShareSheet item={shareItem} lang={lang} onClose={()=>setShareItem(null)} showToast={showToast}/>}

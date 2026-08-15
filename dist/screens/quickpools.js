@@ -1571,17 +1571,20 @@ function QuickPoolsScreen({
       overflowY: 'auto',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center'
+      alignItems: 'center',
+      padding: isDesktop ? '28px 24px' : 0
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: '100%',
-      maxWidth: isDesktop ? 560 : '100%',
-      minHeight: '100%',
+      maxWidth: isDesktop ? 680 : '100%',
+      minHeight: isDesktop ? 'auto' : '100%',
       background: 'var(--pg-bg)',
       display: 'flex',
       flexDirection: 'column',
-      boxShadow: isDesktop ? '0 0 40px rgba(0,0,0,0.10)' : 'none'
+      borderRadius: isDesktop ? 20 : 0,
+      boxShadow: isDesktop ? '0 8px 40px rgba(0,0,0,0.12)' : 'none',
+      overflow: isDesktop ? 'hidden' : 'visible'
     }
   }, /*#__PURE__*/React.createElement(JobDetailBoundary, {
     onClose: closeJobDetail
