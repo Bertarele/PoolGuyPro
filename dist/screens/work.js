@@ -8851,14 +8851,53 @@ function PostPoolHandoffSheet({
       color: 'var(--pg-ink-400)',
       marginTop: 1
     }
-  }, "(70/30)")), /*#__PURE__*/React.createElement("input", {
+  }, "(70/30)")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      fontWeight: 600,
+      marginBottom: 6
+    }
+  }, lang === 'pt' ? 'Valor por piscina (opcional)' : lang === 'es' ? 'Valor por piscina (opcional)' : 'Price per pool (optional)'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: 16,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: 22,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }, "$"), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
-    type: "number",
-    inputMode: "decimal",
     value: priceValue,
-    onChange: e => setPriceValue(e.target.value),
-    placeholder: lang === 'pt' ? 'Valor por piscina (opcional)' : lang === 'es' ? 'Valor por piscina (opcional)' : 'Price per pool (optional)'
-  })), /*#__PURE__*/React.createElement(HiringFormSection, {
+    onChange: e => setPriceValue(e.target.value.replace(/[^0-9]/g, '').replace(/^0+(?!$)/, '')),
+    inputMode: "numeric",
+    pattern: "[0-9]*",
+    style: {
+      height: 64,
+      paddingLeft: 36,
+      fontSize: 30,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      letterSpacing: '-0.02em',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      right: 16,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: 13,
+      color: 'var(--pg-ink-500)'
+    }
+  }, "/", lang === 'pt' ? 'piscina' : lang === 'es' ? 'piscina' : 'pool'))), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: typeLbl
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9018,7 +9057,6 @@ function PostPoolHandoffSheet({
     ref: photoInputRef,
     type: "file",
     accept: "image/*",
-    capture: "environment",
     onChange: handlePhotoPick,
     style: {
       display: 'none'
@@ -9058,7 +9096,7 @@ function PostPoolHandoffSheet({
       daysOfWeek: days,
       poolsCount,
       splitTakerPct: 70,
-      pricePerPool: priceValue.trim() ? parseFloat(priceValue) : null,
+      pricePerPool: priceValue ? parseInt(priceValue) : null,
       poolType,
       extras: {
         dog,
