@@ -1559,7 +1559,7 @@ function ViewListingSheet({
   const allPhotos = item.photoUrls && item.photoUrls.length > 0 ? item.photoUrls : item.photoUrl ? [item.photoUrl] : [];
 
   // Helper: suffix label for a given period key
-  const getPeriodSfx = p => p === 'week' ? lang === 'pt' ? '/sem' : '/wk' : p === 'month' ? lang === 'pt' ? '/mês' : '/mo' : lang === 'pt' ? '/dia' : '/day';
+  const getPeriodSfx = p => p === 'week' ? lang === 'en' ? '/wk' : '/sem' : p === 'month' ? lang === 'en' ? '/mo' : '/mês' : lang === 'en' ? '/day' : '/dia';
   const getPeriodLabel = (p, qty = 1) => {
     const n = qty > 1 ? qty + ' ' : '';
     if (p === 'week') return n + (lang === 'pt' ? qty > 1 ? 'semanas' : 'semana' : qty > 1 ? 'weeks' : 'week');
@@ -7114,7 +7114,7 @@ function MyPostDetailSheet({
   const statusColor = isPending ? '#D97706' : isSoldItem ? '#6B7280' : '#16A34A';
   const statusBg = isPending ? '#FEF3C7' : isSoldItem ? '#F3F4F6' : '#DCFCE7';
   const statusLabel = isPending ? lang === 'pt' ? '⏳ Em revisão' : lang === 'es' ? '⏳ En revisión' : '⏳ Under review' : isSoldItem ? lang === 'pt' ? '✓ Vendido' : lang === 'es' ? '✓ Vendido' : '✓ Sold' : lang === 'pt' ? '✓ Ativo' : lang === 'es' ? '✓ Activo' : '✓ Active';
-  const _sfxOf = p => p === 'week' ? lang === 'pt' ? '/sem' : '/wk' : p === 'month' ? lang === 'pt' ? '/mês' : '/mo' : lang === 'pt' ? '/dia' : '/day';
+  const _sfxOf = p => p === 'week' ? lang === 'en' ? '/wk' : '/sem' : p === 'month' ? lang === 'en' ? '/mo' : '/mês' : lang === 'en' ? '/day' : '/dia';
   const periodSfx = item.type === 'rent' ? item.rentPrices && typeof item.rentPrices === 'object' ? Object.entries(item.rentPrices).filter(([, v]) => v > 0).map(([k, v]) => `$${fmtN(v, lang)}${_sfxOf(k)}`).join(' · ') : `$${fmtN(item.price, lang)}${_sfxOf(item.rentPeriod || 'day')}` : '';
   const handleSave = async () => {
     if (!window.sb) return;
@@ -10943,7 +10943,7 @@ function MarketplaceScreen({
         }));
         if (entries.length === 0) return `$${fmtN(item.price, lang)}`;
         const first = entries[0];
-        const sfx = first.k === 'week' ? lang === 'pt' ? '/sem' : '/wk' : first.k === 'month' ? lang === 'pt' ? '/mês' : '/mo' : lang === 'pt' ? '/dia' : '/day';
+        const sfx = first.k === 'week' ? lang === 'en' ? '/wk' : '/sem' : first.k === 'month' ? lang === 'en' ? '/mo' : '/mês' : lang === 'en' ? '/day' : '/dia';
         return /*#__PURE__*/React.createElement(React.Fragment, null, entries.length > 1 && /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 10,
@@ -10951,7 +10951,7 @@ function MarketplaceScreen({
             color: 'var(--pg-ink-400)',
             marginRight: 2
           }
-        }, lang === 'pt' ? 'de' : 'from'), "$", fmtN(first.v, lang), /*#__PURE__*/React.createElement("span", {
+        }, lang === 'en' ? 'from' : 'de'), "$", fmtN(first.v, lang), /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 11,
             fontWeight: 500,
@@ -10961,7 +10961,7 @@ function MarketplaceScreen({
         }, sfx));
       }
       // Legacy single period
-      const sfx = item.rentPeriod === 'week' ? lang === 'pt' ? '/sem' : '/wk' : item.rentPeriod === 'month' ? lang === 'pt' ? '/mês' : '/mo' : lang === 'pt' ? '/dia' : '/day';
+      const sfx = item.rentPeriod === 'week' ? lang === 'en' ? '/wk' : '/sem' : item.rentPeriod === 'month' ? lang === 'en' ? '/mo' : '/mês' : lang === 'en' ? '/day' : '/dia';
       return /*#__PURE__*/React.createElement(React.Fragment, null, "$", fmtN(item.price, lang), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
