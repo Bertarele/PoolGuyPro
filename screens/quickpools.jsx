@@ -1557,7 +1557,7 @@ function QuickPoolsScreen({ ctx }) {
                   {poolIcon}
                 </div>
                 <div style={{paddingTop:2}}>
-                  <div style={{fontSize:10.5, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, textTransform:'uppercase', whiteSpace:'nowrap'}}>
+                  <div style={{fontSize:10.5, fontWeight:600, color:H.sub, letterSpacing:'0.10em', marginBottom:3, marginTop:-4, textTransform:'uppercase', whiteSpace:'nowrap'}}>
                     {lang==='pt'?'ALERTAS EM TEMPO REAL':lang==='es'?'ALERTAS EN TIEMPO REAL':'REAL-TIME ALERTS'}
                   </div>
                   <div style={{fontFamily:'var(--pg-font-display)', fontSize:19, fontWeight:800, letterSpacing:'-0.025em', lineHeight:1.1, color:H.text}}>

@@ -2698,6 +2698,7 @@ function QuickPoolsScreen({
           color: H.sub,
           letterSpacing: '0.10em',
           marginBottom: 3,
+          marginTop: -4,
           textTransform: 'uppercase',
           whiteSpace: 'nowrap'
         }
