@@ -2712,7 +2712,7 @@ function WorkScreen({
         fontWeight: 700,
         color: 'var(--pg-ink-900)'
       }
-    }, h.city), /*#__PURE__*/React.createElement("div", {
+    }, (h.cities || []).join(' · ')), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -3020,7 +3020,7 @@ function HandoffDetailPanel({
       color: 'var(--pg-ink-900)',
       marginTop: 6
     }
-  }, handoff.city)), /*#__PURE__*/React.createElement("div", {
+  }, (handoff.cities || []).join(' · '))), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'right'
     }
@@ -8527,7 +8527,8 @@ function PostPoolHandoffSheet({
   onSubmit
 }) {
   const t = STRINGS[lang];
-  const [city, setCity] = React.useState('');
+  const [cities, setCities] = React.useState([]); // one city per pool, max = poolsCount
+  const [cityKey, setCityKey] = React.useState(0);
   const [days, setDays] = React.useState([]); // ['mon','wed',...]
   const [poolsCount, setPoolsCount] = React.useState(1);
   const [splitTaker, setSplitTaker] = React.useState(70); // % the pool guy keeps
@@ -8537,8 +8538,14 @@ function PostPoolHandoffSheet({
   const [gateCode, setGateCode] = React.useState(false);
   const [doorman, setDoorman] = React.useState(false);
   const [description, setDescription] = React.useState('');
+
+  // Never more cities than pools — each pool has at most one city, so
+  // shrinking the count below the current city list trims it back down.
+  React.useEffect(() => {
+    setCities(prev => prev.slice(0, poolsCount));
+  }, [poolsCount]);
   const headLbl = lang === 'pt' ? 'Repassar piscina' : lang === 'es' ? 'Traspasar piscina' : 'Hand off a pool';
-  const cityLbl = lang === 'pt' ? 'Cidade / área' : lang === 'es' ? 'Ciudad / área' : 'City / area';
+  const cityLbl = lang === 'pt' ? 'Cidades / áreas' : lang === 'es' ? 'Ciudades / áreas' : 'Cities / areas';
   const daysLbl = lang === 'pt' ? 'Dias da semana' : lang === 'es' ? 'Días de la semana' : 'Days of week';
   const countLbl = lang === 'pt' ? 'Quantas piscinas' : lang === 'es' ? 'Cuántas piscinas' : 'How many pools';
   const splitLbl = lang === 'pt' ? 'Divisão do pagamento' : lang === 'es' ? 'División del pago' : 'Payment split';
@@ -8571,7 +8578,7 @@ function PostPoolHandoffSheet({
   }];
   const splitPresets = [70, 60, 50];
   const toggleDay = id => setDays(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
-  const isValid = city.trim().length > 0 && days.length > 0;
+  const isValid = cities.length > 0 && days.length > 0;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -8621,38 +8628,6 @@ function PostPoolHandoffSheet({
       gap: 20
     }
   }, /*#__PURE__*/React.createElement(HiringFormSection, {
-    label: cityLbl
-  }, /*#__PURE__*/React.createElement(CityAutocomplete, {
-    value: city,
-    onChange: setCity,
-    lang: lang
-  })), /*#__PURE__*/React.createElement(HiringFormSection, {
-    label: daysLbl
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      flexWrap: 'wrap'
-    }
-  }, dayDefs.map(d => {
-    const on = days.includes(d.id);
-    return /*#__PURE__*/React.createElement("button", {
-      key: d.id,
-      onClick: () => toggleDay(d.id),
-      style: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
-        background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
-        color: on ? '#fff' : 'var(--pg-ink-700)',
-        fontFamily: 'inherit',
-        fontSize: 12,
-        fontWeight: 700,
-        cursor: 'pointer'
-      }
-    }, d.label);
-  }))), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: countLbl
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8694,6 +8669,80 @@ function PostPoolHandoffSheet({
       color: 'var(--pg-ink-900)'
     }
   }, "+"))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: cityLbl
+  }, cities.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginBottom: 10
+    }
+  }, cities.map(c => /*#__PURE__*/React.createElement("div", {
+    key: c,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 5,
+      background: 'var(--pg-blue-100)',
+      color: 'var(--pg-blue-700)',
+      borderRadius: 20,
+      padding: '5px 10px 5px 12px',
+      fontSize: 13,
+      fontWeight: 600
+    }
+  }, c, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setCities(prev => prev.filter(x => x !== c)),
+    style: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      color: 'inherit',
+      fontSize: 15,
+      lineHeight: 1,
+      padding: '0 2px',
+      display: 'flex',
+      alignItems: 'center'
+    }
+  }, "\xD7")))), cities.length < poolsCount ? /*#__PURE__*/React.createElement(CityAutocomplete, {
+    key: cityKey,
+    value: "",
+    onChange: v => {
+      if (v && !cities.includes(v)) setCities(prev => [...prev, v]);
+      setCityKey(k => k + 1);
+    },
+    lang: lang
+  }) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-ink-400)'
+    }
+  }, lang === 'pt' ? `Máximo de ${poolsCount} cidade${poolsCount > 1 ? 's' : ''} (uma por piscina) — aumente a quantidade de piscinas pra adicionar mais.` : lang === 'es' ? `Máximo ${poolsCount} ciudad${poolsCount > 1 ? 'es' : ''} (una por piscina) — aumenta la cantidad de piscinas para agregar más.` : `Max ${poolsCount} cit${poolsCount > 1 ? 'ies' : 'y'} (one per pool) — increase the pool count to add more.`)), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: daysLbl
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      flexWrap: 'wrap'
+    }
+  }, dayDefs.map(d => {
+    const on = days.includes(d.id);
+    return /*#__PURE__*/React.createElement("button", {
+      key: d.id,
+      onClick: () => toggleDay(d.id),
+      style: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
+        background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+        color: on ? '#fff' : 'var(--pg-ink-700)',
+        fontFamily: 'inherit',
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: 'pointer'
+      }
+    }, d.label);
+  }))), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: splitLbl
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8838,9 +8887,9 @@ function PostPoolHandoffSheet({
       textAlign: 'center',
       marginBottom: 10
     }
-  }, lang === 'pt' ? 'Informe a cidade e pelo menos um dia' : lang === 'es' ? 'Ingresa la ciudad y al menos un día' : 'Enter a city and at least one day'), /*#__PURE__*/React.createElement("button", {
+  }, lang === 'pt' ? 'Informe ao menos uma cidade e um dia' : lang === 'es' ? 'Ingresa al menos una ciudad y un día' : 'Enter at least one city and one day'), /*#__PURE__*/React.createElement("button", {
     onClick: () => onSubmit && onSubmit({
-      city,
+      cities,
       daysOfWeek: days,
       poolsCount,
       splitTakerPct: splitTaker,

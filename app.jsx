@@ -1143,7 +1143,7 @@ function App() {
 
     // Data fetch — runs AFTER auth is ready (authReady gate above)
     const normHandoff = r => ({ _id:r.id, _live:true, poster_id:r.poster_id, poster:r.poster_name || 'Pool Guy',
-      poster_phone:r.poster_phone, city:r.city, daysOfWeek:r.days_of_week||[], poolsCount:r.pools_count||1,
+      poster_phone:r.poster_phone, cities:r.cities||[], daysOfWeek:r.days_of_week||[], poolsCount:r.pools_count||1,
       splitTakerPct:r.split_taker_pct||70, poolType:r.pool_type||'residential', extras:r.extras||{},
       description:r.description||'', status:r.status||'open', createdAt:r.created_at });
     const doFetch = async () => {
@@ -1348,7 +1348,7 @@ function App() {
     if (!window.sb) return;
     const { data } = await window.sb.from('pool_handoffs').select('*').eq('status', 'open').order('created_at', { ascending: false });
     if (data) setLiveHandoffs(data.map(r => ({ _id:r.id, _live:true, poster_id:r.poster_id, poster:r.poster_name || 'Pool Guy',
-      poster_phone:r.poster_phone, city:r.city, daysOfWeek:r.days_of_week||[], poolsCount:r.pools_count||1,
+      poster_phone:r.poster_phone, cities:r.cities||[], daysOfWeek:r.days_of_week||[], poolsCount:r.pools_count||1,
       splitTakerPct:r.split_taker_pct||70, poolType:r.pool_type||'residential', extras:r.extras||{},
       description:r.description||'', status:r.status||'open', createdAt:r.created_at })));
   }, []);
@@ -2018,7 +2018,7 @@ function App() {
             const { error } = await window.sb.from('pool_handoffs').insert({
               poster_id: user.uid, poster_name: user.name || user.email || 'Pool Guy',
               poster_phone: user.phone || null,
-              city: data.city, days_of_week: data.daysOfWeek, pools_count: data.poolsCount,
+              cities: data.cities, days_of_week: data.daysOfWeek, pools_count: data.poolsCount,
               split_taker_pct: data.splitTakerPct, pool_type: data.poolType,
               extras: data.extras, description: data.description || null, status: 'open',
             });

@@ -1243,7 +1243,7 @@ function WorkScreen({ ctx }) {
                       {h.splitTakerPct}/{100-h.splitTakerPct}
                     </span>
                   </div>
-                  <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{h.city}</div>
+                  <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{(h.cities||[]).join(' · ')}</div>
                   <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginTop:5}}>
                     <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>
                       {h.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
@@ -1376,7 +1376,7 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChanged
           <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999, background:'#F59E0B', color:'#fff', letterSpacing:'0.04em'}}>
             {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
           </span>
-          <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', marginTop:6}}>{handoff.city}</div>
+          <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', marginTop:6}}>{(handoff.cities||[]).join(' · ')}</div>
         </div>
         <div style={{textAlign:'right'}}>
           <div style={{fontSize:22, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>{handoff.splitTakerPct}/{100-handoff.splitTakerPct}</div>
@@ -4145,7 +4145,8 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
 // with other companies/route owners too since it's not exclusive.
 function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
   const t = STRINGS[lang];
-  const [city,        setCity]        = React.useState('');
+  const [cities,       setCities]      = React.useState([]); // one city per pool, max = poolsCount
+  const [cityKey,      setCityKey]     = React.useState(0);
   const [days,         setDays]        = React.useState([]); // ['mon','wed',...]
   const [poolsCount,   setPoolsCount]  = React.useState(1);
   const [splitTaker,   setSplitTaker]  = React.useState(70); // % the pool guy keeps
@@ -4156,8 +4157,14 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
   const [doorman,      setDoorman]     = React.useState(false);
   const [description,  setDescription] = React.useState('');
 
+  // Never more cities than pools — each pool has at most one city, so
+  // shrinking the count below the current city list trims it back down.
+  React.useEffect(() => {
+    setCities(prev => prev.slice(0, poolsCount));
+  }, [poolsCount]);
+
   const headLbl  = lang==='pt'?'Repassar piscina':lang==='es'?'Traspasar piscina':'Hand off a pool';
-  const cityLbl  = lang==='pt'?'Cidade / área':lang==='es'?'Ciudad / área':'City / area';
+  const cityLbl  = lang==='pt'?'Cidades / áreas':lang==='es'?'Ciudades / áreas':'Cities / areas';
   const daysLbl  = lang==='pt'?'Dias da semana':lang==='es'?'Días de la semana':'Days of week';
   const countLbl = lang==='pt'?'Quantas piscinas':lang==='es'?'Cuántas piscinas':'How many pools';
   const splitLbl = lang==='pt'?'Divisão do pagamento':lang==='es'?'División del pago':'Payment split';
@@ -4179,7 +4186,7 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
   const splitPresets = [70, 60, 50];
 
   const toggleDay = (id) => setDays(prev => prev.includes(id) ? prev.filter(d=>d!==id) : [...prev, id]);
-  const isValid = city.trim().length > 0 && days.length > 0;
+  const isValid = cities.length > 0 && days.length > 0;
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
@@ -4195,8 +4202,49 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
 
       <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'20px 18px', display:'flex', flexDirection:'column', gap:20}}>
 
+        <HiringFormSection label={countLbl}>
+          <div style={{display:'flex', alignItems:'center', gap:14}}>
+            <button onClick={()=>setPoolsCount(n=>Math.max(1,n-1))} style={{
+              width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
+              background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:20, color:'var(--pg-ink-900)',
+            }}>−</button>
+            <span style={{fontSize:20, fontWeight:800, minWidth:24, textAlign:'center'}}>{poolsCount}</span>
+            <button onClick={()=>setPoolsCount(n=>Math.min(20,n+1))} style={{
+              width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
+              background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:20, color:'var(--pg-ink-900)',
+            }}>+</button>
+          </div>
+        </HiringFormSection>
+
         <HiringFormSection label={cityLbl}>
-          <CityAutocomplete value={city} onChange={setCity} lang={lang}/>
+          {cities.length > 0 && (
+            <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:10}}>
+              {cities.map(c => (
+                <div key={c} style={{display:'inline-flex', alignItems:'center', gap:5,
+                  background:'var(--pg-blue-100)', color:'var(--pg-blue-700)',
+                  borderRadius:20, padding:'5px 10px 5px 12px', fontSize:13, fontWeight:600}}>
+                  {c}
+                  <button onClick={()=>setCities(prev=>prev.filter(x=>x!==c))}
+                    style={{background:'none', border:'none', cursor:'pointer', color:'inherit',
+                      fontSize:15, lineHeight:1, padding:'0 2px', display:'flex', alignItems:'center'}}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {cities.length < poolsCount ? (
+            <CityAutocomplete key={cityKey} value='' onChange={v=>{
+              if (v && !cities.includes(v)) setCities(prev=>[...prev, v]);
+              setCityKey(k=>k+1);
+            }} lang={lang}/>
+          ) : (
+            <div style={{fontSize:11.5, color:'var(--pg-ink-400)'}}>
+              {lang==='pt'
+                ? `Máximo de ${poolsCount} cidade${poolsCount>1?'s':''} (uma por piscina) — aumente a quantidade de piscinas pra adicionar mais.`
+                : lang==='es'
+                  ? `Máximo ${poolsCount} ciudad${poolsCount>1?'es':''} (una por piscina) — aumenta la cantidad de piscinas para agregar más.`
+                  : `Max ${poolsCount} cit${poolsCount>1?'ies':'y'} (one per pool) — increase the pool count to add more.`}
+            </div>
+          )}
         </HiringFormSection>
 
         <HiringFormSection label={daysLbl}>
@@ -4212,20 +4260,6 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
                 }}>{d.label}</button>
               );
             })}
-          </div>
-        </HiringFormSection>
-
-        <HiringFormSection label={countLbl}>
-          <div style={{display:'flex', alignItems:'center', gap:14}}>
-            <button onClick={()=>setPoolsCount(n=>Math.max(1,n-1))} style={{
-              width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
-              background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:20, color:'var(--pg-ink-900)',
-            }}>−</button>
-            <span style={{fontSize:20, fontWeight:800, minWidth:24, textAlign:'center'}}>{poolsCount}</span>
-            <button onClick={()=>setPoolsCount(n=>Math.min(20,n+1))} style={{
-              width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
-              background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:20, color:'var(--pg-ink-900)',
-            }}>+</button>
           </div>
         </HiringFormSection>
 
@@ -4292,11 +4326,11 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
       <div style={{padding:'12px 18px', flexShrink:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         {!isValid && (
           <div style={{fontSize:11.5, color:'var(--pg-ink-400)', textAlign:'center', marginBottom:10}}>
-            {lang==='pt'?'Informe a cidade e pelo menos um dia':lang==='es'?'Ingresa la ciudad y al menos un día':'Enter a city and at least one day'}
+            {lang==='pt'?'Informe ao menos uma cidade e um dia':lang==='es'?'Ingresa al menos una ciudad y un día':'Enter at least one city and one day'}
           </div>
         )}
         <button onClick={()=>onSubmit && onSubmit({
-          city, daysOfWeek: days, poolsCount, splitTakerPct: splitTaker, poolType,
+          cities, daysOfWeek: days, poolsCount, splitTakerPct: splitTaker, poolType,
           extras: { dog, saltwater, gate_code: gateCode, doorman },
           description,
         })} disabled={!isValid} className="pg-btn pg-btn-primary"
