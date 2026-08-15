@@ -4591,27 +4591,37 @@ function QuickPoolDetails({
     }
   }, t.offer), job.splitTakerPct ? /*#__PURE__*/React.createElement("div", {
     style: {
+      marginTop: 3
+    }
+  }, job.price !== 'neg' && job.price != null ? /*#__PURE__*/React.createElement("span", {
+    style: {
       fontFamily: 'var(--pg-font-display)',
       fontSize: 28,
       fontWeight: 800,
       color: '#4ADE80',
-      letterSpacing: '-0.02em',
-      marginTop: 3
+      letterSpacing: '-0.02em'
     }
-  }, job.splitTakerPct, "/", 100 - job.splitTakerPct, " ", /*#__PURE__*/React.createElement("span", {
+  }, "$", job.price, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       color: 'rgba(255,255,255,0.75)',
       fontWeight: 600
     }
-  }, "split"), job.price !== 'neg' && job.price != null && /*#__PURE__*/React.createElement("span", {
+  }, "/", lang === 'pt' ? 'piscina' : 'pool')) : /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 14,
-      color: 'rgba(255,255,255,0.85)',
+      fontSize: 22,
+      fontWeight: 800,
+      color: '#fff',
+      fontFamily: 'var(--pg-font-display)'
+    }
+  }, t.negotiable), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      color: 'rgba(255,255,255,0.55)',
       fontWeight: 700,
       marginLeft: 8
     }
-  }, "\xB7 $", job.price, "/", lang === 'pt' ? 'piscina' : 'pool')) : job.price === 'neg' ? /*#__PURE__*/React.createElement("div", {
+  }, "\xB7 ", job.splitTakerPct, "/", 100 - job.splitTakerPct, " split")) : job.price === 'neg' ? /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
       fontWeight: 800,

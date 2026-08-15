@@ -155,9 +155,11 @@ function RideRequestCard({ alert, lang='pt', onView, onApply, onDismiss, applyin
   // postMessage path (app backgrounded, push arrives) only has flat title/body
   // strings — fall back to those when structured fields aren't present.
   const hasStructured = !!alert.city;
-  const priceLabel = alert.splitTakerPct
-    ? `${alert.splitTakerPct}/${100-alert.splitTakerPct}`
-    : (alert.price ? `$${alert.price}` : (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable'));
+  // Price is what a pool guy actually decides on — the 70/30 split (when this
+  // is a Rota Rápida job) is secondary context, shown small next to it rather
+  // than as the headline number.
+  const priceLabel = alert.price ? `$${alert.price}` : (lang==='pt'?'Negociável':lang==='es'?'Negociable':'Negotiable');
+  const splitLabel = alert.splitTakerPct ? `${alert.splitTakerPct}/${100-alert.splitTakerPct}` : null;
   const poolsLabel = `${alert.poolsCount ?? 1} ${(alert.poolsCount??1) > 1 ? (lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools') : (lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}`;
   // Everything the pool guy needs to decide without opening the job — property
   // type + access/hazard flags — instead of the day of week, which they
@@ -215,13 +217,14 @@ function RideRequestCard({ alert, lang='pt', onView, onApply, onDismiss, applyin
               <div style={{fontSize:24, fontWeight:800, color:'#4ADE80', lineHeight:1, fontFamily:'var(--pg-font-display)'}}>
                 {priceLabel}
               </div>
-              {alert.splitTakerPct ? (
+              {alert.price && (
                 <div style={{fontSize:9.5, fontWeight:700, color:'rgba(74,222,128,0.75)', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:2}}>
-                  split
+                  {lang==='pt'?'por piscina':lang==='es'?'por piscina':'per pool'}
                 </div>
-              ) : alert.price && (
-                <div style={{fontSize:9.5, fontWeight:700, color:'rgba(74,222,128,0.75)', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:2}}>
-                  {lang==='pt'?'por serviço':lang==='es'?'por servicio':'per job'}
+              )}
+              {splitLabel && (
+                <div style={{fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', marginTop:2}}>
+                  {splitLabel} split
                 </div>
               )}
             </div>

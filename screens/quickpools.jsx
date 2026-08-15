@@ -2610,11 +2610,15 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
           <div>
             <div style={{fontSize:11, color:'rgba(255,255,255,0.65)', letterSpacing:'0.05em', fontWeight:700, textTransform:'uppercase'}}>{t.offer}</div>
             {job.splitTakerPct ? (
-              <div style={{fontFamily:'var(--pg-font-display)', fontSize:28, fontWeight:800, color:'#4ADE80', letterSpacing:'-0.02em', marginTop:3}}>
-                {job.splitTakerPct}/{100-job.splitTakerPct} <span style={{fontSize:13, color:'rgba(255,255,255,0.75)', fontWeight:600}}>split</span>
-                {job.price !== 'neg' && job.price != null && (
-                  <span style={{fontSize:14, color:'rgba(255,255,255,0.85)', fontWeight:700, marginLeft:8}}>· ${job.price}/{lang==='pt'?'piscina':'pool'}</span>
+              <div style={{marginTop:3}}>
+                {job.price !== 'neg' && job.price != null ? (
+                  <span style={{fontFamily:'var(--pg-font-display)', fontSize:28, fontWeight:800, color:'#4ADE80', letterSpacing:'-0.02em'}}>
+                    ${job.price}<span style={{fontSize:13, color:'rgba(255,255,255,0.75)', fontWeight:600}}>/{lang==='pt'?'piscina':'pool'}</span>
+                  </span>
+                ) : (
+                  <span style={{fontSize:22, fontWeight:800, color:'#fff', fontFamily:'var(--pg-font-display)'}}>{t.negotiable}</span>
                 )}
+                <span style={{fontSize:11.5, color:'rgba(255,255,255,0.55)', fontWeight:700, marginLeft:8}}>· {job.splitTakerPct}/{100-job.splitTakerPct} split</span>
               </div>
             ) : job.price === 'neg' ? (
               <div style={{fontSize:22, fontWeight:800, marginTop:3, color:'#fff', fontFamily:'var(--pg-font-display)'}}>{t.negotiable}</div>
