@@ -1434,6 +1434,8 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
     ? (Math.min(...poolPrices)===Math.max(...poolPrices) ? `$${poolPrices[0]}` : `$${Math.min(...poolPrices)}–$${Math.max(...poolPrices)}`)
     : (handoff.pricePerPool != null ? `$${handoff.pricePerPool}` : null);
 
+  const [localPools, setLocalPools] = React.useState(() => handoff.pools ? handoff.pools.map(p => ({...p})) : null);
+
   const markFilled = async () => {
     if (!window.sb || busy) return;
     setBusy(true);
@@ -1442,6 +1444,27 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
     showToast && showToast(lang==='pt'?'✓ Marcado como preenchido':lang==='es'?'✓ Marcado como cubierto':'✓ Marked as filled');
     onChanged && onChanged();
     onClose && onClose();
+  };
+
+  // Multi-pool handoffs: each pool may get taken by a different pool guy, so
+  // "filled" is tracked per pool, not for the whole posting at once. The
+  // posting itself only flips to status:'filled' once every pool is taken.
+  const togglePoolFilled = async (i) => {
+    if (!window.sb || busy || !localPools) return;
+    const updated = localPools.map((p,j) => j===i ? { ...p, filled: !p.filled } : p);
+    const allFilled = updated.every(p => p.filled);
+    setBusy(true);
+    const { error } = await window.sb.from('pool_handoffs')
+      .update({ pools: updated, status: allFilled ? 'filled' : 'open' })
+      .eq('id', handoff._id);
+    setBusy(false);
+    if (error) { showToast && showToast('❌ ' + (error.message||'Error')); return; }
+    setLocalPools(updated);
+    showToast && showToast(updated[i].filled
+      ? (lang==='pt'?'✓ Piscina marcada como preenchida':lang==='es'?'✓ Piscina marcada como cubierta':'✓ Pool marked as filled')
+      : (lang==='pt'?'Piscina reaberta':lang==='es'?'Piscina reabierta':'Pool reopened'));
+    onChanged && onChanged();
+    if (allFilled) onClose && onClose();
   };
 
   const deleteHandoff = async () => {
@@ -1517,16 +1540,16 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
           </div>
         )}
 
-        {handoff.pools && handoff.pools.length > 0 ? (
+        {localPools && localPools.length > 0 ? (
           <div style={{display:'flex', flexDirection:'column', gap:10}}>
-            {handoff.pools.map((p, i) => (
-              <div key={i} style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'12px 14px'}}>
-                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
-                  <div style={{fontSize:14, fontWeight:800, color:'var(--pg-ink-900)'}}>
+            {localPools.map((p, i) => (
+              <div key={i} style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'12px 14px', opacity: p.filled ? 0.55 : 1}}>
+                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8, gap:8}}>
+                  <div style={{fontSize:14, fontWeight:800, color:'var(--pg-ink-900)', flex:1, minWidth:0}}>
                     {(lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool')} {i+1} · {p.city}
                   </div>
                   {p.price != null && (
-                    <div style={{fontSize:13, fontWeight:800, color:'#D97706'}}>${p.price}/{lang==='pt'?'piscina':'pool'}</div>
+                    <div style={{fontSize:13, fontWeight:800, color:'#D97706', flexShrink:0}}>${p.price}/{lang==='pt'?'piscina':'pool'}</div>
                   )}
                 </div>
                 {p.photos && p.photos.length > 0 && (
@@ -1548,6 +1571,26 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
                 </div>
                 {p.description && (
                   <p style={{margin:'8px 0 0', fontSize:12.5, lineHeight:1.5, color:'var(--pg-ink-600)'}}>{p.description}</p>
+                )}
+                {canManage && (
+                  <button onClick={()=>togglePoolFilled(i)} disabled={busy} style={{
+                    marginTop:10, width:'100%', height:36, borderRadius:10, cursor:'pointer', fontFamily:'inherit', fontSize:12.5, fontWeight:700,
+                    border: p.filled ? '1px solid var(--pg-ink-200)' : '1px solid rgba(16,185,129,0.35)',
+                    background: p.filled ? 'var(--pg-ink-50)' : 'rgba(16,185,129,0.08)',
+                    color: p.filled ? 'var(--pg-ink-600)' : '#10B981',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                  }}>
+                    {p.filled ? (
+                      <>{Icon.check ? Icon.check(13,'currentColor') : null} {lang==='pt'?'Preenchida — reabrir':lang==='es'?'Cubierta — reabrir':'Filled — reopen'}</>
+                    ) : (
+                      lang==='pt'?'Marcar esta piscina como preenchida':lang==='es'?'Marcar esta piscina como cubierta':'Mark this pool as filled'
+                    )}
+                  </button>
+                )}
+                {!canManage && p.filled && (
+                  <div style={{marginTop:8, fontSize:11.5, fontWeight:700, color:'var(--pg-ink-400)'}}>
+                    {lang==='pt'?'✓ Já preenchida':lang==='es'?'✓ Ya cubierta':'✓ Already filled'}
+                  </div>
                 )}
               </div>
             ))}
@@ -1583,7 +1626,11 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
 
       <div style={{padding:'12px 18px', flexShrink:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
         {isOwn ? (
-          handoff.status === 'open' && (
+          // Multi-pool handoffs mark each pool filled individually (see the
+          // button on each pool card above) since different pool guys can
+          // pick up different pools — this whole-posting button only applies
+          // to legacy single-set handoffs that have no per-pool data.
+          !localPools && handoff.status === 'open' && (
             <button onClick={markFilled} disabled={busy} className="pg-btn pg-btn-ghost" style={{width:'100%', height:50, fontSize:14}}>
               {lang==='pt'?'Marcar como preenchido':lang==='es'?'Marcar como cubierto':'Mark as filled'}
             </button>
@@ -4297,7 +4344,7 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
 // with other companies/route owners too since it's not exclusive.
 // One entry per pool: { city, days:[...], price:'', poolType, dog, saltwater, gateCode, doorman }
 function blankPool() {
-  return { city:'', days:[], price:'', poolType:'residential', dog:false, saltwater:false, gateCode:false, doorman:false, photos:[], description:'' };
+  return { city:'', days:[], price:'', poolType:'residential', dog:false, saltwater:false, gateCode:false, doorman:false, photos:[], description:'', filled:false };
 }
 function poolsFromInitialValues(initialValues) {
   if (!initialValues) return [blankPool()];
@@ -4307,7 +4354,7 @@ function poolsFromInitialValues(initialValues) {
       poolType: p.poolType || 'residential', dog: !!p.dog, saltwater: !!p.saltwater,
       gateCode: !!p.gateCode, doorman: !!p.doorman,
       photos: (p.photos || []).map(url => ({ url, uploading:false, error:null })),
-      description: p.description || '',
+      description: p.description || '', filled: !!p.filled,
     }));
   }
   // Legacy rows (pre-per-pool schema) — one shared set of days/price/type/extras/photos
@@ -4321,6 +4368,7 @@ function poolsFromInitialValues(initialValues) {
     gateCode: !!initialValues.extras?.gate_code, doorman: !!initialValues.extras?.doorman,
     photos: i === 0 ? (initialValues.photoUrls || []).map(url => ({ url, uploading:false, error:null })) : [],
     description: i === 0 ? (initialValues.description || '') : '',
+    filled: false,
   }));
 }
 
@@ -4550,7 +4598,7 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
             city: p.city, days: p.days, price: p.price ? parseInt(p.price) : null,
             poolType: p.poolType, dog: p.dog, saltwater: p.saltwater, gateCode: p.gateCode, doorman: p.doorman,
             photos: p.photos.filter(ph=>!ph.uploading && !ph.error).map(ph=>ph.url),
-            description: p.description || null,
+            description: p.description || null, filled: !!p.filled,
           })),
           poolsCount: pools.length, splitTakerPct: 70,
           cities: pools.map(p => p.city),
