@@ -5269,6 +5269,99 @@ function TechReviewSheet({
   }, Icon.star(18, '#fff', true), " ", submitting ? lang === 'pt' ? 'Enviando…' : 'Sending…' : submitLbl))));
 }
 
+// Specialty filter categories for the Techs tab — techs type their own
+// specialty as free text (no fixed taxonomy at signup), so filtering works
+// by keyword match across pt/es/en synonyms rather than an exact field.
+const TECH_SPECIALTY_CATEGORIES = [{
+  id: 'pump',
+  label: {
+    pt: 'Bomba/Motor',
+    es: 'Bomba/Motor',
+    en: 'Pump/Motor'
+  },
+  kw: ['bomba', 'motor', 'pump']
+}, {
+  id: 'heater',
+  label: {
+    pt: 'Aquecedor',
+    es: 'Calentador',
+    en: 'Heater'
+  },
+  kw: ['aquecedor', 'aquecimento', 'calentador', 'calefacción', 'heater', 'heat pump']
+}, {
+  id: 'filter',
+  label: {
+    pt: 'Filtro',
+    es: 'Filtro',
+    en: 'Filter'
+  },
+  kw: ['filtro', 'filter']
+}, {
+  id: 'skimmer',
+  label: {
+    pt: 'Skimmer',
+    es: 'Skimmer',
+    en: 'Skimmer'
+  },
+  kw: ['skimmer']
+}, {
+  id: 'automation',
+  label: {
+    pt: 'Automação/Sal',
+    es: 'Automatización/Sal',
+    en: 'Automation/Salt'
+  },
+  kw: ['automação', 'automacao', 'automatización', 'automatizacion', 'sal', 'salt', 'célula', 'celula', 'celda', 'cell']
+}, {
+  id: 'leak',
+  label: {
+    pt: 'Vazamento/Encanamento',
+    es: 'Fuga/Plomería',
+    en: 'Leak/Plumbing'
+  },
+  kw: ['vazamento', 'vazando', 'encanamento', 'cano', 'fuga', 'plomería', 'plomeria', 'tubería', 'tuberia', 'leak', 'plumbing', 'pipe']
+}, {
+  id: 'tile',
+  label: {
+    pt: 'Azulejo/Reboco',
+    es: 'Azulejo/Yeso',
+    en: 'Tile/Plaster'
+  },
+  kw: ['azulejo', 'reboco', 'yeso', 'tile', 'plaster']
+}, {
+  id: 'electric',
+  label: {
+    pt: 'Elétrica',
+    es: 'Eléctrica',
+    en: 'Electrical'
+  },
+  kw: ['elétric', 'eletric', 'eléctric', 'electric']
+}, {
+  id: 'chemical',
+  label: {
+    pt: 'Química/Água Verde',
+    es: 'Química/Agua Verde',
+    en: 'Chemical/Green Pool'
+  },
+  kw: ['química', 'quimica', 'agua verde', 'água verde', 'ph', 'chemical', 'green pool', 'clorador', 'chlorinator']
+}, {
+  id: 'install',
+  label: {
+    pt: 'Instalação',
+    es: 'Instalación',
+    en: 'Installation'
+  },
+  kw: ['instalação', 'instalacao', 'instalación', 'instalacion', 'install']
+}];
+function techSpecialtyMatches(searchText, selectedIds) {
+  if (!selectedIds || selectedIds.length === 0) return true;
+  const hay = (searchText || '').toLowerCase();
+  return selectedIds.some(id => {
+    const cat = TECH_SPECIALTY_CATEGORIES.find(c => c.id === id);
+    return cat && cat.kw.some(k => hay.includes(k));
+  });
+}
+
 // ── Technicians — same card layout as Hiring ─────────────────
 function TechsPanel({
   t,
@@ -5284,6 +5377,9 @@ function TechsPanel({
   const [contactOpen, setContactOpen] = React.useState(null);
   const [ratingFor, setRatingFor] = React.useState(null);
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
+  const [specFilter, setSpecFilter] = React.useState([]);
+  const [specFilterOpen, setSpecFilterOpen] = React.useState(false);
+  const toggleSpec = id => setSpecFilter(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const [ratedIds, setRatedIds] = React.useState(new Set());
   const [editingTech, setEditingTech] = React.useState(null);
   React.useEffect(() => {
@@ -5336,13 +5432,82 @@ function TechsPanel({
     };
     return (map[tech.id] || map[1])[lang] || (map[tech.id] || map[1]).en;
   };
+  const filteredLiveTechsList = liveTechs.filter(tech => techSpecialtyMatches(tech.specialty, specFilter));
+  const filteredStaticTechsList = TECHS.filter(tech => !hiddenStatic.includes(tech.id)).filter(tech => techSpecialtyMatches(`${tech.speciality?.pt || ''} ${tech.speciality?.es || ''} ${tech.speciality?.en || ''}`, specFilter));
+  const noSpecMatches = specFilter.length > 0 && filteredLiveTechsList.length === 0 && filteredStaticTechsList.length === 0;
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
       gap: 12
     }
-  }, [...liveTechs].sort((a, b) => {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSpecFilterOpen(true),
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      height: 36,
+      padding: '0 14px',
+      borderRadius: 999,
+      border: specFilter.length > 0 ? '1.5px solid var(--pg-blue-500)' : '1.5px solid var(--pg-ink-200)',
+      background: specFilter.length > 0 ? 'var(--pg-blue-50)' : 'var(--pg-white)',
+      color: specFilter.length > 0 ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)',
+      fontFamily: 'inherit',
+      fontSize: 12.5,
+      fontWeight: 700,
+      cursor: 'pointer'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "13",
+    height: "13",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polygon", {
+    points: "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"
+  })), lang === 'pt' ? 'Especialidade' : lang === 'es' ? 'Especialidad' : 'Specialty', specFilter.length > 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: 'var(--pg-blue-500)',
+      color: '#fff',
+      borderRadius: 999,
+      minWidth: 16,
+      height: 16,
+      fontSize: 10,
+      fontWeight: 800,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0 4px'
+    }
+  }, specFilter.length)), specFilter.length > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSpecFilter([]),
+    style: {
+      border: 'none',
+      background: 'none',
+      color: 'var(--pg-ink-400)',
+      fontSize: 12,
+      fontWeight: 600,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, lang === 'pt' ? 'Limpar' : lang === 'es' ? 'Limpiar' : 'Clear')), noSpecMatches && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '28px 16px',
+      color: 'var(--pg-ink-400)',
+      fontSize: 13
+    }
+  }, lang === 'pt' ? 'Nenhum técnico com essa especialidade' : lang === 'es' ? 'Ningún técnico con esa especialidad' : 'No technicians with that specialty'), [...filteredLiveTechsList].sort((a, b) => {
     const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
     const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
     return aOwn - bOwn;
@@ -5627,7 +5792,7 @@ function TechsPanel({
         color: 'var(--pg-aqua-700)'
       }
     }, tech.email)))));
-  }), TECHS.filter(tech => !hiddenStatic.includes(tech.id)).map(tech => /*#__PURE__*/React.createElement("article", {
+  }), filteredStaticTechsList.map(tech => /*#__PURE__*/React.createElement("article", {
     key: tech.id,
     className: "pg-card",
     style: {
@@ -5962,7 +6127,71 @@ function TechsPanel({
       }
       showToast && showToast(lang === 'pt' ? '✓ Perfil atualizado' : lang === 'es' ? '✓ Perfil actualizado' : '✓ Profile updated');
     }
-  })));
+  })), /*#__PURE__*/React.createElement(Sheet, {
+    open: specFilterOpen,
+    onClose: () => setSpecFilterOpen(false),
+    height: "auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '8px 18px calc(18px + env(safe-area-inset-bottom, 0px))'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      margin: '6px 0 14px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Filtrar por especialidade' : lang === 'es' ? 'Filtrar por especialidad' : 'Filter by specialty'), specFilter.length > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSpecFilter([]),
+    style: {
+      border: 'none',
+      background: 'none',
+      color: 'var(--pg-blue-500)',
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, lang === 'pt' ? 'Limpar' : lang === 'es' ? 'Limpiar' : 'Clear')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: 18
+    }
+  }, TECH_SPECIALTY_CATEGORIES.map(cat => {
+    const on = specFilter.includes(cat.id);
+    return /*#__PURE__*/React.createElement("button", {
+      key: cat.id,
+      onClick: () => toggleSpec(cat.id),
+      style: {
+        padding: '9px 14px',
+        borderRadius: 999,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 13,
+        fontWeight: 700,
+        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
+        background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+        color: on ? '#fff' : 'var(--pg-ink-700)'
+      }
+    }, cat.label[lang] || cat.label.en);
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSpecFilterOpen(false),
+    className: "pg-btn pg-btn-primary",
+    style: {
+      width: '100%',
+      height: 50,
+      fontSize: 15
+    }
+  }, lang === 'pt' ? 'Ver resultados' : lang === 'es' ? 'Ver resultados' : 'Show results'))));
 }
 
 // ── Accepted vacation application card with address reveal ────
