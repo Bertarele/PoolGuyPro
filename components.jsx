@@ -348,8 +348,8 @@ function FullPage({ open, onClose, children }) {
   const isSmallPhone = typeof screen !== 'undefined' && screen.width > 0 && screen.width < 420;
   const style = {
     position: 'fixed',
-    bottom: 0,
-    top: 0,
+    bottom: isDesktop ? 28 : 0,
+    top: isDesktop ? 28 : 0,
     left:  isDesktop ? `calc(50% - ${Math.floor(desktopW / 2)}px)` : 0,
     right: isDesktop ? 'auto' : 0,
     width: isDesktop ? desktopW : '100%',
@@ -360,12 +360,29 @@ function FullPage({ open, onClose, children }) {
     display: 'flex',
     flexDirection: 'column',
     paddingTop: isSmallPhone ? 'env(safe-area-inset-top, 24px)' : 0,
+    borderRadius: isDesktop ? 18 : 0,
+    boxShadow: isDesktop ? '0 24px 70px rgba(0,0,0,0.35)' : 'none',
     animation: closing
       ? 'pg-sheet-down 0.28s cubic-bezier(.36,0,.66,0) forwards'
       : 'pg-sheet-up 0.34s cubic-bezier(.22,1,.36,1)',
   };
 
-  return <div ref={pageRef} data-pg-fullpage style={style}>{children}</div>;
+  // On desktop the panel is centered at a fixed width, not edge-to-edge, so
+  // without a scrim behind it the rest of the dashboard stays fully visible
+  // and interactive around it — reads as a broken/overlapping layout rather
+  // than a modal. Mobile stays edge-to-edge and needs no backdrop.
+  return (
+    <>
+      {isDesktop && (
+        <div onClick={onClose} style={{
+          position:'fixed', inset:0, zIndex:1001,
+          background:'rgba(6,20,36,0.55)', backdropFilter:'blur(2px)',
+          opacity: closing ? 0 : 1, transition:'opacity 0.28s ease',
+        }}/>
+      )}
+      <div ref={pageRef} data-pg-fullpage style={style}>{children}</div>
+    </>
+  );
 }
 
 // ── Bottom Sheet ──────────────────────────────────────────────
