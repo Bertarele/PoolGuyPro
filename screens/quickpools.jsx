@@ -1315,8 +1315,12 @@ function QuickPoolsScreen({ ctx }) {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     {lang==='pt'?'Publicar':lang==='es'?'Publicar':'Post'}
                   </button>
-                  <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} style={{height:38,padding:'0 14px',borderRadius:11,border:'none',background:'linear-gradient(135deg,#0077B6,#023E8A)',color:'#fff',fontFamily:'inherit',fontSize:12,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',gap:6,boxShadow:'0 2px 8px rgba(0,119,182,0.40)',transition:'all .15s'}}>
-                    {Icon.cal(13,'#fff')} {lang==='pt'?'Editar':'Edit'}
+                  <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} title={lang==='pt'?'Configurar dias e cidades das notificações':lang==='es'?'Configurar días y ciudades de notificaciones':'Configure notification days and cities'} style={{height:38,padding:'0 14px',borderRadius:11,border:'none',background:'linear-gradient(135deg,#0077B6,#023E8A)',color:'#fff',fontFamily:'inherit',fontSize:12,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',gap:6,boxShadow:'0 2px 8px rgba(0,119,182,0.40)',transition:'all .15s'}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3"/>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    {lang==='pt'?'Configurar':lang==='es'?'Configurar':'Configure'}
                   </button>
                   <button onClick={()=>setRoutesOpen(true)} title={lang==='pt'?'Rotas Rápidas':lang==='es'?'Rutas Rápidas':'Quick Routes'} style={{height:38,padding:'0 14px',borderRadius:11,border:'none',background:'linear-gradient(135deg,#0EBAC7,#0D7280)',color:'#fff',fontFamily:'inherit',fontSize:12,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',gap:6,boxShadow:'0 2px 8px rgba(14,186,199,0.40)',transition:'all .15s'}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1629,13 +1633,17 @@ function QuickPoolsScreen({ ctx }) {
                     ? notifCities.slice(0,3).join(' · ')+(notifCities.length>3?` +${notifCities.length-3}`:'')
                     : (lang==='pt'?'Nenhuma cidade':lang==='es'?'Ninguna ciudad':'No cities')}
                 </span>
-                <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} style={{
+                <button onClick={()=>user.tier==='premium' ? openRegionEditor() : openPaywall('quickpools')} title={lang==='pt'?'Configurar dias e cidades das notificações':lang==='es'?'Configurar días y ciudades de notificaciones':'Configure notification days and cities'} style={{
                   background:'linear-gradient(135deg,#0077B6,#023E8A)', border:'none', color:'#fff',
                   fontSize:11, fontWeight:800, cursor:'pointer', padding:'5px 10px', borderRadius:8,
                   flexShrink:0, display:'flex', alignItems:'center', gap:4,
                   boxShadow:'0 2px 6px rgba(0,119,182,0.45)',
                 }}>
-                  {Icon.cal(11,'#fff')} {lang==='pt'?'Editar':'Edit'}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                  {lang==='pt'?'Configurar':lang==='es'?'Configurar':'Configure'}
                 </button>
               </div>
             </div>

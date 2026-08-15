@@ -2239,6 +2239,7 @@ function QuickPoolsScreen({
         y2: "12"
       })), lang === 'pt' ? 'Publicar' : lang === 'es' ? 'Publicar' : 'Post'), /*#__PURE__*/React.createElement("button", {
         onClick: () => user.tier === 'premium' ? openRegionEditor() : openPaywall('quickpools'),
+        title: lang === 'pt' ? 'Configurar dias e cidades das notificações' : lang === 'es' ? 'Configurar días y ciudades de notificaciones' : 'Configure notification days and cities',
         style: {
           height: 38,
           padding: '0 14px',
@@ -2256,7 +2257,22 @@ function QuickPoolsScreen({
           boxShadow: '0 2px 8px rgba(0,119,182,0.40)',
           transition: 'all .15s'
         }
-      }, Icon.cal(13, '#fff'), " ", lang === 'pt' ? 'Editar' : 'Edit'), /*#__PURE__*/React.createElement("button", {
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "13",
+        height: "13",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "#fff",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }, /*#__PURE__*/React.createElement("circle", {
+        cx: "12",
+        cy: "12",
+        r: "3"
+      }), /*#__PURE__*/React.createElement("path", {
+        d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+      })), lang === 'pt' ? 'Configurar' : lang === 'es' ? 'Configurar' : 'Configure'), /*#__PURE__*/React.createElement("button", {
         onClick: () => setRoutesOpen(true),
         title: lang === 'pt' ? 'Rotas Rápidas' : lang === 'es' ? 'Rutas Rápidas' : 'Quick Routes',
         style: {
@@ -2934,6 +2950,7 @@ function QuickPoolsScreen({
       }
     }, notifCities.length > 0 ? notifCities.slice(0, 3).join(' · ') + (notifCities.length > 3 ? ` +${notifCities.length - 3}` : '') : lang === 'pt' ? 'Nenhuma cidade' : lang === 'es' ? 'Ninguna ciudad' : 'No cities'), /*#__PURE__*/React.createElement("button", {
       onClick: () => user.tier === 'premium' ? openRegionEditor() : openPaywall('quickpools'),
+      title: lang === 'pt' ? 'Configurar dias e cidades das notificações' : lang === 'es' ? 'Configurar días y ciudades de notificaciones' : 'Configure notification days and cities',
       style: {
         background: 'linear-gradient(135deg,#0077B6,#023E8A)',
         border: 'none',
@@ -2949,7 +2966,22 @@ function QuickPoolsScreen({
         gap: 4,
         boxShadow: '0 2px 6px rgba(0,119,182,0.45)'
       }
-    }, Icon.cal(11, '#fff'), " ", lang === 'pt' ? 'Editar' : 'Edit'))));
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "11",
+      height: "11",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "3"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+    })), lang === 'pt' ? 'Configurar' : lang === 'es' ? 'Configurar' : 'Configure'))));
   })(), (notifStatus === 'needed' || notifStatus === 'denied') && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 18px 0'
