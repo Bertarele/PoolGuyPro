@@ -2716,16 +2716,31 @@ function QuickPoolsScreen({
           gap: 6,
           alignItems: 'center'
         }
-      }, /*#__PURE__*/React.createElement(IconButton, {
-        dark: darkMode,
+      }, /*#__PURE__*/React.createElement("button", {
         onClick: () => setRoutesOpen(true),
-        title: lang === 'pt' ? 'Rotas Rápidas' : lang === 'es' ? 'Rutas Rápidas' : 'Quick Routes'
+        className: "pg-press",
+        style: {
+          height: 38,
+          padding: '0 12px',
+          borderRadius: 12,
+          border: 'none',
+          cursor: 'pointer',
+          background: 'linear-gradient(135deg,#0EBAC7,#0D7280)',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          boxShadow: '0 2px 8px rgba(14,186,199,0.45)',
+          fontFamily: 'inherit',
+          fontSize: 12,
+          fontWeight: 800
+        }
       }, /*#__PURE__*/React.createElement("svg", {
-        width: "19",
-        height: "19",
+        width: "16",
+        height: "16",
         viewBox: "0 0 24 24",
         fill: "none",
-        stroke: H.text,
+        stroke: "#fff",
         strokeWidth: "2",
         strokeLinecap: "round",
         strokeLinejoin: "round"
@@ -2739,7 +2754,7 @@ function QuickPoolsScreen({
         r: "2.5"
       }), /*#__PURE__*/React.createElement("path", {
         d: "M8.3 17.7 15.7 6.3"
-      }))), /*#__PURE__*/React.createElement("div", {
+      })), lang === 'pt' ? 'Rotas' : lang === 'es' ? 'Rutas' : 'Routes'), /*#__PURE__*/React.createElement("div", {
         style: {
           position: 'relative',
           display: 'inline-flex'

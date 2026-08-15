@@ -7207,6 +7207,27 @@ function MyPostDetailSheet({
       marginBottom: 6
     }
   }, text);
+
+  // Owners land here (not ViewListingSheet, which has its own Share button)
+  // when opening their own post, so this needs its own share affordance too.
+  const shareThisListing = async () => {
+    const url = `https://poolguyx.com/#market?listing=${item._id}`;
+    const text = `${item.name}${item.priceMode === 'neg' ? ' — Negotiable' : item.price ? ` — $${item.price}` : ''}  📍 ${item.loc || 'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${url}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: item.name,
+          text,
+          url
+        });
+      } catch (e) {}
+      return;
+    }
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      showToast && showToast('✓ ' + (lang === 'pt' ? 'Link copiado!' : lang === 'es' ? '¡Enlace copiado!' : 'Link copied!'));
+    }
+  };
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -7247,12 +7268,58 @@ function MyPostDetailSheet({
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
     }
-  }, editing ? lang === 'pt' ? 'Editar anúncio' : lang === 'es' ? 'Editar anuncio' : 'Edit listing' : item.name || (lang === 'pt' ? 'Seu anúncio' : lang === 'es' ? 'Tu anuncio' : 'Your listing')), /*#__PURE__*/React.createElement("div", {
+  }, editing ? lang === 'pt' ? 'Editar anúncio' : lang === 'es' ? 'Editar anuncio' : 'Edit listing' : item.name || (lang === 'pt' ? 'Seu anúncio' : lang === 'es' ? 'Tu anuncio' : 'Your listing')), editing ? /*#__PURE__*/React.createElement("div", {
     style: {
       width: 44,
       flexShrink: 0
     }
-  })), /*#__PURE__*/React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement("button", {
+    onClick: shareThisListing,
+    title: lang === 'pt' ? 'Compartilhar' : lang === 'es' ? 'Compartir' : 'Share',
+    style: {
+      width: 44,
+      flexShrink: 0,
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-blue-500)',
+      cursor: 'pointer',
+      padding: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "18",
+    cy: "5",
+    r: "3"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "6",
+    cy: "12",
+    r: "3"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "18",
+    cy: "19",
+    r: "3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "8.59",
+    y1: "13.51",
+    x2: "15.42",
+    y2: "17.49"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15.41",
+    y1: "6.51",
+    x2: "8.59",
+    y2: "10.49"
+  })))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       overflow: 'auto',
@@ -7969,7 +8036,7 @@ function MarketplaceScreen({
   // rental-requests approve/decline UI (isOwner && isRent branches). Only
   // route to the plain edit/delete MyPostDetailSheet for non-rent own posts.
   const openMyOrOthersListing = item => {
-    if (isMyPost(item) && item.type !== 'rent') setMyPostDetail(item);else openListing(item);
+    if (isMyPost(item) && item.type !== 'rent') openMyPostDetail(item);else openListing(item);
   };
   const t = STRINGS[lang];
   // Own "sell" listings live 15+ days with no sale — surfaced right on the
@@ -8135,11 +8202,32 @@ function MarketplaceScreen({
     }
   }, []);
 
-  // Browser back button → close listing
+  // Owner viewing their own post lands in MyPostDetailSheet instead of
+  // ViewListingSheet — it's the exact same listing, so it needs the exact
+  // same shareable #market?listing=<id> URL (previously it had none at all).
+  const openMyPostDetail = React.useCallback(item => {
+    setMyPostDetail(item);
+    if (item._live !== false) {
+      window.history.pushState({
+        pgListing: item._id
+      }, '', '#market?listing=' + item._id);
+      historyPushed.current = true;
+    }
+  }, []);
+  const closeMyPostDetail = React.useCallback(() => {
+    setMyPostDetail(null);
+    if (historyPushed.current) {
+      historyPushed.current = false;
+      window.history.replaceState({}, '', '#market');
+    }
+  }, []);
+
+  // Browser back button → close whichever listing detail is open
   React.useEffect(() => {
     const handler = () => {
       if (historyPushed.current) {
         setViewListing(null);
+        setMyPostDetail(null);
         historyPushed.current = false;
       }
     };
@@ -8156,7 +8244,7 @@ function MarketplaceScreen({
       if (!data) return;
       const normalized = normMktItem(data);
       if (isMyPost(normalized) && normalized.type !== 'rent') {
-        setMyPostDetail(normalized);
+        openMyPostDetail(normalized);
       } else {
         setViewListing(normalized);
         // This path (ctx.openListingById → deepLinkListingId) previously only
@@ -9811,7 +9899,7 @@ function MarketplaceScreen({
           const m = liveMarket.find(x => x._id === r._liveId);
           if (m) {
             if (isMyPost(m)) {
-              setMyPostDetail(m);
+              openMyPostDetail(m);
               return;
             }
             if (m.status === 'sold') {
@@ -9996,7 +10084,7 @@ function MarketplaceScreen({
       onClose: closeListing,
       isAdmin: user.role === 'admin',
       canDelete: user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id),
-      onEdit: isMyPost(viewListing) ? () => setMyPostDetail(viewListing) : undefined,
+      onEdit: isMyPost(viewListing) ? () => openMyPostDetail(viewListing) : undefined,
       currentUser: user,
       showToast: showToast,
       isSaved: savedIds.has(viewListing._id),
@@ -10034,20 +10122,20 @@ function MarketplaceScreen({
       showToast: showToast
     }), /*#__PURE__*/React.createElement(FullPage, {
       open: !!myPostDetail,
-      onClose: () => setMyPostDetail(null)
+      onClose: () => closeMyPostDetail()
     }, myPostDetail && /*#__PURE__*/React.createElement(MyPostDetailSheet, {
       item: myPostDetail,
       lang: lang,
-      onClose: () => setMyPostDetail(null),
+      onClose: () => closeMyPostDetail(),
       showToast: showToast,
       currentUser: user,
       openRating: openRating,
       onUpdated: () => {
-        setMyPostDetail(null);
+        closeMyPostDetail();
         if (ctx.liveMarket) ctx.liveMarket.splice(0);
       },
       onDeleted: id => {
-        setMyPostDetail(null);
+        closeMyPostDetail();
         if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
       }
     })), selected && /*#__PURE__*/React.createElement("div", {
@@ -11534,7 +11622,7 @@ function MarketplaceScreen({
         const m = liveMarket.find(x => x._id === r._liveId);
         if (m) {
           if (isMyPost(m)) {
-            setMyPostDetail(m);
+            openMyPostDetail(m);
             return;
           }
           if (m.status === 'sold') {
@@ -11785,7 +11873,7 @@ function MarketplaceScreen({
         const m = liveMarket.find(x => x._id === p._liveId);
         if (m) {
           if (isMyPost(m)) {
-            setMyPostDetail(m);
+            openMyPostDetail(m);
           } else {
             openListing(m);
           }
@@ -12077,7 +12165,7 @@ function MarketplaceScreen({
     onClose: closeListing,
     isAdmin: user.role === 'admin',
     canDelete: user.role === 'admin' || !!(user.uid && viewListing.author_id && user.uid === viewListing.author_id),
-    onEdit: isMyPost(viewListing) ? () => setMyPostDetail(viewListing) : undefined,
+    onEdit: isMyPost(viewListing) ? () => openMyPostDetail(viewListing) : undefined,
     currentUser: user,
     showToast: showToast,
     isSaved: savedIds.has(viewListing._id),
@@ -12119,20 +12207,20 @@ function MarketplaceScreen({
     showToast: showToast
   }), /*#__PURE__*/React.createElement(FullPage, {
     open: !!myPostDetail,
-    onClose: () => setMyPostDetail(null)
+    onClose: () => closeMyPostDetail()
   }, myPostDetail && /*#__PURE__*/React.createElement(MyPostDetailSheet, {
     item: myPostDetail,
     lang: lang,
-    onClose: () => setMyPostDetail(null),
+    onClose: () => closeMyPostDetail(),
     showToast: showToast,
     currentUser: user,
     openRating: openRating,
     onUpdated: updated => {
-      setMyPostDetail(null);
+      closeMyPostDetail();
       if (ctx.liveMarket) ctx.liveMarket.splice(0); // will re-fetch via realtime
     },
     onDeleted: id => {
-      setMyPostDetail(null);
+      closeMyPostDetail();
       if (ctx && ctx.removeMarketItem) ctx.removeMarketItem(id);
     }
   })), selected && /*#__PURE__*/React.createElement("div", {

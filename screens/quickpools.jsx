@@ -1568,12 +1568,20 @@ function QuickPoolsScreen({ ctx }) {
             }
             right={
               <div style={{display:'flex', gap:6, alignItems:'center'}}>
-                <IconButton dark={darkMode} onClick={()=>setRoutesOpen(true)} title={lang==='pt'?'Rotas Rápidas':lang==='es'?'Rutas Rápidas':'Quick Routes'}>
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={H.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {/* Filled + labeled, unlike the neutral chat/bell icons next to it —
+                    otherwise nothing hints this opens route publishing at all. */}
+                <button onClick={()=>setRoutesOpen(true)} className="pg-press" style={{
+                  height:38, padding:'0 12px', borderRadius:12, border:'none', cursor:'pointer',
+                  background:'linear-gradient(135deg,#0EBAC7,#0D7280)', color:'#fff',
+                  display:'flex', alignItems:'center', gap:6,
+                  boxShadow:'0 2px 8px rgba(14,186,199,0.45)', fontFamily:'inherit', fontSize:12, fontWeight:800,
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/>
                     <path d="M8.3 17.7 15.7 6.3"/>
                   </svg>
-                </IconButton>
+                  {lang==='pt'?'Rotas':lang==='es'?'Rutas':'Routes'}
+                </button>
                 <div style={{position:'relative', display:'inline-flex'}}>
                   <IconButton dark={darkMode} onClick={()=>openChat&&openChat()}>
                     {Icon.msg(20, H.text)}
