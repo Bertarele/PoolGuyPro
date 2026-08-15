@@ -2680,7 +2680,26 @@ function WorkScreen({
         cursor: 'pointer',
         padding: '13px 15px',
         background: 'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(245,158,11,0.02))',
-        border: '1.5px solid rgba(245,158,11,0.35)'
+        border: '1.5px solid rgba(245,158,11,0.35)',
+        display: 'flex',
+        gap: 12,
+        alignItems: 'flex-start'
+      }
+    }, h.photoUrls && h.photoUrls.length > 0 && /*#__PURE__*/React.createElement("img", {
+      src: h.photoUrls[0],
+      alt: "",
+      style: {
+        width: 52,
+        height: 52,
+        borderRadius: 10,
+        objectFit: 'cover',
+        flexShrink: 0,
+        border: '1px solid rgba(245,158,11,0.3)'
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2741,7 +2760,7 @@ function WorkScreen({
         color: 'var(--pg-blue-600)',
         fontWeight: 700
       }
-    }, "\xB7 ", lang === 'pt' ? 'Sua publicação' : lang === 'es' ? 'Tu publicación' : 'Your post')));
+    }, "\xB7 ", lang === 'pt' ? 'Sua publicação' : lang === 'es' ? 'Tu publicación' : 'Your post'))));
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '14px 18px 0'
@@ -3037,7 +3056,17 @@ function HandoffDetailPanel({
       color: 'var(--pg-ink-500)',
       fontWeight: 600
     }
-  }, lang === 'pt' ? 'seu / repassador' : lang === 'es' ? 'tuyo / traspasador' : 'you / poster'))), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'seu / repassador' : lang === 'es' ? 'tuyo / traspasador' : 'you / poster'), handoff.pricePerPool != null && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      fontWeight: 700,
+      color: 'var(--pg-ink-700)',
+      marginTop: 3
+    }
+  }, "$", handoff.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool'))), handoff.photoUrls && handoff.photoUrls.length > 0 && /*#__PURE__*/React.createElement(PhotoCarousel, {
+    urls: handoff.photoUrls,
+    height: 160
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexWrap: 'wrap',
@@ -8531,13 +8560,73 @@ function PostPoolHandoffSheet({
   const [cityKey, setCityKey] = React.useState(0);
   const [days, setDays] = React.useState([]); // ['mon','wed',...]
   const [poolsCount, setPoolsCount] = React.useState(1);
-  const [splitTaker, setSplitTaker] = React.useState(70); // % the pool guy keeps
+  const [priceValue, setPriceValue] = React.useState(''); // optional $ per pool — split itself is fixed at 70/30
   const [poolType, setPoolType] = React.useState('residential');
   const [dog, setDog] = React.useState(false);
   const [saltwater, setSaltwater] = React.useState(false);
   const [gateCode, setGateCode] = React.useState(false);
   const [doorman, setDoorman] = React.useState(false);
   const [description, setDescription] = React.useState('');
+  const [photos, setPhotos] = React.useState([]); // [{url, uploading, error}]
+  const photoInputRef = React.useRef(null);
+  const handlePhotoPick = async e => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file || !window.sb) return;
+    const idx = photos.length;
+    setPhotos(prev => [...prev, {
+      url: URL.createObjectURL(file),
+      uploading: true,
+      error: null
+    }]);
+    try {
+      const img = new Image();
+      const blob = await new Promise(resolve => {
+        img.onload = () => {
+          const MAX = 1200;
+          let w = img.width,
+            h = img.height;
+          if (w > MAX || h > MAX) {
+            if (w >= h) {
+              h = Math.round(h * MAX / w);
+              w = MAX;
+            } else {
+              w = Math.round(w * MAX / h);
+              h = MAX;
+            }
+          }
+          const c = document.createElement('canvas');
+          c.width = w;
+          c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          c.toBlob(b => resolve(b), 'image/jpeg', 0.78);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+      const path = `handoffs/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+      const {
+        error: upErr
+      } = await window.sb.storage.from('post-images').upload(path, blob, {
+        contentType: 'image/jpeg'
+      });
+      if (upErr) throw upErr;
+      const {
+        data: pub
+      } = window.sb.storage.from('post-images').getPublicUrl(path);
+      setPhotos(prev => prev.map((p, i) => i === idx ? {
+        url: pub.publicUrl,
+        uploading: false,
+        error: null
+      } : p));
+    } catch (err) {
+      setPhotos(prev => prev.map((p, i) => i === idx ? {
+        ...p,
+        uploading: false,
+        error: err.message || 'Error'
+      } : p));
+    }
+  };
+  const removePhoto = i => setPhotos(prev => prev.filter((_, j) => j !== i));
 
   // Never more cities than pools — each pool has at most one city, so
   // shrinking the count below the current city list trims it back down.
@@ -8549,7 +8638,6 @@ function PostPoolHandoffSheet({
   const daysLbl = lang === 'pt' ? 'Dias da semana' : lang === 'es' ? 'Días de la semana' : 'Days of week';
   const countLbl = lang === 'pt' ? 'Quantas piscinas' : lang === 'es' ? 'Cuántas piscinas' : 'How many pools';
   const splitLbl = lang === 'pt' ? 'Divisão do pagamento' : lang === 'es' ? 'División del pago' : 'Payment split';
-  const splitSub = lang === 'pt' ? '% que fica com quem faz o serviço' : lang === 'es' ? '% para quien hace el servicio' : '% that goes to the pool guy doing the work';
   const typeLbl = lang === 'pt' ? 'Tipo de propriedade' : lang === 'es' ? 'Tipo de propiedad' : 'Property type';
   const descLbl = lang === 'pt' ? 'Detalhes (opcional)' : lang === 'es' ? 'Detalles (opcional)' : 'Details (optional)';
   const descPh = lang === 'pt' ? 'Endereço aproximado, horário, particularidades…' : lang === 'es' ? 'Dirección aproximada, horario, detalles…' : 'Approximate address, schedule, quirks…';
@@ -8576,9 +8664,8 @@ function PostPoolHandoffSheet({
     id: 'sun',
     label: lang === 'pt' ? 'Dom' : lang === 'es' ? 'Dom' : 'Sun'
   }];
-  const splitPresets = [70, 60, 50];
   const toggleDay = id => setDays(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
-  const isValid = cities.length > 0 && days.length > 0;
+  const isValid = cities.length > 0 && days.length > 0 && !photos.some(p => p.uploading);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -8746,60 +8833,32 @@ function PostPoolHandoffSheet({
     label: splitLbl
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      gap: 8,
-      marginBottom: 8
+      padding: '12px 14px',
+      borderRadius: 12,
+      background: 'var(--pg-ink-50)',
+      border: '1px solid var(--pg-ink-200)',
+      marginBottom: 10
     }
-  }, splitPresets.map(p => {
-    const on = splitTaker === p;
-    return /*#__PURE__*/React.createElement("button", {
-      key: p,
-      onClick: () => setSplitTaker(p),
-      style: {
-        flex: 1,
-        padding: '10px 6px',
-        borderRadius: 12,
-        border: 'none',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        background: on ? '#16A34A' : 'var(--pg-ink-100)',
-        color: on ? '#fff' : 'var(--pg-ink-900)',
-        fontSize: 14,
-        fontWeight: 800
-      }
-    }, p, "/", 100 - p);
-  })), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8
+      fontSize: 14,
+      fontWeight: 800,
+      color: 'var(--pg-ink-900)'
     }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: "10",
-    max: "90",
-    step: "5",
-    value: splitTaker,
-    onChange: e => setSplitTaker(parseInt(e.target.value)),
-    style: {
-      flex: 1,
-      accentColor: '#16A34A'
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700,
-      minWidth: 56,
-      textAlign: 'right',
-      color: 'var(--pg-ink-700)'
-    }
-  }, splitTaker, "/", 100 - splitTaker)), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Preço fixo' : lang === 'es' ? 'Precio fijo' : 'Fixed price'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: 'var(--pg-ink-400)',
-      marginTop: 4
+      marginTop: 1
     }
-  }, splitSub)), /*#__PURE__*/React.createElement(HiringFormSection, {
+  }, "(70/30)")), /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    type: "number",
+    inputMode: "decimal",
+    value: priceValue,
+    onChange: e => setPriceValue(e.target.value),
+    placeholder: lang === 'pt' ? 'Valor por piscina (opcional)' : lang === 'es' ? 'Valor por piscina (opcional)' : 'Price per pool (optional)'
+  })), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: typeLbl
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8859,6 +8918,112 @@ function PostPoolHandoffSheet({
     on: doorman,
     setOn: setDoorman
   })))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Fotos da piscina (opcional)' : lang === 'es' ? 'Fotos de la piscina (opcional)' : 'Pool photos (optional)'
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      flexWrap: 'wrap'
+    }
+  }, photos.map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      position: 'relative',
+      width: 64,
+      height: 64,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: p.url,
+    alt: "",
+    style: {
+      width: 64,
+      height: 64,
+      objectFit: 'cover',
+      borderRadius: 10,
+      border: '1.5px solid var(--pg-ink-200)',
+      opacity: p.uploading ? 0.5 : 1
+    }
+  }), p.uploading && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      inset: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 16,
+      height: 16,
+      borderRadius: '50%',
+      border: '2px solid rgba(0,0,0,0.15)',
+      borderTopColor: 'var(--pg-blue-500)',
+      animation: 'pgSpin .7s linear infinite'
+    }
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: () => removePhoto(i),
+    style: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      width: 20,
+      height: 20,
+      borderRadius: '50%',
+      border: 'none',
+      background: '#EF4444',
+      color: '#fff',
+      fontSize: 12,
+      cursor: 'pointer',
+      padding: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontWeight: 700,
+      lineHeight: '20px'
+    }
+  }, "\xD7"))), photos.length < 6 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => photoInputRef.current?.click(),
+    style: {
+      width: 64,
+      height: 64,
+      borderRadius: 10,
+      border: '1.5px dashed var(--pg-ink-300)',
+      background: 'var(--pg-ink-50)',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "var(--pg-ink-400)",
+    strokeWidth: "2",
+    strokeLinecap: "round"
+  }, /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "5",
+    x2: "12",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "5",
+    y1: "12",
+    x2: "19",
+    y2: "12"
+  })))), /*#__PURE__*/React.createElement("input", {
+    ref: photoInputRef,
+    type: "file",
+    accept: "image/*",
+    capture: "environment",
+    onChange: handlePhotoPick,
+    style: {
+      display: 'none'
+    }
+  })), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: descLbl
   }, /*#__PURE__*/React.createElement("textarea", {
     className: "pg-field",
@@ -8892,7 +9057,8 @@ function PostPoolHandoffSheet({
       cities,
       daysOfWeek: days,
       poolsCount,
-      splitTakerPct: splitTaker,
+      splitTakerPct: 70,
+      pricePerPool: priceValue.trim() ? parseFloat(priceValue) : null,
       poolType,
       extras: {
         dog,
@@ -8900,7 +9066,8 @@ function PostPoolHandoffSheet({
         gate_code: gateCode,
         doorman
       },
-      description
+      description,
+      photoUrls: photos.filter(p => !p.uploading && !p.error).map(p => p.url)
     }),
     disabled: !isValid,
     className: "pg-btn pg-btn-primary",

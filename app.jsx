@@ -1144,7 +1144,7 @@ function App() {
     // Data fetch — runs AFTER auth is ready (authReady gate above)
     const normHandoff = r => ({ _id:r.id, _live:true, poster_id:r.poster_id, poster:r.poster_name || 'Pool Guy',
       poster_phone:r.poster_phone, cities:r.cities||[], daysOfWeek:r.days_of_week||[], poolsCount:r.pools_count||1,
-      splitTakerPct:r.split_taker_pct||70, poolType:r.pool_type||'residential', extras:r.extras||{},
+      splitTakerPct:r.split_taker_pct||70, pricePerPool:r.price_per_pool||null, poolType:r.pool_type||'residential', extras:r.extras||{}, photoUrls:r.photo_urls||[],
       description:r.description||'', status:r.status||'open', createdAt:r.created_at });
     const doFetch = async () => {
       const [j, tc, v, m, ho] = await Promise.all([
@@ -1349,7 +1349,7 @@ function App() {
     const { data } = await window.sb.from('pool_handoffs').select('*').eq('status', 'open').order('created_at', { ascending: false });
     if (data) setLiveHandoffs(data.map(r => ({ _id:r.id, _live:true, poster_id:r.poster_id, poster:r.poster_name || 'Pool Guy',
       poster_phone:r.poster_phone, cities:r.cities||[], daysOfWeek:r.days_of_week||[], poolsCount:r.pools_count||1,
-      splitTakerPct:r.split_taker_pct||70, poolType:r.pool_type||'residential', extras:r.extras||{},
+      splitTakerPct:r.split_taker_pct||70, pricePerPool:r.price_per_pool||null, poolType:r.pool_type||'residential', extras:r.extras||{}, photoUrls:r.photo_urls||[],
       description:r.description||'', status:r.status||'open', createdAt:r.created_at })));
   }, []);
 
@@ -2019,8 +2019,9 @@ function App() {
               poster_id: user.uid, poster_name: user.name || user.email || 'Pool Guy',
               poster_phone: user.phone || null,
               cities: data.cities, days_of_week: data.daysOfWeek, pools_count: data.poolsCount,
-              split_taker_pct: data.splitTakerPct, pool_type: data.poolType,
+              split_taker_pct: data.splitTakerPct, price_per_pool: data.pricePerPool ?? null, pool_type: data.poolType,
               extras: data.extras, description: data.description || null, status: 'open',
+              photo_urls: data.photoUrls && data.photoUrls.length > 0 ? data.photoUrls : null,
             });
             if (error) { console.error('[Handoff] insert failed', error); showToast('❌ ' + (error.message||'Error')); return; }
             loadLiveHandoffs();

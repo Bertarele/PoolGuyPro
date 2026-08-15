@@ -1233,26 +1233,32 @@ function WorkScreen({ ctx }) {
                   borderRadius:14, cursor:'pointer', padding:'13px 15px',
                   background:'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(245,158,11,0.02))',
                   border:'1.5px solid rgba(245,158,11,0.35)',
+                  display:'flex', gap:12, alignItems:'flex-start',
                 }}>
-                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                    <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999,
-                      background:'#F59E0B', color:'#fff', letterSpacing:'0.04em'}}>
-                      {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
-                    </span>
-                    <span style={{fontSize:14, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>
-                      {h.splitTakerPct}/{100-h.splitTakerPct}
-                    </span>
-                  </div>
-                  <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{(h.cities||[]).join(' · ')}</div>
-                  <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginTop:5}}>
-                    <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>
-                      {h.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
-                    </span>
-                    <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>·</span>
-                    <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>
-                      {h.poolsCount} {h.poolsCount>1?(lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'):(lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}
-                    </span>
-                    {isOwn && <span style={{fontSize:11, color:'var(--pg-blue-600)', fontWeight:700}}>· {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}</span>}
+                  {h.photoUrls && h.photoUrls.length > 0 && (
+                    <img src={h.photoUrls[0]} alt="" style={{width:52, height:52, borderRadius:10, objectFit:'cover', flexShrink:0, border:'1px solid rgba(245,158,11,0.3)'}}/>
+                  )}
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                      <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999,
+                        background:'#F59E0B', color:'#fff', letterSpacing:'0.04em'}}>
+                        {lang==='pt'?'REPASSE':lang==='es'?'TRASPASO':'HANDOFF'}
+                      </span>
+                      <span style={{fontSize:14, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>
+                        {h.splitTakerPct}/{100-h.splitTakerPct}
+                      </span>
+                    </div>
+                    <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>{(h.cities||[]).join(' · ')}</div>
+                    <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginTop:5}}>
+                      <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>
+                        {h.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
+                      </span>
+                      <span style={{fontSize:11, color:'var(--pg-ink-400)'}}>·</span>
+                      <span style={{fontSize:11, color:'var(--pg-ink-500)'}}>
+                        {h.poolsCount} {h.poolsCount>1?(lang==='pt'?'piscinas':lang==='es'?'piscinas':'pools'):(lang==='pt'?'piscina':lang==='es'?'piscina':'pool')}
+                      </span>
+                      {isOwn && <span style={{fontSize:11, color:'var(--pg-blue-600)', fontWeight:700}}>· {lang==='pt'?'Sua publicação':lang==='es'?'Tu publicación':'Your post'}</span>}
+                    </div>
                   </div>
                 </div>
               );
@@ -1381,8 +1387,15 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChanged
         <div style={{textAlign:'right'}}>
           <div style={{fontSize:22, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>{handoff.splitTakerPct}/{100-handoff.splitTakerPct}</div>
           <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600}}>{lang==='pt'?'seu / repassador':lang==='es'?'tuyo / traspasador':'you / poster'}</div>
+          {handoff.pricePerPool != null && (
+            <div style={{fontSize:12.5, fontWeight:700, color:'var(--pg-ink-700)', marginTop:3}}>${handoff.pricePerPool}/{lang==='pt'?'piscina':'pool'}</div>
+          )}
         </div>
       </div>
+
+      {handoff.photoUrls && handoff.photoUrls.length > 0 && (
+        <PhotoCarousel urls={handoff.photoUrls} height={160}/>
+      )}
 
       <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
         <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
@@ -4149,13 +4162,45 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
   const [cityKey,      setCityKey]     = React.useState(0);
   const [days,         setDays]        = React.useState([]); // ['mon','wed',...]
   const [poolsCount,   setPoolsCount]  = React.useState(1);
-  const [splitTaker,   setSplitTaker]  = React.useState(70); // % the pool guy keeps
+  const [priceValue,   setPriceValue]  = React.useState(''); // optional $ per pool — split itself is fixed at 70/30
   const [poolType,     setPoolType]    = React.useState('residential');
   const [dog,          setDog]         = React.useState(false);
   const [saltwater,    setSaltwater]   = React.useState(false);
   const [gateCode,     setGateCode]    = React.useState(false);
   const [doorman,      setDoorman]     = React.useState(false);
   const [description,  setDescription] = React.useState('');
+  const [photos,       setPhotos]      = React.useState([]); // [{url, uploading, error}]
+  const photoInputRef = React.useRef(null);
+
+  const handlePhotoPick = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file || !window.sb) return;
+    const idx = photos.length;
+    setPhotos(prev => [...prev, { url: URL.createObjectURL(file), uploading: true, error: null }]);
+    try {
+      const img = new Image();
+      const blob = await new Promise((resolve) => {
+        img.onload = () => {
+          const MAX = 1200;
+          let w = img.width, h = img.height;
+          if (w > MAX || h > MAX) { if (w >= h) { h = Math.round(h*MAX/w); w = MAX; } else { w = Math.round(w*MAX/h); h = MAX; } }
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          c.toBlob(b => resolve(b), 'image/jpeg', 0.78);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+      const path = `handoffs/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+      const { error: upErr } = await window.sb.storage.from('post-images').upload(path, blob, { contentType:'image/jpeg' });
+      if (upErr) throw upErr;
+      const { data: pub } = window.sb.storage.from('post-images').getPublicUrl(path);
+      setPhotos(prev => prev.map((p,i) => i===idx ? { url: pub.publicUrl, uploading:false, error:null } : p));
+    } catch (err) {
+      setPhotos(prev => prev.map((p,i) => i===idx ? { ...p, uploading:false, error:err.message||'Error' } : p));
+    }
+  };
+  const removePhoto = (i) => setPhotos(prev => prev.filter((_,j)=>j!==i));
 
   // Never more cities than pools — each pool has at most one city, so
   // shrinking the count below the current city list trims it back down.
@@ -4168,7 +4213,6 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
   const daysLbl  = lang==='pt'?'Dias da semana':lang==='es'?'Días de la semana':'Days of week';
   const countLbl = lang==='pt'?'Quantas piscinas':lang==='es'?'Cuántas piscinas':'How many pools';
   const splitLbl = lang==='pt'?'Divisão do pagamento':lang==='es'?'División del pago':'Payment split';
-  const splitSub = lang==='pt'?'% que fica com quem faz o serviço':lang==='es'?'% para quien hace el servicio':'% that goes to the pool guy doing the work';
   const typeLbl  = lang==='pt'?'Tipo de propriedade':lang==='es'?'Tipo de propiedad':'Property type';
   const descLbl  = lang==='pt'?'Detalhes (opcional)':lang==='es'?'Detalles (opcional)':'Details (optional)';
   const descPh   = lang==='pt'?'Endereço aproximado, horário, particularidades…':lang==='es'?'Dirección aproximada, horario, detalles…':'Approximate address, schedule, quirks…';
@@ -4183,10 +4227,9 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
     { id:'sat', label: lang==='pt'?'Sáb':lang==='es'?'Sáb':'Sat' },
     { id:'sun', label: lang==='pt'?'Dom':lang==='es'?'Dom':'Sun' },
   ];
-  const splitPresets = [70, 60, 50];
 
   const toggleDay = (id) => setDays(prev => prev.includes(id) ? prev.filter(d=>d!==id) : [...prev, id]);
-  const isValid = cities.length > 0 && days.length > 0;
+  const isValid = cities.length > 0 && days.length > 0 && !photos.some(p=>p.uploading);
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
@@ -4264,27 +4307,15 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
         </HiringFormSection>
 
         <HiringFormSection label={splitLbl}>
-          <div style={{display:'flex', gap:8, marginBottom:8}}>
-            {splitPresets.map(p => {
-              const on = splitTaker === p;
-              return (
-                <button key={p} onClick={()=>setSplitTaker(p)} style={{
-                  flex:1, padding:'10px 6px', borderRadius:12, border:'none', cursor:'pointer', fontFamily:'inherit',
-                  background: on ? '#16A34A' : 'var(--pg-ink-100)', color: on ? '#fff' : 'var(--pg-ink-900)',
-                  fontSize:14, fontWeight:800,
-                }}>{p}/{100-p}</button>
-              );
-            })}
+          <div style={{padding:'12px 14px', borderRadius:12, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-200)', marginBottom:10}}>
+            <div style={{fontSize:14, fontWeight:800, color:'var(--pg-ink-900)'}}>
+              {lang==='pt'?'Preço fixo':lang==='es'?'Precio fijo':'Fixed price'}
+            </div>
+            <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:1}}>(70/30)</div>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:8}}>
-            <input type="range" min="10" max="90" step="5" value={splitTaker}
-              onChange={e=>setSplitTaker(parseInt(e.target.value))}
-              style={{flex:1, accentColor:'#16A34A'}}/>
-            <span style={{fontSize:13, fontWeight:700, minWidth:56, textAlign:'right', color:'var(--pg-ink-700)'}}>
-              {splitTaker}/{100-splitTaker}
-            </span>
-          </div>
-          <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:4}}>{splitSub}</div>
+          <input className="pg-field" type="number" inputMode="decimal" value={priceValue}
+            onChange={e=>setPriceValue(e.target.value)}
+            placeholder={lang==='pt'?'Valor por piscina (opcional)':lang==='es'?'Valor por piscina (opcional)':'Price per pool (optional)'}/>
         </HiringFormSection>
 
         <HiringFormSection label={typeLbl}>
@@ -4315,6 +4346,37 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
           </div>
         </HiringFormSection>
 
+        <HiringFormSection label={lang==='pt'?'Fotos da piscina (opcional)':lang==='es'?'Fotos de la piscina (opcional)':'Pool photos (optional)'}>
+          <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+            {photos.map((p,i) => (
+              <div key={i} style={{position:'relative', width:64, height:64, flexShrink:0}}>
+                <img src={p.url} alt="" style={{width:64, height:64, objectFit:'cover', borderRadius:10,
+                  border:'1.5px solid var(--pg-ink-200)', opacity:p.uploading?0.5:1}}/>
+                {p.uploading && (
+                  <div style={{position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    <span style={{width:16, height:16, borderRadius:'50%', border:'2px solid rgba(0,0,0,0.15)', borderTopColor:'var(--pg-blue-500)', animation:'pgSpin .7s linear infinite'}}/>
+                  </div>
+                )}
+                <button onClick={()=>removePhoto(i)} style={{
+                  position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', border:'none',
+                  background:'#EF4444', color:'#fff', fontSize:12, cursor:'pointer', padding:0,
+                  display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, lineHeight:'20px',
+                }}>×</button>
+              </div>
+            ))}
+            {photos.length < 6 && (
+              <button onClick={()=>photoInputRef.current?.click()} style={{
+                width:64, height:64, borderRadius:10, border:'1.5px dashed var(--pg-ink-300)',
+                background:'var(--pg-ink-50)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                flexShrink:0,
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            )}
+          </div>
+          <input ref={photoInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoPick} style={{display:'none'}}/>
+        </HiringFormSection>
+
         <HiringFormSection label={descLbl}>
           <textarea className="pg-field" value={description} onChange={e=>setDescription(e.target.value)}
             placeholder={descPh} rows={4}
@@ -4330,9 +4392,11 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit }) {
           </div>
         )}
         <button onClick={()=>onSubmit && onSubmit({
-          cities, daysOfWeek: days, poolsCount, splitTakerPct: splitTaker, poolType,
+          cities, daysOfWeek: days, poolsCount, splitTakerPct: 70,
+          pricePerPool: priceValue.trim() ? parseFloat(priceValue) : null, poolType,
           extras: { dog, saltwater, gate_code: gateCode, doorman },
           description,
+          photoUrls: photos.filter(p=>!p.uploading && !p.error).map(p=>p.url),
         })} disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45,
             background: isValid ? 'linear-gradient(135deg,#F59E0B,#D97706)' : undefined}}>

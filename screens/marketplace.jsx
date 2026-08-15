@@ -7785,13 +7785,13 @@ function CityAutocomplete({ value, onChange, lang }) {
         <div style={{
           position:'absolute', top: dropPos.top, left: dropPos.left, width: dropPos.width,
           zIndex: 2000, background:'var(--pg-white)', borderRadius:12, padding:6,
-          border:'0.5px solid var(--pg-ink-200)',
+          border:'0.5px solid var(--pg-ink-200)', maxHeight:260, overflowY:'auto',
           boxShadow:'0 8px 24px rgba(15,30,60,0.14)',
         }}>
           {matches.map(m => (
             <button key={m.city}
               onMouseDown={e => { e.preventDefault(); pick(m.city); }}
-              onTouchStart={e => { e.preventDefault(); pick(m.city); }}
+              onClick={() => pick(m.city)}
               style={{
                 width:'100%', textAlign:'left', padding:'9px 10px', border:'none',
                 background:'transparent', cursor:'pointer', borderRadius:8,
@@ -7922,7 +7922,7 @@ function StreetAddressAutocomplete({ value, onChange, lang, placeholder }) {
           ) : results.map((r, i) => (
             <button key={r.place_id || i}
               onMouseDown={e => { e.preventDefault(); pick(r); }}
-              onTouchStart={e => { e.preventDefault(); pick(r); }}
+              onClick={() => pick(r)}
               style={{
                 width:'100%', textAlign:'left', padding:'9px 10px', border:'none',
                 background:'transparent', cursor:'pointer', borderRadius:8,

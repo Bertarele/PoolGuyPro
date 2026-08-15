@@ -1617,8 +1617,10 @@ function App() {
       daysOfWeek: r.days_of_week || [],
       poolsCount: r.pools_count || 1,
       splitTakerPct: r.split_taker_pct || 70,
+      pricePerPool: r.price_per_pool || null,
       poolType: r.pool_type || 'residential',
       extras: r.extras || {},
+      photoUrls: r.photo_urls || [],
       description: r.description || '',
       status: r.status || 'open',
       createdAt: r.created_at
@@ -1885,8 +1887,10 @@ function App() {
       daysOfWeek: r.days_of_week || [],
       poolsCount: r.pools_count || 1,
       splitTakerPct: r.split_taker_pct || 70,
+      pricePerPool: r.price_per_pool || null,
       poolType: r.pool_type || 'residential',
       extras: r.extras || {},
+      photoUrls: r.photo_urls || [],
       description: r.description || '',
       status: r.status || 'open',
       createdAt: r.created_at
@@ -2909,10 +2913,12 @@ function App() {
         days_of_week: data.daysOfWeek,
         pools_count: data.poolsCount,
         split_taker_pct: data.splitTakerPct,
+        price_per_pool: data.pricePerPool ?? null,
         pool_type: data.poolType,
         extras: data.extras,
         description: data.description || null,
-        status: 'open'
+        status: 'open',
+        photo_urls: data.photoUrls && data.photoUrls.length > 0 ? data.photoUrls : null
       });
       if (error) {
         console.error('[Handoff] insert failed', error);
