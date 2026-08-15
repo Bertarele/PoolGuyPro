@@ -1240,6 +1240,10 @@ function WorkScreen({ ctx }) {
               const canManageHere = isOwn || isAdminHere;
               const dayLbls = { mon:'Seg',tue:'Ter',wed:'Qua',thu:'Qui',fri:'Sex',sat:'Sáb',sun:'Dom' };
               const thumb = h.photoUrls && h.photoUrls[0];
+              const poolPrices = (h.pools||[]).map(p=>p.price).filter(p=>p!=null);
+              const priceLbl = poolPrices.length > 0
+                ? (Math.min(...poolPrices)===Math.max(...poolPrices) ? `$${poolPrices[0]}` : `$${Math.min(...poolPrices)}–$${Math.max(...poolPrices)}`)
+                : (h.pricePerPool != null ? `$${h.pricePerPool}` : null);
               const deleteHandoffFromCard = async (e) => {
                 e.stopPropagation();
                 const msg = lang==='pt'?'Excluir este repasse?':lang==='es'?'¿Eliminar este traspaso?':'Delete this handoff?';
@@ -1302,7 +1306,7 @@ function WorkScreen({ ctx }) {
                   <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
                     <div style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, color:'#D97706', letterSpacing:'-0.01em'}}>
                       {h.splitTakerPct}/{100-h.splitTakerPct}
-                      {h.pricePerPool != null && <span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-500)', marginLeft:6}}>· ${h.pricePerPool}/{lang==='pt'?'piscina':'pool'}</span>}
+                      {priceLbl && <span style={{fontSize:12, fontWeight:600, color:'var(--pg-ink-500)', marginLeft:6}}>· {priceLbl}/{lang==='pt'?'piscina':'pool'}</span>}
                     </div>
                     {isOwn ? (
                       <span style={{fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'rgba(0,119,182,0.12)', color:'var(--pg-blue-600)', border:'1px solid rgba(0,119,182,0.25)'}}>
@@ -1395,9 +1399,8 @@ function WorkScreen({ ctx }) {
             if (!data || !window.sb) { setEditingHandoff(null); return; }
             setHandoffBusy(true);
             const { error } = await window.sb.from('pool_handoffs').update({
-              cities: data.cities, days_of_week: data.daysOfWeek, pools_count: data.poolsCount,
-              price_per_pool: data.pricePerPool ?? null, pool_type: data.poolType,
-              extras: data.extras, description: data.description || null,
+              pools: data.pools, cities: data.cities, days_of_week: data.daysOfWeek, pools_count: data.poolsCount,
+              description: data.description || null,
               photo_urls: data.photoUrls && data.photoUrls.length > 0 ? data.photoUrls : null,
             }).eq('id', editingHandoff._id);
             setHandoffBusy(false);
@@ -1487,7 +1490,7 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
           <div style={{textAlign:'right'}}>
             <div style={{fontSize:22, fontWeight:800, color:'#D97706', fontFamily:'var(--pg-font-display)'}}>{handoff.splitTakerPct}/{100-handoff.splitTakerPct}</div>
             <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600}}>{lang==='pt'?'seu / repassador':lang==='es'?'tuyo / traspasador':'you / poster'}</div>
-            {handoff.pricePerPool != null && (
+            {!(handoff.pools && handoff.pools.length > 0) && handoff.pricePerPool != null && (
               <div style={{fontSize:12.5, fontWeight:700, color:'var(--pg-ink-700)', marginTop:3}}>${handoff.pricePerPool}/{lang==='pt'?'piscina':'pool'}</div>
             )}
           </div>
@@ -1499,19 +1502,48 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
           </div>
         )}
 
-        <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
-          <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
-            {handoff.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
-          </span>
-          <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
-            {handoff.poolsCount} {handoff.poolsCount>1?(lang==='pt'?'piscinas':'pools'):(lang==='pt'?'piscina':'pool')}
-          </span>
-          <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
-            {handoff.poolType==='condo'?(lang==='pt'?'Condomínio':'Condo'):(lang==='pt'?'Casa':'House')}
-          </span>
-          {handoff.extras?.dog && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🐕 {lang==='pt'?'Cachorro':'Dog'}</span>}
-          {handoff.extras?.saltwater && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🧂 {lang==='pt'?'Sal':'Salt'}</span>}
-        </div>
+        {handoff.pools && handoff.pools.length > 0 ? (
+          <div style={{display:'flex', flexDirection:'column', gap:10}}>
+            {handoff.pools.map((p, i) => (
+              <div key={i} style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'12px 14px'}}>
+                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
+                  <div style={{fontSize:14, fontWeight:800, color:'var(--pg-ink-900)'}}>
+                    {(lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool')} {i+1} · {p.city}
+                  </div>
+                  {p.price != null && (
+                    <div style={{fontSize:13, fontWeight:800, color:'#D97706'}}>${p.price}/{lang==='pt'?'piscina':'pool'}</div>
+                  )}
+                </div>
+                <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+                  <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+                    {(p.days||[]).map(d=>dayLbls[d]||d).join(', ')}
+                  </span>
+                  <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+                    {p.poolType==='condo'?(lang==='pt'?'Condomínio':'Condo'):(lang==='pt'?'Casa':'House')}
+                  </span>
+                  {p.dog && <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🐕 {lang==='pt'?'Cachorro':'Dog'}</span>}
+                  {p.saltwater && <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🧂 {lang==='pt'?'Sal':'Salt'}</span>}
+                  {p.gateCode && <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🔑 {lang==='pt'?'Portão':'Gate'}</span>}
+                  {p.doorman && <span style={{fontSize:11.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🧑‍💼 {lang==='pt'?'Portaria':'Doorman'}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+            <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+              {handoff.daysOfWeek.map(d=>dayLbls[d]||d).join(', ')}
+            </span>
+            <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+              {handoff.poolsCount} {handoff.poolsCount>1?(lang==='pt'?'piscinas':'pools'):(lang==='pt'?'piscina':'pool')}
+            </span>
+            <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>
+              {handoff.poolType==='condo'?(lang==='pt'?'Condomínio':'Condo'):(lang==='pt'?'Casa':'House')}
+            </span>
+            {handoff.extras?.dog && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🐕 {lang==='pt'?'Cachorro':'Dog'}</span>}
+            {handoff.extras?.saltwater && <span style={{fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'var(--pg-ink-100)', color:'var(--pg-ink-700)'}}>🧂 {lang==='pt'?'Sal':'Salt'}</span>}
+          </div>
+        )}
 
         {handoff.description && (
           <p style={{margin:0, fontSize:13.5, lineHeight:1.55, color:'var(--pg-ink-700)'}}>{handoff.description}</p>
@@ -4240,22 +4272,42 @@ function PostHiringSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
 // revenue split instead of a flat rate. Distinct from Vagas (permanent
 // employment) — this is per-pool, recurring, and the poster keeps working
 // with other companies/route owners too since it's not exclusive.
+// One entry per pool: { city, days:[...], price:'', poolType, dog, saltwater, gateCode, doorman }
+function blankPool() {
+  return { city:'', days:[], price:'', poolType:'residential', dog:false, saltwater:false, gateCode:false, doorman:false };
+}
+function poolsFromInitialValues(initialValues) {
+  if (!initialValues) return [blankPool()];
+  if (Array.isArray(initialValues.pools) && initialValues.pools.length > 0) {
+    return initialValues.pools.map(p => ({
+      city: p.city || '', days: p.days || [], price: p.price != null ? String(p.price) : '',
+      poolType: p.poolType || 'residential', dog: !!p.dog, saltwater: !!p.saltwater,
+      gateCode: !!p.gateCode, doorman: !!p.doorman,
+    }));
+  }
+  // Legacy rows (pre-per-pool schema) — one shared set of days/price/type/extras
+  // applied to every city, so rebuild one pool entry per city.
+  const cities = initialValues.cities && initialValues.cities.length > 0 ? initialValues.cities : [''];
+  return cities.map(city => ({
+    city, days: initialValues.daysOfWeek || [],
+    price: initialValues.pricePerPool != null ? String(initialValues.pricePerPool) : '',
+    poolType: initialValues.poolType || 'residential',
+    dog: !!initialValues.extras?.dog, saltwater: !!initialValues.extras?.saltwater,
+    gateCode: !!initialValues.extras?.gate_code, doorman: !!initialValues.extras?.doorman,
+  }));
+}
+
 function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null }) {
   const t = STRINGS[lang];
   const isEdit = !!initialValues;
-  const [cities,       setCities]      = React.useState(initialValues?.cities || []); // one city per pool, max = poolsCount
-  const [cityKey,      setCityKey]     = React.useState(0);
-  const [days,         setDays]        = React.useState(initialValues?.daysOfWeek || []); // ['mon','wed',...]
-  const [poolsCount,   setPoolsCount]  = React.useState(initialValues?.poolsCount || 1);
-  const [priceValue,   setPriceValue]  = React.useState(initialValues?.pricePerPool != null ? String(initialValues.pricePerPool) : ''); // optional $ per pool — split itself is fixed at 70/30
-  const [poolType,     setPoolType]    = React.useState(initialValues?.poolType || 'residential');
-  const [dog,          setDog]         = React.useState(initialValues?.extras?.dog || false);
-  const [saltwater,    setSaltwater]   = React.useState(initialValues?.extras?.saltwater || false);
-  const [gateCode,     setGateCode]    = React.useState(initialValues?.extras?.gate_code || false);
-  const [doorman,      setDoorman]     = React.useState(initialValues?.extras?.doorman || false);
+  const [pools,        setPools]       = React.useState(() => poolsFromInitialValues(initialValues));
   const [description,  setDescription] = React.useState(initialValues?.description || '');
   const [photos,       setPhotos]      = React.useState((initialValues?.photoUrls || []).map(url => ({ url, uploading:false, error:null }))); // [{url, uploading, error}]
   const photoInputRef = React.useRef(null);
+
+  const addPool = () => { if (pools.length < 20) setPools(prev => [...prev, blankPool()]); };
+  const removePool = () => { if (pools.length > 1) setPools(prev => prev.slice(0, -1)); };
+  const updatePool = (i, patch) => setPools(prev => prev.map((p, j) => j===i ? { ...p, ...patch } : p));
 
   const handlePhotoPick = async (e) => {
     const file = e.target.files && e.target.files[0];
@@ -4287,21 +4339,12 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
   };
   const removePhoto = (i) => setPhotos(prev => prev.filter((_,j)=>j!==i));
 
-  // Never more cities than pools — each pool has at most one city, so
-  // shrinking the count below the current city list trims it back down.
-  React.useEffect(() => {
-    setCities(prev => prev.slice(0, poolsCount));
-  }, [poolsCount]);
-
   const headLbl  = isEdit ? (lang==='pt'?'Editar repasse':lang==='es'?'Editar traspaso':'Edit handoff') : (lang==='pt'?'Repassar piscina':lang==='es'?'Traspasar piscina':'Hand off a pool');
-  const cityLbl  = lang==='pt'?'Cidades / áreas':lang==='es'?'Ciudades / áreas':'Cities / areas';
-  const daysLbl  = lang==='pt'?'Dias da semana':lang==='es'?'Días de la semana':'Days of week';
   const countLbl = lang==='pt'?'Quantas piscinas':lang==='es'?'Cuántas piscinas':'How many pools';
-  const splitLbl = lang==='pt'?'Divisão do pagamento':lang==='es'?'División del pago':'Payment split';
-  const typeLbl  = lang==='pt'?'Tipo de propriedade':lang==='es'?'Tipo de propiedad':'Property type';
-  const descLbl  = lang==='pt'?'Detalhes (opcional)':lang==='es'?'Detalles (opcional)':'Details (optional)';
+  const descLbl  = lang==='pt'?'Detalhes gerais (opcional)':lang==='es'?'Detalles generales (opcional)':'General details (optional)';
   const descPh   = lang==='pt'?'Endereço aproximado, horário, particularidades…':lang==='es'?'Dirección aproximada, horario, detalles…':'Approximate address, schedule, quirks…';
   const submitLbl= isEdit ? (lang==='pt'?'Salvar alterações':lang==='es'?'Guardar cambios':'Save changes') : (lang==='pt'?'Publicar repasse':lang==='es'?'Publicar traspaso':'Post handoff');
+  const poolLbl  = lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool';
 
   const dayDefs = [
     { id:'mon', label: lang==='pt'?'Seg':lang==='es'?'Lun':'Mon' },
@@ -4313,8 +4356,8 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
     { id:'sun', label: lang==='pt'?'Dom':lang==='es'?'Dom':'Sun' },
   ];
 
-  const toggleDay = (id) => setDays(prev => prev.includes(id) ? prev.filter(d=>d!==id) : [...prev, id]);
-  const isValid = cities.length > 0 && days.length > 0 && !photos.some(p=>p.uploading);
+  const toggleDay = (i, id) => updatePool(i, { days: pools[i].days.includes(id) ? pools[i].days.filter(d=>d!==id) : [...pools[i].days, id] });
+  const isValid = pools.length > 0 && pools.every(p => p.city && p.days.length > 0) && !photos.some(p=>p.uploading);
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
@@ -4332,114 +4375,96 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
 
         <HiringFormSection label={countLbl}>
           <div style={{display:'flex', alignItems:'center', gap:14}}>
-            <button onClick={()=>setPoolsCount(n=>Math.max(1,n-1))} style={{
+            <button onClick={removePool} style={{
               width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
               background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:20, color:'var(--pg-ink-900)',
             }}>−</button>
-            <span style={{fontSize:20, fontWeight:800, minWidth:24, textAlign:'center'}}>{poolsCount}</span>
-            <button onClick={()=>setPoolsCount(n=>Math.min(20,n+1))} style={{
+            <span style={{fontSize:20, fontWeight:800, minWidth:24, textAlign:'center'}}>{pools.length}</span>
+            <button onClick={addPool} style={{
               width:38, height:38, borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
               background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:20, color:'var(--pg-ink-900)',
             }}>+</button>
           </div>
+          <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:8}}>
+            {lang==='pt'?'Cada piscina tem seu próprio endereço, dias, preço e detalhes de acesso.':lang==='es'?'Cada piscina tiene su propia dirección, días, precio y detalles de acceso.':'Each pool has its own address, days, price, and access details.'}
+          </div>
         </HiringFormSection>
 
-        <HiringFormSection label={cityLbl}>
-          {cities.length > 0 && (
-            <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:10}}>
-              {cities.map(c => (
-                <div key={c} style={{display:'inline-flex', alignItems:'center', gap:5,
-                  background:'var(--pg-blue-100)', color:'var(--pg-blue-700)',
-                  borderRadius:20, padding:'5px 10px 5px 12px', fontSize:13, fontWeight:600}}>
-                  {c}
-                  <button onClick={()=>setCities(prev=>prev.filter(x=>x!==c))}
-                    style={{background:'none', border:'none', cursor:'pointer', color:'inherit',
-                      fontSize:15, lineHeight:1, padding:'0 2px', display:'flex', alignItems:'center'}}>×</button>
-                </div>
-              ))}
+        <div style={{padding:'12px 14px', borderRadius:12, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-200)'}}>
+          <div style={{fontSize:14, fontWeight:800, color:'var(--pg-ink-900)'}}>
+            {lang==='pt'?'Preço fixo':lang==='es'?'Precio fijo':'Fixed price'}
+          </div>
+          <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:1}}>(70/30)</div>
+        </div>
+
+        {pools.map((p, i) => (
+          <div key={i} style={{display:'flex', flexDirection:'column', gap:14, padding:'14px', borderRadius:16, border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-ink-25, var(--pg-white))'}}>
+            <div style={{fontSize:12.5, fontWeight:800, color:'#D97706', letterSpacing:'0.02em'}}>
+              {poolLbl} {i+1}
             </div>
-          )}
-          {cities.length < poolsCount ? (
-            <CityAutocomplete key={cityKey} value='' onChange={v=>{
-              if (v && !cities.includes(v)) setCities(prev=>[...prev, v]);
-              setCityKey(k=>k+1);
-            }} lang={lang}/>
-          ) : (
-            <div style={{fontSize:11.5, color:'var(--pg-ink-400)'}}>
-              {lang==='pt'
-                ? `Máximo de ${poolsCount} cidade${poolsCount>1?'s':''} (uma por piscina) — aumente a quantidade de piscinas pra adicionar mais.`
-                : lang==='es'
-                  ? `Máximo ${poolsCount} ciudad${poolsCount>1?'es':''} (una por piscina) — aumenta la cantidad de piscinas para agregar más.`
-                  : `Max ${poolsCount} cit${poolsCount>1?'ies':'y'} (one per pool) — increase the pool count to add more.`}
-            </div>
-          )}
-        </HiringFormSection>
 
-        <HiringFormSection label={daysLbl}>
-          <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-            {dayDefs.map(d => {
-              const on = days.includes(d.id);
-              return (
-                <button key={d.id} onClick={()=>toggleDay(d.id)} style={{
-                  width:44, height:44, borderRadius:12, border:on?'none':'1.5px solid var(--pg-ink-200)',
-                  background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
-                  color: on ? '#fff' : 'var(--pg-ink-700)', fontFamily:'inherit', fontSize:12, fontWeight:700,
-                  cursor:'pointer',
-                }}>{d.label}</button>
-              );
-            })}
-          </div>
-        </HiringFormSection>
+            <HiringFormSection label={lang==='pt'?'Cidade / área':lang==='es'?'Ciudad / área':'City / area'}>
+              <CityAutocomplete value={p.city} onChange={v=>updatePool(i, { city: v })} lang={lang}/>
+            </HiringFormSection>
 
-        <HiringFormSection label={splitLbl}>
-          <div style={{padding:'12px 14px', borderRadius:12, background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-200)', marginBottom:10}}>
-            <div style={{fontSize:14, fontWeight:800, color:'var(--pg-ink-900)'}}>
-              {lang==='pt'?'Preço fixo':lang==='es'?'Precio fijo':'Fixed price'}
-            </div>
-            <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:1}}>(70/30)</div>
-          </div>
-          <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:600, marginBottom:6}}>
-            {lang==='pt'?'Valor por piscina (opcional)':lang==='es'?'Valor por piscina (opcional)':'Price per pool (optional)'}
-          </div>
-          <div style={{position:'relative'}}>
-            <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:22, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
-            <input className="pg-field" value={priceValue}
-              onChange={e=>setPriceValue(e.target.value.replace(/[^0-9]/g,'').replace(/^0+(?!$)/,''))}
-              inputMode="numeric" pattern="[0-9]*"
-              style={{height:64, paddingLeft:36, fontSize:30, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', fontFamily:'var(--pg-font-display)'}}/>
-            <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--pg-ink-500)'}}>
-              /{lang==='pt'?'piscina':lang==='es'?'piscina':'pool'}
-            </span>
-          </div>
-        </HiringFormSection>
+            <HiringFormSection label={lang==='pt'?'Dias da semana':lang==='es'?'Días de la semana':'Days of week'}>
+              <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+                {dayDefs.map(d => {
+                  const on = p.days.includes(d.id);
+                  return (
+                    <button key={d.id} onClick={()=>toggleDay(i, d.id)} style={{
+                      width:40, height:40, borderRadius:11, border:on?'none':'1.5px solid var(--pg-ink-200)',
+                      background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+                      color: on ? '#fff' : 'var(--pg-ink-700)', fontFamily:'inherit', fontSize:11.5, fontWeight:700,
+                      cursor:'pointer',
+                    }}>{d.label}</button>
+                  );
+                })}
+              </div>
+            </HiringFormSection>
 
-        <HiringFormSection label={typeLbl}>
-          <div style={{display:'flex', gap:8}}>
-            {[{id:'residential',label:lang==='pt'?'Casa':lang==='es'?'Casa':'House'},{id:'condo',label:lang==='pt'?'Condomínio':lang==='es'?'Condominio':'Condo'}].map(o=>{
-              const on = poolType===o.id;
-              return (
-                <button key={o.id} onClick={()=>setPoolType(o.id)} style={{
-                  flex:1, height:42, borderRadius:11, border: on?'none':'1.5px solid var(--pg-ink-200)',
-                  background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
-                  color: on ? '#fff' : 'var(--pg-ink-700)', fontFamily:'inherit', fontSize:13, fontWeight:700, cursor:'pointer',
-                }}>{o.label}</button>
-              );
-            })}
-          </div>
-        </HiringFormSection>
+            <HiringFormSection label={lang==='pt'?'Valor por piscina (opcional)':lang==='es'?'Valor por piscina (opcional)':'Price per pool (optional)'}>
+              <div style={{position:'relative'}}>
+                <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)', fontFamily:'var(--pg-font-display)'}}>$</span>
+                <input className="pg-field" value={p.price}
+                  onChange={e=>updatePool(i, { price: e.target.value.replace(/[^0-9]/g,'').replace(/^0+(?!$)/,'') })}
+                  inputMode="numeric" pattern="[0-9]*"
+                  style={{height:56, paddingLeft:34, fontSize:26, fontWeight:700, color:'var(--pg-blue-500)', letterSpacing:'-0.02em', fontFamily:'var(--pg-font-display)'}}/>
+                <span style={{position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--pg-ink-500)'}}>
+                  /{lang==='pt'?'piscina':lang==='es'?'piscina':'pool'}
+                </span>
+              </div>
+            </HiringFormSection>
 
-        <HiringFormSection label={lang==='pt'?'Detalhes de acesso':lang==='es'?'Detalles de acceso':'Access details'}>
-          <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'4px 16px'}}>
-            <ToggleRow icon={Icon.dog(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem cachorro':lang==='es'?'Hay perro':'Has dog on property'} on={dog} setOn={setDog}/>
-            <ToggleRow icon={Icon.pool(15,'var(--pg-ink-700)')} label={lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool'} on={saltwater} setOn={setSaltwater}/>
-            {poolType==='condo' && (
-              <>
-                <ToggleRow icon={Icon.key(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem código de portão':lang==='es'?'Tiene código de portón':'Has gate code'} on={gateCode} setOn={setGateCode}/>
-                <ToggleRow icon={Icon.user(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem portaria':lang==='es'?'Tiene portería':'Has doorman'} on={doorman} setOn={setDoorman}/>
-              </>
-            )}
+            <HiringFormSection label={lang==='pt'?'Tipo de propriedade':lang==='es'?'Tipo de propiedad':'Property type'}>
+              <div style={{display:'flex', gap:8}}>
+                {[{id:'residential',label:lang==='pt'?'Casa':lang==='es'?'Casa':'House'},{id:'condo',label:lang==='pt'?'Condomínio':lang==='es'?'Condominio':'Condo'}].map(o=>{
+                  const on = p.poolType===o.id;
+                  return (
+                    <button key={o.id} onClick={()=>updatePool(i, { poolType: o.id })} style={{
+                      flex:1, height:40, borderRadius:11, border: on?'none':'1.5px solid var(--pg-ink-200)',
+                      background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+                      color: on ? '#fff' : 'var(--pg-ink-700)', fontFamily:'inherit', fontSize:13, fontWeight:700, cursor:'pointer',
+                    }}>{o.label}</button>
+                  );
+                })}
+              </div>
+            </HiringFormSection>
+
+            <HiringFormSection label={lang==='pt'?'Detalhes de acesso':lang==='es'?'Detalles de acceso':'Access details'}>
+              <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'4px 16px'}}>
+                <ToggleRow icon={Icon.dog(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem cachorro':lang==='es'?'Hay perro':'Has dog on property'} on={p.dog} setOn={v=>updatePool(i, { dog: v })}/>
+                <ToggleRow icon={Icon.pool(15,'var(--pg-ink-700)')} label={lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool'} on={p.saltwater} setOn={v=>updatePool(i, { saltwater: v })}/>
+                {p.poolType==='condo' && (
+                  <>
+                    <ToggleRow icon={Icon.key(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem código de portão':lang==='es'?'Tiene código de portón':'Has gate code'} on={p.gateCode} setOn={v=>updatePool(i, { gateCode: v })}/>
+                    <ToggleRow icon={Icon.user(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem portaria':lang==='es'?'Tiene portería':'Has doorman'} on={p.doorman} setOn={v=>updatePool(i, { doorman: v })}/>
+                  </>
+                )}
+              </div>
+            </HiringFormSection>
           </div>
-        </HiringFormSection>
+        ))}
 
         <HiringFormSection label={lang==='pt'?'Fotos da piscina (opcional)':lang==='es'?'Fotos de la piscina (opcional)':'Pool photos (optional)'}>
           <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
@@ -4487,9 +4512,13 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
           </div>
         )}
         <button onClick={()=>onSubmit && onSubmit({
-          cities, daysOfWeek: days, poolsCount, splitTakerPct: 70,
-          pricePerPool: priceValue ? parseInt(priceValue) : null, poolType,
-          extras: { dog, saltwater, gate_code: gateCode, doorman },
+          pools: pools.map(p => ({
+            city: p.city, days: p.days, price: p.price ? parseInt(p.price) : null,
+            poolType: p.poolType, dog: p.dog, saltwater: p.saltwater, gateCode: p.gateCode, doorman: p.doorman,
+          })),
+          poolsCount: pools.length, splitTakerPct: 70,
+          cities: pools.map(p => p.city),
+          daysOfWeek: [...new Set(pools.flatMap(p => p.days))],
           description,
           photoUrls: photos.filter(p=>!p.uploading && !p.error).map(p=>p.url),
         })} disabled={!isValid} className="pg-btn pg-btn-primary"

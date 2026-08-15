@@ -2668,6 +2668,8 @@ function WorkScreen({
       sun: 'Dom'
     };
     const thumb = h.photoUrls && h.photoUrls[0];
+    const poolPrices = (h.pools || []).map(p => p.price).filter(p => p != null);
+    const priceLbl = poolPrices.length > 0 ? Math.min(...poolPrices) === Math.max(...poolPrices) ? `$${poolPrices[0]}` : `$${Math.min(...poolPrices)}–$${Math.max(...poolPrices)}` : h.pricePerPool != null ? `$${h.pricePerPool}` : null;
     const deleteHandoffFromCard = async e => {
       e.stopPropagation();
       const msg = lang === 'pt' ? 'Excluir este repasse?' : lang === 'es' ? '¿Eliminar este traspaso?' : 'Delete this handoff?';
@@ -2843,14 +2845,14 @@ function WorkScreen({
         color: '#D97706',
         letterSpacing: '-0.01em'
       }
-    }, h.splitTakerPct, "/", 100 - h.splitTakerPct, h.pricePerPool != null && /*#__PURE__*/React.createElement("span", {
+    }, h.splitTakerPct, "/", 100 - h.splitTakerPct, priceLbl && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         fontWeight: 600,
         color: 'var(--pg-ink-500)',
         marginLeft: 6
       }
-    }, "\xB7 $", h.pricePerPool, "/", lang === 'pt' ? 'piscina' : 'pool')), isOwn ? /*#__PURE__*/React.createElement("span", {
+    }, "\xB7 ", priceLbl, "/", lang === 'pt' ? 'piscina' : 'pool')), isOwn ? /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -3071,12 +3073,10 @@ function WorkScreen({
       const {
         error
       } = await window.sb.from('pool_handoffs').update({
+        pools: data.pools,
         cities: data.cities,
         days_of_week: data.daysOfWeek,
         pools_count: data.poolsCount,
-        price_per_pool: data.pricePerPool ?? null,
-        pool_type: data.poolType,
-        extras: data.extras,
         description: data.description || null,
         photo_urls: data.photoUrls && data.photoUrls.length > 0 ? data.photoUrls : null
       }).eq('id', editingHandoff._id);
@@ -3291,7 +3291,7 @@ function HandoffDetailPanel({
       color: 'var(--pg-ink-500)',
       fontWeight: 600
     }
-  }, lang === 'pt' ? 'seu / repassador' : lang === 'es' ? 'tuyo / traspasador' : 'you / poster'), handoff.pricePerPool != null && /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'seu / repassador' : lang === 'es' ? 'tuyo / traspasador' : 'you / poster'), !(handoff.pools && handoff.pools.length > 0) && handoff.pricePerPool != null && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12.5,
       fontWeight: 700,
@@ -3306,7 +3306,99 @@ function HandoffDetailPanel({
   }, /*#__PURE__*/React.createElement(PhotoCarousel, {
     urls: handoff.photoUrls,
     height: 200
-  })), /*#__PURE__*/React.createElement("div", {
+  })), handoff.pools && handoff.pools.length > 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10
+    }
+  }, handoff.pools.map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      padding: '12px 14px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 800,
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Piscina' : lang === 'es' ? 'Piscina' : 'Pool', " ", i + 1, " \xB7 ", p.city), p.price != null && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 800,
+      color: '#D97706'
+    }
+  }, "$", p.price, "/", lang === 'pt' ? 'piscina' : 'pool')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, (p.days || []).map(d => dayLbls[d] || d).join(', ')), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, p.poolType === 'condo' ? lang === 'pt' ? 'Condomínio' : 'Condo' : lang === 'pt' ? 'Casa' : 'House'), p.dog && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, "\uD83D\uDC15 ", lang === 'pt' ? 'Cachorro' : 'Dog'), p.saltwater && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, "\uD83E\uDDC2 ", lang === 'pt' ? 'Sal' : 'Salt'), p.gateCode && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, "\uD83D\uDD11 ", lang === 'pt' ? 'Portão' : 'Gate'), p.doorman && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: '3px 9px',
+      borderRadius: 999,
+      background: 'var(--pg-ink-100)',
+      color: 'var(--pg-ink-700)'
+    }
+  }, "\uD83E\uDDD1\u200D\uD83D\uDCBC ", lang === 'pt' ? 'Portaria' : 'Doorman'))))) : /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexWrap: 'wrap',
@@ -8731,6 +8823,47 @@ function PostHiringSheet({
 // revenue split instead of a flat rate. Distinct from Vagas (permanent
 // employment) — this is per-pool, recurring, and the poster keeps working
 // with other companies/route owners too since it's not exclusive.
+// One entry per pool: { city, days:[...], price:'', poolType, dog, saltwater, gateCode, doorman }
+function blankPool() {
+  return {
+    city: '',
+    days: [],
+    price: '',
+    poolType: 'residential',
+    dog: false,
+    saltwater: false,
+    gateCode: false,
+    doorman: false
+  };
+}
+function poolsFromInitialValues(initialValues) {
+  if (!initialValues) return [blankPool()];
+  if (Array.isArray(initialValues.pools) && initialValues.pools.length > 0) {
+    return initialValues.pools.map(p => ({
+      city: p.city || '',
+      days: p.days || [],
+      price: p.price != null ? String(p.price) : '',
+      poolType: p.poolType || 'residential',
+      dog: !!p.dog,
+      saltwater: !!p.saltwater,
+      gateCode: !!p.gateCode,
+      doorman: !!p.doorman
+    }));
+  }
+  // Legacy rows (pre-per-pool schema) — one shared set of days/price/type/extras
+  // applied to every city, so rebuild one pool entry per city.
+  const cities = initialValues.cities && initialValues.cities.length > 0 ? initialValues.cities : [''];
+  return cities.map(city => ({
+    city,
+    days: initialValues.daysOfWeek || [],
+    price: initialValues.pricePerPool != null ? String(initialValues.pricePerPool) : '',
+    poolType: initialValues.poolType || 'residential',
+    dog: !!initialValues.extras?.dog,
+    saltwater: !!initialValues.extras?.saltwater,
+    gateCode: !!initialValues.extras?.gate_code,
+    doorman: !!initialValues.extras?.doorman
+  }));
+}
 function PostPoolHandoffSheet({
   onClose,
   lang = 'en',
@@ -8739,16 +8872,7 @@ function PostPoolHandoffSheet({
 }) {
   const t = STRINGS[lang];
   const isEdit = !!initialValues;
-  const [cities, setCities] = React.useState(initialValues?.cities || []); // one city per pool, max = poolsCount
-  const [cityKey, setCityKey] = React.useState(0);
-  const [days, setDays] = React.useState(initialValues?.daysOfWeek || []); // ['mon','wed',...]
-  const [poolsCount, setPoolsCount] = React.useState(initialValues?.poolsCount || 1);
-  const [priceValue, setPriceValue] = React.useState(initialValues?.pricePerPool != null ? String(initialValues.pricePerPool) : ''); // optional $ per pool — split itself is fixed at 70/30
-  const [poolType, setPoolType] = React.useState(initialValues?.poolType || 'residential');
-  const [dog, setDog] = React.useState(initialValues?.extras?.dog || false);
-  const [saltwater, setSaltwater] = React.useState(initialValues?.extras?.saltwater || false);
-  const [gateCode, setGateCode] = React.useState(initialValues?.extras?.gate_code || false);
-  const [doorman, setDoorman] = React.useState(initialValues?.extras?.doorman || false);
+  const [pools, setPools] = React.useState(() => poolsFromInitialValues(initialValues));
   const [description, setDescription] = React.useState(initialValues?.description || '');
   const [photos, setPhotos] = React.useState((initialValues?.photoUrls || []).map(url => ({
     url,
@@ -8756,6 +8880,16 @@ function PostPoolHandoffSheet({
     error: null
   }))); // [{url, uploading, error}]
   const photoInputRef = React.useRef(null);
+  const addPool = () => {
+    if (pools.length < 20) setPools(prev => [...prev, blankPool()]);
+  };
+  const removePool = () => {
+    if (pools.length > 1) setPools(prev => prev.slice(0, -1));
+  };
+  const updatePool = (i, patch) => setPools(prev => prev.map((p, j) => j === i ? {
+    ...p,
+    ...patch
+  } : p));
   const handlePhotoPick = async e => {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
@@ -8814,21 +8948,12 @@ function PostPoolHandoffSheet({
     }
   };
   const removePhoto = i => setPhotos(prev => prev.filter((_, j) => j !== i));
-
-  // Never more cities than pools — each pool has at most one city, so
-  // shrinking the count below the current city list trims it back down.
-  React.useEffect(() => {
-    setCities(prev => prev.slice(0, poolsCount));
-  }, [poolsCount]);
   const headLbl = isEdit ? lang === 'pt' ? 'Editar repasse' : lang === 'es' ? 'Editar traspaso' : 'Edit handoff' : lang === 'pt' ? 'Repassar piscina' : lang === 'es' ? 'Traspasar piscina' : 'Hand off a pool';
-  const cityLbl = lang === 'pt' ? 'Cidades / áreas' : lang === 'es' ? 'Ciudades / áreas' : 'Cities / areas';
-  const daysLbl = lang === 'pt' ? 'Dias da semana' : lang === 'es' ? 'Días de la semana' : 'Days of week';
   const countLbl = lang === 'pt' ? 'Quantas piscinas' : lang === 'es' ? 'Cuántas piscinas' : 'How many pools';
-  const splitLbl = lang === 'pt' ? 'Divisão do pagamento' : lang === 'es' ? 'División del pago' : 'Payment split';
-  const typeLbl = lang === 'pt' ? 'Tipo de propriedade' : lang === 'es' ? 'Tipo de propiedad' : 'Property type';
-  const descLbl = lang === 'pt' ? 'Detalhes (opcional)' : lang === 'es' ? 'Detalles (opcional)' : 'Details (optional)';
+  const descLbl = lang === 'pt' ? 'Detalhes gerais (opcional)' : lang === 'es' ? 'Detalles generales (opcional)' : 'General details (optional)';
   const descPh = lang === 'pt' ? 'Endereço aproximado, horário, particularidades…' : lang === 'es' ? 'Dirección aproximada, horario, detalles…' : 'Approximate address, schedule, quirks…';
   const submitLbl = isEdit ? lang === 'pt' ? 'Salvar alterações' : lang === 'es' ? 'Guardar cambios' : 'Save changes' : lang === 'pt' ? 'Publicar repasse' : lang === 'es' ? 'Publicar traspaso' : 'Post handoff';
+  const poolLbl = lang === 'pt' ? 'Piscina' : lang === 'es' ? 'Piscina' : 'Pool';
   const dayDefs = [{
     id: 'mon',
     label: lang === 'pt' ? 'Seg' : lang === 'es' ? 'Lun' : 'Mon'
@@ -8851,8 +8976,10 @@ function PostPoolHandoffSheet({
     id: 'sun',
     label: lang === 'pt' ? 'Dom' : lang === 'es' ? 'Dom' : 'Sun'
   }];
-  const toggleDay = id => setDays(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
-  const isValid = cities.length > 0 && days.length > 0 && !photos.some(p => p.uploading);
+  const toggleDay = (i, id) => updatePool(i, {
+    days: pools[i].days.includes(id) ? pools[i].days.filter(d => d !== id) : [...pools[i].days, id]
+  });
+  const isValid = pools.length > 0 && pools.every(p => p.city && p.days.length > 0) && !photos.some(p => p.uploading);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -8910,7 +9037,7 @@ function PostPoolHandoffSheet({
       gap: 14
     }
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setPoolsCount(n => Math.max(1, n - 1)),
+    onClick: removePool,
     style: {
       width: 38,
       height: 38,
@@ -8929,8 +9056,8 @@ function PostPoolHandoffSheet({
       minWidth: 24,
       textAlign: 'center'
     }
-  }, poolsCount), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setPoolsCount(n => Math.min(20, n + 1)),
+  }, pools.length), /*#__PURE__*/React.createElement("button", {
+    onClick: addPool,
     style: {
       width: 38,
       height: 38,
@@ -8942,89 +9069,18 @@ function PostPoolHandoffSheet({
       fontSize: 20,
       color: 'var(--pg-ink-900)'
     }
-  }, "+"))), /*#__PURE__*/React.createElement(HiringFormSection, {
-    label: cityLbl
-  }, cities.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "+")), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: 6,
-      marginBottom: 10
+      fontSize: 11,
+      color: 'var(--pg-ink-400)',
+      marginTop: 8
     }
-  }, cities.map(c => /*#__PURE__*/React.createElement("div", {
-    key: c,
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 5,
-      background: 'var(--pg-blue-100)',
-      color: 'var(--pg-blue-700)',
-      borderRadius: 20,
-      padding: '5px 10px 5px 12px',
-      fontSize: 13,
-      fontWeight: 600
-    }
-  }, c, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setCities(prev => prev.filter(x => x !== c)),
-    style: {
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      color: 'inherit',
-      fontSize: 15,
-      lineHeight: 1,
-      padding: '0 2px',
-      display: 'flex',
-      alignItems: 'center'
-    }
-  }, "\xD7")))), cities.length < poolsCount ? /*#__PURE__*/React.createElement(CityAutocomplete, {
-    key: cityKey,
-    value: "",
-    onChange: v => {
-      if (v && !cities.includes(v)) setCities(prev => [...prev, v]);
-      setCityKey(k => k + 1);
-    },
-    lang: lang
-  }) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11.5,
-      color: 'var(--pg-ink-400)'
-    }
-  }, lang === 'pt' ? `Máximo de ${poolsCount} cidade${poolsCount > 1 ? 's' : ''} (uma por piscina) — aumente a quantidade de piscinas pra adicionar mais.` : lang === 'es' ? `Máximo ${poolsCount} ciudad${poolsCount > 1 ? 'es' : ''} (una por piscina) — aumenta la cantidad de piscinas para agregar más.` : `Max ${poolsCount} cit${poolsCount > 1 ? 'ies' : 'y'} (one per pool) — increase the pool count to add more.`)), /*#__PURE__*/React.createElement(HiringFormSection, {
-    label: daysLbl
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      flexWrap: 'wrap'
-    }
-  }, dayDefs.map(d => {
-    const on = days.includes(d.id);
-    return /*#__PURE__*/React.createElement("button", {
-      key: d.id,
-      onClick: () => toggleDay(d.id),
-      style: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
-        background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
-        color: on ? '#fff' : 'var(--pg-ink-700)',
-        fontFamily: 'inherit',
-        fontSize: 12,
-        fontWeight: 700,
-        cursor: 'pointer'
-      }
-    }, d.label);
-  }))), /*#__PURE__*/React.createElement(HiringFormSection, {
-    label: splitLbl
-  }, /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Cada piscina tem seu próprio endereço, dias, preço e detalhes de acesso.' : lang === 'es' ? 'Cada piscina tiene su propia dirección, días, precio y detalles de acceso.' : 'Each pool has its own address, days, price, and access details.')), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 14px',
       borderRadius: 12,
       background: 'var(--pg-ink-50)',
-      border: '1px solid var(--pg-ink-200)',
-      marginBottom: 10
+      border: '1px solid var(--pg-ink-200)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9038,14 +9094,61 @@ function PostPoolHandoffSheet({
       color: 'var(--pg-ink-400)',
       marginTop: 1
     }
-  }, "(70/30)")), /*#__PURE__*/React.createElement("div", {
+  }, "(70/30)")), pools.map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
     style: {
-      fontSize: 11,
-      color: 'var(--pg-ink-500)',
-      fontWeight: 600,
-      marginBottom: 6
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 14,
+      padding: '14px',
+      borderRadius: 16,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-25, var(--pg-white))'
     }
-  }, lang === 'pt' ? 'Valor por piscina (opcional)' : lang === 'es' ? 'Valor por piscina (opcional)' : 'Price per pool (optional)'), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      fontWeight: 800,
+      color: '#D97706',
+      letterSpacing: '0.02em'
+    }
+  }, poolLbl, " ", i + 1), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Cidade / área' : lang === 'es' ? 'Ciudad / área' : 'City / area'
+  }, /*#__PURE__*/React.createElement(CityAutocomplete, {
+    value: p.city,
+    onChange: v => updatePool(i, {
+      city: v
+    }),
+    lang: lang
+  })), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Dias da semana' : lang === 'es' ? 'Días de la semana' : 'Days of week'
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      flexWrap: 'wrap'
+    }
+  }, dayDefs.map(d => {
+    const on = p.days.includes(d.id);
+    return /*#__PURE__*/React.createElement("button", {
+      key: d.id,
+      onClick: () => toggleDay(i, d.id),
+      style: {
+        width: 40,
+        height: 40,
+        borderRadius: 11,
+        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
+        background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+        color: on ? '#fff' : 'var(--pg-ink-700)',
+        fontFamily: 'inherit',
+        fontSize: 11.5,
+        fontWeight: 700,
+        cursor: 'pointer'
+      }
+    }, d.label);
+  }))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    label: lang === 'pt' ? 'Valor por piscina (opcional)' : lang === 'es' ? 'Valor por piscina (opcional)' : 'Price per pool (optional)'
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative'
     }
@@ -9055,21 +9158,23 @@ function PostPoolHandoffSheet({
       left: 16,
       top: '50%',
       transform: 'translateY(-50%)',
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: 700,
       color: 'var(--pg-blue-500)',
       fontFamily: 'var(--pg-font-display)'
     }
   }, "$"), /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
-    value: priceValue,
-    onChange: e => setPriceValue(e.target.value.replace(/[^0-9]/g, '').replace(/^0+(?!$)/, '')),
+    value: p.price,
+    onChange: e => updatePool(i, {
+      price: e.target.value.replace(/[^0-9]/g, '').replace(/^0+(?!$)/, '')
+    }),
     inputMode: "numeric",
     pattern: "[0-9]*",
     style: {
-      height: 64,
-      paddingLeft: 36,
-      fontSize: 30,
+      height: 56,
+      paddingLeft: 34,
+      fontSize: 26,
       fontWeight: 700,
       color: 'var(--pg-blue-500)',
       letterSpacing: '-0.02em',
@@ -9085,7 +9190,7 @@ function PostPoolHandoffSheet({
       color: 'var(--pg-ink-500)'
     }
   }, "/", lang === 'pt' ? 'piscina' : lang === 'es' ? 'piscina' : 'pool'))), /*#__PURE__*/React.createElement(HiringFormSection, {
-    label: typeLbl
+    label: lang === 'pt' ? 'Tipo de propriedade' : lang === 'es' ? 'Tipo de propiedad' : 'Property type'
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -9098,13 +9203,15 @@ function PostPoolHandoffSheet({
     id: 'condo',
     label: lang === 'pt' ? 'Condomínio' : lang === 'es' ? 'Condominio' : 'Condo'
   }].map(o => {
-    const on = poolType === o.id;
+    const on = p.poolType === o.id;
     return /*#__PURE__*/React.createElement("button", {
       key: o.id,
-      onClick: () => setPoolType(o.id),
+      onClick: () => updatePool(i, {
+        poolType: o.id
+      }),
       style: {
         flex: 1,
-        height: 42,
+        height: 40,
         borderRadius: 11,
         border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
         background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
@@ -9126,24 +9233,32 @@ function PostPoolHandoffSheet({
   }, /*#__PURE__*/React.createElement(ToggleRow, {
     icon: Icon.dog(15, 'var(--pg-ink-700)'),
     label: lang === 'pt' ? 'Tem cachorro' : lang === 'es' ? 'Hay perro' : 'Has dog on property',
-    on: dog,
-    setOn: setDog
+    on: p.dog,
+    setOn: v => updatePool(i, {
+      dog: v
+    })
   }), /*#__PURE__*/React.createElement(ToggleRow, {
     icon: Icon.pool(15, 'var(--pg-ink-700)'),
     label: lang === 'pt' ? 'Piscina de sal' : lang === 'es' ? 'Piscina de sal' : 'Salt pool',
-    on: saltwater,
-    setOn: setSaltwater
-  }), poolType === 'condo' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleRow, {
+    on: p.saltwater,
+    setOn: v => updatePool(i, {
+      saltwater: v
+    })
+  }), p.poolType === 'condo' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ToggleRow, {
     icon: Icon.key(15, 'var(--pg-ink-700)'),
     label: lang === 'pt' ? 'Tem código de portão' : lang === 'es' ? 'Tiene código de portón' : 'Has gate code',
-    on: gateCode,
-    setOn: setGateCode
+    on: p.gateCode,
+    setOn: v => updatePool(i, {
+      gateCode: v
+    })
   }), /*#__PURE__*/React.createElement(ToggleRow, {
     icon: Icon.user(15, 'var(--pg-ink-700)'),
     label: lang === 'pt' ? 'Tem portaria' : lang === 'es' ? 'Tiene portería' : 'Has doorman',
-    on: doorman,
-    setOn: setDoorman
-  })))), /*#__PURE__*/React.createElement(HiringFormSection, {
+    on: p.doorman,
+    setOn: v => updatePool(i, {
+      doorman: v
+    })
+  })))))), /*#__PURE__*/React.createElement(HiringFormSection, {
     label: lang === 'pt' ? 'Fotos da piscina (opcional)' : lang === 'es' ? 'Fotos de la piscina (opcional)' : 'Pool photos (optional)'
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9279,18 +9394,20 @@ function PostPoolHandoffSheet({
     }
   }, lang === 'pt' ? 'Informe ao menos uma cidade e um dia' : lang === 'es' ? 'Ingresa al menos una ciudad y un día' : 'Enter at least one city and one day'), /*#__PURE__*/React.createElement("button", {
     onClick: () => onSubmit && onSubmit({
-      cities,
-      daysOfWeek: days,
-      poolsCount,
+      pools: pools.map(p => ({
+        city: p.city,
+        days: p.days,
+        price: p.price ? parseInt(p.price) : null,
+        poolType: p.poolType,
+        dog: p.dog,
+        saltwater: p.saltwater,
+        gateCode: p.gateCode,
+        doorman: p.doorman
+      })),
+      poolsCount: pools.length,
       splitTakerPct: 70,
-      pricePerPool: priceValue ? parseInt(priceValue) : null,
-      poolType,
-      extras: {
-        dog,
-        saltwater,
-        gate_code: gateCode,
-        doorman
-      },
+      cities: pools.map(p => p.city),
+      daysOfWeek: [...new Set(pools.flatMap(p => p.days))],
       description,
       photoUrls: photos.filter(p => !p.uploading && !p.error).map(p => p.url)
     }),
