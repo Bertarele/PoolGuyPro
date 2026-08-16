@@ -834,6 +834,20 @@ function WorkScreen({
   const filteredLiveTechs = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
   const filteredLiveVacations = liveVacations.filter(v => radiusMatch(v.region || v.loc || ''));
 
+  // Header stat counts used to say VACATION_LISTINGS.length (the raw, unfiltered
+  // static seed count) — but every one of those seed listings has an expired
+  // yearMonth/days by now, so VacationPanel filters all of them out below,
+  // leaving the header claiming e.g. "4 available" over an empty list. Count
+  // only the seed listings that still have a future day, same filter
+  // VacationPanel itself applies.
+  const todayForVacCount = React.useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  const availStaticVacCount = VACATION_LISTINGS.filter(v => !v.yearMonth || v.days.some(d => new Date(v.yearMonth.year, v.yearMonth.month, d) >= todayForVacCount)).length;
+  const availVacCount = availStaticVacCount + filteredLiveVacations.length;
+
   // Live jobs created by me → appear in My Posts
   const myLiveJobs = liveJobs.filter(j => j.author_id && user.uid && j.author_id === user.uid).map(j => {
     const counts = jobApplicantCounts[j._id] || {
@@ -1276,7 +1290,7 @@ function WorkScreen({
           color: _tx,
           letterSpacing: '-0.02em'
         }
-      }, VACATION_LISTINGS.length + liveVacations.length), /*#__PURE__*/React.createElement("span", {
+      }, availVacCount), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
           color: _sub,
@@ -2011,7 +2025,7 @@ function WorkScreen({
         color: 'var(--pg-ink-500)',
         marginTop: 2
       }
-    }, sub === 'hiring' ? `${HIRING.length + liveJobs.length} ${lang === 'pt' ? `vagas · Condado de ${county}` : lang === 'es' ? `empleos · Condado de ${county}` : `openings · ${county} County`}` : sub === 'techs' ? `${TECHS.length + liveTechs.length} ${lang === 'pt' ? 'técnicos · South Florida' : lang === 'es' ? 'técnicos · South Florida' : 'techs · South Florida'}` : `${VACATION_LISTINGS.length + liveVacations.length} ${lang === 'pt' ? 'coberturas disponíveis' : lang === 'es' ? 'coberturas disponibles' : 'covers available'}`)), /*#__PURE__*/React.createElement("button", {
+    }, sub === 'hiring' ? `${HIRING.length + liveJobs.length} ${lang === 'pt' ? `vagas · Condado de ${county}` : lang === 'es' ? `empleos · Condado de ${county}` : `openings · ${county} County`}` : sub === 'techs' ? `${TECHS.length + liveTechs.length} ${lang === 'pt' ? 'técnicos · South Florida' : lang === 'es' ? 'técnicos · South Florida' : 'techs · South Florida'}` : `${availVacCount} ${lang === 'pt' ? 'coberturas disponíveis' : lang === 'es' ? 'coberturas disponibles' : 'covers available'}`)), /*#__PURE__*/React.createElement("button", {
       onClick: () => setWorkLocationFilterOpen(true),
       style: {
         display: 'flex',
@@ -2487,7 +2501,7 @@ function WorkScreen({
         lineHeight: 1,
         color: H.text
       }
-    }, VACATION_LISTINGS.length + liveVacations.length), /*#__PURE__*/React.createElement("div", {
+    }, availVacCount), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         opacity: 0.55,
@@ -6904,7 +6918,7 @@ function VacationPanel({
       letterSpacing: '0.06em',
       color: 'var(--pg-ink-700)'
     }
-  }, availSectionLabel)), VACATION_LISTINGS.length > 0 && /*#__PURE__*/React.createElement("span", {
+  }, availSectionLabel)), sortedStaticVac.length + sortedLiveVac.length > 0 && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -6913,7 +6927,7 @@ function VacationPanel({
       background: 'var(--pg-aqua-100)',
       color: 'var(--pg-aqua-700)'
     }
-  }, VACATION_LISTINGS.length, " ", lang === 'pt' ? 'disponíveis' : lang === 'es' ? 'disponibles' : 'available')), /*#__PURE__*/React.createElement("div", {
+  }, sortedStaticVac.length + sortedLiveVac.length, " ", lang === 'pt' ? 'disponíveis' : lang === 'es' ? 'disponibles' : 'available')), /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       padding: '10px 13px',

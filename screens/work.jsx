@@ -454,6 +454,18 @@ function WorkScreen({ ctx }) {
   const filteredLiveTechs     = liveTechs.filter(t => radiusMatch(t.loc || t.region || ''));
   const filteredLiveVacations = liveVacations.filter(v => radiusMatch(v.region || v.loc || ''));
 
+  // Header stat counts used to say VACATION_LISTINGS.length (the raw, unfiltered
+  // static seed count) — but every one of those seed listings has an expired
+  // yearMonth/days by now, so VacationPanel filters all of them out below,
+  // leaving the header claiming e.g. "4 available" over an empty list. Count
+  // only the seed listings that still have a future day, same filter
+  // VacationPanel itself applies.
+  const todayForVacCount = React.useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
+  const availStaticVacCount = VACATION_LISTINGS.filter(v =>
+    !v.yearMonth || v.days.some(d => new Date(v.yearMonth.year, v.yearMonth.month, d) >= todayForVacCount)
+  ).length;
+  const availVacCount = availStaticVacCount + filteredLiveVacations.length;
+
   // Live jobs created by me → appear in My Posts
   const myLiveJobs = liveJobs
     .filter(j => j.author_id && user.uid && j.author_id === user.uid)
@@ -677,7 +689,7 @@ function WorkScreen({ ctx }) {
                     {sub === 'vac' && <>
                       <div style={{display:'flex',alignItems:'center',gap:6}}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={_sub2} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>
-                        <span style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:_tx,letterSpacing:'-0.02em'}}>{VACATION_LISTINGS.length + liveVacations.length}</span>
+                        <span style={{fontFamily:'var(--pg-font-display)',fontSize:15,fontWeight:800,color:_tx,letterSpacing:'-0.02em'}}>{availVacCount}</span>
                         <span style={{fontSize:11,color:_sub,fontWeight:500}}>{lang==='pt'?'coberturas':'covers'}</span>
                       </div>
                     </>}
@@ -1009,7 +1021,7 @@ function WorkScreen({ ctx }) {
                     ? `${HIRING.length + liveJobs.length} ${lang==='pt'?`vagas · Condado de ${county}`:lang==='es'?`empleos · Condado de ${county}`:`openings · ${county} County`}`
                     : sub==='techs'
                       ? `${TECHS.length + liveTechs.length} ${lang==='pt'?'técnicos · South Florida':lang==='es'?'técnicos · South Florida':'techs · South Florida'}`
-                      : `${VACATION_LISTINGS.length + liveVacations.length} ${lang==='pt'?'coberturas disponíveis':lang==='es'?'coberturas disponibles':'covers available'}`}
+                      : `${availVacCount} ${lang==='pt'?'coberturas disponíveis':lang==='es'?'coberturas disponibles':'covers available'}`}
                 </div>
               </div>
               <button onClick={()=>setWorkLocationFilterOpen(true)} style={{display:'flex',alignItems:'center',gap:6,background:workUserLocation?'var(--pg-aqua-100)':'rgba(0,178,169,0.10)',border:'1.5px solid var(--pg-aqua-400)',borderRadius:999,padding:workUserLocation?'7px 14px':'7px 12px',boxShadow:'none',cursor:'pointer',fontFamily:'inherit',color:'inherit',touchAction:'manipulation',flexShrink:0}}>
@@ -1142,7 +1154,7 @@ function WorkScreen({ ctx }) {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={H.iconC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V8"/><path d="M12 8c-2-2-5-2-7 0 2 2 5 2 7 0Z"/><path d="M12 8c2-2 5-2 7 0-2 2-5 2-7 0Z"/><path d="M5 12c2 0 4 1 4 3M19 12c-2 0-4 1-4 3"/></svg>
                   </div>
                   <div>
-                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{VACATION_LISTINGS.length + liveVacations.length}</div>
+                    <div style={{fontSize:16, fontWeight:700, fontFamily:'var(--pg-font-display)', lineHeight:1, color:H.text}}>{availVacCount}</div>
                     <div style={{fontSize:10, opacity:0.55, lineHeight:1, marginTop:1, color:H.text}}>{lang==='pt'?'coberturas':lang==='es'?'coberturas':'covers'}</div>
                   </div>
                 </div>
@@ -3142,10 +3154,15 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
               {availSectionLabel}
             </span>
           </div>
-          {VACATION_LISTINGS.length > 0 && (
+          {(sortedStaticVac.length + sortedLiveVac.length) > 0 && (
             <span style={{fontSize:11, fontWeight:700, padding:'2px 9px', borderRadius:999,
               background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)'}}>
-              {VACATION_LISTINGS.length} {lang==='pt'?'disponíveis':lang==='es'?'disponibles':'available'}
+              {/* Was VACATION_LISTINGS.length — the raw, unfiltered static seed
+                  count, which could say e.g. "4 available" while every one of
+                  those listings had already been filtered out below (all its
+                  days were in the past), leaving the badge showing a count
+                  nothing on screen backed up. Now it matches what's rendered. */}
+              {sortedStaticVac.length + sortedLiveVac.length} {lang==='pt'?'disponíveis':lang==='es'?'disponibles':'available'}
             </span>
           )}
         </div>
