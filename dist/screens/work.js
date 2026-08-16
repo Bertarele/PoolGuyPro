@@ -7119,7 +7119,20 @@ function VacationPanel({
           fontSize: 13,
           fontWeight: 600
         }
-      }, vac.author)));
+      }, vac.author)), vac.ownerRating != null && /*#__PURE__*/React.createElement("span", {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 3,
+          fontSize: 12,
+          color: 'var(--pg-ink-700)',
+          fontWeight: 600,
+          flexShrink: 0
+        }
+      }, /*#__PURE__*/React.createElement(Stars, {
+        rating: vac.ownerRating,
+        size: 11
+      }), " ", vac.ownerRating));
     })(), liveAvailDays.length > 0 && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,

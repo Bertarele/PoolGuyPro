@@ -1577,10 +1577,11 @@ function App() {
       author: r.author,
       author_id: r.author_id || null
     });
-    const normVac = r => {
+    const normVac = (r, ratingMap) => {
       const wr = r.weekday_regions || {};
       const allCities = [...new Set(Object.values(wr).flat())];
       const region = allCities.slice(0, 3).join(' / ') || '';
+      const rm = ratingMap && r.author_id ? ratingMap[r.author_id] : null;
       return {
         _id: r.id,
         _live: true,
@@ -1603,7 +1604,9 @@ function App() {
         region,
         author: r.author,
         author_id: r.author_id || null,
-        ownerId: r.author_id || null
+        ownerId: r.author_id || null,
+        ownerRating: rm ? Math.round(rm.sum / rm.count * 10) / 10 : null,
+        ownerJobs: rm ? rm.count : 0
       };
     };
     const normMkt = r => ({
@@ -1709,7 +1712,26 @@ function App() {
           setLiveTechs(tc.data.map(normTech));
         }
       }
-      if (v.data) setLiveVacations(v.data.map(normVac));
+      if (v.data) {
+        const vacAuthorIds = [...new Set(v.data.map(r => r.author_id).filter(Boolean))];
+        if (vacAuthorIds.length > 0) {
+          const {
+            data: vacRatingRows
+          } = await window.sb.from('ratings').select('to_id, stars').in('to_id', vacAuthorIds).eq('pending', false);
+          const vacRatingMap = {};
+          (vacRatingRows || []).forEach(r => {
+            if (!vacRatingMap[r.to_id]) vacRatingMap[r.to_id] = {
+              sum: 0,
+              count: 0
+            };
+            vacRatingMap[r.to_id].sum += r.stars;
+            vacRatingMap[r.to_id].count++;
+          });
+          setLiveVacations(v.data.map(r => normVac(r, vacRatingMap)));
+        } else {
+          setLiveVacations(v.data.map(r => normVac(r)));
+        }
+      }
       if (m.data) setLiveMarket(m.data.map(normMkt));
       if (m.error) console.warn('[Supabase] marketplace fetch error:', m.error.message);
       // Load applicant counts in background — non-blocking, doesn't delay UI render

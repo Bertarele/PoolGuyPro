@@ -3267,6 +3267,12 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                       <div style={{flex:1, minWidth:0}}>
                         <span style={{fontSize:13, fontWeight:600}}>{vac.author}</span>
                       </div>
+                      {vac.ownerRating != null && (
+                        <span style={{display:'inline-flex', alignItems:'center', gap:3, fontSize:12,
+                          color:'var(--pg-ink-700)', fontWeight:600, flexShrink:0}}>
+                          <Stars rating={vac.ownerRating} size={11}/> {vac.ownerRating}
+                        </span>
+                      )}
                     </button>
                     ); })()}
                     {liveAvailDays.length > 0 && (
