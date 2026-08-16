@@ -1037,11 +1037,11 @@ function QuickPoolsScreen({
         transition: 'all .2s ease',
         overflow: 'hidden'
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, !isDone && !isOwnFilled && !isAccepted && !isHighlighted && /*#__PURE__*/React.createElement("div", {
       style: {
-        height: isAccepted && !isDone ? 4 : 3,
+        height: 3,
         width: '100%',
-        background: isDone ? 'linear-gradient(90deg,#94A3B8,#CBD5E1)' : isOwnFilled ? 'linear-gradient(90deg,#D97706,#F59E0B)' : isAccepted ? 'linear-gradient(90deg,#16A34A,#22C55E,#4ADE80)' : j.status === 'filled' ? 'linear-gradient(90deg,#D97706,#F59E0B)' : isApplied ? 'linear-gradient(90deg,#16A34A,#22C55E)' : locked ? 'linear-gradient(90deg,#6B7280,#9CA3AF)' : 'linear-gradient(90deg,#0077B6,#38BDF8)'
+        background: j.status === 'filled' ? 'linear-gradient(90deg,#D97706,#F59E0B)' : isApplied ? 'linear-gradient(90deg,#16A34A,#22C55E)' : locked ? 'linear-gradient(90deg,#6B7280,#9CA3AF)' : 'linear-gradient(90deg,#0077B6,#38BDF8)'
       }
     }), /*#__PURE__*/React.createElement("div", {
       style: {

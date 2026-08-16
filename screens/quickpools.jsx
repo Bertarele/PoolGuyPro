@@ -670,23 +670,23 @@ function QuickPoolsScreen({ ctx }) {
           overflow:'hidden',
         }}>
 
-        {/* Top accent strip */}
-        <div style={{
-          height: (isAccepted && !isDone) ? 4 : 3, width:'100%',
-          background: isDone
-            ? 'linear-gradient(90deg,#94A3B8,#CBD5E1)'
-            : isOwnFilled
+        {/* Top accent strip — only for states that DON'T already have a
+            colored border (isOwnFilled/isAccepted/isHighlighted/isDone).
+            Stacking a flat-edged strip on top of a rounded, colored border
+            made the top edge read as thicker than the sides — an actual
+            visual bug, not just two accents layered on purpose. */}
+        {!isDone && !isOwnFilled && !isAccepted && !isHighlighted && (
+          <div style={{
+            height:3, width:'100%',
+            background: j.status==='filled'
               ? 'linear-gradient(90deg,#D97706,#F59E0B)'
-              : isAccepted
-                ? 'linear-gradient(90deg,#16A34A,#22C55E,#4ADE80)'
-                : j.status==='filled'
-                  ? 'linear-gradient(90deg,#D97706,#F59E0B)'
-                  : isApplied
-                    ? 'linear-gradient(90deg,#16A34A,#22C55E)'
-                    : locked
-                      ? 'linear-gradient(90deg,#6B7280,#9CA3AF)'
-                      : 'linear-gradient(90deg,#0077B6,#38BDF8)',
-        }}/>
+              : isApplied
+                ? 'linear-gradient(90deg,#16A34A,#22C55E)'
+                : locked
+                  ? 'linear-gradient(90deg,#6B7280,#9CA3AF)'
+                  : 'linear-gradient(90deg,#0077B6,#38BDF8)',
+          }}/>
+        )}
 
         <div style={{padding: compact ? '14px 16px' : '16px 18px'}}>
           {/* Row 1: time + pools + price */}
