@@ -75,6 +75,12 @@ function WorkScreen({
     if (ctx.pendingJobCardId) setSub('hiring');
   }, [ctx.pendingJobCardId]);
 
+  // A shared vacation-card link (#work?vac=<id>) lands here the same way —
+  // VacationPanel only mounts (and can consume pendingVacId) once sub is 'vac'.
+  React.useEffect(() => {
+    if (ctx.pendingVacId) setSub('vac');
+  }, [ctx.pendingVacId]);
+
   // Give a handoff its own shareable URL (#work?handoff=<id>) while its detail
   // is open — same pushState/popstate pattern as the QuickPools job detail,
   // so it gets a real link to share and swipe-back doesn't skip past it.
@@ -704,6 +710,7 @@ function WorkScreen({
     lang: lang,
     showToast: showToast,
     onClose: closeHandoffDetail,
+    openPublicProfile: openPublicProfile,
     onChat: openChat,
     onEdit: h => {
       closeHandoffDetail();
@@ -2116,7 +2123,9 @@ function WorkScreen({
       liveVacations: filteredLiveVacations,
       user: ctx.user,
       showToast: showToast,
-      onDeleteVac: removeVacation
+      onDeleteVac: removeVacation,
+      highlightVacId: ctx.pendingVacId,
+      onHighlightConsumed: () => ctx.clearPendingVac && ctx.clearPendingVac()
     })))), /*#__PURE__*/React.createElement(LocationFilterSheet, {
       open: workLocationFilterOpen,
       onClose: () => setWorkLocationFilterOpen(false),
@@ -3169,7 +3178,9 @@ function WorkScreen({
     liveVacations: filteredLiveVacations,
     user: ctx.user,
     showToast: showToast,
-    onDeleteVac: removeVacation
+    onDeleteVac: removeVacation,
+    highlightVacId: ctx.pendingVacId,
+    onHighlightConsumed: () => ctx.clearPendingVac && ctx.clearPendingVac()
   }))), FabBtn, handoffOverlays);
 }
 function HandoffDetailPanel({
@@ -3180,7 +3191,8 @@ function HandoffDetailPanel({
   onClose,
   onChat,
   onEdit,
-  onChanged
+  onChanged,
+  openPublicProfile
 }) {
   const isOwn = user?.uid && handoff.poster_id === user.uid;
   const isAdmin = user?.role === 'admin';
@@ -3688,7 +3700,11 @@ function HandoffDetailPanel({
       lineHeight: 1.55,
       color: 'var(--pg-ink-700)'
     }
-  }, handoff.description), /*#__PURE__*/React.createElement("div", {
+  }, handoff.description), /*#__PURE__*/React.createElement("button", {
+    onClick: () => openPublicProfile && openPublicProfile({
+      uid: handoff.poster_id,
+      name: handoff.poster
+    }),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -3696,9 +3712,16 @@ function HandoffDetailPanel({
       padding: '10px 12px',
       borderRadius: 12,
       background: 'var(--pg-ink-50)',
-      marginBottom: 18
-    }
-  }, /*#__PURE__*/React.createElement(Avatar, {
+      marginBottom: 18,
+      width: '100%',
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      textAlign: 'left'
+    },
+    className: "pg-press"
+  }, /*#__PURE__*/React.createElement(AvatarFetch, {
+    uid: handoff.poster_id,
     name: handoff.poster,
     size: 36
   }), /*#__PURE__*/React.createElement("div", {
@@ -3717,7 +3740,20 @@ function HandoffDetailPanel({
       fontSize: 11,
       color: 'var(--pg-ink-500)'
     }
-  }, lang === 'pt' ? 'Dono da rota' : lang === 'es' ? 'Dueño de la ruta' : 'Route owner')))), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Dono da rota' : lang === 'es' ? 'Dueño de la ruta' : 'Route owner')), handoff.posterRating != null && /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 3,
+      fontSize: 12,
+      color: 'var(--pg-ink-700)',
+      fontWeight: 600,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(Stars, {
+    rating: handoff.posterRating,
+    size: 11
+  }), " ", handoff.posterRating))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 18px',
       flexShrink: 0,
@@ -6823,9 +6859,50 @@ function VacationPanel({
   user,
   showToast,
   onDeleteVac,
-  onUnlockVac
+  onUnlockVac,
+  highlightVacId = null,
+  onHighlightConsumed
 }) {
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
+  const [highlightedVacId, setHighlightedVacId] = React.useState(null);
+  const vacCardRefs = React.useRef({});
+
+  // A shared vacation link (#work?vac=<id>) lands here — scroll the matching
+  // card into view and ring it briefly, same idea as job/handoff deep links,
+  // just without a dedicated detail sheet since the card already shows
+  // everything inline.
+  React.useEffect(() => {
+    if (!highlightVacId) return;
+    const el = vacCardRefs.current[highlightVacId];
+    if (el) {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+      setHighlightedVacId(highlightVacId);
+      setTimeout(() => setHighlightedVacId(null), 2400);
+    }
+    onHighlightConsumed && onHighlightConsumed();
+  }, [highlightVacId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const shareVacation = async vac => {
+    const url = `https://poolguyx.com/#work?vac=${vac._id}`;
+    const text = `${vac.author} — ${lang === 'pt' ? 'Férias para cobrir' : lang === 'es' ? 'Vacaciones para cubrir' : 'Vacation to cover'}\n\n${url}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: vac.author,
+          text,
+          url
+        });
+      } catch (e) {}
+      return;
+    }
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      showToast && showToast('✓ ' + (lang === 'pt' ? 'Link copiado!' : lang === 'es' ? '¡Enlace copiado!' : 'Link copied!'));
+    }
+  };
   const today = React.useMemo(() => {
     const t = new Date();
     t.setHours(0, 0, 0, 0);
@@ -7009,20 +7086,77 @@ function VacationPanel({
     const wdShortNames = lang === 'pt' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] : lang === 'es' ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return /*#__PURE__*/React.createElement("article", {
       key: vac._id,
+      ref: el => {
+        vacCardRefs.current[vac._id] = el;
+      },
       className: "pg-card",
       style: {
         padding: 0,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        transition: 'box-shadow 0.3s, outline 0.3s',
+        outline: highlightedVacId === vac._id ? '2px solid var(--pg-aqua-500)' : 'none',
+        outlineOffset: highlightedVacId === vac._id ? 2 : 0,
+        boxShadow: highlightedVacId === vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         background: 'linear-gradient(120deg, oklch(0.26 0.10 232) 0%, oklch(0.33 0.13 215) 100%)',
         padding: '12px 14px 11px',
+        position: 'relative',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-end'
       }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => shareVacation(vac),
+      title: lang === 'pt' ? 'Compartilhar' : lang === 'es' ? 'Compartir' : 'Share',
+      style: {
+        position: 'absolute',
+        top: 9,
+        right: 10,
+        border: 'none',
+        background: 'rgba(255,255,255,0.14)',
+        width: 26,
+        height: 26,
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        padding: 0
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "18",
+      cy: "5",
+      r: "3"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "6",
+      cy: "12",
+      r: "3"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "18",
+      cy: "19",
+      r: "3"
+    }), /*#__PURE__*/React.createElement("line", {
+      x1: "8.59",
+      y1: "13.51",
+      x2: "15.42",
+      y2: "17.49"
+    }), /*#__PURE__*/React.createElement("line", {
+      x1: "15.41",
+      y1: "6.51",
+      x2: "8.59",
+      y2: "10.49"
+    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 700,
@@ -7042,7 +7176,8 @@ function VacationPanel({
       }
     }, monthName)), /*#__PURE__*/React.createElement("div", {
       style: {
-        textAlign: 'right'
+        textAlign: 'right',
+        paddingRight: 22
       }
     }, vac.priceMode !== 'neg' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {

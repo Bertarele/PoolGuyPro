@@ -848,6 +848,7 @@ function App() {
   });
   const [pendingHandoffId, setPendingHandoffId] = React.useState(null);
   const [pendingJobCardId, setPendingJobCardId] = React.useState(null);
+  const [pendingVacId, setPendingVacId] = React.useState(null);
   // Parse deep link from URL on startup (e.g. notification click when app was closed)
   const [pendingDeepLink, setPendingDeepLink] = React.useState(() => {
     try {
@@ -868,9 +869,16 @@ function App() {
         const params = new URLSearchParams(qs);
         const handoffId = params.get('handoff') || null;
         const jobId = params.get('job') || null;
-        window.history.replaceState(null, '', '#home');
+        const vacId = params.get('vac') || null;
+        // Only consume the hash (reset to #home) when it's carrying a specific
+        // deep-linked item to open. A bare "#work/<sub>" (e.g. from reloading
+        // while on the Férias/Técnicos sub-tab) must be left alone — WorkScreen
+        // reads that segment itself to restore the sub-tab, and wiping it here
+        // was sending every reload back to the default "Vagas" sub-tab.
+        if (handoffId || jobId || vacId) window.history.replaceState(null, '', '#home');
         if (handoffId) return { type: 'handoff', id: handoffId };
         if (jobId) return { type: 'jobcard', id: jobId };
+        if (vacId) return { type: 'vac', id: vacId };
       } else if (hash.startsWith('#home')) {
         const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
         window.history.replaceState(null, '', '#home');
@@ -895,6 +903,9 @@ function App() {
       setTab('work');
     } else if (pendingDeepLink.type === 'jobcard') {
       setPendingJobCardId(pendingDeepLink.id);
+      setTab('work');
+    } else if (pendingDeepLink.type === 'vac') {
+      setPendingVacId(pendingDeepLink.id);
       setTab('work');
     } else if (pendingDeepLink.type === 'rate') {
       loadPendingRatings();
@@ -933,8 +944,10 @@ function App() {
       const params = new URLSearchParams(qs);
       const handoffId = params.get('handoff') || null;
       const jobId = params.get('job') || null;
+      const vacId = params.get('vac') || null;
       if (handoffId) ctx.openListingById('handoff_' + handoffId);
       else if (jobId) ctx.openListingById('job_' + jobId);
+      else if (vacId) ctx.openListingById('vac_' + vacId);
       else setTab('work');
     } else if (hash.startsWith('#home')) {
       const qs = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
@@ -1183,10 +1196,14 @@ function App() {
     window.sb.rpc('cleanup_expired_marketplace').then(() => {}).catch(() => {});
 
     // Data fetch — runs AFTER auth is ready (authReady gate above)
-    const normHandoff = r => ({ _id:r.id, _live:true, poster_id:r.poster_id, poster:r.poster_name || 'Pool Guy',
+    const normHandoff = (r, ratingMap) => {
+      const rm = ratingMap && r.poster_id ? ratingMap[r.poster_id] : null;
+      return { _id:r.id, _live:true, poster_id:r.poster_id, poster:r.poster_name || 'Pool Guy',
       poster_phone:r.poster_phone, pools:r.pools||null, cities:r.cities||[], daysOfWeek:r.days_of_week||[], poolsCount:r.pools_count||1,
       splitTakerPct:r.split_taker_pct||70, pricePerPool:r.price_per_pool||null, poolType:r.pool_type||'residential', extras:r.extras||{}, photoUrls:r.photo_urls||[],
-      description:r.description||'', status:r.status||'open', createdAt:r.created_at });
+      description:r.description||'', status:r.status||'open', createdAt:r.created_at,
+      posterRating: rm ? Math.round(rm.sum / rm.count * 10) / 10 : null, posterJobs: rm ? rm.count : 0 };
+    };
     const doFetch = async () => {
       const [j, tc, v, m, ho] = await Promise.all([
         window.sb.from('jobs').select('*').order('created_at', { ascending: false }),
@@ -1195,7 +1212,21 @@ function App() {
         window.sb.from('marketplace').select('*').order('created_at', { ascending: false }),
         window.sb.from('pool_handoffs').select('*').eq('status', 'open').order('created_at', { ascending: false }),
       ]);
-      if (ho.data) setLiveHandoffs(ho.data.map(normHandoff));
+      if (ho.data) {
+        const hoPosterIds = [...new Set(ho.data.map(r => r.poster_id).filter(Boolean))];
+        if (hoPosterIds.length > 0) {
+          const { data: hoRatingRows } = await window.sb.from('ratings').select('to_id, stars').in('to_id', hoPosterIds).eq('pending', false);
+          const hoRatingMap = {};
+          (hoRatingRows || []).forEach(r => {
+            if (!hoRatingMap[r.to_id]) hoRatingMap[r.to_id] = { sum: 0, count: 0 };
+            hoRatingMap[r.to_id].sum += r.stars;
+            hoRatingMap[r.to_id].count++;
+          });
+          setLiveHandoffs(ho.data.map(r => normHandoff(r, hoRatingMap)));
+        } else {
+          setLiveHandoffs(ho.data.map(r => normHandoff(r)));
+        }
+      }
       if (j.data)  setLiveJobs(j.data.map(normJob));
       if (tc.data) {
         const techAuthorIds = tc.data.map(r => r.author_id).filter(Boolean);
@@ -1546,6 +1577,9 @@ function App() {
       } else if (typeof id === 'string' && id.startsWith('job_')) {
         setPendingJobCardId(id.slice(4));
         switchTab('work');
+      } else if (typeof id === 'string' && id.startsWith('vac_')) {
+        setPendingVacId(id.slice(4));
+        switchTab('work');
       } else {
         setDeepLinkListingId(id);
         switchTab('market');
@@ -1558,6 +1592,8 @@ function App() {
     clearPendingHandoff: () => setPendingHandoffId(null),
     pendingJobCardId,
     clearPendingJobCard: () => setPendingJobCardId(null),
+    pendingVacId,
+    clearPendingVac: () => setPendingVacId(null),
     goTab:              switchTab,
     openChat:           (target=null) => { setChatConvoTarget(target); setChatOpen(true); },
     openNotifications:  () => { setNotifOpen(true); setHasUnreadNotif(false); },

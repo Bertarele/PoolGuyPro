@@ -45,6 +45,12 @@ function WorkScreen({ ctx }) {
     if (ctx.pendingJobCardId) setSub('hiring');
   }, [ctx.pendingJobCardId]);
 
+  // A shared vacation-card link (#work?vac=<id>) lands here the same way —
+  // VacationPanel only mounts (and can consume pendingVacId) once sub is 'vac'.
+  React.useEffect(() => {
+    if (ctx.pendingVacId) setSub('vac');
+  }, [ctx.pendingVacId]);
+
   // Give a handoff its own shareable URL (#work?handoff=<id>) while its detail
   // is open — same pushState/popstate pattern as the QuickPools job detail,
   // so it gets a real link to share and swipe-back doesn't skip past it.
@@ -346,6 +352,7 @@ function WorkScreen({ ctx }) {
         {handoffDetail && (
           <HandoffDetailPanel handoff={handoffDetail} user={ctxUser} lang={lang} showToast={showToast}
             onClose={closeHandoffDetail}
+            openPublicProfile={openPublicProfile}
             onChat={openChat}
             onEdit={(h)=>{ closeHandoffDetail(); setTimeout(()=>setEditingHandoff(h), 50); }}
             onChanged={()=>{ loadLiveHandoffs && loadLiveHandoffs(); }}/>
@@ -1035,7 +1042,7 @@ function WorkScreen({ ctx }) {
               {handoffCardsList}
               {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts} highlightJobId={ctx.pendingJobCardId} onHighlightConsumed={()=>ctx.clearPendingJobCard&&ctx.clearPendingJobCard()}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
-              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
+              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation} highlightVacId={ctx.pendingVacId} onHighlightConsumed={()=>ctx.clearPendingVac&&ctx.clearPendingVac()}/>}
             </div>
           </div>
         </div>
@@ -1467,7 +1474,8 @@ function WorkScreen({ ctx }) {
                               openDayPicker={openDayPicker}
                               openSchedule={openSchedule}
                               openPublicProfile={openPublicProfile}
-                              liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}/>}
+                              liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}
+                              highlightVacId={ctx.pendingVacId} onHighlightConsumed={()=>ctx.clearPendingVac&&ctx.clearPendingVac()}/>}
       </div>
 
     </div>
@@ -1478,7 +1486,7 @@ function WorkScreen({ ctx }) {
   );
 }
 
-function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, onEdit, onChanged }) {
+function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, onEdit, onChanged, openPublicProfile }) {
   const isOwn   = user?.uid && handoff.poster_id === user.uid;
   const isAdmin = user?.role === 'admin';
   const canManage = isOwn || isAdmin;
@@ -1695,13 +1703,21 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
           <p style={{margin:0, fontSize:13.5, lineHeight:1.55, color:'var(--pg-ink-700)'}}>{handoff.description}</p>
         )}
 
-        <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:12, background:'var(--pg-ink-50)', marginBottom:18}}>
-          <Avatar name={handoff.poster} size={36}/>
+        <button onClick={()=>openPublicProfile && openPublicProfile({ uid:handoff.poster_id, name:handoff.poster })}
+          style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:12, background:'var(--pg-ink-50)', marginBottom:18,
+            width:'100%', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'left'}} className="pg-press">
+          <AvatarFetch uid={handoff.poster_id} name={handoff.poster} size={36}/>
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)'}}>{handoff.poster}</div>
             <div style={{fontSize:11, color:'var(--pg-ink-500)'}}>{lang==='pt'?'Dono da rota':lang==='es'?'Dueño de la ruta':'Route owner'}</div>
           </div>
-        </div>
+          {handoff.posterRating != null && (
+            <span style={{display:'inline-flex', alignItems:'center', gap:3, fontSize:12,
+              color:'var(--pg-ink-700)', fontWeight:600, flexShrink:0}}>
+              <Stars rating={handoff.posterRating} size={11}/> {handoff.posterRating}
+            </span>
+          )}
+        </button>
       </div>
 
       <div style={{padding:'12px 18px', flexShrink:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
@@ -3071,8 +3087,35 @@ function PoolRouteMap({ pools=[], style={}, doneIndices=null }) {
 }
 
 // ── Vacation panel ────────────────────────────────────────────
-function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac, onUnlockVac }) {
+function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac, onUnlockVac, highlightVacId=null, onHighlightConsumed }) {
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
+  const [highlightedVacId, setHighlightedVacId] = React.useState(null);
+  const vacCardRefs = React.useRef({});
+
+  // A shared vacation link (#work?vac=<id>) lands here — scroll the matching
+  // card into view and ring it briefly, same idea as job/handoff deep links,
+  // just without a dedicated detail sheet since the card already shows
+  // everything inline.
+  React.useEffect(() => {
+    if (!highlightVacId) return;
+    const el = vacCardRefs.current[highlightVacId];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightedVacId(highlightVacId);
+      setTimeout(() => setHighlightedVacId(null), 2400);
+    }
+    onHighlightConsumed && onHighlightConsumed();
+  }, [highlightVacId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const shareVacation = async (vac) => {
+    const url = `https://poolguyx.com/#work?vac=${vac._id}`;
+    const text = `${vac.author} — ${lang==='pt'?'Férias para cobrir':lang==='es'?'Vacaciones para cubrir':'Vacation to cover'}\n\n${url}`;
+    if (navigator.share) { try { await navigator.share({ title: vac.author, text, url }); } catch(e) {} return; }
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      showToast && showToast('✓ ' + (lang==='pt'?'Link copiado!':lang==='es'?'¡Enlace copiado!':'Link copied!'));
+    }
+  };
 
   const today = React.useMemo(() => { const t = new Date(); t.setHours(0,0,0,0); return t; }, []);
 
@@ -3215,14 +3258,27 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                   ? ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
                   : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
               return (
-              <article key={vac._id} className="pg-card" style={{padding:0, overflow:'hidden'}}>
+              <article key={vac._id} ref={el => { vacCardRefs.current[vac._id] = el; }} className="pg-card" style={{padding:0, overflow:'hidden',
+                transition:'box-shadow 0.3s, outline 0.3s',
+                outline: highlightedVacId===vac._id ? '2px solid var(--pg-aqua-500)' : 'none',
+                outlineOffset: highlightedVacId===vac._id ? 2 : 0,
+                boxShadow: highlightedVacId===vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined}}>
 
                 {/* ── Gradient header ── */}
                 <div style={{
                   background:'linear-gradient(120deg, oklch(0.26 0.10 232) 0%, oklch(0.33 0.13 215) 100%)',
-                  padding:'12px 14px 11px',
+                  padding:'12px 14px 11px', position:'relative',
                   display:'flex', justifyContent:'space-between', alignItems:'flex-end',
                 }}>
+                  <button onClick={()=>shareVacation(vac)} title={lang==='pt'?'Compartilhar':lang==='es'?'Compartir':'Share'}
+                    style={{position:'absolute', top:9, right:10, border:'none', background:'rgba(255,255,255,0.14)',
+                      width:26, height:26, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
+                      cursor:'pointer', padding:0}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                    </svg>
+                  </button>
                   <div>
                     <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.09em',
                       color:'rgba(255,255,255,0.52)', marginBottom:3, textTransform:'uppercase'}}>
@@ -3233,7 +3289,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                       {monthName}
                     </div>
                   </div>
-                  <div style={{textAlign:'right'}}>
+                  <div style={{textAlign:'right', paddingRight:22}}>
                     {vac.priceMode !== 'neg' ? (<>
                       <div style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:800,
                         color:'oklch(0.88 0.16 90)', letterSpacing:'-0.03em', lineHeight:1}}>
