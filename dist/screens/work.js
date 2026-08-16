@@ -37,7 +37,8 @@ function WorkScreen({
     openNotifications,
     hasUnreadNotif,
     darkMode = false,
-    isDesktop = false
+    isDesktop = false,
+    county = 'Broward'
   } = ctx;
   const [postPickerOpen, setPostPickerOpen] = React.useState(false);
   const [handoffDetail, setHandoffDetail] = React.useState(null);
@@ -2010,7 +2011,7 @@ function WorkScreen({
         color: 'var(--pg-ink-500)',
         marginTop: 2
       }
-    }, sub === 'hiring' ? `${HIRING.length + liveJobs.length} ${lang === 'pt' ? 'vagas · Broward County' : lang === 'es' ? 'empleos · Broward County' : 'openings · Broward County'}` : sub === 'techs' ? `${TECHS.length + liveTechs.length} ${lang === 'pt' ? 'técnicos · South Florida' : lang === 'es' ? 'técnicos · South Florida' : 'techs · South Florida'}` : `${VACATION_LISTINGS.length + liveVacations.length} ${lang === 'pt' ? 'coberturas disponíveis' : lang === 'es' ? 'coberturas disponibles' : 'covers available'}`)), /*#__PURE__*/React.createElement("button", {
+    }, sub === 'hiring' ? `${HIRING.length + liveJobs.length} ${lang === 'pt' ? `vagas · Condado de ${county}` : lang === 'es' ? `empleos · Condado de ${county}` : `openings · ${county} County`}` : sub === 'techs' ? `${TECHS.length + liveTechs.length} ${lang === 'pt' ? 'técnicos · South Florida' : lang === 'es' ? 'técnicos · South Florida' : 'techs · South Florida'}` : `${VACATION_LISTINGS.length + liveVacations.length} ${lang === 'pt' ? 'coberturas disponíveis' : lang === 'es' ? 'coberturas disponibles' : 'covers available'}`)), /*#__PURE__*/React.createElement("button", {
       onClick: () => setWorkLocationFilterOpen(true),
       style: {
         display: 'flex',

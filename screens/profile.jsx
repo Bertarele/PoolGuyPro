@@ -6,7 +6,7 @@ function ProfileScreen({ ctx }) {
           openEditProfile, onLogout, openHelp, openPrivacy,
           darkMode, toggleDark, openChat, hasUnreadChat, openNotifications, hasUnreadNotif, requestVerification,
           isDesktop=false, retryPush, pushLog='',
-          notifPrefs, saveNotifPrefs, openListingById, openPublicProfile } = ctx;
+          notifPrefs, saveNotifPrefs, openListingById, openPublicProfile, county='Broward' } = ctx;
   const t = STRINGS[lang];
 
   const typeIcon = (type) => {
@@ -116,7 +116,7 @@ function ProfileScreen({ ctx }) {
                 </button>
                 <div style={{marginTop:5, display:'flex', alignItems:'center', gap:5}}>
                   {Icon.pin(10,H.faint)}
-                  <span style={{fontSize:11, color:H.faint}}>Broward County, FL</span>
+                  <span style={{fontSize:11, color:H.faint}}>{lang==='pt'?`Condado de ${county}, FL`:lang==='es'?`Condado de ${county}, FL`:`${county} County, FL`}</span>
                 </div>
               </div>
             </div>

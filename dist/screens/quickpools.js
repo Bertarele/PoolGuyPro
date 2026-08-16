@@ -2485,7 +2485,7 @@ function QuickPoolsScreen({
         color: 'var(--pg-ink-500)',
         marginTop: 4
       }
-    }, lang === 'pt' ? `Broward County · ordenado por proximidade` : `${county} County · sorted by proximity`)), user.tier !== 'premium' && /*#__PURE__*/React.createElement("button", {
+    }, lang === 'pt' ? `Condado de ${county} · ordenado por proximidade` : lang === 'es' ? `Condado de ${county} · ordenado por proximidad` : `${county} County · sorted by proximity`)), user.tier !== 'premium' && /*#__PURE__*/React.createElement("button", {
       onClick: () => openPaywall('quickpools'),
       style: {
         display: 'flex',

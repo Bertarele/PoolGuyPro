@@ -1414,7 +1414,7 @@ function QuickPoolsScreen({ ctx }) {
                   {lang==='pt'?`${jobs.length} vagas disponíveis`:lang==='es'?`${jobs.length} trabajos disponibles`:`${jobs.length} jobs available`}
                 </div>
                 <div style={{fontSize:13, color:'var(--pg-ink-500)', marginTop:4}}>
-                  {lang==='pt'?`Broward County · ordenado por proximidade`:`${county} County · sorted by proximity`}
+                  {lang==='pt'?`Condado de ${county} · ordenado por proximidade`:lang==='es'?`Condado de ${county} · ordenado por proximidad`:`${county} County · sorted by proximity`}
                 </div>
               </div>
               {user.tier !== 'premium' && (

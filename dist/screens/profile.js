@@ -32,7 +32,8 @@ function ProfileScreen({
     notifPrefs,
     saveNotifPrefs,
     openListingById,
-    openPublicProfile
+    openPublicProfile,
+    county = 'Broward'
   } = ctx;
   const t = STRINGS[lang];
   const typeIcon = type => {
@@ -384,7 +385,7 @@ function ProfileScreen({
         fontSize: 11,
         color: H.faint
       }
-    }, "Broward County, FL")))), /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? `Condado de ${county}, FL` : lang === 'es' ? `Condado de ${county}, FL` : `${county} County, FL`)))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         marginTop: 14,
