@@ -583,6 +583,11 @@ function App() {
     // Disable PTR when any sheet or full-page overlay is open
     if (document.querySelector('.pg-sheet-backdrop')) return;
     if (document.querySelector('[data-pg-fullpage]')) return;
+    // Leaflet maps (QuickPools) pan via internal drag handling, not native
+    // scrollTop, so the scrollable-ancestor check below never catches them —
+    // dragging the map down to reveal what's further north/south was
+    // indistinguishable from a real pull-to-refresh and reloaded the page.
+    if (e.target.closest && e.target.closest('.leaflet-container')) return;
     if (!screenRef.current || screenRef.current.scrollTop !== 0) return;
     let el = e.target;
     while (el && el !== screenRef.current) {
