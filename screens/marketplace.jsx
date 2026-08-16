@@ -118,7 +118,7 @@ function BoostListingSheet({ item, lang, onClose, onBoosted, showToast }) {
 // ── Share bottom sheet ───────────────────────────────────────
 function ShareSheet({ item, lang, onClose, showToast }) {
   if (!item) return null;
-  const listingUrl = item._id ? `https://poolguyx.com/#market?listing=${item._id}` : 'https://poolguyx.com';
+  const listingUrl = item._id ? `https://poolguyx.com/api/share?type=market&id=${item._id}` : 'https://poolguyx.com';
   const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
   const enc = encodeURIComponent(txt);
   const btn = (label, icon, href, color, onClick) => (
@@ -3782,7 +3782,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
   // Owners land here (not ViewListingSheet, which has its own Share button)
   // when opening their own post, so this needs its own share affordance too.
   const shareThisListing = async () => {
-    const url = `https://poolguyx.com/#market?listing=${item._id}`;
+    const url = `https://poolguyx.com/api/share?type=market&id=${item._id}`;
     const text = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${url}`;
     if (navigator.share) { try { await navigator.share({ title: item.name, text, url }); } catch(e) {} return; }
     if (navigator.clipboard) {
@@ -4417,7 +4417,7 @@ function MarketplaceScreen({ ctx }) {
 
   const handleShare = async (e, item) => {
     if (e) e.stopPropagation();
-    const listingUrl = item._id ? `https://poolguyx.com/#market?listing=${item._id}` : 'https://poolguyx.com';
+    const listingUrl = item._id ? `https://poolguyx.com/api/share?type=market&id=${item._id}` : 'https://poolguyx.com';
     const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
     if (navigator.share) {
       // Try to share with photo

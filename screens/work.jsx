@@ -1531,7 +1531,7 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
   };
 
   const shareHandoff = async () => {
-    const url = `https://poolguyx.com/#work?handoff=${handoff._id}`;
+    const url = `https://poolguyx.com/api/share?type=handoff&id=${handoff._id}`;
     const cities = (handoff.cities||[]).join(', ');
     const text = `${lang==='pt'?'Repasse de Piscina':lang==='es'?'Traspaso de Piscina':'Pool Handoff'} — ${cities}\n\n${url}`;
     if (navigator.share) {
@@ -1973,7 +1973,7 @@ function HiringPanel({ t, lang, onChat, onViewApplicants, onCreate, user, onAppl
         const job = selectedJob;
         const myApp = user?.uid ? liveApplications.find(a => a.job_id === job._id) : null;
         const shareJob = async () => {
-          const url = `https://poolguyx.com/#work?job=${job._id}`;
+          const url = `https://poolguyx.com/api/share?type=job&id=${job._id}`;
           const text = `${job.author}${job.role ? ' — ' + job.role : ''}\n\n${url}`;
           if (navigator.share) { try { await navigator.share({ title: job.author, text, url }); } catch(e) {} return; }
           if (navigator.clipboard) {
@@ -3108,7 +3108,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
   }, [highlightVacId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const shareVacation = async (vac) => {
-    const url = `https://poolguyx.com/#work?vac=${vac._id}`;
+    const url = `https://poolguyx.com/api/share?type=vac&id=${vac._id}`;
     const text = `${vac.author} — ${lang==='pt'?'Férias para cobrir':lang==='es'?'Vacaciones para cubrir':'Vacation to cover'}\n\n${url}`;
     if (navigator.share) { try { await navigator.share({ title: vac.author, text, url }); } catch(e) {} return; }
     if (navigator.clipboard) {
