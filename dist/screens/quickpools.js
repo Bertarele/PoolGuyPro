@@ -3068,7 +3068,7 @@ function QuickPoolsScreen({
       color: 'var(--pg-blue-700)',
       lineHeight: 1.4
     }
-  }, lang === 'pt' ? /*#__PURE__*/React.createElement(React.Fragment, null, "Mostrando ", /*#__PURE__*/React.createElement("b", null, "todos os trabalhos do condado de ", county), ". Voc\xEA s\xF3 ser\xE1 ", /*#__PURE__*/React.createElement("b", null, "notificado"), " dos trabalhos nas cidades e dias configurados.") : /*#__PURE__*/React.createElement(React.Fragment, null, "Showing ", /*#__PURE__*/React.createElement("b", null, "all jobs in ", county, " County"), ". You're only ", /*#__PURE__*/React.createElement("b", null, "notified"), " for jobs in your configured cities and days.")))), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? /*#__PURE__*/React.createElement(React.Fragment, null, "Voc\xEA s\xF3 ser\xE1 ", /*#__PURE__*/React.createElement("b", null, "notificado"), " dos trabalhos nas cidades e dias configurados.") : lang === 'es' ? /*#__PURE__*/React.createElement(React.Fragment, null, "Solo ser\xE1s ", /*#__PURE__*/React.createElement("b", null, "notificado"), " de trabajos en tus ciudades y d\xEDas configurados.") : /*#__PURE__*/React.createElement(React.Fragment, null, "You're only ", /*#__PURE__*/React.createElement("b", null, "notified"), " for jobs in your configured cities and days.")))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 18px 0',
       display: 'flex',

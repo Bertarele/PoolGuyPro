@@ -1700,8 +1700,10 @@ function QuickPoolsScreen({ ctx }) {
           <div style={{flexShrink:0, marginTop:1}}>{Icon.bell(14,'var(--pg-blue-700)')}</div>
           <div style={{fontSize:11.5, color:'var(--pg-blue-700)', lineHeight:1.4}}>
             {lang==='pt'
-              ? <>Mostrando <b>todos os trabalhos do condado de {county}</b>. Você só será <b>notificado</b> dos trabalhos nas cidades e dias configurados.</>
-              : <>Showing <b>all jobs in {county} County</b>. You're only <b>notified</b> for jobs in your configured cities and days.</>}
+              ? <>Você só será <b>notificado</b> dos trabalhos nas cidades e dias configurados.</>
+              : lang==='es'
+                ? <>Solo serás <b>notificado</b> de trabajos en tus ciudades y días configurados.</>
+                : <>You're only <b>notified</b> for jobs in your configured cities and days.</>}
           </div>
         </div>
       </div>
