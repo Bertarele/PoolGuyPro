@@ -7086,6 +7086,7 @@ function VacationPanel({
       const freeBlur = !isOwner && user?.tier === 'free';
       return /*#__PURE__*/React.createElement("button", {
         onClick: freeBlur ? () => onUnlockVac && onUnlockVac() : () => openPublicProfile && openPublicProfile({
+          uid: vac.author_id,
           name: vac.author
         }),
         style: {

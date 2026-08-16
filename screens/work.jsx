@@ -3261,7 +3261,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                   {/* Owner row */}
                   <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
                     {(() => { const freeBlur = !isOwner && user?.tier === 'free'; return (
-                    <button onClick={freeBlur ? ()=>onUnlockVac&&onUnlockVac() : ()=>openPublicProfile&&openPublicProfile({ name:vac.author })}
+                    <button onClick={freeBlur ? ()=>onUnlockVac&&onUnlockVac() : ()=>openPublicProfile&&openPublicProfile({ uid:vac.author_id, name:vac.author })}
                       style={{display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textAlign:'left', filter:freeBlur?'blur(5px)':undefined, userSelect:freeBlur?'none':undefined}} className="pg-press">
                       <AvatarFetch uid={vac.author_id} name={vac.author} size={30}/>
                       <div style={{flex:1, minWidth:0}}>
