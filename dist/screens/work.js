@@ -8782,16 +8782,16 @@ function WeekdayRegionRow({
       fontFamily: 'var(--pg-font-display)',
       transition: 'background .15s ease'
     }
-  }, i + 1), /*#__PURE__*/React.createElement("input", {
-    className: "pg-field",
+  }, i + 1), /*#__PURE__*/React.createElement("div", {
     style: {
-      height: 38,
-      fontSize: 12.5
-    },
-    placeholder: lang === 'pt' ? `Endereço piscina ${i + 1}…` : lang === 'es' ? `Dirección piscina ${i + 1}…` : `Pool ${i + 1} address…`,
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement(StreetAddressAutocomplete, {
     value: addr,
-    onChange: e => onAddressChange && onAddressChange(i, e.target.value)
-  }))))));
+    onChange: v => onAddressChange && onAddressChange(i, v),
+    lang: lang,
+    placeholder: lang === 'pt' ? `Endereço piscina ${i + 1}…` : lang === 'es' ? `Dirección piscina ${i + 1}…` : `Pool ${i + 1} address…`
+  })))))));
 }
 
 // ── Post Hiring sheet ─────────────────────────────────────────

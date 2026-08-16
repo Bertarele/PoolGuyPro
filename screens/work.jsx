@@ -4271,13 +4271,14 @@ function WeekdayRegionRow({ label, values, cities, onToggle, poolCount, onPoolCh
                   fontSize:10, fontWeight:700, fontFamily:'var(--pg-font-display)',
                   transition:'background .15s ease',
                 }}>{i+1}</div>
-                <input
-                  className="pg-field"
-                  style={{height:38, fontSize:12.5}}
-                  placeholder={lang==='pt'?`Endereço piscina ${i+1}…`:lang==='es'?`Dirección piscina ${i+1}…`:`Pool ${i+1} address…`}
-                  value={addr}
-                  onChange={e => onAddressChange && onAddressChange(i, e.target.value)}
-                />
+                <div style={{flex:1}}>
+                  <StreetAddressAutocomplete
+                    value={addr}
+                    onChange={v => onAddressChange && onAddressChange(i, v)}
+                    lang={lang}
+                    placeholder={lang==='pt'?`Endereço piscina ${i+1}…`:lang==='es'?`Dirección piscina ${i+1}…`:`Pool ${i+1} address…`}
+                  />
+                </div>
               </div>
             ))}
           </div>
