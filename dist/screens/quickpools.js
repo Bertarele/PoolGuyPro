@@ -4049,11 +4049,22 @@ function LeafletMapBlock({
       maxZoom: 19
     }).addTo(map);
 
-    // Attribution (small) bottom-left
-    L.control.attribution({
+    // Attribution — required by CartoDB/OSM's free-tile terms, so it can't be
+    // removed outright, but it doesn't need to be legible-sized to comply.
+    // Styled down to a barely-there sliver instead of Leaflet's default box.
+    const attrCtl = L.control.attribution({
       position: 'bottomleft',
       prefix: false
     }).addAttribution('© <a href="https://carto.com">CartoDB</a> © <a href="https://www.openstreetmap.org/copyright">OSM</a>').addTo(map);
+    const attrEl = attrCtl.getContainer();
+    if (attrEl) {
+      attrEl.style.fontSize = '7px';
+      attrEl.style.opacity = '0.45';
+      attrEl.style.background = 'transparent';
+      attrEl.style.boxShadow = 'none';
+      attrEl.style.padding = '0 3px';
+      attrEl.style.lineHeight = '1.4';
+    }
     mapRef.current = map;
 
     // Prevent Leaflet's map container from stealing focus and triggering scroll-into-view
