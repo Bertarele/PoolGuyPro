@@ -2253,10 +2253,18 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
       const isNeg = job.price === 'neg';
       const lbl   = isNeg ? 'NEG' : `$${job.price}`;
       const bg    = isNeg ? '#f59e0b' : '#2563eb';
+      // Classic map-pin shape (badge + pointer tail) instead of a plain small
+      // circle — the price text was hard to make out against the light map
+      // tiles at a glance, and a real pin shape reads faster at this zoom.
       const icon  = L.divIcon({
-        html:`<div style="background:${bg};color:#fff;font-size:11px;font-weight:700;padding:5px 9px;border-radius:14px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,0.28);border:2.5px solid rgba(255,255,255,0.95);font-family:Inter,system-ui,sans-serif;line-height:1;">${lbl}</div>`,
+        html:`
+          <div style="display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.35));">
+            <div style="background:${bg};color:#fff;font-size:11.5px;font-weight:800;padding:5px 10px;border-radius:12px;white-space:nowrap;border:2px solid #fff;font-family:Inter,system-ui,sans-serif;line-height:1;">${lbl}</div>
+            <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid ${bg};margin-top:-1px;"></div>
+          </div>`,
         className:'',
-        iconAnchor:[22,14],
+        iconSize:[46,42],
+        iconAnchor:[23,42],
       });
       const marker = L.marker(coords, { icon })
         .addTo(mapRef.current)
