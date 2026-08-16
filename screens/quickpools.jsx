@@ -2211,7 +2211,7 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
     });
 
     // CartoDB light tiles — clean, Apple Maps-like aesthetic
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
     }).addTo(map);
 
