@@ -4420,19 +4420,11 @@ function MarketplaceScreen({ ctx }) {
     const listingUrl = item._id ? `https://poolguyx.com/api/share?type=market&id=${item._id}` : 'https://poolguyx.com';
     const txt = `${item.name}${item.priceMode==='neg'?' — Negotiable':item.price?` — $${item.price}`:''}  📍 ${item.loc||'Broward County, FL'}\n\nFind it on PoolGuyX 👉 ${listingUrl}`;
     if (navigator.share) {
-      // Try to share with photo
-      const photoUrl = (item.photoUrls && item.photoUrls[0]) || item.photoUrl || null;
-      if (photoUrl) {
-        try {
-          const resp = await fetch(photoUrl);
-          const blob = await resp.blob();
-          const file = new File([blob], 'listing.jpg', { type: blob.type || 'image/jpeg' });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title: item.name, text: txt, files: [file] });
-            return;
-          }
-        } catch(err) { /* fall through to text-only */ }
-      }
+      // Share the link only (not the photo as a separate file) — the link
+      // itself now carries the real photo via api/share's og:image tags, so
+      // WhatsApp/iMessage unfurl it as one rich card. Sharing a raw file
+      // attachment instead makes the app send the photo as something the
+      // recipient has to download separately, disconnected from the link.
       navigator.share({ title: item.name, text: txt, url: listingUrl }).catch(()=>{});
     } else {
       setShareItem(item);
