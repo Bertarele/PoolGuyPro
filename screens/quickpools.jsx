@@ -1555,10 +1555,10 @@ function QuickPoolsScreen({ ctx }) {
               : 'linear-gradient(155deg, #daeeff 0%, #c2e4f8 40%, #a8d8f5 80%, #8ec8f0 100%)'}
             leftBack={true}
             onBack={()=>goTab&&goTab('home')}
-            backIconNudge={6}
+            backIconNudge={9}
             title={
               <div style={{display:'flex', alignItems:'center', gap:10}}>
-                <div style={{width:44, height:44, borderRadius:13, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center', marginTop:6}}>
+                <div style={{width:44, height:44, borderRadius:13, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center', marginTop:9}}>
                   {poolIcon}
                 </div>
                 <div style={{paddingTop:2}}>
