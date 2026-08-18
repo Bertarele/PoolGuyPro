@@ -389,7 +389,7 @@ function NavyBar({
       justifyContent: 'center',
       flexShrink: 0,
       backdropFilter: 'blur(8px)',
-      marginTop: backIconNudge || 0
+      transform: backIconNudge ? `translateY(${backIconNudge}px)` : undefined
     }
   }, Icon.chev(18, H.text, 'left')), typeof title === 'string' ? /*#__PURE__*/React.createElement("h1", {
     style: {

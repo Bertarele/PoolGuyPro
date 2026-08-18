@@ -168,7 +168,7 @@ function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode
               border:'none', background:H.backBtn, width:36, height:36,
               borderRadius:'50%', cursor:'pointer', color:H.text,
               display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-              backdropFilter:'blur(8px)', marginTop: backIconNudge || 0,
+              backdropFilter:'blur(8px)', transform: backIconNudge ? `translateY(${backIconNudge}px)` : undefined,
             }}>{Icon.chev(18, H.text, 'left')}</button>
           )}
           {typeof title === 'string'

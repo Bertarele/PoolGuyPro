@@ -2685,7 +2685,7 @@ function QuickPoolsScreen({
       bgOverride: darkMode ? 'linear-gradient(155deg, #010E1F 0%, #012044 40%, #013B78 80%, #004E9A 100%)' : 'linear-gradient(155deg, #daeeff 0%, #c2e4f8 40%, #a8d8f5 80%, #8ec8f0 100%)',
       leftBack: true,
       onBack: () => goTab && goTab('home'),
-      backIconNudge: 20,
+      backIconNudge: 7,
       title: /*#__PURE__*/React.createElement("div", {
         style: {
           display: 'flex',
@@ -2703,7 +2703,7 @@ function QuickPoolsScreen({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginTop: 20
+          transform: 'translateY(7px)'
         }
       }, poolIcon), /*#__PURE__*/React.createElement("div", {
         style: {
