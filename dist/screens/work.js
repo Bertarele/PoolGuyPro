@@ -5603,11 +5603,24 @@ const TECH_SPECIALTY_CATEGORIES = [{
     en: 'Installation'
   },
   kw: ['instalação', 'instalacao', 'instalación', 'instalacion', 'install']
+}, {
+  id: 'other',
+  label: {
+    pt: 'Outros',
+    es: 'Otros',
+    en: 'Other'
+  },
+  kw: []
 }];
 function techSpecialtyMatches(searchText, selectedIds) {
   if (!selectedIds || selectedIds.length === 0) return true;
   const hay = (searchText || '').toLowerCase();
   return selectedIds.some(id => {
+    // "Other" has no fixed keywords — it means "doesn't match any known
+    // category", so a tech only counts under it when nothing else does.
+    if (id === 'other') {
+      return !TECH_SPECIALTY_CATEGORIES.some(c => c.id !== 'other' && c.kw.some(k => hay.includes(k)));
+    }
     const cat = TECH_SPECIALTY_CATEGORIES.find(c => c.id === id);
     return cat && cat.kw.some(k => hay.includes(k));
   });
@@ -5837,10 +5850,10 @@ function TechsPanel({
         width: '100%',
         paddingRight: isOwner || user?.role === 'admin' ? 36 : 0
       }
-    }, /*#__PURE__*/React.createElement(Avatar, {
+    }, /*#__PURE__*/React.createElement(AvatarFetch, {
+      uid: tech.author_id,
       name: tech.name,
-      size: 28,
-      src: tech.photoUrl || undefined
+      size: 28
     }), /*#__PURE__*/React.createElement("h3", {
       style: {
         margin: 0,
@@ -10186,16 +10199,33 @@ function PostTechSheet({
 }) {
   const t = STRINGS[lang];
   const isEdit = !!initialValues;
-  const [specialty, setSpecialty] = React.useState(initialValues?.specialty || '');
+  // Specialty used to be free text — now the same fixed categories used by
+  // the technician-search filter, so the two vocabularies always match.
+  // Editing an existing (free-text) profile best-effort matches it back onto
+  // those categories via the same keyword lists the filter uses; anything
+  // that doesn't match lands in "Other" with the original text preserved.
+  const [specIds, setSpecIds] = React.useState(() => {
+    if (!initialValues?.specialty) return [];
+    const hay = initialValues.specialty.toLowerCase();
+    const ids = TECH_SPECIALTY_CATEGORIES.filter(c => c.id !== 'other' && c.kw.some(k => hay.includes(k))).map(c => c.id);
+    return ids.length > 0 ? ids : ['other'];
+  });
+  const [otherSpec, setOtherSpec] = React.useState(() => {
+    if (!initialValues?.specialty) return '';
+    const hay = initialValues.specialty.toLowerCase();
+    const matchedAny = TECH_SPECIALTY_CATEGORIES.some(c => c.id !== 'other' && c.kw.some(k => hay.includes(k)));
+    return matchedAny ? '' : initialValues.specialty;
+  });
+  const toggleSpecId = id => setSpecIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const specialty = specIds.map(id => id === 'other' ? otherSpec.trim() : TECH_SPECIALTY_CATEGORIES.find(c => c.id === id)?.label[lang] || id).filter(Boolean).join(', ');
   const [loc, setLoc] = React.useState(initialValues?.loc || '');
   const [phone, setPhone] = React.useState(initialValues?.phone || user?.phone || '');
   const [email, setEmail] = React.useState(initialValues?.email || user?.email || '');
-  const [photos, setPhotos] = React.useState(initialValues?.photoUrl ? [initialValues.photoUrl] : []);
   const [rateMode, setRateMode] = React.useState(initialValues?.rateMode || 'fixed');
   const [rate, setRate] = React.useState(initialValues?.rate || '90');
   const headLbl = isEdit ? lang === 'pt' ? 'Editar perfil' : lang === 'es' ? 'Editar perfil' : 'Edit profile' : lang === 'pt' ? 'Cadastrar técnico' : lang === 'es' ? 'Registrar técnico' : 'Register as technician';
   const specLbl = lang === 'pt' ? 'Especialidade' : lang === 'es' ? 'Especialidad' : 'Specialty';
-  const specPh = lang === 'pt' ? 'ex: Reparo de bombas e motores' : lang === 'es' ? 'ej: Reparación de bombas y motores' : 'e.g. Pump & Motor Repair';
+  const otherSpecPh = lang === 'pt' ? 'Descreva a especialidade' : lang === 'es' ? 'Describe la especialidad' : 'Describe the specialty';
   const locLbl = lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City';
   const phoneLbl = lang === 'pt' ? 'Telefone' : lang === 'es' ? 'Teléfono' : 'Phone number';
   const emailLbl = lang === 'pt' ? 'E-mail (opcional)' : lang === 'es' ? 'E-mail (opcional)' : 'Email (optional)';
@@ -10259,19 +10289,7 @@ function PostTechSheet({
       flexDirection: 'column',
       gap: 18
     }
-  }, /*#__PURE__*/React.createElement(PhotoPicker, {
-    photos: photos,
-    onAdd: url => setPhotos(p => [...p, url]),
-    onRemove: url => setPhotos(p => p.filter(u => u !== url)),
-    max: 3,
-    lang: lang,
-    title: lang === 'pt' ? 'Foto do perfil' : lang === 'es' ? 'Foto de perfil' : 'Profile photo'
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 0,
-      borderTop: '0.5px solid var(--pg-ink-200)'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -10331,11 +10349,38 @@ function PostTechSheet({
       letterSpacing: '0.06em',
       marginBottom: 8
     }
-  }, specLbl.toUpperCase()), /*#__PURE__*/React.createElement("input", {
+  }, specLbl.toUpperCase()), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 8
+    }
+  }, TECH_SPECIALTY_CATEGORIES.map(cat => {
+    const on = specIds.includes(cat.id);
+    return /*#__PURE__*/React.createElement("button", {
+      key: cat.id,
+      type: "button",
+      onClick: () => toggleSpecId(cat.id),
+      style: {
+        padding: '9px 14px',
+        borderRadius: 999,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 13,
+        fontWeight: 700,
+        border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
+        background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+        color: on ? '#fff' : 'var(--pg-ink-700)'
+      }
+    }, cat.label[lang] || cat.label.en);
+  })), specIds.includes('other') && /*#__PURE__*/React.createElement("input", {
     className: "pg-field",
-    value: specialty,
-    onChange: e => setSpecialty(e.target.value),
-    placeholder: specPh
+    style: {
+      marginTop: 10
+    },
+    value: otherSpec,
+    onChange: e => setOtherSpec(e.target.value),
+    placeholder: otherSpecPh
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
@@ -10464,7 +10509,7 @@ function PostTechSheet({
       email,
       rateMode,
       rate,
-      photoUrl: photos[0] || null
+      photoUrl: user?.photoUrl || null
     }),
     disabled: !isValid,
     className: "pg-btn pg-btn-primary",

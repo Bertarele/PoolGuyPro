@@ -2456,11 +2456,17 @@ const TECH_SPECIALTY_CATEGORIES = [
   { id:'electric',   label:{pt:'Elétrica',                es:'Eléctrica',              en:'Electrical'},          kw:['elétric','eletric','eléctric','electric'] },
   { id:'chemical',   label:{pt:'Química/Água Verde',      es:'Química/Agua Verde',     en:'Chemical/Green Pool'}, kw:['química','quimica','agua verde','água verde','ph','chemical','green pool','clorador','chlorinator'] },
   { id:'install',    label:{pt:'Instalação',              es:'Instalación',            en:'Installation'},       kw:['instalação','instalacao','instalación','instalacion','install'] },
+  { id:'other',      label:{pt:'Outros',                  es:'Otros',                  en:'Other'},               kw:[] },
 ];
 function techSpecialtyMatches(searchText, selectedIds) {
   if (!selectedIds || selectedIds.length === 0) return true;
   const hay = (searchText || '').toLowerCase();
   return selectedIds.some(id => {
+    // "Other" has no fixed keywords — it means "doesn't match any known
+    // category", so a tech only counts under it when nothing else does.
+    if (id === 'other') {
+      return !TECH_SPECIALTY_CATEGORIES.some(c => c.id !== 'other' && c.kw.some(k => hay.includes(k)));
+    }
     const cat = TECH_SPECIALTY_CATEGORIES.find(c => c.id === id);
     return cat && cat.kw.some(k => hay.includes(k));
   });
@@ -2582,7 +2588,7 @@ function TechsPanel({ t, lang, onChat, onCreate, openPublicProfile, liveTechs=[]
           {/* Header — click opens public profile */}
           <button onClick={()=>isOwner ? setEditingTech(tech) : (openPublicProfile&&openPublicProfile({name:tech.name,photo:tech.photoUrl,loc:tech.loc,uid:tech.author_id}))}
             style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit',textAlign:'left',width:'100%',paddingRight:(isOwner||user?.role==='admin')?36:0}}>
-            <Avatar name={tech.name} size={28} src={tech.photoUrl||undefined}/>
+            <AvatarFetch uid={tech.author_id} name={tech.name} size={28}/>
             <h3 style={{margin:0,fontFamily:'var(--pg-font-display)',fontSize:16,fontWeight:700,letterSpacing:'-0.015em',flex:1,minWidth:0}}>{tech.name}</h3>
             {tech.rating != null && (
               <span style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:12,color:'var(--pg-ink-700)',fontWeight:600,flexShrink:0}}>
@@ -4904,17 +4910,37 @@ function PostPoolHandoffSheet({ onClose, lang='en', onSubmit, initialValues=null
 function PostTechSheet({ onClose, lang='en', onSubmit, user=null, initialValues=null }) {
   const t = STRINGS[lang];
   const isEdit = !!initialValues;
-  const [specialty, setSpecialty] = React.useState(initialValues?.specialty || '');
+  // Specialty used to be free text — now the same fixed categories used by
+  // the technician-search filter, so the two vocabularies always match.
+  // Editing an existing (free-text) profile best-effort matches it back onto
+  // those categories via the same keyword lists the filter uses; anything
+  // that doesn't match lands in "Other" with the original text preserved.
+  const [specIds, setSpecIds] = React.useState(() => {
+    if (!initialValues?.specialty) return [];
+    const hay = initialValues.specialty.toLowerCase();
+    const ids = TECH_SPECIALTY_CATEGORIES.filter(c => c.id !== 'other' && c.kw.some(k => hay.includes(k))).map(c => c.id);
+    return ids.length > 0 ? ids : ['other'];
+  });
+  const [otherSpec, setOtherSpec] = React.useState(() => {
+    if (!initialValues?.specialty) return '';
+    const hay = initialValues.specialty.toLowerCase();
+    const matchedAny = TECH_SPECIALTY_CATEGORIES.some(c => c.id !== 'other' && c.kw.some(k => hay.includes(k)));
+    return matchedAny ? '' : initialValues.specialty;
+  });
+  const toggleSpecId = (id) => setSpecIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const specialty = specIds
+    .map(id => id === 'other' ? otherSpec.trim() : (TECH_SPECIALTY_CATEGORIES.find(c => c.id === id)?.label[lang] || id))
+    .filter(Boolean)
+    .join(', ');
   const [loc, setLoc]           = React.useState(initialValues?.loc || '');
   const [phone, setPhone]       = React.useState(initialValues?.phone || user?.phone || '');
   const [email, setEmail]       = React.useState(initialValues?.email || user?.email || '');
-  const [photos, setPhotos]     = React.useState(initialValues?.photoUrl ? [initialValues.photoUrl] : []);
   const [rateMode, setRateMode] = React.useState(initialValues?.rateMode || 'fixed');
   const [rate, setRate]         = React.useState(initialValues?.rate || '90');
 
   const headLbl     = isEdit ? (lang==='pt'?'Editar perfil':lang==='es'?'Editar perfil':'Edit profile') : (lang==='pt'?'Cadastrar técnico':lang==='es'?'Registrar técnico':'Register as technician');
   const specLbl     = lang==='pt'?'Especialidade':lang==='es'?'Especialidad':'Specialty';
-  const specPh      = lang==='pt'?'ex: Reparo de bombas e motores':lang==='es'?'ej: Reparación de bombas y motores':'e.g. Pump & Motor Repair';
+  const otherSpecPh = lang==='pt'?'Descreva a especialidade':lang==='es'?'Describe la especialidad':'Describe the specialty';
   const locLbl      = lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City';
   const phoneLbl    = lang==='pt'?'Telefone':lang==='es'?'Teléfono':'Phone number';
   const emailLbl    = lang==='pt'?'E-mail (opcional)':lang==='es'?'E-mail (opcional)':'Email (optional)';
@@ -4944,16 +4970,7 @@ function PostTechSheet({ onClose, lang='en', onSubmit, user=null, initialValues=
 
       {/* Scrollable form body */}
       <div style={{flex:1, overflow:'auto', touchAction:'pan-y', padding:'20px 18px', display:'flex', flexDirection:'column', gap:18}}>
-        {/* Profile photo */}
-        <PhotoPicker
-          photos={photos}
-          onAdd={url=>setPhotos(p=>[...p,url])}
-          onRemove={url=>setPhotos(p=>p.filter(u=>u!==url))}
-          max={3} lang={lang}
-          title={lang==='pt'?'Foto do perfil':lang==='es'?'Foto de perfil':'Profile photo'}
-        />
-        <div style={{height:0,borderTop:'0.5px solid var(--pg-ink-200)'}}/>
-        {/* Nome do perfil — não editável */}
+        {/* Nome do perfil — não editável; a foto usada é a do perfil da conta, não uma separada aqui */}
         <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderRadius:12,
           background:'var(--pg-ink-50)', border:'1px solid var(--pg-ink-100)'}}>
           <Avatar name={user?.name||'?'} size={36} src={user?.photoUrl||undefined}/>
@@ -4969,7 +4986,25 @@ function PostTechSheet({ onClose, lang='en', onSubmit, user=null, initialValues=
         </div>
         <div>
           <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em', marginBottom:8}}>{specLbl.toUpperCase()}</div>
-          <input className="pg-field" value={specialty} onChange={e=>setSpecialty(e.target.value)} placeholder={specPh}/>
+          <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
+            {TECH_SPECIALTY_CATEGORIES.map(cat => {
+              const on = specIds.includes(cat.id);
+              return (
+                <button key={cat.id} type="button" onClick={()=>toggleSpecId(cat.id)} style={{
+                  padding:'9px 14px', borderRadius:999, cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:700,
+                  border: on ? 'none' : '1.5px solid var(--pg-ink-200)',
+                  background: on ? 'linear-gradient(135deg,#0077B6,#023E8A)' : 'var(--pg-ink-50)',
+                  color: on ? '#fff' : 'var(--pg-ink-700)',
+                }}>
+                  {cat.label[lang] || cat.label.en}
+                </button>
+              );
+            })}
+          </div>
+          {specIds.includes('other') && (
+            <input className="pg-field" style={{marginTop:10}} value={otherSpec}
+              onChange={e=>setOtherSpec(e.target.value)} placeholder={otherSpecPh}/>
+          )}
         </div>
         <div>
           <div style={{fontSize:11, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em', marginBottom:8}}>{locLbl.toUpperCase()}</div>
@@ -5016,7 +5051,7 @@ function PostTechSheet({ onClose, lang='en', onSubmit, user=null, initialValues=
 
       {/* Submit — fixed to bottom */}
       <div style={{padding:'14px 18px', flexShrink:0, background:'var(--pg-bg)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
-        <button onClick={()=>onSubmit && onSubmit({ name: user?.name||'', specialty, loc, phone, email, rateMode, rate, photoUrl: photos[0]||null })}
+        <button onClick={()=>onSubmit && onSubmit({ name: user?.name||'', specialty, loc, phone, email, rateMode, rate, photoUrl: user?.photoUrl||null })}
           disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45}}>
           {Icon.shield(17, '#fff')} {submitLbl}
