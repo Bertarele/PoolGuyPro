@@ -168,8 +168,8 @@ function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode
               border:'none', background:H.backBtn, width:36, height:36,
               borderRadius:'50%', cursor:'pointer', color:H.text,
               display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-              backdropFilter:'blur(8px)',
-            }}><span style={{display:'flex', transform: backIconNudge ? `translateY(${backIconNudge}px)` : undefined}}>{Icon.chev(18, H.text, 'left')}</span></button>
+              backdropFilter:'blur(8px)', marginTop: backIconNudge || 0,
+            }}>{Icon.chev(18, H.text, 'left')}</button>
           )}
           {typeof title === 'string'
             ? <h1 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em', color:H.text}}>{title}</h1>

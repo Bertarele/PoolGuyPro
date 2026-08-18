@@ -1541,7 +1541,7 @@ function QuickPoolsScreen({ ctx }) {
         const H = headerTheme(darkMode);
         const dotBorder = darkMode ? '#010E1F' : '#a8d8f5';
         const poolIcon = (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill={H.iconC} style={{transform:'translateY(6px)'}}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill={H.iconC}>
             <path d="M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"/>
           </svg>
         );
@@ -1558,7 +1558,7 @@ function QuickPoolsScreen({ ctx }) {
             backIconNudge={6}
             title={
               <div style={{display:'flex', alignItems:'center', gap:10}}>
-                <div style={{width:44, height:44, borderRadius:13, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                <div style={{width:44, height:44, borderRadius:13, flexShrink:0, background:H.iconBg, border:`0.5px solid ${H.border}`, display:'flex', alignItems:'center', justifyContent:'center', marginTop:6}}>
                   {poolIcon}
                 </div>
                 <div style={{paddingTop:2}}>

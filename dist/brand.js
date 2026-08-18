@@ -388,14 +388,10 @@ function NavyBar({
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
-      backdropFilter: 'blur(8px)'
+      backdropFilter: 'blur(8px)',
+      marginTop: backIconNudge || 0
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      display: 'flex',
-      transform: backIconNudge ? `translateY(${backIconNudge}px)` : undefined
-    }
-  }, Icon.chev(18, H.text, 'left'))), typeof title === 'string' ? /*#__PURE__*/React.createElement("h1", {
+  }, Icon.chev(18, H.text, 'left')), typeof title === 'string' ? /*#__PURE__*/React.createElement("h1", {
     style: {
       margin: 0,
       fontFamily: 'var(--pg-font-display)',

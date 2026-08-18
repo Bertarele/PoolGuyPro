@@ -2674,10 +2674,7 @@ function QuickPoolsScreen({
       width: "20",
       height: "20",
       viewBox: "0 0 24 24",
-      fill: H.iconC,
-      style: {
-        transform: 'translateY(6px)'
-      }
+      fill: H.iconC
     }, /*#__PURE__*/React.createElement("path", {
       d: "M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"
     }));
@@ -2705,7 +2702,8 @@ function QuickPoolsScreen({
           border: `0.5px solid ${H.border}`,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          marginTop: 6
         }
       }, poolIcon), /*#__PURE__*/React.createElement("div", {
         style: {
