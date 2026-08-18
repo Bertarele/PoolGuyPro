@@ -1572,7 +1572,7 @@ function QuickPoolsScreen({ ctx }) {
               </div>
             }
             right={
-              <div style={{display:'flex', gap:6, alignItems:'center', transform:'translateY(6px)'}}>
+              <div style={{display:'flex', gap:6, alignItems:'center', transform:'translateY(9px)'}}>
                 {/* Filled + labeled, unlike the neutral chat/bell icons next to it —
                     otherwise nothing hints this opens route publishing at all. */}
                 <button onClick={()=>setRoutesOpen(true)} className="pg-press" style={{
