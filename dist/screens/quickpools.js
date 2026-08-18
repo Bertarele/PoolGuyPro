@@ -2718,7 +2718,8 @@ function QuickPoolsScreen({
           marginBottom: 3,
           marginTop: -6,
           textTransform: 'uppercase',
-          whiteSpace: 'nowrap'
+          whiteSpace: 'nowrap',
+          transform: 'translateY(3px)'
         }
       }, lang === 'pt' ? 'ALERTAS EM TEMPO REAL' : lang === 'es' ? 'ALERTAS EN TIEMPO REAL' : 'REAL-TIME ALERTS'), /*#__PURE__*/React.createElement("div", {
         style: {
