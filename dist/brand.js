@@ -289,7 +289,8 @@ function NavyBar({
   darkMode = true,
   bgOverride = null,
   centerDecor = null,
-  compact = false
+  compact = false,
+  backIconNudge = 0
 }) {
   const H = headerTheme(darkMode);
   const bg = bgOverride || (darkMode ? 'linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)' : 'linear-gradient(145deg, #f0f9ff 0%, #dff0fb 52%, #cce8f5 100%)');
@@ -389,7 +390,12 @@ function NavyBar({
       flexShrink: 0,
       backdropFilter: 'blur(8px)'
     }
-  }, Icon.chev(18, H.text, 'left')), typeof title === 'string' ? /*#__PURE__*/React.createElement("h1", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      transform: backIconNudge ? `translateY(${backIconNudge}px)` : undefined
+    }
+  }, Icon.chev(18, H.text, 'left'))), typeof title === 'string' ? /*#__PURE__*/React.createElement("h1", {
     style: {
       margin: 0,
       fontFamily: 'var(--pg-font-display)',

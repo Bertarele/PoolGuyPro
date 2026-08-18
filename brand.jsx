@@ -137,7 +137,7 @@ function headerTheme(dark) {
 }
 
 // ── App bar (light/dark responsive) ───────────────────────────
-function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode=true, bgOverride=null, centerDecor=null, compact=false }) {
+function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode=true, bgOverride=null, centerDecor=null, compact=false, backIconNudge=0 }) {
   const H = headerTheme(darkMode);
   const bg = bgOverride || (darkMode
     ? 'linear-gradient(145deg, #040D18 0%, #071A2E 52%, #0A2840 100%)'
@@ -169,7 +169,7 @@ function NavyBar({ title, leftBack, onBack, right, children, wave=true, darkMode
               borderRadius:'50%', cursor:'pointer', color:H.text,
               display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
               backdropFilter:'blur(8px)',
-            }}>{Icon.chev(18, H.text, 'left')}</button>
+            }}><span style={{display:'flex', transform: backIconNudge ? `translateY(${backIconNudge}px)` : undefined}}>{Icon.chev(18, H.text, 'left')}</span></button>
           )}
           {typeof title === 'string'
             ? <h1 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em', color:H.text}}>{title}</h1>

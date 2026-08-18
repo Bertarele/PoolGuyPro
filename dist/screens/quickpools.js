@@ -2674,7 +2674,10 @@ function QuickPoolsScreen({
       width: "20",
       height: "20",
       viewBox: "0 0 24 24",
-      fill: H.iconC
+      fill: H.iconC,
+      style: {
+        transform: 'translateY(2px)'
+      }
     }, /*#__PURE__*/React.createElement("path", {
       d: "M13.5 2 4 14h6l-1.5 8L20 10h-6.5z"
     }));
@@ -2685,6 +2688,7 @@ function QuickPoolsScreen({
       bgOverride: darkMode ? 'linear-gradient(155deg, #010E1F 0%, #012044 40%, #013B78 80%, #004E9A 100%)' : 'linear-gradient(155deg, #daeeff 0%, #c2e4f8 40%, #a8d8f5 80%, #8ec8f0 100%)',
       leftBack: true,
       onBack: () => goTab && goTab('home'),
+      backIconNudge: 2,
       title: /*#__PURE__*/React.createElement("div", {
         style: {
           display: 'flex',
