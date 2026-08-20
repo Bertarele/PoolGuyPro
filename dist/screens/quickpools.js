@@ -1780,7 +1780,8 @@ function QuickPoolsScreen({
       day_of_week: data.dayOfWeek,
       pools: data.pools,
       price_per_pool: data.pricePerPool ?? null,
-      split_taker_pct: 70
+      split_taker_pct: 70,
+      required_photos: data.requiredPhotos || []
     };
     const isEdit = !!data.id;
     const {
@@ -1865,7 +1866,7 @@ function QuickPoolsScreen({
         notes: p.notes || null
       })),
       source_route_id: route.id,
-      required_photos: [],
+      required_photos: route.required_photos || [],
       status: 'open'
     };
     try {
@@ -3663,6 +3664,19 @@ function RoutePostForm({
     doorman: !!p.doorman,
     notes: p.notes || ''
   })) : [blankRoutePool()]);
+  // One set of required photo types for the whole route — applies to every
+  // pool it posts, not configured per pool (same field the activated job
+  // already reads for its own photo-upload flow, quick_pool_jobs.required_photos).
+  const [requiredPhotos, setRequiredPhotos] = React.useState(initialValues?.required_photos || []);
+  const [customPhotoText, setCustomPhotoText] = React.useState('');
+  const toggleRoutePhoto = key => setRequiredPhotos(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  const addCustomRoutePhoto = () => {
+    const txt = customPhotoText.trim();
+    if (!txt) return;
+    const key = 'custom:' + txt;
+    if (!requiredPhotos.includes(key)) setRequiredPhotos(prev => [...prev, key]);
+    setCustomPhotoText('');
+  };
   const addPool = () => {
     if (pools.length < 30) setPools(prev => [...prev, blankRoutePool()]);
   };
@@ -3978,7 +3992,157 @@ function RoutePostForm({
       paddingBottom: 12,
       height: 'auto'
     }
-  }))))), /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      padding: '14px 16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Fotos obrigatórias' : lang === 'es' ? 'Fotos obligatorias' : 'Required photos'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      marginBottom: 12
+    }
+  }, lang === 'pt' ? 'Aplica a todas as piscinas da rota. O pool guy deverá tirar essas fotos antes de finalizar.' : lang === 'es' ? 'Aplica a todas las piscinas de la ruta. El pool guy deberá tomar estas fotos antes de finalizar.' : 'Applies to every pool on the route. The pool guy must take these photos before completing the job.'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
+    }
+  }, QUICK_POOL_PHOTO_OPTS.map(opt => {
+    const sel = requiredPhotos.includes(opt.key);
+    return /*#__PURE__*/React.createElement("button", {
+      key: opt.key,
+      onClick: () => toggleRoutePhoto(opt.key),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px 12px',
+        borderRadius: 10,
+        border: sel ? '1.5px solid var(--pg-blue-500)' : '1px solid var(--pg-ink-200)',
+        background: sel ? 'var(--pg-blue-50)' : 'transparent',
+        cursor: 'pointer',
+        textAlign: 'left'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        flexShrink: 0,
+        border: sel ? 'none' : '1.5px solid var(--pg-ink-300)',
+        background: sel ? 'var(--pg-blue-500)' : 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, sel && /*#__PURE__*/React.createElement("svg", {
+      width: "12",
+      height: "12",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "3",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "20 6 9 17 4 12"
+    }))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 500,
+        color: sel ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)'
+      }
+    }, lang === 'pt' ? opt.pt : opt.en));
+  }), requiredPhotos.filter(k => k.startsWith('custom:')).map(k => /*#__PURE__*/React.createElement("div", {
+    key: k,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '10px 12px',
+      borderRadius: 10,
+      border: '1.5px solid var(--pg-blue-500)',
+      background: 'var(--pg-blue-50)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 20,
+      height: 20,
+      borderRadius: 6,
+      background: 'var(--pg-blue-500)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "12",
+    height: "12",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "3",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "20 6 9 17 4 12"
+  }))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 500,
+      color: 'var(--pg-blue-700)',
+      flex: 1
+    }
+  }, k.slice(7)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setRequiredPhotos(prev => prev.filter(x => x !== k)),
+    style: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: 2,
+      color: 'var(--pg-ink-400)',
+      fontSize: 16,
+      lineHeight: 1
+    }
+  }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      marginTop: 2
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: customPhotoText,
+    onChange: e => setCustomPhotoText(e.target.value),
+    placeholder: lang === 'pt' ? 'Outra foto (ex: filtro)' : lang === 'es' ? 'Otra foto (ej: filtro)' : 'Other photo (e.g. filter)',
+    onKeyDown: e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addCustomRoutePhoto();
+      }
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: addCustomRoutePhoto,
+    style: {
+      padding: '0 16px',
+      borderRadius: 10,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-50)',
+      color: 'var(--pg-ink-700)',
+      fontWeight: 700,
+      cursor: 'pointer',
+      fontFamily: 'inherit'
+    }
+  }, "+"))))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '12px 18px',
       flexShrink: 0,
@@ -4007,7 +4171,8 @@ function RoutePostForm({
         gateCode: p.gateCode,
         doorman: p.doorman,
         notes: p.notes || null
-      }))
+      })),
+      requiredPhotos
     }),
     disabled: !isValid,
     className: "pg-btn pg-btn-primary",

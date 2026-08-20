@@ -59,23 +59,7 @@ function PostQuickPool({
       customPhotoText: ''
     };
   });
-  const PHOTO_OPTS = [{
-    key: 'before',
-    pt: 'Foto antes',
-    en: 'Before photo'
-  }, {
-    key: 'after',
-    pt: 'Foto depois',
-    en: 'After photo'
-  }, {
-    key: 'vacuum',
-    pt: 'Foto vacum',
-    en: 'Vacuum photo'
-  }, {
-    key: 'chemical',
-    pt: 'Foto químico',
-    en: 'Chemical photo'
-  }];
+  const PHOTO_OPTS = QUICK_POOL_PHOTO_OPTS;
   const togglePhoto = key => {
     const cur = form.requiredPhotos;
     upd('requiredPhotos', cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key]);
