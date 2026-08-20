@@ -7096,7 +7096,8 @@ function VacationPanel({
         position: 'relative',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'flex-end'
+        alignItems: 'flex-end',
+        gap: 8
       }
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => shareVacation(vac),
@@ -7114,7 +7115,8 @@ function VacationPanel({
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        padding: 0
+        padding: 0,
+        flexShrink: 0
       }
     }, /*#__PURE__*/React.createElement("svg", {
       width: "13",
@@ -7147,14 +7149,20 @@ function VacationPanel({
       y1: "6.51",
       x2: "8.59",
       y2: "10.49"
-    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 700,
         letterSpacing: '0.09em',
         color: 'rgba(255,255,255,0.52)',
         marginBottom: 3,
-        textTransform: 'uppercase'
+        textTransform: 'uppercase',
+        lineHeight: 1.3
       }
     }, vac.region || 'Broward County'), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -7168,7 +7176,8 @@ function VacationPanel({
     }, monthName)), /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: 'right',
-        paddingRight: 22
+        paddingRight: 22,
+        flexShrink: 0
       }
     }, vac.priceMode !== 'neg' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -7177,7 +7186,8 @@ function VacationPanel({
         fontWeight: 800,
         color: 'oklch(0.88 0.16 90)',
         letterSpacing: '-0.03em',
-        lineHeight: 1
+        lineHeight: 1,
+        whiteSpace: 'nowrap'
       }
     }, "$", vac.price, /*#__PURE__*/React.createElement("span", {
       style: {
@@ -7189,7 +7199,8 @@ function VacationPanel({
       style: {
         fontSize: 11,
         color: 'rgba(255,255,255,0.52)',
-        marginTop: 1
+        marginTop: 1,
+        whiteSpace: 'nowrap'
       }
     }, avgPools, " ", t.poolsPerDay)) : /*#__PURE__*/React.createElement("div", {
       style: {

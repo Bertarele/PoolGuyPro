@@ -3273,20 +3273,20 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                 <div style={{
                   background:'linear-gradient(120deg, oklch(0.26 0.10 232) 0%, oklch(0.33 0.13 215) 100%)',
                   padding:'12px 14px 11px', position:'relative',
-                  display:'flex', justifyContent:'space-between', alignItems:'flex-end',
+                  display:'flex', justifyContent:'space-between', alignItems:'flex-end', gap:8,
                 }}>
                   <button onClick={()=>shareVacation(vac)} title={lang==='pt'?'Compartilhar':lang==='es'?'Compartir':'Share'}
                     style={{position:'absolute', top:9, right:10, border:'none', background:'rgba(255,255,255,0.14)',
                       width:26, height:26, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
-                      cursor:'pointer', padding:0}}>
+                      cursor:'pointer', padding:0, flexShrink:0}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                       <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                     </svg>
                   </button>
-                  <div>
+                  <div style={{flex:1, minWidth:0}}>
                     <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.09em',
-                      color:'rgba(255,255,255,0.52)', marginBottom:3, textTransform:'uppercase'}}>
+                      color:'rgba(255,255,255,0.52)', marginBottom:3, textTransform:'uppercase', lineHeight:1.3}}>
                       {vac.region || 'Broward County'}
                     </div>
                     <div style={{fontFamily:'var(--pg-font-display)', fontSize:18, fontWeight:700,
@@ -3294,17 +3294,17 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                       {monthName}
                     </div>
                   </div>
-                  <div style={{textAlign:'right', paddingRight:22}}>
+                  <div style={{textAlign:'right', paddingRight:22, flexShrink:0}}>
                     {vac.priceMode !== 'neg' ? (<>
                       <div style={{fontFamily:'var(--pg-font-display)', fontSize:26, fontWeight:800,
-                        color:'oklch(0.88 0.16 90)', letterSpacing:'-0.03em', lineHeight:1}}>
+                        color:'oklch(0.88 0.16 90)', letterSpacing:'-0.03em', lineHeight:1, whiteSpace:'nowrap'}}>
                         ${vac.price}
                         <span style={{fontSize:11.5, fontWeight:500, color:'rgba(255,255,255,0.45)'}}>
                           /{vac.priceMode==='pool'?'pool':'day'}
                         </span>
                       </div>
                       {avgPools > 0 && (
-                        <div style={{fontSize:11, color:'rgba(255,255,255,0.52)', marginTop:1}}>
+                        <div style={{fontSize:11, color:'rgba(255,255,255,0.52)', marginTop:1, whiteSpace:'nowrap'}}>
                           {avgPools} {t.poolsPerDay}
                         </div>
                       )}
