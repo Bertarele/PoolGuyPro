@@ -3275,19 +3275,18 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                   padding:'12px 14px 11px', position:'relative',
                   display:'flex', justifyContent:'space-between', alignItems:'flex-end', gap:8,
                 }}>
-                  {/* Standard iOS "share" glyph (box + arrow out the top), not the
-                      3-dot network icon — that one reads as "settings/more" to a
-                      lot of people, which is exactly the confusion reported.
-                      Solid white pill + shadow so it reads as a tappable control
-                      instead of a decorative dot on the gradient. */}
+                  {/* Solid white pill + shadow so it reads as a tappable control
+                      instead of a decorative dot on the gradient — icon back to
+                      the original 3-node share glyph per feedback, kept inside
+                      the clearer button treatment. */}
                   <button onClick={()=>shareVacation(vac)} title={lang==='pt'?'Compartilhar':lang==='es'?'Compartir':'Share'}
                     style={{position:'absolute', top:8, right:8, border:'none', background:'rgba(255,255,255,0.95)',
                       boxShadow:'0 2px 6px rgba(0,0,0,0.25)',
                       width:30, height:30, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
                       cursor:'pointer', padding:0, flexShrink:0}}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0D7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
-                      <polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0D7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                     </svg>
                   </button>
                   <div style={{flex:1, minWidth:0}}>
