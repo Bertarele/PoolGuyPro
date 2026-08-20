@@ -1651,6 +1651,7 @@ function App() {
         pricePerPool: r.price,
         priceMode: r.price_mode,
         note: r.note || null,
+        requiredPhotos: r.required_photos || [],
         region,
         author: r.author,
         author_id: r.author_id || null,
@@ -2107,6 +2108,7 @@ function App() {
       price: data.price,
       price_mode: data.priceMode,
       note: data.note || null,
+      required_photos: data.requiredPhotos || [],
       author: authorName,
       author_id: user.uid || null
     } : col === 'marketplace' ? {
@@ -2976,7 +2978,8 @@ function App() {
           pools_per_weekday: data.poolsPerWeekday,
           price: data.price,
           price_mode: data.priceMode,
-          note: data.note || null
+          note: data.note || null,
+          required_photos: data.requiredPhotos || []
         };
         window.sb.from('vacations').update(row).eq('id', editingVac._id).then(({
           error
@@ -3005,7 +3008,8 @@ function App() {
             pricePerPool: data.price,
             priceMode: data.priceMode,
             note: data.note || null,
-            region
+            region,
+            requiredPhotos: data.requiredPhotos || []
           }));
           showToast(lang === 'pt' ? 'Férias atualizadas ✓' : lang === 'es' ? 'Vacaciones actualizadas ✓' : 'Vacation updated ✓');
         });

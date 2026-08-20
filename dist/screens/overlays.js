@@ -2530,22 +2530,38 @@ function ApplicantsSheet({
     })), lang === 'pt' ? 'Fotos enviadas — revise e confirme' : lang === 'es' ? 'Fotos enviadas — revisa y confirma' : 'Photos submitted — review and confirm'), a.submittedPhotos && a.submittedPhotos.length > 0 && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
-        gap: 6,
+        gap: 8,
         flexWrap: 'wrap',
         marginBottom: 10
       }
-    }, a.submittedPhotos.map((p, i) => /*#__PURE__*/React.createElement("img", {
-      key: i,
-      src: p.url,
-      alt: "",
-      style: {
-        width: 56,
-        height: 56,
-        borderRadius: 8,
-        objectFit: 'cover',
-        border: '1px solid oklch(0.85 0.08 260)'
-      }
-    }))), /*#__PURE__*/React.createElement("button", {
+    }, a.submittedPhotos.map((p, i) => {
+      const typeLabel = p.type ? p.type.startsWith('custom:') ? p.type.slice(7) : p.type === 'before' ? lang === 'pt' ? 'Antes' : 'Before' : p.type === 'after' ? lang === 'pt' ? 'Depois' : lang === 'es' ? 'Después' : 'After' : p.type === 'vacuum' ? lang === 'pt' ? 'Vacum' : 'Vacuum' : p.type === 'chemical' ? lang === 'pt' ? 'Químico' : lang === 'es' ? 'Químico' : 'Chemical' : p.type : null;
+      return /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 3
+        }
+      }, /*#__PURE__*/React.createElement("img", {
+        src: p.url,
+        alt: "",
+        style: {
+          width: 56,
+          height: 56,
+          borderRadius: 8,
+          objectFit: 'cover',
+          border: '1px solid oklch(0.85 0.08 260)'
+        }
+      }), typeLabel && /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 9.5,
+          color: 'oklch(0.48 0.14 260)',
+          fontWeight: 600
+        }
+      }, typeLabel));
+    })), /*#__PURE__*/React.createElement("button", {
       onClick: () => finalizeVacation(a),
       className: "pg-btn pg-btn-primary",
       style: {

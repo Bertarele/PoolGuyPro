@@ -830,6 +830,7 @@ function WorkScreen({
       pricePerPool: relatedVac?.pricePerPool || 0,
       status: a.status === 'completed' ? 'completed' : a.status === 'accepted' && a.pool_guy_done ? 'done_pending' : a.status === 'accepted' ? 'accepted' : a.status === 'rejected' ? 'rejected' : 'awaiting',
       poolGuyDone: !!a.pool_guy_done,
+      requiredPhotos: relatedVac?.requiredPhotos || [],
       selectedDays: a.selectedDays || null,
       job_id: a.job_id,
       title: relatedVac ? {
@@ -8022,6 +8023,10 @@ function VacationPanel({
 }
 
 // ── Vacation coverage completion — photo proof before the owner can finalize ──
+// Mirrors QuickPools' typed required-photos upload flow (screens/quickpools.jsx
+// handlePhotoSelect/uploadedPhotos) when the owner picked specific photo types
+// on the vacation post; falls back to any 1+ free-form photos for older
+// vacation posts that predate that picker (requiredPhotos empty).
 function VacCompletionSheet({
   app,
   lang = 'en',
@@ -8030,17 +8035,68 @@ function VacCompletionSheet({
   showToast,
   applicantName
 }) {
-  const [photos, setPhotos] = React.useState([]);
+  const requiredPhotos = app.requiredPhotos || [];
+  const hasTypedRequirement = requiredPhotos.length > 0;
+  const [uploadedPhotos, setUploadedPhotos] = React.useState({}); // {photoKey: {url, uploading, error}}
+  const [freePhotos, setFreePhotos] = React.useState([]); // fallback mode
   const [submitting, setSubmitting] = React.useState(false);
+  const photoLabel = p => p.startsWith('custom:') ? p.slice(7) : p === 'before' ? lang === 'pt' ? 'Foto antes' : 'Before photo' : p === 'after' ? lang === 'pt' ? 'Foto depois' : 'After photo' : p === 'vacuum' ? lang === 'pt' ? 'Foto vacum' : 'Vacuum photo' : p === 'chemical' ? lang === 'pt' ? 'Foto químico' : 'Chemical photo' : p;
+  const handlePhotoSelect = async (photoKey, file) => {
+    if (!file || !window.sb) return;
+    setUploadedPhotos(prev => ({
+      ...prev,
+      [photoKey]: {
+        url: URL.createObjectURL(file),
+        uploading: true,
+        error: null
+      }
+    }));
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${app.job_id}/${photoKey}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const {
+      error: uploadErr
+    } = await window.sb.storage.from('job-photos').upload(path, file, {
+      upsert: true,
+      contentType: file.type
+    });
+    if (uploadErr) {
+      setUploadedPhotos(prev => ({
+        ...prev,
+        [photoKey]: {
+          ...prev[photoKey],
+          uploading: false,
+          error: uploadErr.message
+        }
+      }));
+      return;
+    }
+    const {
+      data: pub
+    } = window.sb.storage.from('job-photos').getPublicUrl(path);
+    setUploadedPhotos(prev => ({
+      ...prev,
+      [photoKey]: {
+        url: pub.publicUrl,
+        uploading: false,
+        error: null
+      }
+    }));
+  };
+  const allTypedUploaded = hasTypedRequirement && requiredPhotos.every(p => uploadedPhotos[p] && !uploadedPhotos[p].uploading && !uploadedPhotos[p].error && uploadedPhotos[p].url && !uploadedPhotos[p].url.startsWith('blob:'));
+  const canSubmit = hasTypedRequirement ? allTypedUploaded : freePhotos.length > 0;
   const submit = async () => {
-    if (photos.length === 0 || submitting || !window.sb) return;
+    if (!canSubmit || submitting || !window.sb) return;
     setSubmitting(true);
+    const submittedPhotos = hasTypedRequirement ? requiredPhotos.map(p => ({
+      type: p,
+      url: uploadedPhotos[p].url
+    })) : freePhotos.map(url => ({
+      url
+    }));
     const {
       error
     } = await window.sb.from('job_applications').update({
-      submitted_photos: photos.map(url => ({
-        url
-      })),
+      submitted_photos: submittedPhotos,
       pool_guy_done: true,
       pool_guy_done_at: new Date().toISOString()
     }).eq('id', app.id);
@@ -8091,16 +8147,119 @@ function VacCompletionSheet({
       marginBottom: 16,
       lineHeight: 1.4
     }
-  }, lang === 'pt' ? 'Tire pelo menos uma foto das piscinas que você cobriu. O dono vai revisar e confirmar.' : lang === 'es' ? 'Toma al menos una foto de las piscinas que cubriste. El dueño revisará y confirmará.' : 'Take at least one photo of the pools you covered. The owner will review and confirm.'), /*#__PURE__*/React.createElement(PhotoPicker, {
-    photos: photos,
-    onAdd: url => setPhotos(p => [...p, url]),
-    onRemove: url => setPhotos(p => p.filter(u => u !== url)),
+  }, hasTypedRequirement ? lang === 'pt' ? 'Tire ou selecione cada foto abaixo antes de finalizar.' : lang === 'es' ? 'Toma o selecciona cada foto abajo antes de finalizar.' : 'Take or select each photo below before finishing.' : lang === 'pt' ? 'Tire pelo menos uma foto das piscinas que você cobriu. O dono vai revisar e confirmar.' : lang === 'es' ? 'Toma al menos una foto de las piscinas que cubriste. El dueño revisará y confirmará.' : 'Take at least one photo of the pools you covered. The owner will review and confirm.'), hasTypedRequirement ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12
+    }
+  }, requiredPhotos.map(photoKey => {
+    const state = uploadedPhotos[photoKey];
+    return /*#__PURE__*/React.createElement("div", {
+      key: photoKey,
+      style: {
+        borderRadius: 12,
+        border: state ? '1.5px solid var(--pg-blue-400)' : '1px solid var(--pg-ink-200)',
+        overflow: 'hidden'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '12px 14px',
+        background: state ? 'var(--pg-blue-50)' : 'transparent'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        flexShrink: 0,
+        overflow: 'hidden',
+        background: state ? 'transparent' : 'var(--pg-ink-100)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, state?.url ? /*#__PURE__*/React.createElement("img", {
+      src: state.url,
+      alt: "",
+      style: {
+        width: 36,
+        height: 36,
+        objectFit: 'cover'
+      }
+    }) : /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 18
+      }
+    }, "\uD83D\uDCF7")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--pg-ink-800)'
+      }
+    }, photoLabel(photoKey)), state?.uploading && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-blue-500)'
+      }
+    }, lang === 'pt' ? 'Enviando...' : lang === 'es' ? 'Enviando...' : 'Uploading...'), state?.error && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: '#EF4444'
+      }
+    }, lang === 'pt' ? 'Erro — tente de novo' : 'Error — try again'), state && !state.uploading && !state.error && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: '#16A34A',
+        fontWeight: 600
+      }
+    }, "\u2713 ", lang === 'pt' ? 'Foto adicionada' : lang === 'es' ? 'Foto añadida' : 'Photo added')), /*#__PURE__*/React.createElement("label", {
+      style: {
+        cursor: 'pointer',
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "file",
+      accept: "image/*",
+      capture: "environment",
+      style: {
+        display: 'none'
+      },
+      onChange: e => handlePhotoSelect(photoKey, e.target.files[0])
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        height: 34,
+        padding: '0 12px',
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: 'pointer',
+        background: state ? 'var(--pg-blue-100)' : 'var(--pg-blue-500)',
+        color: state ? 'var(--pg-blue-700)' : '#fff',
+        border: 'none'
+      }
+    }, state ? lang === 'pt' ? 'Trocar' : lang === 'es' ? 'Cambiar' : 'Retake' : lang === 'pt' ? 'Tirar foto' : lang === 'es' ? 'Tomar foto' : 'Take photo'))));
+  })) : /*#__PURE__*/React.createElement(PhotoPicker, {
+    photos: freePhotos,
+    onAdd: url => setFreePhotos(p => [...p, url]),
+    onRemove: url => setFreePhotos(p => p.filter(u => u !== url)),
     max: 6,
     lang: lang,
     title: lang === 'pt' ? 'Fotos das piscinas' : lang === 'es' ? 'Fotos de las piscinas' : 'Pool photos'
   }), /*#__PURE__*/React.createElement("button", {
     onClick: submit,
-    disabled: photos.length === 0 || submitting,
+    disabled: !canSubmit || submitting,
     className: "pg-btn pg-btn-primary",
     style: {
       width: '100%',
@@ -8108,7 +8267,7 @@ function VacCompletionSheet({
       fontSize: 15,
       borderRadius: 14,
       marginTop: 18,
-      opacity: photos.length === 0 || submitting ? 0.45 : 1
+      opacity: !canSubmit || submitting ? 0.45 : 1
     }
   }, submitting ? lang === 'pt' ? 'Enviando…' : lang === 'es' ? 'Enviando…' : 'Sending…' : lang === 'pt' ? 'Enviar e concluir' : lang === 'es' ? 'Enviar y concluir' : 'Submit and finish'));
 }
@@ -8142,6 +8301,19 @@ function PostVacationSheet({
   const [price, setPrice] = React.useState(initialData?.price ?? '0');
   const [priceMode, setPriceMode] = React.useState(initialData?.priceMode ?? 'fixed');
   const [note, setNote] = React.useState(initialData?.note || '');
+  // Same required-photos picker as Piscinas Rápidas/Rotas Rápidas — one set
+  // for the whole coverage period, read by VacCompletionSheet when the pool
+  // guy finishes a day.
+  const [requiredPhotos, setRequiredPhotos] = React.useState(initialData?.requiredPhotos || []);
+  const [customPhotoText, setCustomPhotoText] = React.useState('');
+  const toggleVacPhoto = key => setRequiredPhotos(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  const addCustomVacPhoto = () => {
+    const txt = customPhotoText.trim();
+    if (!txt) return;
+    const key = 'custom:' + txt;
+    if (!requiredPhotos.includes(key)) setRequiredPhotos(prev => [...prev, key]);
+    setCustomPhotoText('');
+  };
 
   // Calendar — get days in selected month
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
@@ -8662,7 +8834,158 @@ function PostVacationSheet({
       color: 'var(--pg-ink-900)',
       boxSizing: 'border-box'
     }
-  }))))), /*#__PURE__*/React.createElement("div", {
+  })), selectedDays.size > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16,
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      padding: '14px 16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      marginBottom: 2
+    }
+  }, lang === 'pt' ? 'Fotos obrigatórias' : lang === 'es' ? 'Fotos obligatorias' : 'Required photos'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      marginBottom: 12
+    }
+  }, lang === 'pt' ? 'O pool guy deverá tirar essas fotos antes de finalizar cada dia.' : lang === 'es' ? 'El pool guy deberá tomar estas fotos antes de finalizar cada día.' : 'The pool guy must take these photos before finishing each day.'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
+    }
+  }, QUICK_POOL_PHOTO_OPTS.map(opt => {
+    const sel = requiredPhotos.includes(opt.key);
+    return /*#__PURE__*/React.createElement("button", {
+      key: opt.key,
+      onClick: () => toggleVacPhoto(opt.key),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px 12px',
+        borderRadius: 10,
+        border: sel ? '1.5px solid var(--pg-blue-500)' : '1px solid var(--pg-ink-200)',
+        background: sel ? 'var(--pg-blue-50)' : 'transparent',
+        cursor: 'pointer',
+        textAlign: 'left'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        flexShrink: 0,
+        border: sel ? 'none' : '1.5px solid var(--pg-ink-300)',
+        background: sel ? 'var(--pg-blue-500)' : 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, sel && /*#__PURE__*/React.createElement("svg", {
+      width: "12",
+      height: "12",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "3",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "20 6 9 17 4 12"
+    }))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 500,
+        color: sel ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)'
+      }
+    }, lang === 'pt' ? opt.pt : opt.en));
+  }), requiredPhotos.filter(k => k.startsWith('custom:')).map(k => /*#__PURE__*/React.createElement("div", {
+    key: k,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '10px 12px',
+      borderRadius: 10,
+      border: '1.5px solid var(--pg-blue-500)',
+      background: 'var(--pg-blue-50)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 20,
+      height: 20,
+      borderRadius: 6,
+      background: 'var(--pg-blue-500)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "12",
+    height: "12",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "3",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "20 6 9 17 4 12"
+  }))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 500,
+      color: 'var(--pg-blue-700)',
+      flex: 1
+    }
+  }, k.slice(7)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setRequiredPhotos(prev => prev.filter(x => x !== k)),
+    style: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: 2,
+      color: 'var(--pg-ink-400)',
+      fontSize: 16,
+      lineHeight: 1
+    }
+  }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      marginTop: 2
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "pg-field",
+    value: customPhotoText,
+    onChange: e => setCustomPhotoText(e.target.value),
+    placeholder: lang === 'pt' ? 'Outra foto (ex: filtro)' : lang === 'es' ? 'Otra foto (ej: filtro)' : 'Other photo (e.g. filter)',
+    onKeyDown: e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addCustomVacPhoto();
+      }
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: addCustomVacPhoto,
+    style: {
+      padding: '0 16px',
+      borderRadius: 10,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-ink-50)',
+      color: 'var(--pg-ink-700)',
+      fontWeight: 700,
+      cursor: 'pointer',
+      fontFamily: 'inherit'
+    }
+  }, "+"))))))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '14px 20px 18px',
       flexShrink: 0,
@@ -8777,7 +9100,8 @@ function PostVacationSheet({
       poolsPerWeekday,
       price,
       priceMode,
-      note: note.trim() || null
+      note: note.trim() || null,
+      requiredPhotos
     }),
     disabled: !isValid,
     className: "pg-btn pg-btn-primary",
@@ -11028,7 +11352,44 @@ function VacationDayPickerSheet({
       alignItems: 'center',
       justifyContent: 'center'
     }
-  }, Icon.x(16, 'var(--pg-ink-700)'))), /*#__PURE__*/React.createElement("div", {
+  }, Icon.x(16, 'var(--pg-ink-700)'))), vac.requiredPhotos && vac.requiredPhotos.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14,
+      padding: '10px 12px',
+      borderRadius: 10,
+      background: 'var(--pg-aqua-50)',
+      borderLeft: '3px solid var(--pg-aqua-500)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      color: 'var(--pg-aqua-700)',
+      fontWeight: 700,
+      letterSpacing: '0.05em',
+      textTransform: 'uppercase',
+      marginBottom: 6
+    }
+  }, "\uD83D\uDCF8 ", lang === 'pt' ? 'Fotos obrigatórias' : lang === 'es' ? 'Fotos obligatorias' : 'Required photos'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 6
+    }
+  }, vac.requiredPhotos.map((p, i) => {
+    const label = p.startsWith('custom:') ? p.slice(7) : p === 'before' ? lang === 'pt' ? 'Foto antes' : 'Before photo' : p === 'after' ? lang === 'pt' ? 'Foto depois' : 'After photo' : p === 'vacuum' ? lang === 'pt' ? 'Foto vacum' : 'Vacuum photo' : p === 'chemical' ? lang === 'pt' ? 'Foto químico' : 'Chemical photo' : p;
+    return /*#__PURE__*/React.createElement("span", {
+      key: i,
+      style: {
+        fontSize: 11,
+        fontWeight: 600,
+        color: 'var(--pg-ink-700)',
+        background: 'var(--pg-white)',
+        padding: '3px 9px',
+        borderRadius: 999,
+        border: '0.5px solid var(--pg-aqua-100)'
+      }
+    }, label);
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 14,
