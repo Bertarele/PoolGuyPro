@@ -452,6 +452,27 @@ function QuickPoolsScreen({
   const [confirmDialog, setConfirmDialog] = React.useState(null); // { message, subMessage, confirmLabel, onConfirm }
   const [extendDialog, setExtendDialog] = React.useState(null); // jobId of the job being offered an extension
 
+  // First-ever visit to Piscinas Rápidas: nudge straight into the
+  // notification setup instead of leaving it undiscovered behind the small
+  // "Configurar" button — same destination that button already goes to
+  // (Configurar for premium, the paywall upsell for free), just triggered
+  // automatically once instead of waiting for the user to find it.
+  React.useEffect(() => {
+    if (!user?.uid) return;
+    let seen = [];
+    try {
+      seen = JSON.parse(localStorage.getItem('pg_qp_notif_prompted') || '[]');
+    } catch (e) {}
+    if (seen.includes(user.uid)) return;
+    try {
+      localStorage.setItem('pg_qp_notif_prompted', JSON.stringify([...seen, user.uid]));
+    } catch (e) {}
+    const timer = setTimeout(() => {
+      user.tier === 'premium' ? openRegionEditor() : openPaywall('quickpools');
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Ratings I still owe (skipped or never submitted) for finished Quick Pool jobs —
   // these outlive the job card itself, which disappears once finalized.
   const [pendingOutRatings, setPendingOutRatings] = React.useState([]);
