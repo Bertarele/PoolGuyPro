@@ -45,14 +45,30 @@ function WorkScreen({
   const [editingHandoff, setEditingHandoff] = React.useState(null);
   const [handoffBusy, setHandoffBusy] = React.useState(false);
   const t = STRINGS[lang];
+  // WorkScreen fully unmounts when the user leaves the Trabalho tab (app.jsx
+  // only renders it while tab==='work'), so a plain useState here forgets
+  // which sub-tab (Vagas/Técnicos/Férias) was open every time — the hash can
+  // reflect it right after a direct link, but isn't a reliable signal once
+  // other tabs/screens have touched window.location.hash in between. Persist
+  // to localStorage as the source of truth for "last sub-tab", hash still
+  // wins first for actual deep links.
   const [sub, setSub] = React.useState(() => {
     try {
       const hash = window.location.hash.replace(/^#\/?/, '');
       const [base, seg] = hash.split('/');
       if (base === 'work' && ['hiring', 'techs', 'vac'].includes(seg)) return seg;
     } catch (e) {}
+    try {
+      const stored = localStorage.getItem('pg_work_sub');
+      if (['hiring', 'techs', 'vac'].includes(stored)) return stored;
+    } catch (e) {}
     return 'hiring';
   });
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('pg_work_sub', sub);
+    } catch (e) {}
+  }, [sub]);
   const [vacTab, setVacTab] = React.useState('applied');
 
   // Open a handoff straight to its full detail — reached via the listing-context
