@@ -2071,8 +2071,35 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
     setCustomPhotoText('');
   };
 
-  const addPool = () => { if (pools.length < 30) setPools(prev => [...prev, blankRoutePool()]); };
-  const removePool = () => { if (pools.length > 1) setPools(prev => prev.slice(0, -1)); };
+  // Only one pool card open at a time (accordion) — a route with a dozen+
+  // pools was an enormous scroll of fully-expanded forms. The newly added/
+  // duplicated pool is the one that opens, since that's the one still
+  // needing input; everything already filled in collapses out of the way.
+  const [expandedIdx, setExpandedIdx] = React.useState(0);
+
+  const addPool = () => {
+    if (pools.length >= 30) return;
+    setPools(prev => [...prev, blankRoutePool()]);
+    setExpandedIdx(pools.length);
+  };
+  const removePoolAt = (i) => {
+    if (pools.length <= 1) return;
+    setPools(prev => prev.filter((_,j) => j!==i));
+    setExpandedIdx(idx => idx === i ? Math.max(0, i-1) : idx > i ? idx-1 : idx);
+  };
+  // Most pools on a route share the same city and access pattern — only the
+  // address usually differs — so duplicating copies everything except
+  // address/notes, dropped right after the source pool.
+  const duplicatePool = (i) => {
+    if (pools.length >= 30) return;
+    setPools(prev => {
+      const copy = { ...prev[i], address:'', notes:'' };
+      const next = [...prev];
+      next.splice(i+1, 0, copy);
+      return next;
+    });
+    setExpandedIdx(i+1);
+  };
   const updatePool = (i, patch) => setPools(prev => prev.map((p,j) => j===i ? { ...p, ...patch } : p));
 
   const dayDefs = ROUTE_DAY_ORDER.map(id => ({ id, label: (ROUTE_DAY_LABELS[id][lang] || ROUTE_DAY_LABELS[id].en).slice(0,3) }));
@@ -2132,72 +2159,107 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
           <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-700)'}}>
             {lang==='pt'?'Piscinas desta rota':lang==='es'?'Piscinas de esta ruta':'Pools on this route'}
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:10}}>
-            <button onClick={removePool} style={{
-              width:32, height:32, borderRadius:9, border:'1.5px solid var(--pg-ink-200)',
-              background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:17, color:'var(--pg-ink-900)',
-            }}>−</button>
-            <span style={{fontSize:15, fontWeight:800, minWidth:18, textAlign:'center'}}>{pools.length}</span>
-            <button onClick={addPool} style={{
-              width:32, height:32, borderRadius:9, border:'1.5px solid var(--pg-ink-200)',
-              background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:17, color:'var(--pg-ink-900)',
-            }}>+</button>
-          </div>
+          <button onClick={addPool} style={{
+            width:32, height:32, borderRadius:9, border:'1.5px solid var(--pg-ink-200)',
+            background:'var(--pg-ink-100)', cursor:'pointer', fontFamily:'inherit', fontSize:17, color:'var(--pg-ink-900)',
+          }}>+</button>
         </div>
 
-        {pools.map((p, i) => (
-          <div key={i} style={{display:'flex', flexDirection:'column', gap:14, padding:'14px', borderRadius:16, border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)'}}>
-            <div style={{fontSize:12.5, fontWeight:800, color:'#0D7280', letterSpacing:'0.02em'}}>
-              {lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool'} {i+1}
-            </div>
-
-            <HiringFormSection label={lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City'}>
-              <CityAutocomplete value={p.city} onChange={v=>updatePool(i, { city: v })} lang={lang}/>
-            </HiringFormSection>
-
-            <HiringFormSection label={lang==='pt'?'Endereço (opcional)':lang==='es'?'Dirección (opcional)':'Address (optional)'}>
-              <StreetAddressAutocomplete value={p.address} onChange={v=>updatePool(i, { address: v })} lang={lang}/>
-              <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:6}}>
-                {lang==='pt'?'Se informado, só aparece pro pool guy depois de aceito na vaga.':lang==='es'?'Si se indica, solo aparece para el pool guy después de ser aceptado.':'If provided, only shown to the pool guy once accepted.'}
+        {pools.map((p, i) => {
+          const isOpen = expandedIdx === i;
+          const accessBadges = [
+            p.dog && '🐕', p.saltwater && '🧂',
+            p.poolType==='condo' && p.gateCode && '🔑', p.poolType==='condo' && p.doorman && '🚪',
+          ].filter(Boolean);
+          return (
+          <div key={i} style={{display:'flex', flexDirection:'column', borderRadius:16, border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)', overflow:'hidden'}}>
+            <button onClick={()=>setExpandedIdx(isOpen ? -1 : i)} style={{
+              display:'flex', alignItems:'center', gap:10, padding:'12px 14px',
+              border:'none', background:'transparent', width:'100%', cursor:'pointer', textAlign:'left', fontFamily:'inherit',
+            }}>
+              <div style={{fontSize:12.5, fontWeight:800, color:'#0D7280', letterSpacing:'0.02em', flexShrink:0}}>
+                {lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool'} {i+1}
               </div>
-            </HiringFormSection>
-
-            <HiringFormSection label={lang==='pt'?'Tipo de propriedade':lang==='es'?'Tipo de propiedad':'Property type'}>
-              <div style={{display:'flex', gap:8}}>
-                {[{id:'residential',label:lang==='pt'?'Casa':lang==='es'?'Casa':'House'},{id:'condo',label:lang==='pt'?'Condomínio':lang==='es'?'Condominio':'Condo'}].map(o=>{
-                  const on = p.poolType===o.id;
-                  return (
-                    <button key={o.id} onClick={()=>updatePool(i, { poolType: o.id })} style={{
-                      flex:1, height:40, borderRadius:11, border: on?'none':'1.5px solid var(--pg-ink-200)',
-                      background: on ? 'linear-gradient(135deg,#0EBAC7,#0D7280)' : 'var(--pg-ink-50)',
-                      color: on ? '#fff' : 'var(--pg-ink-700)', fontFamily:'inherit', fontSize:13, fontWeight:700, cursor:'pointer',
-                    }}>{o.label}</button>
-                  );
-                })}
-              </div>
-            </HiringFormSection>
-
-            <HiringFormSection label={lang==='pt'?'Detalhes de acesso':lang==='es'?'Detalles de acceso':'Access details'}>
-              <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'4px 16px'}}>
-                <ToggleRow icon={Icon.dog(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem cachorro':lang==='es'?'Hay perro':'Has dog on property'} on={p.dog} setOn={v=>updatePool(i, { dog: v })}/>
-                <ToggleRow icon={Icon.pool(15,'var(--pg-ink-700)')} label={lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool'} on={p.saltwater} setOn={v=>updatePool(i, { saltwater: v })}/>
-                {p.poolType==='condo' && (
-                  <>
-                    <ToggleRow icon={Icon.key(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem código de portão':lang==='es'?'Tiene código de portón':'Has gate code'} on={p.gateCode} setOn={v=>updatePool(i, { gateCode: v })}/>
-                    <ToggleRow icon={Icon.user(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem portaria':lang==='es'?'Tiene portería':'Has doorman'} on={p.doorman} setOn={v=>updatePool(i, { doorman: v })}/>
-                  </>
+              {!isOpen && (
+                <div style={{flex:1, minWidth:0, fontSize:12.5, color:'var(--pg-ink-500)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                  {p.city || (lang==='pt'?'Sem cidade':lang==='es'?'Sin ciudad':'No city')}
+                  {p.address ? ` · ${p.address}` : ''}
+                  {accessBadges.length>0 ? ` · ${accessBadges.join(' ')}` : ''}
+                </div>
+              )}
+              <div style={{marginLeft:'auto', flexShrink:0, display:'flex', alignItems:'center', gap:4}}>
+                <span onClick={(e)=>{ e.stopPropagation(); duplicatePool(i); }} title={lang==='pt'?'Duplicar':lang==='es'?'Duplicar':'Duplicate'} style={{
+                  width:28, height:28, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center',
+                  color:'var(--pg-ink-500)', cursor:'pointer',
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>
+                </span>
+                {pools.length > 1 && (
+                  <span onClick={(e)=>{ e.stopPropagation(); removePoolAt(i); }} title={lang==='pt'?'Remover':lang==='es'?'Eliminar':'Remove'} style={{
+                    width:28, height:28, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center',
+                    color:'var(--pg-ink-400)', cursor:'pointer',
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                  </span>
                 )}
+                <div style={{transform: isOpen ? 'rotate(90deg)' : 'rotate(0)', transition:'transform .2s ease', color:'var(--pg-ink-400)'}}>
+                  {Icon.chev(15, 'currentColor')}
+                </div>
               </div>
-            </HiringFormSection>
+            </button>
 
-            <HiringFormSection label={lang==='pt'?'Observações desta piscina (opcional)':lang==='es'?'Notas de esta piscina (opcional)':'Notes for this pool (optional)'}>
-              <textarea className="pg-field" value={p.notes} onChange={e=>updatePool(i, { notes: e.target.value })}
-                placeholder={lang==='pt'?'Equipamento, particularidades…':lang==='es'?'Equipo, particularidades…':'Equipment, quirks…'}
-                rows={2}
-                style={{resize:'none', lineHeight:1.55, paddingTop:12, paddingBottom:12, height:'auto'}}/>
-            </HiringFormSection>
+            {isOpen && (
+              <div style={{display:'flex', flexDirection:'column', gap:14, padding:'0 14px 14px'}}>
+                <HiringFormSection label={lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City'}>
+                  <CityAutocomplete value={p.city} onChange={v=>updatePool(i, { city: v })} lang={lang}/>
+                </HiringFormSection>
+
+                <HiringFormSection label={lang==='pt'?'Endereço (opcional)':lang==='es'?'Dirección (opcional)':'Address (optional)'}>
+                  <StreetAddressAutocomplete value={p.address} onChange={v=>updatePool(i, { address: v })} lang={lang}/>
+                  <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:6}}>
+                    {lang==='pt'?'Se informado, só aparece pro pool guy depois de aceito na vaga.':lang==='es'?'Si se indica, solo aparece para el pool guy después de ser aceptado.':'If provided, only shown to the pool guy once accepted.'}
+                  </div>
+                </HiringFormSection>
+
+                <HiringFormSection label={lang==='pt'?'Tipo de propriedade':lang==='es'?'Tipo de propiedad':'Property type'}>
+                  <div style={{display:'flex', gap:8}}>
+                    {[{id:'residential',label:lang==='pt'?'Casa':lang==='es'?'Casa':'House'},{id:'condo',label:lang==='pt'?'Condomínio':lang==='es'?'Condominio':'Condo'}].map(o=>{
+                      const on = p.poolType===o.id;
+                      return (
+                        <button key={o.id} onClick={()=>updatePool(i, { poolType: o.id })} style={{
+                          flex:1, height:40, borderRadius:11, border: on?'none':'1.5px solid var(--pg-ink-200)',
+                          background: on ? 'linear-gradient(135deg,#0EBAC7,#0D7280)' : 'var(--pg-ink-50)',
+                          color: on ? '#fff' : 'var(--pg-ink-700)', fontFamily:'inherit', fontSize:13, fontWeight:700, cursor:'pointer',
+                        }}>{o.label}</button>
+                      );
+                    })}
+                  </div>
+                </HiringFormSection>
+
+                <HiringFormSection label={lang==='pt'?'Detalhes de acesso':lang==='es'?'Detalles de acceso':'Access details'}>
+                  <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'4px 16px'}}>
+                    <ToggleRow icon={Icon.dog(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem cachorro':lang==='es'?'Hay perro':'Has dog on property'} on={p.dog} setOn={v=>updatePool(i, { dog: v })}/>
+                    <ToggleRow icon={Icon.pool(15,'var(--pg-ink-700)')} label={lang==='pt'?'Piscina de sal':lang==='es'?'Piscina de sal':'Salt pool'} on={p.saltwater} setOn={v=>updatePool(i, { saltwater: v })}/>
+                    {p.poolType==='condo' && (
+                      <>
+                        <ToggleRow icon={Icon.key(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem código de portão':lang==='es'?'Tiene código de portón':'Has gate code'} on={p.gateCode} setOn={v=>updatePool(i, { gateCode: v })}/>
+                        <ToggleRow icon={Icon.user(15,'var(--pg-ink-700)')} label={lang==='pt'?'Tem portaria':lang==='es'?'Tiene portería':'Has doorman'} on={p.doorman} setOn={v=>updatePool(i, { doorman: v })}/>
+                      </>
+                    )}
+                  </div>
+                </HiringFormSection>
+
+                <HiringFormSection label={lang==='pt'?'Observações desta piscina (opcional)':lang==='es'?'Notas de esta piscina (opcional)':'Notes for this pool (optional)'}>
+                  <textarea className="pg-field" value={p.notes} onChange={e=>updatePool(i, { notes: e.target.value })}
+                    placeholder={lang==='pt'?'Equipamento, particularidades…':lang==='es'?'Equipo, particularidades…':'Equipment, quirks…'}
+                    rows={2}
+                    style={{resize:'none', lineHeight:1.55, paddingTop:12, paddingBottom:12, height:'auto'}}/>
+                </HiringFormSection>
+              </div>
+            )}
           </div>
-        ))}
+          );
+        })}
 
         {/* Required photos — one set for the whole route, applies to every pool it posts */}
         <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'14px 16px'}}>
