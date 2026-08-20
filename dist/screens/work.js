@@ -1477,7 +1477,7 @@ function WorkScreen({
       }
     }, lang === 'pt' ? 'Minha Atividade' : lang === 'es' ? 'Mi Actividad' : 'My Activity')), /*#__PURE__*/React.createElement("div", {
       style: {
-        display: sub === 'hiring' ? 'none' : 'flex',
+        display: 'none',
         gap: 0,
         background: 'var(--pg-ink-100)',
         borderRadius: 10,
@@ -2697,7 +2697,7 @@ function WorkScreen({
       }
     }, activityLbl)), /*#__PURE__*/React.createElement("div", {
       style: {
-        display: sub === 'hiring' ? 'none' : 'flex',
+        display: 'none',
         gap: 0,
         background: 'var(--pg-ink-100)',
         borderRadius: 10,

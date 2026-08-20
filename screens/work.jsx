@@ -773,10 +773,12 @@ function WorkScreen({ ctx }) {
                     {lang==='pt'?'Minha Atividade':lang==='es'?'Mi Actividad':'My Activity'}
                   </span>
                 </div>
-                {/* Inner tabs — "My Posts" only makes sense for Vacation here; Hiring's own
-                    job cards already surface applicant counts directly, so no need to
-                    duplicate that view behind a second tab. */}
-                <div style={{display: sub==='hiring' ? 'none' : 'flex', gap:0,background:'var(--pg-ink-100)',borderRadius:10,padding:3,marginBottom:14}}>
+                {/* Inner tabs — "My Posts" is redundant for both Hiring and Vacation:
+                    their own cards already surface applicant counts directly, and
+                    the poster's own listings always sort to the top of the main
+                    list (see sortedLiveVac's aOwn ordering), so there's nothing this
+                    second tab shows that isn't already visible without it. */}
+                <div style={{display:'none', gap:0,background:'var(--pg-ink-100)',borderRadius:10,padding:3,marginBottom:14}}>
                   {[
                     {id:'applications',label:appsLbl,count:currentMyApps.length},
                     {id:'myposts',label:myPostsLbl,count:currentMyPosts.length},
@@ -1244,9 +1246,11 @@ function WorkScreen({ ctx }) {
                 </span>
               </div>
 
-              {/* Inner tab switcher — "My Posts" hidden for Hiring; its job cards already
-                  surface applicant counts directly, so no need for a second tab. */}
-              <div style={{display: sub==='hiring' ? 'none' : 'flex', gap:0, background:'var(--pg-ink-100)', borderRadius:10, padding:3, marginBottom:12}}>
+              {/* Inner tab switcher — "My Posts" is redundant for both Hiring and
+                  Vacation now: their own cards already surface applicant counts
+                  directly, and the poster's own listings always sort to the top
+                  of the main list, so there's nothing this tab adds. */}
+              <div style={{display:'none', gap:0, background:'var(--pg-ink-100)', borderRadius:10, padding:3, marginBottom:12}}>
                 {[
                   { id:'applications', label: appsLbl,    count: totalApps  },
                   { id:'myposts',      label: myPostsLbl, count: totalPosts },
