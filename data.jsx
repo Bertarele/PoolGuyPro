@@ -385,6 +385,16 @@ const FEATURED = [
 
 const EQUIPMENT = [];
 
+// Shared with PostQuickPool (single job) and RoutePostForm (Rotas Rápidas,
+// where one set applies to every pool the route posts) — same keys are read
+// back in the job detail view and the pool guy's photo-upload flow.
+const QUICK_POOL_PHOTO_OPTS = [
+  { key:'before',   pt:'Foto antes',   en:'Before photo'   },
+  { key:'after',    pt:'Foto depois',  en:'After photo'    },
+  { key:'vacuum',   pt:'Foto vacum',   en:'Vacuum photo'   },
+  { key:'chemical', pt:'Foto químico', en:'Chemical photo' },
+];
+
 const POOL_ROUTES = [];
 
 const SINGLE_POOLS = [];

@@ -1089,6 +1089,7 @@ function QuickPoolsScreen({ ctx }) {
       owner_id: user.uid, owner_name: user.name || user.email || 'Pool Guy', owner_phone: user.phone || null,
       name: data.name || null, day_of_week: data.dayOfWeek,
       pools: data.pools, price_per_pool: data.pricePerPool ?? null, split_taker_pct: 70,
+      required_photos: data.requiredPhotos || [],
     };
     const isEdit = !!data.id;
     const { error } = isEdit
@@ -1157,7 +1158,7 @@ function QuickPoolsScreen({ ctx }) {
       pool_type: isCondo ? 'condo' : 'residential',
       pools: pools.map(p => ({ city:p.city, address:p.address||null, poolType:p.poolType, dog:!!p.dog, saltwater:!!p.saltwater, gateCode:!!p.gateCode, doorman:!!p.doorman, notes:p.notes||null })),
       source_route_id: route.id,
-      required_photos: [],
+      required_photos: route.required_photos || [],
       status: 'open',
     };
     try {
@@ -2034,6 +2035,19 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
         }))
       : [blankRoutePool()]
   );
+  // One set of required photo types for the whole route — applies to every
+  // pool it posts, not configured per pool (same field the activated job
+  // already reads for its own photo-upload flow, quick_pool_jobs.required_photos).
+  const [requiredPhotos, setRequiredPhotos] = React.useState(initialValues?.required_photos || []);
+  const [customPhotoText, setCustomPhotoText] = React.useState('');
+  const toggleRoutePhoto = (key) => setRequiredPhotos(prev => prev.includes(key) ? prev.filter(k=>k!==key) : [...prev, key]);
+  const addCustomRoutePhoto = () => {
+    const txt = customPhotoText.trim();
+    if (!txt) return;
+    const key = 'custom:' + txt;
+    if (!requiredPhotos.includes(key)) setRequiredPhotos(prev => [...prev, key]);
+    setCustomPhotoText('');
+  };
 
   const addPool = () => { if (pools.length < 30) setPools(prev => [...prev, blankRoutePool()]); };
   const removePool = () => { if (pools.length > 1) setPools(prev => prev.slice(0, -1)); };
@@ -2163,6 +2177,63 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
           </div>
         ))}
 
+        {/* Required photos — one set for the whole route, applies to every pool it posts */}
+        <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', padding:'14px 16px'}}>
+          <div style={{fontSize:13, fontWeight:700, marginBottom:2}}>
+            {lang==='pt'?'Fotos obrigatórias':lang==='es'?'Fotos obligatorias':'Required photos'}
+          </div>
+          <div style={{fontSize:11, color:'var(--pg-ink-500)', marginBottom:12}}>
+            {lang==='pt'?'Aplica a todas as piscinas da rota. O pool guy deverá tirar essas fotos antes de finalizar.':lang==='es'?'Aplica a todas las piscinas de la ruta. El pool guy deberá tomar estas fotos antes de finalizar.':'Applies to every pool on the route. The pool guy must take these photos before completing the job.'}
+          </div>
+          <div style={{display:'flex', flexDirection:'column', gap:8}}>
+            {QUICK_POOL_PHOTO_OPTS.map(opt => {
+              const sel = requiredPhotos.includes(opt.key);
+              return (
+                <button key={opt.key} onClick={()=>toggleRoutePhoto(opt.key)} style={{
+                  display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
+                  borderRadius:10, border: sel ? '1.5px solid var(--pg-blue-500)' : '1px solid var(--pg-ink-200)',
+                  background: sel ? 'var(--pg-blue-50)' : 'transparent',
+                  cursor:'pointer', textAlign:'left',
+                }}>
+                  <div style={{
+                    width:20, height:20, borderRadius:6, flexShrink:0,
+                    border: sel ? 'none' : '1.5px solid var(--pg-ink-300)',
+                    background: sel ? 'var(--pg-blue-500)' : 'transparent',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                  }}>
+                    {sel && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                  </div>
+                  <span style={{fontSize:13, fontWeight:500, color: sel ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)'}}>
+                    {lang==='pt'?opt.pt:opt.en}
+                  </span>
+                </button>
+              );
+            })}
+            {requiredPhotos.filter(k=>k.startsWith('custom:')).map(k => (
+              <div key={k} style={{
+                display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
+                borderRadius:10, border:'1.5px solid var(--pg-blue-500)', background:'var(--pg-blue-50)',
+              }}>
+                <div style={{width:20,height:20,borderRadius:6,background:'var(--pg-blue-500)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <span style={{fontSize:13,fontWeight:500,color:'var(--pg-blue-700)',flex:1}}>{k.slice(7)}</span>
+                <button onClick={()=>setRequiredPhotos(prev=>prev.filter(x=>x!==k))} style={{background:'none',border:'none',cursor:'pointer',padding:2,color:'var(--pg-ink-400)',fontSize:16,lineHeight:1}}>✕</button>
+              </div>
+            ))}
+            <div style={{display:'flex', gap:8, marginTop:2}}>
+              <input className="pg-field" value={customPhotoText}
+                onChange={e=>setCustomPhotoText(e.target.value)}
+                placeholder={lang==='pt'?'Outra foto (ex: filtro)':lang==='es'?'Otra foto (ej: filtro)':'Other photo (e.g. filter)'}
+                onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); addCustomRoutePhoto(); } }}/>
+              <button onClick={addCustomRoutePhoto} style={{
+                padding:'0 16px', borderRadius:10, border:'1.5px solid var(--pg-ink-200)',
+                background:'var(--pg-ink-50)', color:'var(--pg-ink-700)', fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+              }}>+</button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div style={{padding:'12px 18px', flexShrink:0, background:'var(--pg-white)', borderTop:'0.5px solid var(--pg-ink-200)'}}>
@@ -2179,6 +2250,7 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
             city: p.city, address: p.address.trim(), poolType: p.poolType,
             dog: p.dog, saltwater: p.saltwater, gateCode: p.gateCode, doorman: p.doorman, notes: p.notes || null,
           })),
+          requiredPhotos,
         })} disabled={!isValid} className="pg-btn pg-btn-primary"
           style={{width:'100%', height:52, fontSize:16, opacity: isValid ? 1 : 0.45,
             background: isValid ? 'linear-gradient(135deg,#0EBAC7,#0D7280)' : undefined}}>
