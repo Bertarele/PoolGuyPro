@@ -4218,14 +4218,24 @@ function MarketplaceScreen({ ctx }) {
     setDismissedReminderIds(prev => new Set(prev).add(item._id));
     if (window.sb) window.sb.from('marketplace').update({ last_reminder_at: new Date().toISOString() }).eq('id', item._id).catch(()=>{});
   };
+  // MarketplaceScreen fully unmounts when the user leaves the Marketplace tab,
+  // so a plain useState here forgets which sub-tab (Comprar/Alugar/Rotas/
+  // Vender) was open every time — same issue and same fix as WorkScreen's
+  // sub-tab (see pg_work_sub): persist to localStorage since the hash isn't
+  // reliably still "#market/..." by the time this remounts.
   const [view,         setView]        = React.useState(() => {
     try {
       const hash = window.location.hash.replace(/^#\/?/, '');
       const [base, seg] = hash.split('/');
       if (base === 'market' && ['buy','rent','routes','sell'].includes(seg)) return seg;
     } catch(e) {}
+    try {
+      const stored = localStorage.getItem('pg_market_view');
+      if (['buy','rent','routes','sell'].includes(stored)) return stored;
+    } catch(e) {}
     return 'buy';
   });
+  React.useEffect(() => { try { localStorage.setItem('pg_market_view', view); } catch(e) {} }, [view]);
   const [cat,          setCat]         = React.useState('All');
   const [q,            setQ]           = React.useState('');
   const [selected,     setSelected]    = React.useState(null);
