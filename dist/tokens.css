@@ -333,6 +333,14 @@ button { font-family: inherit; }
 .pg-press { transition: transform .1s ease; }
 .pg-press:active { transform: scale(0.97); }
 
+/* Press feedback for cards INSIDE a horizontally-scrollable (overflow-x:auto)
+   row — a transform on :active (like .pg-press above) fires the instant a
+   finger touches down, and on iOS Safari that's known to make the browser
+   treat the touch as a press instead of recognizing the drag that follows as
+   a scroll, effectively locking the row. Opacity doesn't have that problem. */
+.pg-press-scroll { transition: opacity .1s ease; }
+.pg-press-scroll:active { opacity: 0.6; }
+
 /* Field */
 .pg-field {
   width: 100%; height: 48px; padding: 0 14px;

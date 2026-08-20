@@ -843,7 +843,7 @@ function HomeScreen({
         const dy = e.touches[0].clientY - myAdsTouch.current.y;
         if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) myAdsTouch.current.swiped = true;
       },
-      className: "pg-press",
+      className: "pg-press-scroll",
       style: {
         display: 'flex',
         flexDirection: 'column',
@@ -1234,6 +1234,7 @@ function HomeScreen({
         if (featuredTouch.current?.swiped) return;
         openListingById(f.id);
       },
+      className: "pg-press-scroll",
       style: {
         minWidth: 170,
         maxWidth: 170,
@@ -1246,12 +1247,9 @@ function HomeScreen({
         border: '1px solid var(--pg-ink-100)',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'transform .12s, box-shadow .12s'
+        touchAction: 'pan-x'
       },
-      onMouseDown: e => e.currentTarget.style.transform = 'scale(0.97)',
-      onMouseUp: e => e.currentTarget.style.transform = '',
       onTouchStart: e => {
-        e.currentTarget.style.transform = 'scale(0.97)';
         featuredTouch.current = {
           x: e.touches[0].clientX,
           y: e.touches[0].clientY,
@@ -1263,8 +1261,7 @@ function HomeScreen({
         const dx = e.touches[0].clientX - featuredTouch.current.x;
         const dy = e.touches[0].clientY - featuredTouch.current.y;
         if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) featuredTouch.current.swiped = true;
-      },
-      onTouchEnd: e => e.currentTarget.style.transform = ''
+      }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'relative',

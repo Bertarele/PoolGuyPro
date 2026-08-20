@@ -496,7 +496,7 @@ function HomeScreen({ ctx }) {
                     const dy = e.touches[0].clientY - myAdsTouch.current.y;
                     if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) myAdsTouch.current.swiped = true;
                   }}
-                  className="pg-press" style={{
+                  className="pg-press-scroll" style={{
                     display:'flex', flexDirection:'column', alignItems:'flex-start',
                     padding:'11px 11px 11px', borderRadius:14, flexShrink:0,
                     width:150,
@@ -689,16 +689,14 @@ function HomeScreen({ ctx }) {
               const priceStr = f.price_mode==='neg'?'🤝 Neg.':(f.price?'$'+f.price:'—');
               return (
                 <div key={f.id} onClick={()=>{ if (featuredTouch.current?.swiped) return; openListingById(f.id); }}
+                  className="pg-press-scroll"
                   style={{
                     minWidth:170, maxWidth:170, flexShrink:0, cursor:'pointer',
                     borderRadius:16, overflow:'hidden', background:'var(--pg-white)',
                     boxShadow:'0 2px 8px rgba(0,0,0,0.08)', border:'1px solid var(--pg-ink-100)',
-                    display:'flex', flexDirection:'column', transition:'transform .12s, box-shadow .12s',
+                    display:'flex', flexDirection:'column', touchAction:'pan-x',
                   }}
-                  onMouseDown={e=>e.currentTarget.style.transform='scale(0.97)'}
-                  onMouseUp={e=>e.currentTarget.style.transform=''}
                   onTouchStart={e=>{
-                    e.currentTarget.style.transform='scale(0.97)';
                     featuredTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, swiped: false };
                   }}
                   onTouchMove={e=>{
@@ -707,7 +705,6 @@ function HomeScreen({ ctx }) {
                     const dy = e.touches[0].clientY - featuredTouch.current.y;
                     if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) featuredTouch.current.swiped = true;
                   }}
-                  onTouchEnd={e=>e.currentTarget.style.transform=''}
                 >
                   <div style={{position:'relative', paddingTop:'66%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
                     <div style={{position:'absolute', inset:0}}>
