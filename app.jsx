@@ -2138,6 +2138,35 @@ function App() {
               } : null,
             });
             if (error) { showToast('❌ ' + (lang==='pt'?'Erro ao enviar candidatura':'Failed to submit application')); return; }
+            // Notify the vacation poster (in-app + push) — was missing entirely,
+            // unlike regular job applications (see ApplyJobSheet) and Quick Pool
+            // applications, which both already notify the poster on apply.
+            const ownerId = vac.author_id || null;
+            if (ownerId && ownerId !== user.uid) {
+              window.sb.from('notifications').insert({
+                user_id: ownerId,
+                type:    'vacation_new_application',
+                title:   JSON.stringify({ en:'New application received', pt:'Nova candidatura recebida', es:'Nueva postulación recibida' }),
+                body:    JSON.stringify({
+                  en: `${user.name || 'Someone'} applied to cover your vacation.`,
+                  pt: `${user.name || 'Alguém'} se candidatou para cobrir suas férias.`,
+                  es: `${user.name || 'Alguien'} se postuló para cubrir tus vacaciones.`,
+                }),
+                link_id: String(vac._id),
+                read:    false,
+              }).catch(()=>{});
+              window.sendPush && window.sendPush(
+                ownerId,
+                lang==='pt' ? '📬 Nova candidatura' : lang==='es' ? '📬 Nueva postulación' : '📬 New application',
+                lang==='pt'
+                  ? `${user.name || 'Alguém'} se candidatou para cobrir suas férias.`
+                  : lang==='es'
+                  ? `${user.name || 'Alguien'} se postuló para cubrir tus vacaciones.`
+                  : `${user.name || 'Someone'} applied to cover your vacation.`,
+                '/#work',
+                'work'
+              );
+            }
             showToast(lang==='pt'?'✓ Candidatura enviada':lang==='es'?'✓ Postulación enviada':'✓ Application sent');
             loadLiveApplications(user.uid);
           }}
