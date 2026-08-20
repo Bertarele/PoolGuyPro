@@ -143,6 +143,24 @@
     return { ok: r.ok, status: r.status, data: d };
   };
 
+  // Antifraud views (flagged_ratings, repeated_trade_pairs, new_account_raters)
+  // were locked down to service_role-only in the DB — anon/authenticated could
+  // read other users' names/ratings straight off them before. Now they route
+  // through the same admin-gated edge function as the auth actions above.
+  window._adminListTable = async function(table, _retried){
+    var r = await fetch(BASE+'/functions/v1/admin-user', {
+      method:'POST',
+      headers:{'apikey':KEY,'Authorization':'Bearer '+(_tok||''),'Content-Type':'application/json'},
+      body:JSON.stringify({ action:'list_table', table:table })
+    });
+    var d = []; try { d = await r.json(); } catch(e){}
+    if (!r.ok && !_retried && (r.status===401 || _isExpired((d&&d.error)||''))) {
+      var ok = await _refreshOnce();
+      if (ok) return window._adminListTable(table, true);
+    }
+    return r.ok ? (Array.isArray(d)?d:[]) : [];
+  };
+
   function makeBuilder(table){
     var op='select', sel='*', filters=[], orderCol=null, orderAsc=true, isSingle=false, body=null, _limit=null, _in=null, _inCol=null;
     var run=async function(retried){
@@ -1566,9 +1584,9 @@ function AdminApp({ adminUser, onLogout }) {
       window.sb.from('rental_requests').select('*').order('created_at',{ascending:false}),
       window.sb.from('sponsored_cards').select('*').order('created_at',{ascending:false}),
       window.sb.from('quick_pool_jobs').select('*').order('created_at',{ascending:false}).limit(200),
-      window.sb.from('flagged_ratings').select('*').order('created_at',{ascending:false}),
-      window.sb.from('repeated_trade_pairs').select('*').order('trade_count',{ascending:false}),
-      window.sb.from('new_account_raters').select('*').order('ratings_given',{ascending:false}),
+      window._adminListTable('flagged_ratings'),
+      window._adminListTable('repeated_trade_pairs'),
+      window._adminListTable('new_account_raters'),
     ]);
     if(u.data) setUsers(u.data);
     if(j.data) setJobs(j.data);
@@ -1580,9 +1598,9 @@ function AdminApp({ adminUser, onLogout }) {
     if(r.data) setRentals(r.data);
     if(sp.data) setSponsors(sp.data);
     if(qp.data) setQuickPools(qp.data);
-    if(fr.data) setFlaggedRatings(fr.data);
-    if(rtp.data) setRepeatedTradePairs(rtp.data);
-    if(nar.data) setNewAccountRaters(nar.data);
+    setFlaggedRatings(fr || []);
+    setRepeatedTradePairs(rtp || []);
+    setNewAccountRaters(nar || []);
     const hiringsCount = j.data?.filter(x=>x.hired_at)?.length??0;
     const pendingRentals = r.data?.filter(x=>x.status==='pending'||x.status==='active')?.length??0;
     setStats({ users:u.data?.length??0, jobs:j.data?.length??0, techs:tc.data?.length??0, market:m.data?.length??0, vacs:v.data?.length??0, disputes:d.data?.filter(x=>x.status==='pending')?.length??0, hirings:hiringsCount, rentals:r.data?.length??0, pendingRentals });

@@ -8,7 +8,14 @@
 // Ações:
 //   { action: 'get',    user_id }  -> lê metadados de auth do usuário
 //   { action: 'delete', user_id }  -> deleta a conta de auth (revoga sessões)
+//   { action: 'list_table', table }  -> lê uma view antifraude (allowlist abaixo)
 // ============================================================================
+
+// Views antifraude — nomes/avaliações/comentários de outros usuários, nunca
+// devem ser legíveis por anon/authenticated diretamente (Supabase Advisor
+// sinalizou como "Security Definer View" expostas publicamente). Só saem
+// daqui, já validado que quem pediu é admin.
+const ANTIFRAUD_TABLES = new Set(['flagged_ratings', 'repeated_trade_pairs', 'new_account_raters']);
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
 const SB_SRK = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -60,9 +67,19 @@ Deno.serve(async (req) => {
   if (!isAdmin) return json({ error: 'forbidden — admin only' }, 403);
 
   // 4. Executa a ação pedida
-  let payload: { action?: string; user_id?: string };
+  let payload: { action?: string; user_id?: string; table?: string };
   try { payload = await req.json(); } catch { return json({ error: 'bad body' }, 400); }
-  const { action, user_id } = payload;
+  const { action, user_id, table } = payload;
+
+  if (action === 'list_table') {
+    if (!table || !ANTIFRAUD_TABLES.has(table)) return json({ error: 'unknown table' }, 400);
+    const orderCol = table === 'flagged_ratings' ? 'created_at'
+      : table === 'repeated_trade_pairs' ? 'trade_count' : 'ratings_given';
+    const r = await fetch(`${SB_URL}/rest/v1/${table}?select=*&order=${orderCol}.desc`, { headers: srkHeaders });
+    const data = await r.json().catch(() => []);
+    return json(data, r.ok ? 200 : r.status);
+  }
+
   if (!user_id) return json({ error: 'missing user_id' }, 400);
 
   if (action === 'get') {
