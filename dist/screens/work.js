@@ -33,6 +33,7 @@ function WorkScreen({
     loadLiveHandoffs,
     liveApplications = [],
     jobApplicantCounts = {},
+    refreshLiveApplications,
     hasUnreadChat,
     openNotifications,
     hasUnreadNotif,
@@ -44,6 +45,10 @@ function WorkScreen({
   const [handoffDetail, setHandoffDetail] = React.useState(null);
   const [editingHandoff, setEditingHandoff] = React.useState(null);
   const [handoffBusy, setHandoffBusy] = React.useState(false);
+  // Pool guy marking a vacation day covered — now goes through this photo-proof
+  // step (opens VacCompletionSheet) instead of instantly flipping to
+  // "completed"; see the sheet below for the rest of the handshake with the owner.
+  const [completingVacApp, setCompletingVacApp] = React.useState(null);
   const t = STRINGS[lang];
   // WorkScreen fully unmounts when the user leaves the Trabalho tab (app.jsx
   // only renders it while tab==='work'), so a plain useState here forgets
@@ -769,6 +774,28 @@ function WorkScreen({
     }
   })));
 
+  // Photo-proof step for finishing a vacation-coverage day: pool guy uploads
+  // at least one photo, which sets pool_guy_done (status stays "accepted")
+  // and notifies the owner — the owner then reviews the photos and finalizes
+  // from ApplicantsSheet, which is what actually flips status to "completed"
+  // and prompts them to rate the pool guy. Keeps the two-sided handshake the
+  // request asked for instead of the pool guy being able to self-certify.
+  const vacCompleteOverlay = /*#__PURE__*/React.createElement(Sheet, {
+    open: !!completingVacApp,
+    onClose: () => setCompletingVacApp(null),
+    height: "auto"
+  }, completingVacApp && /*#__PURE__*/React.createElement(VacCompletionSheet, {
+    app: completingVacApp,
+    lang: lang,
+    showToast: showToast,
+    applicantName: ctxUser?.name,
+    onClose: () => setCompletingVacApp(null),
+    onSubmitted: () => {
+      setCompletingVacApp(null);
+      refreshLiveApplications && refreshLiveApplications();
+    }
+  }));
+
   // ── My Activity data (shared between desktop + mobile) ────────
   const user = ctx.user || {};
 
@@ -801,7 +828,8 @@ function WorkScreen({
       owner: relatedVac?.author || a.job_company || '?',
       author_id: relatedVac?.author_id || a.job_author_id || null,
       pricePerPool: relatedVac?.pricePerPool || 0,
-      status: completedAppIds.has(a.id) ? 'completed' : a.status === 'accepted' ? 'accepted' : a.status === 'rejected' ? 'rejected' : 'awaiting',
+      status: a.status === 'completed' ? 'completed' : a.status === 'accepted' && a.pool_guy_done ? 'done_pending' : a.status === 'accepted' ? 'accepted' : a.status === 'rejected' ? 'rejected' : 'awaiting',
+      poolGuyDone: !!a.pool_guy_done,
       selectedDays: a.selectedDays || null,
       job_id: a.job_id,
       title: relatedVac ? {
@@ -990,26 +1018,6 @@ function WorkScreen({
         to_name: app.company || '',
         listing_name: tr(app.title, lang) || app.company || '',
         connection_type: 'hiring',
-        connection_id: app.job_id || app.id
-      });
-    }
-  }, [openRating, lang]);
-
-  // Vacation coverage had no completion step at all — the arrangement could never
-  // be closed out and neither side was ever prompted to rate the other.
-  const completeVacApp = React.useCallback(async app => {
-    if (app._live && window.sb) {
-      await window.sb.from('job_applications').update({
-        status: 'completed'
-      }).eq('id', app.id);
-    }
-    setCompletedAppIds(p => new Set([...p, app.id]));
-    if (app.author_id && openRating) {
-      openRating({
-        to_id: app.author_id,
-        to_name: app.owner || '',
-        listing_name: lang === 'pt' ? 'Cobertura de rota' : lang === 'es' ? 'Cobertura de ruta' : 'Route coverage',
-        connection_type: 'vacation',
         connection_id: app.job_id || app.id
       });
     }
@@ -1679,6 +1687,7 @@ function WorkScreen({
       // Vacation app
       const isAwaiting = app.status === 'awaiting';
       const isAcc = app.status === 'accepted';
+      const isDonePending = app.status === 'done_pending';
       const isDone = app.status === 'completed';
       const sCfg = isAwaiting ? {
         label: lang === 'pt' ? 'Aguardando' : lang === 'es' ? 'Pendiente' : 'Pending',
@@ -1688,6 +1697,10 @@ function WorkScreen({
         label: lang === 'pt' ? 'Concluída ✓' : lang === 'es' ? 'Completado ✓' : 'Completed ✓',
         color: 'oklch(0.40 0.18 145)',
         bg: 'oklch(0.95 0.05 145)'
+      } : isDonePending ? {
+        label: lang === 'pt' ? 'Aguardando confirmação' : lang === 'es' ? 'Esperando confirmación' : 'Awaiting confirmation',
+        color: 'oklch(0.48 0.16 260)',
+        bg: 'oklch(0.95 0.04 260)'
       } : isAcc ? {
         label: lang === 'pt' ? 'Confirmado ✓' : lang === 'es' ? 'Confirmado ✓' : 'Confirmed ✓',
         color: 'var(--pg-blue-600)',
@@ -1753,7 +1766,7 @@ function WorkScreen({
           color: 'var(--pg-ink-400)'
         }
       }, "\xB7 $", app.pricePerPool, lang === 'en' ? '/pool' : '/pisc'))), isAcc ? /*#__PURE__*/React.createElement("button", {
-        onClick: () => completeVacApp(app),
+        onClick: () => setCompletingVacApp(app),
         style: {
           flexShrink: 0,
           height: 26,
@@ -1767,7 +1780,28 @@ function WorkScreen({
           cursor: 'pointer',
           whiteSpace: 'nowrap'
         }
-      }, lang === 'pt' ? 'Concluir' : lang === 'es' ? 'Completar' : 'Complete') : Icon.chev(13, 'var(--pg-ink-300)'));
+      }, lang === 'pt' ? 'Concluir' : lang === 'es' ? 'Completar' : 'Complete') : isDone ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => openRating && openRating({
+          to_id: app.author_id,
+          to_name: app.owner || '',
+          listing_name: lang === 'pt' ? 'Cobertura de férias' : lang === 'es' ? 'Cobertura de vacaciones' : 'Vacation coverage',
+          connection_type: 'vacation',
+          connection_id: app.job_id || app.id
+        }),
+        style: {
+          flexShrink: 0,
+          height: 26,
+          padding: '0 9px',
+          borderRadius: 7,
+          fontSize: 10.5,
+          fontWeight: 700,
+          border: '1px solid var(--pg-blue-200)',
+          background: 'var(--pg-blue-50)',
+          color: 'var(--pg-blue-600)',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap'
+        }
+      }, "\u2B50 ", lang === 'pt' ? 'Avaliar' : lang === 'es' ? 'Calificar' : 'Rate') : Icon.chev(13, 'var(--pg-ink-300)'));
     }), currentMyApps.length > activityLimit && /*#__PURE__*/React.createElement("button", {
       onClick: () => setActivityLimit(p => p + 4),
       style: {
@@ -2151,7 +2185,7 @@ function WorkScreen({
       radiusMiles: workRadiusMiles,
       setRadiusMiles: setWorkRadiusMiles,
       lang: lang
-    }), handoffOverlays);
+    }), handoffOverlays, vacCompleteOverlay);
   }
   // ── END desktop ────────────────────────────────────────────────
 
@@ -2901,6 +2935,7 @@ function WorkScreen({
       // Vacation app
       const isAwaiting = app.status === 'awaiting';
       const isAccepted = app.status === 'accepted';
+      const isDonePendingVac = app.status === 'done_pending';
       const isDone = app.status === 'completed';
       const isRejectedVac = app.status === 'rejected';
       const statusCfg = isAwaiting ? {
@@ -2911,6 +2946,10 @@ function WorkScreen({
         label: lang === 'pt' ? 'Concluída ✓' : lang === 'es' ? 'Completado ✓' : 'Completed ✓',
         color: 'oklch(0.40 0.18 145)',
         bg: 'oklch(0.95 0.05 145)'
+      } : isDonePendingVac ? {
+        label: lang === 'pt' ? 'Aguardando confirmação' : lang === 'es' ? 'Esperando confirmación' : 'Awaiting confirmation',
+        color: 'oklch(0.48 0.16 260)',
+        bg: 'oklch(0.95 0.04 260)'
       } : isAccepted ? {
         label: lang === 'pt' ? 'Confirmado ✓' : lang === 'es' ? 'Confirmado ✓' : 'Confirmed ✓',
         color: 'var(--pg-blue-600)',
@@ -2972,7 +3011,7 @@ function WorkScreen({
           color: 'var(--pg-ink-400)'
         }
       }, "\xB7 ", tr(app.month, lang), " \xB7 ", app.poolsPerDay, " ", lang === 'pt' ? 'pisc/dia' : lang === 'es' ? 'pisc/día' : 'pools/day'))), isAccepted ? /*#__PURE__*/React.createElement("button", {
-        onClick: () => completeVacApp(app),
+        onClick: () => setCompletingVacApp(app),
         style: {
           flexShrink: 0,
           height: 28,
@@ -2986,7 +3025,28 @@ function WorkScreen({
           cursor: 'pointer',
           whiteSpace: 'nowrap'
         }
-      }, lang === 'pt' ? 'Concluir' : lang === 'es' ? 'Completar' : 'Complete') : /*#__PURE__*/React.createElement("div", {
+      }, lang === 'pt' ? 'Concluir' : lang === 'es' ? 'Completar' : 'Complete') : isDone ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => openRating && openRating({
+          to_id: app.author_id,
+          to_name: app.owner || '',
+          listing_name: lang === 'pt' ? 'Cobertura de férias' : lang === 'es' ? 'Cobertura de vacaciones' : 'Vacation coverage',
+          connection_type: 'vacation',
+          connection_id: app.job_id || app.id
+        }),
+        style: {
+          flexShrink: 0,
+          height: 28,
+          padding: '0 10px',
+          borderRadius: 8,
+          fontSize: 11,
+          fontWeight: 700,
+          border: '1px solid var(--pg-blue-200)',
+          background: 'var(--pg-blue-50)',
+          color: 'var(--pg-blue-600)',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap'
+        }
+      }, "\u2B50 ", lang === 'pt' ? 'Avaliar' : lang === 'es' ? 'Calificar' : 'Rate') : /*#__PURE__*/React.createElement("div", {
         style: {
           textAlign: 'right',
           flexShrink: 0
@@ -7385,7 +7445,53 @@ function VacationPanel({
         marginTop: 7,
         lineHeight: 1.45
       }
-    }, vac.note), /*#__PURE__*/React.createElement("div", {
+    }, vac.note), isOwner && (jobApplicantCounts[vac._id]?.total || 0) > 0 && /*#__PURE__*/React.createElement("button", {
+      onClick: () => onViewApplicants && onViewApplicants({
+        ...vac,
+        type: 'vacation',
+        role: lang === 'pt' ? 'Cobertura de férias' : lang === 'es' ? 'Cobertura de vacaciones' : 'Vacation coverage'
+      }),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        width: '100%',
+        marginTop: 10,
+        padding: '10px 12px',
+        borderRadius: 12,
+        border: 'none',
+        cursor: 'pointer',
+        background: 'linear-gradient(135deg,#0077B6,#023E8A)',
+        color: '#fff'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 30,
+        height: 30,
+        borderRadius: '50%',
+        background: 'rgba(255,255,255,0.18)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }
+    }, Icon.user(15, '#fff')), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0,
+        textAlign: 'left'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700
+      }
+    }, jobApplicantCounts[vac._id].total, " ", jobApplicantCounts[vac._id].total === 1 ? lang === 'pt' ? 'candidato' : lang === 'es' ? 'candidato' : 'applicant' : lang === 'pt' ? 'candidatos' : lang === 'es' ? 'candidatos' : 'applicants'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        opacity: 0.8
+      }
+    }, lang === 'pt' ? 'Toque para ver, conversar e aprovar' : lang === 'es' ? 'Toca para ver, chatear y aprobar' : 'Tap to view, message and approve')), Icon.chev(15, 'rgba(255,255,255,0.8)')), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -7477,28 +7583,7 @@ function VacationPanel({
         gap: 6,
         alignItems: 'center'
       }
-    }, (jobApplicantCounts[vac._id]?.total || 0) > 0 && /*#__PURE__*/React.createElement("button", {
-      onClick: () => onViewApplicants && onViewApplicants({
-        ...vac,
-        type: 'vacation',
-        role: lang === 'pt' ? 'Cobertura de férias' : lang === 'es' ? 'Cobertura de vacaciones' : 'Vacation coverage'
-      }),
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        height: 36,
-        padding: '0 13px',
-        borderRadius: 999,
-        border: 'none',
-        cursor: 'pointer',
-        background: 'linear-gradient(135deg,#0077B6,#023E8A)',
-        color: '#fff',
-        fontSize: 12.5,
-        fontWeight: 700,
-        boxShadow: '0 3px 10px rgba(0,119,182,0.30)'
-      }
-    }, Icon.user(13, '#fff'), jobApplicantCounts[vac._id].total, " ", jobApplicantCounts[vac._id].total === 1 ? lang === 'pt' ? 'candidato' : lang === 'es' ? 'candidato' : 'applicant' : lang === 'pt' ? 'candidatos' : lang === 'es' ? 'candidatos' : 'applicants'), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: () => onEditVac && onEditVac(vac),
       className: "pg-btn pg-btn-primary",
       style: {
@@ -7934,6 +8019,98 @@ function VacationPanel({
       d: "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
     })), lang === 'pt' ? 'Excluir' : lang === 'es' ? 'Eliminar' : 'Delete'));
   }))));
+}
+
+// ── Vacation coverage completion — photo proof before the owner can finalize ──
+function VacCompletionSheet({
+  app,
+  lang = 'en',
+  onClose,
+  onSubmitted,
+  showToast,
+  applicantName
+}) {
+  const [photos, setPhotos] = React.useState([]);
+  const [submitting, setSubmitting] = React.useState(false);
+  const submit = async () => {
+    if (photos.length === 0 || submitting || !window.sb) return;
+    setSubmitting(true);
+    const {
+      error
+    } = await window.sb.from('job_applications').update({
+      submitted_photos: photos.map(url => ({
+        url
+      })),
+      pool_guy_done: true,
+      pool_guy_done_at: new Date().toISOString()
+    }).eq('id', app.id);
+    setSubmitting(false);
+    if (error) {
+      showToast && showToast('❌ ' + error.message);
+      return;
+    }
+    if (app.author_id) {
+      window.sb.from('notifications').insert({
+        user_id: app.author_id,
+        type: 'vacation_photos_submitted',
+        title: JSON.stringify({
+          en: 'Vacation coverage finished',
+          pt: 'Cobertura de férias concluída',
+          es: 'Cobertura de vacaciones terminada'
+        }),
+        body: JSON.stringify({
+          en: `${applicantName || 'The pool guy'} finished — review the photos and confirm.`,
+          pt: `${applicantName || 'O pool guy'} terminou — confira as fotos e confirme.`,
+          es: `${applicantName || 'El pool guy'} terminó — revisa las fotos y confirma.`
+        }),
+        link_id: String(app.job_id || ''),
+        read: false
+      }).catch(() => {});
+      window.sendPush && window.sendPush(app.author_id, lang === 'pt' ? '✅ Cobertura concluída' : lang === 'es' ? '✅ Cobertura terminada' : '✅ Coverage finished', lang === 'pt' ? `${applicantName || 'O pool guy'} terminou — confira as fotos e confirme.` : lang === 'es' ? `${applicantName || 'El pool guy'} terminó — revisa las fotos y confirma.` : `${applicantName || 'The pool guy'} finished — review the photos and confirm.`, '/#work', 'work');
+    }
+    showToast && showToast('✓ ' + (lang === 'pt' ? 'Enviado! Aguarde a confirmação do dono.' : lang === 'es' ? '¡Enviado! Espera la confirmación del dueño.' : 'Sent! Waiting on the owner to confirm.'));
+    onSubmitted && onSubmitted();
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '8px 18px calc(18px + env(safe-area-inset-bottom, 0px))'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 700,
+      textAlign: 'center',
+      margin: '6px 0 4px',
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Finalizar cobertura' : lang === 'es' ? 'Finalizar cobertura' : 'Finish coverage'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: 'var(--pg-ink-500)',
+      textAlign: 'center',
+      marginBottom: 16,
+      lineHeight: 1.4
+    }
+  }, lang === 'pt' ? 'Tire pelo menos uma foto das piscinas que você cobriu. O dono vai revisar e confirmar.' : lang === 'es' ? 'Toma al menos una foto de las piscinas que cubriste. El dueño revisará y confirmará.' : 'Take at least one photo of the pools you covered. The owner will review and confirm.'), /*#__PURE__*/React.createElement(PhotoPicker, {
+    photos: photos,
+    onAdd: url => setPhotos(p => [...p, url]),
+    onRemove: url => setPhotos(p => p.filter(u => u !== url)),
+    max: 6,
+    lang: lang,
+    title: lang === 'pt' ? 'Fotos das piscinas' : lang === 'es' ? 'Fotos de las piscinas' : 'Pool photos'
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: submit,
+    disabled: photos.length === 0 || submitting,
+    className: "pg-btn pg-btn-primary",
+    style: {
+      width: '100%',
+      height: 52,
+      fontSize: 15,
+      borderRadius: 14,
+      marginTop: 18,
+      opacity: photos.length === 0 || submitting ? 0.45 : 1
+    }
+  }, submitting ? lang === 'pt' ? 'Enviando…' : lang === 'es' ? 'Enviando…' : 'Sending…' : lang === 'pt' ? 'Enviar e concluir' : lang === 'es' ? 'Enviar y concluir' : 'Submit and finish'));
 }
 
 // ── New Vacation creation sheet ───────────────────────────────

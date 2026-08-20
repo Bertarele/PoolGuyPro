@@ -2906,6 +2906,7 @@ function App() {
       setChatConvoTarget(name);
       setChatOpen(true);
     },
+    openRating: r => setActiveRating(r),
     onOpenProfile: applicant => setPublicProfileUser({
       uid: applicant.applicant_id || null,
       name: applicant.name,

@@ -2044,6 +2044,7 @@ function App() {
         lang={lang}
         user={user}
         onChat={(name)=>{ setApplicantsPost(null); setChatConvoTarget(name); setChatOpen(true); }}
+        openRating={(r)=>setActiveRating(r)}
         onOpenProfile={(applicant) => setPublicProfileUser({
           uid:     applicant.applicant_id || null,
           name:    applicant.name,

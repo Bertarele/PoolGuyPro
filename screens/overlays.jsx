@@ -761,7 +761,7 @@ function LanguagePickerSheet({ open, onClose, lang, setLang }) {
 }
 
 // ── Applicants Sheet ──────────────────────────────────────────
-function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenProfile }) {
+function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenProfile, openRating }) {
   const t = STRINGS[lang];
   const [applicants, setApplicants] = React.useState([]);
   const [loading,    setLoading]    = React.useState(false);
@@ -800,6 +800,8 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
       when:         relTime(row.created_at),
       rejectReason: row.reject_reason || null,
       selectedDays: vacDays?.selectedDays || null,
+      poolGuyDone:  !!row.pool_guy_done,
+      submittedPhotos: row.submitted_photos || [],
       interview: row.interview_day ? {
         day:  { en: row.interview_day, pt: row.interview_day, es: row.interview_day },
         time: row.interview_time || '',
@@ -951,6 +953,45 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
         await window.sb.from('vacations').update({ booked_days: merged }).eq('id', post._id);
       }
     }
+  };
+
+  // Owner confirms a vacation applicant's submitted photos and closes out the
+  // job — the other half of the two-sided handshake (pool guy submits photos
+  // via VacCompletionSheet, sets pool_guy_done; this is what actually flips
+  // status to "completed"). Also opens RatingSheet for the owner to rate the
+  // pool guy right away; submitting that rating auto-notifies+prompts the
+  // pool guy to rate back (see RatingSheet's reciprocal-notification logic).
+  const finalizeVacation = async (a) => {
+    await updateStatus(a.id, 'completed');
+    if (a.applicant_id && window.sb) {
+      window.sb.from('notifications').insert({
+        user_id: a.applicant_id,
+        type:    'vacation_confirmed',
+        title:   JSON.stringify({ en:'Coverage confirmed ✓', pt:'Cobertura confirmada ✓', es:'Cobertura confirmada ✓' }),
+        body:    JSON.stringify({
+          en: `${post.author || 'The owner'} confirmed your vacation coverage.`,
+          pt: `${post.author || 'O dono'} confirmou sua cobertura de férias.`,
+          es: `${post.author || 'El dueño'} confirmó tu cobertura de vacaciones.`,
+        }),
+        link_id: post._id || null,
+        read:    false,
+      }).catch(()=>{});
+      window.sendPush && window.sendPush(
+        a.applicant_id,
+        lang==='pt' ? '✅ Cobertura confirmada' : lang==='es' ? '✅ Cobertura confirmada' : '✅ Coverage confirmed',
+        lang==='pt' ? `${post.author || 'O dono'} confirmou sua cobertura de férias.`
+          : lang==='es' ? `${post.author || 'El dueño'} confirmó tu cobertura de vacaciones.`
+          : `${post.author || 'The owner'} confirmed your vacation coverage.`,
+        '/#work', 'work'
+      );
+    }
+    openRating && openRating({
+      to_id:           a.applicant_id,
+      to_name:         a.name,
+      listing_name:    lang==='pt'?'Cobertura de férias':lang==='es'?'Cobertura de vacaciones':'Vacation coverage',
+      connection_type: 'vacation',
+      connection_id:   post._id,
+    });
   };
 
   // Build day→owner map from post.bookedDays + currently accepted applicants
@@ -1301,6 +1342,28 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
                     <span style={{fontSize:11.5, fontWeight:700, color:'oklch(0.40 0.18 145)'}}>
                       📅 {tr(a.interview.day, lang)} · {a.interview.time}
                     </span>
+                  </div>
+                )}
+
+                {/* Vacation-specific: pool guy submitted completion photos —
+                    owner reviews them here and finalizes, which is what
+                    actually closes the job out and prompts a rating. */}
+                {post.type === 'vacation' && a.status === 'accepted' && a.poolGuyDone && (
+                  <div style={{marginTop:10, padding:'10px 12px', borderRadius:10, background:'oklch(0.96 0.04 260)', border:'0.5px solid oklch(0.85 0.08 260)'}}>
+                    <div style={{fontSize:11.5, fontWeight:700, color:'oklch(0.42 0.16 260)', marginBottom:8, display:'flex', alignItems:'center', gap:6}}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+                      {lang==='pt'?'Fotos enviadas — revise e confirme':lang==='es'?'Fotos enviadas — revisa y confirma':'Photos submitted — review and confirm'}
+                    </div>
+                    {a.submittedPhotos && a.submittedPhotos.length > 0 && (
+                      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:10}}>
+                        {a.submittedPhotos.map((p,i) => (
+                          <img key={i} src={p.url} alt="" style={{width:56, height:56, borderRadius:8, objectFit:'cover', border:'1px solid oklch(0.85 0.08 260)'}}/>
+                        ))}
+                      </div>
+                    )}
+                    <button onClick={()=>finalizeVacation(a)} className="pg-btn pg-btn-primary" style={{width:'100%', height:38, fontSize:13, borderRadius:999}}>
+                      {Icon.check(14,'#fff')} {lang==='pt'?'Finalizar e avaliar':lang==='es'?'Finalizar y calificar':'Finalize and rate'}
+                    </button>
                   </div>
                 )}
 
