@@ -1585,6 +1585,14 @@ function App() {
   React.useEffect(() => {
     liveJobIdsRef.current = liveJobs.map(j => j._id);
   }, [liveJobs]);
+  // Vacation applications reuse the same job_applications table (job_id column
+  // holds the vacation's id there too) — folding vacation ids into the same
+  // counts query/ref means jobApplicantCounts[vac._id] just works, no
+  // parallel vacation-specific counts machinery needed.
+  const liveVacIdsRef = React.useRef([]);
+  React.useEffect(() => {
+    liveVacIdsRef.current = liveVacations.map(v => v._id);
+  }, [liveVacations]);
   React.useEffect(() => {
     if (!window.sb || !authReady) return;
 
@@ -1800,10 +1808,14 @@ function App() {
       }
       if (m.data) setLiveMarket(m.data.map(normMkt));
       if (m.error) console.warn('[Supabase] marketplace fetch error:', m.error.message);
-      // Load applicant counts in background — non-blocking, doesn't delay UI render
-      if (j.data && j.data.length > 0) {
-        const jobIds = j.data.map(r => r.id);
-        liveJobIdsRef.current = jobIds;
+      // Load applicant counts in background — non-blocking, doesn't delay UI render.
+      // Includes vacation ids too (same job_applications table) so vacation
+      // owners see applicant counts/the same "view applicants" flow.
+      const vacIdsForCounts = v.data ? v.data.map(r => r.id) : [];
+      liveVacIdsRef.current = vacIdsForCounts;
+      if (j.data && j.data.length > 0 || vacIdsForCounts.length > 0) {
+        const jobIds = [...(j.data ? j.data.map(r => r.id) : []), ...vacIdsForCounts];
+        liveJobIdsRef.current = j.data ? j.data.map(r => r.id) : [];
         window.sb.from('job_applications').select('job_id, status, interview_day').in('job_id', jobIds).then(({
           data: appRows
         }) => {
@@ -1825,10 +1837,10 @@ function App() {
     };
     doFetch().catch(e => console.warn('[Supabase] fetch:', e.message));
 
-    // Helper: refresh applicant counts for all known jobs
+    // Helper: refresh applicant counts for all known jobs (+ vacations)
     const doCountsRefresh = async () => {
-      const ids = liveJobIdsRef.current;
-      if (!window.sb || !ids || ids.length === 0) return;
+      const ids = [...(liveJobIdsRef.current || []), ...(liveVacIdsRef.current || [])];
+      if (!window.sb || ids.length === 0) return;
       const {
         data: appRows
       } = await window.sb.from('job_applications').select('job_id, status, interview_day').in('job_id', ids);

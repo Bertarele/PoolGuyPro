@@ -1056,7 +1056,7 @@ function WorkScreen({ ctx }) {
               {handoffCardsList}
               {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts} highlightJobId={ctx.pendingJobCardId} onHighlightConsumed={()=>ctx.clearPendingJobCard&&ctx.clearPendingJobCard()}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
-              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation} highlightVacId={ctx.pendingVacId} onHighlightConsumed={()=>ctx.clearPendingVac&&ctx.clearPendingVac()}/>}
+              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} jobApplicantCounts={jobApplicantCounts} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation} highlightVacId={ctx.pendingVacId} onHighlightConsumed={()=>ctx.clearPendingVac&&ctx.clearPendingVac()}/>}
             </div>
           </div>
         </div>
@@ -1487,6 +1487,7 @@ function WorkScreen({ ctx }) {
         {sub === 'vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab}
                               onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')}
                               onViewApplicants={openApplicants}
+                              jobApplicantCounts={jobApplicantCounts}
                               openDayPicker={openDayPicker}
                               openSchedule={openSchedule}
                               openPublicProfile={openPublicProfile}
@@ -3109,7 +3110,7 @@ function PoolRouteMap({ pools=[], style={}, doneIndices=null }) {
 }
 
 // ── Vacation panel ────────────────────────────────────────────
-function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac, onViewApplicants, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac, onUnlockVac, highlightVacId=null, onHighlightConsumed }) {
+function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac, onViewApplicants, jobApplicantCounts={}, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac, onUnlockVac, highlightVacId=null, onHighlightConsumed }) {
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const [highlightedVacId, setHighlightedVacId] = React.useState(null);
   const vacCardRefs = React.useRef({});
@@ -3468,7 +3469,19 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                       </div>
                     )}
                     {isOwner && user?.role !== 'admin' && (
-                      <div style={{display:'flex', gap:6}}>
+                      <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                        {(jobApplicantCounts[vac._id]?.total || 0) > 0 && (
+                          <button onClick={()=>onViewApplicants && onViewApplicants({ ...vac, type:'vacation', role: (lang==='pt'?'Cobertura de férias':lang==='es'?'Cobertura de vacaciones':'Vacation coverage') })} style={{
+                            display:'flex', alignItems:'center', gap:6, height:36, padding:'0 13px', borderRadius:999, border:'none', cursor:'pointer',
+                            background:'linear-gradient(135deg,#0077B6,#023E8A)', color:'#fff', fontSize:12.5, fontWeight:700,
+                            boxShadow:'0 3px 10px rgba(0,119,182,0.30)',
+                          }}>
+                            {Icon.user(13,'#fff')}
+                            {jobApplicantCounts[vac._id].total} {jobApplicantCounts[vac._id].total===1
+                              ? (lang==='pt'?'candidato':lang==='es'?'candidato':'applicant')
+                              : (lang==='pt'?'candidatos':lang==='es'?'candidatos':'applicants')}
+                          </button>
+                        )}
                         <button onClick={()=>onEditVac && onEditVac(vac)}
                           className="pg-btn pg-btn-primary"
                           style={{height:36, padding:'0 16px', fontSize:13, borderRadius:999, gap:5}}>

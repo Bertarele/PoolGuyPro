@@ -2133,6 +2133,7 @@ function WorkScreen({
       onEditVac: openEditVacSheet,
       onUnlockVac: () => ctx.openPaywall && ctx.openPaywall('vac'),
       onViewApplicants: openApplicants,
+      jobApplicantCounts: jobApplicantCounts,
       openDayPicker: openDayPicker,
       openSchedule: openSchedule,
       openPublicProfile: openPublicProfile,
@@ -3188,6 +3189,7 @@ function WorkScreen({
     onEditVac: openEditVacSheet,
     onUnlockVac: () => ctx.openPaywall && ctx.openPaywall('vac'),
     onViewApplicants: openApplicants,
+    jobApplicantCounts: jobApplicantCounts,
     openDayPicker: openDayPicker,
     openSchedule: openSchedule,
     openPublicProfile: openPublicProfile,
@@ -6881,6 +6883,7 @@ function VacationPanel({
   onCreate,
   onEditVac,
   onViewApplicants,
+  jobApplicantCounts = {},
   openDayPicker,
   openSchedule,
   openPublicProfile,
@@ -7471,9 +7474,31 @@ function VacationPanel({
     }, pickDaysLabel, " \u2192")), isOwner && user?.role !== 'admin' && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
-        gap: 6
+        gap: 6,
+        alignItems: 'center'
       }
-    }, /*#__PURE__*/React.createElement("button", {
+    }, (jobApplicantCounts[vac._id]?.total || 0) > 0 && /*#__PURE__*/React.createElement("button", {
+      onClick: () => onViewApplicants && onViewApplicants({
+        ...vac,
+        type: 'vacation',
+        role: lang === 'pt' ? 'Cobertura de férias' : lang === 'es' ? 'Cobertura de vacaciones' : 'Vacation coverage'
+      }),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        height: 36,
+        padding: '0 13px',
+        borderRadius: 999,
+        border: 'none',
+        cursor: 'pointer',
+        background: 'linear-gradient(135deg,#0077B6,#023E8A)',
+        color: '#fff',
+        fontSize: 12.5,
+        fontWeight: 700,
+        boxShadow: '0 3px 10px rgba(0,119,182,0.30)'
+      }
+    }, Icon.user(13, '#fff'), jobApplicantCounts[vac._id].total, " ", jobApplicantCounts[vac._id].total === 1 ? lang === 'pt' ? 'candidato' : lang === 'es' ? 'candidato' : 'applicant' : lang === 'pt' ? 'candidatos' : lang === 'es' ? 'candidatos' : 'applicants'), /*#__PURE__*/React.createElement("button", {
       onClick: () => onEditVac && onEditVac(vac),
       className: "pg-btn pg-btn-primary",
       style: {
