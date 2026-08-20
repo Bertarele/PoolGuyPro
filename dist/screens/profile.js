@@ -900,7 +900,8 @@ function ProfileScreen({
       padding: 0
     }
   }, Icon.plus(13, 'var(--pg-blue-500)'), " ", t.add))), /*#__PURE__*/React.createElement(Section, {
-    title: t.myPosts
+    title: t.myPosts,
+    accent: "#0EBAC7"
   }, /*#__PURE__*/React.createElement("div", {
     className: "pg-card",
     style: {
@@ -909,11 +910,29 @@ function ProfileScreen({
     }
   }, MY_POSTS.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '16px 14px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 8,
+      padding: '26px 20px',
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      background: 'var(--pg-ink-100)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, Icon.briefcase(18, 'var(--pg-ink-400)')), /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 13,
       color: 'var(--pg-ink-500)'
     }
-  }, t.noPostsYet) : MY_POSTS.map((post, idx) => {
+  }, t.noPostsYet)) : MY_POSTS.map((post, idx) => {
     const pendingCount = post.applicants.filter(a => a.status === 'pending').length;
     const isLast = idx === MY_POSTS.length - 1;
     return /*#__PURE__*/React.createElement("div", {
@@ -1011,8 +1030,8 @@ function ProfileScreen({
     }
   }, /*#__PURE__*/React.createElement(SettingRow, {
     icon: darkMode ? /*#__PURE__*/React.createElement("svg", {
-      width: "18",
-      height: "18",
+      width: "17",
+      height: "17",
       viewBox: "0 0 24 24",
       fill: "none",
       stroke: "#F59E0B",
@@ -1063,16 +1082,17 @@ function ProfileScreen({
       x2: "19.78",
       y2: "4.22"
     })) : /*#__PURE__*/React.createElement("svg", {
-      width: "18",
-      height: "18",
+      width: "17",
+      height: "17",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: "var(--pg-blue-500)",
+      stroke: "#F59E0B",
       strokeWidth: "2",
       strokeLinecap: "round"
     }, /*#__PURE__*/React.createElement("path", {
       d: "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
     })),
+    iconBg: "rgba(245,158,11,0.12)",
     label: lang === 'pt' ? 'Modo Escuro' : lang === 'es' ? 'Modo Oscuro' : 'Dark Mode',
     right: /*#__PURE__*/React.createElement("div", {
       onClick: e => {
@@ -1086,27 +1106,57 @@ function ProfileScreen({
     }),
     onClick: toggleDark
   }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SettingRow, {
-    icon: Icon.bell(18, 'var(--pg-blue-500)'),
+    icon: Icon.bell(17, 'var(--pg-blue-500)'),
     label: t.notifications,
-    detail: pushLog.startsWith('✅') ? lang === 'pt' ? 'Ativas' : 'Active' : lang === 'pt' ? 'Verificar' : 'Check',
-    chev: true,
+    sub: pushLog.startsWith('✅') ? lang === 'pt' ? 'Push ativado neste dispositivo' : 'Push enabled on this device' : lang === 'pt' ? 'Toque para ativar' : 'Tap to enable',
+    right: /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        flexShrink: 0,
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '4px 9px',
+        borderRadius: 999,
+        background: pushLog.startsWith('✅') ? 'rgba(16,185,129,0.12)' : pushLog.startsWith('❌') ? 'rgba(220,38,38,0.1)' : 'var(--pg-ink-100)',
+        color: pushLog.startsWith('✅') ? '#10B981' : pushLog.startsWith('❌') ? '#DC2626' : 'var(--pg-ink-500)'
+      }
+    }, pushLog.startsWith('✅') && /*#__PURE__*/React.createElement("svg", {
+      width: "10",
+      height: "10",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "3",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "20 6 9 17 4 12"
+    })), pushLog.startsWith('✅') ? lang === 'pt' ? 'Ativas' : 'Active' : pushLog.startsWith('❌') ? lang === 'pt' ? 'Erro' : 'Error' : lang === 'pt' ? 'Verificar' : 'Check'),
     onClick: openPushNotif
   }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '0 14px 12px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '4px 16px 10px',
-      gap: 8
+      gap: 8,
+      padding: '8px 12px',
+      borderRadius: 10,
+      background: 'var(--pg-ink-50)'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       flex: 1,
       lineHeight: 1.3,
-      color: pushLog.startsWith('✅') ? '#16A34A' : pushLog.startsWith('❌') ? '#DC2626' : 'var(--pg-ink-400)'
+      color: 'var(--pg-ink-500)'
     }
-  }, pushLog || (lang === 'pt' ? 'Toque para ativar notificações push' : 'Tap to enable push notifications')), /*#__PURE__*/React.createElement("button", {
+  }, pushLog || (lang === 'pt' ? 'Ative para não perder novas vagas e mensagens' : 'Enable to not miss new jobs and messages')), /*#__PURE__*/React.createElement("button", {
     onClick: retryPush,
     style: {
       fontSize: 11,
@@ -1115,11 +1165,11 @@ function ProfileScreen({
       border: 'none',
       background: 'transparent',
       cursor: 'pointer',
-      padding: '4px 8px',
+      padding: '4px 6px',
       whiteSpace: 'nowrap',
       flexShrink: 0
     }
-  }, pushLog.startsWith('✅') ? lang === 'pt' ? 'Re-testar' : 'Re-test' : lang === 'pt' ? 'Ativar' : 'Enable')), pushLog.startsWith('✅') && notifPrefs && (() => {
+  }, pushLog.startsWith('✅') ? lang === 'pt' ? 'Re-testar' : 'Re-test' : lang === 'pt' ? 'Ativar' : 'Enable'))), pushLog.startsWith('✅') && notifPrefs && (() => {
     const prefs = notifPrefs;
     const toggle = key => {
       const next = {
@@ -1128,69 +1178,47 @@ function ProfileScreen({
       };
       saveNotifPrefs && saveNotifPrefs(next);
     };
-    const Switch = ({
-      on
-    }) => /*#__PURE__*/React.createElement("div", {
-      onClick: null,
-      style: {
-        width: 40,
-        height: 22,
-        borderRadius: 11,
-        flexShrink: 0,
-        background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)',
-        position: 'relative',
-        transition: 'background .2s',
-        cursor: 'pointer'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        top: 2,
-        left: on ? 20 : 2,
-        width: 18,
-        height: 18,
-        borderRadius: '50%',
-        background: '#fff',
-        transition: 'left .2s',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.25)'
-      }
-    }));
     const rows = [{
       key: 'chat',
-      icon: '💬',
+      icon: Icon.msg(15, '#0077B6'),
+      iconBg: 'rgba(0,119,182,0.1)',
       label: lang === 'pt' ? 'Chat' : 'Chat'
     }, {
       key: 'quick',
-      icon: '⚡',
+      icon: Icon.bolt(15, '#0D7280'),
+      iconBg: 'rgba(14,186,199,0.12)',
       label: lang === 'pt' ? 'Piscinas Rápidas' : 'Express Pools'
     }, {
       key: 'market',
-      icon: '🛒',
+      icon: Icon.cart(15, '#B45309'),
+      iconBg: 'rgba(217,119,6,0.1)',
       label: lang === 'pt' ? 'Marketplace' : 'Marketplace'
     }, {
       key: 'work',
-      icon: '💼',
+      icon: Icon.briefcase(15, '#6D28D9'),
+      iconBg: 'rgba(109,40,217,0.1)',
       label: lang === 'pt' ? 'Vagas de Trabalho' : 'Job Listings'
     }];
     return /*#__PURE__*/React.createElement("div", {
       style: {
-        margin: '0 12px 10px',
-        borderRadius: 10,
+        margin: '0 14px 12px',
+        borderRadius: 12,
         overflow: 'hidden',
         border: '1px solid var(--pg-ink-100)'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        padding: '8px 14px 6px',
-        fontSize: 11,
-        fontWeight: 600,
+        padding: '9px 12px 7px',
+        fontSize: 10.5,
+        fontWeight: 700,
         color: 'var(--pg-ink-400)',
-        letterSpacing: .4,
+        letterSpacing: '0.06em',
         textTransform: 'uppercase'
       }
     }, lang === 'pt' ? 'Receber notificações de' : 'Receive notifications for'), rows.map(({
       key,
       icon,
+      iconBg,
       label
     }, i) => /*#__PURE__*/React.createElement("div", {
       key: key,
@@ -1198,29 +1226,39 @@ function ProfileScreen({
       style: {
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '10px 14px',
+        gap: 10,
+        padding: '9px 12px',
         cursor: 'pointer',
         borderTop: i > 0 ? '0.5px solid var(--pg-ink-100)' : 'none',
         background: 'var(--pg-white)'
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        background: iconBg,
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
-        fontSize: 14,
+        justifyContent: 'center',
+        flexShrink: 0
+      }
+    }, icon), /*#__PURE__*/React.createElement("span", {
+      style: {
+        flex: 1,
+        fontSize: 13.5,
+        fontWeight: 500,
         color: 'var(--pg-ink-900)'
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, label), /*#__PURE__*/React.createElement("div", {
+      className: 'pg-toggle' + (prefs[key] !== false ? ' on' : ''),
       style: {
-        fontSize: 16
+        flexShrink: 0
       }
-    }, icon), label), /*#__PURE__*/React.createElement(Switch, {
-      on: prefs[key] !== false
     }))));
   })()), /*#__PURE__*/React.createElement(SettingRow, {
-    icon: Icon.globe(18, 'var(--pg-blue-500)'),
+    icon: Icon.globe(17, '#0EBAC7'),
+    iconBg: "rgba(14,186,199,0.12)",
     label: t.languageLbl,
     detail: {
       en: t.english,
@@ -1230,35 +1268,38 @@ function ProfileScreen({
     chev: true,
     onClick: openLanguagePicker
   }), /*#__PURE__*/React.createElement(SettingRow, {
-    icon: Icon.shield(18, 'var(--pg-blue-500)'),
+    icon: Icon.shield(17, '#10B981'),
+    iconBg: "rgba(16,185,129,0.12)",
     label: t.verification,
     detail: t.verified,
     chev: true,
     onClick: openVerification
   }), /*#__PURE__*/React.createElement(SettingRow, {
-    icon: Icon.msg(18, 'var(--pg-blue-500)'),
+    icon: Icon.msg(17, 'var(--pg-blue-500)'),
     label: t.helpSupport,
     chev: true,
     onClick: openHelp
   }), /*#__PURE__*/React.createElement(SettingRow, {
     icon: /*#__PURE__*/React.createElement("svg", {
-      width: "18",
-      height: "18",
+      width: "17",
+      height: "17",
       viewBox: "0 0 24 24",
       fill: "none",
-      stroke: "var(--pg-blue-500)",
+      stroke: "#B45309",
       strokeWidth: "2",
       strokeLinecap: "round",
       strokeLinejoin: "round"
     }, /*#__PURE__*/React.createElement("path", {
       d: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
     })),
+    iconBg: "rgba(217,119,6,0.1)",
     label: lang === 'pt' ? 'Enviar Feedback' : lang === 'es' ? 'Enviar Feedback' : 'Send Feedback',
     detail: lang === 'pt' ? 'Beta' : 'Beta',
     chev: true,
     onClick: openFeedback
   }), /*#__PURE__*/React.createElement(SettingRow, {
-    icon: Icon.lock(18, 'var(--pg-blue-500)'),
+    icon: Icon.lock(17, 'var(--pg-ink-500)'),
+    iconBg: "var(--pg-ink-100)",
     label: t.privacy,
     chev: true,
     last: true,
@@ -2184,25 +2225,41 @@ function Section({
   title,
   action,
   onAction,
+  accent = 'var(--pg-blue-500)',
   children
 }) {
   return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'baseline',
-      marginBottom: 8
+      alignItems: 'center',
+      marginBottom: 10,
+      gap: 8
     }
-  }, /*#__PURE__*/React.createElement("h3", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 7
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 3,
+      height: 13,
+      borderRadius: 2,
+      background: accent,
+      flexShrink: 0
+    }
+  }), /*#__PURE__*/React.createElement("h3", {
     style: {
       margin: 0,
       fontWeight: 700,
       color: 'var(--pg-ink-700)',
-      letterSpacing: '-0.01em',
+      letterSpacing: '0.05em',
       textTransform: 'uppercase',
       fontSize: 11
     }
-  }, title), action && /*#__PURE__*/React.createElement("button", {
+  }, title)), action && /*#__PURE__*/React.createElement("button", {
     onClick: onAction,
     style: {
       border: 'none',
@@ -2216,7 +2273,9 @@ function Section({
 }
 function SettingRow({
   icon,
+  iconBg = 'var(--pg-blue-100)',
   label,
+  sub,
   detail,
   chev,
   last,
@@ -2235,10 +2294,10 @@ function SettingRow({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 32,
-      height: 32,
-      borderRadius: 8,
-      background: 'var(--pg-blue-100)',
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      background: iconBg,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -2247,16 +2306,34 @@ function SettingRow({
   }, icon), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
-      fontSize: 14,
-      fontWeight: 500,
-      color: 'var(--pg-ink-900)'
+      minWidth: 0
     }
-  }, label), detail && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      color: 'var(--pg-ink-900)',
+      letterSpacing: '-0.005em'
+    }
+  }, label), sub && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-ink-500)',
+      marginTop: 1
+    }
+  }, sub)), detail && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
-      color: 'var(--pg-ink-500)'
+      color: 'var(--pg-ink-500)',
+      fontWeight: 500,
+      flexShrink: 0
     }
-  }, detail), right, chev && Icon.chev(14, 'var(--pg-ink-400)'));
+  }, detail), right, chev && /*#__PURE__*/React.createElement("span", {
+    style: {
+      flexShrink: 0,
+      display: 'flex'
+    }
+  }, Icon.chev(14, 'var(--pg-ink-400)')));
 }
 function _historyItemRow(m, idx, isLast, fmtDate, fmtType, badge) {
   return /*#__PURE__*/React.createElement("div", {

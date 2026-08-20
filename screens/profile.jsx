@@ -402,10 +402,15 @@ function ProfileScreen({ ctx }) {
         </Section>
 
         {/* My Posts */}
-        <Section title={t.myPosts}>
+        <Section title={t.myPosts} accent="#0EBAC7">
           <div className="pg-card" style={{padding:0, overflow:'hidden'}}>
             {MY_POSTS.length === 0 ? (
-              <div style={{padding:'16px 14px', fontSize:13, color:'var(--pg-ink-500)'}}>{t.noPostsYet}</div>
+              <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:8, padding:'26px 20px', textAlign:'center'}}>
+                <div style={{width:40, height:40, borderRadius:12, background:'var(--pg-ink-100)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                  {Icon.briefcase(18,'var(--pg-ink-400)')}
+                </div>
+                <div style={{fontSize:13, color:'var(--pg-ink-500)'}}>{t.noPostsYet}</div>
+              </div>
             ) : MY_POSTS.map((post, idx) => {
               const pendingCount = post.applicants.filter(a=>a.status==='pending').length;
               const isLast = idx === MY_POSTS.length - 1;
@@ -455,9 +460,10 @@ function ProfileScreen({ ctx }) {
             {/* Dark Mode — first row, most visible */}
             <SettingRow
               icon={darkMode
-                ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
               }
+              iconBg="rgba(245,158,11,0.12)"
               label={lang==='pt'?'Modo Escuro':lang==='es'?'Modo Oscuro':'Dark Mode'}
               right={
                 <div
@@ -469,17 +475,32 @@ function ProfileScreen({ ctx }) {
               onClick={toggleDark}
             />
             <div>
-              <SettingRow icon={Icon.bell(18,'var(--pg-blue-500)')} label={t.notifications}
-                detail={pushLog.startsWith('✅') ? (lang==='pt'?'Ativas':'Active') : (lang==='pt'?'Verificar':'Check')}
-                chev onClick={openPushNotif}/>
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 16px 10px',gap:8}}>
-                <span style={{fontSize:11,flex:1,lineHeight:1.3,
-                  color: pushLog.startsWith('✅') ? '#16A34A' : pushLog.startsWith('❌') ? '#DC2626' : 'var(--pg-ink-400)'}}>
-                  {pushLog || (lang==='pt'?'Toque para ativar notificações push':'Tap to enable push notifications')}
-                </span>
-                <button onClick={retryPush} style={{fontSize:11,fontWeight:700,color:'var(--pg-blue-500)',border:'none',background:'transparent',cursor:'pointer',padding:'4px 8px',whiteSpace:'nowrap',flexShrink:0}}>
-                  {pushLog.startsWith('✅') ? (lang==='pt'?'Re-testar':'Re-test') : (lang==='pt'?'Ativar':'Enable')}
-                </button>
+              <SettingRow icon={Icon.bell(17,'var(--pg-blue-500)')} label={t.notifications}
+                sub={pushLog.startsWith('✅')
+                  ? (lang==='pt'?'Push ativado neste dispositivo':'Push enabled on this device')
+                  : (lang==='pt'?'Toque para ativar':'Tap to enable')}
+                right={
+                  <span style={{
+                    display:'flex', alignItems:'center', gap:5, flexShrink:0,
+                    fontSize:11, fontWeight:700, padding:'4px 9px', borderRadius:999,
+                    background: pushLog.startsWith('✅') ? 'rgba(16,185,129,0.12)' : pushLog.startsWith('❌') ? 'rgba(220,38,38,0.1)' : 'var(--pg-ink-100)',
+                    color: pushLog.startsWith('✅') ? '#10B981' : pushLog.startsWith('❌') ? '#DC2626' : 'var(--pg-ink-500)',
+                  }}>
+                    {pushLog.startsWith('✅') && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    {pushLog.startsWith('✅') ? (lang==='pt'?'Ativas':'Active') : pushLog.startsWith('❌') ? (lang==='pt'?'Erro':'Error') : (lang==='pt'?'Verificar':'Check')}
+                  </span>
+                }
+                onClick={openPushNotif}/>
+              <div style={{padding:'0 14px 12px'}}>
+                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
+                  padding:'8px 12px', borderRadius:10, background:'var(--pg-ink-50)'}}>
+                  <span style={{fontSize:11, flex:1, lineHeight:1.3, color:'var(--pg-ink-500)'}}>
+                    {pushLog || (lang==='pt'?'Ative para não perder novas vagas e mensagens':'Enable to not miss new jobs and messages')}
+                  </span>
+                  <button onClick={retryPush} style={{fontSize:11,fontWeight:700,color:'var(--pg-blue-500)',border:'none',background:'transparent',cursor:'pointer',padding:'4px 6px',whiteSpace:'nowrap',flexShrink:0}}>
+                    {pushLog.startsWith('✅') ? (lang==='pt'?'Re-testar':'Re-test') : (lang==='pt'?'Ativar':'Enable')}
+                  </button>
+                </div>
               </div>
               {/* Notification type preferences — only shown when push is active */}
               {pushLog.startsWith('✅') && notifPrefs && (() => {
@@ -488,59 +509,44 @@ function ProfileScreen({ ctx }) {
                   const next = { ...prefs, [key]: !prefs[key] };
                   saveNotifPrefs && saveNotifPrefs(next);
                 };
-                const Switch = ({ on }) => (
-                  <div onClick={null} style={{
-                    width:40, height:22, borderRadius:11, flexShrink:0,
-                    background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-200)',
-                    position:'relative', transition:'background .2s',
-                    cursor:'pointer',
-                  }}>
-                    <div style={{
-                      position:'absolute', top:2, left: on ? 20 : 2,
-                      width:18, height:18, borderRadius:'50%',
-                      background:'#fff', transition:'left .2s',
-                      boxShadow:'0 1px 4px rgba(0,0,0,0.25)',
-                    }}/>
-                  </div>
-                );
                 const rows = [
-                  { key:'chat',   icon:'💬', label: lang==='pt'?'Chat':'Chat' },
-                  { key:'quick',  icon:'⚡', label: lang==='pt'?'Piscinas Rápidas':'Express Pools' },
-                  { key:'market', icon:'🛒', label: lang==='pt'?'Marketplace':'Marketplace' },
-                  { key:'work',   icon:'💼', label: lang==='pt'?'Vagas de Trabalho':'Job Listings' },
+                  { key:'chat',   icon:Icon.msg(15,'#0077B6'),       iconBg:'rgba(0,119,182,0.1)',   label: lang==='pt'?'Chat':'Chat' },
+                  { key:'quick',  icon:Icon.bolt(15,'#0D7280'),      iconBg:'rgba(14,186,199,0.12)', label: lang==='pt'?'Piscinas Rápidas':'Express Pools' },
+                  { key:'market', icon:Icon.cart(15,'#B45309'),      iconBg:'rgba(217,119,6,0.1)',   label: lang==='pt'?'Marketplace':'Marketplace' },
+                  { key:'work',   icon:Icon.briefcase(15,'#6D28D9'), iconBg:'rgba(109,40,217,0.1)',  label: lang==='pt'?'Vagas de Trabalho':'Job Listings' },
                 ];
                 return (
-                  <div style={{margin:'0 12px 10px', borderRadius:10, overflow:'hidden', border:'1px solid var(--pg-ink-100)'}}>
-                    <div style={{padding:'8px 14px 6px', fontSize:11, fontWeight:600, color:'var(--pg-ink-400)', letterSpacing:.4, textTransform:'uppercase'}}>
+                  <div style={{margin:'0 14px 12px', borderRadius:12, overflow:'hidden', border:'1px solid var(--pg-ink-100)'}}>
+                    <div style={{padding:'9px 12px 7px', fontSize:10.5, fontWeight:700, color:'var(--pg-ink-400)', letterSpacing:'0.06em', textTransform:'uppercase'}}>
                       {lang==='pt' ? 'Receber notificações de' : 'Receive notifications for'}
                     </div>
-                    {rows.map(({ key, icon, label }, i) => (
+                    {rows.map(({ key, icon, iconBg, label }, i) => (
                       <div key={key} onClick={() => toggle(key)}
-                        style={{display:'flex', alignItems:'center', justifyContent:'space-between',
-                          padding:'10px 14px', cursor:'pointer',
+                        style={{display:'flex', alignItems:'center', gap:10,
+                          padding:'9px 12px', cursor:'pointer',
                           borderTop: i > 0 ? '0.5px solid var(--pg-ink-100)' : 'none',
                           background:'var(--pg-white)'}}>
-                        <span style={{display:'flex', alignItems:'center', gap:8, fontSize:14, color:'var(--pg-ink-900)'}}>
-                          <span style={{fontSize:16}}>{icon}</span>{label}
-                        </span>
-                        <Switch on={prefs[key] !== false}/>
+                        <div style={{width:28, height:28, borderRadius:8, background:iconBg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>{icon}</div>
+                        <span style={{flex:1, fontSize:13.5, fontWeight:500, color:'var(--pg-ink-900)'}}>{label}</span>
+                        <div className={'pg-toggle' + (prefs[key] !== false ? ' on' : '')} style={{flexShrink:0}}/>
                       </div>
                     ))}
                   </div>
                 );
               })()}
             </div>
-            <SettingRow icon={Icon.globe(18,'var(--pg-blue-500)')} label={t.languageLbl}
+            <SettingRow icon={Icon.globe(17,'#0EBAC7')} iconBg="rgba(14,186,199,0.12)" label={t.languageLbl}
               detail={({en:t.english, pt:t.portuguese, es:t.spanish})[lang]} chev
               onClick={openLanguagePicker}/>
-            <SettingRow icon={Icon.shield(18,'var(--pg-blue-500)')} label={t.verification} detail={t.verified} chev onClick={openVerification}/>
-            <SettingRow icon={Icon.msg(18,'var(--pg-blue-500)')} label={t.helpSupport} chev onClick={openHelp}/>
+            <SettingRow icon={Icon.shield(17,'#10B981')} iconBg="rgba(16,185,129,0.12)" label={t.verification} detail={t.verified} chev onClick={openVerification}/>
+            <SettingRow icon={Icon.msg(17,'var(--pg-blue-500)')} label={t.helpSupport} chev onClick={openHelp}/>
             <SettingRow
-              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}
+              icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}
+              iconBg="rgba(217,119,6,0.1)"
               label={lang==='pt'?'Enviar Feedback':lang==='es'?'Enviar Feedback':'Send Feedback'}
               detail={lang==='pt'?'Beta':'Beta'}
               chev onClick={openFeedback}/>
-            <SettingRow icon={Icon.lock(18,'var(--pg-blue-500)')} label={t.privacy} chev last onClick={openPrivacy}/>
+            <SettingRow icon={Icon.lock(17,'var(--pg-ink-500)')} iconBg="var(--pg-ink-100)" label={t.privacy} chev last onClick={openPrivacy}/>
           </div>
         </Section>
 
@@ -1004,11 +1010,14 @@ function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=
   );
 }
 
-function Section({ title, action, onAction, children }) {
+function Section({ title, action, onAction, accent='var(--pg-blue-500)', children }) {
   return (
     <section>
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
-        <h3 style={{margin:0, fontWeight:700, color:'var(--pg-ink-700)', letterSpacing:'-0.01em', textTransform:'uppercase', fontSize:11}}>{title}</h3>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, gap:8}}>
+        <div style={{display:'flex', alignItems:'center', gap:7}}>
+          <div style={{width:3, height:13, borderRadius:2, background:accent, flexShrink:0}}/>
+          <h3 style={{margin:0, fontWeight:700, color:'var(--pg-ink-700)', letterSpacing:'0.05em', textTransform:'uppercase', fontSize:11}}>{title}</h3>
+        </div>
         {action && <button onClick={onAction} style={{border:'none', background:'transparent', color:'var(--pg-blue-500)', fontSize:13, fontWeight:600, cursor:'pointer'}}>{action}</button>}
       </div>
       {children}
@@ -1016,18 +1025,21 @@ function Section({ title, action, onAction, children }) {
   );
 }
 
-function SettingRow({ icon, label, detail, chev, last, onClick, right }) {
+function SettingRow({ icon, iconBg='var(--pg-blue-100)', label, sub, detail, chev, last, onClick, right }) {
   return (
     <div onClick={onClick} style={{
       display:'flex', alignItems:'center', gap:12, padding:'13px 14px',
       borderBottom: last ? 'none' : '0.5px solid var(--pg-ink-200)',
       cursor: onClick ? 'pointer' : 'default',
     }}>
-      <div style={{width:32, height:32, borderRadius:8, background:'var(--pg-blue-100)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>{icon}</div>
-      <div style={{flex:1, fontSize:14, fontWeight:500, color:'var(--pg-ink-900)'}}>{label}</div>
-      {detail && <div style={{fontSize:13, color:'var(--pg-ink-500)'}}>{detail}</div>}
+      <div style={{width:34, height:34, borderRadius:10, background:iconBg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>{icon}</div>
+      <div style={{flex:1, minWidth:0}}>
+        <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-900)', letterSpacing:'-0.005em'}}>{label}</div>
+        {sub && <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>{sub}</div>}
+      </div>
+      {detail && <div style={{fontSize:13, color:'var(--pg-ink-500)', fontWeight:500, flexShrink:0}}>{detail}</div>}
       {right}
-      {chev && Icon.chev(14,'var(--pg-ink-400)')}
+      {chev && <span style={{flexShrink:0, display:'flex'}}>{Icon.chev(14,'var(--pg-ink-400)')}</span>}
     </div>
   );
 }
