@@ -5384,8 +5384,8 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
               const cnt  = getPoolsForDay(d);
               const isSel = selected.has(d);
               return (
-                <div key={d} style={{
-                  display:'flex', justifyContent:'space-between', alignItems:'center',
+                <div key={d} onClick={()=>toggle(d)} style={{
+                  display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer',
                   fontSize:12, padding:'5px 8px', borderRadius:8, marginLeft:-8, marginRight:-8,
                   transition:'all .15s ease',
                   background: isSel ? 'var(--pg-blue-500)' : 'transparent',

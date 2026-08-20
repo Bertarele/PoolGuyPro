@@ -10987,10 +10987,12 @@ function VacationDayPickerSheet({
     const isSel = selected.has(d);
     return /*#__PURE__*/React.createElement("div", {
       key: d,
+      onClick: () => toggle(d),
       style: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        cursor: 'pointer',
         fontSize: 12,
         padding: '5px 8px',
         borderRadius: 8,
