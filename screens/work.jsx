@@ -3216,24 +3216,19 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
           )}
         </div>
 
-        {/* Boost motivation banner — compact */}
+        {/* Boost tip — plain informational note, deliberately NOT styled like a
+            vacation card (no gradient hero treatment) so it doesn't read as
+            another listing to tap; just a small aside next to the list. */}
         <div style={{
-          borderRadius:12, padding:'10px 13px', marginBottom:14,
-          background:'linear-gradient(120deg, var(--pg-blue-900) 0%, oklch(0.34 0.13 215) 100%)',
-          display:'flex', alignItems:'center', gap:10, color:'#fff',
-          position:'relative', overflow:'hidden',
+          borderRadius:10, padding:'9px 12px', marginBottom:14,
+          background:'var(--pg-aqua-50)', border:'1px solid var(--pg-aqua-100)',
+          display:'flex', alignItems:'flex-start', gap:8,
         }}>
-          <div style={{position:'absolute', right:-16, top:-16, width:70, height:70, borderRadius:'50%',
-            background:'oklch(0.85 0.15 90 / 0.13)', pointerEvents:'none'}}/>
-          <div style={{width:28, height:28, borderRadius:8, flexShrink:0, background:'oklch(0.85 0.15 90)',
-            display:'flex', alignItems:'center', justifyContent:'center'}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--pg-blue-900)">
-              <path d="M12 2l2.39 7.36H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.15L2 9.36h7.61z"/>
-            </svg>
-          </div>
-          <div style={{flex:1, minWidth:0, position:'relative'}}>
-            <div style={{fontSize:12, fontWeight:700, lineHeight:1.3}}>{boost.title}</div>
-            <div style={{fontSize:10.5, opacity:0.75, marginTop:1}}>{boost.chip}</div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-aqua-700)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0, marginTop:1}}>
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+          </svg>
+          <div style={{fontSize:11.5, lineHeight:1.4, color:'var(--pg-aqua-700)'}}>
+            <b>{boost.title}.</b> {boost.body}
           </div>
         </div>
 

@@ -7019,65 +7019,43 @@ function VacationPanel({
     }
   }, sortedStaticVac.length + sortedLiveVac.length, " ", lang === 'pt' ? 'disponíveis' : lang === 'es' ? 'disponibles' : 'available')), /*#__PURE__*/React.createElement("div", {
     style: {
-      borderRadius: 12,
-      padding: '10px 13px',
+      borderRadius: 10,
+      padding: '9px 12px',
       marginBottom: 14,
-      background: 'linear-gradient(120deg, var(--pg-blue-900) 0%, oklch(0.34 0.13 215) 100%)',
+      background: 'var(--pg-aqua-50)',
+      border: '1px solid var(--pg-aqua-100)',
       display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      color: '#fff',
-      position: 'relative',
-      overflow: 'hidden'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      right: -16,
-      top: -16,
-      width: 70,
-      height: 70,
-      borderRadius: '50%',
-      background: 'oklch(0.85 0.15 90 / 0.13)',
-      pointerEvents: 'none'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 28,
-      height: 28,
-      borderRadius: 8,
-      flexShrink: 0,
-      background: 'oklch(0.85 0.15 90)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
+      alignItems: 'flex-start',
+      gap: 8
     }
   }, /*#__PURE__*/React.createElement("svg", {
     width: "14",
     height: "14",
     viewBox: "0 0 24 24",
-    fill: "var(--pg-blue-900)"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M12 2l2.39 7.36H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.15L2 9.36h7.61z"
-  }))), /*#__PURE__*/React.createElement("div", {
+    fill: "none",
+    stroke: "var(--pg-aqua-700)",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
     style: {
-      flex: 1,
-      minWidth: 0,
-      position: 'relative'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      lineHeight: 1.3
-    }
-  }, boost.title), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10.5,
-      opacity: 0.75,
+      flexShrink: 0,
       marginTop: 1
     }
-  }, boost.chip))), sortedLiveVac.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "10"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12 16v-4"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12 8h.01"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      lineHeight: 1.4,
+      color: 'var(--pg-aqua-700)'
+    }
+  }, /*#__PURE__*/React.createElement("b", null, boost.title, "."), " ", boost.body)), sortedLiveVac.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
