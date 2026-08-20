@@ -1085,6 +1085,11 @@ function QuickPoolsScreen({ ctx }) {
   // ══════════════════════════════════════════════════════════════
   const [routesOpen,   setRoutesOpen]   = React.useState(false); // manager list FullPage
   const [routeForm,    setRouteForm]    = React.useState(null);  // {} = new, {...route} = editing
+  // Posting a single Piscina Rápida is free; publishing/managing Rotas
+  // Rápidas requires premium (viewing job details already requires premium
+  // for both, via the `locked` check further down — this is the other half:
+  // posting a route specifically).
+  const openRoutes = () => user.tier === 'premium' ? setRoutesOpen(true) : openPaywall('quickpools');
   const [myRoutes,     setMyRoutes]     = React.useState([]);
   const [routesLoading,setRoutesLoading]= React.useState(false);
   const [routeBusy,    setRouteBusy]    = React.useState(false);
@@ -1340,7 +1345,7 @@ function QuickPoolsScreen({ ctx }) {
                     </svg>
                     {lang==='pt'?'Configurar':lang==='es'?'Configurar':'Configure'}
                   </button>
-                  <button onClick={()=>setRoutesOpen(true)} title={lang==='pt'?'Rotas Rápidas':lang==='es'?'Rutas Rápidas':'Quick Routes'} style={{height:38,padding:'0 14px',borderRadius:11,border:'none',background:'linear-gradient(135deg,#0EBAC7,#0D7280)',color:'#fff',fontFamily:'inherit',fontSize:12,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',gap:6,boxShadow:'0 2px 8px rgba(14,186,199,0.40)',transition:'all .15s'}}>
+                  <button onClick={openRoutes} title={lang==='pt'?'Rotas Rápidas':lang==='es'?'Rutas Rápidas':'Quick Routes'} style={{height:38,padding:'0 14px',borderRadius:11,border:'none',background:'linear-gradient(135deg,#0EBAC7,#0D7280)',color:'#fff',fontFamily:'inherit',fontSize:12,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',gap:6,boxShadow:'0 2px 8px rgba(14,186,199,0.40)',transition:'all .15s'}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/>
                       <path d="M8.3 17.7 15.7 6.3"/>
@@ -1593,7 +1598,7 @@ function QuickPoolsScreen({ ctx }) {
               <div style={{display:'flex', gap:6, alignItems:'center', transform:'translateY(8px)'}}>
                 {/* Filled + labeled, unlike the neutral chat/bell icons next to it —
                     otherwise nothing hints this opens route publishing at all. */}
-                <button onClick={()=>setRoutesOpen(true)} className="pg-press" style={{
+                <button onClick={openRoutes} className="pg-press" style={{
                   height:38, padding:'0 12px', borderRadius:12, border:'none', cursor:'pointer',
                   background:'linear-gradient(135deg,#0EBAC7,#0D7280)', color:'#fff',
                   display:'flex', alignItems:'center', gap:6,

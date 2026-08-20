@@ -1775,6 +1775,11 @@ function QuickPoolsScreen({
   // ══════════════════════════════════════════════════════════════
   const [routesOpen, setRoutesOpen] = React.useState(false); // manager list FullPage
   const [routeForm, setRouteForm] = React.useState(null); // {} = new, {...route} = editing
+  // Posting a single Piscina Rápida is free; publishing/managing Rotas
+  // Rápidas requires premium (viewing job details already requires premium
+  // for both, via the `locked` check further down — this is the other half:
+  // posting a route specifically).
+  const openRoutes = () => user.tier === 'premium' ? setRoutesOpen(true) : openPaywall('quickpools');
   const [myRoutes, setMyRoutes] = React.useState([]);
   const [routesLoading, setRoutesLoading] = React.useState(false);
   const [routeBusy, setRouteBusy] = React.useState(false);
@@ -2295,7 +2300,7 @@ function QuickPoolsScreen({
       }), /*#__PURE__*/React.createElement("path", {
         d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
       })), lang === 'pt' ? 'Configurar' : lang === 'es' ? 'Configurar' : 'Configure'), /*#__PURE__*/React.createElement("button", {
-        onClick: () => setRoutesOpen(true),
+        onClick: openRoutes,
         title: lang === 'pt' ? 'Rotas Rápidas' : lang === 'es' ? 'Rutas Rápidas' : 'Quick Routes',
         style: {
           height: 38,
@@ -2761,7 +2766,7 @@ function QuickPoolsScreen({
           transform: 'translateY(8px)'
         }
       }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => setRoutesOpen(true),
+        onClick: openRoutes,
         className: "pg-press",
         style: {
           height: 38,
