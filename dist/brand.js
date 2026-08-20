@@ -1050,7 +1050,10 @@ function RegionEditorSheet({
   regionsByDay,
   setRegionsByDay,
   saveRegionsByDay,
-  county
+  county,
+  notifyPools = true,
+  notifyRoutes = true,
+  setNotifyPref
 }) {
   const t = STRINGS[lang];
   const [openDay, setOpenDay] = React.useState('mon');
@@ -1140,7 +1143,110 @@ function RegionEditorSheet({
       overflow: 'auto',
       padding: '12px 18px 0'
     }
+  }, setNotifyPref && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      overflow: 'hidden',
+      marginBottom: 16
+    }
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '13px 14px',
+      borderBottom: '0.5px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      background: 'var(--pg-aqua-50)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, Icon.pool(17, 'var(--pg-aqua-700)')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Quick Pools'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      marginTop: 1
+    }
+  }, lang === 'pt' ? 'Piscinas avulsas perto de você' : lang === 'es' ? 'Piscinas sueltas cerca de ti' : 'One-off pools near you')), /*#__PURE__*/React.createElement("div", {
+    className: `pg-toggle ${notifyPools ? 'on' : ''}`,
+    onClick: () => setNotifyPref('notifyPools', !notifyPools)
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '13px 14px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      background: 'rgba(14,186,199,0.1)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "17",
+    height: "17",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#0D7280",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "6",
+    cy: "19",
+    r: "2.5"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "18",
+    cy: "5",
+    r: "2.5"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M8.3 17.7 15.7 6.3"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Rotas Rápidas' : lang === 'es' ? 'Rutas Rápidas' : 'Quick Routes'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      marginTop: 1
+    }
+  }, lang === 'pt' ? 'Rotas inteiras liberadas para cobrir' : lang === 'es' ? 'Rutas enteras liberadas para cubrir' : 'Whole routes opening up to cover')), /*#__PURE__*/React.createElement("div", {
+    className: `pg-toggle ${notifyRoutes ? 'on' : ''}`,
+    onClick: () => setNotifyPref('notifyRoutes', !notifyRoutes)
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',

@@ -419,6 +419,8 @@ function App() {
     hasEquipment: false,
     equipment: null,
     experience: [],
+    notifyPools: true,
+    notifyRoutes: true,
   });
   const loadProfile = React.useCallback(async (sbUser) => {
     if (!sbUser || !window.sb) return;
@@ -464,6 +466,8 @@ function App() {
       hasEquipment:          !!profile?.has_equipment,
       equipment:             profile?.equipment    ?? null,
       experience:            profile?.experience   ?? [],
+      notifyPools:           profile?.notify_pools  !== false,
+      notifyRoutes:          profile?.notify_routes !== false,
     }));
     // Load regionsByDay from profile if saved
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
@@ -563,6 +567,7 @@ function App() {
     if (!window.sb || !user?.uid) return;
     try { await window.sb.from('profiles').update({ regions_by_day: rbd }).eq('id', user.uid); } catch {}
   }, [user?.uid]);
+
   // Derive county from user.region (city → county lookup via FL_COUNTIES)
   const county = (() => {
     const FL = window.FL_COUNTIES || {};
@@ -800,6 +805,21 @@ function App() {
       if (manual) _setPushLog('❌ ' + (e.message || String(e)));
     }
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Separate on/off switches for Piscinas Rápidas vs Rotas Rápidas push —
+  // some pool guys only want to hear about nearby single pools while already
+  // employed, others (between routes) only want route openings. Turning a
+  // switch on when the browser hasn't granted push yet asks for permission
+  // right there, same flow as the existing "ativar notificações" button.
+  const setNotifyPref = React.useCallback(async (key, value) => {
+    if (!user?.uid) return;
+    setUser(u => ({ ...u, [key]: value }));
+    const col = key === 'notifyPools' ? 'notify_pools' : 'notify_routes';
+    try { await window.sb.from('profiles').update({ [col]: value }).eq('id', user.uid); } catch {}
+    if (value && Notification?.permission !== 'granted') {
+      _registerPush(true);
+    }
+  }, [user?.uid, _registerPush]);
 
   // Auto-register silently on login (no permission prompt — only refreshes existing sub)
   React.useEffect(() => {
@@ -1353,8 +1373,11 @@ function App() {
       const jobCitiesOf = (job) => (job.pools && job.pools.length > 0)
         ? [...new Set(job.pools.map(p => p.city).filter(Boolean))]
         : [job.city];
+      const notifyPools  = userRef.current?.notifyPools  !== false;
+      const notifyRoutes = userRef.current?.notifyRoutes !== false;
       const match = data.find(job =>
         job.poster_id !== uid && job.created_at > since &&
+        (job.source_route_id ? notifyRoutes : notifyPools) &&
         jobCitiesOf(job).some(c => (rbd[job.day_of_week] || []).includes(c))
       );
       if (!match) return;
@@ -1998,6 +2021,7 @@ function App() {
         open={regionOpen} onClose={()=>setRegionOpen(false)} lang={lang}
         regionsByDay={regionsByDay} setRegionsByDay={setRegionsByDay}
         saveRegionsByDay={saveRegionsByDay} county={county}
+        notifyPools={user.notifyPools} notifyRoutes={user.notifyRoutes} setNotifyPref={setNotifyPref}
       />
       <LanguagePickerSheet
         open={langPickerOpen} onClose={()=>setLangPickerOpen(false)}

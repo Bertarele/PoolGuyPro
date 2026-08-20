@@ -72,12 +72,18 @@ Deno.serve(async (req) => {
   // shape is still just the single job.city.
   const jobCities: string[] = Array.isArray(job.cities) && job.cities.length > 0 ? job.cities : [job.city];
 
+  // Rotas Rápidas (whole route opening up) vs a regular one-off Piscinas
+  // Rápidas posting — users can independently switch either kind of
+  // notification off, so this has to be known before filtering matches.
+  const isRoute = !!job.source_route_id;
+
   // Find all users who have any of this job's cities on this day_of_week
-  const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,name,regions_by_day,is_online,last_seen`, { headers });
+  const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,name,regions_by_day,is_online,last_seen,notify_pools,notify_routes`, { headers });
   const profiles: any[] = await profilesRes.json();
 
   const matching = profiles.filter(p => {
     if (p.id === job.poster_id) return false; // never notify the poster about their own job
+    if (isRoute ? p.notify_routes === false : p.notify_pools === false) return false;
     const rbd = p.regions_by_day;
     if (!rbd) return false;
     const dayCities: string[] = rbd[job.day_of_week] || [];
@@ -122,7 +128,6 @@ Deno.serve(async (req) => {
   })() : [];
 
   const dayLabel = DAY_LABELS[job.day_of_week] || job.day_of_week;
-  const isRoute = !!job.source_route_id;
   const citiesLabel = jobCities.slice(0, 2).join(', ') + (jobCities.length > 2 ? ` +${jobCities.length - 2}` : '');
   const title = isRoute ? `🚨 Rota disponível em ${citiesLabel}` : `💧 Piscina em ${job.city}`;
   const payLabel = job.split_taker_pct ? `${job.split_taker_pct}/${100 - job.split_taker_pct} split` : (job.price_per_pool ? `$${job.price_per_pool}/piscina` : 'Negociável');
