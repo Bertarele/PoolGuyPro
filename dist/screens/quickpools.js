@@ -3903,21 +3903,20 @@ function RoutePostForm({
         flexDirection: 'column',
         borderRadius: 16,
         border: '1.5px solid var(--pg-ink-200)',
-        background: 'var(--pg-white)',
-        overflow: 'hidden'
+        background: 'var(--pg-white)'
       }
-    }, /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("div", {
       onClick: () => setExpandedIdx(isOpen ? -1 : i),
+      role: "button",
+      tabIndex: 0,
       style: {
         display: 'flex',
         alignItems: 'center',
         gap: 10,
         padding: '12px 14px',
-        border: 'none',
-        background: 'transparent',
         width: '100%',
+        boxSizing: 'border-box',
         cursor: 'pointer',
-        textAlign: 'left',
         fontFamily: 'inherit'
       }
     }, /*#__PURE__*/React.createElement("div", {
@@ -3946,7 +3945,8 @@ function RoutePostForm({
         alignItems: 'center',
         gap: 4
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
       onClick: e => {
         e.stopPropagation();
         duplicatePool(i);
@@ -3960,7 +3960,10 @@ function RoutePostForm({
         alignItems: 'center',
         justifyContent: 'center',
         color: 'var(--pg-ink-500)',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        border: 'none',
+        background: 'transparent',
+        padding: 0
       }
     }, /*#__PURE__*/React.createElement("svg", {
       width: "14",
@@ -3979,7 +3982,8 @@ function RoutePostForm({
       rx: "2"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M4 16V4a2 2 0 0 1 2-2h10"
-    }))), pools.length > 1 && /*#__PURE__*/React.createElement("span", {
+    }))), pools.length > 1 && /*#__PURE__*/React.createElement("button", {
+      type: "button",
       onClick: e => {
         e.stopPropagation();
         removePoolAt(i);
@@ -3993,7 +3997,10 @@ function RoutePostForm({
         alignItems: 'center',
         justifyContent: 'center',
         color: 'var(--pg-ink-400)',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        border: 'none',
+        background: 'transparent',
+        padding: 0
       }
     }, /*#__PURE__*/React.createElement("svg", {
       width: "14",

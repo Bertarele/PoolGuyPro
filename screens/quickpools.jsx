@@ -2172,10 +2172,17 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
             p.poolType==='condo' && p.gateCode && '🔑', p.poolType==='condo' && p.doorman && '🚪',
           ].filter(Boolean);
           return (
-          <div key={i} style={{display:'flex', flexDirection:'column', borderRadius:16, border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)', overflow:'hidden'}}>
-            <button onClick={()=>setExpandedIdx(isOpen ? -1 : i)} style={{
+          <div key={i} style={{display:'flex', flexDirection:'column', borderRadius:16, border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)'}}>
+            {/* A <button> can't validly contain other interactive elements
+                (the duplicate/remove icons) — nested-interactive markup like
+                that is known to make mobile Safari's touch handling flaky
+                (taps not registering, focus getting stuck), which is exactly
+                what broke here. This header is a plain clickable div; the
+                icons next to it are their own real buttons, siblings not
+                children of anything clickable. */}
+            <div onClick={()=>setExpandedIdx(isOpen ? -1 : i)} role="button" tabIndex={0} style={{
               display:'flex', alignItems:'center', gap:10, padding:'12px 14px',
-              border:'none', background:'transparent', width:'100%', cursor:'pointer', textAlign:'left', fontFamily:'inherit',
+              width:'100%', boxSizing:'border-box', cursor:'pointer', fontFamily:'inherit',
             }}>
               <div style={{fontSize:12.5, fontWeight:800, color:'#0D7280', letterSpacing:'0.02em', flexShrink:0}}>
                 {lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool'} {i+1}
@@ -2188,25 +2195,25 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
                 </div>
               )}
               <div style={{marginLeft:'auto', flexShrink:0, display:'flex', alignItems:'center', gap:4}}>
-                <span onClick={(e)=>{ e.stopPropagation(); duplicatePool(i); }} title={lang==='pt'?'Duplicar':lang==='es'?'Duplicar':'Duplicate'} style={{
+                <button type="button" onClick={(e)=>{ e.stopPropagation(); duplicatePool(i); }} title={lang==='pt'?'Duplicar':lang==='es'?'Duplicar':'Duplicate'} style={{
                   width:28, height:28, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center',
-                  color:'var(--pg-ink-500)', cursor:'pointer',
+                  color:'var(--pg-ink-500)', cursor:'pointer', border:'none', background:'transparent', padding:0,
                 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>
-                </span>
+                </button>
                 {pools.length > 1 && (
-                  <span onClick={(e)=>{ e.stopPropagation(); removePoolAt(i); }} title={lang==='pt'?'Remover':lang==='es'?'Eliminar':'Remove'} style={{
+                  <button type="button" onClick={(e)=>{ e.stopPropagation(); removePoolAt(i); }} title={lang==='pt'?'Remover':lang==='es'?'Eliminar':'Remove'} style={{
                     width:28, height:28, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center',
-                    color:'var(--pg-ink-400)', cursor:'pointer',
+                    color:'var(--pg-ink-400)', cursor:'pointer', border:'none', background:'transparent', padding:0,
                   }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                  </span>
+                  </button>
                 )}
                 <div style={{transform: isOpen ? 'rotate(90deg)' : 'rotate(0)', transition:'transform .2s ease', color:'var(--pg-ink-400)'}}>
                   {Icon.chev(15, 'currentColor')}
                 </div>
               </div>
-            </button>
+            </div>
 
             {isOpen && (
               <div style={{display:'flex', flexDirection:'column', gap:14, padding:'0 14px 14px'}}>
