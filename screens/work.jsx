@@ -545,7 +545,9 @@ function WorkScreen({ ctx }) {
     });
 
   // Live applications (I applied to other people's jobs) → appear in My Applications
-  const myLiveApps = liveApplications.map(a => {
+  const myLiveApps = liveApplications
+    .filter(a => !liveVacations.some(v => v._id === a.job_id))
+    .map(a => {
     // Cross-reference liveJobs to get the author_id so we can open a live chat with the employer
     const relatedJob = liveJobs.find(j => j._id === a.job_id);
     return {
