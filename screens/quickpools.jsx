@@ -999,6 +999,9 @@ function QuickPoolsScreen({ ctx }) {
             onMyJobAccepted={(jobId) => {
               setMyAcceptedJobIds(prev => new Set([...prev, String(jobId)]));
             }}
+            onWithdraw={() => {
+              setApplied(prev => { const next = {...prev}; delete next[selected.id]; return next; });
+            }}
           />
         </JobDetailBoundary>
       </div>
@@ -2471,7 +2474,7 @@ function LeafletMapBlock({ jobs, highlighted, onPinClick, fullHeight=false }) {
 }
 
 // ── Detail view ──────────────────────────────────────────────
-function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, openPublicProfile, openEditPost, onStatusChange, onMyJobAccepted }) {
+function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onChat, onClose, onDelete, onComplete, openPublicProfile, openEditPost, onStatusChange, onMyJobAccepted, onWithdraw }) {
   const isOwn   = job._live && user?.uid && job.poster_id === user.uid;
   const isAdmin = user?.role === 'admin';
   const isOwnFilled = isOwn && job.status === 'filled';
@@ -2697,6 +2700,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
     if (!window.sb || !myApp) return;
     await window.sb.from('quick_pool_applications').update({ status: 'withdrawn' }).eq('id', myApp.id);
     setMyApp(null);
+    onWithdraw && onWithdraw();
   };
 
 

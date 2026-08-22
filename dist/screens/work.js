@@ -1002,15 +1002,27 @@ function WorkScreen({
   const currentMyPosts = sub === 'hiring' ? myPostsHiring : myPostsVac;
   const deleteApp = React.useCallback(async app => {
     if (app._live && window.sb) {
-      await window.sb.from('job_applications').delete().eq('id', app.id);
+      const {
+        error
+      } = await window.sb.from('job_applications').delete().eq('id', app.id);
+      if (error) {
+        showToast && showToast('❌ ' + error.message);
+        return;
+      }
     }
     setDeletedAppIds(p => new Set([...p, app.id]));
-  }, []);
+  }, [showToast]);
   const completeApp = React.useCallback(async app => {
     if (app._live && window.sb) {
-      await window.sb.from('job_applications').update({
+      const {
+        error
+      } = await window.sb.from('job_applications').update({
         status: 'completed'
       }).eq('id', app.id);
+      if (error) {
+        showToast && showToast('❌ ' + error.message);
+        return;
+      }
     }
     setCompletedAppIds(p => new Set([...p, app.id]));
     if (app.author_id && openRating) {
@@ -1022,13 +1034,19 @@ function WorkScreen({
         connection_id: app.job_id || app.id
       });
     }
-  }, [openRating, lang]);
+  }, [openRating, lang, showToast]);
   const deletePost = React.useCallback(async post => {
     if (post._live && window.sb) {
-      await window.sb.from('jobs').delete().eq('id', post.id);
+      const {
+        error
+      } = await window.sb.from('jobs').delete().eq('id', post.id);
+      if (error) {
+        showToast && showToast('❌ ' + error.message);
+        return;
+      }
     }
     removeJob && removeJob(post.id);
-  }, [removeJob]);
+  }, [removeJob, showToast]);
   const visibleApps = currentMyApps.slice(0, activityLimit);
 
   // ── Desktop layout ─────────────────────────────────────────────
@@ -3294,10 +3312,16 @@ function HandoffDetailPanel({
   const markFilled = async () => {
     if (!window.sb || busy) return;
     setBusy(true);
-    await window.sb.from('pool_handoffs').update({
+    const {
+      error
+    } = await window.sb.from('pool_handoffs').update({
       status: 'filled'
     }).eq('id', handoff._id);
     setBusy(false);
+    if (error) {
+      showToast && showToast('❌ ' + error.message);
+      return;
+    }
     showToast && showToast(lang === 'pt' ? '✓ Marcado como preenchido' : lang === 'es' ? '✓ Marcado como cubierto' : '✓ Marked as filled');
     onChanged && onChanged();
     onClose && onClose();
@@ -7154,6 +7178,7 @@ function VacationPanel({
       return sum + (vac.priceMode === 'pool' ? pools * Number(vac.price || 0) : Number(vac.price || 0));
     }, 0) : 0;
     const isOwner = !!(user?.uid && user.uid === vac.author_id);
+    const vacInProgress = (jobApplicantCounts[vac._id]?.accepted || 0) > 0;
     const wdShortNames = lang === 'pt' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] : lang === 'es' ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return /*#__PURE__*/React.createElement("article", {
       key: vac._id,
@@ -7578,7 +7603,21 @@ function VacationPanel({
         borderRadius: 999,
         gap: 5
       }
-    }, pickDaysLabel, " \u2192")), isOwner && user?.role !== 'admin' && /*#__PURE__*/React.createElement("div", {
+    }, pickDaysLabel, " \u2192")), isOwner && user?.role !== 'admin' && (vacInProgress ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 32,
+        padding: '0 12px',
+        borderRadius: 9,
+        background: '#FFFBEB',
+        border: '1px solid #FCD34D',
+        color: '#92400E',
+        fontSize: 11.5,
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, "\u23F3 ", lang === 'pt' ? 'Em andamento' : lang === 'es' ? 'En curso' : 'In progress') : /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 6,
@@ -7645,7 +7684,7 @@ function VacationPanel({
       strokeLinejoin: "round"
     }, /*#__PURE__*/React.createElement("path", {
       d: "M20 6L9 17l-5-5"
-    })), lang === 'pt' ? 'Encerrar' : lang === 'es' ? 'Cerrar' : 'Close')))), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
+    })), lang === 'pt' ? 'Encerrar' : lang === 'es' ? 'Cerrar' : 'Close'))))), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
       onClick: async () => {
         if (!window.confirm(lang === 'pt' ? 'Excluir este registro de férias?' : 'Delete this vacation post?')) return;
         const {

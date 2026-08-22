@@ -1635,6 +1635,15 @@ function QuickPoolsScreen({
     },
     onMyJobAccepted: jobId => {
       setMyAcceptedJobIds(prev => new Set([...prev, String(jobId)]));
+    },
+    onWithdraw: () => {
+      setApplied(prev => {
+        const next = {
+          ...prev
+        };
+        delete next[selected.id];
+        return next;
+      });
     }
   })))) : null;
 
@@ -4486,7 +4495,8 @@ function QuickPoolDetails({
   openPublicProfile,
   openEditPost,
   onStatusChange,
-  onMyJobAccepted
+  onMyJobAccepted,
+  onWithdraw
 }) {
   const isOwn = job._live && user?.uid && job.poster_id === user.uid;
   const isAdmin = user?.role === 'admin';
@@ -4755,6 +4765,7 @@ function QuickPoolDetails({
       status: 'withdrawn'
     }).eq('id', myApp.id);
     setMyApp(null);
+    onWithdraw && onWithdraw();
   };
   const submitRatingAndFinalize = async () => {
     setRatingSubmitting(true);

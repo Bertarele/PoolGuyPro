@@ -585,14 +585,16 @@ function WorkScreen({ ctx }) {
 
   const deleteApp = React.useCallback(async (app) => {
     if (app._live && window.sb) {
-      await window.sb.from('job_applications').delete().eq('id', app.id);
+      const { error } = await window.sb.from('job_applications').delete().eq('id', app.id);
+      if (error) { showToast && showToast('❌ ' + error.message); return; }
     }
     setDeletedAppIds(p => new Set([...p, app.id]));
-  }, []);
+  }, [showToast]);
 
   const completeApp = React.useCallback(async (app) => {
     if (app._live && window.sb) {
-      await window.sb.from('job_applications').update({ status: 'completed' }).eq('id', app.id);
+      const { error } = await window.sb.from('job_applications').update({ status: 'completed' }).eq('id', app.id);
+      if (error) { showToast && showToast('❌ ' + error.message); return; }
     }
     setCompletedAppIds(p => new Set([...p, app.id]));
     if (app.author_id && openRating) {
@@ -604,14 +606,15 @@ function WorkScreen({ ctx }) {
         connection_id:   app.job_id || app.id,
       });
     }
-  }, [openRating, lang]);
+  }, [openRating, lang, showToast]);
 
   const deletePost = React.useCallback(async (post) => {
     if (post._live && window.sb) {
-      await window.sb.from('jobs').delete().eq('id', post.id);
+      const { error } = await window.sb.from('jobs').delete().eq('id', post.id);
+      if (error) { showToast && showToast('❌ ' + error.message); return; }
     }
     removeJob && removeJob(post.id);
-  }, [removeJob]);
+  }, [removeJob, showToast]);
 
   const visibleApps = currentMyApps.slice(0, activityLimit);
 
@@ -1562,8 +1565,9 @@ function HandoffDetailPanel({ handoff, user, lang, showToast, onClose, onChat, o
   const markFilled = async () => {
     if (!window.sb || busy) return;
     setBusy(true);
-    await window.sb.from('pool_handoffs').update({ status:'filled' }).eq('id', handoff._id);
+    const { error } = await window.sb.from('pool_handoffs').update({ status:'filled' }).eq('id', handoff._id);
     setBusy(false);
+    if (error) { showToast && showToast('❌ ' + error.message); return; }
     showToast && showToast(lang==='pt'?'✓ Marcado como preenchido':lang==='es'?'✓ Marcado como cubierto':'✓ Marked as filled');
     onChanged && onChanged();
     onClose && onClose();
@@ -3313,6 +3317,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                 return sum + (vac.priceMode === 'pool' ? pools * Number(vac.price||0) : Number(vac.price||0));
               }, 0) : 0;
               const isOwner = !!(user?.uid && user.uid === vac.author_id);
+              const vacInProgress = (jobApplicantCounts[vac._id]?.accepted || 0) > 0;
               const wdShortNames = lang==='pt'
                 ? ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
                 : lang==='es'
@@ -3539,7 +3544,16 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                         )}
                       </div>
                     )}
-                    {isOwner && user?.role !== 'admin' && (
+                    {isOwner && user?.role !== 'admin' && (vacInProgress ? (
+                      <div style={{
+                        height:32, padding:'0 12px', borderRadius:9,
+                        background:'#FFFBEB', border:'1px solid #FCD34D',
+                        color:'#92400E', fontSize:11.5, fontWeight:700,
+                        display:'flex', alignItems:'center', gap:6,
+                      }}>
+                        ⏳ {lang==='pt'?'Em andamento':lang==='es'?'En curso':'In progress'}
+                      </div>
+                    ) : (
                       <div style={{display:'flex', gap:6, alignItems:'center'}}>
                         <button onClick={()=>onEditVac && onEditVac(vac)}
                           className="pg-btn pg-btn-primary"
@@ -3571,7 +3585,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                           {lang==='pt'?'Encerrar':lang==='es'?'Cerrar':'Close'}
                         </div>
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
 
