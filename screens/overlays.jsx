@@ -1134,7 +1134,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
                     <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
                       <ReputationBadge jobs={a.jobs} lang={lang}/>
                     </div>
-                    <div style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:4, display:'flex', alignItems:'center', gap:6}}>
+                    <div onClick={()=>setProfileApp(a)} style={{fontSize:12, color:'var(--pg-ink-500)', marginTop:4, display:'flex', alignItems:'center', gap:6, cursor:'pointer', width:'fit-content'}}>
                       <Stars rating={a.rating} size={10}/> {a.rating}
                       <span>·</span>
                       <span>{a.jobs} {lang==='pt'?'trabalhos':lang==='es'?'trabajos':'jobs'}</span>
@@ -1480,7 +1480,8 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
       {/* Profile preview — nested sheet stacked on top */}
       <ApplicantProfileSheet
         open={!!profileApp} onClose={()=>setProfileApp(null)}
-        applicant={profileApp} lang={lang}/>
+        applicant={profileApp} lang={lang}
+        onChat={(target)=>{ onChat(target); onClose(); }}/>
 
       {/* Interview scheduler — nested sheet */}
       <InterviewSchedulerSheet
@@ -1742,7 +1743,7 @@ function InterviewSchedulerSheet({ open, onClose, applicant, lang='en', onConfir
 }
 
 // ── Applicant Profile Preview Sheet ───────────────────────────
-function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
+function ApplicantProfileSheet({ open, onClose, applicant, lang='en', onChat }) {
   const [reviewLang,  setReviewLang]  = React.useState(lang);
   const [realRatings, setRealRatings] = React.useState(null);
   const [livePhoto,   setLivePhoto]   = React.useState(null); // fetched from profiles table
@@ -1777,12 +1778,17 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
   // Use profile snapshot (nested under applicant.profile)
   const prof = applicant.profile || {};
 
+  // applicant.jobs is a snapshot frozen at the moment they applied — can drift
+  // out of sync with reality (e.g. show 0 while they already have revealed
+  // reviews). Once the live ratings are loaded, prefer that real count.
+  const liveJobs = realRatings !== null ? realRatings.filter(r=>r.stars).length : applicant.jobs;
+
   const badgeCfg = (jobs) => {
     if (jobs >= 100) return { label:'EXPERT',   bg:'oklch(0.93 0.06 80)',  color:'oklch(0.40 0.18 80)' };
     if (jobs >= 20)  return { label:'RELIABLE', bg:'var(--pg-aqua-100)',   color:'var(--pg-aqua-700)' };
     return              { label:'ROOKIE',   bg:'var(--pg-blue-100)',   color:'var(--pg-blue-700)' };
   };
-  const badge = badgeCfg(applicant.jobs);
+  const badge = badgeCfg(liveJobs);
 
   const LANGS = ['en','pt','es'];
   const LANG_LABELS = {en:'EN', pt:'PT', es:'ES'};
@@ -1850,9 +1856,9 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
         {/* Stats row */}
         <div style={{display:'flex', gap:8, marginBottom:20}}>
           {[
-            { val:applicant.jobs,         label:sectionLbl('Jobs done','Jobs feitos','Jobs hechos') },
+            { val:liveJobs,                label:sectionLbl('Jobs done','Jobs feitos','Jobs hechos') },
             { val:`${applicant.rating}★`, label:sectionLbl('Rating','Avaliação','Calificación') },
-            { val:applicant.jobs>=100?'3+yr':applicant.jobs>=30?'1+yr':'<1yr',
+            { val:liveJobs>=100?'3+yr':liveJobs>=30?'1+yr':'<1yr',
               label:sectionLbl('On platform','Na plataforma','En plataforma') },
           ].map((s,i) => (
             <div key={i} style={{flex:1, textAlign:'center', padding:'10px 4px', borderRadius:12, background:'var(--pg-blue-50)', border:'0.5px solid var(--pg-blue-200)'}}>
@@ -2009,6 +2015,14 @@ function ApplicantProfileSheet({ open, onClose, applicant, lang='en' }) {
             </div>
           )}
         </div>
+
+        {onChat && applicant.applicant_id && (
+          <button onClick={()=>{ onClose(); onChat({ id: applicant.applicant_id, name: applicant.name }); }}
+            className="pg-btn pg-btn-primary" style={{width:'100%', height:50, fontSize:15, borderRadius:14, marginTop:20}}>
+            {Icon.msg(16,'#fff')}
+            <span style={{marginLeft:6}}>{sectionLbl('Chat','Chat','Chat')}</span>
+          </button>
+        )}
       </div>
     </Sheet>
   );

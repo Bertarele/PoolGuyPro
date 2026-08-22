@@ -2081,13 +2081,16 @@ function ApplicantsSheet({
       jobs: a.jobs,
       lang: lang
     })), /*#__PURE__*/React.createElement("div", {
+      onClick: () => setProfileApp(a),
       style: {
         fontSize: 12,
         color: 'var(--pg-ink-500)',
         marginTop: 4,
         display: 'flex',
         alignItems: 'center',
-        gap: 6
+        gap: 6,
+        cursor: 'pointer',
+        width: 'fit-content'
       }
     }, /*#__PURE__*/React.createElement(Stars, {
       rating: a.rating,
@@ -2771,7 +2774,11 @@ function ApplicantsSheet({
     open: !!profileApp,
     onClose: () => setProfileApp(null),
     applicant: profileApp,
-    lang: lang
+    lang: lang,
+    onChat: target => {
+      onChat(target);
+      onClose();
+    }
   }), /*#__PURE__*/React.createElement(InterviewSchedulerSheet, {
     open: !!schedulingFor,
     onClose: () => setSchedulingFor(null),
@@ -3166,7 +3173,8 @@ function ApplicantProfileSheet({
   open,
   onClose,
   applicant,
-  lang = 'en'
+  lang = 'en',
+  onChat
 }) {
   const [reviewLang, setReviewLang] = React.useState(lang);
   const [realRatings, setRealRatings] = React.useState(null);
@@ -3201,6 +3209,11 @@ function ApplicantProfileSheet({
 
   // Use profile snapshot (nested under applicant.profile)
   const prof = applicant.profile || {};
+
+  // applicant.jobs is a snapshot frozen at the moment they applied — can drift
+  // out of sync with reality (e.g. show 0 while they already have revealed
+  // reviews). Once the live ratings are loaded, prefer that real count.
+  const liveJobs = realRatings !== null ? realRatings.filter(r => r.stars).length : applicant.jobs;
   const badgeCfg = jobs => {
     if (jobs >= 100) return {
       label: 'EXPERT',
@@ -3218,7 +3231,7 @@ function ApplicantProfileSheet({
       color: 'var(--pg-blue-700)'
     };
   };
-  const badge = badgeCfg(applicant.jobs);
+  const badge = badgeCfg(liveJobs);
   const LANGS = ['en', 'pt', 'es'];
   const LANG_LABELS = {
     en: 'EN',
@@ -3383,13 +3396,13 @@ function ApplicantProfileSheet({
       marginBottom: 20
     }
   }, [{
-    val: applicant.jobs,
+    val: liveJobs,
     label: sectionLbl('Jobs done', 'Jobs feitos', 'Jobs hechos')
   }, {
     val: `${applicant.rating}★`,
     label: sectionLbl('Rating', 'Avaliação', 'Calificación')
   }, {
-    val: applicant.jobs >= 100 ? '3+yr' : applicant.jobs >= 30 ? '1+yr' : '<1yr',
+    val: liveJobs >= 100 ? '3+yr' : liveJobs >= 30 ? '1+yr' : '<1yr',
     label: sectionLbl('On platform', 'Na plataforma', 'En plataforma')
   }].map((s, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
@@ -3704,7 +3717,27 @@ function ApplicantProfileSheet({
       color: 'var(--pg-ink-700)',
       lineHeight: 1.5
     }
-  }, "\"", r.comment, "\"")))))));
+  }, "\"", r.comment, "\""))))), onChat && applicant.applicant_id && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      onClose();
+      onChat({
+        id: applicant.applicant_id,
+        name: applicant.name
+      });
+    },
+    className: "pg-btn pg-btn-primary",
+    style: {
+      width: '100%',
+      height: 50,
+      fontSize: 15,
+      borderRadius: 14,
+      marginTop: 20
+    }
+  }, Icon.msg(16, '#fff'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 6
+    }
+  }, sectionLbl('Chat', 'Chat', 'Chat')))));
 }
 
 // ── Identity Verification ─────────────────────────────────────
