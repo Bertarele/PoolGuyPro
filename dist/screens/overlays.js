@@ -2582,7 +2582,7 @@ function ApplicantsSheet({
         onChat(a.applicant_id ? {
           id: a.applicant_id,
           name: a.name,
-          listingId: post?._id || null,
+          listingId: post?._id ? post.type === 'vacation' ? 'vac_' + post._id : post.type === 'quickpool' ? 'qp_' + post._id : 'job_' + post._id : null,
           listingContext: {
             name: tr(post?.title, lang) || post?.role || post?.company || (post?.type === 'vacation' ? lang === 'pt' ? 'Cobertura de férias' : lang === 'es' ? 'Cobertura de vacaciones' : 'Vacation coverage' : lang === 'pt' ? 'Vaga' : 'Job'),
             type: post?.type || 'hiring'
@@ -7462,7 +7462,7 @@ function HiringAppDetailSheet({
         onChat(authorId ? {
           id: authorId,
           name: authorName,
-          listingId: display.job_id || null,
+          listingId: display.job_id ? 'job_' + display.job_id : null,
           listingContext: {
             name: tr(display.title, lang) || display.company || (lang === 'pt' ? 'Vaga' : 'Job'),
             type: 'hiring'

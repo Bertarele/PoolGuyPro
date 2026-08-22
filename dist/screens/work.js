@@ -6865,7 +6865,7 @@ function AcceptedVacCard({
     onClick: () => onChat(v.author_id ? {
       id: v.author_id,
       name: v.owner || v.author || '?',
-      listingId: v._id || null,
+      listingId: v._id ? 'vac_' + v._id : null,
       listingContext: {
         name: v.name || v.title || (lang === 'pt' ? 'Cobertura' : 'Coverage'),
         type: 'vac'
@@ -7568,7 +7568,7 @@ function VacationPanel({
       onClick: () => onChat && onChat({
         id: vac.author_id,
         name: vac.owner || vac.author || '?',
-        listingId: vac._id || null,
+        listingId: vac._id ? 'vac_' + vac._id : null,
         listingContext: {
           name: (lang === 'pt' ? 'Férias' : 'Vacation') + (vac.yearMonth ? ' – ' + monthName : ''),
           type: 'vac'

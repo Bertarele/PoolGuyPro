@@ -3097,7 +3097,7 @@ function AcceptedVacCard({ v, lang, onChat, onSchedule, openPublicProfile }) {
 
         {/* Action row */}
         <div style={{display:'flex', gap:8, marginTop:12, paddingTop:10, borderTop:'0.5px solid var(--pg-ink-100)'}}>
-          <button onClick={()=>onChat(v.author_id ? { id: v.author_id, name: v.owner || v.author || '?', listingId: v._id || null, listingContext: { name: v.name || v.title || (lang==='pt'?'Cobertura':'Coverage'), type: 'vac' } } : (v.owner || v.author || '?'))} className="pg-btn pg-btn-ghost"
+          <button onClick={()=>onChat(v.author_id ? { id: v.author_id, name: v.owner || v.author || '?', listingId: v._id ? 'vac_'+v._id : null, listingContext: { name: v.name || v.title || (lang==='pt'?'Cobertura':'Coverage'), type: 'vac' } } : (v.owner || v.author || '?'))} className="pg-btn pg-btn-ghost"
             style={{height:34, padding:'0 14px', fontSize:12.5, borderRadius:999}}>
             {Icon.msg(13, 'var(--pg-blue-700)')}
           </button>
@@ -3521,7 +3521,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                     </div>
                     {!isOwner && (
                       <div style={{display:'flex', gap:7, alignItems:'center'}}>
-                        <button onClick={()=>onChat && onChat({ id: vac.author_id, name: vac.owner || vac.author || '?', listingId: vac._id || null, listingContext: { name: (lang==='pt'?'Férias':'Vacation') + (vac.yearMonth ? ' – ' + monthName : ''), type: 'vac' } })}
+                        <button onClick={()=>onChat && onChat({ id: vac.author_id, name: vac.owner || vac.author || '?', listingId: vac._id ? 'vac_'+vac._id : null, listingContext: { name: (lang==='pt'?'Férias':'Vacation') + (vac.yearMonth ? ' – ' + monthName : ''), type: 'vac' } })}
                           style={{
                             width:38, height:38, borderRadius:999, border:'1px solid var(--pg-ink-200)',
                             background:'var(--pg-ink-100)', color:'var(--pg-blue-600)',
