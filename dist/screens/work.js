@@ -7475,7 +7475,18 @@ function VacationPanel({
       onClick: () => onViewApplicants && onViewApplicants({
         ...vac,
         type: 'vacation',
-        role: lang === 'pt' ? 'Cobertura de férias' : lang === 'es' ? 'Cobertura de vacaciones' : 'Vacation coverage'
+        role: lang === 'pt' ? 'Cobertura de férias' : lang === 'es' ? 'Cobertura de vacaciones' : 'Vacation coverage',
+        title: {
+          en: 'Vacation coverage',
+          pt: 'Cobertura de férias',
+          es: 'Cobertura de vacaciones'
+        },
+        loc: vac.region || '',
+        date: {
+          en: monthName,
+          pt: monthName,
+          es: monthName
+        }
       }),
       style: {
         display: 'flex',

@@ -1378,7 +1378,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
                 )}
 
                 <div style={{display:'flex', gap:7, marginTop:11, flexWrap:'wrap'}}>
-                  <button onClick={()=>{ onChat(a.applicant_id ? { id: a.applicant_id, name: a.name, listingId: post?._id || null, listingContext: { name: post?.name || (lang==='pt'?'Vaga':'Job'), type: post?.type || 'hiring' } } : a.name); onClose(); }}
+                  <button onClick={()=>{ onChat(a.applicant_id ? { id: a.applicant_id, name: a.name, listingId: post?._id || null, listingContext: { name: tr(post?.title, lang) || post?.role || post?.company || (post?.type==='vacation' ? (lang==='pt'?'Cobertura de férias':lang==='es'?'Cobertura de vacaciones':'Vacation coverage') : (lang==='pt'?'Vaga':'Job')), type: post?.type || 'hiring' } } : a.name); onClose(); }}
                     className="pg-btn pg-btn-ghost" style={{height:34, padding:'0 12px', fontSize:12, borderRadius:999, flexShrink:0}}>
                     {Icon.msg(13,'var(--pg-blue-700)')} {t.chatBtn}
                   </button>

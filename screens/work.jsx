@@ -3473,7 +3473,11 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                       were applicants (only place that ever happened, since
                       this row is invisible with 0 applicants). */}
                   {isOwner && (jobApplicantCounts[vac._id]?.total || 0) > 0 && (
-                    <button onClick={()=>onViewApplicants && onViewApplicants({ ...vac, type:'vacation', role: (lang==='pt'?'Cobertura de férias':lang==='es'?'Cobertura de vacaciones':'Vacation coverage') })} style={{
+                    <button onClick={()=>onViewApplicants && onViewApplicants({ ...vac, type:'vacation',
+                      role: (lang==='pt'?'Cobertura de férias':lang==='es'?'Cobertura de vacaciones':'Vacation coverage'),
+                      title: { en:'Vacation coverage', pt:'Cobertura de férias', es:'Cobertura de vacaciones' },
+                      loc: vac.region || '', date: { en:monthName, pt:monthName, es:monthName },
+                    })} style={{
                       display:'flex', alignItems:'center', gap:10, width:'100%', marginTop:10,
                       padding:'10px 12px', borderRadius:12, border:'none', cursor:'pointer',
                       background:'linear-gradient(135deg,#0077B6,#023E8A)', color:'#fff',

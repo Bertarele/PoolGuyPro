@@ -2584,7 +2584,7 @@ function ApplicantsSheet({
           name: a.name,
           listingId: post?._id || null,
           listingContext: {
-            name: post?.name || (lang === 'pt' ? 'Vaga' : 'Job'),
+            name: tr(post?.title, lang) || post?.role || post?.company || (post?.type === 'vacation' ? lang === 'pt' ? 'Cobertura de férias' : lang === 'es' ? 'Cobertura de vacaciones' : 'Vacation coverage' : lang === 'pt' ? 'Vaga' : 'Job'),
             type: post?.type || 'hiring'
           }
         } : a.name);
