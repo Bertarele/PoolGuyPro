@@ -8820,6 +8820,24 @@ function PostVacationSheet({
   }, regsLbl), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
+      alignItems: 'flex-start',
+      gap: 8,
+      marginBottom: 10,
+      padding: '9px 11px',
+      borderRadius: 10,
+      background: 'var(--pg-blue-50)',
+      border: '1px solid var(--pg-blue-100)'
+    }
+  }, Icon.shield(13, 'var(--pg-blue-700)'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-blue-700)',
+      fontWeight: 500,
+      lineHeight: 1.4
+    }
+  }, lang === 'pt' ? 'O endereço exato das piscinas só é revelado ao pool guy depois que a candidatura dele for aprovada por você.' : lang === 'es' ? 'La dirección exacta de las piscinas solo se revela al pool guy después de que apruebes su solicitud.' : "The exact pool address is only revealed to the pool guy once you approve their application.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
       flexDirection: 'column',
       gap: 8
     }
