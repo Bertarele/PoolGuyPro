@@ -894,7 +894,7 @@ function LanguagePickerSheet({ open, onClose, lang, setLang }) {
 }
 
 // ── Applicants Sheet ──────────────────────────────────────────
-function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenProfile, openRating }) {
+function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenProfile, openRating, showToast }) {
   const t = STRINGS[lang];
   const [applicants, setApplicants] = React.useState([]);
   const [loading,    setLoading]    = React.useState(false);
@@ -996,7 +996,7 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
   const dbUpdate = async (appDbId, patch) => {
     if (!window.sb || !post?._live || !appDbId) return;
     const { error } = await window.sb.from('job_applications').update(patch).eq('id', appDbId);
-    if (error) console.warn('[ApplicantsSheet] update error:', error.message);
+    if (error) { console.warn('[ApplicantsSheet] update error:', error.message); showToast && showToast('❌ ' + error.message); }
   };
 
   // Hiring (not vacation, where multiple different-day accepts are normal): accepting
@@ -1064,10 +1064,42 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
   if (!post) return null;
 
   const updateStatus = async (id, status, extra={}) => {
-    setApplicants(prev => prev.map(a => a.id===id ? {...a, status, ...extra} : a));
     const app = applicants.find(a => a.id === id);
     if (post?._live && app?._dbId) {
-      await dbUpdate(app._dbId, { status, ...extra });
+      // Vacation accept: re-verify against fresh booked_days right before
+      // committing. handleAccept already did a client-side check, but that
+      // snapshot (post.bookedDays / local applicants state) can be stale —
+      // another tab, the chat quick-accept shortcut, or the periodic poll
+      // may have booked one of these days in the meantime.
+      let freshBooked = null;
+      if (status === 'accepted' && post.type === 'vacation' && app.selectedDays?.length) {
+        const { data: fresh } = await window.sb.from('vacations').select('booked_days').eq('id', post._id).single();
+        freshBooked = fresh?.booked_days || [];
+        const conflicts = app.selectedDays.filter(d => freshBooked.includes(d));
+        if (conflicts.length > 0) {
+          showToast && showToast('❌ ' + (lang==='pt'
+            ? `Conflito: dia(s) ${conflicts.join(', ')} já foram aceitos para outra pessoa.`
+            : lang==='es'
+              ? `Conflicto: día(s) ${conflicts.join(', ')} ya fueron aceptados para otra persona.`
+              : `Conflict: day(s) ${conflicts.join(', ')} were already accepted for someone else.`));
+          loadLiveApplicants(post._id);
+          return;
+        }
+      }
+      // Guard the write itself against the same kind of staleness — only
+      // apply it if the row still has the status we last saw it in.
+      const { data: updRows, error: updErr } = await window.sb.from('job_applications')
+        .update({ status, ...extra }).eq('id', app._dbId).eq('status', app.status).select('id');
+      if (updErr) {
+        showToast && showToast('❌ ' + updErr.message);
+        return;
+      }
+      if (!updRows || updRows.length === 0) {
+        showToast && showToast(lang==='pt'?'❌ Essa candidatura já foi alterada em outro lugar.':lang==='es'?'❌ Esa postulación ya fue modificada en otro lugar.':'❌ This application was already changed elsewhere.');
+        loadLiveApplicants(post._id);
+        return;
+      }
+      setApplicants(prev => prev.map(a => a.id===id ? {...a, status, ...extra} : a));
       // Notify applicant on accept or reject
       if (app.applicant_id && window.sb && (status === 'accepted' || status === 'rejected')) {
         const jobRole = post.role || post.company || '';
@@ -1103,6 +1135,8 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
         const merged = Array.from(new Set([...(fresh?.booked_days || []), ...app.selectedDays]));
         await window.sb.from('vacations').update({ booked_days: merged }).eq('id', post._id);
       }
+    } else {
+      setApplicants(prev => prev.map(a => a.id===id ? {...a, status, ...extra} : a));
     }
   };
 

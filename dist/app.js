@@ -2909,6 +2909,7 @@ function App() {
     post: applicantsPost,
     lang: lang,
     user: user,
+    showToast: showToast,
     onChat: name => {
       setApplicantsPost(null);
       setChatConvoTarget(name);

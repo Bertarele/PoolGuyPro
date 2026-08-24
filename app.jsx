@@ -2050,6 +2050,7 @@ function App() {
         post={applicantsPost}
         lang={lang}
         user={user}
+        showToast={showToast}
         onChat={(name)=>{ setApplicantsPost(null); setChatConvoTarget(name); setChatOpen(true); }}
         openRating={(r)=>setActiveRating(r)}
         onOpenProfile={(applicant) => setPublicProfileUser({

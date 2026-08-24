@@ -458,7 +458,9 @@ function WorkScreen({ ctx }) {
                     : a.status === 'rejected' ? 'rejected' : 'awaiting',
         poolGuyDone:  !!a.pool_guy_done,
         requiredPhotos: relatedVac?.requiredPhotos || [],
-        selectedDays: a.selectedDays || null,
+        selectedDays: a.vacation_days?.selectedDays || null,
+        yearMonth:      relatedVac?.yearMonth || null,
+        poolsByWeekday: relatedVac?.poolsByWeekday || {},
         job_id:       a.job_id,
         title:        relatedVac ? { en:'Route coverage', pt:'Cobertura de rota', es:'Cobertura de ruta' } : { en:'', pt:'', es:'' },
       };
