@@ -1642,6 +1642,7 @@ function ApplicantsSheet({
           link_id: post._id || null,
           read: false
         });
+        window.sendPush && window.sendPush(app.applicant_id, lang === 'pt' ? '🎉 Candidatura aceita!' : lang === 'es' ? '🎉 ¡Postulación aceptada!' : '🎉 Application accepted!', lang === 'pt' ? `Sua candidatura para "${jobRole}" foi aceita.` : lang === 'es' ? `Tu postulación para "${jobRole}" fue aceptada.` : `Your application for "${jobRole}" was accepted.`, '/#work', 'work');
       }
       await closeJobAndRejectOthers(applicantId);
     }
@@ -1687,6 +1688,7 @@ function ApplicantsSheet({
           link_id: post._id || null,
           read: false
         });
+        window.sendPush && window.sendPush(app.applicant_id, isAcc ? lang === 'pt' ? '🎉 Candidatura aceita!' : lang === 'es' ? '🎉 ¡Postulación aceptada!' : '🎉 Application accepted!' : lang === 'pt' ? 'Candidatura não selecionada' : lang === 'es' ? 'Postulación no seleccionada' : 'Application not selected', isAcc ? lang === 'pt' ? `Sua candidatura para "${jobRole}" foi aceita.` : lang === 'es' ? `Tu postulación para "${jobRole}" fue aceptada.` : `Your application for "${jobRole}" was accepted.` : lang === 'pt' ? `Sua candidatura para "${jobRole}" não foi selecionada.` : lang === 'es' ? `Tu postulación para "${jobRole}" no fue seleccionada.` : `Your application for "${jobRole}" was not selected.`, '/#work', 'work');
       }
       if (status === 'accepted') await closeJobAndRejectOthers(id);
       // Persist accepted vacation days so booked_days reflects reality — it's what
