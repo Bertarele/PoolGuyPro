@@ -671,9 +671,16 @@ function ChatConversation({
     // Candidatos sheet's own accept path.
     if (status === 'accepted' && selectedDays.length) {
       const merged = Array.from(new Set([...freshBooked, ...selectedDays]));
-      await window.sb.from('vacations').update({
+      const {
+        data: bdRows,
+        error: bdErr
+      } = await window.sb.from('vacations').update({
         booked_days: merged
-      }).eq('id', rawId);
+      }).eq('id', rawId).select('id');
+      if (bdErr || !bdRows || bdRows.length === 0) {
+        console.error('[ChatConversation] booked_days write failed:', bdErr);
+        setVacActionErr(lang === 'pt' ? '⚠️ Candidatura aceita, mas o dia não foi travado — avise o suporte.' : lang === 'es' ? '⚠️ Postulación aceptada, pero el día no se bloqueó — avisa a soporte.' : '⚠️ Application accepted, but the day failed to lock — please report this.');
+      }
     }
     setVacActionBusy(false);
     setVacActionDone(decision);
@@ -1941,9 +1948,19 @@ function ApplicantsSheet({
           data: fresh
         } = await window.sb.from('vacations').select('booked_days').eq('id', post._id).single();
         const merged = Array.from(new Set([...(fresh?.booked_days || []), ...app.selectedDays]));
-        await window.sb.from('vacations').update({
+        const {
+          data: bdRows,
+          error: bdErr
+        } = await window.sb.from('vacations').update({
           booked_days: merged
-        }).eq('id', post._id);
+        }).eq('id', post._id).select('id');
+        if (bdErr || !bdRows || bdRows.length === 0) {
+          // The application itself is already accepted at this point — don't
+          // undo it, but the owner needs to know the day didn't actually lock,
+          // or the listing will keep showing it as free to other applicants.
+          console.error('[ApplicantsSheet] booked_days write failed:', bdErr);
+          showToast && showToast(lang === 'pt' ? '⚠️ Candidatura aceita, mas o dia não foi travado — avise o suporte.' : lang === 'es' ? '⚠️ Postulación aceptada, pero el día no se bloqueó — avisa a soporte.' : '⚠️ Application accepted, but the day failed to lock — please report this.');
+        }
       }
     } else {
       setApplicants(prev => prev.map(a => a.id === id ? {
@@ -3026,9 +3043,16 @@ function ApplicantsSheet({
               data: fresh
             } = await window.sb.from('vacations').select('booked_days').eq('id', post._id).single();
             const remaining = (fresh?.booked_days || []).filter(d => !a.selectedDays.includes(d));
-            await window.sb.from('vacations').update({
+            const {
+              data: bdRows2,
+              error: bdErr2
+            } = await window.sb.from('vacations').update({
               booked_days: remaining
-            }).eq('id', post._id);
+            }).eq('id', post._id).select('id');
+            if (bdErr2 || !bdRows2 || bdRows2.length === 0) {
+              console.error('[ApplicantsSheet] booked_days release failed:', bdErr2);
+              showToast && showToast(lang === 'pt' ? '⚠️ Cancelado, mas o dia não foi liberado — avise o suporte.' : lang === 'es' ? '⚠️ Cancelado, pero el día no se liberó — avisa a soporte.' : '⚠️ Cancelled, but the day failed to release — please report this.');
+            }
           }
           if (wasAccepted && a.applicant_id) {
             const title = {
