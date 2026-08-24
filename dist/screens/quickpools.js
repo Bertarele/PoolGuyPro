@@ -1614,6 +1614,7 @@ function QuickPoolsScreen({
     user: user,
     t: t,
     lang: lang,
+    showToast: showToast,
     applied: !!applied[selected.id],
     onApply: sharePhone => applyToJob(selected.id, sharePhone),
     onUnlock: () => openPaywall('quickpools'),
@@ -4496,7 +4497,8 @@ function QuickPoolDetails({
   openEditPost,
   onStatusChange,
   onMyJobAccepted,
-  onWithdraw
+  onWithdraw,
+  showToast
 }) {
   const isOwn = job._live && user?.uid && job.poster_id === user.uid;
   const isAdmin = user?.role === 'admin';
@@ -4679,7 +4681,13 @@ function QuickPoolDetails({
       // Prefer myApp.submitted_photos (already persisted) over local state
       const photosToSave = myApp.submitted_photos && myApp.submitted_photos.length > 0 ? myApp.submitted_photos : localPhotos && localPhotos.length > 0 ? localPhotos : null;
       if (photosToSave) patch.submitted_photos = photosToSave;
-      await window.sb.from('quick_pool_applications').update(patch).eq('id', myApp.id);
+      const {
+        error: finishErr
+      } = await window.sb.from('quick_pool_applications').update(patch).eq('id', myApp.id);
+      if (finishErr) {
+        console.error('[QuickPools] finish error:', finishErr);
+        showToast && showToast('❌ ' + finishErr.message);
+      }
     }
     // Notify owner — push + in-app notification
     if (job.poster_id && window.sb) {
@@ -4737,15 +4745,41 @@ function QuickPoolDetails({
   }, [isOwn, job.status, acceptedApp?.pool_guy_done, loadApplicants]);
   const acceptApplicant = async (appId, applicantId) => {
     if (!window.sb) return;
-    await window.sb.from('quick_pool_applications').update({
+    // Guard against a race — two applicants accepted concurrently (another
+    // tab, a double-tap) — by only committing if this application is still
+    // pending AND the job itself is still open.
+    const {
+      data: jobRow
+    } = await window.sb.from('quick_pool_jobs').select('status').eq('id', job.id).single();
+    if (jobRow?.status !== 'open') {
+      showToast && showToast(lang === 'pt' ? '❌ Esta vaga já foi preenchida.' : '❌ This job was already filled.');
+      loadApplicants();
+      return;
+    }
+    const {
+      data: updRows,
+      error
+    } = await window.sb.from('quick_pool_applications').update({
       status: 'accepted'
-    }).eq('id', appId);
+    }).eq('id', appId).eq('status', 'pending').select('id');
+    if (error) {
+      showToast && showToast('❌ ' + error.message);
+      return;
+    }
+    if (!updRows || updRows.length === 0) {
+      showToast && showToast(lang === 'pt' ? '❌ Essa candidatura já foi decidida em outro lugar.' : '❌ This application was already decided elsewhere.');
+      loadApplicants();
+      return;
+    }
+    const {
+      error: jobErr
+    } = await window.sb.from('quick_pool_jobs').update({
+      status: 'filled'
+    }).eq('id', job.id).eq('status', 'open');
+    if (jobErr) showToast && showToast('❌ ' + jobErr.message);
     await window.sb.from('quick_pool_applications').update({
       status: 'rejected'
-    }).neq('id', appId).eq('job_id', job.id);
-    await window.sb.from('quick_pool_jobs').update({
-      status: 'filled'
-    }).eq('id', job.id);
+    }).neq('id', appId).eq('job_id', job.id).eq('status', 'pending');
     // Notify rejected applicants
     applicants.forEach(a => {
       if (a.id === appId) return;
@@ -4761,9 +4795,20 @@ function QuickPoolDetails({
   };
   const withdrawApp = async () => {
     if (!window.sb || !myApp) return;
-    await window.sb.from('quick_pool_applications').update({
+    const {
+      data: rows,
+      error
+    } = await window.sb.from('quick_pool_applications').update({
       status: 'withdrawn'
-    }).eq('id', myApp.id);
+    }).eq('id', myApp.id).eq('status', 'pending').select('id');
+    if (error) {
+      showToast && showToast('❌ ' + error.message);
+      return;
+    }
+    if (!rows || rows.length === 0) {
+      showToast && showToast(lang === 'pt' ? '❌ Essa candidatura já foi decidida.' : '❌ This application was already decided.');
+      return;
+    }
     setMyApp(null);
     onWithdraw && onWithdraw();
   };
