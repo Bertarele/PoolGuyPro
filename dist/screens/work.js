@@ -2266,6 +2266,7 @@ function WorkScreen({
       openSchedule: openSchedule,
       openPublicProfile: openPublicProfile,
       liveVacations: filteredLiveVacations,
+      liveApplications: liveApplications,
       user: ctx.user,
       showToast: showToast,
       onDeleteVac: removeVacation,
@@ -3405,6 +3406,7 @@ function WorkScreen({
     openSchedule: openSchedule,
     openPublicProfile: openPublicProfile,
     liveVacations: filteredLiveVacations,
+    liveApplications: liveApplications,
     user: ctx.user,
     showToast: showToast,
     onDeleteVac: removeVacation,
@@ -7105,6 +7107,7 @@ function VacationPanel({
   openSchedule,
   openPublicProfile,
   liveVacations = [],
+  liveApplications = [],
   user,
   showToast,
   onDeleteVac,
@@ -7312,6 +7315,7 @@ function VacationPanel({
     const isOwner = !!(user?.uid && user.uid === vac.author_id);
     const vacInProgress = (jobApplicantCounts[vac._id]?.accepted || 0) > 0;
     const fullyBooked = (vac.days || []).length > 0 && liveAvailDays.length === 0;
+    const myAppliedDays = !isOwner && user?.uid ? liveApplications.filter(a => String(a.job_id) === String(vac._id) && a.status === 'pending').flatMap(a => a.vacation_days?.selectedDays || []) : [];
     const wdShortNames = lang === 'pt' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] : lang === 'es' ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return /*#__PURE__*/React.createElement("article", {
       key: vac._id,
@@ -7544,6 +7548,7 @@ function VacationPanel({
     }, (vac.bookedDays || []).length, " ", bookedLabel)), /*#__PURE__*/React.createElement(DayChips, {
       days: vac.days || [],
       bookedDays: vac.bookedDays || [],
+      appliedDays: myAppliedDays,
       yearMonth: vac.yearMonth,
       lang: lang,
       showPastDays: isOwner,
@@ -11379,6 +11384,7 @@ function MiniCal({
 function DayChips({
   days,
   bookedDays = [],
+  appliedDays = [],
   selectedDays = null,
   size = 26,
   yearMonth = null,
@@ -11388,6 +11394,7 @@ function DayChips({
   userSelectedDays = null
 }) {
   const bookedSet = new Set(bookedDays);
+  const appliedSet = new Set(appliedDays);
   const selSet = selectedDays ? new Set(selectedDays) : null;
   const userSelSet = userSelectedDays ? new Set(userSelectedDays) : null;
   const today = React.useMemo(() => {
@@ -11405,6 +11412,7 @@ function DayChips({
     }
   }, days.map(d => {
     const booked = bookedSet.has(d);
+    const applied = appliedSet.has(d);
     const sel = selSet ? selSet.has(d) : !booked;
     const wd = yearMonth ? new Date(yearMonth.year, yearMonth.month, d).getDay() : null;
     const fullDate = yearMonth ? new Date(yearMonth.year, yearMonth.month, d) : null;
@@ -11426,24 +11434,32 @@ function DayChips({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 0,
-        background: isPast ? 'var(--pg-ink-100)' : booked ? 'var(--pg-ink-100)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
-        color: isPast ? 'var(--pg-ink-300)' : booked ? 'var(--pg-ink-300)' : sel ? '#fff' : 'var(--pg-blue-600)',
-        opacity: isPast ? 0.55 : 1
+        background: applied ? 'oklch(0.93 0.06 80)' : isPast ? 'var(--pg-ink-100)' : booked ? 'var(--pg-ink-100)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
+        color: applied ? 'oklch(0.55 0.14 80)' : isPast ? 'var(--pg-ink-300)' : booked ? 'var(--pg-ink-300)' : sel ? '#fff' : 'var(--pg-blue-600)',
+        opacity: isPast && !applied ? 0.55 : 1
       }
     }, wd !== null && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 8,
         fontWeight: 700,
         letterSpacing: '0.04em',
-        opacity: booked ? 0.5 : 0.75,
+        opacity: booked || applied ? 0.5 : 0.75,
         lineHeight: 1.2
       }
     }, wdShort[wd].toUpperCase()), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: wd !== null ? 12 : 10.5,
-        lineHeight: 1.15
+        lineHeight: 1.15,
+        textDecoration: applied ? 'line-through' : 'none'
       }
-    }, d));
+    }, d), applied && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 6.5,
+        fontWeight: 700,
+        letterSpacing: '0.03em',
+        marginTop: 1
+      }
+    }, lang === 'pt' ? 'ENVIADO' : lang === 'es' ? 'ENVIADO' : 'APPLIED'));
   }));
 }
 
@@ -11691,7 +11707,7 @@ function VacationDayPickerSheet({
       onClick: () => !isUnavail && toggle(d),
       style: {
         width: 56,
-        height: 68,
+        height: 74,
         borderRadius: 12,
         border: isConflict ? '2px solid var(--pg-warn)' : 'none',
         cursor: isUnavail ? 'default' : 'pointer',
@@ -11746,9 +11762,10 @@ function VacationDayPickerSheet({
       }
     }, "\u26A0\uFE0F") : /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 8,
-        color: sel ? 'rgba(255,255,255,0.75)' : 'var(--pg-blue-500)',
-        marginTop: 1
+        fontSize: 12.5,
+        fontWeight: 800,
+        marginTop: 1,
+        color: sel ? '#fff' : 'var(--pg-blue-700)'
       }
     }, poolsCnt, "\uD83C\uDFCA"));
   })), /*#__PURE__*/React.createElement("button", {

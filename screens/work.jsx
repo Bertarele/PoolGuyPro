@@ -1121,7 +1121,7 @@ function WorkScreen({ ctx }) {
               {handoffCardsList}
               {sub==='hiring' && <HiringPanel t={t} lang={lang} onChat={openChat} onViewApplicants={openApplicants} onCreate={()=>{}} user={ctx.user} onApply={openApplyJob} hidePosted={false} openPublicProfile={openPublicProfile} liveJobs={filteredLiveJobs} showToast={showToast} onDeleteJob={removeJob} onJobUpdated={ctx.loadLiveJobs} liveApplications={liveApplications} jobApplicantCounts={jobApplicantCounts} highlightJobId={ctx.pendingJobCardId} onHighlightConsumed={()=>ctx.clearPendingJobCard&&ctx.clearPendingJobCard()}/>}
               {sub==='techs'  && <TechsPanel  t={t} lang={lang} onChat={openChat} onCreate={()=>{}} openPublicProfile={openPublicProfile} liveTechs={filteredLiveTechs} user={ctx.user} showToast={showToast} onDeleteTech={removeTech}/>}
-              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} jobApplicantCounts={jobApplicantCounts} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation} highlightVacId={ctx.pendingVacId} onHighlightConsumed={()=>ctx.clearPendingVac&&ctx.clearPendingVac()}/>}
+              {sub==='vac'    && <VacationPanel t={t} lang={lang} vacTab={vacTab} setVacTab={setVacTab} onChat={openChat} onCreate={openVacSheet} onEditVac={openEditVacSheet} onUnlockVac={()=>ctx.openPaywall&&ctx.openPaywall('vac')} onViewApplicants={openApplicants} jobApplicantCounts={jobApplicantCounts} openDayPicker={openDayPicker} openSchedule={openSchedule} openPublicProfile={openPublicProfile} liveVacations={filteredLiveVacations} liveApplications={liveApplications} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation} highlightVacId={ctx.pendingVacId} onHighlightConsumed={()=>ctx.clearPendingVac&&ctx.clearPendingVac()}/>}
             </div>
           </div>
         </div>
@@ -1591,7 +1591,7 @@ function WorkScreen({ ctx }) {
                               openDayPicker={openDayPicker}
                               openSchedule={openSchedule}
                               openPublicProfile={openPublicProfile}
-                              liveVacations={filteredLiveVacations} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}
+                              liveVacations={filteredLiveVacations} liveApplications={liveApplications} user={ctx.user} showToast={showToast} onDeleteVac={removeVacation}
                               highlightVacId={ctx.pendingVacId} onHighlightConsumed={()=>ctx.clearPendingVac&&ctx.clearPendingVac()}/>}
       </div>
 
@@ -3211,7 +3211,7 @@ function PoolRouteMap({ pools=[], style={}, doneIndices=null }) {
 }
 
 // ── Vacation panel ────────────────────────────────────────────
-function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac, onViewApplicants, jobApplicantCounts={}, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], user, showToast, onDeleteVac, onUnlockVac, highlightVacId=null, onHighlightConsumed }) {
+function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac, onViewApplicants, jobApplicantCounts={}, openDayPicker, openSchedule, openPublicProfile, liveVacations=[], liveApplications=[], user, showToast, onDeleteVac, onUnlockVac, highlightVacId=null, onHighlightConsumed }) {
   const [hiddenStatic, setHiddenStatic] = React.useState([]);
   const [highlightedVacId, setHighlightedVacId] = React.useState(null);
   const vacCardRefs = React.useRef({});
@@ -3373,6 +3373,9 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
               const isOwner = !!(user?.uid && user.uid === vac.author_id);
               const vacInProgress = (jobApplicantCounts[vac._id]?.accepted || 0) > 0;
               const fullyBooked = (vac.days||[]).length > 0 && liveAvailDays.length === 0;
+              const myAppliedDays = (!isOwner && user?.uid) ? liveApplications
+                .filter(a => String(a.job_id) === String(vac._id) && a.status === 'pending')
+                .flatMap(a => a.vacation_days?.selectedDays || []) : [];
               const wdShortNames = lang==='pt'
                 ? ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
                 : lang==='es'
@@ -3478,7 +3481,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                   </div>
 
                   {/* Day chips */}
-                  <DayChips days={vac.days||[]} bookedDays={vac.bookedDays||[]}
+                  <DayChips days={vac.days||[]} bookedDays={vac.bookedDays||[]} appliedDays={myAppliedDays}
                     yearMonth={vac.yearMonth} lang={lang}
                     showPastDays={isOwner} isOwner={isOwner}/>
 
@@ -5532,8 +5535,9 @@ function MiniCal({ days, bookedDays=[], selectedDays=null, yearMonth=null, varia
 }
 
 // ── Compact day chips (for ApplicantsSheet + Applied cards) ────
-function DayChips({ days, bookedDays=[], selectedDays=null, size=26, yearMonth=null, lang='en', showPastDays=false, isOwner=false, userSelectedDays=null }) {
+function DayChips({ days, bookedDays=[], appliedDays=[], selectedDays=null, size=26, yearMonth=null, lang='en', showPastDays=false, isOwner=false, userSelectedDays=null }) {
   const bookedSet = new Set(bookedDays);
+  const appliedSet = new Set(appliedDays);
   const selSet    = selectedDays ? new Set(selectedDays) : null;
   const userSelSet = userSelectedDays ? new Set(userSelectedDays) : null;
 
@@ -5554,7 +5558,8 @@ function DayChips({ days, bookedDays=[], selectedDays=null, size=26, yearMonth=n
   return (
     <div style={{display:'flex', flexWrap:'wrap', gap:4}}>
       {days.map(d => {
-        const booked = bookedSet.has(d);
+        const booked  = bookedSet.has(d);
+        const applied = appliedSet.has(d);
         const sel    = selSet ? selSet.has(d) : !booked;
         const wd     = yearMonth ? new Date(yearMonth.year, yearMonth.month, d).getDay() : null;
         const fullDate = yearMonth ? new Date(yearMonth.year, yearMonth.month, d) : null;
@@ -5572,17 +5577,22 @@ function DayChips({ days, bookedDays=[], selectedDays=null, size=26, yearMonth=n
             borderRadius:7, fontWeight:700,
             display:'inline-flex', flexDirection:'column',
             alignItems:'center', justifyContent:'center', gap:0,
-            background: isPast ? 'var(--pg-ink-100)' : booked ? 'var(--pg-ink-100)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
-            color:      isPast ? 'var(--pg-ink-300)' : booked ? 'var(--pg-ink-300)' : sel ? '#fff' : 'var(--pg-blue-600)',
-            opacity: isPast ? 0.55 : 1,
+            background: applied ? 'oklch(0.93 0.06 80)' : isPast ? 'var(--pg-ink-100)' : booked ? 'var(--pg-ink-100)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
+            color:      applied ? 'oklch(0.55 0.14 80)' : isPast ? 'var(--pg-ink-300)' : booked ? 'var(--pg-ink-300)' : sel ? '#fff' : 'var(--pg-blue-600)',
+            opacity: isPast && !applied ? 0.55 : 1,
           }}>
             {wd !== null && (
               <span style={{fontSize:8, fontWeight:700, letterSpacing:'0.04em',
-                opacity: booked ? 0.5 : 0.75, lineHeight:1.2}}>
+                opacity: (booked||applied) ? 0.5 : 0.75, lineHeight:1.2}}>
                 {wdShort[wd].toUpperCase()}
               </span>
             )}
-            <span style={{fontSize: wd !== null ? 12 : 10.5, lineHeight:1.15}}>{d}</span>
+            <span style={{fontSize: wd !== null ? 12 : 10.5, lineHeight:1.15, textDecoration: applied ? 'line-through' : 'none'}}>{d}</span>
+            {applied && (
+              <span style={{fontSize:6.5, fontWeight:700, letterSpacing:'0.03em', marginTop:1}}>
+                {lang==='pt'?'ENVIADO':lang==='es'?'ENVIADO':'APPLIED'}
+              </span>
+            )}
           </span>
         );
       })}
@@ -5754,7 +5764,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
             !!confirmedMap[`${vac.yearMonth.year}-${vac.yearMonth.month}-${d}`];
           return (
             <button key={d} onClick={()=>!isUnavail && toggle(d)} style={{
-              width:56, height:68, borderRadius:12, border: isConflict ? '2px solid var(--pg-warn)' : 'none',
+              width:56, height:74, borderRadius:12, border: isConflict ? '2px solid var(--pg-warn)' : 'none',
               cursor: isUnavail ? 'default' : 'pointer',
               display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1,
               fontFamily:'inherit', transition:'all .12s ease',
@@ -5785,7 +5795,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
                   ? <span style={{fontSize:7.5, fontWeight:700, letterSpacing:'0.04em', marginTop:1}}>{lang==='pt'?'ENVIADO':lang==='es'?'ENVIADO':'APPLIED'}</span>
                 : isConflict
                   ? <span style={{fontSize:7, fontWeight:700, letterSpacing:'0.02em', marginTop:1}}>⚠️</span>
-                  : <span style={{fontSize:8, color: sel ? 'rgba(255,255,255,0.75)' : 'var(--pg-blue-500)', marginTop:1}}>
+                  : <span style={{fontSize:12.5, fontWeight:800, marginTop:1, color: sel ? '#fff' : 'var(--pg-blue-700)'}}>
                       {poolsCnt}🏊
                     </span>
               }
