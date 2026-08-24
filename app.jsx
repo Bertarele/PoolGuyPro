@@ -1787,7 +1787,7 @@ function App() {
               else switchTab('quick');
             } else if (type==='job_new_application' || type==='job_accepted' || type==='job_rejected') {
               switchTab('work');
-            } else if (type==='vacation_new_application' || type==='vacation_confirmed' || type==='vacation_photos_submitted' || type==='vacation_cancelled') {
+            } else if (type==='vacation_new_application' || type==='vacation_confirmed' || type==='vacation_photos_submitted' || type==='vacation_cancelled' || type==='vacation_day_today' || type==='vacation_day_missed') {
               if (linkId) ctx.openListingById('vac_'+linkId);
               else switchTab('work');
             } else if (type==='rental_request') {

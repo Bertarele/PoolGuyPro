@@ -2646,6 +2646,8 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
     if (type==='vacation_confirmed')       return Icon.check(17,'#fff');
     if (type==='vacation_photos_submitted') return <span style={{fontSize:16}}>📸</span>;
     if (type==='vacation_cancelled')       return Icon.x(17,'#fff');
+    if (type==='vacation_day_today')       return Icon.cal(17,'#fff');
+    if (type==='vacation_day_missed')      return <span style={{fontSize:16}}>⚠️</span>;
     return Icon.bolt(17,'#fff');
   };
   const colorFor = (type) => {
@@ -2670,6 +2672,8 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
     if (type==='vacation_confirmed')       return '#22C55E';
     if (type==='vacation_photos_submitted') return '#0EBAC7';
     if (type==='vacation_cancelled')       return '#EF4444';
+    if (type==='vacation_day_today')       return '#0077B6';
+    if (type==='vacation_day_missed')      return '#F59E0B';
     return '#3B82F6';
   };
   const fmtTime = (d) => {

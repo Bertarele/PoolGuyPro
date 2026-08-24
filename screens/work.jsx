@@ -445,6 +445,18 @@ function WorkScreen({ ctx }) {
     .filter(a => liveVacations.some(v => v._id === a.job_id))
     .map(a => {
       const relatedVac = liveVacations.find(v => v._id === a.job_id);
+      const selectedDays = a.vacation_days?.selectedDays || null;
+      const yearMonth = relatedVac?.yearMonth || null;
+      // Earliest scheduled day not yet reached — the "Fazer serviço" button
+      // stays locked until that day arrives, so the pool guy can't (accidentally
+      // or otherwise) do — and photograph — the wrong day's work early.
+      let earliestDate = null, canDoJobToday = true;
+      if (selectedDays?.length && yearMonth) {
+        const today0 = new Date(); today0.setHours(0,0,0,0);
+        const dates = selectedDays.map(d => new Date(yearMonth.year, yearMonth.month, d));
+        earliestDate = new Date(Math.min(...dates));
+        canDoJobToday = dates.some(d => d <= today0);
+      }
       return {
         id:           a.id,
         _live:        true,
@@ -458,8 +470,10 @@ function WorkScreen({ ctx }) {
                     : a.status === 'rejected' ? 'rejected' : 'awaiting',
         poolGuyDone:  !!a.pool_guy_done,
         requiredPhotos: relatedVac?.requiredPhotos || [],
-        selectedDays: a.vacation_days?.selectedDays || null,
-        yearMonth:      relatedVac?.yearMonth || null,
+        selectedDays,
+        yearMonth,
+        earliestDate,
+        canDoJobToday,
         poolsByWeekday: relatedVac?.poolsByWeekday || {},
         job_id:       a.job_id,
         title:        relatedVac ? { en:'Route coverage', pt:'Cobertura de rota', es:'Cobertura de ruta' } : { en:'', pt:'', es:'' },
@@ -922,12 +936,28 @@ function WorkScreen({ ctx }) {
                               </div>
                             </div>
                             {isAcc ? (
-                              <button onClick={()=>setCompletingVacApp(app)} style={{
+                              <button
+                                onClick={()=>{
+                                  if (!app.canDoJobToday) {
+                                    showToast && showToast(lang==='pt'
+                                      ? `🔒 Disponível em ${app.earliestDate.getDate()}/${app.earliestDate.getMonth()+1}`
+                                      : lang==='es'
+                                        ? `🔒 Disponible el ${app.earliestDate.getDate()}/${app.earliestDate.getMonth()+1}`
+                                        : `🔒 Available on ${app.earliestDate.getMonth()+1}/${app.earliestDate.getDate()}`);
+                                    return;
+                                  }
+                                  setCompletingVacApp(app);
+                                }}
+                                style={{
                                 flexShrink:0,height:26,padding:'0 9px',borderRadius:7,fontSize:10.5,fontWeight:700,
-                                border:'1px solid rgba(16,185,129,0.35)',background:'rgba(16,185,129,0.10)',
-                                color:'#10B981',cursor:'pointer',whiteSpace:'nowrap',
+                                border: app.canDoJobToday ? '1px solid rgba(16,185,129,0.35)' : '1px solid var(--pg-ink-200)',
+                                background: app.canDoJobToday ? 'rgba(16,185,129,0.10)' : 'var(--pg-ink-100)',
+                                color: app.canDoJobToday ? '#10B981' : 'var(--pg-ink-400)',
+                                cursor:'pointer',whiteSpace:'nowrap',
                               }}>
-                                {lang==='pt'?'Fazer serviço':lang==='es'?'Hacer el trabajo':'Do the job'}
+                                {app.canDoJobToday
+                                  ? (lang==='pt'?'Fazer serviço':lang==='es'?'Hacer el trabajo':'Do the job')
+                                  : (lang==='pt'?'🔒 Bloqueado':lang==='es'?'🔒 Bloqueado':'🔒 Locked')}
                               </button>
                             ) : isDone ? (
                               <button onClick={()=>openRating && openRating({
@@ -1447,12 +1477,28 @@ function WorkScreen({ ctx }) {
                             </div>
                           </div>
                           {isAccepted ? (
-                            <button onClick={()=>setCompletingVacApp(app)} style={{
+                            <button
+                              onClick={()=>{
+                                if (!app.canDoJobToday) {
+                                  showToast && showToast(lang==='pt'
+                                    ? `🔒 Disponível em ${app.earliestDate.getDate()}/${app.earliestDate.getMonth()+1}`
+                                    : lang==='es'
+                                      ? `🔒 Disponible el ${app.earliestDate.getDate()}/${app.earliestDate.getMonth()+1}`
+                                      : `🔒 Available on ${app.earliestDate.getMonth()+1}/${app.earliestDate.getDate()}`);
+                                  return;
+                                }
+                                setCompletingVacApp(app);
+                              }}
+                              style={{
                               flexShrink:0, height:28, padding:'0 10px', borderRadius:8, fontSize:11, fontWeight:700,
-                              border:'1px solid rgba(16,185,129,0.35)', background:'rgba(16,185,129,0.10)',
-                              color:'#10B981', cursor:'pointer', whiteSpace:'nowrap',
+                              border: app.canDoJobToday ? '1px solid rgba(16,185,129,0.35)' : '1px solid var(--pg-ink-200)',
+                              background: app.canDoJobToday ? 'rgba(16,185,129,0.10)' : 'var(--pg-ink-100)',
+                              color: app.canDoJobToday ? '#10B981' : 'var(--pg-ink-400)',
+                              cursor:'pointer', whiteSpace:'nowrap',
                             }}>
-                              {lang==='pt'?'Fazer serviço':lang==='es'?'Hacer el trabajo':'Do the job'}
+                              {app.canDoJobToday
+                                ? (lang==='pt'?'Fazer serviço':lang==='es'?'Hacer el trabajo':'Do the job')
+                                : (lang==='pt'?'🔒 Bloqueado':lang==='es'?'🔒 Bloqueado':'🔒 Locked')}
                             </button>
                           ) : isDone ? (
                             <button onClick={()=>openRating && openRating({

@@ -4791,6 +4791,12 @@ function NotificationsSheet({
       }
     }, "\uD83D\uDCF8");
     if (type === 'vacation_cancelled') return Icon.x(17, '#fff');
+    if (type === 'vacation_day_today') return Icon.cal(17, '#fff');
+    if (type === 'vacation_day_missed') return /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 16
+      }
+    }, "\u26A0\uFE0F");
     return Icon.bolt(17, '#fff');
   };
   const colorFor = type => {
@@ -4815,6 +4821,8 @@ function NotificationsSheet({
     if (type === 'vacation_confirmed') return '#22C55E';
     if (type === 'vacation_photos_submitted') return '#0EBAC7';
     if (type === 'vacation_cancelled') return '#EF4444';
+    if (type === 'vacation_day_today') return '#0077B6';
+    if (type === 'vacation_day_missed') return '#F59E0B';
     return '#3B82F6';
   };
   const fmtTime = d => {
