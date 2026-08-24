@@ -1560,23 +1560,37 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
                       {lang==='pt'?'Fotos enviadas — revise e confirme':lang==='es'?'Fotos enviadas — revisa y confirma':'Photos submitted — review and confirm'}
                     </div>
-                    {a.submittedPhotos && a.submittedPhotos.length > 0 && (
-                      <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:10}}>
-                        {a.submittedPhotos.map((p,i) => {
-                          const typeLabel = p.type ? (p.type.startsWith('custom:') ? p.type.slice(7)
-                            : p.type==='before'   ? (lang==='pt'?'Antes':'Before')
-                            : p.type==='after'    ? (lang==='pt'?'Depois':lang==='es'?'Después':'After')
-                            : p.type==='vacuum'   ? (lang==='pt'?'Vacum':'Vacuum')
-                            : p.type==='chemical' ? (lang==='pt'?'Químico':lang==='es'?'Químico':'Chemical') : p.type) : null;
-                          return (
-                            <div key={i} style={{display:'flex', flexDirection:'column', alignItems:'center', gap:3}}>
-                              <img src={p.url} alt="" style={{width:56, height:56, borderRadius:8, objectFit:'cover', border:'1px solid oklch(0.85 0.08 260)'}}/>
-                              {typeLabel && <span style={{fontSize:9.5, color:'oklch(0.48 0.14 260)', fontWeight:600}}>{typeLabel}</span>}
+                    {a.submittedPhotos && a.submittedPhotos.length > 0 && (() => {
+                      const typeLabel = (t) => t ? (t.startsWith('custom:') ? t.slice(7)
+                        : t==='before'   ? (lang==='pt'?'Antes':'Before')
+                        : t==='after'    ? (lang==='pt'?'Depois':lang==='es'?'Después':'After')
+                        : t==='vacuum'   ? (lang==='pt'?'Vacum':'Vacuum')
+                        : t==='chemical' ? (lang==='pt'?'Químico':lang==='es'?'Químico':'Chemical') : t) : null;
+                      // Older submissions (before per-pool grouping) have no
+                      // .poolLabel — fall back to one flat, unlabeled group.
+                      const groups = {};
+                      a.submittedPhotos.forEach(p => {
+                        const key = p.poolLabel || '';
+                        (groups[key] = groups[key] || []).push(p);
+                      });
+                      return Object.entries(groups).map(([label, photos]) => (
+                        <div key={label} style={{marginBottom:10}}>
+                          {label && (
+                            <div style={{fontSize:10.5, fontWeight:700, color:'oklch(0.42 0.16 260)', marginBottom:5, display:'flex', alignItems:'center', gap:4}}>
+                              {Icon.pin(10,'oklch(0.42 0.16 260)')} {label}
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                          )}
+                          <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                            {photos.map((p,i) => (
+                              <div key={i} style={{display:'flex', flexDirection:'column', alignItems:'center', gap:3}}>
+                                <img src={p.url} alt="" style={{width:56, height:56, borderRadius:8, objectFit:'cover', border:'1px solid oklch(0.85 0.08 260)'}}/>
+                                {typeLabel(p.type) && <span style={{fontSize:9.5, color:'oklch(0.48 0.14 260)', fontWeight:600}}>{typeLabel(p.type)}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ));
+                    })()}
                     <button onClick={()=>finalizeVacation(a)} className="pg-btn pg-btn-primary" style={{width:'100%', height:38, fontSize:13, borderRadius:999}}>
                       {Icon.check(14,'#fff')} {lang==='pt'?'Finalizar e avaliar':lang==='es'?'Finalizar y calificar':'Finalize and rate'}
                     </button>

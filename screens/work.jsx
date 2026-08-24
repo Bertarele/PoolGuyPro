@@ -473,8 +473,10 @@ function WorkScreen({ ctx }) {
         selectedDays,
         yearMonth,
         earliestDate,
+        earliestWeekday: earliestDate ? earliestDate.getDay() : null,
         canDoJobToday,
         poolsByWeekday: relatedVac?.poolsByWeekday || {},
+        addressesByWeekday: relatedVac?.addressesByWeekday || {},
         job_id:       a.job_id,
         title:        relatedVac ? { en:'Route coverage', pt:'Cobertura de rota', es:'Cobertura de ruta' } : { en:'', pt:'', es:'' },
       };
@@ -3946,9 +3948,21 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
 function VacCompletionSheet({ app, lang='en', onClose, onSubmitted, showToast, applicantName }) {
   const requiredPhotos = app.requiredPhotos || [];
   const hasTypedRequirement = requiredPhotos.length > 0;
-  const [uploadedPhotos, setUploadedPhotos] = React.useState({}); // {photoKey: {url, uploading, error}}
+  const [uploadedPhotos, setUploadedPhotos] = React.useState({}); // {"poolIdx_photoKey": {url, uploading, error}}
   const [freePhotos, setFreePhotos] = React.useState([]); // fallback mode
   const [submitting, setSubmitting] = React.useState(false);
+
+  // Group required photos by pool — one section per pool scheduled for the
+  // day being worked, each labeled with the owner's real address if they
+  // gave one, or a plain "Piscina N" placeholder if they didn't.
+  const poolCount = Math.max(1, (app.earliestWeekday != null ? app.poolsByWeekday?.[app.earliestWeekday] : null) || 1);
+  const poolAddresses = (app.earliestWeekday != null ? app.addressesByWeekday?.[app.earliestWeekday] : null) || [];
+  const pools = Array.from({ length: poolCount }, (_, i) => ({
+    idx: i,
+    label: (poolAddresses[i] && poolAddresses[i].trim())
+      ? poolAddresses[i].trim()
+      : (lang==='pt' ? `Piscina ${i+1}` : lang==='es' ? `Piscina ${i+1}` : `Pool ${i+1}`),
+  }));
 
   const photoLabel = (p) => p.startsWith('custom:') ? p.slice(7)
     : p==='before'   ? (lang==='pt'?'Foto antes':'Before photo')
@@ -3956,31 +3970,34 @@ function VacCompletionSheet({ app, lang='en', onClose, onSubmitted, showToast, a
     : p==='vacuum'   ? (lang==='pt'?'Foto vacum':'Vacuum photo')
     : p==='chemical' ? (lang==='pt'?'Foto químico':'Chemical photo') : p;
 
-  const handlePhotoSelect = async (photoKey, file) => {
+  const handlePhotoSelect = async (slotKey, file) => {
     if (!file || !window.sb) return;
-    setUploadedPhotos(prev => ({ ...prev, [photoKey]: { url: URL.createObjectURL(file), uploading: true, error: null } }));
+    setUploadedPhotos(prev => ({ ...prev, [slotKey]: { url: URL.createObjectURL(file), uploading: true, error: null } }));
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const path = `${app.job_id}/${photoKey}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = `${app.job_id}/${slotKey}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const { error: uploadErr } = await window.sb.storage.from('job-photos').upload(path, file, { upsert: true, contentType: file.type });
     if (uploadErr) {
-      setUploadedPhotos(prev => ({ ...prev, [photoKey]: { ...prev[photoKey], uploading: false, error: uploadErr.message } }));
+      setUploadedPhotos(prev => ({ ...prev, [slotKey]: { ...prev[slotKey], uploading: false, error: uploadErr.message } }));
       return;
     }
     const { data: pub } = window.sb.storage.from('job-photos').getPublicUrl(path);
-    setUploadedPhotos(prev => ({ ...prev, [photoKey]: { url: pub.publicUrl, uploading: false, error: null } }));
+    setUploadedPhotos(prev => ({ ...prev, [slotKey]: { url: pub.publicUrl, uploading: false, error: null } }));
   };
 
-  const allTypedUploaded = hasTypedRequirement && requiredPhotos.every(p =>
-    uploadedPhotos[p] && !uploadedPhotos[p].uploading && !uploadedPhotos[p].error &&
-    uploadedPhotos[p].url && !uploadedPhotos[p].url.startsWith('blob:')
-  );
+  const allTypedUploaded = hasTypedRequirement && pools.every(pool => requiredPhotos.every(p => {
+    const s = uploadedPhotos[`${pool.idx}_${p}`];
+    return s && !s.uploading && !s.error && s.url && !s.url.startsWith('blob:');
+  }));
   const canSubmit = hasTypedRequirement ? allTypedUploaded : freePhotos.length > 0;
 
   const submit = async () => {
     if (!canSubmit || submitting || !window.sb) return;
     setSubmitting(true);
     const submittedPhotos = hasTypedRequirement
-      ? requiredPhotos.map(p => ({ type: p, url: uploadedPhotos[p].url }))
+      ? pools.flatMap(pool => requiredPhotos.map(p => ({
+          type: p, url: uploadedPhotos[`${pool.idx}_${p}`].url,
+          pool: pool.idx + 1, poolLabel: pool.label,
+        })))
       : freePhotos.map(url => ({ url }));
     const { error } = await window.sb.from('job_applications').update({
       submitted_photos: submittedPhotos,
@@ -4031,42 +4048,53 @@ function VacCompletionSheet({ app, lang='en', onClose, onSubmitted, showToast, a
       </div>
 
       {hasTypedRequirement ? (
-        <div style={{display:'flex', flexDirection:'column', gap:12}}>
-          {requiredPhotos.map(photoKey => {
-            const state = uploadedPhotos[photoKey];
-            return (
-              <div key={photoKey} style={{borderRadius:12, border: state ? '1.5px solid var(--pg-blue-400)' : '1px solid var(--pg-ink-200)', overflow:'hidden'}}>
-                <div style={{display:'flex', alignItems:'center', gap:10, padding:'12px 14px', background: state ? 'var(--pg-blue-50)' : 'transparent'}}>
-                  <div style={{
-                    width:36, height:36, borderRadius:10, flexShrink:0, overflow:'hidden',
-                    background: state ? 'transparent' : 'var(--pg-ink-100)',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                  }}>
-                    {state?.url ? <img src={state.url} alt="" style={{width:36,height:36,objectFit:'cover'}}/> : <span style={{fontSize:18}}>📷</span>}
-                  </div>
-                  <div style={{flex:1, minWidth:0}}>
-                    <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)'}}>{photoLabel(photoKey)}</div>
-                    {state?.uploading && <div style={{fontSize:11, color:'var(--pg-blue-500)'}}>{lang==='pt'?'Enviando...':lang==='es'?'Enviando...':'Uploading...'}</div>}
-                    {state?.error && <div style={{fontSize:11, color:'#EF4444'}}>{lang==='pt'?'Erro — tente de novo':'Error — try again'}</div>}
-                    {state && !state.uploading && !state.error && <div style={{fontSize:11, color:'#16A34A', fontWeight:600}}>✓ {lang==='pt'?'Foto adicionada':lang==='es'?'Foto añadida':'Photo added'}</div>}
-                  </div>
-                  <label style={{cursor:'pointer', flexShrink:0}}>
-                    <input type="file" accept="image/*" capture="environment" style={{display:'none'}}
-                      onChange={e=>handlePhotoSelect(photoKey, e.target.files[0])}/>
-                    <span style={{
-                      display:'inline-flex', alignItems:'center', gap:4, height:34, padding:'0 12px',
-                      borderRadius:999, fontSize:12, fontWeight:700, cursor:'pointer',
-                      background: state ? 'var(--pg-blue-100)' : 'var(--pg-blue-500)',
-                      color: state ? 'var(--pg-blue-700)' : '#fff',
-                      border:'none',
-                    }}>
-                      {state ? (lang==='pt'?'Trocar':lang==='es'?'Cambiar':'Retake') : (lang==='pt'?'Tirar foto':lang==='es'?'Tomar foto':'Take photo')}
-                    </span>
-                  </label>
-                </div>
+        <div style={{display:'flex', flexDirection:'column', gap:18}}>
+          {pools.map(pool => (
+            <div key={pool.idx}>
+              <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:8}}>
+                {Icon.pin(12,'var(--pg-blue-600)')}
+                <span style={{fontSize:12.5, fontWeight:700, color:'var(--pg-blue-700)'}}>{pool.label}</span>
               </div>
-            );
-          })}
+              <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                {requiredPhotos.map(photoKey => {
+                  const slotKey = `${pool.idx}_${photoKey}`;
+                  const state = uploadedPhotos[slotKey];
+                  return (
+                    <div key={slotKey} style={{borderRadius:12, border: state ? '1.5px solid var(--pg-blue-400)' : '1px solid var(--pg-ink-200)', overflow:'hidden'}}>
+                      <div style={{display:'flex', alignItems:'center', gap:10, padding:'12px 14px', background: state ? 'var(--pg-blue-50)' : 'transparent'}}>
+                        <div style={{
+                          width:36, height:36, borderRadius:10, flexShrink:0, overflow:'hidden',
+                          background: state ? 'transparent' : 'var(--pg-ink-100)',
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                        }}>
+                          {state?.url ? <img src={state.url} alt="" style={{width:36,height:36,objectFit:'cover'}}/> : <span style={{fontSize:18}}>📷</span>}
+                        </div>
+                        <div style={{flex:1, minWidth:0}}>
+                          <div style={{fontSize:13, fontWeight:600, color:'var(--pg-ink-800)'}}>{photoLabel(photoKey)}</div>
+                          {state?.uploading && <div style={{fontSize:11, color:'var(--pg-blue-500)'}}>{lang==='pt'?'Enviando...':lang==='es'?'Enviando...':'Uploading...'}</div>}
+                          {state?.error && <div style={{fontSize:11, color:'#EF4444'}}>{lang==='pt'?'Erro — tente de novo':'Error — try again'}</div>}
+                          {state && !state.uploading && !state.error && <div style={{fontSize:11, color:'#16A34A', fontWeight:600}}>✓ {lang==='pt'?'Foto adicionada':lang==='es'?'Foto añadida':'Photo added'}</div>}
+                        </div>
+                        <label style={{cursor:'pointer', flexShrink:0}}>
+                          <input type="file" accept="image/*" capture="environment" style={{display:'none'}}
+                            onChange={e=>handlePhotoSelect(slotKey, e.target.files[0])}/>
+                          <span style={{
+                            display:'inline-flex', alignItems:'center', gap:4, height:34, padding:'0 12px',
+                            borderRadius:999, fontSize:12, fontWeight:700, cursor:'pointer',
+                            background: state ? 'var(--pg-blue-100)' : 'var(--pg-blue-500)',
+                            color: state ? 'var(--pg-blue-700)' : '#fff',
+                            border:'none',
+                          }}>
+                            {state ? (lang==='pt'?'Trocar':lang==='es'?'Cambiar':'Retake') : (lang==='pt'?'Tirar foto':lang==='es'?'Tomar foto':'Take photo')}
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <PhotoPicker
@@ -4118,7 +4146,7 @@ function PostVacationSheet({ onClose, lang='en', onSubmit, initialData=null }) {
   const [selectedDays, setSelectedDays] = React.useState(() => new Set(initialData?.selectedDays || []));
   const [weekdayRegions, setWeekdayRegions] = React.useState(initialData?.weekdayRegions || {});
   const [poolsPerWeekday, setPoolsPerWeekday] = React.useState(initialData?.poolsPerWeekday || {});
-  const [wdAddresses, setWdAddresses]         = React.useState({});  // {wd: string[]}
+  const [wdAddresses, setWdAddresses]         = React.useState(initialData?.addressesByWeekday || {});  // {wd: string[]}
   const [price, setPrice] = React.useState(initialData?.price ?? '0');
   const [priceMode, setPriceMode] = React.useState(initialData?.priceMode ?? 'fixed');
   const [note, setNote] = React.useState(initialData?.note || '');
@@ -4605,7 +4633,7 @@ function PostVacationSheet({ onClose, lang='en', onSubmit, initialData=null }) {
           </div>
         )}
         <button
-          onClick={()=>onSubmit && onSubmit({ monthIdx, year, selectedDays:[...selectedDays], weekdayRegions, poolsPerWeekday, price, priceMode, note: note.trim() || null, requiredPhotos })}
+          onClick={()=>onSubmit && onSubmit({ monthIdx, year, selectedDays:[...selectedDays], weekdayRegions, poolsPerWeekday, addresses: wdAddresses, price, priceMode, note: note.trim() || null, requiredPhotos })}
           disabled={!isValid}
           className="pg-btn pg-btn-primary"
           style={{

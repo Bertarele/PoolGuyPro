@@ -848,8 +848,10 @@ function WorkScreen({
       selectedDays,
       yearMonth,
       earliestDate,
+      earliestWeekday: earliestDate ? earliestDate.getDay() : null,
       canDoJobToday,
       poolsByWeekday: relatedVac?.poolsByWeekday || {},
+      addressesByWeekday: relatedVac?.addressesByWeekday || {},
       job_id: a.job_id,
       title: relatedVac ? {
         en: 'Route coverage',
@@ -8278,22 +8280,34 @@ function VacCompletionSheet({
 }) {
   const requiredPhotos = app.requiredPhotos || [];
   const hasTypedRequirement = requiredPhotos.length > 0;
-  const [uploadedPhotos, setUploadedPhotos] = React.useState({}); // {photoKey: {url, uploading, error}}
+  const [uploadedPhotos, setUploadedPhotos] = React.useState({}); // {"poolIdx_photoKey": {url, uploading, error}}
   const [freePhotos, setFreePhotos] = React.useState([]); // fallback mode
   const [submitting, setSubmitting] = React.useState(false);
+
+  // Group required photos by pool — one section per pool scheduled for the
+  // day being worked, each labeled with the owner's real address if they
+  // gave one, or a plain "Piscina N" placeholder if they didn't.
+  const poolCount = Math.max(1, (app.earliestWeekday != null ? app.poolsByWeekday?.[app.earliestWeekday] : null) || 1);
+  const poolAddresses = (app.earliestWeekday != null ? app.addressesByWeekday?.[app.earliestWeekday] : null) || [];
+  const pools = Array.from({
+    length: poolCount
+  }, (_, i) => ({
+    idx: i,
+    label: poolAddresses[i] && poolAddresses[i].trim() ? poolAddresses[i].trim() : lang === 'pt' ? `Piscina ${i + 1}` : lang === 'es' ? `Piscina ${i + 1}` : `Pool ${i + 1}`
+  }));
   const photoLabel = p => p.startsWith('custom:') ? p.slice(7) : p === 'before' ? lang === 'pt' ? 'Foto antes' : 'Before photo' : p === 'after' ? lang === 'pt' ? 'Foto depois' : 'After photo' : p === 'vacuum' ? lang === 'pt' ? 'Foto vacum' : 'Vacuum photo' : p === 'chemical' ? lang === 'pt' ? 'Foto químico' : 'Chemical photo' : p;
-  const handlePhotoSelect = async (photoKey, file) => {
+  const handlePhotoSelect = async (slotKey, file) => {
     if (!file || !window.sb) return;
     setUploadedPhotos(prev => ({
       ...prev,
-      [photoKey]: {
+      [slotKey]: {
         url: URL.createObjectURL(file),
         uploading: true,
         error: null
       }
     }));
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const path = `${app.job_id}/${photoKey}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = `${app.job_id}/${slotKey}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const {
       error: uploadErr
     } = await window.sb.storage.from('job-photos').upload(path, file, {
@@ -8303,8 +8317,8 @@ function VacCompletionSheet({
     if (uploadErr) {
       setUploadedPhotos(prev => ({
         ...prev,
-        [photoKey]: {
-          ...prev[photoKey],
+        [slotKey]: {
+          ...prev[slotKey],
           uploading: false,
           error: uploadErr.message
         }
@@ -8316,22 +8330,27 @@ function VacCompletionSheet({
     } = window.sb.storage.from('job-photos').getPublicUrl(path);
     setUploadedPhotos(prev => ({
       ...prev,
-      [photoKey]: {
+      [slotKey]: {
         url: pub.publicUrl,
         uploading: false,
         error: null
       }
     }));
   };
-  const allTypedUploaded = hasTypedRequirement && requiredPhotos.every(p => uploadedPhotos[p] && !uploadedPhotos[p].uploading && !uploadedPhotos[p].error && uploadedPhotos[p].url && !uploadedPhotos[p].url.startsWith('blob:'));
+  const allTypedUploaded = hasTypedRequirement && pools.every(pool => requiredPhotos.every(p => {
+    const s = uploadedPhotos[`${pool.idx}_${p}`];
+    return s && !s.uploading && !s.error && s.url && !s.url.startsWith('blob:');
+  }));
   const canSubmit = hasTypedRequirement ? allTypedUploaded : freePhotos.length > 0;
   const submit = async () => {
     if (!canSubmit || submitting || !window.sb) return;
     setSubmitting(true);
-    const submittedPhotos = hasTypedRequirement ? requiredPhotos.map(p => ({
+    const submittedPhotos = hasTypedRequirement ? pools.flatMap(pool => requiredPhotos.map(p => ({
       type: p,
-      url: uploadedPhotos[p].url
-    })) : freePhotos.map(url => ({
+      url: uploadedPhotos[`${pool.idx}_${p}`].url,
+      pool: pool.idx + 1,
+      poolLabel: pool.label
+    }))) : freePhotos.map(url => ({
       url
     }));
     const {
@@ -8392,12 +8411,34 @@ function VacCompletionSheet({
     style: {
       display: 'flex',
       flexDirection: 'column',
-      gap: 12
+      gap: 18
+    }
+  }, pools.map(pool => /*#__PURE__*/React.createElement("div", {
+    key: pool.idx
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 8
+    }
+  }, Icon.pin(12, 'var(--pg-blue-600)'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12.5,
+      fontWeight: 700,
+      color: 'var(--pg-blue-700)'
+    }
+  }, pool.label)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10
     }
   }, requiredPhotos.map(photoKey => {
-    const state = uploadedPhotos[photoKey];
+    const slotKey = `${pool.idx}_${photoKey}`;
+    const state = uploadedPhotos[slotKey];
     return /*#__PURE__*/React.createElement("div", {
-      key: photoKey,
+      key: slotKey,
       style: {
         borderRadius: 12,
         border: state ? '1.5px solid var(--pg-blue-400)' : '1px solid var(--pg-ink-200)',
@@ -8474,7 +8515,7 @@ function VacCompletionSheet({
       style: {
         display: 'none'
       },
-      onChange: e => handlePhotoSelect(photoKey, e.target.files[0])
+      onChange: e => handlePhotoSelect(slotKey, e.target.files[0])
     }), /*#__PURE__*/React.createElement("span", {
       style: {
         display: 'inline-flex',
@@ -8491,7 +8532,7 @@ function VacCompletionSheet({
         border: 'none'
       }
     }, state ? lang === 'pt' ? 'Trocar' : lang === 'es' ? 'Cambiar' : 'Retake' : lang === 'pt' ? 'Tirar foto' : lang === 'es' ? 'Tomar foto' : 'Take photo'))));
-  })) : /*#__PURE__*/React.createElement(PhotoPicker, {
+  }))))) : /*#__PURE__*/React.createElement(PhotoPicker, {
     photos: freePhotos,
     onAdd: url => setFreePhotos(p => [...p, url]),
     onRemove: url => setFreePhotos(p => p.filter(u => u !== url)),
@@ -8538,7 +8579,7 @@ function PostVacationSheet({
   const [selectedDays, setSelectedDays] = React.useState(() => new Set(initialData?.selectedDays || []));
   const [weekdayRegions, setWeekdayRegions] = React.useState(initialData?.weekdayRegions || {});
   const [poolsPerWeekday, setPoolsPerWeekday] = React.useState(initialData?.poolsPerWeekday || {});
-  const [wdAddresses, setWdAddresses] = React.useState({}); // {wd: string[]}
+  const [wdAddresses, setWdAddresses] = React.useState(initialData?.addressesByWeekday || {}); // {wd: string[]}
   const [price, setPrice] = React.useState(initialData?.price ?? '0');
   const [priceMode, setPriceMode] = React.useState(initialData?.priceMode ?? 'fixed');
   const [note, setNote] = React.useState(initialData?.note || '');
@@ -9357,6 +9398,7 @@ function PostVacationSheet({
       selectedDays: [...selectedDays],
       weekdayRegions,
       poolsPerWeekday,
+      addresses: wdAddresses,
       price,
       priceMode,
       note: note.trim() || null,

@@ -2810,16 +2810,37 @@ function ApplicantsSheet({
       r: "10"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M9 12l2 2 4-4"
-    })), lang === 'pt' ? 'Fotos enviadas — revise e confirme' : lang === 'es' ? 'Fotos enviadas — revisa y confirma' : 'Photos submitted — review and confirm'), a.submittedPhotos && a.submittedPhotos.length > 0 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: 8,
-        flexWrap: 'wrap',
-        marginBottom: 10
-      }
-    }, a.submittedPhotos.map((p, i) => {
-      const typeLabel = p.type ? p.type.startsWith('custom:') ? p.type.slice(7) : p.type === 'before' ? lang === 'pt' ? 'Antes' : 'Before' : p.type === 'after' ? lang === 'pt' ? 'Depois' : lang === 'es' ? 'Después' : 'After' : p.type === 'vacuum' ? lang === 'pt' ? 'Vacum' : 'Vacuum' : p.type === 'chemical' ? lang === 'pt' ? 'Químico' : lang === 'es' ? 'Químico' : 'Chemical' : p.type : null;
-      return /*#__PURE__*/React.createElement("div", {
+    })), lang === 'pt' ? 'Fotos enviadas — revise e confirme' : lang === 'es' ? 'Fotos enviadas — revisa y confirma' : 'Photos submitted — review and confirm'), a.submittedPhotos && a.submittedPhotos.length > 0 && (() => {
+      const typeLabel = t => t ? t.startsWith('custom:') ? t.slice(7) : t === 'before' ? lang === 'pt' ? 'Antes' : 'Before' : t === 'after' ? lang === 'pt' ? 'Depois' : lang === 'es' ? 'Después' : 'After' : t === 'vacuum' ? lang === 'pt' ? 'Vacum' : 'Vacuum' : t === 'chemical' ? lang === 'pt' ? 'Químico' : lang === 'es' ? 'Químico' : 'Chemical' : t : null;
+      // Older submissions (before per-pool grouping) have no
+      // .poolLabel — fall back to one flat, unlabeled group.
+      const groups = {};
+      a.submittedPhotos.forEach(p => {
+        const key = p.poolLabel || '';
+        (groups[key] = groups[key] || []).push(p);
+      });
+      return Object.entries(groups).map(([label, photos]) => /*#__PURE__*/React.createElement("div", {
+        key: label,
+        style: {
+          marginBottom: 10
+        }
+      }, label && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10.5,
+          fontWeight: 700,
+          color: 'oklch(0.42 0.16 260)',
+          marginBottom: 5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4
+        }
+      }, Icon.pin(10, 'oklch(0.42 0.16 260)'), " ", label), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          gap: 8,
+          flexWrap: 'wrap'
+        }
+      }, photos.map((p, i) => /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
           display: 'flex',
@@ -2837,14 +2858,14 @@ function ApplicantsSheet({
           objectFit: 'cover',
           border: '1px solid oklch(0.85 0.08 260)'
         }
-      }), typeLabel && /*#__PURE__*/React.createElement("span", {
+      }), typeLabel(p.type) && /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 9.5,
           color: 'oklch(0.48 0.14 260)',
           fontWeight: 600
         }
-      }, typeLabel));
-    })), /*#__PURE__*/React.createElement("button", {
+      }, typeLabel(p.type)))))));
+    })(), /*#__PURE__*/React.createElement("button", {
       onClick: () => finalizeVacation(a),
       className: "pg-btn pg-btn-primary",
       style: {

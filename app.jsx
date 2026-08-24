@@ -1181,6 +1181,7 @@ function App() {
         weekdayRegions: wr,
         poolsByWeekday: r.pools_per_weekday || {},
         poolsPerWeekday: r.pools_per_weekday,
+        addressesByWeekday: r.addresses || {},
         price: r.price,
         pricePerPool: r.price,
         priceMode: r.price_mode,
@@ -1235,7 +1236,10 @@ function App() {
       const [j, tc, v, m, ho] = await Promise.all([
         window.sb.from('jobs').select('*').order('created_at', { ascending: false }),
         window.sb.from('techs_public').select('*').order('created_at', { ascending: false }),
-        window.sb.from('vacations').select('*').order('created_at', { ascending: false }),
+        // vacations_feed redacts `addresses` to everyone except the owner and
+        // an applicant already accepted for this listing — same pattern as
+        // quick_pool_jobs_feed for pool addresses/phone numbers.
+        window.sb.from('vacations_feed').select('*').order('created_at', { ascending: false }),
         window.sb.from('marketplace').select('*').order('created_at', { ascending: false }),
         window.sb.from('pool_handoffs').select('*').eq('status', 'open').order('created_at', { ascending: false }),
       ]);
@@ -1526,6 +1530,7 @@ function App() {
       month_idx: data.monthIdx, year: data.year,
       selected_days: data.selectedDays, weekday_regions: data.weekdayRegions,
       pools_per_weekday: data.poolsPerWeekday,
+      addresses: data.addresses || {},
       price: data.price, price_mode: data.priceMode,
       note: data.note || null,
       required_photos: data.requiredPhotos || [],
@@ -2098,6 +2103,7 @@ function App() {
                 month_idx: data.monthIdx, year: data.year,
                 selected_days: data.selectedDays, weekday_regions: data.weekdayRegions,
                 pools_per_weekday: data.poolsPerWeekday,
+                addresses: data.addresses || {},
                 price: data.price, price_mode: data.priceMode,
                 note: data.note || null,
                 required_photos: data.requiredPhotos || [],
@@ -2113,6 +2119,7 @@ function App() {
                   days: data.selectedDays || [], selectedDays: data.selectedDays,
                   weekdayRegions: wr, poolsByWeekday: data.poolsPerWeekday || {},
                   poolsPerWeekday: data.poolsPerWeekday,
+                  addressesByWeekday: data.addresses || {},
                   price: data.price, pricePerPool: data.price, priceMode: data.priceMode,
                   note: data.note || null, region,
                   requiredPhotos: data.requiredPhotos || [],
