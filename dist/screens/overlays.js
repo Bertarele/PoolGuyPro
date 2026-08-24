@@ -2252,7 +2252,19 @@ function ApplicantsSheet({
         background: sc.bg,
         color: sc.color
       }
-    }, sc.label)), /*#__PURE__*/React.createElement("div", {
+    }, sc.label), post.type === 'vacation' && a.selectedDays && a.selectedDays.length > 0 && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        padding: '2px 7px',
+        borderRadius: 6,
+        fontWeight: 700,
+        background: 'var(--pg-blue-100)',
+        color: 'var(--pg-blue-700)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3
+      }
+    }, Icon.cal(9, 'var(--pg-blue-700)'), a.selectedDays.length, " ", a.selectedDays.length === 1 ? lang === 'pt' ? 'dia' : lang === 'es' ? 'día' : 'day' : lang === 'pt' ? 'dias' : lang === 'es' ? 'días' : 'days')), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',

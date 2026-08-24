@@ -11943,7 +11943,9 @@ function VacationDayPickerSheet({
     onClick: () => {
       setShowCommitWarning(false);
       setSubmitted(true);
-      setTimeout(onSubmit, 1600);
+      setTimeout(() => onSubmit && onSubmit({
+        selectedDays: selArr
+      }), 1600);
     },
     style: {
       flex: 2,

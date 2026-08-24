@@ -3054,16 +3054,11 @@ function App() {
         applicant_id: user.uid,
         applicant_name: user.name || '',
         applicant_rating: user.rating || null,
+        applicant_jobs: user.reviews || 0,
         note: data?.note || null,
         status: 'pending',
-        vacation_days: data ? {
-          selectedDays: data.selectedDays,
-          monthIdx: data.monthIdx,
-          year: data.year,
-          weekdayRegions: data.weekdayRegions,
-          poolsPerWeekday: data.poolsPerWeekday,
-          price: data.price,
-          priceMode: data.priceMode
+        vacation_days: data?.selectedDays ? {
+          selectedDays: data.selectedDays
         } : null
       });
       if (error) {

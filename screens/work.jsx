@@ -5912,7 +5912,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
                 }}>
                 {lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}
               </button>
-              <button onClick={()=>{ setShowCommitWarning(false); setSubmitted(true); setTimeout(onSubmit, 1600); }}
+              <button onClick={()=>{ setShowCommitWarning(false); setSubmitted(true); setTimeout(()=>onSubmit && onSubmit({ selectedDays: selArr }), 1600); }}
                 style={{
                   flex:2, height:42, borderRadius:10, fontSize:13, fontWeight:700,
                   border:'none', background:'var(--pg-blue-500)',

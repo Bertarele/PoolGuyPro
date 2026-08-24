@@ -1249,6 +1249,14 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
                         color:'var(--pg-ink-900)', textAlign:'left',
                       }}>{a.name}</button>
                       <span style={{fontSize:10, padding:'2px 7px', borderRadius:6, fontWeight:700, background:sc.bg, color:sc.color}}>{sc.label}</span>
+                      {post.type === 'vacation' && a.selectedDays && a.selectedDays.length > 0 && (
+                        <span style={{fontSize:10, padding:'2px 7px', borderRadius:6, fontWeight:700, background:'var(--pg-blue-100)', color:'var(--pg-blue-700)', display:'inline-flex', alignItems:'center', gap:3}}>
+                          {Icon.cal(9,'var(--pg-blue-700)')}
+                          {a.selectedDays.length} {a.selectedDays.length===1
+                            ? (lang==='pt'?'dia':lang==='es'?'día':'day')
+                            : (lang==='pt'?'dias':lang==='es'?'días':'days')}
+                        </span>
+                      )}
                     </div>
                     <div style={{display:'flex', alignItems:'center', gap:5, marginTop:3}}>
                       <ReputationBadge jobs={a.jobs} lang={lang}/>
