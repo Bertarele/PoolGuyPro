@@ -1820,7 +1820,37 @@ function WorkScreen({
           cursor: 'pointer',
           whiteSpace: 'nowrap'
         }
-      }, "\u2B50 ", lang === 'pt' ? 'Avaliar' : lang === 'es' ? 'Calificar' : 'Rate') : Icon.chev(13, 'var(--pg-ink-300)'));
+      }, "\u2B50 ", lang === 'pt' ? 'Avaliar' : lang === 'es' ? 'Calificar' : 'Rate') : isAwaiting ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => {
+          const msg = lang === 'pt' ? 'Cancelar esta candidatura?' : lang === 'es' ? '¿Cancelar esta postulación?' : 'Cancel this application?';
+          if (window.confirm(msg)) deleteApp(app);
+        },
+        style: {
+          flexShrink: 0,
+          width: 26,
+          height: 26,
+          borderRadius: 7,
+          border: '1px solid rgba(239,68,68,0.22)',
+          background: 'rgba(239,68,68,0.08)',
+          color: '#EF4444',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "11",
+        height: "11",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2.5",
+        strokeLinecap: "round"
+      }, /*#__PURE__*/React.createElement("polyline", {
+        points: "3 6 5 6 21 6"
+      }), /*#__PURE__*/React.createElement("path", {
+        d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+      }))) : Icon.chev(13, 'var(--pg-ink-300)'));
     }), currentMyApps.length > activityLimit && /*#__PURE__*/React.createElement("button", {
       onClick: () => setActivityLimit(p => p + 4),
       style: {
@@ -3065,7 +3095,37 @@ function WorkScreen({
           cursor: 'pointer',
           whiteSpace: 'nowrap'
         }
-      }, "\u2B50 ", lang === 'pt' ? 'Avaliar' : lang === 'es' ? 'Calificar' : 'Rate') : /*#__PURE__*/React.createElement("div", {
+      }, "\u2B50 ", lang === 'pt' ? 'Avaliar' : lang === 'es' ? 'Calificar' : 'Rate') : isAwaiting ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => {
+          const msg = lang === 'pt' ? 'Cancelar esta candidatura?' : lang === 'es' ? '¿Cancelar esta postulación?' : 'Cancel this application?';
+          if (window.confirm(msg)) deleteApp(app);
+        },
+        style: {
+          flexShrink: 0,
+          width: 28,
+          height: 28,
+          borderRadius: 8,
+          border: '1px solid rgba(239,68,68,0.22)',
+          background: 'rgba(239,68,68,0.08)',
+          color: '#EF4444',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "12",
+        height: "12",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2.5",
+        strokeLinecap: "round"
+      }, /*#__PURE__*/React.createElement("polyline", {
+        points: "3 6 5 6 21 6"
+      }), /*#__PURE__*/React.createElement("path", {
+        d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+      }))) : /*#__PURE__*/React.createElement("div", {
         style: {
           textAlign: 'right',
           flexShrink: 0
@@ -11321,7 +11381,8 @@ function VacationDayPickerSheet({
   lang = 'en',
   onClose,
   onSubmit,
-  confirmedDays = []
+  confirmedDays = [],
+  myAppliedDays = []
 }) {
   const [selected, setSelected] = React.useState(new Set());
   const [submitted, setSubmitted] = React.useState(false);
@@ -11345,10 +11406,11 @@ function VacationDayPickerSheet({
   }, [vac]);
   if (!vac) return null;
   const bookedSet = new Set(vac.bookedDays || []);
+  const appliedSet = new Set(myAppliedDays);
   const _vacToday = new Date();
   _vacToday.setHours(0, 0, 0, 0);
   const availDays = vac.days.filter(d => {
-    if (bookedSet.has(d)) return false;
+    if (bookedSet.has(d) || appliedSet.has(d)) return false;
     if (vac.yearMonth) {
       const dd = new Date(vac.yearMonth.year, vac.yearMonth.month, d);
       if (dd < _vacToday) return false;
@@ -11381,7 +11443,7 @@ function VacationDayPickerSheet({
     });
   };
   const toggle = d => {
-    if (bookedSet.has(d)) return;
+    if (bookedSet.has(d) || appliedSet.has(d)) return;
     // Check conflict
     if (!selected.has(d) && vac.yearMonth) {
       const key = `${vac.yearMonth.year}-${vac.yearMonth.month}-${d}`;
@@ -11400,6 +11462,7 @@ function VacationDayPickerSheet({
   };
   const selectAllLabel = lang === 'pt' ? 'Todos os dias' : lang === 'es' ? 'Todos los días' : 'All days';
   const bookedLabel = lang === 'pt' ? 'Já reservado' : lang === 'es' ? 'Ya reservado' : 'Booked';
+  const appliedLabel = lang === 'pt' ? 'Sua candidatura' : lang === 'es' ? 'Tu postulación' : 'Your application';
   const availLabel = lang === 'pt' ? 'Disponível' : lang === 'es' ? 'Disponible' : 'Available';
   const selLabel = lang === 'pt' ? 'Selecionado' : lang === 'es' ? 'Seleccionado' : 'Selected';
   const conflictLabel = lang === 'pt' ? 'Dia já confirmado' : lang === 'es' ? 'Día ya confirmado' : 'Day already confirmed';
@@ -11504,6 +11567,11 @@ function VacationDayPickerSheet({
     color: 'var(--pg-ink-300)',
     label: bookedLabel,
     td: 'line-through'
+  }, {
+    bg: 'oklch(0.93 0.06 80)',
+    color: 'oklch(0.55 0.14 80)',
+    label: appliedLabel,
+    td: 'line-through'
   }].map((l, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
@@ -11536,6 +11604,7 @@ function VacationDayPickerSheet({
     }
   }, vac.days.map(d => {
     const booked = bookedSet.has(d);
+    const applied = appliedSet.has(d);
     const sel = selected.has(d);
     const poolsCnt = getPoolsForDay(d);
     const wd = getDayWd(d);
@@ -11543,7 +11612,7 @@ function VacationDayPickerSheet({
     _today.setHours(0, 0, 0, 0);
     const _dayDate = vac.yearMonth ? new Date(vac.yearMonth.year, vac.yearMonth.month, d) : null;
     const isPastDay = _dayDate ? _dayDate < _today : false;
-    const isUnavail = booked || isPastDay;
+    const isUnavail = booked || applied || isPastDay;
     const isConflict = !isUnavail && !sel && vac.yearMonth && !!confirmedMap[`${vac.yearMonth.year}-${vac.yearMonth.month}-${d}`];
     return /*#__PURE__*/React.createElement("button", {
       key: d,
@@ -11561,11 +11630,11 @@ function VacationDayPickerSheet({
         gap: 1,
         fontFamily: 'inherit',
         transition: 'all .12s ease',
-        background: isUnavail ? 'var(--pg-ink-100)' : isConflict ? 'oklch(0.97 0.05 60)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
-        color: isUnavail ? 'var(--pg-ink-300)' : isConflict ? 'oklch(0.48 0.14 60)' : sel ? '#fff' : 'var(--pg-blue-600)',
+        background: applied ? 'oklch(0.93 0.06 80)' : isUnavail ? 'var(--pg-ink-100)' : isConflict ? 'oklch(0.97 0.05 60)' : sel ? 'var(--pg-blue-500)' : 'var(--pg-blue-100)',
+        color: applied ? 'oklch(0.55 0.14 80)' : isUnavail ? 'var(--pg-ink-300)' : isConflict ? 'oklch(0.48 0.14 60)' : sel ? '#fff' : 'var(--pg-blue-600)',
         boxShadow: sel && !isUnavail ? '0 4px 12px oklch(0.58 0.16 235 / 0.35)' : 'none',
         transform: sel && !isUnavail ? 'scale(1.06)' : 'scale(1)',
-        textDecoration: isPastDay && !booked ? 'line-through' : 'none',
+        textDecoration: isPastDay && !booked && !applied ? 'line-through' : 'none',
         opacity: isPastDay ? 0.5 : 1
       }
     }, getDayName(d) && /*#__PURE__*/React.createElement("span", {
@@ -11573,13 +11642,13 @@ function VacationDayPickerSheet({
         fontSize: 8.5,
         fontWeight: 700,
         letterSpacing: '0.03em',
-        opacity: booked ? 0.5 : 0.85
+        opacity: booked || applied ? 0.5 : 0.85
       }
     }, getDayName(d).toUpperCase()), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 17,
         fontWeight: 700,
-        textDecoration: booked ? 'line-through' : 'none',
+        textDecoration: booked || applied ? 'line-through' : 'none',
         lineHeight: 1
       }
     }, d), booked ? /*#__PURE__*/React.createElement("span", {
@@ -11589,7 +11658,14 @@ function VacationDayPickerSheet({
         letterSpacing: '0.04em',
         marginTop: 1
       }
-    }, lang === 'pt' ? 'RESERV.' : lang === 'es' ? 'RESERV.' : 'BOOKED') : isConflict ? /*#__PURE__*/React.createElement("span", {
+    }, lang === 'pt' ? 'RESERV.' : lang === 'es' ? 'RESERV.' : 'BOOKED') : applied ? /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 7.5,
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        marginTop: 1
+      }
+    }, lang === 'pt' ? 'ENVIADO' : lang === 'es' ? 'ENVIADO' : 'APPLIED') : isConflict ? /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 7,
         fontWeight: 700,

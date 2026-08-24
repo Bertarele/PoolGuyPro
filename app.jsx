@@ -2126,6 +2126,9 @@ function App() {
         <VacationDayPickerSheet
           vac={dayPickerVac} lang={lang}
           confirmedDays={confirmedDays}
+          myAppliedDays={dayPickerVac ? liveApplications
+            .filter(a => String(a.job_id) === String(dayPickerVac._id) && a.status === 'pending')
+            .flatMap(a => a.vacation_days?.selectedDays || []) : []}
           onClose={()=>setDayPickerVac(null)}
           onSubmit={async (data)=>{
             const vac = dayPickerVac;

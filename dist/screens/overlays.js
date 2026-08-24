@@ -2882,7 +2882,7 @@ function ApplicantsSheet({
         color: 'oklch(0.45 0.18 20)',
         marginBottom: 7
       }
-    }, lang === 'pt' ? 'Motivo da recusa (opcional)' : lang === 'es' ? 'Motivo del rechazo (opcional)' : 'Reason for rejection (optional)'), /*#__PURE__*/React.createElement("input", {
+    }, a.status === 'accepted' ? lang === 'pt' ? 'Motivo do cancelamento (obrigatório)' : lang === 'es' ? 'Motivo de la cancelación (obligatorio)' : 'Reason for cancelling (required)' : lang === 'pt' ? 'Motivo da recusa (opcional)' : lang === 'es' ? 'Motivo del rechazo (opcional)' : 'Reason for rejection (optional)'), /*#__PURE__*/React.createElement("input", {
       autoFocus: true,
       value: rejectReason,
       onChange: e => setRejectReason(e.target.value),
@@ -2923,8 +2923,10 @@ function ApplicantsSheet({
         color: 'var(--pg-ink-600)'
       }
     }, lang === 'pt' ? 'Cancelar' : lang === 'es' ? 'Cancelar' : 'Cancel'), /*#__PURE__*/React.createElement("button", {
+      disabled: a.status === 'accepted' && !rejectReason.trim(),
       onClick: async () => {
         const reason = rejectReason.trim() || null;
+        const wasAccepted = a.status === 'accepted';
         setApplicants(prev => prev.map(a2 => a2.id === a.id ? {
           ...a2,
           status: 'rejected',
@@ -2935,6 +2937,43 @@ function ApplicantsSheet({
             status: 'rejected',
             reject_reason: reason
           }).eq('id', a._dbId);
+          // Cancelling someone who was already accepted must free up
+          // their days again, or the listing stays wrongly "fully
+          // covered" forever with nobody actually assigned to them.
+          if (wasAccepted && post.type === 'vacation' && a.selectedDays?.length) {
+            const {
+              data: fresh
+            } = await window.sb.from('vacations').select('booked_days').eq('id', post._id).single();
+            const remaining = (fresh?.booked_days || []).filter(d => !a.selectedDays.includes(d));
+            await window.sb.from('vacations').update({
+              booked_days: remaining
+            }).eq('id', post._id);
+          }
+          if (wasAccepted && a.applicant_id) {
+            const title = {
+              en: 'Coverage cancelled',
+              pt: 'Cobertura cancelada',
+              es: 'Cobertura cancelada'
+            };
+            const body = reason ? {
+              en: `${post.author || 'The owner'} cancelled your acceptance: "${reason}"`,
+              pt: `${post.author || 'O dono'} cancelou sua aceitação: "${reason}"`,
+              es: `${post.author || 'El dueño'} canceló tu aceptación: "${reason}"`
+            } : {
+              en: `${post.author || 'The owner'} cancelled your acceptance.`,
+              pt: `${post.author || 'O dono'} cancelou sua aceitação.`,
+              es: `${post.author || 'El dueño'} canceló tu aceptación.`
+            };
+            window.sb.from('notifications').insert({
+              user_id: a.applicant_id,
+              type: 'vacation_cancelled',
+              title: JSON.stringify(title),
+              body: JSON.stringify(body),
+              link_id: post._id || null,
+              read: false
+            }).catch(() => {});
+            window.sendPush && window.sendPush(a.applicant_id, title[lang] || title.en, body[lang] || body.en, '/#work', 'work');
+          }
         }
         setRejectingFor(null);
         setRejectReason('');
@@ -2945,11 +2984,12 @@ function ApplicantsSheet({
         fontSize: 12,
         borderRadius: 999,
         border: 'none',
-        cursor: 'pointer',
+        cursor: a.status === 'accepted' && !rejectReason.trim() ? 'default' : 'pointer',
         fontFamily: 'inherit',
         fontWeight: 700,
         background: 'oklch(0.55 0.22 25)',
-        color: '#fff'
+        color: '#fff',
+        opacity: a.status === 'accepted' && !rejectReason.trim() ? 0.5 : 1
       }
     }, lang === 'pt' ? 'Confirmar' : lang === 'es' ? 'Confirmar' : 'Confirm'))));
   }))), /*#__PURE__*/React.createElement(ApplicantProfileSheet, {

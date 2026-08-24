@@ -925,6 +925,17 @@ function WorkScreen({ ctx }) {
                               }}>
                                 ⭐ {lang==='pt'?'Avaliar':lang==='es'?'Calificar':'Rate'}
                               </button>
+                            ) : isAwaiting ? (
+                              <button onClick={()=>{
+                                const msg = lang==='pt'?'Cancelar esta candidatura?':lang==='es'?'¿Cancelar esta postulación?':'Cancel this application?';
+                                if (window.confirm(msg)) deleteApp(app);
+                              }} style={{
+                                flexShrink:0,width:26,height:26,borderRadius:7,border:'1px solid rgba(239,68,68,0.22)',
+                                background:'rgba(239,68,68,0.08)',color:'#EF4444',cursor:'pointer',
+                                display:'flex',alignItems:'center',justifyContent:'center',
+                              }}>
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                              </button>
                             ) : Icon.chev(13,'var(--pg-ink-300)')}
                           </div>
                         );
@@ -1430,6 +1441,17 @@ function WorkScreen({ ctx }) {
                               color:'var(--pg-blue-600)', cursor:'pointer', whiteSpace:'nowrap',
                             }}>
                               ⭐ {lang==='pt'?'Avaliar':lang==='es'?'Calificar':'Rate'}
+                            </button>
+                          ) : isAwaiting ? (
+                            <button onClick={()=>{
+                              const msg = lang==='pt'?'Cancelar esta candidatura?':lang==='es'?'¿Cancelar esta postulación?':'Cancel this application?';
+                              if (window.confirm(msg)) deleteApp(app);
+                            }} style={{
+                              flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid rgba(239,68,68,0.22)',
+                              background:'rgba(239,68,68,0.08)', color:'#EF4444', cursor:'pointer',
+                              display:'flex', alignItems:'center', justifyContent:'center',
+                            }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                             </button>
                           ) : (
                             <div style={{textAlign:'right', flexShrink:0}}>
@@ -5537,7 +5559,7 @@ function DayChips({ days, bookedDays=[], selectedDays=null, size=26, yearMonth=n
 }
 
 // ── Vacation Day Picker Sheet ──────────────────────────────────
-function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDays=[] }) {
+function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDays=[], myAppliedDays=[] }) {
   const [selected, setSelected] = React.useState(new Set());
   const [submitted, setSubmitted] = React.useState(false);
   const [conflictPending,    setConflictPending]    = React.useState(null); // {d, owner}
@@ -5557,9 +5579,10 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
   if (!vac) return null;
 
   const bookedSet   = new Set(vac.bookedDays || []);
+  const appliedSet  = new Set(myAppliedDays);
   const _vacToday   = new Date(); _vacToday.setHours(0,0,0,0);
   const availDays   = vac.days.filter(d => {
-    if (bookedSet.has(d)) return false;
+    if (bookedSet.has(d) || appliedSet.has(d)) return false;
     if (vac.yearMonth) {
       const dd = new Date(vac.yearMonth.year, vac.yearMonth.month, d);
       if (dd < _vacToday) return false;
@@ -5598,7 +5621,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
   };
 
   const toggle = (d) => {
-    if (bookedSet.has(d)) return;
+    if (bookedSet.has(d) || appliedSet.has(d)) return;
     // Check conflict
     if (!selected.has(d) && vac.yearMonth) {
       const key = `${vac.yearMonth.year}-${vac.yearMonth.month}-${d}`;
@@ -5617,6 +5640,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
 
   const selectAllLabel = lang==='pt' ? 'Todos os dias' : lang==='es' ? 'Todos los días' : 'All days';
   const bookedLabel    = lang==='pt' ? 'Já reservado' : lang==='es' ? 'Ya reservado' : 'Booked';
+  const appliedLabel   = lang==='pt' ? 'Sua candidatura' : lang==='es' ? 'Tu postulación' : 'Your application';
   const availLabel     = lang==='pt' ? 'Disponível' : lang==='es' ? 'Disponible' : 'Available';
   const selLabel       = lang==='pt' ? 'Selecionado' : lang==='es' ? 'Seleccionado' : 'Selected';
   const conflictLabel  = lang==='pt' ? 'Dia já confirmado' : lang==='es' ? 'Día ya confirmado' : 'Day already confirmed';
@@ -5673,6 +5697,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
           { bg:'var(--pg-blue-500)', color:'#fff',             label:selLabel },
           { bg:'var(--pg-blue-100)', color:'var(--pg-blue-600)', label:availLabel, border:'1px dashed var(--pg-blue-300)' },
           { bg:'var(--pg-ink-100)',  color:'var(--pg-ink-300)', label:bookedLabel, td:'line-through' },
+          { bg:'oklch(0.93 0.06 80)', color:'oklch(0.55 0.14 80)', label:appliedLabel, td:'line-through' },
         ].map((l,i) => (
           <div key={i} style={{display:'flex', alignItems:'center', gap:5}}>
             <span style={{width:18, height:18, borderRadius:4, background:l.bg, display:'inline-block', border:l.border||'none', flexShrink:0}}/>
@@ -5685,13 +5710,14 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
       <div style={{display:'flex', flexWrap:'wrap', gap:8, marginBottom:16}}>
         {vac.days.map(d => {
           const booked   = bookedSet.has(d);
+          const applied  = appliedSet.has(d);
           const sel      = selected.has(d);
           const poolsCnt = getPoolsForDay(d);
           const wd       = getDayWd(d);
           const _today = new Date(); _today.setHours(0,0,0,0);
           const _dayDate = vac.yearMonth ? new Date(vac.yearMonth.year, vac.yearMonth.month, d) : null;
           const isPastDay = _dayDate ? _dayDate < _today : false;
-          const isUnavail = booked || isPastDay;
+          const isUnavail = booked || applied || isPastDay;
           const isConflict = !isUnavail && !sel && vac.yearMonth &&
             !!confirmedMap[`${vac.yearMonth.year}-${vac.yearMonth.month}-${d}`];
           return (
@@ -5700,27 +5726,31 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
               cursor: isUnavail ? 'default' : 'pointer',
               display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1,
               fontFamily:'inherit', transition:'all .12s ease',
-              background: isUnavail  ? 'var(--pg-ink-100)'
+              background: applied     ? 'oklch(0.93 0.06 80)'
+                        : isUnavail  ? 'var(--pg-ink-100)'
                         : isConflict ? 'oklch(0.97 0.05 60)'
                         : sel        ? 'var(--pg-blue-500)'
                         :              'var(--pg-blue-100)',
-              color:      isUnavail  ? 'var(--pg-ink-300)'
+              color:      applied     ? 'oklch(0.55 0.14 80)'
+                        : isUnavail  ? 'var(--pg-ink-300)'
                         : isConflict ? 'oklch(0.48 0.14 60)'
                         : sel        ? '#fff'
                         :              'var(--pg-blue-600)',
               boxShadow:  sel && !isUnavail ? '0 4px 12px oklch(0.58 0.16 235 / 0.35)' : 'none',
               transform:  sel && !isUnavail ? 'scale(1.06)' : 'scale(1)',
-              textDecoration: isPastDay && !booked ? 'line-through' : 'none',
+              textDecoration: (isPastDay && !booked && !applied) ? 'line-through' : 'none',
               opacity: isPastDay ? 0.5 : 1,
             }}>
               {getDayName(d) && (
-                <span style={{fontSize:8.5, fontWeight:700, letterSpacing:'0.03em', opacity: booked ? 0.5 : 0.85}}>
+                <span style={{fontSize:8.5, fontWeight:700, letterSpacing:'0.03em', opacity: (booked||applied) ? 0.5 : 0.85}}>
                   {getDayName(d).toUpperCase()}
                 </span>
               )}
-              <span style={{fontSize:17, fontWeight:700, textDecoration: booked ? 'line-through' : 'none', lineHeight:1}}>{d}</span>
+              <span style={{fontSize:17, fontWeight:700, textDecoration: (booked||applied) ? 'line-through' : 'none', lineHeight:1}}>{d}</span>
               {booked
                 ? <span style={{fontSize:7.5, fontWeight:700, letterSpacing:'0.04em', marginTop:1}}>{lang==='pt'?'RESERV.':lang==='es'?'RESERV.':'BOOKED'}</span>
+                : applied
+                  ? <span style={{fontSize:7.5, fontWeight:700, letterSpacing:'0.04em', marginTop:1}}>{lang==='pt'?'ENVIADO':lang==='es'?'ENVIADO':'APPLIED'}</span>
                 : isConflict
                   ? <span style={{fontSize:7, fontWeight:700, letterSpacing:'0.02em', marginTop:1}}>⚠️</span>
                   : <span style={{fontSize:8, color: sel ? 'rgba(255,255,255,0.75)' : 'var(--pg-blue-500)', marginTop:1}}>
