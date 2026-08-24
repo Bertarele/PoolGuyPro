@@ -385,6 +385,71 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
     }
   };
 
+  // ── Approve/decline a pending vacation-coverage application right from the
+  // chat — same idea as the rental request above: the owner shouldn't have to
+  // leave the conversation and go find the applicant in the Candidatos sheet.
+  const [pendingVacApp, setPendingVacApp] = React.useState(null);
+  const [vacActionBusy, setVacActionBusy] = React.useState(false);
+  const [vacActionErr,  setVacActionErr]  = React.useState('');
+  const [vacActionDone, setVacActionDone] = React.useState(null); // 'accepted'|'rejected'|null
+
+  const loadPendingVacApp = React.useCallback(() => {
+    if (!window.sb || !currentUser?.uid || !convo.receiverId || !convo.listingId) {
+      setPendingVacApp(null); return;
+    }
+    const rawId = convo.listingId.startsWith('vac_') ? convo.listingId.slice(4) : convo.listingId;
+    window.sb.from('job_applications').select('id,status,vacation_days')
+      .eq('job_id', rawId).eq('job_author_id', currentUser.uid).eq('applicant_id', convo.receiverId)
+      .eq('status', 'pending').limit(1)
+      .then(({ data }) => setPendingVacApp((data && data[0]) || null))
+      .catch(() => setPendingVacApp(null));
+  }, [currentUser?.uid, convo.receiverId, convo.listingId]);
+  React.useEffect(() => { loadPendingVacApp(); }, [loadPendingVacApp]);
+
+  const handleVacDecision = async (decision) => {
+    if (!pendingVacApp || !window.sb || vacActionBusy) return;
+    setVacActionBusy(true);
+    setVacActionErr('');
+    const rawId  = convo.listingId.startsWith('vac_') ? convo.listingId.slice(4) : convo.listingId;
+    const status = decision === 'approved' ? 'accepted' : 'rejected';
+    const { error } = await window.sb.from('job_applications').update({ status }).eq('id', pendingVacApp.id);
+    if (error) {
+      setVacActionBusy(false);
+      setVacActionErr(lang==='pt'?'Erro — tente de novo.':lang==='es'?'Error — intenta de nuevo.':'Error — please try again.');
+      return;
+    }
+    // Persist accepted days so booked_days reflects reality, same as the
+    // Candidatos sheet's own accept path.
+    if (status === 'accepted' && pendingVacApp.vacation_days?.selectedDays?.length) {
+      const { data: fresh } = await window.sb.from('vacations').select('booked_days').eq('id', rawId).single();
+      const merged = Array.from(new Set([...(fresh?.booked_days || []), ...pendingVacApp.vacation_days.selectedDays]));
+      await window.sb.from('vacations').update({ booked_days: merged }).eq('id', rawId);
+    }
+    setVacActionBusy(false);
+    setVacActionDone(decision);
+    setPendingVacApp(null);
+    const msg = decision === 'approved'
+      ? (lang==='pt'?'✅ Candidatura para cobertura de férias aceita!':lang==='es'?'✅ ¡Postulación de cobertura de vacaciones aceptada!':'✅ Vacation coverage application accepted!')
+      : (lang==='pt'?'❌ Candidatura recusada.':lang==='es'?'❌ Postulación rechazada.':'❌ Application declined.');
+    if (isLive) {
+      window.sb.rpc('send_chat_message', {
+        p_convo_id: convoId, p_body: msg, p_other_id: convo.receiverId,
+        p_my_name: currentUser.name || (currentUser.email||'').split('@')[0] || 'Owner',
+        p_other_name: convo.name || '',
+      }).catch(()=>{});
+    }
+    if (window.sb && convo.receiverId) {
+      const title = decision === 'approved'
+        ? { en:'Application accepted! 🎉', pt:'Candidatura aceita! 🎉', es:'¡Postulación aceptada! 🎉' }
+        : { en:'Application not selected', pt:'Candidatura não selecionada', es:'Postulación no seleccionada' };
+      window.sb.from('notifications').insert({
+        user_id: convo.receiverId, type: decision === 'approved' ? 'job_accepted' : 'job_rejected',
+        title: JSON.stringify(title), body: msg, link_id: rawId, read: false,
+      }).catch(()=>{});
+      window.sendPush && window.sendPush(convo.receiverId, title[lang] || title.en, msg, '/#work', 'work');
+    }
+  };
+
   // Initial scroll to bottom
   React.useEffect(() => {
     if (messages.length > 0 && scroller.current) {
@@ -586,6 +651,42 @@ function ChatConversation({ convo, lang, t, onBack, onClose, currentUser, onUnre
           {rentalActionDone==='approved'
             ? (lang==='pt'?'✅ Aluguel aprovado':'✅ Rental approved')
             : (lang==='pt'?'❌ Aluguel recusado':'❌ Rental declined')}
+        </div>
+      )}
+
+      {/* Approve/decline a pending vacation-coverage application right here */}
+      {pendingVacApp && (
+        <div style={{margin:'8px 12px 0', flexShrink:0}}>
+          {vacActionErr && (
+            <div style={{fontSize:11.5, color:'#DC2626', marginBottom:6, textAlign:'center'}}>{vacActionErr}</div>
+          )}
+          <div style={{display:'flex', gap:8}}>
+            <button onClick={()=>handleVacDecision('approved')} disabled={vacActionBusy} style={{
+              flex:1, height:38, borderRadius:11, border:'none', cursor: vacActionBusy?'default':'pointer',
+              background:'#16A34A', color:'#fff', fontSize:13, fontWeight:700, fontFamily:'inherit',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:6, opacity: vacActionBusy?0.7:1,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              {lang==='pt'?'Aceitar candidatura':lang==='es'?'Aceptar postulación':'Accept application'}
+            </button>
+            <button onClick={()=>handleVacDecision('declined')} disabled={vacActionBusy} style={{
+              flex:1, height:38, borderRadius:11, border:'none', cursor: vacActionBusy?'default':'pointer',
+              background:'#EF4444', color:'#fff', fontSize:13, fontWeight:700, fontFamily:'inherit',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:6, opacity: vacActionBusy?0.7:1,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              {lang==='pt'?'Recusar':lang==='es'?'Rechazar':'Decline'}
+            </button>
+          </div>
+        </div>
+      )}
+      {vacActionDone && (
+        <div style={{margin:'8px 12px 0', padding:'8px 12px', borderRadius:11, flexShrink:0, textAlign:'center',
+          background: vacActionDone==='approved' ? 'rgba(22,163,74,0.10)' : 'rgba(239,68,68,0.10)',
+          color: vacActionDone==='approved' ? '#16A34A' : '#EF4444', fontSize:12.5, fontWeight:700}}>
+          {vacActionDone==='approved'
+            ? (lang==='pt'?'✅ Candidatura aceita':lang==='es'?'✅ Postulación aceptada':'✅ Application accepted')
+            : (lang==='pt'?'❌ Candidatura recusada':lang==='es'?'❌ Postulación rechazada':'❌ Application declined')}
         </div>
       )}
       {/* Messages */}
