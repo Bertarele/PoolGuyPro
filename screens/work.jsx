@@ -1599,6 +1599,7 @@ function WorkScreen({ ctx }) {
     {FabBtn}
 
     {handoffOverlays}
+    {vacCompleteOverlay}
     </div>
   );
 }

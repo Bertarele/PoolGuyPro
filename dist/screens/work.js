@@ -3412,7 +3412,7 @@ function WorkScreen({
     onDeleteVac: removeVacation,
     highlightVacId: ctx.pendingVacId,
     onHighlightConsumed: () => ctx.clearPendingVac && ctx.clearPendingVac()
-  }))), FabBtn, handoffOverlays);
+  }))), FabBtn, handoffOverlays, vacCompleteOverlay);
 }
 function HandoffDetailPanel({
   handoff,
