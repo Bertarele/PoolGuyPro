@@ -570,6 +570,15 @@ function QuickPoolsScreen({ ctx }) {
   const deleteJob = async (jobId, e) => {
     e && e.stopPropagation();
     if (!window.sb) return;
+    const { data: updRows, error } = await window.sb.from('quick_pool_jobs')
+      .update({ status:'cancelled' }).eq('id', jobId).select('id');
+    if (error) { showToast && showToast('❌ ' + error.message); return; }
+    if (!updRows || updRows.length === 0) {
+      // Prefer: return=minimal masks RLS-blocked writes as "success" with no
+      // error — the .select() above is what actually surfaces a 0-row block.
+      showToast && showToast(lang==='pt'?'❌ Não foi possível remover — tente novamente':lang==='es'?'❌ No se pudo eliminar — inténtalo de nuevo':'❌ Could not remove — please try again');
+      return;
+    }
     // If someone was already accepted for this job, notify them and clear their
     // application so it doesn't linger stuck at status:'accepted' forever.
     const { data: accepted } = await window.sb.from('quick_pool_applications')
@@ -583,7 +592,6 @@ function QuickPoolsScreen({ ctx }) {
           : 'The poster cancelled this job after accepting your application.',
         '/#express-pools', 'quick');
     }
-    await window.sb.from('quick_pool_jobs').update({ status:'cancelled' }).eq('id', jobId);
     setJobs(prev => prev.filter(j => String(j.id) !== String(jobId)));
     if (selected && String(selected.id) === String(jobId)) closeJobDetail();
   };
@@ -613,7 +621,13 @@ function QuickPoolsScreen({ ctx }) {
   // ── Finalize a filled job (owner marks complete → removed) ──
   const finalizeJob = async (jobId) => {
     if (!window.sb) return;
-    await window.sb.from('quick_pool_jobs').update({ status: 'completed' }).eq('id', jobId);
+    const { data: updRows, error } = await window.sb.from('quick_pool_jobs')
+      .update({ status: 'completed' }).eq('id', jobId).select('id');
+    if (error) { showToast && showToast('❌ ' + error.message); return; }
+    if (!updRows || updRows.length === 0) {
+      showToast && showToast(lang==='pt'?'❌ Não foi possível finalizar — tente novamente':lang==='es'?'❌ No se pudo finalizar — inténtalo de nuevo':'❌ Could not finalize — please try again');
+      return;
+    }
     setJobs(prev => prev.filter(j => String(j.id) !== String(jobId)));
     closeJobDetail();
   };
@@ -622,27 +636,31 @@ function QuickPoolsScreen({ ctx }) {
   const applyToJob = async (jobId, sharePhone = false) => {
     if (!window.sb || !user?.uid) return;
     setApplied(prev => ({ ...prev, [jobId]: true }));
-    try {
-      await window.sb.from('quick_pool_applications').insert({
-        job_id: jobId, applicant_id: user.uid,
-        applicant_name: user.name || user.email || 'Pool Guy',
-        applicant_phone: sharePhone ? (user.phone || null) : null,
-        status: 'pending',
-      });
-      // Notify the poster — in-app (guaranteed) + push (best-effort) — so they
-      // see "has an applicant" without having to reopen the job to check.
-      const job = jobs.find(j => String(j.id) === String(jobId));
-      if (job?.poster_id && job.poster_id !== user.uid) {
-        const title = lang==='pt'?'👤 Novo candidato':lang==='es'?'👤 Nuevo candidato':'👤 New applicant';
-        const applicantName = user.name || user.email || 'Pool Guy';
-        const body = `${applicantName} — ${job.title?.[lang] || job.title?.pt || job.loc}`;
-        window.sb.from('notifications').insert({
-          user_id: job.poster_id, type: 'quick_pool_application',
-          title, body, link_id: String(jobId), read: false,
-        }).catch(()=>{});
-        window.sendPush && window.sendPush(job.poster_id, title, body, `/#quick?job=${jobId}`, 'quick_pool_application');
-      }
-    } catch {}
+    const { error } = await window.sb.from('quick_pool_applications').insert({
+      job_id: jobId, applicant_id: user.uid,
+      applicant_name: user.name || user.email || 'Pool Guy',
+      applicant_phone: sharePhone ? (user.phone || null) : null,
+      status: 'pending',
+    });
+    if (error) {
+      // Roll back the optimistic "Applied" state — nothing was actually saved.
+      setApplied(prev => { const next = {...prev}; delete next[jobId]; return next; });
+      showToast && showToast('❌ ' + (lang==='pt'?'Não foi possível enviar a candidatura — tente novamente':lang==='es'?'No se pudo enviar la postulación — inténtalo de nuevo':'Could not submit application — please try again'));
+      return;
+    }
+    // Notify the poster — in-app (guaranteed) + push (best-effort) — so they
+    // see "has an applicant" without having to reopen the job to check.
+    const job = jobs.find(j => String(j.id) === String(jobId));
+    if (job?.poster_id && job.poster_id !== user.uid) {
+      const title = lang==='pt'?'👤 Novo candidato':lang==='es'?'👤 Nuevo candidato':'👤 New applicant';
+      const applicantName = user.name || user.email || 'Pool Guy';
+      const body = `${applicantName} — ${job.title?.[lang] || job.title?.pt || job.loc}`;
+      window.sb.from('notifications').insert({
+        user_id: job.poster_id, type: 'quick_pool_application',
+        title, body, link_id: String(jobId), read: false,
+      }).catch(()=>{});
+      window.sendPush && window.sendPush(job.poster_id, title, body, `/#quick?job=${jobId}`, 'quick_pool_application');
+    }
   };
 
   // ── Shared job card (used on mobile + desktop) ────────────────
@@ -1157,10 +1175,12 @@ function QuickPoolsScreen({ ctx }) {
     if (route.last_activated_job_id) {
       const { data: existing } = await window.sb.from('quick_pool_jobs')
         .select('id,status').eq('id', route.last_activated_job_id).single();
-      if (existing && existing.status === 'open') {
+      if (existing && (existing.status === 'open' || existing.status === 'filled')) {
         setRouteBusy(false);
         setRoutesOpen(false);
-        showToast && showToast(lang==='pt'?'Essa rota já está ativa hoje':lang==='es'?'Esta ruta ya está activa hoy':'This route is already active today');
+        showToast && showToast(existing.status === 'filled'
+          ? (lang==='pt'?'Já tem alguém escalado nessa rota hoje':lang==='es'?'Ya hay alguien asignado a esta ruta hoy':'Someone is already assigned to this route today')
+          : (lang==='pt'?'Essa rota já está ativa hoje':lang==='es'?'Esta ruta ya está activa hoy':'This route is already active today'));
         ctx.openQuickJobById && ctx.openQuickJobById(String(existing.id));
         return;
       }
@@ -2618,6 +2638,8 @@ function QuickPoolDetails({ job, user, t, lang, applied, onApply, onUnlock, onCh
       if (finishErr) {
         console.error('[QuickPools] finish error:', finishErr);
         showToast && showToast('❌ ' + finishErr.message);
+        setOwnerRatingSubmitting(false);
+        return;
       }
     }
     // Notify owner — push + in-app notification

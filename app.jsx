@@ -2023,7 +2023,8 @@ function App() {
                 required_photos: formData.requiredPhotos || [],
               };
               const { data: updated } = await window.sb.from('quick_pool_jobs').update(patch).eq('id', jobId).select().single();
-              if (updated) window.dispatchEvent(new CustomEvent('pgQuickPoolPosted', { detail: updated }));
+              if (!updated) { showToast(lang==='pt'?'❌ Não foi possível salvar — tente novamente':lang==='es'?'❌ No se pudo guardar — inténtalo de nuevo':'❌ Could not save — please try again'); return; }
+              window.dispatchEvent(new CustomEvent('pgQuickPoolPosted', { detail: updated }));
               showToast(lang==='pt'?'✅ Vaga atualizada':lang==='es'?'✅ Vaga actualizada':'✅ Job updated');
             } catch { showToast(lang==='pt'?'❌ Erro ao salvar':'❌ Error saving'); }
           }}
