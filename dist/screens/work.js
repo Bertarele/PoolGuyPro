@@ -11452,14 +11452,7 @@ function DayChips({
         lineHeight: 1.15,
         textDecoration: applied ? 'line-through' : 'none'
       }
-    }, d), applied && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 6.5,
-        fontWeight: 700,
-        letterSpacing: '0.03em',
-        marginTop: 1
-      }
-    }, lang === 'pt' ? 'ENVIADO' : lang === 'es' ? 'ENVIADO' : 'APPLIED'));
+    }, d));
   }));
 }
 
@@ -11767,7 +11760,7 @@ function VacationDayPickerSheet({
         marginTop: 1,
         color: sel ? '#fff' : 'var(--pg-blue-700)'
       }
-    }, poolsCnt, "\uD83C\uDFCA"));
+    }, "(", poolsCnt, ") \uD83C\uDFCA"));
   })), /*#__PURE__*/React.createElement("button", {
     onClick: toggleAll,
     style: {

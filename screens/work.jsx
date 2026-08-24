@@ -5588,11 +5588,6 @@ function DayChips({ days, bookedDays=[], appliedDays=[], selectedDays=null, size
               </span>
             )}
             <span style={{fontSize: wd !== null ? 12 : 10.5, lineHeight:1.15, textDecoration: applied ? 'line-through' : 'none'}}>{d}</span>
-            {applied && (
-              <span style={{fontSize:6.5, fontWeight:700, letterSpacing:'0.03em', marginTop:1}}>
-                {lang==='pt'?'ENVIADO':lang==='es'?'ENVIADO':'APPLIED'}
-              </span>
-            )}
           </span>
         );
       })}
@@ -5796,7 +5791,7 @@ function VacationDayPickerSheet({ vac, lang='en', onClose, onSubmit, confirmedDa
                 : isConflict
                   ? <span style={{fontSize:7, fontWeight:700, letterSpacing:'0.02em', marginTop:1}}>⚠️</span>
                   : <span style={{fontSize:12.5, fontWeight:800, marginTop:1, color: sel ? '#fff' : 'var(--pg-blue-700)'}}>
-                      {poolsCnt}🏊
+                      ({poolsCnt}) 🏊
                     </span>
               }
             </button>
