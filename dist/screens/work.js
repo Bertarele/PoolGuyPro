@@ -7179,6 +7179,7 @@ function VacationPanel({
     }, 0) : 0;
     const isOwner = !!(user?.uid && user.uid === vac.author_id);
     const vacInProgress = (jobApplicantCounts[vac._id]?.accepted || 0) > 0;
+    const fullyBooked = (vac.days || []).length > 0 && liveAvailDays.length === 0;
     const wdShortNames = lang === 'pt' ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] : lang === 'es' ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return /*#__PURE__*/React.createElement("article", {
       key: vac._id,
@@ -7192,7 +7193,9 @@ function VacationPanel({
         transition: 'box-shadow 0.3s, outline 0.3s',
         outline: highlightedVacId === vac._id ? '2px solid var(--pg-aqua-500)' : 'none',
         outlineOffset: highlightedVacId === vac._id ? 2 : 0,
-        boxShadow: highlightedVacId === vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined
+        boxShadow: highlightedVacId === vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined,
+        filter: fullyBooked ? 'grayscale(0.85)' : 'none',
+        opacity: fullyBooked ? 0.72 : 1
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -7376,7 +7379,17 @@ function VacationPanel({
         rating: vac.ownerRating,
         size: 11
       }), " ", vac.ownerRating));
-    })(), liveAvailDays.length > 0 && /*#__PURE__*/React.createElement("span", {
+    })(), fullyBooked ? /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '2px 8px',
+        borderRadius: 999,
+        background: 'var(--pg-ink-200)',
+        color: 'var(--pg-ink-600)',
+        flexShrink: 0
+      }
+    }, lang === 'pt' ? 'Totalmente coberto' : lang === 'es' ? 'Totalmente cubierto' : 'Fully covered') : liveAvailDays.length > 0 && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -7558,7 +7571,20 @@ function VacationPanel({
       style: {
         fontSize: 11
       }
-    }, lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable')), !isOwner && /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'Negociável' : lang === 'es' ? 'Negociable' : 'Negotiable')), !isOwner && (fullyBooked ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 38,
+        padding: '0 14px',
+        borderRadius: 999,
+        background: 'var(--pg-ink-100)',
+        color: 'var(--pg-ink-500)',
+        fontSize: 12.5,
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, lang === 'pt' ? 'Sem vagas' : lang === 'es' ? 'Sin cupos' : 'No spots left') : /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 7,
@@ -7614,7 +7640,7 @@ function VacationPanel({
         borderRadius: 999,
         gap: 5
       }
-    }, pickDaysLabel, " \u2192")), isOwner && user?.role !== 'admin' && (vacInProgress ? /*#__PURE__*/React.createElement("div", {
+    }, pickDaysLabel, " \u2192"))), isOwner && user?.role !== 'admin' && (vacInProgress ? /*#__PURE__*/React.createElement("div", {
       style: {
         height: 32,
         padding: '0 12px',

@@ -3318,6 +3318,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
               }, 0) : 0;
               const isOwner = !!(user?.uid && user.uid === vac.author_id);
               const vacInProgress = (jobApplicantCounts[vac._id]?.accepted || 0) > 0;
+              const fullyBooked = (vac.days||[]).length > 0 && liveAvailDays.length === 0;
               const wdShortNames = lang==='pt'
                 ? ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
                 : lang==='es'
@@ -3328,7 +3329,8 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                 transition:'box-shadow 0.3s, outline 0.3s',
                 outline: highlightedVacId===vac._id ? '2px solid var(--pg-aqua-500)' : 'none',
                 outlineOffset: highlightedVacId===vac._id ? 2 : 0,
-                boxShadow: highlightedVacId===vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined}}>
+                boxShadow: highlightedVacId===vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined,
+                filter: fullyBooked ? 'grayscale(0.85)' : 'none', opacity: fullyBooked ? 0.72 : 1}}>
 
                 {/* ── Gradient header ── */}
                 <div style={{
@@ -3402,7 +3404,12 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                       )}
                     </button>
                     ); })()}
-                    {liveAvailDays.length > 0 && (
+                    {fullyBooked ? (
+                      <span style={{fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999,
+                        background:'var(--pg-ink-200)', color:'var(--pg-ink-600)', flexShrink:0}}>
+                        {lang==='pt'?'Totalmente coberto':lang==='es'?'Totalmente cubierto':'Fully covered'}
+                      </span>
+                    ) : liveAvailDays.length > 0 && (
                       <span style={{fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999,
                         background:'var(--pg-aqua-100)', color:'var(--pg-aqua-700)', flexShrink:0}}>
                         {liveAvailDays.length} {daysFreeLabel}
@@ -3520,6 +3527,15 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                       )}
                     </div>
                     {!isOwner && (
+                      fullyBooked ? (
+                        <div style={{
+                          height:38, padding:'0 14px', borderRadius:999,
+                          background:'var(--pg-ink-100)', color:'var(--pg-ink-500)',
+                          fontSize:12.5, fontWeight:700, display:'flex', alignItems:'center', gap:6,
+                        }}>
+                          {lang==='pt'?'Sem vagas':lang==='es'?'Sin cupos':'No spots left'}
+                        </div>
+                      ) : (
                       <div style={{display:'flex', gap:7, alignItems:'center'}}>
                         <button onClick={()=>onChat && onChat({ id: vac.author_id, name: vac.owner || vac.author || '?', listingId: vac._id ? 'vac_'+vac._id : null, listingContext: { name: (lang==='pt'?'Férias':'Vacation') + (vac.yearMonth ? ' – ' + monthName : ''), type: 'vac' } })}
                           style={{
@@ -3547,6 +3563,7 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                           </button>
                         )}
                       </div>
+                      )
                     )}
                     {isOwner && user?.role !== 'admin' && (vacInProgress ? (
                       <div style={{
