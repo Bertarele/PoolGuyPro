@@ -585,11 +585,22 @@ function WorkScreen({ ctx }) {
 
   const deleteApp = React.useCallback(async (app) => {
     if (app._live && window.sb) {
-      const { error } = await window.sb.from('job_applications').delete().eq('id', app.id);
+      // Never let this delete an accepted (in-progress) application — the UI
+      // already hides the cancel button once accepted, but that's only a
+      // client-side view; without this guard a stale screen (old tab, cached
+      // state) could still cancel a job the owner already committed to, with
+      // no trace left behind and no way for the owner to find out why their
+      // pool guy vanished.
+      const { data: rows, error } = await window.sb.from('job_applications')
+        .delete().eq('id', app.id).neq('status', 'accepted').select('id');
       if (error) { showToast && showToast('❌ ' + error.message); return; }
+      if (!rows || rows.length === 0) {
+        showToast && showToast(lang==='pt'?'❌ Já foi aceita — não é mais possível cancelar.':lang==='es'?'❌ Ya fue aceptada — ya no se puede cancelar.':'❌ Already accepted — can no longer be cancelled.');
+        return;
+      }
     }
     setDeletedAppIds(p => new Set([...p, app.id]));
-  }, [showToast]);
+  }, [showToast, lang]);
 
   const completeApp = React.useCallback(async (app) => {
     if (app._live && window.sb) {
@@ -886,6 +897,7 @@ function WorkScreen({ ctx }) {
                         const isAcc        = app.status === 'accepted';
                         const isDonePending = app.status === 'done_pending';
                         const isDone       = app.status === 'completed';
+                        const isRejectedVac = app.status === 'rejected';
                         const sCfg = isAwaiting
                           ? {label:lang==='pt'?'Aguardando':lang==='es'?'Pendiente':'Pending',color:'oklch(0.48 0.14 68)',bg:'oklch(0.96 0.05 68)'}
                           : isDone
@@ -894,6 +906,8 @@ function WorkScreen({ ctx }) {
                               ? {label:lang==='pt'?'Aguardando confirmação':lang==='es'?'Esperando confirmación':'Awaiting confirmation',color:'oklch(0.48 0.16 260)',bg:'oklch(0.95 0.04 260)'}
                             : isAcc
                               ? {label:lang==='pt'?'Confirmado ✓':lang==='es'?'Confirmado ✓':'Confirmed ✓',color:'var(--pg-blue-600)',bg:'var(--pg-blue-50)'}
+                            : isRejectedVac
+                              ? {label:lang==='pt'?'Recusado':lang==='es'?'Rechazado':'Rejected',color:'oklch(0.45 0.18 20)',bg:'oklch(0.95 0.04 20)'}
                               : {label:app.status,color:'var(--pg-ink-500)',bg:'var(--pg-ink-100)'};
                         return (
                           <div key={app.id} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 0',borderTop:'1px solid var(--pg-ink-100)'}}>
@@ -930,6 +944,14 @@ function WorkScreen({ ctx }) {
                                 const msg = lang==='pt'?'Cancelar esta candidatura?':lang==='es'?'¿Cancelar esta postulación?':'Cancel this application?';
                                 if (window.confirm(msg)) deleteApp(app);
                               }} style={{
+                                flexShrink:0,width:26,height:26,borderRadius:7,border:'1px solid rgba(239,68,68,0.22)',
+                                background:'rgba(239,68,68,0.08)',color:'#EF4444',cursor:'pointer',
+                                display:'flex',alignItems:'center',justifyContent:'center',
+                              }}>
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                              </button>
+                            ) : isRejectedVac ? (
+                              <button onClick={()=>deleteApp(app)} style={{
                                 flexShrink:0,width:26,height:26,borderRadius:7,border:'1px solid rgba(239,68,68,0.22)',
                                 background:'rgba(239,68,68,0.08)',color:'#EF4444',cursor:'pointer',
                                 display:'flex',alignItems:'center',justifyContent:'center',
@@ -1447,6 +1469,14 @@ function WorkScreen({ ctx }) {
                               const msg = lang==='pt'?'Cancelar esta candidatura?':lang==='es'?'¿Cancelar esta postulación?':'Cancel this application?';
                               if (window.confirm(msg)) deleteApp(app);
                             }} style={{
+                              flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid rgba(239,68,68,0.22)',
+                              background:'rgba(239,68,68,0.08)', color:'#EF4444', cursor:'pointer',
+                              display:'flex', alignItems:'center', justifyContent:'center',
+                            }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                            </button>
+                          ) : isRejectedVac ? (
+                            <button onClick={()=>deleteApp(app)} style={{
                               flexShrink:0, width:28, height:28, borderRadius:8, border:'1px solid rgba(239,68,68,0.22)',
                               background:'rgba(239,68,68,0.08)', color:'#EF4444', cursor:'pointer',
                               display:'flex', alignItems:'center', justifyContent:'center',

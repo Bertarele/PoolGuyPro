@@ -627,11 +627,41 @@ function ChatConversation({
     setVacActionErr('');
     const rawId = convo.listingId.startsWith('vac_') ? convo.listingId.slice(4) : convo.listingId;
     const status = decision === 'approved' ? 'accepted' : 'rejected';
+    const selectedDays = pendingVacApp.vacation_days?.selectedDays || [];
+
+    // Re-check for day conflicts right before accepting — someone else may
+    // have been accepted for an overlapping day since this chat opened. The
+    // full Candidatos sheet has a proper conflict-resolution dialog; this
+    // quick-accept shortcut doesn't, so it just blocks and points there
+    // instead of silently double-booking a day to two different pool guys.
+    let freshBooked = [];
+    if (status === 'accepted' && selectedDays.length) {
+      const {
+        data: fresh
+      } = await window.sb.from('vacations').select('booked_days').eq('id', rawId).single();
+      freshBooked = fresh?.booked_days || [];
+      const conflicts = selectedDays.filter(d => freshBooked.includes(d));
+      if (conflicts.length > 0) {
+        setVacActionBusy(false);
+        setVacActionErr(lang === 'pt' ? `Conflito: o(s) dia(s) ${conflicts.join(', ')} já foram aceitos para outra pessoa. Resolva na tela de Candidatos.` : lang === 'es' ? `Conflicto: el/los día(s) ${conflicts.join(', ')} ya fueron aceptados para otra persona. Resuélvelo en la pantalla de Candidatos.` : `Conflict: day(s) ${conflicts.join(', ')} were already accepted for someone else. Resolve it from the Candidatos screen.`);
+        return;
+      }
+    }
     const {
+      data: updRows,
       error
     } = await window.sb.from('job_applications').update({
       status
-    }).eq('id', pendingVacApp.id);
+    }).eq('id', pendingVacApp.id).eq('status', 'pending').select('id');
+    if (!error && (!updRows || updRows.length === 0)) {
+      // Someone else (another device/tab, or the Candidatos sheet) already
+      // acted on this application between load and click — don't silently
+      // re-process or double-book days on top of whatever they decided.
+      setVacActionBusy(false);
+      setPendingVacApp(null);
+      setVacActionErr(lang === 'pt' ? 'Essa candidatura já foi decidida em outro lugar.' : lang === 'es' ? 'Esa postulación ya fue decidida en otro lugar.' : 'This application was already decided elsewhere.');
+      return;
+    }
     if (error) {
       setVacActionBusy(false);
       setVacActionErr(lang === 'pt' ? 'Erro — tente de novo.' : lang === 'es' ? 'Error — intenta de nuevo.' : 'Error — please try again.');
@@ -639,11 +669,8 @@ function ChatConversation({
     }
     // Persist accepted days so booked_days reflects reality, same as the
     // Candidatos sheet's own accept path.
-    if (status === 'accepted' && pendingVacApp.vacation_days?.selectedDays?.length) {
-      const {
-        data: fresh
-      } = await window.sb.from('vacations').select('booked_days').eq('id', rawId).single();
-      const merged = Array.from(new Set([...(fresh?.booked_days || []), ...pendingVacApp.vacation_days.selectedDays]));
+    if (status === 'accepted' && selectedDays.length) {
+      const merged = Array.from(new Set([...freshBooked, ...selectedDays]));
       await window.sb.from('vacations').update({
         booked_days: merged
       }).eq('id', rawId);
@@ -4690,6 +4717,14 @@ function NotificationsSheet({
         fontSize: 16
       }
     }, "\uD83C\uDFF7\uFE0F");
+    if (type === 'vacation_new_application') return Icon.cal(17, '#fff');
+    if (type === 'vacation_confirmed') return Icon.check(17, '#fff');
+    if (type === 'vacation_photos_submitted') return /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 16
+      }
+    }, "\uD83D\uDCF8");
+    if (type === 'vacation_cancelled') return Icon.x(17, '#fff');
     return Icon.bolt(17, '#fff');
   };
   const colorFor = type => {
@@ -4710,6 +4745,10 @@ function NotificationsSheet({
     if (type === 'chat') return '#38BDF8';
     if (type === 'rating' || type === 'rating_revealed') return '#F59E0B';
     if (type === 'listing_reminder') return '#6366F1';
+    if (type === 'vacation_new_application') return '#0077B6';
+    if (type === 'vacation_confirmed') return '#22C55E';
+    if (type === 'vacation_photos_submitted') return '#0EBAC7';
+    if (type === 'vacation_cancelled') return '#EF4444';
     return '#3B82F6';
   };
   const fmtTime = d => {

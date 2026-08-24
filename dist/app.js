@@ -2483,6 +2483,8 @@ function App() {
           if (linkId) ctx.openQuickJobById(linkId);else switchTab('quick');
         } else if (type === 'job_new_application' || type === 'job_accepted' || type === 'job_rejected') {
           switchTab('work');
+        } else if (type === 'vacation_new_application' || type === 'vacation_confirmed' || type === 'vacation_photos_submitted' || type === 'vacation_cancelled') {
+          if (linkId) ctx.openListingById('vac_' + linkId);else switchTab('work');
         } else if (type === 'rental_request') {
           // link_id is the requester's uid here (not a listing id) — the
           // actionable next step is the chat, where the proposal was
@@ -3036,11 +3038,14 @@ function App() {
       const vac = dayPickerVac;
       setDayPickerVac(null);
       if (!window.sb || !user?.uid || !vac?._id) return;
+      // Only an active (pending/accepted) application blocks reapplying —
+      // a past rejection shouldn't permanently lock someone out of ever
+      // applying to the same listing again (e.g. for different days).
       const {
         data: existing
-      } = await window.sb.from('job_applications').select('id').eq('job_id', vac._id).eq('applicant_id', user.uid);
+      } = await window.sb.from('job_applications').select('id').eq('job_id', vac._id).eq('applicant_id', user.uid).in('status', ['pending', 'accepted']);
       if (existing && existing.length > 0) {
-        showToast(lang === 'pt' ? 'Você já se candidatou para esta rota' : lang === 'es' ? 'Ya te postulaste a esta ruta' : 'You already applied to this route');
+        showToast(lang === 'pt' ? 'Você já tem uma candidatura ativa para esta rota' : lang === 'es' ? 'Ya tienes una postulación activa para esta ruta' : 'You already have an active application for this route');
         return;
       }
       const {
