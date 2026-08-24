@@ -1817,7 +1817,7 @@ function WorkScreen({
           cursor: 'pointer',
           whiteSpace: 'nowrap'
         }
-      }, lang === 'pt' ? 'Concluir' : lang === 'es' ? 'Completar' : 'Complete') : isDone ? /*#__PURE__*/React.createElement("button", {
+      }, lang === 'pt' ? 'Fazer serviço' : lang === 'es' ? 'Hacer el trabajo' : 'Do the job') : isDone ? /*#__PURE__*/React.createElement("button", {
         onClick: () => openRating && openRating({
           to_id: app.author_id,
           to_name: app.owner || '',
@@ -3120,7 +3120,7 @@ function WorkScreen({
           cursor: 'pointer',
           whiteSpace: 'nowrap'
         }
-      }, lang === 'pt' ? 'Concluir' : lang === 'es' ? 'Completar' : 'Complete') : isDone ? /*#__PURE__*/React.createElement("button", {
+      }, lang === 'pt' ? 'Fazer serviço' : lang === 'es' ? 'Hacer el trabajo' : 'Do the job') : isDone ? /*#__PURE__*/React.createElement("button", {
         onClick: () => openRating && openRating({
           to_id: app.author_id,
           to_name: app.owner || '',

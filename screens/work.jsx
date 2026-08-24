@@ -927,7 +927,7 @@ function WorkScreen({ ctx }) {
                                 border:'1px solid rgba(16,185,129,0.35)',background:'rgba(16,185,129,0.10)',
                                 color:'#10B981',cursor:'pointer',whiteSpace:'nowrap',
                               }}>
-                                {lang==='pt'?'Concluir':lang==='es'?'Completar':'Complete'}
+                                {lang==='pt'?'Fazer serviço':lang==='es'?'Hacer el trabajo':'Do the job'}
                               </button>
                             ) : isDone ? (
                               <button onClick={()=>openRating && openRating({
@@ -1452,7 +1452,7 @@ function WorkScreen({ ctx }) {
                               border:'1px solid rgba(16,185,129,0.35)', background:'rgba(16,185,129,0.10)',
                               color:'#10B981', cursor:'pointer', whiteSpace:'nowrap',
                             }}>
-                              {lang==='pt'?'Concluir':lang==='es'?'Completar':'Complete'}
+                              {lang==='pt'?'Fazer serviço':lang==='es'?'Hacer el trabajo':'Do the job'}
                             </button>
                           ) : isDone ? (
                             <button onClick={()=>openRating && openRating({
