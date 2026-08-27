@@ -139,6 +139,13 @@ button { font-family: inherit; }
   to   { transform: rotate(360deg); }
 }
 
+/* Pull-to-refresh wave indicator — the wave path repeats every 13 units,
+   so shifting exactly one period gives a seamless looping flow. */
+@keyframes pg-wave-flow {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-13px); }
+}
+
 /* Bottom sheet animation */
 @keyframes pg-sheet-up {
   from { transform: translateY(100%); opacity: 0.6; }

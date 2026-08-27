@@ -2847,7 +2847,6 @@ function App() {
           {/* Pull-to-refresh indicator */}
           {(pullDist > 4 || refreshing) && (() => {
             const progress = Math.min(pullDist / PULL_THRESHOLD, 1);
-            const ready = progress >= 1;
             return (
             <div style={{
               position:'fixed', top:0, left:0, right:0, zIndex:9999,
@@ -2858,27 +2857,34 @@ function App() {
               opacity: refreshing ? 1 : 0.4 + progress * 0.6,
               transition: pullDist === 0 || refreshing ? 'transform .3s cubic-bezier(.34,1.56,.64,1), opacity .2s ease' : 'none',
             }}>
-              <div style={{
-                width:26, height:26, borderRadius:'50%', position:'relative', overflow:'hidden',
-                background: 'rgba(255,255,255,0.88)',
-                boxShadow:'0 1px 6px rgba(4,20,40,0.14)',
-                display:'flex', alignItems:'center', justifyContent:'center',
-              }}>
-                {refreshing ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5"
-                    strokeLinecap="round" strokeLinejoin="round" style={{animation:'pg-spin .7s linear infinite'}}>
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                  </svg>
-                ) : ready ? (
-                  <img src="icone-watermark.png" alt="" style={{width:56, height:56, objectFit:'cover', flexShrink:0}}/>
-                ) : (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--pg-blue-500)" strokeWidth="2.5"
-                    strokeLinecap="round" strokeLinejoin="round"
-                    style={{transform:`rotate(${progress*180}deg)`, transition:'transform .1s linear'}}>
-                    <path d="M12 5v14M12 19l-5-5M12 19l5-5"/>
-                  </svg>
-                )}
-              </div>
+              {(() => {
+                // Water level rises with pull progress; once released and
+                // refreshing, it settles at a half-full level and the wave
+                // itself flows sideways (translateX loop) to read as "alive"
+                // instead of a generic spinner.
+                const waveY = refreshing ? 11 : 26 - progress * 19;
+                const wavePath = `M-13,${waveY} Q-9.75,${waveY-3.2} -6.5,${waveY} T0,${waveY} T6.5,${waveY} T13,${waveY} T19.5,${waveY} T26,${waveY} T32.5,${waveY} T39,${waveY} L39,28 L-13,28 Z`;
+                return (
+                  <div style={{
+                    width:26, height:26, borderRadius:'50%', position:'relative', overflow:'hidden',
+                    background: 'rgba(14,186,199,0.14)',
+                    boxShadow:'0 1px 6px rgba(4,20,40,0.14)',
+                  }}>
+                    <svg width="26" height="26" viewBox="0 0 26 26" style={{position:'absolute', inset:0}}>
+                      <defs>
+                        <linearGradient id="pgWaveGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#18DAEA"/>
+                          <stop offset="100%" stopColor="#0077B6"/>
+                        </linearGradient>
+                        <clipPath id="pgWaveClip"><circle cx="13" cy="13" r="13"/></clipPath>
+                      </defs>
+                      <g clipPath="url(#pgWaveClip)" style={refreshing ? {animation:'pg-wave-flow 1s linear infinite'} : {}}>
+                        <path d={wavePath} fill="url(#pgWaveGrad)"/>
+                      </g>
+                    </svg>
+                  </div>
+                );
+              })()}
             </div>
             );
           })()}
