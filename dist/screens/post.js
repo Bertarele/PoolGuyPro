@@ -255,6 +255,10 @@ function PostQuickPool({
     style: {
       marginTop: 10
     }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
   }, /*#__PURE__*/React.createElement("input", {
     type: "datetime-local",
     value: customDT,
@@ -273,7 +277,23 @@ function PostQuickPool({
       outline: 'none',
       boxSizing: 'border-box'
     }
-  }), customDT && /*#__PURE__*/React.createElement("div", {
+  }), !customDT && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      inset: 0,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 7,
+      padding: '0 14px',
+      pointerEvents: 'none',
+      color: 'var(--pg-blue-700)'
+    }
+  }, Icon.cal(14, 'var(--pg-blue-700)'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600
+    }
+  }, lang === 'pt' ? 'Toque para escolher data e hora' : lang === 'es' ? 'Toca para elegir fecha y hora' : 'Tap to pick date and time'))), customDT && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6,
       display: 'flex',

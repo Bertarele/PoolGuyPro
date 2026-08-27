@@ -195,18 +195,36 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                 </div>
                 {isCustom && (
                   <div style={{marginTop:10}}>
-                    <input
-                      type="datetime-local"
-                      value={customDT}
-                      min={new Date().toISOString().slice(0,16)}
-                      onChange={e=>setCustomDT(e.target.value)}
-                      style={{
-                        width:'100%', height:46, borderRadius:11, border:'1.5px solid var(--pg-blue-500)',
-                        background:'var(--pg-blue-50)', padding:'0 14px', fontSize:16,
-                        fontFamily:'inherit', color:'var(--pg-ink-900)', outline:'none',
-                        boxSizing:'border-box',
-                      }}
-                    />
+                    <div style={{position:'relative'}}>
+                      <input
+                        type="datetime-local"
+                        value={customDT}
+                        min={new Date().toISOString().slice(0,16)}
+                        onChange={e=>setCustomDT(e.target.value)}
+                        style={{
+                          width:'100%', height:46, borderRadius:11, border:'1.5px solid var(--pg-blue-500)',
+                          background:'var(--pg-blue-50)', padding:'0 14px', fontSize:16,
+                          fontFamily:'inherit', color:'var(--pg-ink-900)', outline:'none',
+                          boxSizing:'border-box',
+                        }}
+                      />
+                      {/* iOS Safari renders datetime-local completely blank —
+                          no text, no calendar icon — until it's tapped, so
+                          the field looks broken/empty. This overlay makes it
+                          obviously tappable; pointer-events:none lets the
+                          real input underneath still receive the tap. */}
+                      {!customDT && (
+                        <div style={{
+                          position:'absolute', inset:0, display:'flex', alignItems:'center', gap:7,
+                          padding:'0 14px', pointerEvents:'none', color:'var(--pg-blue-700)',
+                        }}>
+                          {Icon.cal(14,'var(--pg-blue-700)')}
+                          <span style={{fontSize:14, fontWeight:600}}>
+                            {lang==='pt'?'Toque para escolher data e hora':lang==='es'?'Toca para elegir fecha y hora':'Tap to pick date and time'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     {customDT && (
                       <div style={{marginTop:6, display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--pg-ink-500)'}}>
                         {Icon.bell(12,'var(--pg-aqua-500)')}
