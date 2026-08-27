@@ -631,7 +631,7 @@ function App() {
     if (pullDist >= PULL_THRESHOLD) {
       setRefreshing(true);
       setPullDist(PULL_THRESHOLD);
-      setTimeout(() => window.location.reload(), 600);
+      setTimeout(() => window.location.reload(), 950);
     } else {
       setPullDist(0);
     }
@@ -4504,7 +4504,7 @@ function App() {
       }))), /*#__PURE__*/React.createElement("g", {
         clipPath: "url(#pgWaveClip)",
         style: refreshing ? {
-          animation: 'pg-wave-flow 1s linear infinite'
+          animation: 'pg-wave-flow 0.45s linear infinite'
         } : {}
       }, /*#__PURE__*/React.createElement("path", {
         d: wavePath,

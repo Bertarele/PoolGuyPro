@@ -388,7 +388,7 @@ function App() {
     if (pullDist >= PULL_THRESHOLD) {
       setRefreshing(true);
       setPullDist(PULL_THRESHOLD);
-      setTimeout(() => window.location.reload(), 600);
+      setTimeout(() => window.location.reload(), 950);
     } else {
       setPullDist(0);
     }
@@ -2878,7 +2878,7 @@ function App() {
                         </linearGradient>
                         <clipPath id="pgWaveClip"><circle cx="13" cy="13" r="13"/></clipPath>
                       </defs>
-                      <g clipPath="url(#pgWaveClip)" style={refreshing ? {animation:'pg-wave-flow 1s linear infinite'} : {}}>
+                      <g clipPath="url(#pgWaveClip)" style={refreshing ? {animation:'pg-wave-flow 0.45s linear infinite'} : {}}>
                         <path d={wavePath} fill="url(#pgWaveGrad)"/>
                       </g>
                     </svg>
