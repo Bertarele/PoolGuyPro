@@ -207,7 +207,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                         min={new Date().toISOString().slice(0,10)}
                         onChange={e=>setCustomDT(v => `${e.target.value}T${v.slice(11) || '09:00'}`)}
                         style={{
-                          flex:1, minWidth:0, WebkitAppearance:'none', appearance:'none',
+                          flex:1, minWidth:0,
                           height:46, borderRadius:11, border:'1.5px solid var(--pg-blue-500)',
                           background:'var(--pg-blue-50)', padding:'0 10px', fontSize:15,
                           fontFamily:'inherit', color:'var(--pg-ink-900)', outline:'none',
@@ -219,7 +219,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                         value={customDT.slice(11)}
                         onChange={e=>setCustomDT(v => `${v.slice(0,10) || new Date().toISOString().slice(0,10)}T${e.target.value}`)}
                         style={{
-                          flex:1, minWidth:0, WebkitAppearance:'none', appearance:'none',
+                          flex:1, minWidth:0,
                           height:46, borderRadius:11, border:'1.5px solid var(--pg-blue-500)',
                           background:'var(--pg-blue-50)', padding:'0 10px', fontSize:15,
                           fontFamily:'inherit', color:'var(--pg-ink-900)', outline:'none',

@@ -271,8 +271,6 @@ function PostQuickPool({
     style: {
       flex: 1,
       minWidth: 0,
-      WebkitAppearance: 'none',
-      appearance: 'none',
       height: 46,
       borderRadius: 11,
       border: '1.5px solid var(--pg-blue-500)',
@@ -291,8 +289,6 @@ function PostQuickPool({
     style: {
       flex: 1,
       minWidth: 0,
-      WebkitAppearance: 'none',
-      appearance: 'none',
       height: 46,
       borderRadius: 11,
       border: '1.5px solid var(--pg-blue-500)',
