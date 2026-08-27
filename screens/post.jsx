@@ -230,18 +230,22 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                         }}
                       />
                     </div>
-                    {customDT && (
-                      <div style={{marginTop:6, display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--pg-ink-500)'}}>
-                        {Icon.bell(12,'var(--pg-aqua-500)')}
-                        <span>
-                          {lang==='pt'
-                            ? 'Pool guys serão notificados no horário escolhido (dentro do horário comercial, 8h–20h).'
-                            : lang==='es'
-                            ? 'Los pool guys serán notificados a la hora elegida (en horario comercial, 8am–8pm).'
-                            : 'Pool guys will be notified at the chosen time (within business hours, 8am–8pm).'}
-                        </span>
-                      </div>
-                    )}
+                    {customDT && (() => {
+                      const hr = parseInt(customDT.slice(11,13), 10);
+                      const isEarly = hr < 6;
+                      const isLate = hr >= 19;
+                      const msg = isEarly
+                        ? (lang==='pt'?'Antes das 6h — o alerta só sai às 6h da manhã.':lang==='es'?'Antes de las 6am — la alerta sale recién a las 6am.':"Before 6am — the alert won't go out until 6am.")
+                        : isLate
+                        ? (lang==='pt'?'Depois das 19h — fora da janela de notificação, ninguém será avisado. A vaga continua aparecendo normalmente na lista.':lang==='es'?'Después de las 7pm — fuera de la ventana de notificación, nadie será avisado. Sigue apareciendo normalmente en la lista.':"After 7pm — outside the notification window, no one will be alerted. It still shows up normally in the list.")
+                        : (lang==='pt'?'Pool guys serão notificados no horário escolhido.':lang==='es'?'Los pool guys serán notificados a la hora elegida.':'Pool guys will be notified at the chosen time.');
+                      return (
+                        <div style={{marginTop:6, display:'flex', alignItems:'center', gap:6, fontSize:12, color: isLate ? 'var(--pg-danger)' : 'var(--pg-ink-500)'}}>
+                          {Icon.bell(12, isLate ? 'var(--pg-danger)' : 'var(--pg-aqua-500)')}
+                          <span>{msg}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </Field>

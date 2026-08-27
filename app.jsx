@@ -1926,21 +1926,26 @@ function App() {
                 ? new Date(formData.scheduled_for).toISOString()
                 : null;
               let notifyAt = null;
+              let outsideNotifyWindow = false;
               if (scheduledFor) {
-                // Notify at the exact time the poster picked, clamped into
-                // business hours (8am–8pm) so pool guys are never pinged
-                // outside a reasonable hour — pick a time before 8am and the
-                // alert waits for 8am same day; pick after 8pm and it waits
-                // for 8am the next day.
+                // Notify at the exact time the poster picked, clamped into the
+                // app's notification window (6am–7pm) so pool guys are never
+                // pinged too early or too late. Pick a time before 6am and the
+                // alert waits for 6am same day. Pick 7pm or later and no one
+                // is ever notified for it — the job still posts and shows up
+                // in the normal list, it just doesn't push (there's no "next
+                // day" clamp here on purpose: a job scheduled for tonight
+                // shouldn't silently alert everyone the next morning instead).
                 const d = new Date(formData.scheduled_for);
                 const hr = d.getHours();
-                if (hr < 8) {
-                  d.setHours(8, 0, 0, 0);
-                } else if (hr >= 20) {
-                  d.setDate(d.getDate() + 1);
-                  d.setHours(8, 0, 0, 0);
+                if (hr < 6) {
+                  d.setHours(6, 0, 0, 0);
+                  notifyAt = d.toISOString();
+                } else if (hr >= 19) {
+                  outsideNotifyWindow = true;
+                } else {
+                  notifyAt = d.toISOString();
                 }
-                notifyAt = d.toISOString();
               }
               const firstPool = formData.pools?.[0] || {};
               const isCondo = firstPool.poolType === 'condo';
@@ -2009,7 +2014,9 @@ function App() {
                 } catch(e) { notifyFailed = true; console.error('[QuickPools] notify-quick-pool error', e); }
               }
               const retryMin = Math.ceil(retryAfterSeconds / 60);
-              const toastMsg = throttled
+              const toastMsg = outsideNotifyWindow
+                ? (lang==='pt'?'✅ Vaga publicada — esse horário já passou da janela de notificação do app (6h–19h), então ninguém será avisado. Ela continua aparecendo normalmente na lista.':lang==='es'?'✅ Vacante publicada — ese horario ya pasó la ventana de notificación de la app (6am–7pm), así que nadie será avisado. Sigue apareciendo normalmente en la lista.':"✅ Job posted — that time is outside the app's notification window (6am–7pm), so no one will be alerted. It still shows up normally in the list.")
+                : throttled
                 ? (lang==='pt'?`✅ Vaga publicada — alerta pulado (você já notificou há pouco, tente de novo em ${retryMin} min)`:lang==='es'?`✅ Vacante publicada — alerta omitida (ya notificaste hace poco, intenta de nuevo en ${retryMin} min)`:`✅ Job posted — alert skipped (you already notified recently, try again in ${retryMin} min)`)
                 : notifyFailed
                 ? (lang==='pt'?'⚠️ Vaga publicada, mas o alerta pode não ter chegado a todos':lang==='es'?'⚠️ Vacante publicada, pero la alerta puede no haber llegado a todos':'⚠️ Job posted, but the alert may not have reached everyone')
