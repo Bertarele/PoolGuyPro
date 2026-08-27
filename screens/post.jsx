@@ -135,7 +135,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
         <div style={{width:60}}/>
       </div>
 
-      <div style={{padding:'0 18px', flex:1, overflow:'auto'}}>
+      <div style={{padding:'0 18px', flex:1, overflowY:'auto', overflowX:'hidden'}}>
         <h2 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em'}}>
           {step===1 && t.pqStep1Title}
           {step===2 && lbl.step2Title}
@@ -194,16 +194,16 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                   })}
                 </div>
                 {isCustom && (
-                  <div style={{marginTop:10}}>
-                    <div style={{position:'relative'}}>
+                  <div style={{marginTop:10, maxWidth:'100%'}}>
+                    <div style={{position:'relative', maxWidth:'100%'}}>
                       <input
                         type="datetime-local"
                         value={customDT}
                         min={new Date().toISOString().slice(0,16)}
                         onChange={e=>setCustomDT(e.target.value)}
                         style={{
-                          width:'100%', height:46, borderRadius:11, border:'1.5px solid var(--pg-blue-500)',
-                          background:'var(--pg-blue-50)', padding:'0 14px', fontSize:16,
+                          width:'100%', maxWidth:'100%', minWidth:0, height:46, borderRadius:11, border:'1.5px solid var(--pg-blue-500)',
+                          background:'var(--pg-blue-50)', padding:'0 10px', fontSize:15,
                           fontFamily:'inherit', color:'var(--pg-ink-900)', outline:'none',
                           boxSizing:'border-box',
                         }}

@@ -169,7 +169,8 @@ function PostQuickPool({
     style: {
       padding: '0 18px',
       flex: 1,
-      overflow: 'auto'
+      overflowY: 'auto',
+      overflowX: 'hidden'
     }
   }, /*#__PURE__*/React.createElement("h2", {
     style: {
@@ -253,11 +254,13 @@ function PostQuickPool({
     }, isNow ? Icon.bolt(14, on ? '#fff' : 'var(--pg-danger)') : Icon.cal(14, on ? '#fff' : 'var(--pg-ink-500)'), d);
   })), isCustom && /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 10
+      marginTop: 10,
+      maxWidth: '100%'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      position: 'relative'
+      position: 'relative',
+      maxWidth: '100%'
     }
   }, /*#__PURE__*/React.createElement("input", {
     type: "datetime-local",
@@ -266,12 +269,14 @@ function PostQuickPool({
     onChange: e => setCustomDT(e.target.value),
     style: {
       width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
       height: 46,
       borderRadius: 11,
       border: '1.5px solid var(--pg-blue-500)',
       background: 'var(--pg-blue-50)',
-      padding: '0 14px',
-      fontSize: 16,
+      padding: '0 10px',
+      fontSize: 15,
       fontFamily: 'inherit',
       color: 'var(--pg-ink-900)',
       outline: 'none',
