@@ -234,7 +234,10 @@ function PostQuickPool({
     const on = form.date === d;
     return /*#__PURE__*/React.createElement("button", {
       key: d,
-      onClick: () => upd('date', d),
+      onClick: () => {
+        upd('date', d);
+        if (d === t.custom && !customDT) setCustomDT(`${new Date().toISOString().slice(0, 10)}T09:00`);
+      },
       style: {
         flex: 1,
         display: 'inline-flex',

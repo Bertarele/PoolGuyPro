@@ -177,7 +177,10 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                     const isNow = d === nowLbl;
                     const on = form.date === d;
                     return (
-                      <button key={d} onClick={()=>upd('date',d)} style={{
+                      <button key={d} onClick={()=>{
+                        upd('date',d);
+                        if (d === t.custom && !customDT) setCustomDT(`${new Date().toISOString().slice(0,10)}T09:00`);
+                      }} style={{
                         flex:1, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6,
                         padding:'11px 13px', borderRadius:12, cursor:'pointer',
                         background: on
