@@ -1,4 +1,10 @@
-// Runs daily at 7 AM via pg_cron — notifies pool guys for jobs scheduled today
+// Runs every 15 min via pg_cron — notifies pool guys for scheduled Quick Pool
+// jobs right around the exact time the poster picked (previously this ran
+// once a day at a fixed 7am and batch-notified everything scheduled for
+// "today" at that one fixed hour, ignoring whatever time was actually
+// chosen). Only matches jobs whose notify_at has just arrived (within the
+// last 20 min, so a missed/late cron tick still catches it) — daily_notified_at
+// guards against sending the same job twice across ticks.
 import webpush from 'npm:web-push@3.6.7';
 
 const VAPID_PUBLIC  = Deno.env.get('VAPID_PUBLIC_KEY')!;
@@ -13,15 +19,13 @@ Deno.serve(async (req) => {
 
   const headers = { 'apikey': SB_SRK, 'Authorization': `Bearer ${SB_SRK}`, 'Content-Type': 'application/json' };
 
-  // Find all jobs whose notify_at is today (between 7am and 8am local = UTC window)
+  // Jobs whose chosen notify time has arrived — a 20-min lookback covers a
+  // late/missed tick without re-scanning the whole day every run.
   const now = new Date();
-  const todayStart = new Date(now); todayStart.setHours(6, 55, 0, 0);
-  const todayEnd   = new Date(now); todayEnd.setHours(23, 59, 59, 0);
+  const windowStart = new Date(now.getTime() - 20 * 60 * 1000);
 
-  // daily_notified_at guards against duplicate sends if this function is re-triggered
-  // (cron misfire, manual retry, overlapping schedule) within the same day.
   const jobsRes = await fetch(
-    `${SB_URL}/rest/v1/quick_pool_jobs?select=*&status=eq.open&notify_at=gte.${todayStart.toISOString()}&notify_at=lte.${todayEnd.toISOString()}&daily_notified_at=is.null`,
+    `${SB_URL}/rest/v1/quick_pool_jobs?select=*&status=eq.open&notify_at=gte.${windowStart.toISOString()}&notify_at=lte.${now.toISOString()}&daily_notified_at=is.null`,
     { headers }
   );
   const jobs: any[] = await jobsRes.json();
@@ -42,7 +46,7 @@ Deno.serve(async (req) => {
       return dayCities.includes(job.city);
     });
     // Mark this job as notified regardless of whether anyone matched, so it's never
-    // re-scanned/re-sent on a later invocation the same day.
+    // re-scanned/re-sent on a later invocation.
     await fetch(`${SB_URL}/rest/v1/quick_pool_jobs?id=eq.${job.id}`, {
       method: 'PATCH',
       headers: { ...headers, 'Prefer': 'return=minimal' },

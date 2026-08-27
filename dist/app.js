@@ -2262,7 +2262,29 @@ function App() {
       setPayOpen(true);
     },
     openPostMenu: () => setPostMenuOpen(true),
-    openPost: () => setPostQPOpen(true),
+    openPost: async () => {
+      // Free accounts: max 5 Piscinas Rápidas postings per week, resetting
+      // every Sunday 6am (same cadence as Claude's own credit resets) — PRO
+      // and above post unlimited.
+      if (user.tier === 'free') {
+        try {
+          const now = new Date();
+          const weekStart = new Date(now);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          weekStart.setHours(6, 0, 0, 0);
+          if (weekStart > now) weekStart.setDate(weekStart.getDate() - 7);
+          const {
+            data
+          } = await window.sb.from('quick_pool_jobs').select('id').eq('poster_id', user.uid).gte('created_at', weekStart.toISOString());
+          if ((data || []).length >= 5) {
+            setPayContext('qp_weekly_limit');
+            setPayOpen(true);
+            return;
+          }
+        } catch (e) {}
+      }
+      setPostQPOpen(true);
+    },
     openEditPost: job => setEditQPJob(job),
     openMarketPost: async () => {
       // Count active listings vs tier limit before opening post form
@@ -2686,7 +2708,7 @@ function App() {
   })(), /*#__PURE__*/React.createElement(PostMenuSheet, {
     open: postMenuOpen,
     onClose: () => setPostMenuOpen(false),
-    onPickQuickPool: () => setPostQPOpen(true),
+    onPickQuickPool: () => ctx.openPost(),
     lang: lang
   }), /*#__PURE__*/React.createElement(Sheet, {
     open: postQPOpen,
@@ -2710,8 +2732,19 @@ function App() {
         const scheduledFor = formData.scheduled_for ? new Date(formData.scheduled_for).toISOString() : null;
         let notifyAt = null;
         if (scheduledFor) {
+          // Notify at the exact time the poster picked, clamped into
+          // business hours (8am–8pm) so pool guys are never pinged
+          // outside a reasonable hour — pick a time before 8am and the
+          // alert waits for 8am same day; pick after 8pm and it waits
+          // for 8am the next day.
           const d = new Date(formData.scheduled_for);
-          d.setHours(7, 0, 0, 0);
+          const hr = d.getHours();
+          if (hr < 8) {
+            d.setHours(8, 0, 0, 0);
+          } else if (hr >= 20) {
+            d.setDate(d.getDate() + 1);
+            d.setHours(8, 0, 0, 0);
+          }
           notifyAt = d.toISOString();
         }
         const firstPool = formData.pools?.[0] || {};
@@ -4506,7 +4539,7 @@ function App() {
     setTab: switchTab,
     lang: lang
   }), (tab === 'market' || tab === 'quick') && /*#__PURE__*/React.createElement("button", {
-    onClick: tab === 'market' ? () => setMarketPostOpen(true) : () => setPostQPOpen(true),
+    onClick: tab === 'market' ? () => ctx.openMarketPost() : () => ctx.openPost(),
     className: "pg-press",
     style: {
       position: 'absolute',

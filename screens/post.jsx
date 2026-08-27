@@ -232,10 +232,10 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                         {Icon.bell(12,'var(--pg-aqua-500)')}
                         <span>
                           {lang==='pt'
-                            ? 'Pool guys serão notificados às 7h do dia selecionado.'
+                            ? 'Pool guys serão notificados no horário escolhido (dentro do horário comercial, 8h–20h).'
                             : lang==='es'
-                            ? 'Los pool guys serán notificados a las 7 AM del día seleccionado.'
-                            : 'Pool guys will be notified at 7 AM on the selected day.'}
+                            ? 'Los pool guys serán notificados a la hora elegida (en horario comercial, 8am–8pm).'
+                            : 'Pool guys will be notified at the chosen time (within business hours, 8am–8pm).'}
                         </span>
                       </div>
                     )}

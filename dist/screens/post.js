@@ -313,7 +313,7 @@ function PostQuickPool({
       fontSize: 12,
       color: 'var(--pg-ink-500)'
     }
-  }, Icon.bell(12, 'var(--pg-aqua-500)'), /*#__PURE__*/React.createElement("span", null, lang === 'pt' ? 'Pool guys serão notificados às 7h do dia selecionado.' : lang === 'es' ? 'Los pool guys serán notificados a las 7 AM del día seleccionado.' : 'Pool guys will be notified at 7 AM on the selected day.'))))), step === 2 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, Icon.bell(12, 'var(--pg-aqua-500)'), /*#__PURE__*/React.createElement("span", null, lang === 'pt' ? 'Pool guys serão notificados no horário escolhido (dentro do horário comercial, 8h–20h).' : lang === 'es' ? 'Los pool guys serán notificados a la hora elegida (en horario comercial, 8am–8pm).' : 'Pool guys will be notified at the chosen time (within business hours, 8am–8pm).'))))), step === 2 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',

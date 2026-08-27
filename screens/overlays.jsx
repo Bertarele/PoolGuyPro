@@ -2856,6 +2856,8 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
   const ROWS = [
     { label: lang==='pt'?'Anúncios simultâneos':lang==='es'?'Anuncios simultáneos':'Simultaneous listings',
       free:'2', pro:'5', premium:'10', type:'count' },
+    { label: lang==='pt'?'Publicar Piscinas Rápidas':lang==='es'?'Publicar Piscinas Rápidas':'Post Quick Pools',
+      free: lang==='pt'?'5/semana':lang==='es'?'5/semana':'5/week', pro:lang==='pt'?'Ilimitado':lang==='es'?'Ilimitado':'Unlimited', premium:lang==='pt'?'Ilimitado':lang==='es'?'Ilimitado':'Unlimited', type:'count' },
     { label: lang==='pt'?'Aplicar a vagas':lang==='es'?'Postularte a empleos':'Apply to jobs',
       free:true, pro:true, premium:true },
     { label: lang==='pt'?'Publicar vagas (contratar)':lang==='es'?'Publicar empleos (contratar)':'Post job listings (hire)',
@@ -2913,6 +2915,18 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
           <p style={{margin:'6px 8px 0', fontSize:13, color:'var(--pg-ink-500)', lineHeight:1.5}}>
             {p.tagline}
           </p>
+          {context === 'qp_weekly_limit' && (
+            <div style={{marginTop:12, padding:'9px 13px', borderRadius:10, background:'var(--pg-blue-50)', border:'1px solid var(--pg-blue-100)', textAlign:'left', display:'flex', gap:8}}>
+              {Icon.bolt(13,'var(--pg-blue-700)')}
+              <span style={{fontSize:12, color:'var(--pg-blue-700)', lineHeight:1.4}}>
+                {lang==='pt'
+                  ? 'Você atingiu o limite de 5 Piscinas Rápidas publicadas essa semana no plano grátis. O limite reseta todo domingo às 6h — ou vire PRO pra publicar sem limite.'
+                  : lang==='es'
+                    ? 'Alcanzaste el límite de 5 Piscinas Rápidas publicadas esta semana en el plan gratis. El límite se reinicia cada domingo a las 6am — o hazte PRO para publicar sin límite.'
+                    : "You've hit the free plan's limit of 5 Quick Pools posted this week. It resets every Sunday at 6am — or go PRO to post unlimited."}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Plan toggle */}
