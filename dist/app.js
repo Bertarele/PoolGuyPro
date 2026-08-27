@@ -4495,16 +4495,10 @@ function App() {
       }), /*#__PURE__*/React.createElement("stop", {
         offset: "100%",
         stopColor: "#0077B6"
-      })), /*#__PURE__*/React.createElement("clipPath", {
-        id: "pgWaveClip"
-      }, /*#__PURE__*/React.createElement("circle", {
-        cx: "13",
-        cy: "13",
-        r: "13"
       }))), /*#__PURE__*/React.createElement("g", {
-        clipPath: "url(#pgWaveClip)",
         style: refreshing ? {
-          animation: 'pg-wave-flow 0.45s linear infinite'
+          animation: 'pg-wave-flow 0.45s linear infinite',
+          willChange: 'transform'
         } : {}
       }, /*#__PURE__*/React.createElement("path", {
         d: wavePath,

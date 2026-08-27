@@ -2876,9 +2876,13 @@ function App() {
                           <stop offset="0%" stopColor="#18DAEA"/>
                           <stop offset="100%" stopColor="#0077B6"/>
                         </linearGradient>
-                        <clipPath id="pgWaveClip"><circle cx="13" cy="13" r="13"/></clipPath>
                       </defs>
-                      <g clipPath="url(#pgWaveClip)" style={refreshing ? {animation:'pg-wave-flow 0.45s linear infinite'} : {}}>
+                      {/* Circular mask comes from the wrapping div's overflow:hidden +
+                          border-radius, not an SVG clipPath — some WebKit builds stop
+                          repainting a clip-path's clipped content after the first cycle
+                          of an animated child transform, which read as the wave
+                          flowing once and then freezing. */}
+                      <g style={refreshing ? {animation:'pg-wave-flow 0.45s linear infinite', willChange:'transform'} : {}}>
                         <path d={wavePath} fill="url(#pgWaveGrad)"/>
                       </g>
                     </svg>
