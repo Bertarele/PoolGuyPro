@@ -1053,6 +1053,8 @@ function RegionEditorSheet({
   county,
   notifyPools = true,
   notifyRoutes = true,
+  notifyCleaning = true,
+  notifyService = true,
   setNotifyPref
 }) {
   const t = STRINGS[lang];
@@ -1246,6 +1248,90 @@ function RegionEditorSheet({
   }, lang === 'pt' ? 'Rotas inteiras liberadas para cobrir' : lang === 'es' ? 'Rutas enteras liberadas para cubrir' : 'Whole routes opening up to cover')), /*#__PURE__*/React.createElement("div", {
     className: `pg-toggle ${notifyRoutes ? 'on' : ''}`,
     onClick: () => setNotifyPref('notifyRoutes', !notifyRoutes)
+  }))), setNotifyPref && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      border: '1px solid var(--pg-ink-200)',
+      overflow: 'hidden',
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '13px 14px',
+      borderBottom: '0.5px solid var(--pg-ink-200)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      background: 'var(--pg-aqua-50)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, Icon.pool(17, 'var(--pg-aqua-700)')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Limpeza' : lang === 'es' ? 'Limpieza' : 'Cleaning'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      marginTop: 1
+    }
+  }, lang === 'pt' ? 'Limpeza comum de piscina' : lang === 'es' ? 'Limpieza común de piscina' : 'Routine pool cleaning')), /*#__PURE__*/React.createElement("div", {
+    className: `pg-toggle ${notifyCleaning ? 'on' : ''}`,
+    onClick: () => setNotifyPref('notifyCleaning', !notifyCleaning)
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '13px 14px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      background: 'rgba(14,186,199,0.1)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, Icon.wrench(17, '#0D7280')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
+    }
+  }, lang === 'pt' ? 'Serviço/Manutenção' : lang === 'es' ? 'Servicio/Mantenimiento' : 'Service/Maintenance'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      marginTop: 1
+    }
+  }, lang === 'pt' ? 'Conserto de bomba, filtro, vazamento, etc.' : lang === 'es' ? 'Reparación de bomba, filtro, fuga, etc.' : 'Pump repair, filter, leaks, etc.')), /*#__PURE__*/React.createElement("div", {
+    className: `pg-toggle ${notifyService ? 'on' : ''}`,
+    onClick: () => setNotifyPref('notifyService', !notifyService)
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',

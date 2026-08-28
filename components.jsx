@@ -119,6 +119,11 @@ const Icon = {
       <path d="M7 9h10"/>
     </svg>
   ),
+  wrench: (s=18, c="currentColor") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.7 6.3a4 4 0 0 0-5.6 5.6L3 18l3 3 6.1-6.1a4 4 0 0 0 5.6-5.6l-2.8 2.8-2-2z"/>
+    </svg>
+  ),
   crown: (s=14, c="currentColor") => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill={c}>
       <path d="M3 8l4 4 5-7 5 7 4-4v10H3z"/>

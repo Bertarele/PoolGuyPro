@@ -1,5 +1,14 @@
 // quickpools.jsx — Express Pools live feed + posting + push notifications
 
+// Resolves a service_type value (a QUICK_POOL_SERVICE_TYPES key, a
+// 'custom:<text>' free-text entry, or null) into a display label.
+function serviceTypeLabel(serviceType, lang = 'pt') {
+  if (!serviceType) return lang === 'pt' ? 'Serviço' : lang === 'es' ? 'Servicio' : 'Service';
+  if (serviceType.startsWith('custom:')) return serviceType.slice(7);
+  const opt = QUICK_POOL_SERVICE_TYPES.find(o => o.key === serviceType);
+  if (!opt) return lang === 'pt' ? 'Serviço' : lang === 'es' ? 'Servicio' : 'Service';
+  return lang === 'pt' ? opt.pt : opt.en;
+}
 function ConfirmModal({
   message,
   subMessage,
@@ -613,6 +622,8 @@ function QuickPoolsScreen({
           },
           price: j.price_negotiable ? 'neg' : j.price_per_pool,
           type: j.pool_type || 'residential',
+          category: j.job_category || 'cleaning',
+          serviceType: j.service_type || null,
           urgency: 'new',
           poster: j.poster_name,
           poster_phone: j.poster_phone,
@@ -769,7 +780,7 @@ function QuickPoolsScreen({
       });
     });
     // Load history: accepted apps where pool_guy_done=true, fetch full job details
-    window.sb.from('quick_pool_applications').select('job_id,pool_guy_done_at,submitted_photos,quick_pool_jobs!inner(id,title,city,price_per_pool,price_negotiable,poster_name,poster_id,poster_phone,pool_address,status,created_at,day_of_week,time_slot,when_label,pools_count,pool_type,extras,required_photos,description,pools,split_taker_pct,source_route_id)').eq('applicant_id', user.uid).eq('status', 'accepted').eq('pool_guy_done', true).order('pool_guy_done_at', {
+    window.sb.from('quick_pool_applications').select('job_id,pool_guy_done_at,submitted_photos,quick_pool_jobs!inner(id,title,city,price_per_pool,price_negotiable,poster_name,poster_id,poster_phone,pool_address,status,created_at,day_of_week,time_slot,when_label,pools_count,pool_type,job_category,service_type,extras,required_photos,description,pools,split_taker_pct,source_route_id)').eq('applicant_id', user.uid).eq('status', 'accepted').eq('pool_guy_done', true).order('pool_guy_done_at', {
       ascending: false
     }).limit(20).then(({
       data
@@ -793,6 +804,8 @@ function QuickPoolsScreen({
           },
           price: j.price_negotiable ? 'neg' : j.price_per_pool,
           type: j.pool_type || 'residential',
+          category: j.job_category || 'cleaning',
+          serviceType: j.service_type || null,
           poster: j.poster_name,
           poster_id: j.poster_id,
           poster_phone: j.poster_phone,
@@ -875,6 +888,8 @@ function QuickPoolsScreen({
         },
         price: data.price_negotiable ? 'neg' : data.price_per_pool,
         type: data.pool_type || 'residential',
+        category: data.job_category || 'cleaning',
+        serviceType: data.service_type || null,
         urgency: 'new',
         poster: data.poster_name,
         poster_phone: data.poster_phone,
@@ -1144,7 +1159,17 @@ function QuickPoolsScreen({
         color: '#0D7280',
         letterSpacing: '0.04em'
       }
-    }, "\uD83D\uDEA8 ", lang === 'pt' ? 'ROTA' : lang === 'es' ? 'RUTA' : 'ROUTE'), !isAccepted && j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
+    }, "\uD83D\uDEA8 ", lang === 'pt' ? 'ROTA' : lang === 'es' ? 'RUTA' : 'ROUTE'), j.category === 'service' && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        fontWeight: 800,
+        padding: '2px 8px',
+        borderRadius: 999,
+        background: '#FFEDD5',
+        color: '#9A3412',
+        letterSpacing: '0.04em'
+      }
+    }, "\uD83D\uDD27 ", serviceTypeLabel(j.serviceType, lang)), !isAccepted && j.status === 'filled' && !isOwn && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         fontWeight: 700,

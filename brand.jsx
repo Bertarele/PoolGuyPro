@@ -521,7 +521,7 @@ function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, rad
 }
 window.LocationFilterSheet = LocationFilterSheet;
 
-function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsByDay, saveRegionsByDay, county, notifyPools=true, notifyRoutes=true, setNotifyPref }) {
+function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsByDay, saveRegionsByDay, county, notifyPools=true, notifyRoutes=true, notifyCleaning=true, notifyService=true, setNotifyPref }) {
   const t = STRINGS[lang];
   const [openDay, setOpenDay] = React.useState('mon');
   const [activeCounty, setActiveCounty] = React.useState(county || 'Broward');
@@ -617,6 +617,44 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
                   </div>
                 </div>
                 <div className={`pg-toggle ${notifyRoutes?'on':''}`} onClick={()=>setNotifyPref('notifyRoutes', !notifyRoutes)}/>
+              </div>
+            </div>
+          )}
+
+          {/* Job-category switches — independent of the Pools/Routes pair above.
+              Those decide the SHAPE of the job (one-off vs a whole route); these
+              decide the KIND of work (routine cleaning vs a repair/maintenance
+              call), so a pool guy who only does cleaning can turn service jobs
+              off entirely and vice-versa. */}
+          {setNotifyPref && (
+            <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', overflow:'hidden', marginBottom:16}}>
+              <div style={{display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderBottom:'0.5px solid var(--pg-ink-200)'}}>
+                <div style={{width:36, height:36, borderRadius:10, background:'var(--pg-aqua-50)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                  {Icon.pool(17, 'var(--pg-aqua-700)')}
+                </div>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13.5, fontWeight:700, color:'var(--pg-ink-900)'}}>
+                    {lang==='pt'?'Limpeza':lang==='es'?'Limpieza':'Cleaning'}
+                  </div>
+                  <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>
+                    {lang==='pt'?'Limpeza comum de piscina':lang==='es'?'Limpieza común de piscina':'Routine pool cleaning'}
+                  </div>
+                </div>
+                <div className={`pg-toggle ${notifyCleaning?'on':''}`} onClick={()=>setNotifyPref('notifyCleaning', !notifyCleaning)}/>
+              </div>
+              <div style={{display:'flex', alignItems:'center', gap:12, padding:'13px 14px'}}>
+                <div style={{width:36, height:36, borderRadius:10, background:'rgba(14,186,199,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                  {Icon.wrench(17, '#0D7280')}
+                </div>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13.5, fontWeight:700, color:'var(--pg-ink-900)'}}>
+                    {lang==='pt'?'Serviço/Manutenção':lang==='es'?'Servicio/Mantenimiento':'Service/Maintenance'}
+                  </div>
+                  <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>
+                    {lang==='pt'?'Conserto de bomba, filtro, vazamento, etc.':lang==='es'?'Reparación de bomba, filtro, fuga, etc.':'Pump repair, filter, leaks, etc.'}
+                  </div>
+                </div>
+                <div className={`pg-toggle ${notifyService?'on':''}`} onClick={()=>setNotifyPref('notifyService', !notifyService)}/>
               </div>
             </div>
           )}

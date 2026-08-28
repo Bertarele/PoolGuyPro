@@ -22,6 +22,9 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
       return {
         title: initialData.title || '',
         notes: initialData.description || '',
+        jobCategory: initialData.job_category || 'cleaning',
+        serviceType: (initialData.service_type || '').startsWith('custom:') ? 'other' : (initialData.service_type || ''),
+        serviceTypeCustom: (initialData.service_type || '').startsWith('custom:') ? initialData.service_type.slice(7) : '',
         pools: [{
           id: 1,
           location: initialData.city || '',
@@ -45,6 +48,9 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
     return {
       title:'',
       notes:'',
+      jobCategory: 'cleaning',
+      serviceType: '',
+      serviceTypeCustom: '',
       pools: [newPool(1)],
       priceMode:'fixed', price:'0',
       date: lang==='pt'?'Agora':lang==='es'?'Ahora':'Now',
@@ -57,6 +63,7 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
   });
 
   const PHOTO_OPTS = QUICK_POOL_PHOTO_OPTS;
+  const SERVICE_TYPE_OPTS = QUICK_POOL_SERVICE_TYPES;
 
   const togglePhoto = (key) => {
     const cur = form.requiredPhotos;
@@ -119,7 +126,14 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
   }, [step, form.pools, isCustom, customDT]);
 
   const canContinue = () => {
-    if (step === 1) return form.title.trim().length > 0;
+    if (step === 1) {
+      if (form.title.trim().length === 0) return false;
+      if (form.jobCategory === 'service') {
+        if (!form.serviceType) return false;
+        if (form.serviceType === 'other' && !form.serviceTypeCustom.trim()) return false;
+      }
+      return true;
+    }
     if (step === 2) return form.pools.every(p => p.location.trim().length > 0);
     return true;
   };
@@ -164,6 +178,58 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                 <input className="pg-field" placeholder={t.titlePh}
                   value={form.title} onChange={e=>upd('title',e.target.value)}/>
               </Field>
+
+              {/* Job category */}
+              <Field label={lang==='pt'?'Tipo de trabalho':lang==='es'?'Tipo de trabajo':'Job type'}>
+                <div style={{display:'flex', gap:8}}>
+                  {[
+                    { key:'cleaning', label: lang==='pt'?'Limpeza':lang==='es'?'Limpieza':'Cleaning', icon: Icon.pool },
+                    { key:'service',  label: lang==='pt'?'Serviço/Manutenção':lang==='es'?'Servicio/Mantenimiento':'Service/Maintenance', icon: Icon.wrench },
+                  ].map(c => {
+                    const on = form.jobCategory === c.key;
+                    return (
+                      <button key={c.key} onClick={()=>upd('jobCategory', c.key)} style={{
+                        flex:1, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6,
+                        padding:'11px 13px', borderRadius:12, cursor:'pointer',
+                        background: on ? 'var(--pg-blue-500)' : 'var(--pg-ink-100)',
+                        color: on ? '#fff' : 'var(--pg-ink-700)',
+                        border:'1px solid ' + (on ? 'transparent' : 'var(--pg-ink-200)'),
+                        fontSize:14, fontWeight:700, fontFamily:'inherit',
+                      }}>
+                        {c.icon(14, on?'#fff':'var(--pg-ink-500)')}
+                        {c.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.jobCategory === 'service' && (
+                  <div style={{marginTop:10, display:'flex', flexDirection:'column', gap:8}}>
+                    <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
+                      {SERVICE_TYPE_OPTS.map(opt => {
+                        const sel = form.serviceType === opt.key;
+                        return (
+                          <button key={opt.key} onClick={()=>upd('serviceType', opt.key)} style={{
+                            padding:'9px 13px', borderRadius:10, cursor:'pointer',
+                            border: sel ? '1.5px solid var(--pg-blue-500)' : '1px solid var(--pg-ink-200)',
+                            background: sel ? 'var(--pg-blue-50)' : 'transparent',
+                            color: sel ? 'var(--pg-blue-700)' : 'var(--pg-ink-700)',
+                            fontSize:12.5, fontWeight:600, fontFamily:'inherit',
+                          }}>
+                            {lang==='pt'?opt.pt:opt.en}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {form.serviceType === 'other' && (
+                      <input className="pg-field" value={form.serviceTypeCustom}
+                        onChange={e=>upd('serviceTypeCustom', e.target.value)}
+                        placeholder={lang==='pt'?'Descreva o serviço':lang==='es'?'Describe el servicio':'Describe the service'}
+                        style={{height:42, fontSize:13}}/>
+                    )}
+                  </div>
+                )}
+              </Field>
+
               <Field label={t.notesOptional}>
                 <textarea className="pg-textarea"
                   placeholder={t.notesPh}
@@ -231,10 +297,18 @@ function PostQuickPool({ onClose, onSubmit, lang='en', initialData=null }) {
                       />
                     </div>
                     {customDT && (() => {
+                      // The 6am–7pm window only holds back a job scheduled for
+                      // LATER TODAY — a future day is an advance heads-up, so it
+                      // notifies right away regardless of the clock (even at night).
+                      const picked = new Date(customDT);
+                      const now = new Date();
+                      const isSameDay = picked.getFullYear()===now.getFullYear() && picked.getMonth()===now.getMonth() && picked.getDate()===now.getDate();
                       const hr = parseInt(customDT.slice(11,13), 10);
-                      const isEarly = hr < 6;
-                      const isLate = hr >= 19;
-                      const msg = isEarly
+                      const isEarly = isSameDay && hr < 6;
+                      const isLate = isSameDay && hr >= 19;
+                      const msg = !isSameDay
+                        ? (lang==='pt'?'É pra outro dia — o alerta sai agora, avisando com antecedência.':lang==='es'?'Es para otro día — la alerta sale ahora, avisando con anticipación.':"It's for another day — the alert goes out now, as an advance heads-up.")
+                        : isEarly
                         ? (lang==='pt'?'Antes das 6h — o alerta só sai às 6h da manhã.':lang==='es'?'Antes de las 6am — la alerta sale recién a las 6am.':"Before 6am — the alert won't go out until 6am.")
                         : isLate
                         ? (lang==='pt'?'Depois das 19h — fora da janela de notificação, ninguém será avisado. A vaga continua aparecendo normalmente na lista.':lang==='es'?'Después de las 7pm — fuera de la ventana de notificación, nadie será avisado. Sigue apareciendo normalmente en la lista.':"After 7pm — outside the notification window, no one will be alerted. It still shows up normally in the list.")

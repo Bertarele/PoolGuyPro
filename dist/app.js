@@ -671,7 +671,9 @@ function App() {
     equipment: null,
     experience: [],
     notifyPools: true,
-    notifyRoutes: true
+    notifyRoutes: true,
+    notifyCleaning: true,
+    notifyService: true
   });
   const loadProfile = React.useCallback(async sbUser => {
     if (!sbUser || !window.sb) return;
@@ -752,7 +754,9 @@ function App() {
       equipment: profile?.equipment ?? null,
       experience: profile?.experience ?? [],
       notifyPools: profile?.notify_pools !== false,
-      notifyRoutes: profile?.notify_routes !== false
+      notifyRoutes: profile?.notify_routes !== false,
+      notifyCleaning: profile?.notify_cleaning !== false,
+      notifyService: profile?.notify_service !== false
     }));
     // Load regionsByDay from profile if saved
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
@@ -1186,7 +1190,12 @@ function App() {
       ...u,
       [key]: value
     }));
-    const col = key === 'notifyPools' ? 'notify_pools' : 'notify_routes';
+    const col = {
+      notifyPools: 'notify_pools',
+      notifyRoutes: 'notify_routes',
+      notifyCleaning: 'notify_cleaning',
+      notifyService: 'notify_service'
+    }[key];
     try {
       await window.sb.from('profiles').update({
         [col]: value
@@ -1924,7 +1933,7 @@ function App() {
       // of as a query filter.
       const {
         data
-      } = await window.sb.from('quick_pool_jobs_feed').select('id,city,day_of_week,poster_id,pools_count,price_per_pool,status,created_at,pool_type,extras,pools,source_route_id,split_taker_pct').eq('status', 'open').catch(() => ({
+      } = await window.sb.from('quick_pool_jobs_feed').select('id,city,day_of_week,poster_id,pools_count,price_per_pool,status,created_at,pool_type,extras,pools,source_route_id,split_taker_pct,job_category').eq('status', 'open').catch(() => ({
         data: null
       }));
       if (!data || !data.length) return;
@@ -1933,7 +1942,9 @@ function App() {
       const jobCitiesOf = job => job.pools && job.pools.length > 0 ? [...new Set(job.pools.map(p => p.city).filter(Boolean))] : [job.city];
       const notifyPools = userRef.current?.notifyPools !== false;
       const notifyRoutes = userRef.current?.notifyRoutes !== false;
-      const match = data.find(job => job.poster_id !== uid && job.created_at > since && (job.source_route_id ? notifyRoutes : notifyPools) && jobCitiesOf(job).some(c => (rbd[job.day_of_week] || []).includes(c)));
+      const notifyCleaning = userRef.current?.notifyCleaning !== false;
+      const notifyService = userRef.current?.notifyService !== false;
+      const match = data.find(job => job.poster_id !== uid && job.created_at > since && (job.source_route_id ? notifyRoutes : notifyPools) && (job.job_category === 'service' ? notifyService : notifyCleaning) && jobCitiesOf(job).some(c => (rbd[job.day_of_week] || []).includes(c)));
       if (!match) return;
       const poolsCount = match.pools_count ?? 1;
       const extras = match.extras || {};
@@ -2732,28 +2743,36 @@ function App() {
         const scheduledFor = formData.scheduled_for ? new Date(formData.scheduled_for).toISOString() : null;
         let notifyAt = null;
         let outsideNotifyWindow = false;
+        // "Agora" jobs and jobs scheduled for a future day both notify the
+        // instant they're posted — a future-day job is an advance heads-up
+        // ("there's a job in Deerfield tomorrow"), not a same-day ping, so
+        // it isn't held back by the 6am–7pm window and can go out at night.
+        // Only a job scheduled for LATER TODAY gets clamped into that
+        // window, since that's the one case where it's actually urgent/
+        // same-day and pinging at 2am would be genuinely disruptive.
+        let notifyNow = !scheduledFor;
         if (scheduledFor) {
-          // Notify at the exact time the poster picked, clamped into the
-          // app's notification window (6am–7pm) so pool guys are never
-          // pinged too early or too late. Pick a time before 6am and the
-          // alert waits for 6am same day. Pick 7pm or later and no one
-          // is ever notified for it — the job still posts and shows up
-          // in the normal list, it just doesn't push (there's no "next
-          // day" clamp here on purpose: a job scheduled for tonight
-          // shouldn't silently alert everyone the next morning instead).
           const d = new Date(formData.scheduled_for);
-          const hr = d.getHours();
-          if (hr < 6) {
-            d.setHours(6, 0, 0, 0);
-            notifyAt = d.toISOString();
-          } else if (hr >= 19) {
-            outsideNotifyWindow = true;
+          const now = new Date();
+          const isSameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+          if (isSameDay) {
+            const hr = d.getHours();
+            if (hr < 6) {
+              d.setHours(6, 0, 0, 0);
+              notifyAt = d.toISOString();
+            } else if (hr >= 19) {
+              outsideNotifyWindow = true;
+            } else {
+              notifyAt = d.toISOString();
+            }
           } else {
-            notifyAt = d.toISOString();
+            notifyNow = true;
           }
         }
         const firstPool = formData.pools?.[0] || {};
         const isCondo = firstPool.poolType === 'condo';
+        const jobCategory = formData.jobCategory === 'service' ? 'service' : 'cleaning';
+        const serviceType = jobCategory === 'service' ? formData.serviceType === 'other' ? 'custom:' + (formData.serviceTypeCustom || '').trim() : formData.serviceType || null : null;
         const job = {
           poster_id: user.uid,
           poster_name: user.name || user.email || 'Pool Guy',
@@ -2785,7 +2804,9 @@ function App() {
           },
           required_photos: formData.requiredPhotos || [],
           status: 'open',
-          notify_at: notifyAt
+          notify_at: notifyAt,
+          job_category: jobCategory,
+          service_type: serviceType
         };
         // Proactively refresh a possibly-stale session before writing — a stale
         // token here fails the insert's RLS check silently (see notify refresh below).
@@ -2806,7 +2827,7 @@ function App() {
         let notifyFailed = false;
         let throttled = false,
           retryAfterSeconds = 0;
-        if (!scheduledFor) {
+        if (notifyNow) {
           try {
             // getSession() reads a cached token with no freshness check — if it's
             // stale, the Edge Function's platform-level JWT check 401s before our
@@ -2945,6 +2966,8 @@ function App() {
     county: county,
     notifyPools: user.notifyPools,
     notifyRoutes: user.notifyRoutes,
+    notifyCleaning: user.notifyCleaning,
+    notifyService: user.notifyService,
     setNotifyPref: setNotifyPref
   }), /*#__PURE__*/React.createElement(LanguagePickerSheet, {
     open: langPickerOpen,

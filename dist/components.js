@@ -358,6 +358,18 @@ const Icon = {
   }), /*#__PURE__*/React.createElement("path", {
     d: "M7 9h10"
   })),
+  wrench: (s = 18, c = "currentColor") => /*#__PURE__*/React.createElement("svg", {
+    width: s,
+    height: s,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: c,
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M14.7 6.3a4 4 0 0 0-5.6 5.6L3 18l3 3 6.1-6.1a4 4 0 0 0 5.6-5.6l-2.8 2.8-2-2z"
+  })),
   crown: (s = 14, c = "currentColor") => /*#__PURE__*/React.createElement("svg", {
     width: s,
     height: s,

@@ -36,10 +36,12 @@ Deno.serve(async (req) => {
   for (const job of jobs) {
     // Get all profiles and find those with matching city+day — exclude the poster
     // themselves, they shouldn't be notified about their own job.
-    const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,regions_by_day`, { headers });
+    const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,regions_by_day,notify_cleaning,notify_service`, { headers });
     const profiles: any[] = await profilesRes.json();
+    const isService = job.job_category === 'service';
     const matching = profiles.filter(p => {
       if (p.id === job.poster_id) return false;
+      if (isService ? p.notify_service === false : p.notify_cleaning === false) return false;
       const rbd = p.regions_by_day;
       if (!rbd) return false;
       const dayCities: string[] = rbd[job.day_of_week] || [];
@@ -61,7 +63,7 @@ Deno.serve(async (req) => {
     );
     const subs: any[] = await subRes.json();
 
-    const title = `💧 Piscina hoje em ${job.city}`;
+    const title = isService ? `🔧 Serviço hoje em ${job.city}` : `💧 Piscina hoje em ${job.city}`;
     const body  = `${job.pools_count} piscina${job.pools_count>1?'s':''} · ${job.price_per_pool ? `$${job.price_per_pool}/piscina` : 'Negociável'} · ${job.when_label || ''}`;
     const url   = `/#quick?job=${job.id}`;
 

@@ -78,12 +78,17 @@ Deno.serve(async (req) => {
   const isRoute = !!job.source_route_id;
 
   // Find all users who have any of this job's cities on this day_of_week
-  const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,name,regions_by_day,is_online,last_seen,notify_pools,notify_routes`, { headers });
+  const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,name,regions_by_day,is_online,last_seen,notify_pools,notify_routes,notify_cleaning,notify_service`, { headers });
   const profiles: any[] = await profilesRes.json();
+
+  // Cleaning vs service/maintenance — independent of the pools/routes switch
+  // above, a pool guy can opt out of one kind of work entirely.
+  const isService = job.job_category === 'service';
 
   const matching = profiles.filter(p => {
     if (p.id === job.poster_id) return false; // never notify the poster about their own job
     if (isRoute ? p.notify_routes === false : p.notify_pools === false) return false;
+    if (isService ? p.notify_service === false : p.notify_cleaning === false) return false;
     const rbd = p.regions_by_day;
     if (!rbd) return false;
     const dayCities: string[] = rbd[job.day_of_week] || [];
@@ -129,7 +134,8 @@ Deno.serve(async (req) => {
 
   const dayLabel = DAY_LABELS[job.day_of_week] || job.day_of_week;
   const citiesLabel = jobCities.slice(0, 2).join(', ') + (jobCities.length > 2 ? ` +${jobCities.length - 2}` : '');
-  const title = isRoute ? `🚨 Rota disponível em ${citiesLabel}` : `💧 Piscina em ${job.city}`;
+  const kindEmoji = isService ? '🔧' : '💧';
+  const title = isRoute ? `🚨 Rota disponível em ${citiesLabel}` : `${kindEmoji} ${isService ? 'Serviço' : 'Piscina'} em ${job.city}`;
   const payLabel = job.split_taker_pct ? `${job.split_taker_pct}/${100 - job.split_taker_pct} split` : (job.price_per_pool ? `$${job.price_per_pool}/piscina` : 'Negociável');
   const body  = `${dayLabel} · ${job.pools_count ?? 1} piscina${(job.pools_count??1)>1?'s':''} · ${payLabel}`;
   const url   = `/#quick?job=${job.id}`;

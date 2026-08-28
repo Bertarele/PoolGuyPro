@@ -395,6 +395,25 @@ const QUICK_POOL_PHOTO_OPTS = [
   { key:'chemical', pt:'Foto químico', en:'Chemical photo' },
 ];
 
+// Sub-type picked when a Quick Pool job's category is "service" (as opposed
+// to plain "cleaning") — shown in PostQuickPool step 1 and read back in the
+// job card/detail view. 'other' reveals a free-text field instead of using
+// its own key (stored as 'custom:<text>', same convention as the required
+// photos list above).
+const QUICK_POOL_SERVICE_TYPES = [
+  { key:'pump_repair',       pt:'Conserto de bomba',              en:'Pump repair'            },
+  { key:'filter_wash',       pt:'Lavagem/troca de areia do filtro', en:'Filter wash/backwash' },
+  { key:'vacuum',            pt:'Aspiração (vacuum)',             en:'Vacuum'                 },
+  { key:'leak_repair',       pt:'Reparo de vazamento',            en:'Leak repair'            },
+  { key:'heater_repair',     pt:'Conserto de aquecedor',          en:'Heater repair'          },
+  { key:'equipment_install', pt:'Instalação de equipamento',      en:'Equipment installation' },
+  { key:'chemical_treatment',pt:'Tratamento químico/choque',      en:'Chemical shock treatment' },
+  { key:'motor_replace',     pt:'Troca de motor',                 en:'Motor replacement'      },
+  { key:'automation',        pt:'Automação/timer',                en:'Automation/timer setup' },
+  { key:'tile_repair',       pt:'Reparo de azulejo/revestimento', en:'Tile/surface repair'    },
+  { key:'other',             pt:'Outro',                          en:'Other'                  },
+];
+
 const POOL_ROUTES = [];
 
 const SINGLE_POOLS = [];
