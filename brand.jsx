@@ -521,7 +521,7 @@ function LocationFilterSheet({ open, onClose, userLocation, setUserLocation, rad
 }
 window.LocationFilterSheet = LocationFilterSheet;
 
-function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsByDay, saveRegionsByDay, county, notifyPools=true, notifyRoutes=true, notifyCleaning=true, notifyService=true, setNotifyPref }) {
+function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsByDay, saveRegionsByDay, county, notifyPools=true, notifyRoutes=true, notifyService=true, setNotifyPref }) {
   const t = STRINGS[lang];
   const [openDay, setOpenDay] = React.useState('mon');
   const [activeCounty, setActiveCounty] = React.useState(county || 'Broward');
@@ -582,10 +582,12 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
 
           {/* Notification type switches — separate from the cities/days below:
               those only narrow WHICH notifications of a type you get; these
-              decide whether you get that type at all. A pool guy who's already
-              employed might only want single-pool alerts nearby, while one
-              between routes might only want route openings — so they're two
-              independent switches, not one master toggle. */}
+              decide whether you get that type at all. Piscinas Rápidas is
+              routine cleaning (a one-off pool); Rotas Rápidas is a whole
+              recurring route opening up; Serviço/Manutenção is repair/
+              maintenance work (pump, filter, leaks, etc.) — three independent
+              switches, not one master toggle, so e.g. a pool guy who only
+              does cleaning can turn service jobs off entirely. */}
           {setNotifyPref && (
             <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', overflow:'hidden', marginBottom:16}}>
               <div style={{display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderBottom:'0.5px solid var(--pg-ink-200)'}}>
@@ -597,12 +599,12 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
                     {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Quick Pools'}
                   </div>
                   <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>
-                    {lang==='pt'?'Piscinas avulsas perto de você':lang==='es'?'Piscinas sueltas cerca de ti':'One-off pools near you'}
+                    {lang==='pt'?'Limpezas avulsas perto de você':lang==='es'?'Limpiezas sueltas cerca de ti':'One-off cleanings near you'}
                   </div>
                 </div>
                 <div className={`pg-toggle ${notifyPools?'on':''}`} onClick={()=>setNotifyPref('notifyPools', !notifyPools)}/>
               </div>
-              <div style={{display:'flex', alignItems:'center', gap:12, padding:'13px 14px'}}>
+              <div style={{display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderBottom:'0.5px solid var(--pg-ink-200)'}}>
                 <div style={{width:36, height:36, borderRadius:10, background:'rgba(14,186,199,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0D7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.3 17.7 15.7 6.3"/>
@@ -618,33 +620,9 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
                 </div>
                 <div className={`pg-toggle ${notifyRoutes?'on':''}`} onClick={()=>setNotifyPref('notifyRoutes', !notifyRoutes)}/>
               </div>
-            </div>
-          )}
-
-          {/* Job-category switches — independent of the Pools/Routes pair above.
-              Those decide the SHAPE of the job (one-off vs a whole route); these
-              decide the KIND of work (routine cleaning vs a repair/maintenance
-              call), so a pool guy who only does cleaning can turn service jobs
-              off entirely and vice-versa. */}
-          {setNotifyPref && (
-            <div style={{borderRadius:14, border:'1px solid var(--pg-ink-200)', overflow:'hidden', marginBottom:16}}>
-              <div style={{display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderBottom:'0.5px solid var(--pg-ink-200)'}}>
-                <div style={{width:36, height:36, borderRadius:10, background:'var(--pg-aqua-50)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
-                  {Icon.pool(17, 'var(--pg-aqua-700)')}
-                </div>
-                <div style={{flex:1, minWidth:0}}>
-                  <div style={{fontSize:13.5, fontWeight:700, color:'var(--pg-ink-900)'}}>
-                    {lang==='pt'?'Limpeza':lang==='es'?'Limpieza':'Cleaning'}
-                  </div>
-                  <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>
-                    {lang==='pt'?'Limpeza comum de piscina':lang==='es'?'Limpieza común de piscina':'Routine pool cleaning'}
-                  </div>
-                </div>
-                <div className={`pg-toggle ${notifyCleaning?'on':''}`} onClick={()=>setNotifyPref('notifyCleaning', !notifyCleaning)}/>
-              </div>
               <div style={{display:'flex', alignItems:'center', gap:12, padding:'13px 14px'}}>
-                <div style={{width:36, height:36, borderRadius:10, background:'rgba(14,186,199,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
-                  {Icon.wrench(17, '#0D7280')}
+                <div style={{width:36, height:36, borderRadius:10, background:'#FFEDD5', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                  {Icon.wrench(17, '#9A3412')}
                 </div>
                 <div style={{flex:1, minWidth:0}}>
                   <div style={{fontSize:13.5, fontWeight:700, color:'var(--pg-ink-900)'}}>

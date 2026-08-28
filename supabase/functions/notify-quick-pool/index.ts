@@ -78,17 +78,17 @@ Deno.serve(async (req) => {
   const isRoute = !!job.source_route_id;
 
   // Find all users who have any of this job's cities on this day_of_week
-  const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,name,regions_by_day,is_online,last_seen,notify_pools,notify_routes,notify_cleaning,notify_service`, { headers });
+  const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,name,regions_by_day,is_online,last_seen,notify_pools,notify_routes,notify_service`, { headers });
   const profiles: any[] = await profilesRes.json();
 
-  // Cleaning vs service/maintenance — independent of the pools/routes switch
-  // above, a pool guy can opt out of one kind of work entirely.
-  const isService = job.job_category === 'service';
+  // Piscinas Rápidas IS the cleaning category — there's no separate "cleaning"
+  // switch. A route is always cleaning too (it's a pool guy's own recurring
+  // route), so only a non-route job's category decides between Pools/Service.
+  const isService = !isRoute && job.job_category === 'service';
 
   const matching = profiles.filter(p => {
     if (p.id === job.poster_id) return false; // never notify the poster about their own job
-    if (isRoute ? p.notify_routes === false : p.notify_pools === false) return false;
-    if (isService ? p.notify_service === false : p.notify_cleaning === false) return false;
+    if (isRoute ? p.notify_routes === false : (isService ? p.notify_service === false : p.notify_pools === false)) return false;
     const rbd = p.regions_by_day;
     if (!rbd) return false;
     const dayCities: string[] = rbd[job.day_of_week] || [];

@@ -421,7 +421,6 @@ function App() {
     experience: [],
     notifyPools: true,
     notifyRoutes: true,
-    notifyCleaning: true,
     notifyService: true,
   });
   const loadProfile = React.useCallback(async (sbUser) => {
@@ -470,7 +469,6 @@ function App() {
       experience:            profile?.experience   ?? [],
       notifyPools:           profile?.notify_pools  !== false,
       notifyRoutes:          profile?.notify_routes !== false,
-      notifyCleaning:        profile?.notify_cleaning !== false,
       notifyService:         profile?.notify_service  !== false,
     }));
     // Load regionsByDay from profile if saved
@@ -818,7 +816,7 @@ function App() {
   const setNotifyPref = React.useCallback(async (key, value) => {
     if (!user?.uid) return;
     setUser(u => ({ ...u, [key]: value }));
-    const col = { notifyPools:'notify_pools', notifyRoutes:'notify_routes', notifyCleaning:'notify_cleaning', notifyService:'notify_service' }[key];
+    const col = { notifyPools:'notify_pools', notifyRoutes:'notify_routes', notifyService:'notify_service' }[key];
     try { await window.sb.from('profiles').update({ [col]: value }).eq('id', user.uid); } catch {}
     if (value && Notification?.permission !== 'granted') {
       _registerPush(true);
@@ -1394,14 +1392,16 @@ function App() {
       const jobCitiesOf = (job) => (job.pools && job.pools.length > 0)
         ? [...new Set(job.pools.map(p => p.city).filter(Boolean))]
         : [job.city];
-      const notifyPools    = userRef.current?.notifyPools    !== false;
-      const notifyRoutes   = userRef.current?.notifyRoutes   !== false;
-      const notifyCleaning = userRef.current?.notifyCleaning !== false;
-      const notifyService  = userRef.current?.notifyService  !== false;
+      const notifyPools   = userRef.current?.notifyPools   !== false;
+      const notifyRoutes  = userRef.current?.notifyRoutes  !== false;
+      const notifyService = userRef.current?.notifyService !== false;
+      // Piscinas Rápidas IS the cleaning category — there's no separate
+      // "cleaning" switch. A route is always cleaning too (routes are a
+      // pool guy's own recurring route), so only a non-route job's category
+      // decides between the Pools and Service switches.
       const match = data.find(job =>
         job.poster_id !== uid && job.created_at > since &&
-        (job.source_route_id ? notifyRoutes : notifyPools) &&
-        (job.job_category === 'service' ? notifyService : notifyCleaning) &&
+        (job.source_route_id ? notifyRoutes : (job.job_category === 'service' ? notifyService : notifyPools)) &&
         jobCitiesOf(job).some(c => (rbd[job.day_of_week] || []).includes(c))
       );
       if (!match) return;
@@ -2103,7 +2103,7 @@ function App() {
         regionsByDay={regionsByDay} setRegionsByDay={setRegionsByDay}
         saveRegionsByDay={saveRegionsByDay} county={county}
         notifyPools={user.notifyPools} notifyRoutes={user.notifyRoutes}
-        notifyCleaning={user.notifyCleaning} notifyService={user.notifyService} setNotifyPref={setNotifyPref}
+        notifyService={user.notifyService} setNotifyPref={setNotifyPref}
       />
       <LanguagePickerSheet
         open={langPickerOpen} onClose={()=>setLangPickerOpen(false)}

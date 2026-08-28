@@ -36,12 +36,16 @@ Deno.serve(async (req) => {
   for (const job of jobs) {
     // Get all profiles and find those with matching city+day — exclude the poster
     // themselves, they shouldn't be notified about their own job.
-    const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,regions_by_day,notify_cleaning,notify_service`, { headers });
+    const profilesRes = await fetch(`${SB_URL}/rest/v1/profiles?select=id,regions_by_day,notify_pools,notify_routes,notify_service`, { headers });
     const profiles: any[] = await profilesRes.json();
-    const isService = job.job_category === 'service';
+    // Piscinas Rápidas IS the cleaning category — there's no separate
+    // "cleaning" switch. A route is always cleaning too, so only a
+    // non-route job's category decides between Pools/Service.
+    const isRoute = !!job.source_route_id;
+    const isService = !isRoute && job.job_category === 'service';
     const matching = profiles.filter(p => {
       if (p.id === job.poster_id) return false;
-      if (isService ? p.notify_service === false : p.notify_cleaning === false) return false;
+      if (isRoute ? p.notify_routes === false : (isService ? p.notify_service === false : p.notify_pools === false)) return false;
       const rbd = p.regions_by_day;
       if (!rbd) return false;
       const dayCities: string[] = rbd[job.day_of_week] || [];

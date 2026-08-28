@@ -1053,7 +1053,6 @@ function RegionEditorSheet({
   county,
   notifyPools = true,
   notifyRoutes = true,
-  notifyCleaning = true,
   notifyService = true,
   setNotifyPref
 }) {
@@ -1188,7 +1187,7 @@ function RegionEditorSheet({
       color: 'var(--pg-ink-500)',
       marginTop: 1
     }
-  }, lang === 'pt' ? 'Piscinas avulsas perto de você' : lang === 'es' ? 'Piscinas sueltas cerca de ti' : 'One-off pools near you')), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Limpezas avulsas perto de você' : lang === 'es' ? 'Limpiezas sueltas cerca de ti' : 'One-off cleanings near you')), /*#__PURE__*/React.createElement("div", {
     className: `pg-toggle ${notifyPools ? 'on' : ''}`,
     onClick: () => setNotifyPref('notifyPools', !notifyPools)
   })), /*#__PURE__*/React.createElement("div", {
@@ -1196,7 +1195,8 @@ function RegionEditorSheet({
       display: 'flex',
       alignItems: 'center',
       gap: 12,
-      padding: '13px 14px'
+      padding: '13px 14px',
+      borderBottom: '0.5px solid var(--pg-ink-200)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1248,52 +1248,6 @@ function RegionEditorSheet({
   }, lang === 'pt' ? 'Rotas inteiras liberadas para cobrir' : lang === 'es' ? 'Rutas enteras liberadas para cubrir' : 'Whole routes opening up to cover')), /*#__PURE__*/React.createElement("div", {
     className: `pg-toggle ${notifyRoutes ? 'on' : ''}`,
     onClick: () => setNotifyPref('notifyRoutes', !notifyRoutes)
-  }))), setNotifyPref && /*#__PURE__*/React.createElement("div", {
-    style: {
-      borderRadius: 14,
-      border: '1px solid var(--pg-ink-200)',
-      overflow: 'hidden',
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-      padding: '13px 14px',
-      borderBottom: '0.5px solid var(--pg-ink-200)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      background: 'var(--pg-aqua-50)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }
-  }, Icon.pool(17, 'var(--pg-aqua-700)')), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13.5,
-      fontWeight: 700,
-      color: 'var(--pg-ink-900)'
-    }
-  }, lang === 'pt' ? 'Limpeza' : lang === 'es' ? 'Limpieza' : 'Cleaning'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: 'var(--pg-ink-500)',
-      marginTop: 1
-    }
-  }, lang === 'pt' ? 'Limpeza comum de piscina' : lang === 'es' ? 'Limpieza común de piscina' : 'Routine pool cleaning')), /*#__PURE__*/React.createElement("div", {
-    className: `pg-toggle ${notifyCleaning ? 'on' : ''}`,
-    onClick: () => setNotifyPref('notifyCleaning', !notifyCleaning)
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -1306,13 +1260,13 @@ function RegionEditorSheet({
       width: 36,
       height: 36,
       borderRadius: 10,
-      background: 'rgba(14,186,199,0.1)',
+      background: '#FFEDD5',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0
     }
-  }, Icon.wrench(17, '#0D7280')), /*#__PURE__*/React.createElement("div", {
+  }, Icon.wrench(17, '#9A3412')), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0
