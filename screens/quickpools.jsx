@@ -2003,77 +2003,106 @@ function RouteManagerPanel({ lang, routes, loading, busy, onClose, onCreate, onE
             {lang==='pt'?'Nenhuma rota cadastrada ainda. Toque em "+ Nova" para começar.':lang==='es'?'Ninguna ruta registrada todavía. Toca "+ Nueva" para empezar.':'No routes registered yet. Tap "+ New" to get started.'}
           </div>
         ) : (
-          <div style={{display:'flex', flexDirection:'column', gap:12}}>
-            {sorted.map(route => {
-              const isToday = route.day_of_week === today;
-              const pools = route.pools || [];
-              const cities = [...new Set(pools.map(p=>p.city).filter(Boolean))];
-              const isActive = route.last_activated_job_id && route.last_activated_at &&
-                new Date(route.last_activated_at).toDateString() === new Date().toDateString();
+          <div style={{display:'flex', flexDirection:'column', gap:14}}>
+            {/* One card per weekday — a day can hold more than one route (e.g.
+                two different cities the owner covers that same day), so those
+                are grouped under a single shared day header instead of each
+                repeating its own day pill as a separate floating card. */}
+            {ROUTE_DAY_ORDER.filter(day => sorted.some(r => r.day_of_week === day)).map(day => {
+              const dayRoutes = sorted.filter(r => r.day_of_week === day);
+              const isToday = day === today;
               return (
-                <div key={route.id} style={{
-                  borderRadius:16, border: isToday ? '1.5px solid #0EBAC7' : '1px solid var(--pg-ink-200)',
-                  background: isToday ? 'rgba(14,186,199,0.05)' : 'var(--pg-white)', padding:'14px 16px', position:'relative',
+                <div key={day} style={{
+                  borderRadius:16, overflow:'hidden',
+                  border: isToday ? '1.5px solid #0EBAC7' : '1px solid var(--pg-ink-200)',
+                  background: isToday ? 'rgba(14,186,199,0.05)' : 'var(--pg-white)',
                 }}>
-                  <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
-                    <span style={{fontSize:10, fontWeight:800, padding:'3px 9px', borderRadius:999,
-                      background: isToday ? '#0EBAC7' : 'var(--pg-ink-100)', color: isToday ? '#fff' : 'var(--pg-ink-600)', letterSpacing:'0.04em'}}>
-                      {(ROUTE_DAY_LABELS[route.day_of_week]?.[lang] || route.day_of_week).toUpperCase()}
+                  {/* Day header — shared by every route registered for this day */}
+                  <div style={{
+                    display:'flex', alignItems:'center', gap:8, padding:'11px 16px',
+                    borderBottom: isToday ? '1px solid rgba(14,186,199,0.30)' : '0.5px solid var(--pg-ink-200)',
+                    background: isToday ? 'rgba(14,186,199,0.10)' : 'var(--pg-ink-50, #F7F9FB)',
+                  }}>
+                    <span style={{fontSize:12, fontWeight:800, letterSpacing:'0.04em', color: isToday ? '#0D7280' : 'var(--pg-ink-700)'}}>
+                      {(ROUTE_DAY_LABELS[day]?.[lang] || day).toUpperCase()}
                     </span>
                     {isToday && (
-                      <span style={{fontSize:10, fontWeight:700, color:'#0D7280'}}>
-                        {lang==='pt'?'· hoje':lang==='es'?'· hoy':'· today'}
+                      <span style={{fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999, background:'#0EBAC7', color:'#fff', letterSpacing:'0.03em'}}>
+                        {lang==='pt'?'HOJE':lang==='es'?'HOY':'TODAY'}
                       </span>
                     )}
                     <div style={{flex:1}}/>
-                    <button onClick={()=>onEdit(route)} disabled={busy} title={lang==='pt'?'Editar':'Edit'} style={{
-                      width:28, height:28, borderRadius:7, border:'1px solid var(--pg-ink-200)',
-                      background:'var(--pg-ink-50)', color:'var(--pg-ink-600)', cursor:'pointer',
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                    }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                    </button>
-                    <button onClick={()=>onDelete(route)} disabled={busy} title={lang==='pt'?'Excluir':'Delete'} style={{
-                      width:28, height:28, borderRadius:7,
-                      background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
-                      color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-                    }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                      </svg>
-                    </button>
+                    <span style={{fontSize:11, color:'var(--pg-ink-400)', fontWeight:600}}>
+                      {dayRoutes.length} {dayRoutes.length===1?(lang==='pt'?'rota':lang==='es'?'ruta':'route'):(lang==='pt'?'rotas':lang==='es'?'rutas':'routes')}
+                    </span>
                   </div>
 
-                  {route.name && (
-                    <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:4}}>{route.name}</div>
-                  )}
-                  <div style={{fontSize:12.5, color:'var(--pg-ink-600)', marginBottom:2}}>
-                    {cities.join(' · ') || (lang==='pt'?'Sem cidades':'No cities')}
-                  </div>
-                  <div style={{fontSize:12, color:'var(--pg-ink-400)', marginBottom:12}}>
-                    {pools.length} {pools.length===1?(lang==='pt'?'piscina':'pool'):(lang==='pt'?'piscinas':'pools')}
-                    {' · 70/30'}
-                    {route.price_per_pool != null && ` · $${route.price_per_pool}/${lang==='pt'?'piscina':'pool'}`}
-                  </div>
+                  {/* Routes registered for this day */}
+                  {dayRoutes.map((route, i) => {
+                    const pools = route.pools || [];
+                    const cities = [...new Set(pools.map(p=>p.city).filter(Boolean))];
+                    const isActive = route.last_activated_job_id && route.last_activated_at &&
+                      new Date(route.last_activated_at).toDateString() === new Date().toDateString();
+                    return (
+                      <div key={route.id} style={{
+                        padding:'14px 16px',
+                        borderTop: i > 0 ? (isToday ? '1px solid rgba(14,186,199,0.20)' : '0.5px solid var(--pg-ink-100)') : 'none',
+                      }}>
+                        <div style={{display:'flex', alignItems:'flex-start', gap:8, marginBottom:6}}>
+                          <div style={{flex:1, minWidth:0}}>
+                            <div style={{fontSize:14, fontWeight:700, color:'var(--pg-ink-900)'}}>
+                              {route.name || cities.join(' · ') || (lang==='pt'?'Rota sem nome':lang==='es'?'Ruta sin nombre':'Unnamed route')}
+                            </div>
+                            {route.name && (
+                              <div style={{fontSize:12.5, color:'var(--pg-ink-600)', marginTop:2}}>
+                                {cities.join(' · ') || (lang==='pt'?'Sem cidades':'No cities')}
+                              </div>
+                            )}
+                          </div>
+                          <button onClick={()=>onEdit(route)} disabled={busy} title={lang==='pt'?'Editar':'Edit'} style={{
+                            width:28, height:28, borderRadius:7, border:'1px solid var(--pg-ink-200)', flexShrink:0,
+                            background:'var(--pg-white)', color:'var(--pg-ink-600)', cursor:'pointer',
+                            display:'flex', alignItems:'center', justifyContent:'center',
+                          }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                          <button onClick={()=>onDelete(route)} disabled={busy} title={lang==='pt'?'Excluir':'Delete'} style={{
+                            width:28, height:28, borderRadius:7, flexShrink:0,
+                            background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.22)',
+                            color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                          }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                            </svg>
+                          </button>
+                        </div>
+                        <div style={{fontSize:12, color:'var(--pg-ink-400)', marginBottom:12}}>
+                          {pools.length} {pools.length===1?(lang==='pt'?'piscina':'pool'):(lang==='pt'?'piscinas':'pools')}
+                          {' · 70/30'}
+                          {route.price_per_pool != null && ` · $${route.price_per_pool}/${lang==='pt'?'piscina':'pool'}`}
+                        </div>
 
-                  <button onClick={()=>onActivate(route)} disabled={busy || pools.length===0} style={{
-                    width:'100%', height:44, borderRadius:12, border:'none', cursor: pools.length===0?'not-allowed':'pointer',
-                    fontFamily:'inherit', fontSize:13.5, fontWeight:700,
-                    background: isActive ? 'var(--pg-ink-100)' : 'linear-gradient(135deg,#0EBAC7,#0D7280)',
-                    color: isActive ? 'var(--pg-ink-600)' : '#fff',
-                    opacity: pools.length===0 ? 0.5 : 1,
-                    display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-                    boxShadow: isActive ? 'none' : '0 3px 10px rgba(14,186,199,0.35)',
-                  }}>
-                    {isActive ? (
-                      <>{lang==='pt'?'✓ Ativa hoje — ver vaga':lang==='es'?'✓ Activa hoy — ver puesto':'✓ Active today — view job'}</>
-                    ) : (
-                      <>🚨 {lang==='pt'?'Ativar hoje':lang==='es'?'Activar hoy':'Activate today'}</>
-                    )}
-                  </button>
+                        <button onClick={()=>onActivate(route)} disabled={busy || pools.length===0} style={{
+                          width:'100%', height:44, borderRadius:12, border:'none', cursor: pools.length===0?'not-allowed':'pointer',
+                          fontFamily:'inherit', fontSize:13.5, fontWeight:700,
+                          background: isActive ? 'var(--pg-ink-100)' : 'linear-gradient(135deg,#0EBAC7,#0D7280)',
+                          color: isActive ? 'var(--pg-ink-600)' : '#fff',
+                          opacity: pools.length===0 ? 0.5 : 1,
+                          display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                          boxShadow: isActive ? 'none' : '0 3px 10px rgba(14,186,199,0.35)',
+                        }}>
+                          {isActive ? (
+                            <>{lang==='pt'?'✓ Ativa hoje — ver vaga':lang==='es'?'✓ Activa hoy — ver puesto':'✓ Active today — view job'}</>
+                          ) : (
+                            <>🚨 {lang==='pt'?'Ativar hoje':lang==='es'?'Activar hoy':'Activate today'}</>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
