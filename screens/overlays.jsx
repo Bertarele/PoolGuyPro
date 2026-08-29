@@ -2818,15 +2818,26 @@ function NotificationsSheet({ open, onClose, lang='en', user, onUnreadChange, on
 }
 
 // ── Paywall ───────────────────────────────────────────────────
-function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
+function PaywallSheet({ open, onClose, setUser, lang='en', context=null, wallet=null, showToast }) {
   // Auto-select best plan based on context (quick pools / featured = premium)
   const [plan, setPlan] = React.useState('pro');
+  const [billing, setBilling] = React.useState('monthly');
+  const [busy, setBusy] = React.useState(false);
   React.useEffect(() => {
     if (!open) return;
     setPlan(context === 'quickpools' || context === 'featured' ? 'premium' : 'pro');
   }, [open, context]);
 
-  const mo = lang==='pt'?'/mês':lang==='es'?'/mes':'/mo';
+  const mo = billing === 'annual'
+    ? (lang==='pt'?'/ano':lang==='es'?'/año':'/yr')
+    : (lang==='pt'?'/mês':lang==='es'?'/mes':'/mo');
+
+  // Discount this user is entitled to for having joined via a referral
+  // link. Read-only here — the real discount is applied server-side at
+  // checkout, so a tampered client gains nothing by faking it.
+  const refDiscount = wallet?.my_discount
+    ? (billing === 'annual' ? wallet.my_discount.annual_pct : wallet.my_discount.monthly_pct)
+    : 0;
 
   const plans = {
     pro: {
@@ -2834,7 +2845,7 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
       tagline:  lang==='pt' ? 'Expanda seu negócio e alcance mais clientes'
                 : lang==='es' ? 'Expande tu negocio y llega a más clientes'
                 : 'Grow your business and reach more clients',
-      price:    '14.99',
+      price:    billing === 'annual' ? '149' : '14.99',
       badge:    null,
       gradient: 'linear-gradient(135deg,#0c4a6e,#0077B6)',
       accent:   '#0EBAC7',
@@ -2845,7 +2856,7 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
       tagline:  lang==='pt' ? 'Receba jobs instantaneamente e nunca perca uma oportunidade'
                 : lang==='es' ? 'Recibe trabajos al instante y nunca pierdas una oportunidad'
                 : 'Get jobs instantly near you and never miss an opportunity again',
-      price:    '24.99',
+      price:    billing === 'annual' ? '249' : '24.99',
       badge:    lang==='pt'?'MELHOR VALOR':lang==='es'?'MEJOR VALOR':'BEST VALUE',
       gradient: 'linear-gradient(135deg,#3b0764,#7c3aed)',
       accent:   '#a78bfa',
@@ -2878,13 +2889,38 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
 
   const p = plans[plan];
 
-  const handleSubscribe = () => {
-    // Open external Stripe checkout — no Apple cut
-    window.open(p.url, '_blank', 'noopener');
-    // NOTE: In production, remove the line below. Tier is set server-side via webhook.
-    // Kept here for demo/testing purposes only.
-    setUser(u => ({...u, tier: plan}));
-    onClose();
+  const handleSubscribe = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      // The tier is NEVER granted here. Stripe charges the card, Stripe's
+      // webhook calls confirm_subscription server-side, and only that sets
+      // the tier (and pays any referral commission). The client just opens
+      // the checkout page.
+      const { data: { session } } = await window.sb.auth.getSession();
+      const res = await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (session?.access_token || '') },
+        body: JSON.stringify({ plan, billing }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        console.error('[paywall] checkout failed', res.status, data);
+        showToast && showToast(lang==='pt' ? '❌ Não foi possível abrir o checkout. Tente de novo.'
+          : lang==='es' ? '❌ No se pudo abrir el pago. Inténtalo de nuevo.'
+          : '❌ Could not open checkout. Please try again.');
+        return;
+      }
+      // Same tab: Stripe redirects back to the app when it's done, and a
+      // popup would be swallowed by the in-app browsers these users live in.
+      window.location.href = data.url;
+    } catch (e) {
+      console.error('[paywall] checkout error', e);
+      showToast && showToast(lang==='pt' ? '❌ Erro ao iniciar o pagamento.'
+        : lang==='es' ? '❌ Error al iniciar el pago.' : '❌ Error starting payment.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -2915,6 +2951,33 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
           <p style={{margin:'6px 8px 0', fontSize:13, color:'var(--pg-ink-500)', lineHeight:1.5}}>
             {p.tagline}
           </p>
+
+          {/* Monthly vs annual — changes the price, the referral discount
+              and, for whoever referred this user, the commission. */}
+          <div className="pg-seg" style={{margin:'14px 0 0'}}>
+            <button className={`pg-seg-btn ${billing==='monthly'?'on':''}`} onClick={()=>setBilling('monthly')}>
+              {lang==='pt'?'Mensal':lang==='es'?'Mensual':'Monthly'}
+            </button>
+            <button className={`pg-seg-btn ${billing==='annual'?'on':''}`} onClick={()=>setBilling('annual')}>
+              {lang==='pt'?'Anual':lang==='es'?'Anual':'Annual'}
+              <span style={{marginLeft:5, fontSize:10, fontWeight:800, color:'#0D7280'}}>
+                {lang==='pt'?'-17%':lang==='es'?'-17%':'-17%'}
+              </span>
+            </button>
+          </div>
+
+          {refDiscount > 0 && (
+            <div style={{marginTop:10, padding:'9px 13px', borderRadius:10, background:'rgba(14,186,199,0.10)', border:'1px solid rgba(14,186,199,0.30)', textAlign:'left', display:'flex', gap:8, alignItems:'center'}}>
+              <span style={{fontSize:14}}>🎁</span>
+              <span style={{fontSize:12, color:'var(--pg-ink-800)', lineHeight:1.4}}>
+                {lang==='pt'
+                  ? `Você entrou por indicação: ${refDiscount}% de desconto aplicado no checkout.`
+                  : lang==='es'
+                    ? `Entraste por referido: ${refDiscount}% de descuento aplicado en el pago.`
+                    : `You joined via a referral: ${refDiscount}% off applied at checkout.`}
+              </span>
+            </div>
+          )}
           {context === 'qp_weekly_limit' && (
             <div style={{marginTop:12, padding:'9px 13px', borderRadius:10, background:'var(--pg-blue-50)', border:'1px solid var(--pg-blue-100)', textAlign:'left', display:'flex', gap:8}}>
               {Icon.bolt(13,'var(--pg-blue-700)')}
@@ -3012,7 +3075,9 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null }) {
               color:'#fff', fontWeight:800, fontSize:16, cursor:'pointer',
               fontFamily:'inherit', letterSpacing:'-0.01em',
               boxShadow:`0 6px 20px rgba(0,0,0,0.28)`}}>
-            {lang==='pt'?`Assinar ${p.name} — $${p.price}${mo}`:lang==='es'?`Suscribirse a ${p.name} — $${p.price}${mo}`:`Subscribe to ${p.name} — $${p.price}${mo}`}
+            {busy
+              ? (lang==='pt'?'Abrindo checkout…':lang==='es'?'Abriendo pago…':'Opening checkout…')
+              : lang==='pt'?`Assinar ${p.name} — $${p.price}${mo}`:lang==='es'?`Suscribirse a ${p.name} — $${p.price}${mo}`:`Subscribe to ${p.name} — $${p.price}${mo}`}
           </button>
           <div style={{display:'flex', alignItems:'center', gap:6, justifyContent:'center', marginTop:10}}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>

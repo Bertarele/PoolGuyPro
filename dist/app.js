@@ -777,8 +777,17 @@ function App() {
       experience: profile?.experience ?? [],
       notifyPools: profile?.notify_pools !== false,
       notifyRoutes: profile?.notify_routes !== false,
-      notifyService: profile?.notify_service !== false
+      notifyService: profile?.notify_service !== false,
+      tier: profile?.tier || 'free'
     }));
+    // The tweaks panel mirrors tier into user state on change, so push the
+    // real value into it too — otherwise the locally-remembered preview
+    // tier would immediately overwrite what the database just told us.
+    if (profile?.tier) {
+      try {
+        setTweak('tier', profile.tier);
+      } catch (e) {}
+    }
     // Load regionsByDay from profile if saved
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
       setRegionsByDay(profile.regions_by_day);
@@ -812,9 +821,16 @@ function App() {
   const [walletTx, setWalletTx] = React.useState([]); // ledger rows, newest first
 
   const loadWallet = React.useCallback(async () => {
-    if (!window.sb || !userRef.current?.uid) return;
+    if (!window.sb) return;
     try {
-      const [sum, tx] = await Promise.all([window.sb.rpc('my_referral_summary'), window.sb.from('wallet_transactions').select('*').eq('user_id', userRef.current.uid).order('created_at', {
+      // Deliberately does NOT read the user id from state: this runs inside
+      // the first data fetch, which can land before the effect that syncs
+      // userRef, and gating on it silently skipped the load. Both calls
+      // already scope themselves to the caller server-side —
+      // my_referral_summary() via auth.uid(), and wallet_transactions via
+      // its own RLS policy — so an explicit user filter added nothing but
+      // a race.
+      const [sum, tx] = await Promise.all([window.sb.rpc('my_referral_summary'), window.sb.from('wallet_transactions').select('*').order('created_at', {
         ascending: false
       }).limit(50)]);
       if (sum?.data?.ok) setWallet(sum.data);
@@ -2651,7 +2667,9 @@ function App() {
     onClose: () => setPayOpen(false),
     setUser: ctx.setUser,
     lang: lang,
-    context: payContext
+    context: payContext,
+    wallet: wallet,
+    showToast: showToast
   }), showOnboarding && (() => {
     const slides = {
       en: [{

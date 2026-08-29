@@ -5072,20 +5072,29 @@ function PaywallSheet({
   onClose,
   setUser,
   lang = 'en',
-  context = null
+  context = null,
+  wallet = null,
+  showToast
 }) {
   // Auto-select best plan based on context (quick pools / featured = premium)
   const [plan, setPlan] = React.useState('pro');
+  const [billing, setBilling] = React.useState('monthly');
+  const [busy, setBusy] = React.useState(false);
   React.useEffect(() => {
     if (!open) return;
     setPlan(context === 'quickpools' || context === 'featured' ? 'premium' : 'pro');
   }, [open, context]);
-  const mo = lang === 'pt' ? '/mês' : lang === 'es' ? '/mes' : '/mo';
+  const mo = billing === 'annual' ? lang === 'pt' ? '/ano' : lang === 'es' ? '/año' : '/yr' : lang === 'pt' ? '/mês' : lang === 'es' ? '/mes' : '/mo';
+
+  // Discount this user is entitled to for having joined via a referral
+  // link. Read-only here — the real discount is applied server-side at
+  // checkout, so a tampered client gains nothing by faking it.
+  const refDiscount = wallet?.my_discount ? billing === 'annual' ? wallet.my_discount.annual_pct : wallet.my_discount.monthly_pct : 0;
   const plans = {
     pro: {
       name: 'Pool Guy PRO',
       tagline: lang === 'pt' ? 'Expanda seu negócio e alcance mais clientes' : lang === 'es' ? 'Expande tu negocio y llega a más clientes' : 'Grow your business and reach more clients',
-      price: '14.99',
+      price: billing === 'annual' ? '149' : '14.99',
       badge: null,
       gradient: 'linear-gradient(135deg,#0c4a6e,#0077B6)',
       accent: '#0EBAC7',
@@ -5094,7 +5103,7 @@ function PaywallSheet({
     premium: {
       name: 'Pool Guy PREMIUM',
       tagline: lang === 'pt' ? 'Receba jobs instantaneamente e nunca perca uma oportunidade' : lang === 'es' ? 'Recibe trabajos al instante y nunca pierdas una oportunidad' : 'Get jobs instantly near you and never miss an opportunity again',
-      price: '24.99',
+      price: billing === 'annual' ? '249' : '24.99',
       badge: lang === 'pt' ? 'MELHOR VALOR' : lang === 'es' ? 'MEJOR VALOR' : 'BEST VALUE',
       gradient: 'linear-gradient(135deg,#3b0764,#7c3aed)',
       accent: '#a78bfa',
@@ -5155,16 +5164,45 @@ function PaywallSheet({
     premium: true
   }];
   const p = plans[plan];
-  const handleSubscribe = () => {
-    // Open external Stripe checkout — no Apple cut
-    window.open(p.url, '_blank', 'noopener');
-    // NOTE: In production, remove the line below. Tier is set server-side via webhook.
-    // Kept here for demo/testing purposes only.
-    setUser(u => ({
-      ...u,
-      tier: plan
-    }));
-    onClose();
+  const handleSubscribe = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      // The tier is NEVER granted here. Stripe charges the card, Stripe's
+      // webhook calls confirm_subscription server-side, and only that sets
+      // the tier (and pays any referral commission). The client just opens
+      // the checkout page.
+      const {
+        data: {
+          session
+        }
+      } = await window.sb.auth.getSession();
+      const res = await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + (session?.access_token || '')
+        },
+        body: JSON.stringify({
+          plan,
+          billing
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        console.error('[paywall] checkout failed', res.status, data);
+        showToast && showToast(lang === 'pt' ? '❌ Não foi possível abrir o checkout. Tente de novo.' : lang === 'es' ? '❌ No se pudo abrir el pago. Inténtalo de nuevo.' : '❌ Could not open checkout. Please try again.');
+        return;
+      }
+      // Same tab: Stripe redirects back to the app when it's done, and a
+      // popup would be swallowed by the in-app browsers these users live in.
+      window.location.href = data.url;
+    } catch (e) {
+      console.error('[paywall] checkout error', e);
+      showToast && showToast(lang === 'pt' ? '❌ Erro ao iniciar o pagamento.' : lang === 'es' ? '❌ Error al iniciar el pago.' : '❌ Error starting payment.');
+    } finally {
+      setBusy(false);
+    }
   };
   return /*#__PURE__*/React.createElement(Sheet, {
     open: open,
@@ -5240,7 +5278,47 @@ function PaywallSheet({
       color: 'var(--pg-ink-500)',
       lineHeight: 1.5
     }
-  }, p.tagline), context === 'qp_weekly_limit' && /*#__PURE__*/React.createElement("div", {
+  }, p.tagline), /*#__PURE__*/React.createElement("div", {
+    className: "pg-seg",
+    style: {
+      margin: '14px 0 0'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: `pg-seg-btn ${billing === 'monthly' ? 'on' : ''}`,
+    onClick: () => setBilling('monthly')
+  }, lang === 'pt' ? 'Mensal' : lang === 'es' ? 'Mensual' : 'Monthly'), /*#__PURE__*/React.createElement("button", {
+    className: `pg-seg-btn ${billing === 'annual' ? 'on' : ''}`,
+    onClick: () => setBilling('annual')
+  }, lang === 'pt' ? 'Anual' : lang === 'es' ? 'Anual' : 'Annual', /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 5,
+      fontSize: 10,
+      fontWeight: 800,
+      color: '#0D7280'
+    }
+  }, lang === 'pt' ? '-17%' : lang === 'es' ? '-17%' : '-17%'))), refDiscount > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10,
+      padding: '9px 13px',
+      borderRadius: 10,
+      background: 'rgba(14,186,199,0.10)',
+      border: '1px solid rgba(14,186,199,0.30)',
+      textAlign: 'left',
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14
+    }
+  }, "\uD83C\uDF81"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: 'var(--pg-ink-800)',
+      lineHeight: 1.4
+    }
+  }, lang === 'pt' ? `Você entrou por indicação: ${refDiscount}% de desconto aplicado no checkout.` : lang === 'es' ? `Entraste por referido: ${refDiscount}% de descuento aplicado en el pago.` : `You joined via a referral: ${refDiscount}% off applied at checkout.`)), context === 'qp_weekly_limit' && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
       padding: '9px 13px',
@@ -5431,7 +5509,7 @@ function PaywallSheet({
       letterSpacing: '-0.01em',
       boxShadow: `0 6px 20px rgba(0,0,0,0.28)`
     }
-  }, lang === 'pt' ? `Assinar ${p.name} — $${p.price}${mo}` : lang === 'es' ? `Suscribirse a ${p.name} — $${p.price}${mo}` : `Subscribe to ${p.name} — $${p.price}${mo}`), /*#__PURE__*/React.createElement("div", {
+  }, busy ? lang === 'pt' ? 'Abrindo checkout…' : lang === 'es' ? 'Abriendo pago…' : 'Opening checkout…' : lang === 'pt' ? `Assinar ${p.name} — $${p.price}${mo}` : lang === 'es' ? `Suscribirse a ${p.name} — $${p.price}${mo}` : `Subscribe to ${p.name} — $${p.price}${mo}`), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
