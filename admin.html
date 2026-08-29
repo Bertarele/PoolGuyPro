@@ -1615,11 +1615,15 @@ function SponsorBannersPanel({ banners, setBanners, bannerForm, setBannerForm, b
     const seconds = parseInt(bannerForm.duration_seconds, 10);
     if (!bannerForm.image_url) { showToast('❌ Envie a imagem do banner primeiro', false); return; }
     if (!seconds || seconds < 2 || seconds > 60) { showToast('❌ Duração precisa ser entre 2 e 60 segundos', false); return; }
+    if (bannerForm.contact_type !== 'none' && !bannerForm.contact_value.trim()) { showToast('❌ Preencha o contato ou volte para "Nenhum"', false); return; }
     setBannerSaving(true);
     const payload = {
       company_name: bannerForm.company_name.trim() || null,
       image_url: bannerForm.image_url,
-      link_url: bannerForm.link_url.trim() || null,
+      title: bannerForm.title.trim() || null,
+      subtitle: bannerForm.subtitle.trim() || null,
+      contact_type: bannerForm.contact_type,
+      contact_value: bannerForm.contact_type === 'none' ? null : (bannerForm.contact_value.trim() || null),
       duration_seconds: seconds,
       expires_at: bannerForm.expires_at || null,
       active: true,
@@ -1697,12 +1701,57 @@ function SponsorBannersPanel({ banners, setBanners, bannerForm, setBannerForm, b
             style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'10px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none'}}/>
         </div>
 
+        <div style={{fontSize:10.5,fontWeight:700,color:'#0EBAC7',marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em',paddingTop:4,borderTop:'1px solid #1e293b'}}>Texto sobre a imagem (tudo opcional)</div>
+
         <div style={{marginBottom:12}}>
-          <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Link ao clicar (URL)</div>
-          <input value={bannerForm.link_url} onChange={e=>setBannerForm(p=>({...p,link_url:e.target.value}))}
-            placeholder="https://lojadaparceira.com"
+          <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Título</div>
+          <input value={bannerForm.title} onChange={e=>setBannerForm(p=>({...p,title:e.target.value}))}
+            placeholder="Ex: Equipamentos e químicos para piscina"
             style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'10px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none'}}/>
         </div>
+
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Subtítulo</div>
+          <input value={bannerForm.subtitle} onChange={e=>setBannerForm(p=>({...p,subtitle:e.target.value}))}
+            placeholder="Ex: Preço de atacado para pool guys"
+            style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'10px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+        </div>
+
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Contato (aparece pequeno, embaixo — e é o que abre ao tocar no banner)</div>
+          <div style={{display:'flex',gap:6,marginBottom:8}}>
+            {[['none','Nenhum'],['website','🌐 Site'],['phone','📞 Telefone'],['email','✉️ E-mail']].map(([id,label])=>(
+              <button key={id} onClick={()=>setBannerForm(p=>({...p,contact_type:id}))} style={{
+                flex:1,padding:'8px 6px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',
+                fontSize:11.5,fontWeight:700,whiteSpace:'nowrap',
+                background:bannerForm.contact_type===id?'#0EBAC7':'#0f1117',
+                color:bannerForm.contact_type===id?'#03210f':'#64748b',
+                border:`1px solid ${bannerForm.contact_type===id?'transparent':'#1e293b'}`,
+              }}>{label}</button>
+            ))}
+          </div>
+          {bannerForm.contact_type!=='none' && (
+            <input value={bannerForm.contact_value} onChange={e=>setBannerForm(p=>({...p,contact_value:e.target.value}))}
+              placeholder={bannerForm.contact_type==='website'?'lojadaparceira.com':bannerForm.contact_type==='phone'?'(954) 555-0100':'contato@parceira.com'}
+              type={bannerForm.contact_type==='email'?'email':'text'}
+              style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'10px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+          )}
+        </div>
+
+        {/* Preview */}
+        {(bannerForm.image_url && (bannerForm.title||bannerForm.subtitle||(bannerForm.contact_type!=='none'&&bannerForm.contact_value))) && (
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em'}}>Preview no App</div>
+            <div style={{position:'relative',borderRadius:12,overflow:'hidden'}}>
+              <img src={bannerForm.image_url} alt="" style={{width:'100%',aspectRatio:'2.4 / 1',objectFit:'cover',display:'block'}}/>
+              <div style={{position:'absolute',left:0,right:0,bottom:0,padding:'26px 16px 14px',background:'linear-gradient(to top, rgba(4,15,30,0.85), rgba(4,15,30,0))'}}>
+                {bannerForm.title && <div style={{fontSize:16,fontWeight:800,color:'#fff',lineHeight:1.25}}>{bannerForm.title}</div>}
+                {bannerForm.subtitle && <div style={{fontSize:12,color:'rgba(255,255,255,0.75)',marginTop:2}}>{bannerForm.subtitle}</div>}
+                {bannerForm.contact_type!=='none' && bannerForm.contact_value && <div style={{fontSize:11.5,color:'#7CE0E8',fontWeight:700,marginTop:4}}>{bannerForm.contact_value} ›</div>}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="spons-grid-2" style={{marginBottom:16}}>
           <div>
@@ -1752,9 +1801,16 @@ function SponsorBannersPanel({ banners, setBanners, bannerForm, setBannerForm, b
                       {expired?'Expirado':b.active?'Ativo':'Inativo'}
                     </span>
                   </div>
+                  {(b.title||b.subtitle) && (
+                    <div style={{fontSize:12,color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:1}}>
+                      {b.title}{b.title&&b.subtitle?' — ':''}{b.subtitle}
+                    </div>
+                  )}
                   <div style={{fontSize:11,color:'#475569',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                     ⏱ {b.duration_seconds}s
-                    {b.link_url?<span style={{color:'#0EBAC7'}}> · {b.link_url}</span>:<span> · Sem link</span>}
+                    {b.contact_type&&b.contact_type!=='none'&&b.contact_value
+                      ? <span style={{color:'#0EBAC7'}}> · {b.contact_type==='phone'?'📞':b.contact_type==='email'?'✉️':'🌐'} {b.contact_value}</span>
+                      : <span> · Sem contato</span>}
                     {b.expires_at&&<span style={{color:expired?'#ef4444':'#64748b'}}> · Expira {new Date(b.expires_at).toLocaleDateString('pt-BR')}</span>}
                   </div>
                 </div>
@@ -1763,7 +1819,7 @@ function SponsorBannersPanel({ banners, setBanners, bannerForm, setBannerForm, b
                     style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${b.active?'#f59e0b40':'#22c55e40'}`,background:b.active?'#f59e0b10':'#22c55e10',color:b.active?'#f59e0b':'#22c55e',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
                     {b.active?'Desativar':'Ativar'}
                   </button>
-                  <button onClick={()=>{setBannerEdit(b.id);setBannerForm({company_name:b.company_name||'',image_url:b.image_url,link_url:b.link_url||'',duration_seconds:String(b.duration_seconds),expires_at:b.expires_at?b.expires_at.slice(0,10):''});window.scrollTo({top:0,behavior:'smooth'});}}
+                  <button onClick={()=>{setBannerEdit(b.id);setBannerForm({company_name:b.company_name||'',image_url:b.image_url,title:b.title||'',subtitle:b.subtitle||'',contact_type:b.contact_type||'none',contact_value:b.contact_value||'',duration_seconds:String(b.duration_seconds),expires_at:b.expires_at?b.expires_at.slice(0,10):''});window.scrollTo({top:0,behavior:'smooth'});}}
                     className="aib aib-purple" title="Editar">{AIco.edit}</button>
                   <button onClick={async()=>{if(!confirm('Excluir este banner?'))return;await window.sb.from('sponsor_banners').delete().eq('id',b.id);setBanners(p=>p.filter(x=>x.id!==b.id));showToast('Banner excluído.');}}
                     className="aib aib-red" title="Excluir">{AIco.trash}</button>
@@ -1812,7 +1868,7 @@ function AdminApp({ adminUser, onLogout }) {
   // fields to fill in), shares the "Patrocinadores" nav item via a sub-tab.
   const [sponsorTab, setSponsorTab] = React.useState('cards'); // 'cards' | 'banners'
   const [banners,   setBanners]   = React.useState([]);
-  const BANNER_FORM_DEFAULT = { company_name:'', image_url:'', link_url:'', duration_seconds:'6', expires_at:'' };
+  const BANNER_FORM_DEFAULT = { company_name:'', image_url:'', title:'', subtitle:'', contact_type:'none', contact_value:'', duration_seconds:'6', expires_at:'' };
   const [bannerForm, setBannerForm] = React.useState(BANNER_FORM_DEFAULT);
   const [bannerSaving, setBannerSaving] = React.useState(false);
   const [bannerEdit, setBannerEdit] = React.useState(null);

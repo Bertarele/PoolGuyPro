@@ -871,9 +871,13 @@ function HomeScreen({ ctx }) {
           </div>
         )}
 
-        {/* Image sponsor banners — pure artwork, no text overlay. Each item's
-            own duration_seconds drives when it advances; every transition
-            (automatic or swiped) slides horizontally. */}
+        {/* Image sponsor banners — the artwork is the background; title,
+            subtitle and a contact line are all optional text the app
+            overlays on top (not baked into the uploaded image), so a
+            sponsor with no website — many solo pool techs only have a
+            phone or email — can still show a way to reach them. Each
+            item's own duration_seconds drives when it advances; every
+            transition (automatic or swiped) slides horizontally. */}
         {imageBanners.length > 0 && (
           <div style={{position:'relative', borderRadius:14, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.18)'}}>
             <div
@@ -899,14 +903,39 @@ function HomeScreen({ ctx }) {
                 if (bannerTouch.current.swiped && Math.abs(dx) > 40) goBanner(dx < 0 ? 1 : -1);
                 bannerTouch.current = null;
               }}>
-              {imageBanners.map(b => (
-                <div key={b.id}
-                  onClick={() => { if (!bannerTouch.current?.swiped && b.link_url) window.open(b.link_url, '_blank'); }}
-                  style={{ width: `${100 / imageBanners.length}%`, flexShrink: 0, cursor: b.link_url ? 'pointer' : 'default' }}>
-                  <img src={b.image_url} alt={b.company_name || ''} draggable={false}
-                    style={{ width: '100%', aspectRatio: '2.4 / 1', objectFit: 'cover', display: 'block' }}/>
-                </div>
-              ))}
+              {imageBanners.map(b => {
+                const hasContact = b.contact_type && b.contact_type !== 'none' && b.contact_value;
+                const contactHref = !hasContact ? null
+                  : b.contact_type === 'phone' ? `tel:${b.contact_value.replace(/[^\d+]/g,'')}`
+                  : b.contact_type === 'email' ? `mailto:${b.contact_value}`
+                  : /^https?:\/\//i.test(b.contact_value) ? b.contact_value : `https://${b.contact_value}`;
+                const hasText = b.title || b.subtitle || hasContact;
+                return (
+                  <div key={b.id}
+                    onClick={() => { if (!bannerTouch.current?.swiped && contactHref) window.open(contactHref, '_blank'); }}
+                    style={{ width: `${100 / imageBanners.length}%`, flexShrink: 0, position:'relative', cursor: contactHref ? 'pointer' : 'default' }}>
+                    <img src={b.image_url} alt={b.company_name || ''} draggable={false}
+                      style={{ width: '100%', aspectRatio: '2.4 / 1', objectFit: 'cover', display: 'block' }}/>
+                    {hasText && (
+                      <div style={{
+                        position:'absolute', left:0, right:0, bottom:0, padding:'26px 16px 14px',
+                        background:'linear-gradient(to top, rgba(4,15,30,0.85), rgba(4,15,30,0))',
+                        pointerEvents:'none',
+                      }}>
+                        {b.title && (
+                          <div style={{fontSize:16, fontWeight:800, color:'#fff', lineHeight:1.25, letterSpacing:'-0.01em'}}>{b.title}</div>
+                        )}
+                        {b.subtitle && (
+                          <div style={{fontSize:12, color:'rgba(255,255,255,0.75)', marginTop:2, lineHeight:1.3}}>{b.subtitle}</div>
+                        )}
+                        {hasContact && (
+                          <div style={{fontSize:11.5, color:'#7CE0E8', fontWeight:700, marginTop:4}}>{b.contact_value} ›</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             {imageBanners.length > 1 && (
               <div style={{position:'absolute', bottom:8, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none'}}>
