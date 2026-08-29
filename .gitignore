@@ -8,6 +8,11 @@ node_modules/
 .env
 .env.local
 firebase-config.local.js
+# Stripe keys — chaves ficam só na máquina local e nos secrets do Supabase,
+# nunca no repositório (o repo é público no GitHub).
+.stripe-test-key
+.stripe-*-key
+stripe-keys.txt
 
 # OS
 .DS_Store
