@@ -1603,6 +1603,180 @@ function EditJobModal({ row, onClose, onSave }) {
   );
 }
 
+// ── Sponsor image banners — second, independent ad format ──────
+// The company supplies finished artwork; the admin only sets the link and
+// how long it stays on screen before the app slides to the next one.
+function SponsorBannersPanel({ banners, setBanners, bannerForm, setBannerForm, bannerEdit, setBannerEdit,
+  bannerSaving, setBannerSaving, bannerImgUploading, setBannerImgUploading, BANNER_FORM_DEFAULT, showToast }) {
+
+  const resetForm = () => { setBannerEdit(null); setBannerForm(BANNER_FORM_DEFAULT); };
+
+  const save = async () => {
+    const seconds = parseInt(bannerForm.duration_seconds, 10);
+    if (!bannerForm.image_url) { showToast('❌ Envie a imagem do banner primeiro', false); return; }
+    if (!seconds || seconds < 2 || seconds > 60) { showToast('❌ Duração precisa ser entre 2 e 60 segundos', false); return; }
+    setBannerSaving(true);
+    const payload = {
+      company_name: bannerForm.company_name.trim() || null,
+      image_url: bannerForm.image_url,
+      link_url: bannerForm.link_url.trim() || null,
+      duration_seconds: seconds,
+      expires_at: bannerForm.expires_at || null,
+      active: true,
+    };
+    const { error } = bannerEdit
+      ? await window.sb.from('sponsor_banners').update(payload).eq('id', bannerEdit)
+      : await window.sb.from('sponsor_banners').insert(payload);
+    setBannerSaving(false);
+    if (error) { showToast('❌ ' + error.message, false); return; }
+    showToast(bannerEdit ? '✓ Banner atualizado!' : '✓ Banner criado!');
+    resetForm();
+    const { data } = await window.sb.from('sponsor_banners').select('*').order('created_at', { ascending: false });
+    if (data) setBanners(data);
+  };
+
+  const uploadImage = async (file) => {
+    setBannerImgUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `art/${Date.now()}.${ext}`;
+      const { error } = await window.sb.storage.from('sponsor-banners').upload(path, file, { upsert: true, contentType: file.type });
+      if (error) { showToast('❌ Erro no upload: ' + error.message, false); return; }
+      const { data } = window.sb.storage.from('sponsor-banners').getPublicUrl(path);
+      setBannerForm(p => ({ ...p, image_url: data.publicUrl }));
+      showToast('✓ Imagem enviada!');
+    } catch (ex) {
+      showToast('❌ Erro: ' + ex.message, false);
+    } finally {
+      setBannerImgUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      {/* Form criar/editar */}
+      <div style={{background:'#1a1f2e',borderRadius:16,padding:'18px 16px',border:'1px solid #1e293b',marginBottom:24}}>
+        <div style={{fontWeight:700,fontSize:14,color:'#f1f5f9',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:16}}>{bannerEdit?'✏️':'➕'}</span>
+          {bannerEdit ? 'Editar Banner' : 'Novo Banner de Imagem'}
+        </div>
+
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Arte do banner *</div>
+          <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
+            <label style={{cursor:'pointer',flexShrink:0}}>
+              <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; if(f) uploadImage(f); }}/>
+              <div style={{width:170,aspectRatio:'2.4 / 1',borderRadius:12,border:`1.5px dashed ${bannerForm.image_url?'#0EBAC750':'#334155'}`,background:'#0f1117',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:5,overflow:'hidden'}}>
+                {bannerImgUploading
+                  ? <span style={{width:22,height:22,border:'2.5px solid #334155',borderTopColor:'#0EBAC7',borderRadius:'50%',animation:'pgSpin .7s linear infinite',display:'inline-block'}}/>
+                  : bannerForm.image_url
+                    ? <img src={bannerForm.image_url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                    : <>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <span style={{fontSize:9,color:'#475569',fontWeight:600}}>Upload</span>
+                      </>
+                }
+              </div>
+            </label>
+            <div style={{display:'flex',flexDirection:'column',justifyContent:'center',gap:4,paddingTop:4}}>
+              <span style={{fontSize:11,color:bannerForm.image_url?'#0EBAC7':'#64748b',lineHeight:1.5}}>
+                {bannerForm.image_url ? '✓ Imagem carregada' : 'Proporção larga (ex: 1200×500px) funciona melhor'}
+              </span>
+              {bannerForm.image_url && (
+                <button onClick={()=>setBannerForm(p=>({...p,image_url:''}))}
+                  style={{background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:11,padding:0,fontFamily:'inherit',fontWeight:600,textAlign:'left'}}>✕ remover</button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Empresa (uso interno, não aparece no app)</div>
+          <input value={bannerForm.company_name} onChange={e=>setBannerForm(p=>({...p,company_name:e.target.value}))}
+            placeholder="Ex: SCP Pool Corp"
+            style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'10px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+        </div>
+
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Link ao clicar (URL)</div>
+          <input value={bannerForm.link_url} onChange={e=>setBannerForm(p=>({...p,link_url:e.target.value}))}
+            placeholder="https://lojadaparceira.com"
+            style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'10px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+        </div>
+
+        <div className="spons-grid-2" style={{marginBottom:16}}>
+          <div>
+            <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Duração na tela (segundos)</div>
+            <input type="number" min="2" max="60" value={bannerForm.duration_seconds}
+              onChange={e=>setBannerForm(p=>({...p,duration_seconds:e.target.value}))}
+              style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'10px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+          </div>
+          <div>
+            <div style={{fontSize:10.5,fontWeight:700,color:'#64748b',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}}>Expira em</div>
+            <input type="date" value={bannerForm.expires_at} onChange={e=>setBannerForm(p=>({...p,expires_at:e.target.value}))}
+              style={{width:'100%',background:'#0f1117',border:'1px solid #1e293b',borderRadius:10,padding:'10px 12px',color:'#e2e8f0',fontSize:14,fontFamily:'inherit',outline:'none',colorScheme:'dark'}}/>
+          </div>
+        </div>
+
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <button disabled={bannerSaving||!bannerForm.image_url} onClick={save}
+            style={{flex:1,minWidth:140,height:44,borderRadius:11,border:'none',background:'linear-gradient(135deg,#0EBAC7,#0D7280)',color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer',fontFamily:'inherit',opacity:!bannerForm.image_url?0.45:1,boxShadow:!bannerForm.image_url?'none':'0 4px 16px rgba(14,186,199,0.25)'}}>
+            {bannerSaving?'Salvando…':(bannerEdit?'Salvar Alterações':'Criar Banner')}
+          </button>
+          {bannerEdit && (
+            <button onClick={resetForm}
+              style={{height:44,padding:'0 20px',borderRadius:11,border:'1px solid #1e293b',background:'transparent',color:'#94a3b8',fontWeight:600,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>
+              Cancelar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Lista de banners */}
+      <div style={{fontWeight:700,fontSize:14,color:'#f1f5f9',marginBottom:12}}>Banners Cadastrados ({banners.length})</div>
+      {banners.length===0 && <div style={{color:'#64748b',fontSize:13,padding:'24px 0',textAlign:'center',background:'#1a1f2e',borderRadius:12,border:'1px solid #1e293b'}}>Nenhum banner criado ainda.</div>}
+      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+        {banners.map(b=>{
+          const expired = b.expires_at && new Date(b.expires_at) < new Date();
+          return (
+            <div key={b.id} style={{background:'#1a1f2e',borderRadius:14,border:`1px solid ${b.active&&!expired?'#0EBAC730':'#1e293b'}`,overflow:'hidden'}}>
+              <img src={b.image_url} alt="" style={{width:'100%',aspectRatio:'2.4 / 1',objectFit:'cover',display:'block'}}/>
+              <div style={{padding:'10px 14px',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:2}}>
+                    <span style={{fontWeight:700,fontSize:13,color:'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.company_name||'(sem nome interno)'}</span>
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:999,flexShrink:0,
+                      background:expired?'rgba(239,68,68,0.2)':b.active?'rgba(34,197,94,0.2)':'rgba(100,116,139,0.2)',
+                      color:expired?'#ef4444':b.active?'#22c55e':'#64748b',
+                      border:`1px solid ${expired?'#ef444430':b.active?'#22c55e30':'#33415530'}`}}>
+                      {expired?'Expirado':b.active?'Ativo':'Inativo'}
+                    </span>
+                  </div>
+                  <div style={{fontSize:11,color:'#475569',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                    ⏱ {b.duration_seconds}s
+                    {b.link_url?<span style={{color:'#0EBAC7'}}> · {b.link_url}</span>:<span> · Sem link</span>}
+                    {b.expires_at&&<span style={{color:expired?'#ef4444':'#64748b'}}> · Expira {new Date(b.expires_at).toLocaleDateString('pt-BR')}</span>}
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:6,flexShrink:0}}>
+                  <button onClick={async()=>{await window.sb.from('sponsor_banners').update({active:!b.active}).eq('id',b.id);setBanners(p=>p.map(x=>x.id===b.id?{...x,active:!x.active}:x));showToast(b.active?'Banner desativado.':'Banner ativado!');}}
+                    style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${b.active?'#f59e0b40':'#22c55e40'}`,background:b.active?'#f59e0b10':'#22c55e10',color:b.active?'#f59e0b':'#22c55e',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                    {b.active?'Desativar':'Ativar'}
+                  </button>
+                  <button onClick={()=>{setBannerEdit(b.id);setBannerForm({company_name:b.company_name||'',image_url:b.image_url,link_url:b.link_url||'',duration_seconds:String(b.duration_seconds),expires_at:b.expires_at?b.expires_at.slice(0,10):''});window.scrollTo({top:0,behavior:'smooth'});}}
+                    className="aib aib-purple" title="Editar">{AIco.edit}</button>
+                  <button onClick={async()=>{if(!confirm('Excluir este banner?'))return;await window.sb.from('sponsor_banners').delete().eq('id',b.id);setBanners(p=>p.filter(x=>x.id!==b.id));showToast('Banner excluído.');}}
+                    className="aib aib-red" title="Excluir">{AIco.trash}</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── App Admin ─────────────────────────────────────────────────
 function AdminApp({ adminUser, onLogout }) {
   const [section,    setSection]    = React.useState('dashboard');
@@ -1634,6 +1808,15 @@ function AdminApp({ adminUser, onLogout }) {
   const [sponsorSaving, setSponsorSaving] = React.useState(false);
   const [sponsorEdit, setSponsorEdit] = React.useState(null);
   const [sponsorLogoUploading, setSponsorLogoUploading] = React.useState(false);
+  // Sponsor banners — second, independent ad format (pure artwork, no text
+  // fields to fill in), shares the "Patrocinadores" nav item via a sub-tab.
+  const [sponsorTab, setSponsorTab] = React.useState('cards'); // 'cards' | 'banners'
+  const [banners,   setBanners]   = React.useState([]);
+  const BANNER_FORM_DEFAULT = { company_name:'', image_url:'', link_url:'', duration_seconds:'6', expires_at:'' };
+  const [bannerForm, setBannerForm] = React.useState(BANNER_FORM_DEFAULT);
+  const [bannerSaving, setBannerSaving] = React.useState(false);
+  const [bannerEdit, setBannerEdit] = React.useState(null);
+  const [bannerImgUploading, setBannerImgUploading] = React.useState(false);
   const [quickPools,    setQuickPools]    = React.useState([]);
   const [withdrawals,   setWithdrawals]   = React.useState([]);
   const [qpFilter,      setQpFilter]      = React.useState('active'); // 'active'|'all'
@@ -1654,7 +1837,7 @@ function AdminApp({ adminUser, onLogout }) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [u,j,tc,m,v,d,w,r,sp,qp,fr,rtp,nar,wd] = await Promise.all([
+    const [u,j,tc,m,v,d,w,r,sp,qp,fr,rtp,nar,wd,bn] = await Promise.all([
       window.sb.from('profiles').select('*').order('created_at',{ascending:false}),
       window.sb.from('jobs').select('*, profiles(name, email)').order('created_at',{ascending:false}),
       window.sb.from('techs').select('*').order('created_at',{ascending:false}),
@@ -1669,6 +1852,7 @@ function AdminApp({ adminUser, onLogout }) {
       window._adminListTable('repeated_trade_pairs'),
       window._adminListTable('new_account_raters'),
       window.sb.from('withdrawal_requests').select('*').order('created_at',{ascending:false}).limit(200),
+      window.sb.from('sponsor_banners').select('*').order('created_at',{ascending:false}),
     ]);
     if(u.data) setUsers(u.data);
     if(j.data) setJobs(j.data);
@@ -1681,6 +1865,7 @@ function AdminApp({ adminUser, onLogout }) {
     if(sp.data) setSponsors(sp.data);
     if(qp.data) setQuickPools(qp.data);
     if(wd.data) setWithdrawals(wd.data);
+    if(bn.data) setBanners(bn.data);
     setFlaggedRatings(fr || []);
     setRepeatedTradePairs(rtp || []);
     setNewAccountRaters(nar || []);
@@ -3091,7 +3276,30 @@ function AdminApp({ adminUser, onLogout }) {
           {section==='sponsors' && (
             <div>
               <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>Patrocinadores</h1>
-              <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>Crie cards patrocinados que aparecem na tela inicial do app para todos os usuários.</p>
+              <p style={{fontSize:13,color:'#64748b',marginBottom:16}}>
+                Dois formatos de divulgação que aparecem na tela inicial do app: cards com texto (você preenche título/logo) e banners de imagem (a empresa manda a arte pronta).
+              </p>
+
+              {/* Sub-abas: Cards vs Banners de imagem */}
+              <div style={{display:'flex',gap:6,marginBottom:20,background:'#0f1117',borderRadius:11,padding:4,border:'1px solid #1e293b',width:'fit-content'}}>
+                {[['cards','🗂️ Cards'],['banners','🖼️ Banners de imagem']].map(([id,label])=>(
+                  <button key={id} onClick={()=>setSponsorTab(id)} style={{
+                    padding:'8px 16px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',
+                    fontSize:12.5,fontWeight:700,whiteSpace:'nowrap',
+                    background:sponsorTab===id?'#0EBAC7':'transparent',
+                    color:sponsorTab===id?'#03210f':'#64748b',
+                  }}>{label}</button>
+                ))}
+              </div>
+
+              {sponsorTab==='banners' ? (
+                <SponsorBannersPanel banners={banners} setBanners={setBanners}
+                  bannerForm={bannerForm} setBannerForm={setBannerForm}
+                  bannerEdit={bannerEdit} setBannerEdit={setBannerEdit}
+                  bannerSaving={bannerSaving} setBannerSaving={setBannerSaving}
+                  bannerImgUploading={bannerImgUploading} setBannerImgUploading={setBannerImgUploading}
+                  BANNER_FORM_DEFAULT={BANNER_FORM_DEFAULT} showToast={showToast}/>
+              ) : (<>
 
               {/* Form criar/editar */}
               <div style={{background:'#1a1f2e',borderRadius:16,padding:'18px 16px',border:'1px solid #1e293b',marginBottom:24}}>
@@ -3313,6 +3521,7 @@ function AdminApp({ adminUser, onLogout }) {
                   );
                 })}
               </div>
+              </>)}
             </div>
           )}
 

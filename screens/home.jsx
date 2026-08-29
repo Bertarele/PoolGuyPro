@@ -102,6 +102,41 @@ function HomeScreen({ ctx }) {
     restartSponsoredTimer();
   };
   const sponsoredTouch = React.useRef(null);
+
+  // Image sponsor banners — a second, separate ad format from the sponsored
+  // card above: the company supplies ready-made artwork (no headline/logo
+  // fields to fill in), each with its own display duration, and the
+  // automatic transition slides horizontally instead of fading.
+  const [imageBanners, setImageBanners] = React.useState([]);
+  const [bannerIdx,    setBannerIdx]    = React.useState(0);
+  React.useEffect(() => {
+    if (!window.sb) return;
+    window.sb.from('sponsor_banners').select('*').eq('active', true)
+      .or('expires_at.is.null,expires_at.gte.' + new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setImageBanners(data); });
+  }, []);
+  const goBanner = React.useCallback((dir) => {
+    setBannerIdx(i => {
+      const n = imageBanners.length;
+      return n < 2 ? i : (i + dir + n) % n;
+    });
+  }, [imageBanners.length]);
+  // A per-banner setTimeout (not a fixed setInterval) — it reads the
+  // CURRENT banner's own duration_seconds and reschedules whenever bannerIdx
+  // changes, so each banner honors its own configured time, including after
+  // a manual swipe jumps to a different one.
+  const bannerTimerRef = React.useRef(null);
+  React.useEffect(() => {
+    if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+    if (imageBanners.length < 2) return;
+    const current = imageBanners[bannerIdx];
+    const ms = Math.max(2, current?.duration_seconds || 6) * 1000;
+    bannerTimerRef.current = setTimeout(() => goBanner(1), ms);
+    return () => { if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current); };
+  }, [bannerIdx, imageBanners, goBanner]);
+  const bannerTouch = React.useRef(null);
+
   // "Meus Anúncios" cards live inside a horizontal scroller — without this,
   // a finger that moves even a couple pixels while starting to swipe still
   // fires the card's onClick on release, so scrolling felt like it randomly
@@ -828,6 +863,58 @@ function HomeScreen({ ctx }) {
                   <div key={c.id} style={{
                     width: i === sponsoredIdx ? 14 : 5, height: 5, borderRadius: 999,
                     background: i === sponsoredIdx ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)',
+                    transition: 'all .3s ease',
+                  }}/>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Image sponsor banners — pure artwork, no text overlay. Each item's
+            own duration_seconds drives when it advances; every transition
+            (automatic or swiped) slides horizontally. */}
+        {imageBanners.length > 0 && (
+          <div style={{position:'relative', borderRadius:14, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.18)'}}>
+            <div
+              style={{
+                display:'flex',
+                width: `${imageBanners.length * 100}%`,
+                transform: `translateX(-${(100 / imageBanners.length) * bannerIdx}%)`,
+                transition: 'transform .5s cubic-bezier(.22,.9,.32,1)',
+                touchAction: imageBanners.length > 1 ? 'pan-y' : 'auto',
+              }}
+              onTouchStart={e => {
+                bannerTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, swiped: false };
+              }}
+              onTouchMove={e => {
+                if (!bannerTouch.current || imageBanners.length < 2) return;
+                const dx = e.touches[0].clientX - bannerTouch.current.x;
+                const dy = e.touches[0].clientY - bannerTouch.current.y;
+                if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) bannerTouch.current.swiped = true;
+              }}
+              onTouchEnd={e => {
+                if (!bannerTouch.current) return;
+                const dx = e.changedTouches[0].clientX - bannerTouch.current.x;
+                if (bannerTouch.current.swiped && Math.abs(dx) > 40) goBanner(dx < 0 ? 1 : -1);
+                bannerTouch.current = null;
+              }}>
+              {imageBanners.map(b => (
+                <div key={b.id}
+                  onClick={() => { if (!bannerTouch.current?.swiped && b.link_url) window.open(b.link_url, '_blank'); }}
+                  style={{ width: `${100 / imageBanners.length}%`, flexShrink: 0, cursor: b.link_url ? 'pointer' : 'default' }}>
+                  <img src={b.image_url} alt={b.company_name || ''} draggable={false}
+                    style={{ width: '100%', aspectRatio: '2.4 / 1', objectFit: 'cover', display: 'block' }}/>
+                </div>
+              ))}
+            </div>
+            {imageBanners.length > 1 && (
+              <div style={{position:'absolute', bottom:8, left:0, right:0, display:'flex', justifyContent:'center', gap:5, pointerEvents:'none'}}>
+                {imageBanners.map((b, i) => (
+                  <div key={b.id} style={{
+                    width: i === bannerIdx ? 14 : 5, height: 5, borderRadius: 999,
+                    background: i === bannerIdx ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.45)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                     transition: 'all .3s ease',
                   }}/>
                 ))}
