@@ -18,6 +18,7 @@ function HomeScreen({
     liveVacations = [],
     liveMyQuickJobs = [],
     liveDataLoaded = false,
+    wallet = null,
     hasUnreadChat,
     hasUnreadNotif,
     openListingById,
@@ -986,6 +987,80 @@ function HomeScreen({
       }
     }, priceStr));
   })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 18px 0'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: openWallet,
+    className: "pg-press",
+    style: {
+      width: '100%',
+      textAlign: 'left',
+      cursor: 'pointer',
+      padding: '14px 15px',
+      borderRadius: 16,
+      border: '1px solid var(--pg-ink-200)',
+      background: 'var(--pg-white)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 13,
+      fontFamily: 'inherit'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      flexShrink: 0,
+      background: 'linear-gradient(135deg, var(--pg-blue-900), oklch(0.38 0.16 245))',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "21",
+    height: "21",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "oklch(0.82 0.12 178)",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "1",
+    x2: "12",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: 'var(--pg-ink-500)',
+      fontWeight: 700,
+      letterSpacing: '0.03em'
+    }
+  }, lang === 'pt' ? 'CARTEIRA' : lang === 'es' ? 'CARTERA' : 'WALLET'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--pg-font-display)',
+      fontSize: 23,
+      fontWeight: 700,
+      color: 'var(--pg-blue-500)',
+      letterSpacing: '-0.03em',
+      lineHeight: 1.15
+    }
+  }, liveDataLoaded ? money(wallet?.balance_cents ?? 0) : '—'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: 'var(--pg-ink-500)',
+      marginTop: 2
+    }
+  }, lang === 'pt' ? 'Indique e ganhe até $10 por assinatura' : lang === 'es' ? 'Refiere y gana hasta $10 por suscripción' : 'Refer & earn up to $10 per subscription')), Icon.chev(15, 'var(--pg-ink-400)'))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '16px 18px 16px',
       display: 'flex',

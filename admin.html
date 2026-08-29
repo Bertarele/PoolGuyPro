@@ -1555,6 +1555,7 @@ function AdminApp({ adminUser, onLogout }) {
   const [sponsorEdit, setSponsorEdit] = React.useState(null);
   const [sponsorLogoUploading, setSponsorLogoUploading] = React.useState(false);
   const [quickPools,    setQuickPools]    = React.useState([]);
+  const [withdrawals,   setWithdrawals]   = React.useState([]);
   const [qpFilter,      setQpFilter]      = React.useState('active'); // 'active'|'all'
   const [editQP,        setEditQP]        = React.useState(null); // job being edited
   const [openGroups,    setOpenGroups]    = React.useState({work:false, marketplace:false});
@@ -1573,7 +1574,7 @@ function AdminApp({ adminUser, onLogout }) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [u,j,tc,m,v,d,w,r,sp,qp,fr,rtp,nar] = await Promise.all([
+    const [u,j,tc,m,v,d,w,r,sp,qp,fr,rtp,nar,wd] = await Promise.all([
       window.sb.from('profiles').select('*').order('created_at',{ascending:false}),
       window.sb.from('jobs').select('*, profiles(name, email)').order('created_at',{ascending:false}),
       window.sb.from('techs').select('*').order('created_at',{ascending:false}),
@@ -1587,6 +1588,7 @@ function AdminApp({ adminUser, onLogout }) {
       window._adminListTable('flagged_ratings'),
       window._adminListTable('repeated_trade_pairs'),
       window._adminListTable('new_account_raters'),
+      window.sb.from('withdrawal_requests').select('*').order('created_at',{ascending:false}).limit(200),
     ]);
     if(u.data) setUsers(u.data);
     if(j.data) setJobs(j.data);
@@ -1598,6 +1600,7 @@ function AdminApp({ adminUser, onLogout }) {
     if(r.data) setRentals(r.data);
     if(sp.data) setSponsors(sp.data);
     if(qp.data) setQuickPools(qp.data);
+    if(wd.data) setWithdrawals(wd.data);
     setFlaggedRatings(fr || []);
     setRepeatedTradePairs(rtp || []);
     setNewAccountRaters(nar || []);
@@ -1797,13 +1800,14 @@ function AdminApp({ adminUser, onLogout }) {
     { type:'item',  id:'disputes',   label:'Reclamações',   icon:IC.flag,    badge:disputeCount },
     { type:'item',  id:'ratings',    label:'Antifraude',    icon:IC.star,    badge:flaggedRatings.length+repeatedTradePairs.length+newAccountRaters.length },
     { type:'item',  id:'sponsors',   label:'Patrocinadores',icon:IC.sponsor, badge:0 },
+    { type:'item',  id:'withdrawals',label:'Saques',        icon:IC.sponsor, badge:withdrawals.filter(w=>w.status==='pending').length },
   ];
 
   const sectionLabels = {
     dashboard:'Painel', users:'Usuários', jobs:'Vagas', hirings:'Contratações', ratings:'Antifraude',
     techs:'Técnicos', vacations:'Férias / Rotas', market:'Marketplace · Anúncios',
     rentals:'Marketplace · Aluguéis', quickpools:'Express Pools',
-    disputes:'Reclamações', sponsors:'Patrocinadores',
+    disputes:'Reclamações', sponsors:'Patrocinadores', withdrawals:'Saques da Carteira',
   };
   const sectionLabel = sectionLabels[section] || section;
 
@@ -3231,6 +3235,80 @@ function AdminApp({ adminUser, onLogout }) {
               </div>
             </div>
           )}
+
+          {/* ── Wallet withdrawals ── */}
+          {section==='withdrawals' && (()=>{
+            const stColor = { pending:'#F59E0B', approved:'#0EBAC7', paid:'#22c55e', rejected:'#EF4444' };
+            const stLabel = { pending:'⏳ Pendente', approved:'✓ Aprovado', paid:'💸 Pago', rejected:'✕ Recusado' };
+            const usd = c => '$' + ((c||0)/100).toFixed(2);
+            const nameOf = uid => (users.find(u=>u.id===uid)||{}).name || uid?.slice(0,8) || '—';
+
+            const resolve = async (row, status) => {
+              const verb = status==='rejected' ? 'recusar' : status==='paid' ? 'marcar como pago' : 'aprovar';
+              if(!confirm(`Deseja ${verb} o saque de ${usd(row.amount_cents)} de ${nameOf(row.user_id)}?`)) return;
+              // resolve_withdrawal is the only path that may change a
+              // withdrawal — it re-checks admin server-side and, on
+              // rejection, returns the held amount to the user's ledger.
+              const {data, error} = await window.sb.rpc('resolve_withdrawal', { p_id: row.id, p_status: status, p_note: null });
+              if(error || !data?.ok){ showToast('Erro: ' + (data?.error || error?.message || 'falhou'), false); return; }
+              showToast('Saque atualizado');
+              setWithdrawals(p=>p.map(x=>x.id===row.id?{...x, status, resolved_at:new Date().toISOString()}:x));
+            };
+
+            const pend = withdrawals.filter(w=>w.status==='pending');
+            return (
+              <div>
+                <div style={{display:'flex', gap:10, marginBottom:14, flexWrap:'wrap'}}>
+                  <div style={{background:'#0f172a', border:'1px solid #1e293b', borderRadius:12, padding:'12px 16px'}}>
+                    <div style={{fontSize:11, color:'#64748b', fontWeight:700, letterSpacing:'.05em'}}>PENDENTES</div>
+                    <div style={{fontSize:22, fontWeight:800, color:'#F59E0B'}}>{pend.length}</div>
+                  </div>
+                  <div style={{background:'#0f172a', border:'1px solid #1e293b', borderRadius:12, padding:'12px 16px'}}>
+                    <div style={{fontSize:11, color:'#64748b', fontWeight:700, letterSpacing:'.05em'}}>VALOR PENDENTE</div>
+                    <div style={{fontSize:22, fontWeight:800, color:'#f1f5f9'}}>{usd(pend.reduce((s,w)=>s+w.amount_cents,0))}</div>
+                  </div>
+                </div>
+
+                {withdrawals.length===0 && (
+                  <div style={{padding:'40px 16px', textAlign:'center', color:'#64748b', fontSize:14}}>
+                    Nenhum saque solicitado ainda.
+                  </div>
+                )}
+
+                <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                  {withdrawals.map(w=>(
+                    <div key={w.id} style={{background:'#0f172a', border:'1px solid #1e293b', borderRadius:12, padding:'13px 15px', display:'flex', alignItems:'center', gap:14, flexWrap:'wrap'}}>
+                      <div style={{flex:1, minWidth:180}}>
+                        <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:3}}>
+                          <span style={{fontSize:15, fontWeight:800, color:'#f1f5f9'}}>{usd(w.amount_cents)}</span>
+                          <span style={{fontSize:11, fontWeight:700, color:stColor[w.status]||'#64748b'}}>{stLabel[w.status]||w.status}</span>
+                        </div>
+                        <button onClick={()=>w.user_id&&setViewUserModal({userId:w.user_id,userName:nameOf(w.user_id)})}
+                          style={{background:'none',border:'none',color:'#2373c3',cursor:'pointer',padding:0,fontSize:12.5,fontWeight:600,textDecoration:'underline'}}>
+                          {nameOf(w.user_id)}
+                        </button>
+                        <div style={{fontSize:11.5, color:'#64748b', marginTop:3}}>
+                          {new Date(w.created_at).toLocaleString('pt-BR')}
+                          {w.method ? ` · ${w.method}` : ''}
+                          {w.details ? ` · ${w.details}` : ''}
+                        </div>
+                      </div>
+                      {w.status==='pending' && (
+                        <div style={{display:'flex', gap:7}}>
+                          <button onClick={()=>resolve(w,'paid')} style={{padding:'8px 13px', borderRadius:9, border:'none', background:'#22c55e', color:'#03210f', fontWeight:800, fontSize:12.5, cursor:'pointer'}}>
+                            Marcar pago
+                          </button>
+                          <button onClick={()=>resolve(w,'rejected')} style={{padding:'8px 13px', borderRadius:9, border:'1px solid #EF444455', background:'#EF444415', color:'#EF4444', fontWeight:800, fontSize:12.5, cursor:'pointer'}}>
+                            Recusar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ── Quick Pools ── */}
           {section==='quickpools' && (()=>{

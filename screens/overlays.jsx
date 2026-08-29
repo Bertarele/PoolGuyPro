@@ -3084,23 +3084,117 @@ function Toast({ message, kind='success', onClick }) {
 }
 
 // ── Wallet Sheet ──────────────────────────────────────────────
-function WalletSheet({ open, onClose, lang='en' }) {
-  const [tab, setTab] = React.useState('pending');
-  const d = WALLET_DATA;
+// Balance, referral program and withdrawals. Every number here comes
+// from the wallet_transactions ledger — nothing is computed or stored
+// client-side, so a tampered client can only lie to its own screen.
+const WITHDRAW_MIN_CENTS = 5000; // $50
 
-  const walletLbl   = lang==='pt' ? 'Carteira' : lang==='es' ? 'Cartera' : 'Wallet';
-  const weekLbl     = lang==='pt' ? 'Esta semana' : lang==='es' ? 'Esta semana' : 'This week';
-  const monthLbl    = lang==='pt' ? 'Este mês' : lang==='es' ? 'Este mes' : 'This month';
-  const pendingLbl  = lang==='pt' ? 'A receber' : lang==='es' ? 'Por cobrar' : 'Pending';
-  const historyLbl  = lang==='pt' ? 'Histórico' : lang==='es' ? 'Historial' : 'History';
-  const withdrawLbl = lang==='pt' ? 'Sacar fundos' : lang==='es' ? 'Retirar fondos' : 'Withdraw funds';
-  const balanceLbl  = lang==='pt' ? 'Saldo disponível' : lang==='es' ? 'Saldo disponible' : 'Available balance';
-  const minLbl      = lang==='pt' ? 'Mín. $50 para sacar' : lang==='es' ? 'Mín. $50 para retirar' : 'Min. $50 to withdraw';
-  const awaitLbl    = lang==='pt' ? 'Aguardando liberação' : lang==='es' ? 'Esperando liberación' : 'Awaiting release';
+function money(cents) {
+  return '$' + ((cents || 0) / 100).toFixed(2).replace(/\.00$/, '');
+}
 
-  const dayKeys = lang==='pt' ? ['D','S','T','Q','Q','S','S'] : lang==='es' ? ['D','L','M','X','J','V','S'] : ['S','M','T','W','T','F','S'];
-  const dayAmts = [0, 55, 45, 110, 0, 85, 45];
-  const maxAmt = Math.max(...dayAmts);
+function WalletSheet({ open, onClose, lang='en', wallet, walletTx=[], loadWallet, showToast }) {
+  const [tab, setTab] = React.useState('referral');
+  const [busy, setBusy] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+
+  const balance   = wallet?.balance_cents ?? 0;
+  const earned    = wallet?.total_earned_cents ?? 0;
+  const referred  = wallet?.total_referred ?? 0;
+  const converted = wallet?.total_converted ?? 0;
+  const pendingWd = wallet?.pending_withdrawal_cents ?? 0;
+  const code      = wallet?.code || '';
+  const myDisc    = wallet?.my_discount || null;
+  const link      = code ? `https://poolguyx.com/?ref=${code}` : '';
+
+  const L = lang==='pt' ? {
+    wallet:'Carteira', balance:'Saldo disponível', referral:'Indicações', history:'Histórico',
+    invite:'Indique e ganhe', inviteSub:'Compartilhe seu link. Quando a pessoa assinar, você ganha.',
+    yourLink:'Seu link', copy:'Copiar link', copied:'Link copiado!', share:'Compartilhar',
+    invited:'Indicados', converted:'Assinaram', earned:'Ganhos',
+    withdraw:'Sacar fundos', min:`Mínimo de ${money(WITHDRAW_MIN_CENTS)} para sacar`,
+    pending:'saque em análise', empty:'Nenhuma movimentação ainda.',
+    noRef:'Ninguém usou seu link ainda. Compartilhe para começar a ganhar.',
+    table:'Quanto você ganha', plan:'Plano', monthly:'Mensal', annual:'Anual',
+    youGet:'Você tem desconto', youGetSub:'Alguém te indicou — seu desconto é aplicado na assinatura.',
+    askAmount:'Quanto deseja sacar?', confirmWd:'Solicitar saque', cancel:'Cancelar',
+    wdOk:'Saque solicitado! Vamos revisar e te avisar.',
+    errMin:'Valor abaixo do mínimo.', errFunds:'Saldo insuficiente.', errGeneric:'Não foi possível solicitar o saque.',
+  } : lang==='es' ? {
+    wallet:'Cartera', balance:'Saldo disponible', referral:'Referidos', history:'Historial',
+    invite:'Refiere y gana', inviteSub:'Comparte tu enlace. Cuando la persona se suscriba, tú ganas.',
+    yourLink:'Tu enlace', copy:'Copiar enlace', copied:'¡Enlace copiado!', share:'Compartir',
+    invited:'Referidos', converted:'Suscritos', earned:'Ganancias',
+    withdraw:'Retirar fondos', min:`Mínimo de ${money(WITHDRAW_MIN_CENTS)} para retirar`,
+    pending:'retiro en revisión', empty:'Aún no hay movimientos.',
+    noRef:'Nadie ha usado tu enlace todavía. Compártelo para empezar a ganar.',
+    table:'Cuánto ganas', plan:'Plan', monthly:'Mensual', annual:'Anual',
+    youGet:'Tienes descuento', youGetSub:'Alguien te refirió — tu descuento se aplica en la suscripción.',
+    askAmount:'¿Cuánto quieres retirar?', confirmWd:'Solicitar retiro', cancel:'Cancelar',
+    wdOk:'¡Retiro solicitado! Lo revisaremos y te avisaremos.',
+    errMin:'Monto por debajo del mínimo.', errFunds:'Saldo insuficiente.', errGeneric:'No se pudo solicitar el retiro.',
+  } : {
+    wallet:'Wallet', balance:'Available balance', referral:'Referrals', history:'History',
+    invite:'Refer & earn', inviteSub:'Share your link. When they subscribe, you earn.',
+    yourLink:'Your link', copy:'Copy link', copied:'Link copied!', share:'Share',
+    invited:'Referred', converted:'Subscribed', earned:'Earned',
+    withdraw:'Withdraw funds', min:`${money(WITHDRAW_MIN_CENTS)} minimum to withdraw`,
+    pending:'withdrawal under review', empty:'No activity yet.',
+    noRef:'Nobody has used your link yet. Share it to start earning.',
+    table:'What you earn', plan:'Plan', monthly:'Monthly', annual:'Annual',
+    youGet:'You have a discount', youGetSub:'Someone referred you — your discount applies at checkout.',
+    askAmount:'How much do you want to withdraw?', confirmWd:'Request withdrawal', cancel:'Cancel',
+    wdOk:'Withdrawal requested! We will review and let you know.',
+    errMin:'Amount is below the minimum.', errFunds:'Not enough balance.', errGeneric:'Could not request the withdrawal.',
+  };
+
+  const [wdOpen, setWdOpen] = React.useState(false);
+  const [wdAmount, setWdAmount] = React.useState('');
+
+  React.useEffect(() => { if (open && loadWallet) loadWallet(); }, [open]);
+
+  const copyLink = async () => {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(()=>setCopied(false), 2000);
+    } catch (e) {
+      // clipboard API is blocked in some in-app browsers — fall back to
+      // selecting the text so the user can copy it by hand.
+      const el = document.getElementById('pgRefLinkInput');
+      if (el) { el.focus(); el.select(); }
+    }
+  };
+
+  const shareLink = async () => {
+    if (!link) return;
+    const text = lang==='pt'
+      ? `Entra no PoolGuyX comigo e ganha desconto na assinatura: ${link}`
+      : lang==='es'
+      ? `Únete a PoolGuyX conmigo y obtén descuento en la suscripción: ${link}`
+      : `Join me on PoolGuyX and get a discount on your subscription: ${link}`;
+    if (navigator.share) { try { await navigator.share({ text }); return; } catch (e) { return; } }
+    copyLink();
+  };
+
+  const submitWithdraw = async () => {
+    const cents = Math.round(parseFloat(String(wdAmount).replace(',', '.')) * 100);
+    if (!cents || isNaN(cents)) return;
+    setBusy(true);
+    try {
+      const { data, error } = await window.sb.rpc('request_withdrawal', { p_amount_cents: cents });
+      if (error || !data) { showToast && showToast('❌ ' + L.errGeneric); return; }
+      if (!data.ok) {
+        showToast && showToast('❌ ' + (data.error === 'below_minimum' ? L.errMin
+          : data.error === 'insufficient_funds' ? L.errFunds : L.errGeneric));
+        return;
+      }
+      setWdOpen(false); setWdAmount('');
+      showToast && showToast('✅ ' + L.wdOk);
+      loadWallet && loadWallet();
+    } finally { setBusy(false); }
+  };
 
   const ArrowUp = (s=16,c='currentColor') => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -3113,11 +3207,18 @@ function WalletSheet({ open, onClose, lang='en' }) {
     </svg>
   );
 
+  const txLabel = (t) => {
+    if (t.description) return t.description;
+    return t.kind;
+  };
+
+  const canWithdraw = balance >= WITHDRAW_MIN_CENTS;
+
   return (
     <Sheet open={open} onClose={onClose} height="90%">
       <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
         <div style={{padding:'4px 18px 14px', borderBottom:'0.5px solid var(--pg-ink-200)', flexShrink:0, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-          <h2 style={{margin:0, fontSize:20, fontWeight:700, letterSpacing:'-0.02em'}}>{walletLbl}</h2>
+          <h2 style={{margin:0, fontSize:20, fontWeight:700, letterSpacing:'-0.02em'}}>{L.wallet}</h2>
           <button onClick={onClose} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
             {Icon.x(16,'var(--pg-ink-700)')}
           </button>
@@ -3125,84 +3226,178 @@ function WalletSheet({ open, onClose, lang='en' }) {
 
         <div style={{flex:1, overflow:'auto', padding:'16px 18px 30px'}}>
           {/* Balance hero */}
-          <div style={{borderRadius:18, padding:'20px', background:'linear-gradient(135deg, var(--pg-blue-900) 0%, oklch(0.38 0.16 245) 100%)', color:'#fff', marginBottom:16, position:'relative', overflow:'hidden'}}>
+          <div style={{borderRadius:18, padding:'20px', background:'linear-gradient(135deg, var(--pg-blue-900) 0%, oklch(0.38 0.16 245) 100%)', color:'#fff', marginBottom:14, position:'relative', overflow:'hidden'}}>
             <div style={{position:'absolute', right:-30, top:-30, width:120, height:120, borderRadius:'50%', background:'rgba(255,255,255,0.05)', pointerEvents:'none'}}/>
-            <div style={{fontSize:10, opacity:0.6, letterSpacing:'0.09em', fontWeight:700, marginBottom:6}}>{balanceLbl.toUpperCase()}</div>
-            <div style={{fontFamily:'var(--pg-font-display)', fontSize:46, fontWeight:700, letterSpacing:'-0.04em', lineHeight:1}}>${d.balance}</div>
+            <div style={{fontSize:10, opacity:0.6, letterSpacing:'0.09em', fontWeight:700, marginBottom:6}}>{L.balance.toUpperCase()}</div>
+            <div style={{fontFamily:'var(--pg-font-display)', fontSize:46, fontWeight:700, letterSpacing:'-0.04em', lineHeight:1}}>{money(balance)}</div>
+            {pendingWd > 0 && (
+              <div style={{marginTop:8, fontSize:11.5, opacity:0.75}}>
+                {money(pendingWd)} · {L.pending}
+              </div>
+            )}
             <div style={{marginTop:16, display:'flex', gap:24}}>
               <div>
-                <div style={{fontSize:9, opacity:0.6, fontWeight:700, letterSpacing:'0.07em', marginBottom:3}}>{weekLbl.toUpperCase()}</div>
-                <div style={{fontSize:17, fontWeight:700}}>${d.weekEarnings}</div>
+                <div style={{fontSize:9, opacity:0.6, fontWeight:700, letterSpacing:'0.07em', marginBottom:3}}>{L.invited.toUpperCase()}</div>
+                <div style={{fontSize:17, fontWeight:700}}>{referred}</div>
               </div>
               <div>
-                <div style={{fontSize:9, opacity:0.6, fontWeight:700, letterSpacing:'0.07em', marginBottom:3}}>{monthLbl.toUpperCase()}</div>
-                <div style={{fontSize:17, fontWeight:700}}>${d.monthEarnings}</div>
+                <div style={{fontSize:9, opacity:0.6, fontWeight:700, letterSpacing:'0.07em', marginBottom:3}}>{L.converted.toUpperCase()}</div>
+                <div style={{fontSize:17, fontWeight:700}}>{converted}</div>
               </div>
-            </div>
-            {/* Sparkline */}
-            <div style={{marginTop:14, display:'flex', alignItems:'flex-end', gap:4, height:34}}>
-              {dayAmts.map((amt,i) => (
-                <div key={i} style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3}}>
-                  <div style={{width:'100%', borderRadius:3, height: maxAmt ? Math.max(3, Math.round((amt/maxAmt)*22)) : 3, background: amt>0?'rgba(255,255,255,0.65)':'rgba(255,255,255,0.18)'}}/>
-                  <div style={{fontSize:8, opacity:0.5, fontWeight:600}}>{dayKeys[i]}</div>
-                </div>
-              ))}
+              <div>
+                <div style={{fontSize:9, opacity:0.6, fontWeight:700, letterSpacing:'0.07em', marginBottom:3}}>{L.earned.toUpperCase()}</div>
+                <div style={{fontSize:17, fontWeight:700}}>{money(earned)}</div>
+              </div>
             </div>
           </div>
 
-          {/* Withdraw CTA */}
-          <button className="pg-btn pg-btn-aqua" style={{width:'100%', height:50, fontSize:15, borderRadius:14, marginBottom:6}}>
-            {ArrowUp(16,'var(--pg-blue-900)')} {withdrawLbl}
+          {/* Withdraw */}
+          <button onClick={()=>setWdOpen(true)} disabled={!canWithdraw}
+            className="pg-btn pg-btn-aqua"
+            style={{width:'100%', height:50, fontSize:15, borderRadius:14, marginBottom:6,
+                    opacity: canWithdraw ? 1 : 0.45, cursor: canWithdraw ? 'pointer' : 'not-allowed'}}>
+            {ArrowUp(16,'var(--pg-blue-900)')} {L.withdraw}
           </button>
-          <div style={{fontSize:11, color:'var(--pg-ink-500)', textAlign:'center', marginBottom:20}}>{minLbl}</div>
+          <div style={{fontSize:11, color:'var(--pg-ink-500)', textAlign:'center', marginBottom:18}}>{L.min}</div>
 
           {/* Tabs */}
           <div className="pg-seg" style={{marginBottom:14}}>
-            <button className={`pg-seg-btn ${tab==='pending'?'on':''}`} onClick={()=>setTab('pending')}>
-              {pendingLbl} ({d.pending.length})
-            </button>
-            <button className={`pg-seg-btn ${tab==='history'?'on':''}`} onClick={()=>setTab('history')}>{historyLbl}</button>
+            <button className={`pg-seg-btn ${tab==='referral'?'on':''}`} onClick={()=>setTab('referral')}>{L.referral}</button>
+            <button className={`pg-seg-btn ${tab==='history'?'on':''}`} onClick={()=>setTab('history')}>{L.history}</button>
           </div>
 
-          {tab==='pending' && (
-            <div style={{display:'flex', flexDirection:'column', gap:10}}>
-              {d.pending.map(p => (
-                <div key={p.id} className="pg-card" style={{padding:'13px 14px'}}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10}}>
-                    <div style={{flex:1, minWidth:0}}>
-                      <div style={{fontSize:13, fontWeight:600, letterSpacing:'-0.005em'}}>{tr(p.title, lang)}</div>
-                      <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:3}}>{p.client} · {tr(p.date, lang)}</div>
-                    </div>
-                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:20, fontWeight:700, color:'var(--pg-aqua-700)', letterSpacing:'-0.02em'}}>${p.amount}</div>
+          {tab==='referral' && (
+            <div style={{display:'flex', flexDirection:'column', gap:14}}>
+              {/* Discount the user themselves got */}
+              {myDisc && (
+                <div style={{borderRadius:14, padding:'12px 14px', background:'rgba(14,186,199,0.10)', border:'1px solid rgba(14,186,199,0.30)'}}>
+                  <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:2}}>
+                    🎁 {L.youGet} — {myDisc.monthly_pct}% / {myDisc.annual_pct}%
                   </div>
-                  <div style={{marginTop:9, display:'flex', alignItems:'center', gap:6}}>
-                    <div style={{width:7, height:7, borderRadius:'50%', background:'oklch(0.72 0.18 80)', flexShrink:0}}/>
-                    <span style={{fontSize:11, color:'oklch(0.55 0.18 80)', fontWeight:600}}>{awaitLbl}</span>
-                  </div>
+                  <div style={{fontSize:11.5, color:'var(--pg-ink-600)', lineHeight:1.4}}>{L.youGetSub}</div>
                 </div>
-              ))}
+              )}
+
+              {/* Share link */}
+              <div className="pg-card" style={{padding:'14px 15px'}}>
+                <div style={{fontSize:14, fontWeight:700, marginBottom:2}}>{L.invite}</div>
+                <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginBottom:12, lineHeight:1.4}}>{L.inviteSub}</div>
+
+                <div style={{fontSize:10, fontWeight:700, color:'var(--pg-ink-500)', letterSpacing:'0.05em', marginBottom:5}}>
+                  {L.yourLink.toUpperCase()}
+                </div>
+                <input id="pgRefLinkInput" readOnly value={link}
+                  onFocus={e=>e.target.select()}
+                  style={{width:'100%', height:42, borderRadius:10, border:'1px solid var(--pg-ink-200)',
+                          background:'var(--pg-ink-50, #F7F9FB)', padding:'0 11px', fontSize:12.5,
+                          fontFamily:'inherit', color:'var(--pg-ink-700)', boxSizing:'border-box', marginBottom:9}}/>
+                <div style={{display:'flex', gap:8}}>
+                  <button onClick={copyLink} disabled={!link} style={{flex:1, height:42, borderRadius:11,
+                    cursor: link ? 'pointer' : 'not-allowed', opacity: link ? 1 : 0.45,
+                    border:'1px solid var(--pg-ink-200)', background:'var(--pg-white)', color:'var(--pg-ink-800)',
+                    fontFamily:'inherit', fontSize:13, fontWeight:700}}>
+                    {copied ? '✓ ' + L.copied : L.copy}
+                  </button>
+                  <button onClick={shareLink} disabled={!link} style={{flex:1, height:42, borderRadius:11,
+                    cursor: link ? 'pointer' : 'not-allowed', opacity: link ? 1 : 0.45,
+                    border:'none', background:'var(--pg-blue-500)', color:'#fff',
+                    fontFamily:'inherit', fontSize:13, fontWeight:700}}>
+                    {L.share}
+                  </button>
+                </div>
+              </div>
+
+              {/* Commission table */}
+              <div className="pg-card" style={{padding:'14px 15px'}}>
+                <div style={{fontSize:13, fontWeight:700, marginBottom:10}}>{L.table}</div>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 62px 62px', gap:6, alignItems:'center'}}>
+                  <div/>
+                  <div style={{fontSize:10, fontWeight:700, color:'var(--pg-ink-500)', textAlign:'center', letterSpacing:'0.04em'}}>{L.monthly.toUpperCase()}</div>
+                  <div style={{fontSize:10, fontWeight:700, color:'var(--pg-ink-500)', textAlign:'center', letterSpacing:'0.04em'}}>{L.annual.toUpperCase()}</div>
+
+                  <div style={{fontSize:13, fontWeight:600, color:'#0077B6'}}>PRO</div>
+                  <div style={{fontSize:14, fontWeight:700, textAlign:'center'}}>$5</div>
+                  <div style={{fontSize:14, fontWeight:700, textAlign:'center'}}>$7</div>
+
+                  <div style={{fontSize:13, fontWeight:600, color:'#7c3aed'}}>PREMIUM</div>
+                  <div style={{fontSize:14, fontWeight:700, textAlign:'center'}}>$7</div>
+                  <div style={{fontSize:14, fontWeight:700, textAlign:'center'}}>$10</div>
+                </div>
+                <div style={{marginTop:10, paddingTop:10, borderTop:'0.5px solid var(--pg-ink-100)', fontSize:11.5, color:'var(--pg-ink-500)', lineHeight:1.45}}>
+                  {lang==='pt'
+                    ? 'Quem entrar pelo seu link ganha 10% de desconto no plano mensal e 5% no anual.'
+                    : lang==='es'
+                    ? 'Quien entre por tu enlace obtiene 10% de descuento en el plan mensual y 5% en el anual.'
+                    : 'Whoever joins through your link gets 10% off monthly and 5% off annual.'}
+                </div>
+              </div>
+
+              {referred === 0 && (
+                <div style={{textAlign:'center', padding:'8px 16px 4px', color:'var(--pg-ink-400)', fontSize:12.5, lineHeight:1.5}}>
+                  {L.noRef}
+                </div>
+              )}
             </div>
           )}
 
           {tab==='history' && (
             <div style={{display:'flex', flexDirection:'column', gap:1}}>
-              {d.history.map(h => (
-                <div key={h.id} style={{display:'flex', alignItems:'center', gap:12, padding:'12px 2px', borderBottom:'0.5px solid var(--pg-ink-100)'}}>
-                  <div style={{width:38, height:38, borderRadius:11, flexShrink:0, background:h.type==='credit'?'var(--pg-aqua-100)':'oklch(0.95 0.04 20)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                    {h.type==='credit' ? ArrowUp(16,'var(--pg-aqua-700)') : ArrowDown(16,'oklch(0.45 0.18 20)')}
-                  </div>
-                  <div style={{flex:1, minWidth:0}}>
-                    <div style={{fontSize:13, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{tr(h.title, lang)}</div>
-                    <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>{tr(h.date, lang)}</div>
-                  </div>
-                  <div style={{fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.02em', color:h.type==='credit'?'var(--pg-aqua-700)':'oklch(0.45 0.18 20)'}}>
-                    {h.type==='credit'?'+':'-'}${h.amount}
-                  </div>
+              {walletTx.length === 0 && (
+                <div style={{textAlign:'center', padding:'30px 16px', color:'var(--pg-ink-400)', fontSize:13}}>
+                  {L.empty}
                 </div>
-              ))}
+              )}
+              {walletTx.map(t => {
+                const credit = t.amount_cents > 0;
+                return (
+                  <div key={t.id} style={{display:'flex', alignItems:'center', gap:12, padding:'12px 2px', borderBottom:'0.5px solid var(--pg-ink-100)'}}>
+                    <div style={{width:38, height:38, borderRadius:11, flexShrink:0, background:credit?'var(--pg-aqua-100)':'oklch(0.95 0.04 20)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                      {credit ? ArrowUp(16,'var(--pg-aqua-700)') : ArrowDown(16,'oklch(0.45 0.18 20)')}
+                    </div>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{fontSize:13, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{txLabel(t)}</div>
+                      <div style={{fontSize:11, color:'var(--pg-ink-500)', marginTop:1}}>
+                        {new Date(t.created_at).toLocaleDateString(lang==='pt'?'pt-BR':lang==='es'?'es':'en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+                      </div>
+                    </div>
+                    <div style={{fontFamily:'var(--pg-font-display)', fontSize:15, fontWeight:700, letterSpacing:'-0.02em', color:credit?'var(--pg-aqua-700)':'oklch(0.45 0.18 20)'}}>
+                      {credit?'+':'−'}{money(Math.abs(t.amount_cents))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
+
+        {/* Withdraw prompt */}
+        {wdOpen && (
+          <div style={{position:'absolute', inset:0, zIndex:50, background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'flex-end'}}
+            onClick={()=>!busy && setWdOpen(false)}>
+            <div onClick={e=>e.stopPropagation()} style={{width:'100%', background:'var(--pg-white)', borderRadius:'20px 20px 0 0', padding:'20px 18px calc(20px + env(safe-area-inset-bottom, 0px))'}}>
+              <div style={{width:40, height:4, borderRadius:4, background:'var(--pg-ink-200)', margin:'0 auto 16px'}}/>
+              <div style={{fontSize:16, fontWeight:700, marginBottom:4}}>{L.askAmount}</div>
+              <div style={{fontSize:12, color:'var(--pg-ink-500)', marginBottom:14}}>
+                {L.balance}: {money(balance)} · {L.min}
+              </div>
+              <div style={{position:'relative', marginBottom:14}}>
+                <span style={{position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:20, fontWeight:700, color:'var(--pg-blue-500)'}}>$</span>
+                <input className="pg-field" value={wdAmount} inputMode="decimal"
+                  onChange={e=>setWdAmount(e.target.value.replace(/[^0-9.,]/g,''))}
+                  placeholder={(WITHDRAW_MIN_CENTS/100).toFixed(0)}
+                  style={{height:56, paddingLeft:32, fontSize:22, fontWeight:700}}/>
+              </div>
+              <div style={{display:'flex', gap:8}}>
+                <button onClick={()=>setWdOpen(false)} disabled={busy} style={{flex:1, height:48, borderRadius:12, border:'1px solid var(--pg-ink-200)', background:'var(--pg-white)', color:'var(--pg-ink-700)', fontFamily:'inherit', fontSize:14, fontWeight:700, cursor:'pointer'}}>
+                  {L.cancel}
+                </button>
+                <button onClick={submitWithdraw} disabled={busy} style={{flex:2, height:48, borderRadius:12, border:'none', background:'var(--pg-blue-500)', color:'#fff', fontFamily:'inherit', fontSize:14, fontWeight:700, cursor:'pointer', opacity:busy?0.6:1}}>
+                  {L.confirmWd}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Sheet>
   );

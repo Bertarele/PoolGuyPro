@@ -565,22 +565,8 @@ function tr(v, lang='en') {
   return v[lang] || v.en || '';
 }
 
-const WALLET_DATA = {
-  balance: 490,
-  weekEarnings: 340,
-  monthEarnings: 1240,
-  pending: [
-    { id:1, title:{en:'Vacation cover — 6 pools', pt:'Cobrir férias — 6 piscinas', es:'Cobertura vacaciones — 6 piscinas'}, client:'Marcos T.', amount:270, date:{en:'Today', pt:'Hoje', es:'Hoy'} },
-    { id:2, title:{en:'Weekly route assist', pt:'Assistência semanal', es:'Asistencia semanal'}, client:'Diego A.', amount:220, date:{en:'Yesterday', pt:'Ontem', es:'Ayer'} },
-  ],
-  history: [
-    { id:1, title:{en:'Equipment swap', pt:'Troca de equipamento', es:'Cambio de equipo'}, amount:120, date:{en:'May 20', pt:'20 mai', es:'20 may'}, type:'credit' },
-    { id:2, title:{en:'One-off cleaning', pt:'Limpeza pontual', es:'Limpieza única'}, amount:85, date:{en:'May 18', pt:'18 mai', es:'18 may'}, type:'credit' },
-    { id:3, title:{en:'Withdrawal', pt:'Saque', es:'Retiro'}, amount:500, date:{en:'May 15', pt:'15 mai', es:'15 may'}, type:'debit' },
-    { id:4, title:{en:'Weekly route', pt:'Rota semanal', es:'Ruta semanal'}, amount:220, date:{en:'May 12', pt:'12 mai', es:'12 may'}, type:'credit' },
-    { id:5, title:{en:'Vacation cover', pt:'Cobrir férias', es:'Cobertura vacaciones'}, amount:270, date:{en:'May 8', pt:'8 mai', es:'8 may'}, type:'credit' },
-  ],
-};
+// WALLET_DATA (hardcoded $490 balance + invented history) was removed —
+// the wallet now reads the real wallet_transactions ledger.
 
 const MY_APPLICATIONS = [];
 
@@ -588,5 +574,5 @@ Object.assign(window, {
   STRINGS, FEED, FEATURED, EQUIPMENT, POOL_ROUTES, SINGLE_POOLS, QUICK_POOLS,
   HIRING, TECHS, VACATIONS_POSTED, VACATION_LISTINGS, VACATIONS_APPLIED, REVIEWS, NOTIFICATIONS,
   MY_POSTS, CHAT_CONVERSATIONS, tr,
-  WALLET_DATA, MY_APPLICATIONS,
+  MY_APPLICATIONS,
 });

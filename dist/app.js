@@ -1,5 +1,28 @@
 // app.jsx — root, tab routing, overlays
 
+// ── Referral link capture ─────────────────────────────────────
+// Runs at module load, before React mounts and before any auth
+// redirect rewrites the URL — someone opening ?ref=ABC123 usually
+// still has to sign up (and may bounce through Google/Apple OAuth)
+// before the code can be claimed, so it has to be parked somewhere
+// that survives that round-trip.
+(function capturePendingReferral() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    let code = params.get('ref');
+    if (!code && window.location.hash.includes('ref=')) {
+      code = new URLSearchParams(window.location.hash.split('?')[1] || '').get('ref');
+    }
+    if (!code) return;
+    localStorage.setItem('pg_pending_ref', code.trim().toUpperCase());
+    // Strip it from the URL so a reload (or a shared screenshot of the
+    // address bar) can't re-trigger an attribution attempt later.
+    params.delete('ref');
+    const qs = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+  } catch (e) {}
+})();
+
 // ── Feedback Sheet ────────────────────────────────────────────
 function FeedbackSheet({
   open,
@@ -783,6 +806,21 @@ function App() {
   // (and HomeScreen's "Meus Anúncios") tell "genuinely no listings yet"
   // apart from "still loading", instead of flashing an empty state.
   const [liveDataLoaded, setLiveDataLoaded] = React.useState(false);
+
+  // ── Wallet + referral ────────────────────────────────────────
+  const [wallet, setWallet] = React.useState(null); // my_referral_summary()
+  const [walletTx, setWalletTx] = React.useState([]); // ledger rows, newest first
+
+  const loadWallet = React.useCallback(async () => {
+    if (!window.sb || !userRef.current?.uid) return;
+    try {
+      const [sum, tx] = await Promise.all([window.sb.rpc('my_referral_summary'), window.sb.from('wallet_transactions').select('*').eq('user_id', userRef.current.uid).order('created_at', {
+        ascending: false
+      }).limit(50)]);
+      if (sum?.data?.ok) setWallet(sum.data);
+      if (tx?.data) setWalletTx(tx.data);
+    } catch (e) {}
+  }, []);
 
   // Hide splash screen once auth AND the first data fetch are both done —
   // hiding on authReady alone let the app shell show through with jobs/
@@ -1848,6 +1886,9 @@ function App() {
         price: qj.price_negotiable ? null : qj.price_per_pool,
         priceMode: qj.price_negotiable ? 'neg' : 'fixed'
       })));
+      // Awaited so the Home wallet card has its balance before the splash
+      // lifts, rather than rendering "$0" and correcting itself a beat later.
+      await loadWallet();
       setLiveDataLoaded(true);
       // Load applicant counts in background — non-blocking, doesn't delay UI render.
       // Includes vacation ids too (same job_applications table) so vacation
@@ -2233,6 +2274,31 @@ function App() {
     }, onClick ? 5000 : 2400);
   };
 
+  // Redeem a referral code parked by capturePendingReferral() once the
+  // user actually exists. The server decides whether the code is valid —
+  // this only decides when to stop asking.
+  React.useEffect(() => {
+    if (!authReady || !isLoggedIn || !user?.uid || !window.sb) return;
+    const code = localStorage.getItem('pg_pending_ref');
+    if (!code) return;
+    window.sb.rpc('claim_referral', {
+      p_code: code
+    }).then(({
+      data,
+      error
+    }) => {
+      // A transport error may be a passing network blip, so keep the code
+      // for the next launch. Any server verdict is final — an invalid,
+      // self, or duplicate code will never become valid on a retry.
+      if (error || !data) return;
+      localStorage.removeItem('pg_pending_ref');
+      if (data.ok) {
+        showToast(lang === 'pt' ? `🎁 Indicação aplicada! ${data.discount_monthly_pct}% de desconto no mensal, ${data.discount_annual_pct}% no anual.` : lang === 'es' ? `🎁 ¡Referido aplicado! ${data.discount_monthly_pct}% de descuento mensual, ${data.discount_annual_pct}% anual.` : `🎁 Referral applied! ${data.discount_monthly_pct}% off monthly, ${data.discount_annual_pct}% off annual.`);
+        loadWallet();
+      }
+    }).catch(() => {});
+  }, [authReady, isLoggedIn, user?.uid, lang, loadWallet]);
+
   // ── Responsive: detect desktop vs mobile (must be BEFORE ctx) ──
   const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
   React.useEffect(() => {
@@ -2450,6 +2516,9 @@ function App() {
     loadLiveHandoffs,
     liveDataLoaded,
     liveMyQuickJobs,
+    wallet,
+    walletTx,
+    loadWallet,
     liveApplications,
     jobApplicantCounts,
     refreshLiveApplications: () => loadLiveApplications(user?.uid),
@@ -3033,7 +3102,11 @@ function App() {
   }), /*#__PURE__*/React.createElement(WalletSheet, {
     open: walletOpen,
     onClose: () => setWalletOpen(false),
-    lang: lang
+    lang: lang,
+    wallet: wallet,
+    walletTx: walletTx,
+    loadWallet: loadWallet,
+    showToast: showToast
   }), /*#__PURE__*/React.createElement(WorkLifecycleSheet, {
     open: !!jobDetailApp,
     onClose: () => setJobDetailApp(null),
