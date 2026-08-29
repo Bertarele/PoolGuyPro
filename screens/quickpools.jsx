@@ -1970,6 +1970,16 @@ function todayDayKey() { return ['sun','mon','tue','wed','thu','fri','sat'][new 
 function RouteManagerPanel({ lang, routes, loading, busy, onClose, onCreate, onEdit, onDelete, onActivate }) {
   const today = todayDayKey();
   const sorted = [...routes].sort((a,b) => ROUTE_DAY_ORDER.indexOf(a.day_of_week) - ROUTE_DAY_ORDER.indexOf(b.day_of_week));
+  // Collapsed by default so scanning for one specific route across several
+  // days doesn't mean scrolling past every route's full details — only
+  // today's day opens automatically since that's the one most likely to
+  // matter right now (e.g. activating a route because today's guy is out).
+  const [expandedDays, setExpandedDays] = React.useState(() => new Set([today]));
+  const toggleDay = (day) => setExpandedDays(prev => {
+    const next = new Set(prev);
+    next.has(day) ? next.delete(day) : next.add(day);
+    return next;
+  });
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
@@ -2011,16 +2021,18 @@ function RouteManagerPanel({ lang, routes, loading, busy, onClose, onCreate, onE
             {ROUTE_DAY_ORDER.filter(day => sorted.some(r => r.day_of_week === day)).map(day => {
               const dayRoutes = sorted.filter(r => r.day_of_week === day);
               const isToday = day === today;
+              const isExpanded = expandedDays.has(day);
               return (
                 <div key={day} style={{
                   borderRadius:16, overflow:'hidden',
                   border: isToday ? '1.5px solid #0EBAC7' : '1px solid var(--pg-ink-200)',
                   background: isToday ? 'rgba(14,186,199,0.05)' : 'var(--pg-white)',
                 }}>
-                  {/* Day header — shared by every route registered for this day */}
-                  <div style={{
-                    display:'flex', alignItems:'center', gap:8, padding:'11px 16px',
-                    borderBottom: isToday ? '1px solid rgba(14,186,199,0.30)' : '0.5px solid var(--pg-ink-200)',
+                  {/* Day header — shared by every route registered for this day; tap to expand/collapse */}
+                  <button onClick={()=>toggleDay(day)} style={{
+                    display:'flex', alignItems:'center', gap:8, padding:'11px 16px', width:'100%',
+                    border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'left',
+                    borderBottom: isExpanded ? (isToday ? '1px solid rgba(14,186,199,0.30)' : '0.5px solid var(--pg-ink-200)') : 'none',
                     background: isToday ? 'rgba(14,186,199,0.10)' : 'var(--pg-ink-50, #F7F9FB)',
                   }}>
                     <span style={{fontSize:12, fontWeight:800, letterSpacing:'0.04em', color: isToday ? '#0D7280' : 'var(--pg-ink-700)'}}>
@@ -2035,10 +2047,14 @@ function RouteManagerPanel({ lang, routes, loading, busy, onClose, onCreate, onE
                     <span style={{fontSize:11, color:'var(--pg-ink-400)', fontWeight:600}}>
                       {dayRoutes.length} {dayRoutes.length===1?(lang==='pt'?'rota':lang==='es'?'ruta':'route'):(lang==='pt'?'rotas':lang==='es'?'rutas':'routes')}
                     </span>
-                  </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isToday ? '#0D7280' : 'var(--pg-ink-500)'} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"
+                      style={{flexShrink:0, transform: isExpanded ? 'rotate(180deg)' : 'none', transition:'transform .2s ease'}}>
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
 
                   {/* Routes registered for this day */}
-                  {dayRoutes.map((route, i) => {
+                  {isExpanded && dayRoutes.map((route, i) => {
                     const pools = route.pools || [];
                     const cities = [...new Set(pools.map(p=>p.city).filter(Boolean))];
                     const isActive = route.last_activated_job_id && route.last_activated_at &&

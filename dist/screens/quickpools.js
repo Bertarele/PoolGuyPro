@@ -3504,6 +3504,16 @@ function RouteManagerPanel({
 }) {
   const today = todayDayKey();
   const sorted = [...routes].sort((a, b) => ROUTE_DAY_ORDER.indexOf(a.day_of_week) - ROUTE_DAY_ORDER.indexOf(b.day_of_week));
+  // Collapsed by default so scanning for one specific route across several
+  // days doesn't mean scrolling past every route's full details — only
+  // today's day opens automatically since that's the one most likely to
+  // matter right now (e.g. activating a route because today's guy is out).
+  const [expandedDays, setExpandedDays] = React.useState(() => new Set([today]));
+  const toggleDay = day => setExpandedDays(prev => {
+    const next = new Set(prev);
+    next.has(day) ? next.delete(day) : next.add(day);
+    return next;
+  });
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -3589,6 +3599,7 @@ function RouteManagerPanel({
   }, ROUTE_DAY_ORDER.filter(day => sorted.some(r => r.day_of_week === day)).map(day => {
     const dayRoutes = sorted.filter(r => r.day_of_week === day);
     const isToday = day === today;
+    const isExpanded = expandedDays.has(day);
     return /*#__PURE__*/React.createElement("div", {
       key: day,
       style: {
@@ -3597,13 +3608,19 @@ function RouteManagerPanel({
         border: isToday ? '1.5px solid #0EBAC7' : '1px solid var(--pg-ink-200)',
         background: isToday ? 'rgba(14,186,199,0.05)' : 'var(--pg-white)'
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => toggleDay(day),
       style: {
         display: 'flex',
         alignItems: 'center',
         gap: 8,
         padding: '11px 16px',
-        borderBottom: isToday ? '1px solid rgba(14,186,199,0.30)' : '0.5px solid var(--pg-ink-200)',
+        width: '100%',
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        borderBottom: isExpanded ? isToday ? '1px solid rgba(14,186,199,0.30)' : '0.5px solid var(--pg-ink-200)' : 'none',
         background: isToday ? 'rgba(14,186,199,0.10)' : 'var(--pg-ink-50, #F7F9FB)'
       }
     }, /*#__PURE__*/React.createElement("span", {
@@ -3633,7 +3650,23 @@ function RouteManagerPanel({
         color: 'var(--pg-ink-400)',
         fontWeight: 600
       }
-    }, dayRoutes.length, " ", dayRoutes.length === 1 ? lang === 'pt' ? 'rota' : lang === 'es' ? 'ruta' : 'route' : lang === 'pt' ? 'rotas' : lang === 'es' ? 'rutas' : 'routes')), dayRoutes.map((route, i) => {
+    }, dayRoutes.length, " ", dayRoutes.length === 1 ? lang === 'pt' ? 'rota' : lang === 'es' ? 'ruta' : 'route' : lang === 'pt' ? 'rotas' : lang === 'es' ? 'rutas' : 'routes'), /*#__PURE__*/React.createElement("svg", {
+      width: "14",
+      height: "14",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: isToday ? '#0D7280' : 'var(--pg-ink-500)',
+      strokeWidth: "2.3",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      style: {
+        flexShrink: 0,
+        transform: isExpanded ? 'rotate(180deg)' : 'none',
+        transition: 'transform .2s ease'
+      }
+    }, /*#__PURE__*/React.createElement("polyline", {
+      points: "6 9 12 15 18 9"
+    }))), isExpanded && dayRoutes.map((route, i) => {
       const pools = route.pools || [];
       const cities = [...new Set(pools.map(p => p.city).filter(Boolean))];
       const isActive = route.last_activated_job_id && route.last_activated_at && new Date(route.last_activated_at).toDateString() === new Date().toDateString();
