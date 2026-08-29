@@ -233,6 +233,14 @@
   }
 
   window.sb = {
+    rpc:async function(fn,params){
+      var h={'apikey':KEY,'Content-Type':'application/json'};
+      if(_tok) h['Authorization']='Bearer '+_tok;
+      var r=await fetch(BASE+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(params||{})});
+      var d; try{d=await r.json();}catch(e){d=null;}
+      if(!r.ok) return{data:null,error:{message:(d&&d.message)||('RPC failed '+r.status)}};
+      return{data:d,error:null};
+    },
     auth:{
       signInWithPassword:async function(creds){
         var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
@@ -812,6 +820,10 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
   // Ban
   const [banned,       setBanned]       = React.useState(false);
   const [banSaving,    setBanSaving]    = React.useState(false);
+  // Plan grant
+  const [grantTier,    setGrantTier]    = React.useState('pro');
+  const [grantDays,    setGrantDays]    = React.useState('30');
+  const [grantSaving,  setGrantSaving]  = React.useState(false);
   // Dispute history
   const [disputes,     setDisputes]     = React.useState([]);
 
@@ -928,6 +940,26 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
     }
     setBanned(newBan);
     setBanSaving(false);
+  };
+
+  const applyGrant = async () => {
+    const days = grantTier === 'free' ? null : (grantDays === 'permanent' ? null : parseInt(grantDays, 10));
+    const label = grantTier === 'free' ? 'remover o plano de' : `dar ${grantTier.toUpperCase()} para`;
+    const durLabel = grantTier === 'free' ? '' : (days ? ` por ${days} dias` : ' permanentemente');
+    if (!confirm(`Confirma ${label} ${profile?.name||userName}${durLabel}?`)) return;
+    setGrantSaving(true);
+    // admin_grant_tier() re-checks admin server-side and is the only path
+    // that may write profiles.tier — this call cannot be spoofed into
+    // granting a plan the caller isn't actually an admin for.
+    const { data, error } = await window.sb.rpc('admin_grant_tier', {
+      p_user_id: userId, p_tier: grantTier, p_days: days,
+    });
+    setGrantSaving(false);
+    if (error || !data?.ok) {
+      alert('Erro: ' + (data?.error || error?.message || 'falhou'));
+      return;
+    }
+    setProfile(p => ({ ...p, tier: data.tier, tier_expires_at: data.expires_at, tier_source: 'admin_grant' }));
   };
 
   const totalWarnPts = warnings.reduce((s,w)=>s+(warnPtMap[w.severity]||1),0);
@@ -1177,6 +1209,54 @@ function UserDetailModal({ userId, userName, disputeRequestId, onClose }) {
                 })}
               </div>
             )}
+
+            {/* Plan grant */}
+            <div style={{marginBottom:14,background:'#0f1117',borderRadius:12,border:'1px solid #1e293b',padding:'12px 13px'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:2}}>
+                💳 Gerenciar plano
+              </div>
+              {profile?.tier_expires_at && (
+                <div style={{fontSize:11.5,color:'#f59e0b',marginTop:4,marginBottom:2}}>
+                  ⏳ Expira em {fmtDate(profile.tier_expires_at)}
+                  {profile?.tier_source==='admin_grant' && <span style={{color:'#475569'}}> · concedido manualmente</span>}
+                </div>
+              )}
+              {profile?.tier_source==='stripe_webhook' && profile?.tier!=='free' && (
+                <div style={{fontSize:11.5,color:'#0EBAC7',marginTop:4,marginBottom:2}}>
+                  💳 Assinatura ativa via Stripe — um novo plano manual substitui isso até você reverter.
+                </div>
+              )}
+              <div style={{display:'flex',gap:7,margin:'10px 0'}}>
+                {['free','pro','premium'].map(tv=>(
+                  <button key={tv} onClick={()=>setGrantTier(tv)} style={{
+                    flex:1,height:34,borderRadius:8,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,
+                    border:`1.5px solid ${grantTier===tv ? (tv==='premium'?'#f59e0b':tv==='pro'?'#6366f1':'#475569') : '#334155'}`,
+                    background: grantTier===tv ? (tv==='premium'?'#f59e0b20':tv==='pro'?'#6366f120':'#33415530') : 'transparent',
+                    color: grantTier===tv ? (tv==='premium'?'#f59e0b':tv==='pro'?'#818cf8':'#94a3b8') : '#64748b',
+                  }}>
+                    {tv==='premium'?'⭐ Premium':tv==='pro'?'🚀 Pro':'Free'}
+                  </button>
+                ))}
+              </div>
+              {grantTier !== 'free' && (
+                <select value={grantDays} onChange={e=>setGrantDays(e.target.value)} style={{
+                  width:'100%',padding:'8px 10px',borderRadius:8,border:'1px solid #334155',background:'#1a1f2e',
+                  color:'#f1f5f9',fontFamily:'inherit',fontSize:12,outline:'none',marginBottom:8}}>
+                  <option value="7">7 dias</option>
+                  <option value="30">30 dias</option>
+                  <option value="90">90 dias</option>
+                  <option value="365">1 ano</option>
+                  <option value="permanent">Permanente (sem expiração)</option>
+                </select>
+              )}
+              <button onClick={applyGrant} disabled={grantSaving} style={{
+                width:'100%',height:38,borderRadius:9,border:'none',fontWeight:700,fontSize:12.5,cursor:'pointer',fontFamily:'inherit',
+                background: grantTier==='free' ? '#ef444415' : '#0EBAC7', color: grantTier==='free' ? '#ef4444' : '#03210f',
+                border: grantTier==='free' ? '1px solid #ef444450' : 'none',
+                opacity:grantSaving?0.7:1}}>
+                {grantSaving ? '…' : grantTier==='free' ? '🗑 Remover plano atual' : `✅ Ativar ${grantTier==='premium'?'Premium':'Pro'}${grantDays==='permanent'?' permanentemente':` por ${grantDays} dias`}`}
+              </button>
+            </div>
 
             {/* Admin actions */}
             <div style={{marginBottom:14,display:'flex',flexDirection:'column',gap:8}}>
