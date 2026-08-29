@@ -1639,16 +1639,40 @@ function SponsorBannersPanel({ banners, setBanners, bannerForm, setBannerForm, b
     if (data) setBanners(data);
   };
 
+  // Phone-camera photos routinely come in at 3-8MB — uploaded as-is, that's
+  // multiple megabytes every viewer has to download just to see a banner
+  // that renders at a few hundred px wide in the app. Downscale to a width
+  // that's still crisp at 2x on the widest banner slot and re-encode as
+  // JPEG (photographic content compresses far better than PNG) before
+  // upload, so this can't happen no matter what the sponsor sends over.
+  const MAX_BANNER_WIDTH = 1600;
+  const compressForUpload = (file) => new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, MAX_BANNER_WIDTH / img.naturalWidth);
+      const w = Math.round(img.naturalWidth * scale);
+      const h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao processar a imagem')), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Não foi possível ler a imagem')); };
+    img.src = url;
+  });
+
   const uploadImage = async (file) => {
     setBannerImgUploading(true);
     try {
-      const ext = file.name.split('.').pop();
-      const path = `art/${Date.now()}.${ext}`;
-      const { error } = await window.sb.storage.from('sponsor-banners').upload(path, file, { upsert: true, contentType: file.type });
+      const blob = await compressForUpload(file);
+      const path = `art/${Date.now()}.jpg`;
+      const { error } = await window.sb.storage.from('sponsor-banners').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
       if (error) { showToast('❌ Erro no upload: ' + error.message, false); return; }
       const { data } = window.sb.storage.from('sponsor-banners').getPublicUrl(path);
       setBannerForm(p => ({ ...p, image_url: data.publicUrl }));
-      showToast('✓ Imagem enviada!');
+      showToast(`✓ Imagem enviada! (${Math.round(file.size/1024)}KB → ${Math.round(blob.size/1024)}KB)`);
     } catch (ex) {
       showToast('❌ Erro: ' + ex.message, false);
     } finally {

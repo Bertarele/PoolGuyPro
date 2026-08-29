@@ -1647,11 +1647,13 @@ function HomeScreen({
       key: b.id,
       onClick: () => {
         if (bannerTouch.current?.swiped || !contactHref) return;
-        // tel:/mailto: aren't real pages — opening them in a new tab
-        // just leaves a blank tab behind while the OS dialer/mail
-        // app takes over. Only an actual website should get a new
-        // tab; phone and email hand off from the current one.
-        if (b.contact_type === 'website') window.open(contactHref, '_blank');else window.location.href = contactHref;
+        // Same-tab for everything: window.open(_blank) always shows a
+        // beat of blank tab before the destination paints (it creates
+        // the tab first, loads second) — direct navigation skips that
+        // step entirely. The trade-off is real: a website tap now
+        // replaces the app instead of leaving it open in a background
+        // tab, same as tapping any normal link would.
+        window.location.href = contactHref;
       },
       style: {
         width: `${100 / imageBanners.length}%`,
