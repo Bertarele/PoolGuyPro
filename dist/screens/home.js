@@ -16,6 +16,7 @@ function HomeScreen({
     liveMarket = [],
     liveJobs = [],
     liveVacations = [],
+    liveDataLoaded = false,
     hasUnreadChat,
     hasUnreadNotif,
     openListingById,
@@ -70,9 +71,11 @@ function HomeScreen({
 
   // My own Quick Pool postings
   const [myQuickJobs, setMyQuickJobs] = React.useState([]);
+  const [myQuickJobsLoaded, setMyQuickJobsLoaded] = React.useState(false);
   React.useEffect(() => {
     if (!window.sb || !user?.uid) {
       setMyQuickJobs([]);
+      setMyQuickJobsLoaded(true);
       return;
     }
     window.sb.from('quick_pool_jobs').select('*').eq('poster_id', user.uid).in('status', ['open', 'filled']).order('created_at', {
@@ -90,9 +93,15 @@ function HomeScreen({
         price: j.price_negotiable ? null : j.price_per_pool,
         priceMode: j.price_negotiable ? 'neg' : 'fixed'
       })));
+      setMyQuickJobsLoaded(true);
     });
   }, [user?.uid]);
   const myPosts = [...myMarketPosts, ...myOwnJobs, ...myQuickJobs];
+  // Both myMarketPosts/myOwnJobs (from the app-wide fetch) and myQuickJobs
+  // (fetched locally above) start out empty before their first response —
+  // without this, "Meus Anúncios" flashes its "no listings" empty state on
+  // every app open, then flips to the real content a beat later.
+  const myPostsLoaded = liveDataLoaded && myQuickJobsLoaded;
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob, setSelectedJob] = React.useState(null);
 
@@ -698,7 +707,7 @@ function HomeScreen({
       color: 'var(--pg-ink-500)',
       marginTop: 1
     }
-  }, myPosts.length === 0 ? lang === 'pt' ? 'Nenhum anúncio ativo ainda' : lang === 'es' ? 'Sin anuncios activos aún' : 'No active listings yet' : lang === 'pt' ? 'Seus anúncios ativos' : lang === 'es' ? 'Tus anuncios activos' : 'Your active listings'))), /*#__PURE__*/React.createElement("div", {
+  }, !myPostsLoaded ? lang === 'pt' ? 'Carregando…' : lang === 'es' ? 'Cargando…' : 'Loading…' : myPosts.length === 0 ? lang === 'pt' ? 'Nenhum anúncio ativo ainda' : lang === 'es' ? 'Sin anuncios activos aún' : 'No active listings yet' : lang === 'pt' ? 'Seus anúncios ativos' : lang === 'es' ? 'Tus anuncios activos' : 'Your active listings'))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -748,7 +757,7 @@ function HomeScreen({
     y1: "12",
     x2: "19",
     y2: "12"
-  }))))), myPosts.length === 0 && /*#__PURE__*/React.createElement("button", {
+  }))))), myPostsLoaded && myPosts.length === 0 && /*#__PURE__*/React.createElement("button", {
     onClick: () => openMarketPost && openMarketPost(),
     style: {
       width: '100%',
@@ -801,7 +810,7 @@ function HomeScreen({
       color: '#fff',
       boxShadow: '0 3px 10px rgba(0,119,182,0.30)'
     }
-  }, lang === 'pt' ? 'Publicar agora →' : lang === 'es' ? 'Publicar ahora →' : 'Post now →')), myPosts.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Publicar agora →' : lang === 'es' ? 'Publicar ahora →' : 'Post now →')), myPostsLoaded && myPosts.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       overflowX: 'auto',

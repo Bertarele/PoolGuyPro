@@ -1583,6 +1583,10 @@ function App() {
   const [liveVacations, setLiveVacations] = React.useState([]);
   const [liveMarket, setLiveMarket] = React.useState([]);
   const [liveHandoffs, setLiveHandoffs] = React.useState([]); // "Repasse de Piscina" postings
+  // False until the first jobs/marketplace fetch resolves — lets HomeScreen
+  // tell "genuinely no listings yet" apart from "still loading", so it
+  // doesn't flash an empty "Meus Anúncios" state on every app open.
+  const [liveDataLoaded, setLiveDataLoaded] = React.useState(false);
   const [liveApplications, setLiveApplications] = React.useState([]); // current user's job applications
   // { [job_id]: { total, pending, withInterview } } — applicant counts for jobs the current user owns
   const [jobApplicantCounts, setJobApplicantCounts] = React.useState({});
@@ -1820,6 +1824,7 @@ function App() {
       }
       if (m.data) setLiveMarket(m.data.map(normMkt));
       if (m.error) console.warn('[Supabase] marketplace fetch error:', m.error.message);
+      setLiveDataLoaded(true);
       // Load applicant counts in background — non-blocking, doesn't delay UI render.
       // Includes vacation ids too (same job_applications table) so vacation
       // owners see applicant counts/the same "view applicants" flow.
@@ -2419,6 +2424,7 @@ function App() {
     liveMarket,
     liveHandoffs,
     loadLiveHandoffs,
+    liveDataLoaded,
     liveApplications,
     jobApplicantCounts,
     refreshLiveApplications: () => loadLiveApplications(user?.uid),

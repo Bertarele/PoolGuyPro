@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], liveVacations=[], hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false, county='Broward' } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], liveVacations=[], liveDataLoaded=false, hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false, county='Broward' } = ctx;
   // Desktop detection via CSS (.pg-mobile-only / .pg-desktop-only) — no JS needed
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
@@ -55,8 +55,9 @@ function HomeScreen({ ctx }) {
 
   // My own Quick Pool postings
   const [myQuickJobs, setMyQuickJobs] = React.useState([]);
+  const [myQuickJobsLoaded, setMyQuickJobsLoaded] = React.useState(false);
   React.useEffect(() => {
-    if (!window.sb || !user?.uid) { setMyQuickJobs([]); return; }
+    if (!window.sb || !user?.uid) { setMyQuickJobs([]); setMyQuickJobsLoaded(true); return; }
     window.sb.from('quick_pool_jobs').select('*')
       .eq('poster_id', user.uid).in('status', ['open','filled'])
       .order('created_at', { ascending: false })
@@ -71,10 +72,16 @@ function HomeScreen({ ctx }) {
           price: j.price_negotiable ? null : j.price_per_pool,
           priceMode: j.price_negotiable ? 'neg' : 'fixed',
         })));
+        setMyQuickJobsLoaded(true);
       });
   }, [user?.uid]);
 
   const myPosts = [...myMarketPosts, ...myOwnJobs, ...myQuickJobs];
+  // Both myMarketPosts/myOwnJobs (from the app-wide fetch) and myQuickJobs
+  // (fetched locally above) start out empty before their first response —
+  // without this, "Meus Anúncios" flashes its "no listings" empty state on
+  // every app open, then flips to the real content a beat later.
+  const myPostsLoaded = liveDataLoaded && myQuickJobsLoaded;
 
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob,      setSelectedJob]      = React.useState(null);
@@ -409,7 +416,9 @@ function HomeScreen({ ctx }) {
               <div>
                 <h3 style={{margin:0, fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:700, letterSpacing:'-0.01em'}}>{adsSectionTitle}</h3>
                 <div style={{fontSize:11.5, color:'var(--pg-ink-500)', marginTop:1}}>
-                  {myPosts.length === 0
+                  {!myPostsLoaded
+                    ? (lang==='pt'?'Carregando…':lang==='es'?'Cargando…':'Loading…')
+                    : myPosts.length === 0
                     ? (lang==='pt'?'Nenhum anúncio ativo ainda':lang==='es'?'Sin anuncios activos aún':'No active listings yet')
                     : (lang==='pt'?'Seus anúncios ativos':lang==='es'?'Tus anuncios activos':'Your active listings')}
                 </div>
@@ -436,7 +445,7 @@ function HomeScreen({ ctx }) {
           </div>
 
           {/* No posts state */}
-          {myPosts.length === 0 && (
+          {myPostsLoaded && myPosts.length === 0 && (
             <button onClick={()=>openMarketPost && openMarketPost()} style={{
               width:'100%', padding:'20px 16px', borderRadius:14, cursor:'pointer',
               border:'2px dashed var(--pg-ink-200)', background:'var(--pg-ink-50, #F7F9FB)',
@@ -469,7 +478,7 @@ function HomeScreen({ ctx }) {
           )}
 
           {/* User posts list */}
-          {myPosts.length > 0 && (
+          {myPostsLoaded && myPosts.length > 0 && (
             <div style={{display:'flex', overflowX:'auto', gap:10, paddingBottom:2, scrollSnapType:'x mandatory', WebkitOverflowScrolling:'touch', msOverflowStyle:'none', scrollbarWidth:'none', touchAction:'pan-x'}}>
               {myPosts.map(item => {
                 const isPending = item.status === 'pending';
