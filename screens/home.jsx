@@ -912,7 +912,15 @@ function HomeScreen({ ctx }) {
                 const hasText = b.title || b.subtitle || hasContact;
                 return (
                   <div key={b.id}
-                    onClick={() => { if (!bannerTouch.current?.swiped && contactHref) window.open(contactHref, '_blank'); }}
+                    onClick={() => {
+                      if (bannerTouch.current?.swiped || !contactHref) return;
+                      // tel:/mailto: aren't real pages — opening them in a new tab
+                      // just leaves a blank tab behind while the OS dialer/mail
+                      // app takes over. Only an actual website should get a new
+                      // tab; phone and email hand off from the current one.
+                      if (b.contact_type === 'website') window.open(contactHref, '_blank');
+                      else window.location.href = contactHref;
+                    }}
                     style={{ width: `${100 / imageBanners.length}%`, flexShrink: 0, position:'relative', cursor: contactHref ? 'pointer' : 'default' }}>
                     <img src={b.image_url} alt={b.company_name || ''} draggable={false}
                       style={{ width: '100%', aspectRatio: '2.4 / 1', objectFit: 'cover', display: 'block' }}/>
