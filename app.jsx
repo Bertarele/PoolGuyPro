@@ -491,11 +491,19 @@ function App() {
 
   // authReady gates the data fetch — ensures profile is loaded before querying DB
   const [authReady, setAuthReady] = React.useState(false);
+  // False until the first full data fetch resolves — lets the splash screen
+  // (and HomeScreen's "Meus Anúncios") tell "genuinely no listings yet"
+  // apart from "still loading", instead of flashing an empty state.
+  const [liveDataLoaded, setLiveDataLoaded] = React.useState(false);
 
-  // Hide splash screen once auth is resolved (app is ready to show UI)
+  // Hide splash screen once auth AND the first data fetch are both done —
+  // hiding on authReady alone let the app shell show through with jobs/
+  // marketplace/"Meus Anúncios" still empty for a beat before they filled
+  // in. isLoggedIn false skips straight to the login screen either way, so
+  // this only holds the splash a little longer for an actual logged-in load.
   React.useEffect(() => {
-    if (authReady && window.__pgHideSplash) window.__pgHideSplash();
-  }, [authReady]);
+    if (authReady && (!isLoggedIn || liveDataLoaded) && window.__pgHideSplash) window.__pgHideSplash();
+  }, [authReady, isLoggedIn, liveDataLoaded]);
 
   const [showOnboarding, setShowOnboarding] = React.useState(false);
 
@@ -1144,10 +1152,7 @@ function App() {
   const [liveVacations,    setLiveVacations]    = React.useState([]);
   const [liveMarket,       setLiveMarket]       = React.useState([]);
   const [liveHandoffs,     setLiveHandoffs]     = React.useState([]); // "Repasse de Piscina" postings
-  // False until the first jobs/marketplace fetch resolves — lets HomeScreen
-  // tell "genuinely no listings yet" apart from "still loading", so it
-  // doesn't flash an empty "Meus Anúncios" state on every app open.
-  const [liveDataLoaded,   setLiveDataLoaded]   = React.useState(false);
+  const [liveMyQuickJobs,  setLiveMyQuickJobs]  = React.useState([]); // current user's own open/filled Quick Pool postings
   const [liveApplications, setLiveApplications] = React.useState([]); // current user's job applications
   // { [job_id]: { total, pending, withInterview } } — applicant counts for jobs the current user owns
   const [jobApplicantCounts, setJobApplicantCounts] = React.useState({});
@@ -1239,7 +1244,7 @@ function App() {
       posterRating: rm ? Math.round(rm.sum / rm.count * 10) / 10 : null, posterJobs: rm ? rm.count : 0 };
     };
     const doFetch = async () => {
-      const [j, tc, v, m, ho] = await Promise.all([
+      const [j, tc, v, m, ho, mqp] = await Promise.all([
         window.sb.from('jobs').select('*').order('created_at', { ascending: false }),
         window.sb.from('techs_public').select('*').order('created_at', { ascending: false }),
         // vacations_feed redacts `addresses` to everyone except the owner and
@@ -1248,6 +1253,13 @@ function App() {
         window.sb.from('vacations_feed').select('*').order('created_at', { ascending: false }),
         window.sb.from('marketplace').select('*').order('created_at', { ascending: false }),
         window.sb.from('pool_handoffs').select('*').eq('status', 'open').order('created_at', { ascending: false }),
+        // Poster's own open/filled Quick Pool postings — feeds HomeScreen's
+        // "Meus Anúncios". Folded into the same fetch/poll cycle as
+        // everything else so it shares one loading gate instead of a
+        // separate effect that could resolve at a different time.
+        user?.uid
+          ? window.sb.from('quick_pool_jobs').select('*').eq('poster_id', user.uid).in('status', ['open','filled']).order('created_at', { ascending: false })
+          : Promise.resolve({ data: [] }),
       ]);
       if (ho.data) {
         const hoPosterIds = [...new Set(ho.data.map(r => r.poster_id).filter(Boolean))];
@@ -1300,6 +1312,12 @@ function App() {
       }
       if (m.data)  setLiveMarket(m.data.map(normMkt));
       if (m.error) console.warn('[Supabase] marketplace fetch error:', m.error.message);
+      if (mqp.data) setLiveMyQuickJobs(mqp.data.map(qj => ({
+        _id: qj.id, _isQuickPool: true, status: 'approved',
+        name: qj.title || qj.city || '—', type: 'quick', loc: qj.city || '',
+        price: qj.price_negotiable ? null : qj.price_per_pool,
+        priceMode: qj.price_negotiable ? 'neg' : 'fixed',
+      })));
       setLiveDataLoaded(true);
       // Load applicant counts in background — non-blocking, doesn't delay UI render.
       // Includes vacation ids too (same job_applications table) so vacation
@@ -1749,7 +1767,7 @@ function App() {
       setUser(u => ({ ...u, name:'', email:'', uid:'', role:'user' }));
     },
     // Live Firestore data
-    liveJobs, liveTechs, liveVacations, liveMarket, liveHandoffs, loadLiveHandoffs, liveDataLoaded,
+    liveJobs, liveTechs, liveVacations, liveMarket, liveHandoffs, loadLiveHandoffs, liveDataLoaded, liveMyQuickJobs,
     liveApplications, jobApplicantCounts,
     refreshLiveApplications: () => loadLiveApplications(user?.uid),
     dbWrite, showToast,

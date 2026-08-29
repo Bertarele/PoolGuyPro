@@ -1,7 +1,7 @@
 // home.jsx — navy header + Meus Anúncios hero + sections
 
 function HomeScreen({ ctx }) {
-  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], liveVacations=[], liveDataLoaded=false, hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false, county='Broward' } = ctx;
+  const { user, lang, setLang, openNotifications, openPaywall, openPostMenu, goTab, openWallet, openPublicProfile, liveMarket=[], liveJobs=[], liveVacations=[], liveMyQuickJobs=[], liveDataLoaded=false, hasUnreadChat, hasUnreadNotif, openListingById, openMarketPost, darkMode=false, isDesktop=false, county='Broward' } = ctx;
   // Desktop detection via CSS (.pg-mobile-only / .pg-desktop-only) — no JS needed
   const t = STRINGS[lang];
   const isPremium = user.tier === 'premium';
@@ -53,35 +53,14 @@ function HomeScreen({ ctx }) {
       payMode: j.payMode,
     }));
 
-  // My own Quick Pool postings
-  const [myQuickJobs, setMyQuickJobs] = React.useState([]);
-  const [myQuickJobsLoaded, setMyQuickJobsLoaded] = React.useState(false);
-  React.useEffect(() => {
-    if (!window.sb || !user?.uid) { setMyQuickJobs([]); setMyQuickJobsLoaded(true); return; }
-    window.sb.from('quick_pool_jobs').select('*')
-      .eq('poster_id', user.uid).in('status', ['open','filled'])
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setMyQuickJobs((data||[]).map(j => ({
-          _id: j.id,
-          _isQuickPool: true,
-          status: 'approved',
-          name: j.title || j.city || '—',
-          type: 'quick',
-          loc: j.city || '',
-          price: j.price_negotiable ? null : j.price_per_pool,
-          priceMode: j.price_negotiable ? 'neg' : 'fixed',
-        })));
-        setMyQuickJobsLoaded(true);
-      });
-  }, [user?.uid]);
-
-  const myPosts = [...myMarketPosts, ...myOwnJobs, ...myQuickJobs];
-  // Both myMarketPosts/myOwnJobs (from the app-wide fetch) and myQuickJobs
-  // (fetched locally above) start out empty before their first response —
-  // without this, "Meus Anúncios" flashes its "no listings" empty state on
-  // every app open, then flips to the real content a beat later.
-  const myPostsLoaded = liveDataLoaded && myQuickJobsLoaded;
+  const myPosts = [...myMarketPosts, ...myOwnJobs, ...liveMyQuickJobs];
+  // myMarketPosts/myOwnJobs/liveMyQuickJobs all come from the same app-wide
+  // fetch and start out empty before its first response resolves — without
+  // this, "Meus Anúncios" flashes its "no listings" empty state on every
+  // app open, then flips to the real content a beat later. The splash
+  // screen now also waits on liveDataLoaded, so in practice this should
+  // already be true by the time HomeScreen is visible at all.
+  const myPostsLoaded = liveDataLoaded;
 
   const [selectedFeatured, setSelectedFeatured] = React.useState(null);
   const [selectedJob,      setSelectedJob]      = React.useState(null);
