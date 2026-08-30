@@ -538,6 +538,14 @@ function App() {
       // my_referral_summary() via auth.uid(), and wallet_transactions via
       // its own RLS policy — so an explicit user filter added nothing but
       // a race.
+      //
+      // The session, though, is worth checking: that same first data fetch
+      // also runs on the login screen, where both calls can only 401. Read
+      // it from the auth client rather than from React state — it is the
+      // thing the requests authenticate with, so it is already correct by
+      // the time they would fire, and gating on it reintroduces no race.
+      const { data: { session } } = await window.sb.auth.getSession();
+      if (!session) return;
       const [sum, tx] = await Promise.all([
         window.sb.rpc('my_referral_summary'),
         window.sb.from('wallet_transactions').select('*')

@@ -836,7 +836,7 @@ function HomeScreen({
       WebkitOverflowScrolling: 'touch',
       msOverflowStyle: 'none',
       scrollbarWidth: 'none',
-      touchAction: 'pan-x'
+      touchAction: 'pan-x pan-y'
     }
   }, myPosts.map(item => {
     const isPending = item.status === 'pending';
@@ -866,7 +866,11 @@ function HomeScreen({
         if (!myAdsTouch.current) return;
         const dx = e.touches[0].clientX - myAdsTouch.current.x;
         const dy = e.touches[0].clientY - myAdsTouch.current.y;
-        if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) myAdsTouch.current.swiped = true;
+        // Any drag past the threshold counts, not just a sideways
+        // one: `swiped` exists purely to stop the tap from opening
+        // the listing, and a finger that lands here to scroll the
+        // page down was never a tap either.
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) myAdsTouch.current.swiped = true;
       },
       className: "pg-press-scroll",
       style: {
@@ -878,7 +882,7 @@ function HomeScreen({
         flexShrink: 0,
         width: 150,
         scrollSnapAlign: 'start',
-        touchAction: 'pan-x',
+        touchAction: 'pan-x pan-y',
         border: isPending ? '1px solid var(--pg-ink-200)' : '1px solid var(--pg-blue-100)',
         background: isPending ? 'var(--pg-ink-50, #F7F9FB)' : 'var(--pg-blue-50)',
         cursor: 'pointer',
@@ -1344,9 +1348,13 @@ function HomeScreen({
         background: 'var(--pg-white)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
         border: '1px solid var(--pg-ink-100)',
+        // pan-x alone would tell the browser this card only ever
+        // pans horizontally, so a finger that lands here and drags
+        // down scrolls nothing — the page stays put. Both axes,
+        // matching .pg-scroll-x on the row around it.
         display: 'flex',
         flexDirection: 'column',
-        touchAction: 'pan-x'
+        touchAction: 'pan-x pan-y'
       },
       onTouchStart: e => {
         featuredTouch.current = {
@@ -1359,7 +1367,8 @@ function HomeScreen({
         if (!featuredTouch.current) return;
         const dx = e.touches[0].clientX - featuredTouch.current.x;
         const dy = e.touches[0].clientY - featuredTouch.current.y;
-        if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) featuredTouch.current.swiped = true;
+        // Vertical counts too — see the note on My Listings above.
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) featuredTouch.current.swiped = true;
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
