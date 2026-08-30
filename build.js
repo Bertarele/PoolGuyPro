@@ -130,10 +130,13 @@ if (fs.existsSync(memDir)) {
   });
 }
 
-// Copy any PNG/JPG/SVG/ICO images in root (always overwrite to pick up new/updated images)
-fs.readdirSync(ROOT).filter(f => /\.(png|jpg|jpeg|svg|ico|webp)$/i.test(f)).forEach(f => {
-  fs.copyFileSync(path.join(ROOT, f), path.join(DIST, f));
-});
+// NOTE: this used to blanket-copy every image in the repo root into dist/.
+// That is why 13MB of old development screenshots (ss_*.png, hdr_*.png,
+// rebrand_*.png …) were being published to poolguyx.com, and why the
+// full-resolution masters shipped alongside their optimized versions:
+// anything that landed in the root got deployed, referenced or not.
+// STATIC_GLOBS above is the explicit list of what ships — add new artwork
+// there rather than relying on it being picked up by extension.
 
 // ── Generate dist/index.html ───────────────────────────────────
 console.log('\n📄 Generating dist/index.html...');
