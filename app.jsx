@@ -213,7 +213,7 @@ function RideRequestCard({ alert, lang='pt', onView, onApply, onDismiss, applyin
         <div style={{padding:'16px 16px 14px', display:'flex', alignItems:'flex-start', gap:13}}>
           <div style={{position:'relative', width:60, height:60, flexShrink:0}}>
             <div style={{position:'absolute', inset:0, borderRadius:'50%', background:'rgba(14,186,199,0.35)', animation:'pg-ride-pulse 1.6s ease-out infinite'}}/>
-            <img src="/icone.png" alt="" style={{
+            <img src="/icone-192.png" alt="" style={{
               position:'relative', width:60, height:60, borderRadius:'50%', objectFit:'cover',
               boxShadow:'0 4px 14px rgba(4,13,24,0.4), 0 0 0 2px rgba(255,255,255,0.25)'}}/>
           </div>
@@ -2563,7 +2563,7 @@ function App() {
             {/* ── Brand logo ── */}
             <div style={{padding:'6px 16px 4px', flexShrink:0, display:'flex', alignItems:'center', overflow:'visible', height:70}}>
               <img
-                src="wordmarkwhite.png"
+                src="wordmarkwhite.webp"
                 alt="PoolGuyX"
                 style={{
                   width:220, height:200, objectFit:'contain', objectPosition:'left center', display:'block', marginTop:20,

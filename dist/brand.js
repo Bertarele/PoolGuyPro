@@ -205,7 +205,7 @@ function Wordmark({
       gap: 3
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: onDark ? 'wordmarkwhite.png' : 'pgx-logo.png',
+    src: onDark ? 'wordmarkwhite.webp' : 'pgx-logo.webp',
     alt: "PoolGuyX",
     style: {
       height: h,

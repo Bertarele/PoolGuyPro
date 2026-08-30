@@ -12,7 +12,7 @@
 const SB_URL = 'https://xiszfqghizqzlwyrfjol.supabase.co';
 const SB_KEY = 'sb_publishable_2C7PFtLNiXt3IziFnMVb4w_1YGfBqyX';
 const APP_URL = 'https://poolguyx.com';
-const DEFAULT_IMAGE = `${APP_URL}/icone.png`;
+const DEFAULT_IMAGE = `${APP_URL}/icone-512.png`;
 
 const TYPES = {
   market:  { table: 'marketplace',    hash: id => `#market?listing=${id}` },

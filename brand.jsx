@@ -58,7 +58,7 @@ function Wordmark({ size='md', onDark=false, subtitle }) {
   return (
     <div style={{display:'flex', flexDirection:'column', alignItems:'flex-start', gap:3}}>
       <img
-        src={onDark ? 'wordmarkwhite.png' : 'pgx-logo.png'}
+        src={onDark ? 'wordmarkwhite.webp' : 'pgx-logo.webp'}
         alt="PoolGuyX"
         style={{
           height: h,

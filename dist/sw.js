@@ -1,13 +1,13 @@
 // PoolGuyPro Service Worker — Push Notifications + Offline Cache
 
-const APP_ICON  = '/icone.png';
-const CACHE_VER = 'pgp-v12';
+const APP_ICON  = '/icone-192.png';
+const CACHE_VER = 'pgp-v13';
 
 // Static assets to pre-cache on install (only files that actually exist in dist/)
 // HTML is intentionally excluded so it's always fetched fresh (network-first)
 const PRECACHE = [
   '/tokens.css',
-  '/icone.png',
+  '/icone-192.png',
   '/manifest.json',
 ];
 

@@ -306,7 +306,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
     return (
       <div style={{width:'100%', height:'100%', position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden'}}>
         {/* Background full screen */}
-        <div style={{position:'absolute', inset:0, backgroundImage:'url(wallpaper.jpg)', backgroundSize:'cover', backgroundPosition:'center'}}/>
+        <div style={{position:'absolute', inset:0, backgroundImage:'url(wallpaper.webp)', backgroundSize:'cover', backgroundPosition:'center'}}/>
         <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.04) 38%, rgba(0,0,0,0.03) 52%, rgba(0,0,0,0.12) 100%)'}}/>
 
         {/* Language switcher */}
@@ -338,7 +338,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         }}>
           {/* Logo + tagline no topo do card */}
           <div style={{textAlign:'center', marginBottom:28}}>
-            <img src="wordmarkwhite.png" alt="PoolGuyX" style={{height:'auto', width:'96%', maxHeight:340, display:'block', margin:'0 auto -4px', filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.30))'}}/>
+            <img src="wordmarkwhite.webp" alt="PoolGuyX" style={{height:'auto', width:'96%', maxHeight:340, display:'block', margin:'0 auto -4px', filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.30))'}}/>
             <div style={{fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.07em', textTransform:'uppercase'}}>{t.tagline}</div>
           </div>
 
@@ -533,7 +533,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       {/* ── Background — full screen photo ── */}
       <div style={{
         position:'absolute', inset:0,
-        backgroundImage:'url(login-bg.png)',
+        backgroundImage:'url(login-bg.webp)',
         backgroundSize:'cover',
         backgroundPosition:'center center',
         backgroundRepeat:'no-repeat',
@@ -564,7 +564,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       }}>
         {/* PoolGuyX logo */}
         <img
-          src="wordmarkwhite.png"
+          src="wordmarkwhite.webp"
           alt="PoolGuyX"
           style={{
             height: 280,

@@ -4,8 +4,8 @@
   <meta charset="utf-8"/>
   <title>PoolGuyX — Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link rel="apple-touch-icon" href="/icone-admin.png"/>
-  <link rel="icon" href="/icone-admin.png"/>
+  <link rel="apple-touch-icon" href="/icone-admin-256.png"/>
+  <link rel="icon" href="/icone-admin-256.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -407,7 +407,7 @@ function AdminLogin({ onLogin, sessionExpired=false }) {
     <div style={{minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#0f1117', padding:'24px 16px'}}>
       <div style={{width:'100%', maxWidth:380, background:'#1a1f2e', borderRadius:20, padding:'28px 24px', border:'1px solid #1e293b', boxShadow:'0 32px 80px rgba(0,0,0,0.5)'}}>
         <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:28}}>
-          <img src="/icone-admin.png" alt="PoolGuyX" style={{width:48, height:48, borderRadius:13, flexShrink:0, border:'1px solid #2373c340'}}/>
+          <img src="/icone-admin-256.png" alt="PoolGuyX" style={{width:48, height:48, borderRadius:13, flexShrink:0, border:'1px solid #2373c340'}}/>
           <div>
             <div style={{fontWeight:800, fontSize:17, color:'#f1f5f9', letterSpacing:'-0.01em'}}>PoolGuyX Admin</div>
             <div style={{fontSize:12, color:'#475569', marginTop:2}}>Acesso restrito</div>
@@ -2217,7 +2217,7 @@ function AdminApp({ adminUser, onLogout }) {
       <div className={`admin-sidebar${navOpen?' open':''}`}>
         <div style={{padding:'16px 14px 13px', borderBottom:'1px solid #1e293b20', background:'linear-gradient(135deg,#0a2a6210,#2373c308)', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
           <div style={{display:'flex', alignItems:'center', gap:10}}>
-            <img src="/icone-admin.png" alt="PoolGuyX" style={{width:38, height:38, borderRadius:10, flexShrink:0, border:'1px solid #2373c330'}}/>
+            <img src="/icone-admin-256.png" alt="PoolGuyX" style={{width:38, height:38, borderRadius:10, flexShrink:0, border:'1px solid #2373c330'}}/>
             <div>
               <div style={{fontWeight:800, fontSize:14, color:'#f1f5f9', letterSpacing:'-0.01em'}}>PoolGuyX</div>
               <div style={{fontSize:10.5, color:'#2373c3', fontWeight:700, marginTop:1, letterSpacing:'.04em', textTransform:'uppercase'}}>Admin Panel</div>
@@ -2307,7 +2307,7 @@ function AdminApp({ adminUser, onLogout }) {
         <div className="admin-top-bar">
           <button className="hamburger" onClick={()=>setNavOpen(true)}>{IC.menu}</button>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <img src="/icone-admin.png" alt="PX" style={{width:30,height:30,borderRadius:8,border:'1px solid #2373c330'}}/>
+            <img src="/icone-admin-256.png" alt="PX" style={{width:30,height:30,borderRadius:8,border:'1px solid #2373c330'}}/>
             <span style={{fontWeight:700,fontSize:14,color:'#f1f5f9'}}>{sectionLabel}</span>
           </div>
           <button onClick={fetchAll} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',padding:6}}>{IC.refresh}</button>

@@ -821,7 +821,7 @@ function LoginScreen({
       style: {
         position: 'absolute',
         inset: 0,
-        backgroundImage: 'url(wallpaper.jpg)',
+        backgroundImage: 'url(wallpaper.webp)',
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }
@@ -881,7 +881,7 @@ function LoginScreen({
         marginBottom: 28
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: "wordmarkwhite.png",
+      src: "wordmarkwhite.webp",
       alt: "PoolGuyX",
       style: {
         height: 'auto',
@@ -1695,7 +1695,7 @@ function LoginScreen({
     style: {
       position: 'absolute',
       inset: 0,
-      backgroundImage: 'url(login-bg.png)',
+      backgroundImage: 'url(login-bg.webp)',
       backgroundSize: 'cover',
       backgroundPosition: 'center center',
       backgroundRepeat: 'no-repeat',
@@ -1747,7 +1747,7 @@ function LoginScreen({
       gap: 0
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: "wordmarkwhite.png",
+    src: "wordmarkwhite.webp",
     alt: "PoolGuyX",
     style: {
       height: 280,

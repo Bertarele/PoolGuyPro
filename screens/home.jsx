@@ -299,7 +299,7 @@ function HomeScreen({ ctx }) {
                 {/* CENTRE — logo (absolute so it doesn't push header height) */}
                 <div style={{flex:'0 0 200px', position:'relative', display:'flex', justifyContent:'center'}}>
                   <img
-                    src={darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png'}
+                    src={darkMode ? 'wordmarkwhite.webp' : 'pgx-logo.webp'}
                     alt="PoolGuyX"
                     style={{
                       height:190, objectFit:'contain',
@@ -357,7 +357,7 @@ function HomeScreen({ ctx }) {
             <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0px 18px 0', position:'relative', zIndex:1, marginTop:-18}}>
               <div style={{height:118, overflow:'hidden', transform:'translateY(-14px) translateX(-22px)', width:'calc(100vw - 160px)', flexShrink:1, minWidth:0}}>
                 <img
-                  src={darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png'}
+                  src={darkMode ? 'wordmarkwhite.webp' : 'pgx-logo.webp'}
                   alt="PoolGuyX"
                   className="pg-home-logo"
                   style={{filter: darkMode ? 'drop-shadow(0 2px 12px rgba(0,0,0,0.35))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))'}}

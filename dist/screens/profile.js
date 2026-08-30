@@ -66,7 +66,7 @@ function ProfileScreen({
     return /*#__PURE__*/React.createElement(NavyBar, {
       darkMode: darkMode,
       centerDecor: /*#__PURE__*/React.createElement("img", {
-        src: "icone-watermark.png",
+        src: "icone-watermark.webp",
         alt: "",
         style: {
           height: 280,

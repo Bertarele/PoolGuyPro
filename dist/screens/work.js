@@ -1188,7 +1188,7 @@ function WorkScreen({
           zIndex: 0
         }
       }, /*#__PURE__*/React.createElement("img", {
-        src: "icone-watermark.png",
+        src: "icone-watermark.webp",
         alt: "",
         style: {
           position: 'absolute',

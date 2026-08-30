@@ -419,7 +419,7 @@ function HomeScreen({
           justifyContent: 'center'
         }
       }, /*#__PURE__*/React.createElement("img", {
-        src: darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png',
+        src: darkMode ? 'wordmarkwhite.webp' : 'pgx-logo.webp',
         alt: "PoolGuyX",
         style: {
           height: 190,
@@ -554,7 +554,7 @@ function HomeScreen({
         minWidth: 0
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: darkMode ? 'wordmarkwhite.png' : 'pgx-logo.png',
+      src: darkMode ? 'wordmarkwhite.webp' : 'pgx-logo.webp',
       alt: "PoolGuyX",
       className: "pg-home-logo",
       style: {

@@ -358,7 +358,7 @@ function RideRequestCard({
       animation: 'pg-ride-pulse 1.6s ease-out infinite'
     }
   }), /*#__PURE__*/React.createElement("img", {
-    src: "/icone.png",
+    src: "/icone-192.png",
     alt: "",
     style: {
       position: 'relative',
@@ -3716,7 +3716,7 @@ function App() {
         height: 70
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: "wordmarkwhite.png",
+      src: "wordmarkwhite.webp",
       alt: "PoolGuyX",
       style: {
         width: 220,

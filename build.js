@@ -38,13 +38,31 @@ const JSX_FILES = [
 ];
 
 // ── Static files to copy as-is ─────────────────────────────────
+// This list is the single source of truth for what ships. It used to name
+// only a handful of files while the app referenced several more, which
+// happened to work solely because dist/ was committed with manual copies —
+// a wipe-and-rebuild would have shipped an app with missing artwork and,
+// worse, a service worker that never installs (PRECACHE below is fetched
+// with addAll, which rejects as a unit if any one file 404s, taking push
+// notifications down with it). Every referenced asset is listed here now,
+// and the build fails loudly if one goes missing.
 const STATIC_GLOBS = [
   'tokens.css',
-  'logo.png',
-  'pgx-logo.png',
   'admin.html',
   'sw.js',
   'manifest.json',
+  // App artwork — WebP, sized ~2.5x their largest on-screen size. The
+  // full-resolution PNG/JPG masters stay in the repo root and are
+  // deliberately NOT shipped; regenerate from them if sizes ever change.
+  'wordmarkwhite.webp',
+  'pgx-logo.webp',
+  'icone-watermark.webp',
+  'login-bg.webp',
+  'wallpaper.webp',
+  // Icons: manifest, apple-touch-icon, push notifications, OG share image.
+  'icone-192.png',
+  'icone-512.png',
+  'icone-admin-256.png',
   'icone-splash.png',
   'icone-splash.webp',
 ];
@@ -87,12 +105,19 @@ for (const file of JSX_FILES) {
 
 // ── Copy static assets ─────────────────────────────────────────
 console.log('\n📂 Copying static assets...');
+const missingStatic = [];
 for (const file of STATIC_GLOBS) {
   const src = path.join(ROOT, file);
-  if (fs.existsSync(src)) {
-    fs.copyFileSync(src, path.join(DIST, path.basename(file)));
-    console.log(`  ✓ ${file}`);
-  }
+  if (!fs.existsSync(src)) { missingStatic.push(file); continue; }
+  fs.copyFileSync(src, path.join(DIST, path.basename(file)));
+  console.log(`  ✓ ${file}`);
+}
+// Skipping a missing asset silently is what let dist/ drift out of sync with
+// the source in the first place. A missing file here means a broken deploy,
+// so refuse to produce one.
+if (missingStatic.length) {
+  console.error(`\n❌ Assets ausentes na raiz do projeto:\n   ${missingStatic.join('\n   ')}`);
+  process.exit(1);
 }
 
 // Copy memory/ dir if present
