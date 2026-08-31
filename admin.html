@@ -1606,6 +1606,17 @@ function EditJobModal({ row, onClose, onSave }) {
 // ── Sponsor image banners — second, independent ad format ──────
 // The company supplies finished artwork; the admin only sets the link and
 // how long it stays on screen before the app slides to the next one.
+// Reused by both ad panels below: an expired row's quick Ativar/Desativar
+// toggle only flips `active` — the client query also filters on expires_at,
+// so toggling active on an expired row silently does nothing visible.
+// Reactivating means loading it into the form with a fresh expiration date
+// so admin edits (a different company reusing the same artwork, say) and the
+// new date get saved together in one Salvar.
+function next30Days() {
+  const d = new Date(); d.setDate(d.getDate() + 30);
+  return d.toISOString().slice(0, 10);
+}
+
 function SponsorBannersPanel({ banners, setBanners, bannerForm, setBannerForm, bannerEdit, setBannerEdit,
   bannerSaving, setBannerSaving, bannerImgUploading, setBannerImgUploading, BANNER_FORM_DEFAULT, showToast }) {
 
@@ -1839,10 +1850,17 @@ function SponsorBannersPanel({ banners, setBanners, bannerForm, setBannerForm, b
                   </div>
                 </div>
                 <div style={{display:'flex',gap:6,flexShrink:0}}>
-                  <button onClick={async()=>{await window.sb.from('sponsor_banners').update({active:!b.active}).eq('id',b.id);setBanners(p=>p.map(x=>x.id===b.id?{...x,active:!x.active}:x));showToast(b.active?'Banner desativado.':'Banner ativado!');}}
-                    style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${b.active?'#f59e0b40':'#22c55e40'}`,background:b.active?'#f59e0b10':'#22c55e10',color:b.active?'#f59e0b':'#22c55e',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-                    {b.active?'Desativar':'Ativar'}
-                  </button>
+                  {expired ? (
+                    <button onClick={()=>{setBannerEdit(b.id);setBannerForm({company_name:b.company_name||'',image_url:b.image_url,title:b.title||'',subtitle:b.subtitle||'',contact_type:b.contact_type||'none',contact_value:b.contact_value||'',duration_seconds:String(b.duration_seconds),expires_at:next30Days()});window.scrollTo({top:0,behavior:'smooth'});showToast('Editando para reativar — ajuste o que quiser e clique em Salvar.');}}
+                      style={{padding:'5px 12px',borderRadius:8,border:'1px solid #22c55e40',background:'#22c55e10',color:'#22c55e',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:5}}>
+                      {IC.refresh} Reativar
+                    </button>
+                  ) : (
+                    <button onClick={async()=>{await window.sb.from('sponsor_banners').update({active:!b.active}).eq('id',b.id);setBanners(p=>p.map(x=>x.id===b.id?{...x,active:!x.active}:x));showToast(b.active?'Banner desativado.':'Banner ativado!');}}
+                      style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${b.active?'#f59e0b40':'#22c55e40'}`,background:b.active?'#f59e0b10':'#22c55e10',color:b.active?'#f59e0b':'#22c55e',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                      {b.active?'Desativar':'Ativar'}
+                    </button>
+                  )}
                   <button onClick={()=>{setBannerEdit(b.id);setBannerForm({company_name:b.company_name||'',image_url:b.image_url,title:b.title||'',subtitle:b.subtitle||'',contact_type:b.contact_type||'none',contact_value:b.contact_value||'',duration_seconds:String(b.duration_seconds),expires_at:b.expires_at?b.expires_at.slice(0,10):''});window.scrollTo({top:0,behavior:'smooth'});}}
                     className="aib aib-purple" title="Editar">{AIco.edit}</button>
                   <button onClick={async()=>{if(!confirm('Excluir este banner?'))return;await window.sb.from('sponsor_banners').delete().eq('id',b.id);setBanners(p=>p.filter(x=>x.id!==b.id));showToast('Banner excluído.');}}
@@ -3587,10 +3605,17 @@ function AdminApp({ adminUser, onLogout }) {
                           </div>
                         </div>
                         <div style={{display:'flex',gap:6,flexShrink:0}}>
-                          <button onClick={async()=>{await window.sb.from('sponsored_cards').update({active:!s.active}).eq('id',s.id);setSponsors(p=>p.map(x=>x.id===s.id?{...x,active:!x.active}:x));showToast(s.active?'Card desativado.':'Card ativado!');}}
-                            style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${s.active?'#f59e0b40':'#22c55e40'}`,background:s.active?'#f59e0b10':'#22c55e10',color:s.active?'#f59e0b':'#22c55e',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-                            {s.active?'Desativar':'Ativar'}
-                          </button>
+                          {expired ? (
+                            <button onClick={()=>{setSponsorEdit(s.id);setSponsorForm({company_name:s.company_name,headline:s.headline,subtext:s.subtext||'',link_url:s.link_url||'',logo_text:s.logo_text||'',logo_url:s.logo_url||'',bg_color:s.bg_color||'#001f4d',expires_at:next30Days()});window.scrollTo({top:0,behavior:'smooth'});showToast('Editando para reativar — ajuste o que quiser e clique em Salvar.');}}
+                              style={{padding:'5px 12px',borderRadius:8,border:'1px solid #22c55e40',background:'#22c55e10',color:'#22c55e',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:5}}>
+                              {IC.refresh} Reativar
+                            </button>
+                          ) : (
+                            <button onClick={async()=>{await window.sb.from('sponsored_cards').update({active:!s.active}).eq('id',s.id);setSponsors(p=>p.map(x=>x.id===s.id?{...x,active:!x.active}:x));showToast(s.active?'Card desativado.':'Card ativado!');}}
+                              style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${s.active?'#f59e0b40':'#22c55e40'}`,background:s.active?'#f59e0b10':'#22c55e10',color:s.active?'#f59e0b':'#22c55e',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                              {s.active?'Desativar':'Ativar'}
+                            </button>
+                          )}
                           <button onClick={()=>{setSponsorEdit(s.id);setSponsorForm({company_name:s.company_name,headline:s.headline,subtext:s.subtext||'',link_url:s.link_url||'',logo_text:s.logo_text||'',logo_url:s.logo_url||'',bg_color:s.bg_color||'#001f4d',expires_at:s.expires_at?s.expires_at.slice(0,10):''});window.scrollTo({top:0,behavior:'smooth'});}}
                             className="aib aib-purple" title="Editar">{AIco.edit}</button>
                           <button onClick={async()=>{if(!confirm(`Excluir card de "${s.company_name}"?`))return;await window.sb.from('sponsored_cards').delete().eq('id',s.id);setSponsors(p=>p.filter(x=>x.id!==s.id));showToast('Card excluído.');}}
