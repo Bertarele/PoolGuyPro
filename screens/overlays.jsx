@@ -3052,7 +3052,7 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null, wallet=
                     background: isActive ? (col==='pro'?'rgba(0,119,182,0.08)':'rgba(124,58,237,0.08)') : 'transparent',
                     borderRadius:8, padding:'3px 0'}}>
                     {row.type === 'count'
-                      ? <span style={{fontSize:13, fontWeight:700,
+                      ? <span style={{fontSize: String(val).length > 4 ? 9.5 : 13, fontWeight:700, whiteSpace:'nowrap',
                           color:col==='free'?'var(--pg-ink-400)':col==='pro'?'#0077B6':'#7c3aed'}}>{val}</span>
                       : val
                         ? <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill={col==='free'?'#e2e8f0':col==='pro'?'#0077B6':'#7c3aed'}/><path d="M6 10l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>

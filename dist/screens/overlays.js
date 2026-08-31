@@ -5452,8 +5452,9 @@ function PaywallSheet({
       }
     }, row.type === 'count' ? /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 13,
+        fontSize: String(val).length > 4 ? 9.5 : 13,
         fontWeight: 700,
+        whiteSpace: 'nowrap',
         color: col === 'free' ? 'var(--pg-ink-400)' : col === 'pro' ? '#0077B6' : '#7c3aed'
       }
     }, val) : val ? /*#__PURE__*/React.createElement("svg", {
