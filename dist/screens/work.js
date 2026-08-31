@@ -7286,7 +7286,52 @@ function VacationPanel({
       background: 'var(--pg-aqua-100)',
       color: 'var(--pg-aqua-700)'
     }
-  }, sortedStaticVac.length + sortedLiveVac.length, " ", lang === 'pt' ? 'disponíveis' : lang === 'es' ? 'disponibles' : 'available')), /*#__PURE__*/React.createElement("div", {
+  }, sortedStaticVac.length + sortedLiveVac.length, " ", lang === 'pt' ? 'disponíveis' : lang === 'es' ? 'disponibles' : 'available')), user.tier === 'free' && /*#__PURE__*/React.createElement("button", {
+    onClick: () => onUnlockVac && onUnlockVac(),
+    style: {
+      width: '100%',
+      textAlign: 'left',
+      border: '1px solid #c4b5fd',
+      cursor: 'pointer',
+      padding: '12px 14px',
+      marginBottom: 14,
+      borderRadius: 14,
+      fontFamily: 'inherit',
+      background: 'linear-gradient(110deg,#f5f3ff,#ede9fe)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 34,
+      height: 34,
+      borderRadius: '50%',
+      flexShrink: 0,
+      background: 'linear-gradient(150deg,#7c3aed,#6d28d9)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, Icon.crown(16, '#fff')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      fontWeight: 800,
+      color: '#5b21b6'
+    }
+  }, lang === 'pt' ? 'Cobertura de Férias é exclusivo PRO' : lang === 'es' ? 'Cobertura de Vacaciones es exclusivo PRO' : 'Vacation Cover is PRO-exclusive'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: '#6d28d9',
+      marginTop: 1,
+      lineHeight: 1.3
+    }
+  }, lang === 'pt' ? 'Assine PRO para ver quem publicou e escolher seus dias.' : lang === 'es' ? 'Suscríbete a PRO para ver quién publicó y elegir tus días.' : 'Subscribe to PRO to see who posted and pick your days.')), Icon.chev(13, '#6d28d9')), /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 10,
       padding: '9px 12px',
@@ -7373,7 +7418,7 @@ function VacationPanel({
         alignItems: 'flex-end',
         gap: 8
       }
-    }, /*#__PURE__*/React.createElement("button", {
+    }, !fullyBooked && /*#__PURE__*/React.createElement("button", {
       onClick: () => shareVacation(vac),
       title: lang === 'pt' ? 'Compartilhar' : lang === 'es' ? 'Compartir' : 'Share',
       style: {

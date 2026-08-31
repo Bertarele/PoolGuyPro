@@ -827,7 +827,10 @@ function QuickPoolsScreen({ ctx }) {
                   <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:800,
                     color: locked?'var(--pg-ink-400)':'var(--pg-blue-500)',
                     letterSpacing:'-0.03em', lineHeight:1,
-                    filter: locked ? 'blur(4px)' : 'none',
+                    // Light enough that the digits still read through — a
+                    // locked card showing a tempting high price is what gets
+                    // someone to tap "unlock", a solid blob doesn't.
+                    filter: locked ? 'blur(1.5px)' : 'none',
                   }}>${j.price}</div>
                   <div style={{fontSize:9.5, color:'var(--pg-ink-400)', marginTop:1}}>{t.perPool}</div>
                 </>

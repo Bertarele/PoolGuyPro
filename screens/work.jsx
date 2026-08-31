@@ -3383,6 +3383,33 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
           )}
         </div>
 
+        {/* PRO-exclusive banner — same template as the Premium one on Express
+            Pools (screens/quickpools.jsx), reworded for the tier this
+            feature actually gates: covering vacations blurs the poster's
+            identity and locks day-picking behind PRO, not Premium (see the
+            freeBlur checks and "PRO para aplicar" button below). */}
+        {user.tier === 'free' && (
+          <button onClick={()=>onUnlockVac&&onUnlockVac()} style={{
+            width:'100%', textAlign:'left', border:'1px solid #c4b5fd', cursor:'pointer',
+            padding:'12px 14px', marginBottom:14, borderRadius:14, fontFamily:'inherit',
+            background:'linear-gradient(110deg,#f5f3ff,#ede9fe)',
+            display:'flex', alignItems:'center', gap:10,
+          }}>
+            <div style={{width:34, height:34, borderRadius:'50%', flexShrink:0, background:'linear-gradient(150deg,#7c3aed,#6d28d9)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+              {Icon.crown(16,'#fff')}
+            </div>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:12.5, fontWeight:800, color:'#5b21b6'}}>
+                {lang==='pt'?'Cobertura de Férias é exclusivo PRO':lang==='es'?'Cobertura de Vacaciones es exclusivo PRO':'Vacation Cover is PRO-exclusive'}
+              </div>
+              <div style={{fontSize:11, color:'#6d28d9', marginTop:1, lineHeight:1.3}}>
+                {lang==='pt'?'Assine PRO para ver quem publicou e escolher seus dias.':lang==='es'?'Suscríbete a PRO para ver quién publicó y elegir tus días.':'Subscribe to PRO to see who posted and pick your days.'}
+              </div>
+            </div>
+            {Icon.chev(13,'#6d28d9')}
+          </button>
+        )}
+
         {/* Boost tip — plain informational note, deliberately NOT styled like a
             vacation card (no gradient hero treatment) so it doesn't read as
             another listing to tap; just a small aside next to the list. */}
@@ -3447,17 +3474,20 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                   {/* Solid white pill + shadow so it reads as a tappable control
                       instead of a decorative dot on the gradient — icon back to
                       the original 3-node share glyph per feedback, kept inside
-                      the clearer button treatment. */}
-                  <button onClick={()=>shareVacation(vac)} title={lang==='pt'?'Compartilhar':lang==='es'?'Compartir':'Share'}
-                    style={{position:'absolute', top:8, right:8, border:'none', background:'rgba(255,255,255,0.95)',
-                      boxShadow:'0 2px 6px rgba(0,0,0,0.25)',
-                      width:30, height:30, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
-                      cursor:'pointer', padding:0, flexShrink:0}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0D7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                    </svg>
-                  </button>
+                      the clearer button treatment. Hidden once fully covered —
+                      nothing left to recruit anyone for. */}
+                  {!fullyBooked && (
+                    <button onClick={()=>shareVacation(vac)} title={lang==='pt'?'Compartilhar':lang==='es'?'Compartir':'Share'}
+                      style={{position:'absolute', top:8, right:8, border:'none', background:'rgba(255,255,255,0.95)',
+                        boxShadow:'0 2px 6px rgba(0,0,0,0.25)',
+                        width:30, height:30, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
+                        cursor:'pointer', padding:0, flexShrink:0}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0D7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                      </svg>
+                    </button>
+                  )}
                   <div style={{flex:1, minWidth:0}}>
                     <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.09em',
                       color:'rgba(255,255,255,0.52)', marginBottom:3, textTransform:'uppercase', lineHeight:1.3}}>
