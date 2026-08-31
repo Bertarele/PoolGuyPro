@@ -1957,6 +1957,7 @@ function QuickPoolsScreen({
       description: route.name || null,
       pool_type: isCondo ? 'condo' : 'residential',
       pools: pools.map(p => ({
+        label: p.label || null,
         city: p.city,
         address: p.address || null,
         poolType: p.poolType,
@@ -3795,9 +3796,10 @@ function RouteManagerPanel({
   }))));
 }
 
-// One entry per pool in a route: { city, address, poolType, dog, saltwater, gateCode, doorman, notes }
+// One entry per pool in a route: { label, city, address, poolType, dog, saltwater, gateCode, doorman, notes }
 function blankRoutePool() {
   return {
+    label: '',
     city: '',
     address: '',
     poolType: 'residential',
@@ -3819,6 +3821,7 @@ function RoutePostForm({
   const [name, setName] = React.useState(initialValues?.name || '');
   const [priceValue, setPriceValue] = React.useState(initialValues?.price_per_pool != null ? String(initialValues.price_per_pool) : '');
   const [pools, setPools] = React.useState(() => initialValues?.pools?.length > 0 ? initialValues.pools.map(p => ({
+    label: p.label || '',
     city: p.city || '',
     address: p.address || '',
     poolType: p.poolType || 'residential',
@@ -3865,6 +3868,7 @@ function RoutePostForm({
     setPools(prev => {
       const copy = {
         ...prev[i],
+        label: '',
         address: '',
         notes: ''
       };
@@ -4063,9 +4067,13 @@ function RoutePostForm({
         fontWeight: 800,
         color: '#0D7280',
         letterSpacing: '0.02em',
-        flexShrink: 0
+        flexShrink: 0,
+        maxWidth: p.label?.trim() ? 130 : 'none',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
       }
-    }, lang === 'pt' ? 'Piscina' : lang === 'es' ? 'Piscina' : 'Pool', " ", i + 1), !isOpen && /*#__PURE__*/React.createElement("div", {
+    }, p.label?.trim() || `${lang === 'pt' ? 'Piscina' : lang === 'es' ? 'Piscina' : 'Pool'} ${i + 1}`), !isOpen && /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0,
@@ -4167,6 +4175,21 @@ function RoutePostForm({
         padding: '0 14px 14px'
       }
     }, /*#__PURE__*/React.createElement(HiringFormSection, {
+      label: lang === 'pt' ? 'Nome da piscina (opcional)' : lang === 'es' ? 'Nombre de la piscina (opcional)' : 'Pool name (optional)'
+    }, /*#__PURE__*/React.createElement("input", {
+      className: "pg-field",
+      value: p.label,
+      onChange: e => updatePool(i, {
+        label: e.target.value
+      }),
+      placeholder: lang === 'pt' ? 'ex: Casa da Maria' : lang === 'es' ? 'ej: Casa de María' : 'e.g. Maria’s house'
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: 'var(--pg-ink-400)',
+        marginTop: 6
+      }
+    }, lang === 'pt' ? `Deixe em branco para usar "${lang === 'pt' ? 'Piscina' : 'Pool'} ${i + 1}".` : lang === 'es' ? `Déjalo en blanco para usar "Piscina ${i + 1}".` : `Leave blank to use "Pool ${i + 1}".`)), /*#__PURE__*/React.createElement(HiringFormSection, {
       label: lang === 'pt' ? 'Cidade' : lang === 'es' ? 'Ciudad' : 'City'
     }, /*#__PURE__*/React.createElement(CityAutocomplete, {
       value: p.city,
@@ -4446,6 +4469,7 @@ function RoutePostForm({
       name: name.trim(),
       pricePerPool: priceValue ? parseInt(priceValue) : null,
       pools: pools.map(p => ({
+        label: p.label?.trim() || null,
         city: p.city,
         address: p.address.trim(),
         poolType: p.poolType,

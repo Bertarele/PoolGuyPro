@@ -1227,7 +1227,7 @@ function QuickPoolsScreen({ ctx }) {
       title: lang==='pt'?`Rota Rápida — ${pools.length} piscina${pools.length>1?'s':''}`:lang==='es'?`Ruta Rápida — ${pools.length} piscina${pools.length>1?'s':''}`:`Quick Route — ${pools.length} pool${pools.length>1?'s':''}`,
       description: route.name || null,
       pool_type: isCondo ? 'condo' : 'residential',
-      pools: pools.map(p => ({ city:p.city, address:p.address||null, poolType:p.poolType, dog:!!p.dog, saltwater:!!p.saltwater, gateCode:!!p.gateCode, doorman:!!p.doorman, notes:p.notes||null })),
+      pools: pools.map(p => ({ label:p.label||null, city:p.city, address:p.address||null, poolType:p.poolType, dog:!!p.dog, saltwater:!!p.saltwater, gateCode:!!p.gateCode, doorman:!!p.doorman, notes:p.notes||null })),
       source_route_id: route.id,
       required_photos: route.required_photos || [],
       status: 'open',
@@ -2133,9 +2133,9 @@ function RouteManagerPanel({ lang, routes, loading, busy, onClose, onCreate, onE
   );
 }
 
-// One entry per pool in a route: { city, address, poolType, dog, saltwater, gateCode, doorman, notes }
+// One entry per pool in a route: { label, city, address, poolType, dog, saltwater, gateCode, doorman, notes }
 function blankRoutePool() {
-  return { city:'', address:'', poolType:'residential', dog:false, saltwater:false, gateCode:false, doorman:false, notes:'' };
+  return { label:'', city:'', address:'', poolType:'residential', dog:false, saltwater:false, gateCode:false, doorman:false, notes:'' };
 }
 
 function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
@@ -2146,7 +2146,7 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
   const [pools,      setPools]      = React.useState(() =>
     initialValues?.pools?.length > 0
       ? initialValues.pools.map(p => ({
-          city:p.city||'', address:p.address||'', poolType:p.poolType||'residential',
+          label:p.label||'', city:p.city||'', address:p.address||'', poolType:p.poolType||'residential',
           dog:!!p.dog, saltwater:!!p.saltwater, gateCode:!!p.gateCode, doorman:!!p.doorman, notes:p.notes||'',
         }))
       : [blankRoutePool()]
@@ -2187,7 +2187,7 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
   const duplicatePool = (i) => {
     if (pools.length >= 30) return;
     setPools(prev => {
-      const copy = { ...prev[i], address:'', notes:'' };
+      const copy = { ...prev[i], label:'', address:'', notes:'' };
       const next = [...prev];
       next.splice(i+1, 0, copy);
       return next;
@@ -2278,8 +2278,9 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
               display:'flex', alignItems:'center', gap:10, padding:'12px 14px',
               width:'100%', boxSizing:'border-box', cursor:'pointer', fontFamily:'inherit',
             }}>
-              <div style={{fontSize:12.5, fontWeight:800, color:'#0D7280', letterSpacing:'0.02em', flexShrink:0}}>
-                {lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool'} {i+1}
+              <div style={{fontSize:12.5, fontWeight:800, color:'#0D7280', letterSpacing:'0.02em', flexShrink:0,
+                maxWidth: p.label?.trim() ? 130 : 'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                {p.label?.trim() || `${lang==='pt'?'Piscina':lang==='es'?'Piscina':'Pool'} ${i+1}`}
               </div>
               {!isOpen && (
                 <div style={{flex:1, minWidth:0, fontSize:12.5, color:'var(--pg-ink-500)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
@@ -2311,6 +2312,14 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
 
             {isOpen && (
               <div style={{display:'flex', flexDirection:'column', gap:14, padding:'0 14px 14px'}}>
+                <HiringFormSection label={lang==='pt'?'Nome da piscina (opcional)':lang==='es'?'Nombre de la piscina (opcional)':'Pool name (optional)'}>
+                  <input className="pg-field" value={p.label} onChange={e=>updatePool(i, { label: e.target.value })}
+                    placeholder={lang==='pt'?'ex: Casa da Maria':lang==='es'?'ej: Casa de María':'e.g. Maria’s house'}/>
+                  <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:6}}>
+                    {lang==='pt'?`Deixe em branco para usar "${lang==='pt'?'Piscina':'Pool'} ${i+1}".`:lang==='es'?`Déjalo en blanco para usar "Piscina ${i+1}".`:`Leave blank to use "Pool ${i+1}".`}
+                  </div>
+                </HiringFormSection>
+
                 <HiringFormSection label={lang==='pt'?'Cidade':lang==='es'?'Ciudad':'City'}>
                   <CityAutocomplete value={p.city} onChange={v=>updatePool(i, { city: v })} lang={lang}/>
                 </HiringFormSection>
@@ -2432,6 +2441,7 @@ function RoutePostForm({ onClose, lang='en', onSubmit, initialValues=null }) {
           dayOfWeek, name: name.trim(),
           pricePerPool: priceValue ? parseInt(priceValue) : null,
           pools: pools.map(p => ({
+            label: p.label?.trim() || null,
             city: p.city, address: p.address.trim(), poolType: p.poolType,
             dog: p.dog, saltwater: p.saltwater, gateCode: p.gateCode, doorman: p.doorman, notes: p.notes || null,
           })),
