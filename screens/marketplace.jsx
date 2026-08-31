@@ -4764,6 +4764,13 @@ function MarketplaceScreen({ ctx }) {
                 ${fmtN(item.price, lang)}
               </span>
             )}
+            {item.loc && (
+              <span style={{display:'flex', alignItems:'center', gap:2, fontSize:10.5, fontWeight:600,
+                color:'var(--pg-ink-400)', minWidth:0, overflow:'hidden', textOverflow:'ellipsis',
+                whiteSpace:'nowrap', flexShrink:1}}>
+                {Icon.pin(9,'var(--pg-ink-400)')} {item.loc}, FL
+              </span>
+            )}
           </div>
           {!isMyPost(item) && !isPending && (
             <div style={{display:'flex', gap:6, marginTop:8}}>
@@ -5834,6 +5841,13 @@ function MarketplaceScreen({ ctx }) {
                               const sfx=item.rentPeriod==='week'?(lang==='en'?'/wk':'/sem'):item.rentPeriod==='month'?(lang==='en'?'/mo':'/mês'):(lang==='en'?'/day':'/dia');
                               return <>${fmtN(item.price, lang)}<span style={{fontSize:11,fontWeight:500,color:'var(--pg-ink-400)',marginLeft:2}}>{sfx}</span></>;
                             })()}
+                          </span>
+                        )}
+                        {item.loc && (
+                          <span style={{display:'flex', alignItems:'center', gap:2, fontSize:10.5, fontWeight:600,
+                            color:'var(--pg-ink-400)', minWidth:0, overflow:'hidden', textOverflow:'ellipsis',
+                            whiteSpace:'nowrap', flexShrink:1}}>
+                            {Icon.pin(9,'var(--pg-ink-400)')} {item.loc}, FL
                           </span>
                         )}
                       </div>

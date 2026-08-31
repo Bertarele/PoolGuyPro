@@ -8834,7 +8834,21 @@ function MarketplaceScreen({
         flexShrink: 0,
         textDecoration: isSoldItem ? 'line-through' : 'none'
       }
-    }, "$", fmtN(item.price, lang))), !isMyPost(item) && !isPending && /*#__PURE__*/React.createElement("div", {
+    }, "$", fmtN(item.price, lang)), item.loc && /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        fontSize: 10.5,
+        fontWeight: 600,
+        color: 'var(--pg-ink-400)',
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        flexShrink: 1
+      }
+    }, Icon.pin(9, 'var(--pg-ink-400)'), " ", item.loc, ", FL")), !isMyPost(item) && !isPending && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 6,
@@ -11091,7 +11105,21 @@ function MarketplaceScreen({
           marginLeft: 2
         }
       }, sfx));
-    })())), !isMyPost(item) && !isPending && !isSoldItem && /*#__PURE__*/React.createElement("div", {
+    })()), item.loc && /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        fontSize: 10.5,
+        fontWeight: 600,
+        color: 'var(--pg-ink-400)',
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        flexShrink: 1
+      }
+    }, Icon.pin(9, 'var(--pg-ink-400)'), " ", item.loc, ", FL")), !isMyPost(item) && !isPending && !isSoldItem && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 6,
