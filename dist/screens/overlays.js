@@ -5134,7 +5134,12 @@ function PaywallSheet({
     premium: true
   }, {
     label: lang === 'pt' ? 'Marketplace completo' : lang === 'es' ? 'Marketplace completo' : 'Full marketplace access',
-    free: true,
+    // Routes and pools-for-sale listings live inside Marketplace, and
+    // free tier can't see them (screens/marketplace.jsx gates `view ===
+    // 'routes' && user.tier === 'free'` to an upgrade banner) — so free
+    // never actually gets the FULL marketplace, only the equipment buy/
+    // sell part. Matches the "See routes & pools listings" row below.
+    free: false,
     pro: true,
     premium: true
   }, {
@@ -5153,7 +5158,12 @@ function PaywallSheet({
     pro: false,
     premium: true
   }, {
-    label: lang === 'pt' ? '2 anúncios em destaque/mês' : lang === 'es' ? '2 anuncios destacados/mes' : '2 featured listings/month',
+    label: lang === 'pt' ? 'Rotas Rápidas' : lang === 'es' ? 'Rutas Rápidas' : 'Quick Routes',
+    free: false,
+    pro: false,
+    premium: true
+  }, {
+    label: lang === 'pt' ? '1 anúncio em destaque/mês' : lang === 'es' ? '1 anuncio destacado/mes' : '1 featured listing/month',
     free: false,
     pro: false,
     premium: true

@@ -1086,12 +1086,15 @@ function QuickPoolsScreen({
     const isApplied = !!applied[j.id];
     const isOwn = j._live && user?.uid && j.poster_id === user.uid;
     const isAdmin = user?.role === 'admin';
-    const locked = !isOwn && user.tier !== 'premium';
     // Green only for the candidate whose application was accepted
     const isAccepted = !isOwn && myAcceptedJobIds.has(String(j.id));
     // Amber for the owner when someone has been accepted (job filled, pending finalization)
     const isOwnFilled = isOwn && j.status === 'filled';
     const isDone = !isOwn && myDoneJobIds.has(String(j.id));
+    // A downgrade to free mid-job shouldn't lock someone out of a job they
+    // already applied to, got accepted for, or finished while still Premium —
+    // only the "browse and grab something new" path is gated.
+    const locked = !isOwn && !isApplied && !isAccepted && !isDone && user.tier !== 'premium';
     const isHighlighted = highlighted === j.id;
     return /*#__PURE__*/React.createElement("article", {
       key: j.id,
@@ -1676,6 +1679,8 @@ function QuickPoolsScreen({
     lang: lang,
     showToast: showToast,
     applied: !!applied[selected.id],
+    isAccepted: myAcceptedJobIds.has(String(selected.id)),
+    isDone: myDoneJobIds.has(String(selected.id)),
     onApply: sharePhone => applyToJob(selected.id, sharePhone),
     onUnlock: () => openPaywall('quickpools'),
     onChat: openChat,
@@ -4610,6 +4615,8 @@ function QuickPoolDetails({
   t,
   lang,
   applied,
+  isAccepted = false,
+  isDone = false,
   onApply,
   onUnlock,
   onChat,
@@ -4626,7 +4633,11 @@ function QuickPoolDetails({
   const isOwn = job._live && user?.uid && job.poster_id === user.uid;
   const isAdmin = user?.role === 'admin';
   const isOwnFilled = isOwn && job.status === 'filled';
-  const locked = !isOwn && user.tier !== 'premium';
+  // A downgrade to free mid-job shouldn't lock someone out of a job they
+  // already applied to, got accepted for, or finished while still Premium —
+  // only the "browse and grab something new" path is gated. See the same
+  // exemption on JobCard above.
+  const locked = !isOwn && !applied && !isAccepted && !isDone && user.tier !== 'premium';
   const [confirmDialog, setConfirmDialog] = React.useState(null);
   const [applicants, setApplicants] = React.useState([]);
   const [loadingApps, setLoadingApps] = React.useState(false);

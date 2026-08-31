@@ -2874,14 +2874,21 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null, wallet=
     { label: lang==='pt'?'Publicar vagas (contratar)':lang==='es'?'Publicar empleos (contratar)':'Post job listings (hire)',
       free:true, pro:true, premium:true },
     { label: lang==='pt'?'Marketplace completo':lang==='es'?'Marketplace completo':'Full marketplace access',
-      free:true, pro:true, premium:true },
+      // Routes and pools-for-sale listings live inside Marketplace, and
+      // free tier can't see them (screens/marketplace.jsx gates `view ===
+      // 'routes' && user.tier === 'free'` to an upgrade banner) — so free
+      // never actually gets the FULL marketplace, only the equipment buy/
+      // sell part. Matches the "See routes & pools listings" row below.
+      free:false, pro:true, premium:true },
     { label: lang==='pt'?'Ver anúncios de rotas/piscinas':lang==='es'?'Ver anuncios de rutas/piscinas':'See routes & pools listings',
       free:false, pro:true, premium:true },
     { label: lang==='pt'?'Rotas de férias (ver + publicar)':lang==='es'?'Rutas de vacaciones (ver + publicar)':'Vacation routes — full access',
       free:false, pro:true, premium:true },
     { label: lang==='pt'?'Piscinas Rápidas (Quick Pools)':lang==='es'?'Piscinas Rápidas (Quick Pools)':'Quick Pools — instant jobs',
       free:false, pro:false, premium:true },
-    { label: lang==='pt'?'2 anúncios em destaque/mês':lang==='es'?'2 anuncios destacados/mes':'2 featured listings/month',
+    { label: lang==='pt'?'Rotas Rápidas':lang==='es'?'Rutas Rápidas':'Quick Routes',
+      free:false, pro:false, premium:true },
+    { label: lang==='pt'?'1 anúncio em destaque/mês':lang==='es'?'1 anuncio destacado/mes':'1 featured listing/month',
       free:false, pro:false, premium:true },
     { label: lang==='pt'?'Badge verificado Premium':lang==='es'?'Badge verificado Premium':'Premium verified badge',
       free:false, pro:false, premium:true },
