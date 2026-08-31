@@ -3462,8 +3462,15 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                 transition:'box-shadow 0.3s, outline 0.3s',
                 outline: highlightedVacId===vac._id ? '2px solid var(--pg-aqua-500)' : 'none',
                 outlineOffset: highlightedVacId===vac._id ? 2 : 0,
-                boxShadow: highlightedVacId===vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined,
-                filter: fullyBooked ? 'grayscale(0.85)' : 'none', opacity: fullyBooked ? 0.72 : 1}}>
+                boxShadow: highlightedVacId===vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined}}>
+
+                {/* The fully-covered dimming only belongs on the listing
+                    content — the admin Excluir button below is a real,
+                    always-actionable control and reads as broken/disabled if
+                    it gets grayed out along with a card that just happens to
+                    be fully booked. Scoped to this inner wrapper instead of
+                    the whole <article> so Excluir stays outside it. */}
+                <div style={{filter: fullyBooked ? 'grayscale(0.85)' : 'none', opacity: fullyBooked ? 0.72 : 1}}>
 
                 {/* ── Gradient header ── */}
                 <div style={{
@@ -3745,8 +3752,10 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
                     ))}
                   </div>
                 </div>
+                </div>
 
-                {/* Admin quick-delete */}
+                {/* Admin quick-delete — deliberately outside the dimmed
+                    wrapper above, see the comment by the fullyBooked filter. */}
                 {user?.role === 'admin' && (
                   <div onClick={async () => {
                     if (!window.confirm(lang==='pt'?'Excluir este registro de férias?':'Delete this vacation post?')) return;

@@ -1272,11 +1272,7 @@ function QuickPoolsScreen({
         fontWeight: 800,
         color: locked ? 'var(--pg-ink-400)' : 'var(--pg-blue-500)',
         letterSpacing: '-0.03em',
-        lineHeight: 1,
-        // Light enough that the digits still read through — a
-        // locked card showing a tempting high price is what gets
-        // someone to tap "unlock", a solid blob doesn't.
-        filter: locked ? 'blur(1.5px)' : 'none'
+        lineHeight: 1
       }
     }, "$", j.price), /*#__PURE__*/React.createElement("div", {
       style: {

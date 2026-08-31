@@ -7404,7 +7404,10 @@ function VacationPanel({
         transition: 'box-shadow 0.3s, outline 0.3s',
         outline: highlightedVacId === vac._id ? '2px solid var(--pg-aqua-500)' : 'none',
         outlineOffset: highlightedVacId === vac._id ? 2 : 0,
-        boxShadow: highlightedVacId === vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined,
+        boxShadow: highlightedVacId === vac._id ? '0 0 0 5px var(--pg-aqua-100)' : undefined
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
         filter: fullyBooked ? 'grayscale(0.85)' : 'none',
         opacity: fullyBooked ? 0.72 : 1
       }
@@ -7933,7 +7936,7 @@ function VacationPanel({
       strokeLinejoin: "round"
     }, /*#__PURE__*/React.createElement("path", {
       d: "M20 6L9 17l-5-5"
-    })), lang === 'pt' ? 'Encerrar' : lang === 'es' ? 'Cerrar' : 'Close'))))), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
+    })), lang === 'pt' ? 'Encerrar' : lang === 'es' ? 'Cerrar' : 'Close')))))), user?.role === 'admin' && /*#__PURE__*/React.createElement("div", {
       onClick: async () => {
         if (!window.confirm(lang === 'pt' ? 'Excluir este registro de férias?' : 'Delete this vacation post?')) return;
         const {
