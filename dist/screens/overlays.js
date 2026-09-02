@@ -5755,6 +5755,7 @@ function WalletSheet({
   const [busy, setBusy] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   const balance = wallet?.balance_cents ?? 0;
+  const locked = wallet?.locked_cents ?? 0;
   const earned = wallet?.total_earned_cents ?? 0;
   const referred = wallet?.total_referred ?? 0;
   const converted = wallet?.total_converted ?? 0;
@@ -5793,7 +5794,11 @@ function WalletSheet({
     wdOk: 'Saque solicitado! Vamos revisar e te avisar.',
     errMin: 'Valor abaixo do mínimo.',
     errFunds: 'Saldo insuficiente.',
-    errGeneric: 'Não foi possível solicitar o saque.'
+    errGeneric: 'Não foi possível solicitar o saque.',
+    locked: 'travado',
+    lockedNote: 'em comissões liberando nos próximos 30 dias',
+    unlocksToday: 'libera hoje',
+    unlocksIn: d => `libera em ${d}d`
   } : lang === 'es' ? {
     wallet: 'Cartera',
     balance: 'Saldo disponible',
@@ -5825,7 +5830,11 @@ function WalletSheet({
     wdOk: '¡Retiro solicitado! Lo revisaremos y te avisaremos.',
     errMin: 'Monto por debajo del mínimo.',
     errFunds: 'Saldo insuficiente.',
-    errGeneric: 'No se pudo solicitar el retiro.'
+    errGeneric: 'No se pudo solicitar el retiro.',
+    locked: 'bloqueado',
+    lockedNote: 'en comisiones que se liberan en los próximos 30 días',
+    unlocksToday: 'se libera hoy',
+    unlocksIn: d => `se libera en ${d}d`
   } : {
     wallet: 'Wallet',
     balance: 'Available balance',
@@ -5857,7 +5866,11 @@ function WalletSheet({
     wdOk: 'Withdrawal requested! We will review and let you know.',
     errMin: 'Amount is below the minimum.',
     errFunds: 'Not enough balance.',
-    errGeneric: 'Could not request the withdrawal.'
+    errGeneric: 'Could not request the withdrawal.',
+    locked: 'locked',
+    lockedNote: 'in commissions unlocking over the next 30 days',
+    unlocksToday: 'unlocks today',
+    unlocksIn: d => `unlocks in ${d}d`
   };
   const [wdOpen, setWdOpen] = React.useState(false);
   const [wdAmount, setWdAmount] = React.useState('');
@@ -6039,7 +6052,16 @@ function WalletSheet({
       fontSize: 11.5,
       opacity: 0.75
     }
-  }, money(pendingWd), " \xB7 ", L.pending), /*#__PURE__*/React.createElement("div", {
+  }, money(pendingWd), " \xB7 ", L.pending), locked > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8,
+      fontSize: 11.5,
+      opacity: 0.75,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 5
+    }
+  }, Icon.clock(12, 'rgba(255,255,255,0.75)'), money(locked), " ", L.locked, " \xB7 ", L.lockedNote), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 16,
       display: 'flex',
@@ -6324,6 +6346,11 @@ function WalletSheet({
     }
   }, L.empty), walletTx.map(t => {
     const credit = t.amount_cents > 0;
+    // A commission row still holds until its available_at date —
+    // shown amber/pending instead of the usual green credit, so
+    // it doesn't read as spendable before it actually is.
+    const isPending = t.kind === 'referral_commission' && t.available_at && new Date(t.available_at) > new Date();
+    const daysLeft = isPending ? Math.max(0, Math.ceil((new Date(t.available_at) - Date.now()) / 86400000)) : 0;
     return /*#__PURE__*/React.createElement("div", {
       key: t.id,
       style: {
@@ -6339,12 +6366,12 @@ function WalletSheet({
         height: 38,
         borderRadius: 11,
         flexShrink: 0,
-        background: credit ? 'var(--pg-aqua-100)' : 'oklch(0.95 0.04 20)',
+        background: isPending ? 'rgba(217,119,6,0.12)' : credit ? 'var(--pg-aqua-100)' : 'oklch(0.95 0.04 20)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }
-    }, credit ? ArrowUp(16, 'var(--pg-aqua-700)') : ArrowDown(16, 'oklch(0.45 0.18 20)')), /*#__PURE__*/React.createElement("div", {
+    }, isPending ? Icon.clock(16, '#D97706') : credit ? ArrowUp(16, 'var(--pg-aqua-700)') : ArrowDown(16, 'oklch(0.45 0.18 20)')), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
@@ -6360,10 +6387,11 @@ function WalletSheet({
     }, txLabel(t)), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
-        color: 'var(--pg-ink-500)',
-        marginTop: 1
+        color: isPending ? '#D97706' : 'var(--pg-ink-500)',
+        marginTop: 1,
+        fontWeight: isPending ? 700 : 400
       }
-    }, new Date(t.created_at).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es' : 'en-US', {
+    }, isPending ? daysLeft <= 0 ? L.unlocksToday : L.unlocksIn(daysLeft) : new Date(t.created_at).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es' : 'en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -6374,7 +6402,8 @@ function WalletSheet({
         fontSize: 15,
         fontWeight: 700,
         letterSpacing: '-0.02em',
-        color: credit ? 'var(--pg-aqua-700)' : 'oklch(0.45 0.18 20)'
+        color: isPending ? '#D97706' : credit ? 'var(--pg-aqua-700)' : 'oklch(0.45 0.18 20)',
+        opacity: isPending ? 0.75 : 1
       }
     }, credit ? '+' : '−', money(Math.abs(t.amount_cents))));
   }))), wdOpen && /*#__PURE__*/React.createElement("div", {
