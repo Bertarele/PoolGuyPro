@@ -110,6 +110,44 @@ Deno.serve(async (req) => {
         await rpc('cancel_subscription', { p_user_id: userId, p_source: 'stripe_webhook' });
         break;
       }
+
+      // A refund and a cancellation are separate Stripe actions — refunding
+      // a charge does not by itself touch the subscription, so without this
+      // the person keeps their paid tier indefinitely unless someone
+      // remembers to also cancel it by hand. Only a FULL refund cancels
+      // access; a partial/goodwill refund is left alone since it doesn't
+      // necessarily mean the subscription itself should end. Cancelling the
+      // Stripe subscription (rather than downgrading the tier directly here)
+      // reuses the already-correct customer.subscription.deleted handler
+      // above instead of duplicating its logic, and also stops next
+      // month's billing, not just this app's access.
+      //
+      // Deliberately NOT resolved via charge.invoice -> invoice.subscription:
+      // on this account's API version neither Charge nor PaymentIntent
+      // exposes an `invoice` field at all anymore (confirmed against a real
+      // test charge — both are just absent, not merely unexpanded), so that
+      // chain can't be walked. Going through the customer instead sidesteps
+      // it entirely and is simpler regardless: each PoolGuyX user has at
+      // most one active subscription, so "cancel this customer's active
+      // subscription(s)" and "cancel the subscription this charge paid for"
+      // come out to the same thing here.
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge;
+        if (!charge.refunded) break; // partial refund — leave the subscription alone
+        const customerId = typeof charge.customer === 'string' ? charge.customer : charge.customer?.id;
+        if (!customerId) break;
+        const subs = await stripe.subscriptions.list({ customer: customerId, status: 'active', limit: 10 });
+        for (const s of subs.data) {
+          try {
+            await stripe.subscriptions.cancel(s.id);
+            console.log('[stripe-webhook] refund cancelled subscription', s.id);
+          } catch (e) {
+            // Already canceled (e.g. an admin already cancelled by hand) — not an error.
+            console.log('[stripe-webhook] refund: subscription cancel skipped', s.id, e?.message);
+          }
+        }
+        break;
+      }
     }
   } catch (e) {
     // 500 makes Stripe retry with the same event.id, which confirm_subscription
