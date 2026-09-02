@@ -1433,13 +1433,32 @@ function App() {
     // WebSocket connection, so the postgres_changes handlers below never fire;
     // doFetch() (the same full refetch used on mount) is the only thing that
     // actually keeps these lists current while the app stays open.
-    const onVisible = () => {
+    // iOS home-screen PWAs are the reason this isn't just visibilitychange:
+    // WebKit's Page Visibility API is well documented as unreliable in
+    // standalone mode — reopening the app from the home screen after it was
+    // backgrounded often never fires visibilitychange at all, which reads
+    // as "the app doesn't refresh unless I pull-to-refresh" (it's actually
+    // just never re-running doFetch on resume). pageshow — especially with
+    // event.persisted, which means the page came from the OS/WebKit's
+    // suspended-page cache rather than a fresh load — and window focus are
+    // both more reliable resume signals on iOS, so all three feed the same
+    // refresh. The dedupe window collapses the common case where a couple
+    // of these legitimately fire together (e.g. a normal desktop tab
+    // switch) into a single refetch instead of two or three redundant ones.
+    let lastRefreshAt = 0;
+    const refreshIfVisible = () => {
       if (document.visibilityState !== 'visible') return;
+      const now = Date.now();
+      if (now - lastRefreshAt < 1500) return;
+      lastRefreshAt = now;
       doFetch().catch(()=>{});
       doCountsRefresh(); // also refresh applicant counts on tab focus
       if (user?.uid) loadLiveApplications(user.uid); // refresh candidate application statuses
     };
+    const onVisible = refreshIfVisible;
     document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', refreshIfVisible);
+    window.addEventListener('focus', refreshIfVisible);
 
     // Poll jobs/techs/vacations/marketplace every 60s + applicant counts every 30s + applications every 30s
     const pollTimer  = setInterval(() => doFetch().catch(()=>{}), 60000);
@@ -1518,6 +1537,8 @@ function App() {
 
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', refreshIfVisible);
+      window.removeEventListener('focus', refreshIfVisible);
       clearInterval(pollTimer);
       clearInterval(countTimer);
       clearInterval(appsTimer);
