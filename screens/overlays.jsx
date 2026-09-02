@@ -2918,9 +2918,26 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null, wallet=
           : '❌ Could not open checkout. Please try again.');
         return;
       }
-      // Same tab: Stripe redirects back to the app when it's done, and a
-      // popup would be swallowed by the in-app browsers these users live in.
-      window.location.href = data.url;
+      // Web/PWA: same-tab navigation, same as before — Stripe redirects back
+      // to the app when it's done, and a popup would be swallowed by the
+      // in-app browsers these users live in.
+      //
+      // Wrapped in Capacitor (native iOS/Android): navigating the app's own
+      // webview to the Stripe URL would render checkout INSIDE the app's own
+      // screen — indistinguishable, to App Store review, from an in-app
+      // purchase flow that bypasses Apple's cut. window.Capacitor is a
+      // global the native shell injects into the webview at runtime (no
+      // bundler/import needed, consistent with how the rest of this app
+      // loads); when present, hand the URL to the Browser plugin instead so
+      // it opens in the system browser — a real, visible departure from the
+      // app, not just a same-webview redirect. Falls through to the current
+      // behavior everywhere else, including today, since window.Capacitor
+      // doesn't exist until an actual native wrapper is built.
+      if (window.Capacitor?.Plugins?.Browser) {
+        window.Capacitor.Plugins.Browser.open({ url: data.url });
+      } else {
+        window.location.href = data.url;
+      }
     } catch (e) {
       console.error('[paywall] checkout error', e);
       showToast && showToast(lang==='pt' ? '❌ Erro ao iniciar o pagamento.'
