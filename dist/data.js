@@ -57,7 +57,7 @@ const STRINGS = {
     poolRoutes: 'Pool Routes',
     sell: 'Sell',
     rent: 'Rent',
-    routesSaleOnly: 'Pool routes are sale-only. PoolGuyPro escrows the first month\'s revenue until handoff is complete.',
+    routesSaleOnly: 'Pool routes are sale-only. PoolGuyX escrows the first month\'s revenue until handoff is complete.',
     asking: 'Asking',
     makeOffer: 'Make offer',
     requestRental: 'Request rental',
@@ -89,7 +89,7 @@ const STRINGS = {
     premiumUnlocks: 'Premium unlocks Express Pools',
     premiumUnlocksDesc: 'Apply, contact the poster and see full access details. Cancel anytime.',
     fastTrack: 'fast track',
-    unlockPrice: 'Unlock — $9.99/mo',
+    unlockPrice: 'Unlock — $24.99/mo',
     // Post form
     step: 'Step',
     of: 'of',
@@ -174,6 +174,8 @@ const STRINGS = {
     languageLbl: 'Language',
     locationServices: 'Location services',
     verification: 'Verification',
+    verifyPending: 'Under review',
+    notVerified: 'Not verified',
     alwaysLbl: 'Always',
     helpSupport: 'Help & support',
     privacy: 'Privacy',
@@ -183,6 +185,7 @@ const STRINGS = {
     premium: 'Premium',
     free: 'Free tier',
     renews: 'Renews',
+    activeSub: 'Active subscription',
     upgradeQp: 'Upgrade to unlock Express Pools',
     comparePlans: 'Compare plans',
     tapTier: 'Tap a tier to preview gating behavior across the app',
@@ -330,7 +333,7 @@ const STRINGS = {
     poolRoutes: 'Rotas',
     sell: 'Vender',
     rent: 'Alugar',
-    routesSaleOnly: 'Rotas de piscina são apenas para venda. O PoolGuyPro guarda em garantia a receita do primeiro mês até a entrega ser concluída.',
+    routesSaleOnly: 'Rotas de piscina são apenas para venda. O PoolGuyX guarda em garantia a receita do primeiro mês até a entrega ser concluída.',
     asking: 'Pedido',
     makeOffer: 'Fazer oferta',
     requestRental: 'Solicitar aluguel',
@@ -361,7 +364,7 @@ const STRINGS = {
     premiumUnlocks: 'Premium desbloqueia Piscinas Rápidas',
     premiumUnlocksDesc: 'Candidate-se, contate o anunciante e veja todos os detalhes de acesso. Cancele quando quiser.',
     fastTrack: 'aplicação rápida',
-    unlockPrice: 'Desbloquear — R$49/mês',
+    unlockPrice: 'Desbloquear — $24.99/mês',
     step: 'Passo',
     of: 'de',
     pqStep1Title: 'O que precisa ser feito?',
@@ -443,6 +446,8 @@ const STRINGS = {
     languageLbl: 'Idioma',
     locationServices: 'Serviços de localização',
     verification: 'Verificação',
+    verifyPending: 'Em análise',
+    notVerified: 'Não verificado',
     alwaysLbl: 'Sempre',
     helpSupport: 'Ajuda e suporte',
     privacy: 'Privacidade',
@@ -452,6 +457,7 @@ const STRINGS = {
     premium: 'Premium',
     free: 'Gratuito',
     renews: 'Renova',
+    activeSub: 'Assinatura ativa',
     upgradeQp: 'Atualize para desbloquear Piscinas Rápidas',
     comparePlans: 'Comparar planos',
     tapTier: 'Toque em um plano para visualizar o comportamento de bloqueio no app',
@@ -597,7 +603,7 @@ const STRINGS = {
     poolRoutes: 'Rutas',
     sell: 'Vender',
     rent: 'Rentar',
-    routesSaleOnly: 'Las rutas de piscina son solo para venta. PoolGuyPro retiene en garantía los ingresos del primer mes hasta completar la entrega.',
+    routesSaleOnly: 'Las rutas de piscina son solo para venta. PoolGuyX retiene en garantía los ingresos del primer mes hasta completar la entrega.',
     asking: 'Precio',
     makeOffer: 'Hacer oferta',
     requestRental: 'Solicitar renta',
@@ -628,7 +634,7 @@ const STRINGS = {
     premiumUnlocks: 'Premium desbloquea Piscinas Rápidas',
     premiumUnlocksDesc: 'Postúlate, contacta al anunciante y ve todos los detalles de acceso. Cancela cuando quieras.',
     fastTrack: 'vía rápida',
-    unlockPrice: 'Desbloquear — $9.99/mes',
+    unlockPrice: 'Desbloquear — $24.99/mes',
     step: 'Paso',
     of: 'de',
     pqStep1Title: '¿Qué hay que hacer?',
@@ -710,6 +716,8 @@ const STRINGS = {
     languageLbl: 'Idioma',
     locationServices: 'Servicios de ubicación',
     verification: 'Verificación',
+    verifyPending: 'En revisión',
+    notVerified: 'No verificado',
     alwaysLbl: 'Siempre',
     helpSupport: 'Ayuda y soporte',
     privacy: 'Privacidad',
@@ -719,6 +727,7 @@ const STRINGS = {
     premium: 'Premium',
     free: 'Gratis',
     renews: 'Renueva',
+    activeSub: 'Suscripción activa',
     upgradeQp: 'Actualiza para desbloquear Piscinas Rápidas',
     comparePlans: 'Comparar planes',
     tapTier: 'Toca un plan para previsualizar el bloqueo en la app',
@@ -1518,6 +1527,11 @@ function tr(v, lang = 'en') {
 // WALLET_DATA (hardcoded $490 balance + invented history) was removed —
 // the wallet now reads the real wallet_transactions ledger.
 
+// Single source of truth for the version users see. It was written out by
+// hand in three places and had drifted into three different numbers —
+// v2.5.0 in the profile footer, v2.5.0 Beta in the settings sheet and
+// v1.3.0 · Beta in the desktop sidebar — so all three now read this.
+const APP_VERSION = 'v2.5.0 Beta';
 const MY_APPLICATIONS = [];
 Object.assign(window, {
   STRINGS,
@@ -1537,5 +1551,6 @@ Object.assign(window, {
   MY_POSTS,
   CHAT_CONVERSATIONS,
   tr,
-  MY_APPLICATIONS
+  MY_APPLICATIONS,
+  APP_VERSION
 });

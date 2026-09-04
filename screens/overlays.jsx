@@ -3738,7 +3738,7 @@ function WorkLifecycleSheet({ open, onClose, app, lang='en', onReview }) {
                 <div style={{fontFamily:'var(--pg-font-display)', fontSize:22, fontWeight:700, letterSpacing:'-0.02em', color:'var(--pg-aqua-700)'}}>{paidLbl}</div>
                 <div style={{fontFamily:'var(--pg-font-display)', fontSize:36, fontWeight:700, letterSpacing:'-0.04em', color:'var(--pg-aqua-500)', marginTop:6, lineHeight:1}}>{amtStr}</div>
                 <div style={{fontSize:13, color:'var(--pg-ink-500)', marginTop:10, lineHeight:1.5}}>
-                  {lang==='pt'?'Valor adicionado à sua carteira PoolGuyPro.':lang==='es'?'Importe añadido a tu cartera PoolGuyPro.':'Amount added to your PoolGuyPro wallet.'}
+                  {lang==='pt'?'Valor adicionado à sua carteira PoolGuyX.':lang==='es'?'Importe añadido a tu cartera PoolGuyX.':'Amount added to your PoolGuyX wallet.'}
                 </div>
               </div>
               <button onClick={()=>{ onClose(); if(onReview) onReview(app); }}
@@ -5489,7 +5489,7 @@ function HelpSheet({ open, onClose, lang='en' }) {
           ))}
         </div>
         <div style={{textAlign:'center', padding:'20px 0 0', fontSize:11, color:'var(--pg-ink-400)'}}>
-          PoolGuyX · v2.5.0 Beta
+          PoolGuyX · {APP_VERSION}
         </div>
       </div>
     </div>

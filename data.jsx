@@ -19,7 +19,7 @@ const STRINGS = {
     todayJobs:'Today\'s pool jobs', seeAllOpps:'See all', todayJobsSub:'tap to view & apply',
     // Marketplace
     equipment:'Equipment', poolRoutes:'Pool Routes', sell:'Sell', rent:'Rent',
-    routesSaleOnly:'Pool routes are sale-only. PoolGuyPro escrows the first month\'s revenue until handoff is complete.',
+    routesSaleOnly:'Pool routes are sale-only. PoolGuyX escrows the first month\'s revenue until handoff is complete.',
     asking:'Asking', makeOffer:'Make offer', requestRental:'Request rental',
     itemsSell:'items · Sell', itemsRent:'items · Rent', routesFor:'routes for sale',
     // Express Pools
@@ -30,7 +30,7 @@ const STRINGS = {
     description:'DESCRIPTION', completedJobs:'completed jobs', unlock:'Unlock', unlockApply:'Unlock to apply',
     premiumUnlocks:'Premium unlocks Express Pools',
     premiumUnlocksDesc:'Apply, contact the poster and see full access details. Cancel anytime.',
-    fastTrack:'fast track', unlockPrice:'Unlock — $9.99/mo',
+    fastTrack:'fast track', unlockPrice:'Unlock — $24.99/mo',
     // Post form
     step:'Step', of:'of',
     pqStep1Title:'What needs doing?', pqStep1Sub:'A short title so nearby pool guys understand the job at a glance.',
@@ -68,10 +68,10 @@ const STRINGS = {
     add:'Add', notifyNewJobs:'Notify me of new jobs',
     peerToPeer:'Ratings are peer-to-peer only — both sides must have completed a transaction.',
     settings:'Settings', notifications:'Notifications', languageLbl:'Language', locationServices:'Location services',
-    verification:'Verification', alwaysLbl:'Always',
+    verification:'Verification', verifyPending:'Under review', notVerified:'Not verified', alwaysLbl:'Always',
     helpSupport:'Help & support', privacy:'Privacy', logout:'Log out',
     subscription:'SUBSCRIPTION', poolguyPro:'PoolGuy PRO', premium:'Premium', free:'Free tier',
-    renews:'Renews', upgradeQp:'Upgrade to unlock Express Pools', comparePlans:'Compare plans',
+    renews:'Renews', activeSub:'Active subscription', upgradeQp:'Upgrade to unlock Express Pools', comparePlans:'Compare plans',
     tapTier:'Tap a tier to preview gating behavior across the app',
     on:'On', english:'English', portuguese:'Português', spanish:'Español',
     // Overlays
@@ -135,7 +135,7 @@ const STRINGS = {
     activityAgo:'atrás',
     todayJobs:'Piscinas para hoje', seeAllOpps:'Ver tudo', todayJobsSub:'toque para ver e candidatar',
     equipment:'Equipamento', poolRoutes:'Rotas', sell:'Vender', rent:'Alugar',
-    routesSaleOnly:'Rotas de piscina são apenas para venda. O PoolGuyPro guarda em garantia a receita do primeiro mês até a entrega ser concluída.',
+    routesSaleOnly:'Rotas de piscina são apenas para venda. O PoolGuyX guarda em garantia a receita do primeiro mês até a entrega ser concluída.',
     asking:'Pedido', makeOffer:'Fazer oferta', requestRental:'Solicitar aluguel',
     itemsSell:'itens · Venda', itemsRent:'itens · Aluguel', routesFor:'rotas à venda',
     postQuick:'Publicar Piscina Rápida', yourRegions:'SUAS REGIÕES', mapView:'Ver mapa',
@@ -145,7 +145,7 @@ const STRINGS = {
     description:'DESCRIÇÃO', completedJobs:'trabalhos concluídos', unlock:'Desbloquear', unlockApply:'Desbloquear para aplicar',
     premiumUnlocks:'Premium desbloqueia Piscinas Rápidas',
     premiumUnlocksDesc:'Candidate-se, contate o anunciante e veja todos os detalhes de acesso. Cancele quando quiser.',
-    fastTrack:'aplicação rápida', unlockPrice:'Desbloquear — R$49/mês',
+    fastTrack:'aplicação rápida', unlockPrice:'Desbloquear — $24.99/mês',
     step:'Passo', of:'de',
     pqStep1Title:'O que precisa ser feito?', pqStep1Sub:'Um título curto para os piscineiros próximos entenderem o trabalho rapidamente.',
     pqStep2Title:'Onde e quando?',   pqStep2Sub:'Notificamos os piscineiros cuja região corresponda.',
@@ -180,10 +180,10 @@ const STRINGS = {
     add:'Adicionar', notifyNewJobs:'Notificar novos trabalhos',
     peerToPeer:'Avaliações são entre pares — ambos os lados precisam ter concluído uma transação.',
     settings:'Configurações', notifications:'Notificações', languageLbl:'Idioma', locationServices:'Serviços de localização',
-    verification:'Verificação', alwaysLbl:'Sempre',
+    verification:'Verificação', verifyPending:'Em análise', notVerified:'Não verificado', alwaysLbl:'Sempre',
     helpSupport:'Ajuda e suporte', privacy:'Privacidade', logout:'Sair',
     subscription:'ASSINATURA', poolguyPro:'PoolGuy PRO', premium:'Premium', free:'Gratuito',
-    renews:'Renova', upgradeQp:'Atualize para desbloquear Piscinas Rápidas', comparePlans:'Comparar planos',
+    renews:'Renova', activeSub:'Assinatura ativa', upgradeQp:'Atualize para desbloquear Piscinas Rápidas', comparePlans:'Comparar planos',
     tapTier:'Toque em um plano para visualizar o comportamento de bloqueio no app',
     on:'Ativo', english:'English', portuguese:'Português', spanish:'Español',
     activeNow:'Online agora', viewJob:'Ver trabalho', messagePh:'Mensagem…',
@@ -245,7 +245,7 @@ const STRINGS = {
     activityAgo:'atrás',
     todayJobs:'Piscinas para hoy', seeAllOpps:'Ver todo', todayJobsSub:'toca para ver y postular',
     equipment:'Equipo', poolRoutes:'Rutas', sell:'Vender', rent:'Rentar',
-    routesSaleOnly:'Las rutas de piscina son solo para venta. PoolGuyPro retiene en garantía los ingresos del primer mes hasta completar la entrega.',
+    routesSaleOnly:'Las rutas de piscina son solo para venta. PoolGuyX retiene en garantía los ingresos del primer mes hasta completar la entrega.',
     asking:'Precio', makeOffer:'Hacer oferta', requestRental:'Solicitar renta',
     itemsSell:'artículos · Venta', itemsRent:'artículos · Renta', routesFor:'rutas en venta',
     postQuick:'Publicar Piscina Rápida', yourRegions:'TUS REGIONES', mapView:'Ver mapa',
@@ -255,7 +255,7 @@ const STRINGS = {
     description:'DESCRIPCIÓN', completedJobs:'trabajos completados', unlock:'Desbloquear', unlockApply:'Desbloquea para postular',
     premiumUnlocks:'Premium desbloquea Piscinas Rápidas',
     premiumUnlocksDesc:'Postúlate, contacta al anunciante y ve todos los detalles de acceso. Cancela cuando quieras.',
-    fastTrack:'vía rápida', unlockPrice:'Desbloquear — $9.99/mes',
+    fastTrack:'vía rápida', unlockPrice:'Desbloquear — $24.99/mes',
     step:'Paso', of:'de',
     pqStep1Title:'¿Qué hay que hacer?', pqStep1Sub:'Un título corto para que los técnicos cercanos entiendan el trabajo a primera vista.',
     pqStep2Title:'¿Dónde y cuándo?', pqStep2Sub:'Notificamos a los técnicos cuya región coincida.',
@@ -290,10 +290,10 @@ const STRINGS = {
     add:'Agregar', notifyNewJobs:'Notificarme de nuevos trabajos',
     peerToPeer:'Las reseñas son entre pares — ambas partes deben haber completado una transacción.',
     settings:'Configuración', notifications:'Notificaciones', languageLbl:'Idioma', locationServices:'Servicios de ubicación',
-    verification:'Verificación', alwaysLbl:'Siempre',
+    verification:'Verificación', verifyPending:'En revisión', notVerified:'No verificado', alwaysLbl:'Siempre',
     helpSupport:'Ayuda y soporte', privacy:'Privacidad', logout:'Cerrar sesión',
     subscription:'SUSCRIPCIÓN', poolguyPro:'PoolGuy PRO', premium:'Premium', free:'Gratis',
-    renews:'Renueva', upgradeQp:'Actualiza para desbloquear Piscinas Rápidas', comparePlans:'Comparar planes',
+    renews:'Renueva', activeSub:'Suscripción activa', upgradeQp:'Actualiza para desbloquear Piscinas Rápidas', comparePlans:'Comparar planes',
     tapTier:'Toca un plan para previsualizar el bloqueo en la app',
     on:'Activo', english:'English', portuguese:'Português', spanish:'Español',
     activeNow:'Activo ahora', viewJob:'Ver trabajo', messagePh:'Mensaje…',
@@ -568,11 +568,17 @@ function tr(v, lang='en') {
 // WALLET_DATA (hardcoded $490 balance + invented history) was removed —
 // the wallet now reads the real wallet_transactions ledger.
 
+// Single source of truth for the version users see. It was written out by
+// hand in three places and had drifted into three different numbers —
+// v2.5.0 in the profile footer, v2.5.0 Beta in the settings sheet and
+// v1.3.0 · Beta in the desktop sidebar — so all three now read this.
+const APP_VERSION = 'v2.5.0 Beta';
+
 const MY_APPLICATIONS = [];
 
 Object.assign(window, {
   STRINGS, FEED, FEATURED, EQUIPMENT, POOL_ROUTES, SINGLE_POOLS, QUICK_POOLS,
   HIRING, TECHS, VACATIONS_POSTED, VACATION_LISTINGS, VACATIONS_APPLIED, REVIEWS, NOTIFICATIONS,
   MY_POSTS, CHAT_CONVERSATIONS, tr,
-  MY_APPLICATIONS,
+  MY_APPLICATIONS, APP_VERSION,
 });

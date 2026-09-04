@@ -6992,7 +6992,7 @@ function WorkLifecycleSheet({
       marginTop: 10,
       lineHeight: 1.5
     }
-  }, lang === 'pt' ? 'Valor adicionado à sua carteira PoolGuyPro.' : lang === 'es' ? 'Importe añadido a tu cartera PoolGuyPro.' : 'Amount added to your PoolGuyPro wallet.')), /*#__PURE__*/React.createElement("button", {
+  }, lang === 'pt' ? 'Valor adicionado à sua carteira PoolGuyX.' : lang === 'es' ? 'Importe añadido a tu cartera PoolGuyX.' : 'Amount added to your PoolGuyX wallet.')), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       onClose();
       if (onReview) onReview(app);
@@ -10182,7 +10182,7 @@ function HelpSheet({
       fontSize: 11,
       color: 'var(--pg-ink-400)'
     }
-  }, "PoolGuyX \xB7 v2.5.0 Beta")));
+  }, "PoolGuyX \xB7 ", APP_VERSION)));
 }
 
 // ── Privacy sheet ─────────────────────────────────────────────

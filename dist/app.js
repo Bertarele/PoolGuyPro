@@ -792,6 +792,23 @@ function App() {
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
       setRegionsByDay(profile.regions_by_day);
     }
+    // Billing period of whatever they actually bought. The profiles row records
+    // the tier but not whether it was monthly or annual, and the subscription
+    // card needs that to name the right price instead of guessing one. Purely
+    // for display — nothing is gated on it.
+    if (profile?.tier && profile.tier !== 'free') {
+      window.sb.from('subscription_events').select('billing').eq('user_id', sbUser.id).order('created_at', {
+        ascending: false
+      }).limit(1).then(({
+        data
+      }) => {
+        const billing = data?.[0]?.billing;
+        if (billing) setUser(u => ({
+          ...u,
+          tierBilling: billing
+        }));
+      }).catch(() => {});
+    }
     // Live rating/review count — computed from real ratings received, never cached/hardcoded.
     // Only counts ratings that are actually revealed (both sides rated, or the 7-day blind
     // window expired) — otherwise a seller could see their own score the instant they rate
@@ -1188,7 +1205,7 @@ function App() {
       _setPushLog('pedindo permissão...');
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        _setPushLog('❌ permissão negada — ative em Configurações > ' + (window.navigator.userAgent.includes('iPhone') ? 'PoolGuyPro' : 'Notificações'));
+        _setPushLog('❌ permissão negada — ative em Configurações > ' + (window.navigator.userAgent.includes('iPhone') ? 'PoolGuyX' : 'Notificações'));
         return;
       }
     }
@@ -2707,7 +2724,7 @@ function App() {
     const slides = {
       en: [{
         icon: '🏊',
-        title: 'Welcome to PoolGuyPro',
+        title: 'Welcome to PoolGuyX',
         desc: 'The marketplace built for Florida pool professionals. Find jobs, post routes, and connect with other pool guys.'
       }, {
         icon: '📅',
@@ -2720,7 +2737,7 @@ function App() {
       }],
       pt: [{
         icon: '🏊',
-        title: 'Bem-vindo ao PoolGuyPro',
+        title: 'Bem-vindo ao PoolGuyX',
         desc: 'O marketplace feito para profissionais de piscina na Flórida. Encontre trabalhos, publique rotas e conecte-se com outros pool guys.'
       }, {
         icon: '📅',
@@ -2733,7 +2750,7 @@ function App() {
       }],
       es: [{
         icon: '🏊',
-        title: 'Bienvenido a PoolGuyPro',
+        title: 'Bienvenido a PoolGuyX',
         desc: 'El marketplace para profesionales de piscinas en Florida. Encuentra trabajos, publica rutas y conéctate con otros pool guys.'
       }, {
         icon: '📅',
@@ -4364,7 +4381,7 @@ function App() {
         letterSpacing: '0.06em',
         whiteSpace: 'nowrap'
       }
-    }, "v1.3.0 \xB7 Beta"), /*#__PURE__*/React.createElement("div", {
+    }, APP_VERSION), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         height: 1,

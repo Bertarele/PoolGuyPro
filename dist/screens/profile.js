@@ -1268,10 +1268,10 @@ function ProfileScreen({
     chev: true,
     onClick: openLanguagePicker
   }), /*#__PURE__*/React.createElement(SettingRow, {
-    icon: Icon.shield(17, '#10B981'),
-    iconBg: "rgba(16,185,129,0.12)",
+    icon: Icon.shield(17, user.verified ? '#10B981' : user.verificationRequested ? '#F59E0B' : 'var(--pg-ink-400)'),
+    iconBg: user.verified ? 'rgba(16,185,129,0.12)' : user.verificationRequested ? 'rgba(245,158,11,0.12)' : 'var(--pg-ink-100)',
     label: t.verification,
-    detail: t.verified,
+    detail: user.verified ? t.verified : user.verificationRequested ? t.verifyPending : t.notVerified,
     chev: true,
     onClick: openVerification
   }), /*#__PURE__*/React.createElement(SettingRow, {
@@ -1354,7 +1354,7 @@ function ProfileScreen({
       color: 'var(--pg-ink-400)',
       marginTop: 4
     }
-  }, "PoolGuyPro \xB7 v2.5.0"))));
+  }, "PoolGuyX \xB7 ", APP_VERSION))));
 }
 function SavedSection({
   user,
@@ -1961,6 +1961,32 @@ function PersonalInfoCard({
     }
   }, saving ? '…' : lang === 'pt' ? 'Salvar' : lang === 'es' ? 'Guardar' : 'Save')))));
 }
+
+// Real catalogue prices, matching the paywall in screens/overlays.jsx.
+const PLAN_PRICE = {
+  pro: {
+    monthly: '14.99',
+    annual: '149'
+  },
+  premium: {
+    monthly: '24.99',
+    annual: '249'
+  }
+};
+
+// What a paid subscriber sees under their plan name. This used to be the
+// hardcoded string "Renews 26/05 · $9.99/mo" — a date that meant nothing and a
+// price no plan has ever cost. No renewal date is shown now because nothing in
+// the app knows one: Stripe owns the billing cycle, and profiles.tier_updated_at
+// records when the tier was granted, which stops being the renewal date the
+// moment the subscription renews once. The price is real, and falls back to a
+// plain "active" line if the billing period hasn't loaded yet.
+function planPriceLine(user, t, lang) {
+  const price = PLAN_PRICE[user.tier]?.[user.tierBilling];
+  if (!price) return t.activeSub;
+  const per = user.tierBilling === 'annual' ? lang === 'pt' ? '/ano' : lang === 'es' ? '/año' : '/yr' : lang === 'pt' ? '/mês' : lang === 'es' ? '/mes' : '/mo';
+  return `$${price}${per}`;
+}
 function SubscriptionCard({
   user,
   setUser,
@@ -2186,7 +2212,7 @@ function SubscriptionCard({
       opacity: 0.7,
       marginTop: 4
     }
-  }, user.tier === 'free' ? t.upgradeQp : `${t.renews} 26/05 · $9.99/mo`)), user.tier !== 'free' && Icon.crown(28, 'oklch(0.85 0.15 90)')), /*#__PURE__*/React.createElement("div", {
+  }, user.tier === 'free' ? t.upgradeQp : planPriceLine(user, t, lang))), user.tier !== 'free' && Icon.crown(28, 'oklch(0.85 0.15 90)')), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 6,

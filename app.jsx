@@ -503,6 +503,19 @@ function App() {
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
       setRegionsByDay(profile.regions_by_day);
     }
+    // Billing period of whatever they actually bought. The profiles row records
+    // the tier but not whether it was monthly or annual, and the subscription
+    // card needs that to name the right price instead of guessing one. Purely
+    // for display — nothing is gated on it.
+    if (profile?.tier && profile.tier !== 'free') {
+      window.sb.from('subscription_events').select('billing')
+        .eq('user_id', sbUser.id).order('created_at', { ascending: false }).limit(1)
+        .then(({ data }) => {
+          const billing = data?.[0]?.billing;
+          if (billing) setUser(u => ({ ...u, tierBilling: billing }));
+        })
+        .catch(() => {});
+    }
     // Live rating/review count — computed from real ratings received, never cached/hardcoded.
     // Only counts ratings that are actually revealed (both sides rated, or the 7-day blind
     // window expired) — otherwise a seller could see their own score the instant they rate
@@ -824,7 +837,7 @@ function App() {
       _setPushLog('pedindo permissão...');
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        _setPushLog('❌ permissão negada — ative em Configurações > ' + (window.navigator.userAgent.includes('iPhone') ? 'PoolGuyPro' : 'Notificações'));
+        _setPushLog('❌ permissão negada — ative em Configurações > ' + (window.navigator.userAgent.includes('iPhone') ? 'PoolGuyX' : 'Notificações'));
         return;
       }
     }
@@ -1985,17 +1998,17 @@ function App() {
       {showOnboarding && (() => {
         const slides = {
           en: [
-            { icon:'🏊', title:'Welcome to PoolGuyPro', desc:'The marketplace built for Florida pool professionals. Find jobs, post routes, and connect with other pool guys.' },
+            { icon:'🏊', title:'Welcome to PoolGuyX', desc:'The marketplace built for Florida pool professionals. Find jobs, post routes, and connect with other pool guys.' },
             { icon:'📅', title:'Vacation Coverage', desc:'Going on vacation? Post your route so another pool pro can cover it. Or apply to cover someone else\'s route and earn extra.' },
             { icon:'⚡', title:'Quick Pools & Routes', desc:'Upgrade to PRO for vacation coverage and Routes tab, or PREMIUM for real-time Quick Pools emergency alerts.' },
           ],
           pt: [
-            { icon:'🏊', title:'Bem-vindo ao PoolGuyPro', desc:'O marketplace feito para profissionais de piscina na Flórida. Encontre trabalhos, publique rotas e conecte-se com outros pool guys.' },
+            { icon:'🏊', title:'Bem-vindo ao PoolGuyX', desc:'O marketplace feito para profissionais de piscina na Flórida. Encontre trabalhos, publique rotas e conecte-se com outros pool guys.' },
             { icon:'📅', title:'Cobertura de Férias', desc:'Indo de férias? Publique sua rota para outro profissional cobrir. Ou aplique para cobrir a rota de alguém e ganhar extra.' },
             { icon:'⚡', title:'Quick Pools e Rotas', desc:'Faça upgrade para PRO para cobertura de férias e aba de rotas, ou PREMIUM para alertas em tempo real de Quick Pools.' },
           ],
           es: [
-            { icon:'🏊', title:'Bienvenido a PoolGuyPro', desc:'El marketplace para profesionales de piscinas en Florida. Encuentra trabajos, publica rutas y conéctate con otros pool guys.' },
+            { icon:'🏊', title:'Bienvenido a PoolGuyX', desc:'El marketplace para profesionales de piscinas en Florida. Encuentra trabajos, publica rutas y conéctate con otros pool guys.' },
             { icon:'📅', title:'Cobertura de Vacaciones', desc:'¿De vacaciones? Publica tu ruta para que otro profesional la cubra. O aplica para cubrir la ruta de alguien y ganar extra.' },
             { icon:'⚡', title:'Quick Pools y Rutas', desc:'Mejora a PRO para cobertura de vacaciones y pestaña de Rutas, o PREMIUM para alertas en tiempo real de Quick Pools.' },
           ],
@@ -2858,7 +2871,7 @@ function App() {
               {/* Version */}
               <div style={{padding:'8px 14px 2px', display:'flex', alignItems:'center', gap:6}}>
                 <div style={{flex:1, height:1, background:'rgba(255,255,255,0.04)'}}/>
-                <span style={{fontSize:9, color:'rgba(255,255,255,0.13)', letterSpacing:'0.06em', whiteSpace:'nowrap'}}>v1.3.0 · Beta</span>
+                <span style={{fontSize:9, color:'rgba(255,255,255,0.13)', letterSpacing:'0.06em', whiteSpace:'nowrap'}}>{APP_VERSION}</span>
                 <div style={{flex:1, height:1, background:'rgba(255,255,255,0.04)'}}/>
               </div>
             </div>

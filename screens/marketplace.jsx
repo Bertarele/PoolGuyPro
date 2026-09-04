@@ -26,6 +26,14 @@ const BOOST_PLANS = [
   { days: 14, price: 14.99 },
 ];
 
+// Boost is NOT purchasable yet, so its entry point stays hidden: there is no
+// server-side payment flow for it (poolguyx.com/boost/... isn't a real route),
+// and boosted_until is now admin-only at the database level via the
+// marketplace_protect_paid_fields trigger. The sheet below is kept ready for
+// when pricing is decided — flip this to true only once a webhook grants the
+// boost server-side, never before. Admin-granted boosts still display normally.
+const BOOST_ENABLED = false;
+
 function BoostListingSheet({ item, lang, onClose, onBoosted, showToast }) {
   const [planIdx, setPlanIdx] = React.useState(1); // default: 7 days
   const [buying, setBuying] = React.useState(false);
@@ -36,16 +44,13 @@ function BoostListingSheet({ item, lang, onClose, onBoosted, showToast }) {
   const handleBuy = async () => {
     if (!window.sb || buying) return;
     setBuying(true);
-    // Open external checkout — no Apple cut, same pattern as subscription upgrades
+    // Open external checkout — no Apple cut, same pattern as subscription upgrades.
+    // Nothing is granted here: the boost is applied server-side by the payment
+    // webhook writing boosted_until. This used to grant it locally right after
+    // opening the tab, which handed every listing an unlimited free boost — the
+    // checkout was never even waited on, let alone paid.
     window.open(`https://poolguyx.com/boost/${item._id}?days=${plan.days}`, '_blank', 'noopener');
-    // NOTE: In production, remove the block below. Boost is activated server-side
-    // via payment webhook once pricing is finalized. Kept here for demo/testing only.
-    const until = new Date(Date.now() + plan.days * 86400000).toISOString();
-    const { error } = await window.sb.from('marketplace').update({ boosted_until: until }).eq('id', item._id);
     setBuying(false);
-    if (error) { showToast && showToast('❌ ' + error.message); return; }
-    showToast && showToast(lang==='pt' ? '🚀 Anúncio destacado!' : lang==='es' ? '🚀 ¡Anuncio destacado!' : '🚀 Listing boosted!');
-    onBoosted && onBoosted(until);
     onClose && onClose();
   };
 
@@ -3095,7 +3100,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
                     <div style={{width:36,height:36,borderRadius:'50%',background:'var(--pg-ink-200)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>🎭</div>
                     <div>
                       <div style={{fontSize:13,fontWeight:700,color:'var(--pg-ink-900)'}}>Demo Item</div>
-                      <div style={{fontSize:11,color:'var(--pg-ink-400)'}}>{lang==='pt'?'Publicado pelo PoolGuyPro':'Posted by PoolGuyPro'}</div>
+                      <div style={{fontSize:11,color:'var(--pg-ink-400)'}}>{lang==='pt'?'Publicado pelo PoolGuyX':'Posted by PoolGuyX'}</div>
                     </div>
                   </div>
                 </div>
@@ -4006,7 +4011,7 @@ function MyPostDetailSheet({ item, lang, onClose, showToast, onUpdated, onDelete
             )}
 
             {/* Boost — highlight on Home for a paid duration, any status but sold */}
-            {item.status !== 'sold' && (
+            {BOOST_ENABLED && item.status !== 'sold' && (
               <button onClick={()=>setBoostOpen(true)} style={{
                 width:'100%', marginTop:10, padding:'13px', borderRadius:14,
                 border:'1.5px solid rgba(14,186,199,0.4)', background:'rgba(14,186,199,0.08)',

@@ -41,6 +41,14 @@ const BOOST_PLANS = [{
   days: 14,
   price: 14.99
 }];
+
+// Boost is NOT purchasable yet, so its entry point stays hidden: there is no
+// server-side payment flow for it (poolguyx.com/boost/... isn't a real route),
+// and boosted_until is now admin-only at the database level via the
+// marketplace_protect_paid_fields trigger. The sheet below is kept ready for
+// when pricing is decided — flip this to true only once a webhook grants the
+// boost server-side, never before. Admin-granted boosts still display normally.
+const BOOST_ENABLED = false;
 function BoostListingSheet({
   item,
   lang,
@@ -55,23 +63,13 @@ function BoostListingSheet({
   const handleBuy = async () => {
     if (!window.sb || buying) return;
     setBuying(true);
-    // Open external checkout — no Apple cut, same pattern as subscription upgrades
+    // Open external checkout — no Apple cut, same pattern as subscription upgrades.
+    // Nothing is granted here: the boost is applied server-side by the payment
+    // webhook writing boosted_until. This used to grant it locally right after
+    // opening the tab, which handed every listing an unlimited free boost — the
+    // checkout was never even waited on, let alone paid.
     window.open(`https://poolguyx.com/boost/${item._id}?days=${plan.days}`, '_blank', 'noopener');
-    // NOTE: In production, remove the block below. Boost is activated server-side
-    // via payment webhook once pricing is finalized. Kept here for demo/testing only.
-    const until = new Date(Date.now() + plan.days * 86400000).toISOString();
-    const {
-      error
-    } = await window.sb.from('marketplace').update({
-      boosted_until: until
-    }).eq('id', item._id);
     setBuying(false);
-    if (error) {
-      showToast && showToast('❌ ' + error.message);
-      return;
-    }
-    showToast && showToast(lang === 'pt' ? '🚀 Anúncio destacado!' : lang === 'es' ? '🚀 ¡Anuncio destacado!' : '🚀 Listing boosted!');
-    onBoosted && onBoosted(until);
     onClose && onClose();
   };
   return /*#__PURE__*/React.createElement("div", {
@@ -5984,7 +5982,7 @@ function ViewListingSheet({
         fontSize: 11,
         color: 'var(--pg-ink-400)'
       }
-    }, lang === 'pt' ? 'Publicado pelo PoolGuyPro' : 'Posted by PoolGuyPro')))), canDelete && /*#__PURE__*/React.createElement("div", {
+    }, lang === 'pt' ? 'Publicado pelo PoolGuyX' : 'Posted by PoolGuyX')))), canDelete && /*#__PURE__*/React.createElement("div", {
       style: {
         margin: '16px 24px 0',
         padding: '10px 14px',
@@ -7760,7 +7758,7 @@ function MyPostDetailSheet({
       fontWeight: 700,
       color: '#16A34A'
     }
-  }, lang === 'pt' ? 'Vendido!' : lang === 'es' ? '¡Vendido!' : 'Sold!')), item.status !== 'sold' && /*#__PURE__*/React.createElement("button", {
+  }, lang === 'pt' ? 'Vendido!' : lang === 'es' ? '¡Vendido!' : 'Sold!')), BOOST_ENABLED && item.status !== 'sold' && /*#__PURE__*/React.createElement("button", {
     onClick: () => setBoostOpen(true),
     style: {
       width: '100%',

@@ -538,7 +538,16 @@ function ProfileScreen({ ctx }) {
             <SettingRow icon={Icon.globe(17,'#0EBAC7')} iconBg="rgba(14,186,199,0.12)" label={t.languageLbl}
               detail={({en:t.english, pt:t.portuguese, es:t.spanish})[lang]} chev
               onClick={openLanguagePicker}/>
-            <SettingRow icon={Icon.shield(17,'#10B981')} iconBg="rgba(16,185,129,0.12)" label={t.verification} detail={t.verified} chev onClick={openVerification}/>
+            {/* Detail follows the real state — it used to read "Verified" for
+                everyone, including a brand-new account that had never asked
+                for verification, which is exactly backwards in a marketplace
+                where the green badge is what buyers go on. Same three states
+                the verification card above already distinguishes. */}
+            <SettingRow icon={Icon.shield(17, user.verified ? '#10B981' : user.verificationRequested ? '#F59E0B' : 'var(--pg-ink-400)')}
+              iconBg={user.verified ? 'rgba(16,185,129,0.12)' : user.verificationRequested ? 'rgba(245,158,11,0.12)' : 'var(--pg-ink-100)'}
+              label={t.verification}
+              detail={user.verified ? t.verified : user.verificationRequested ? t.verifyPending : t.notVerified}
+              chev onClick={openVerification}/>
             <SettingRow icon={Icon.msg(17,'var(--pg-blue-500)')} label={t.helpSupport} chev onClick={openHelp}/>
             <SettingRow
               icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}
@@ -574,7 +583,7 @@ function ProfileScreen({ ctx }) {
         }}>{t.logout}</button>
 
         <div style={{textAlign:'center', fontSize:11, color:'var(--pg-ink-400)', marginTop:4}}>
-          PoolGuyPro · v2.5.0
+          PoolGuyX · {APP_VERSION}
         </div>
       </div>
     </div>
@@ -876,6 +885,28 @@ function PersonalInfoCard({ user, setUser, lang }) {
   );
 }
 
+// Real catalogue prices, matching the paywall in screens/overlays.jsx.
+const PLAN_PRICE = {
+  pro:     { monthly: '14.99', annual: '149' },
+  premium: { monthly: '24.99', annual: '249' },
+};
+
+// What a paid subscriber sees under their plan name. This used to be the
+// hardcoded string "Renews 26/05 · $9.99/mo" — a date that meant nothing and a
+// price no plan has ever cost. No renewal date is shown now because nothing in
+// the app knows one: Stripe owns the billing cycle, and profiles.tier_updated_at
+// records when the tier was granted, which stops being the renewal date the
+// moment the subscription renews once. The price is real, and falls back to a
+// plain "active" line if the billing period hasn't loaded yet.
+function planPriceLine(user, t, lang) {
+  const price = PLAN_PRICE[user.tier]?.[user.tierBilling];
+  if (!price) return t.activeSub;
+  const per = user.tierBilling === 'annual'
+    ? (lang==='pt' ? '/ano' : lang==='es' ? '/año' : '/yr')
+    : (lang==='pt' ? '/mês' : lang==='es' ? '/mes' : '/mo');
+  return `$${price}${per}`;
+}
+
 function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=false }) {
   const tiers = [
     { id:'free',    name:t.free },
@@ -986,7 +1017,7 @@ function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=
             {user.tier==='free'    && <>{t.free}</>}
           </div>
           <div style={{fontSize:12, opacity:0.7, marginTop:4}}>
-            {user.tier==='free' ? t.upgradeQp : `${t.renews} 26/05 · $9.99/mo`}
+            {user.tier==='free' ? t.upgradeQp : planPriceLine(user, t, lang)}
           </div>
         </div>
         {user.tier!=='free' && Icon.crown(28,'oklch(0.85 0.15 90)')}

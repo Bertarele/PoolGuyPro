@@ -1,4 +1,4 @@
-// PoolGuyPro Service Worker — Push Notifications + Offline Cache
+// PoolGuyX Service Worker — Push Notifications + Offline Cache
 
 const APP_ICON  = '/icone-192.png';
 const CACHE_VER = 'pgp-v13';
@@ -48,7 +48,7 @@ self.addEventListener('fetch', e => {
             caches.open(CACHE_VER).then(c => c.put(e.request, clone));
           }
           return res;
-        }).catch(() => caches.match('/PoolGuyPro.html'));
+        }).catch(() => caches.match('/index.html'));
       })
     );
     return;
@@ -79,7 +79,7 @@ self.addEventListener('push', e => {
       const visible = list.find(c => c.visibilityState === 'visible');
       if (visible) visible.postMessage({ type: 'PUSH_RECEIVED', title: data.title || '', body: data.body || '', url: data.url || '/' });
     } catch (e) {}
-    return self.registration.showNotification(data.title || 'PoolGuyPro', {
+    return self.registration.showNotification(data.title || 'PoolGuyX', {
       body:    data.body  || '',
       icon:    APP_ICON,
       badge:   APP_ICON,
