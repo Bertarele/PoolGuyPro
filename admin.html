@@ -39,6 +39,11 @@
     .act-btn-warn   { border-color: #f59e0b40; background: #f59e0b15; color: #f59e0b; }
     .act-btn-purple { border-color: #6366f140; background: #6366f110; color: #818cf8; }
     .act-btn-red    { border-color: #ef444430; background: #ef444410; color: #ef4444; }
+    /* Uso do App — four KPI tiles, then 2x2, then stacked. Fixed counts
+       rather than auto-fill so four tiles never break into an orphaned 3+1. */
+    .usage-kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media (max-width: 1240px) { .usage-kpi { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px)  { .usage-kpi { grid-template-columns: 1fr; } }
     /* Mobile nav overlay */
     .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40; }
     .nav-overlay.open { display: block; }
@@ -304,6 +309,7 @@ const IC = {
   sponsor:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2l1 3 2-5 1 3h2"/></svg>,
   bolt:    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
   chevron: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+  chart:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
   star:    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
 };
 
@@ -320,6 +326,273 @@ function StatCard({ label, value, color, icon, onClick }) {
         <div style={{fontSize:12, color:'#64748b', marginTop:3, fontWeight:500}}>{label}</div>
       </div>
       {onClick && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" opacity="0.5"><polyline points="9 18 15 12 9 6"/></svg>}
+    </div>
+  );
+}
+
+// ── Data-viz tokens ───────────────────────────────────────────
+// The panel is dark-only, so every colour here was validated against the CARD
+// surface (#1a1f2e) rather than a generic background: the five categorical
+// hues all sit inside the OKLCH lightness band for a dark surface, clear the
+// chroma floor, keep colour-blind separation (worst adjacent pair ΔE 8.8 under
+// deuteranopia) and clear 3:1 contrast; the four funnel steps are a single hue
+// with monotone lightness, darkest step still at 3.06:1. Don't swap a hue here
+// on looks alone — "different enough" is the judgement those numbers replace.
+const VIZ = {
+  surface:'#1a1f2e', border:'#1e293b', grid:'#232c40', axis:'#2f3a52',
+  ink:'#f1f5f9', ink2:'#94a3b8', muted:'#64748b',
+  accent:'#0EBAC7',                                        // single-series marks
+  series:['#0891b2','#d97706','#6366f1','#16a34a','#ec4899'],
+  funnel:['#67e8f9','#22d3ee','#06b6d4','#0e7490'],
+};
+const nfmt = (n) => (n ?? 0).toLocaleString('pt-BR');
+
+// Shared tooltip. Charts keep it in state and render one per card, so a value
+// is never *only* reachable by hovering — every chart below also direct-labels
+// its bars, and the whole tab has a table view.
+function VizTip({ tip }) {
+  if (!tip) return null;
+  return (
+    <div style={{position:'absolute', left:Math.max(0, Math.min(tip.x, tip.w || tip.x)), top:tip.y,
+      // Flip the anchor near either edge instead of always centring: a centred
+      // tip on the last column hangs past the card and scrolls the whole page.
+      transform: (tip.w && tip.x > tip.w - 90) ? 'translate(-100%,-100%)'
+               : (tip.x < 90 ? 'translate(0,-100%)' : 'translate(-50%,-100%)'),
+      background:'#0b0f18', border:'1px solid #334155', borderRadius:9, padding:'7px 10px',
+      pointerEvents:'none', zIndex:5, boxShadow:'0 8px 24px rgba(0,0,0,0.55)', whiteSpace:'nowrap'}}>
+      <div style={{fontSize:11.5, fontWeight:700, color:VIZ.ink, marginBottom:tip.rows?.length?4:0}}>{tip.title}</div>
+      {(tip.rows||[]).map((r,i)=>(
+        <div key={i} style={{display:'flex', alignItems:'center', gap:6, fontSize:11, color:VIZ.ink2, marginTop:2}}>
+          {r.color && <span style={{width:8, height:8, borderRadius:2, background:r.color, flexShrink:0}}/>}
+          <span style={{flex:1}}>{r.label}</span>
+          <span style={{color:VIZ.ink, fontWeight:600, fontVariantNumeric:'tabular-nums'}}>{r.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Card wrapper ──────────────────────────────────────────────
+function VizCard({ title, sub, right, children, pad=true }) {
+  return (
+    <div style={{background:VIZ.surface, border:'1px solid '+VIZ.border, borderRadius:14,
+      padding:pad?'16px 18px 18px':'0', position:'relative'}}>
+      {title && (
+        <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:sub?12:14}}>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:14, fontWeight:600, color:VIZ.ink}}>{title}</div>
+            {sub && <div style={{fontSize:11.5, color:VIZ.muted, marginTop:3, lineHeight:1.45}}>{sub}</div>}
+          </div>
+          {right}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+// ── Stat tile ─────────────────────────────────────────────────
+// Proportional figures on the value (tabular-nums makes a big number look
+// loose); tabular only in the table view's columns.
+function UsageStat({ label, value, delta, deltaSuffix, hint, color=VIZ.accent, icon }) {
+  const hasDelta = delta !== null && delta !== undefined && isFinite(delta);
+  const up = hasDelta && delta > 0, flat = hasDelta && delta === 0;
+  return (
+    <div style={{background:VIZ.surface, border:'1px solid '+VIZ.border, borderRadius:14, padding:'15px 17px'}}>
+      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+        <span style={{width:26, height:26, borderRadius:8, background:color+'18', color,
+          display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>{icon}</span>
+        <span style={{fontSize:11.5, color:VIZ.muted, fontWeight:500}}>{label}</span>
+      </div>
+      <div style={{display:'flex', alignItems:'baseline', gap:8, flexWrap:'wrap'}}>
+        <span style={{fontSize:27, fontWeight:700, color:VIZ.ink, lineHeight:1}}>{value}</span>
+        {hasDelta && (
+          <span style={{fontSize:11.5, fontWeight:700, color: flat ? VIZ.muted : up ? '#0ca30c' : '#d03b3b'}}>
+            {flat ? '—' : (up ? '▲ ' : '▼ ') + Math.abs(delta) + (deltaSuffix||'%')}
+          </span>
+        )}
+      </div>
+      {hint && <div style={{fontSize:11, color:VIZ.muted, marginTop:6, lineHeight:1.4}}>{hint}</div>}
+    </div>
+  );
+}
+
+// ── Horizontal bars, one series → one colour ──────────────────
+// Nominal categories (features, marketplace categories) get a SINGLE hue, not
+// a value ramp: shading each bar by its own length spends the colour channel
+// re-encoding what bar length already says.
+function HBars({ rows, color=VIZ.accent, emptyMsg='Sem dados no período.' }) {
+  const [tip, setTip] = React.useState(null);
+  // Drop a tooltip left over from the previous range: the cursor hasn't moved,
+  // so nothing else would clear it and it would quote the old numbers.
+  React.useEffect(()=>{ setTip(null); }, [rows]);
+  const max = Math.max(1, ...rows.map(r=>r.value));
+  if (!rows.length) return <div style={{fontSize:12, color:VIZ.muted, padding:'8px 0'}}>{emptyMsg}</div>;
+  return (
+    <div style={{position:'relative'}} onMouseLeave={()=>setTip(null)}>
+      {rows.map((r) => {
+        const pct = (r.value / max) * 100;
+        return (
+          // Label above the bar rather than beside it: in a half-width card a
+          // label column wide enough for "Candidaturas Express" leaves the bar
+          // about 90px of track, and anything narrower clips the label. Stacked,
+          // the bar gets the full card width and nothing truncates.
+          <div key={r.label} tabIndex={0}
+            onMouseMove={e=>{const b=e.currentTarget.parentElement.getBoundingClientRect(), t=e.currentTarget.getBoundingClientRect();
+              setTip({x:e.clientX-b.left, w:b.width, y:t.top-b.top-2, title:r.label,
+                rows:[{label:'Ações', value:nfmt(r.value), color}].concat(r.sub!=null?[{label:'Pessoas', value:nfmt(r.sub)}]:[])});}}
+            onFocus={e=>{const b=e.currentTarget.parentElement.getBoundingClientRect(), t=e.currentTarget.getBoundingClientRect();
+              setTip({x:t.left-b.left+70, w:b.width, y:t.top-b.top-2, title:r.label,
+                rows:[{label:'Ações', value:nfmt(r.value), color}].concat(r.sub!=null?[{label:'Pessoas', value:nfmt(r.sub)}]:[])});}}
+            onBlur={()=>setTip(null)}
+            style={{padding:'6px 6px 7px', margin:'0 -6px', borderRadius:8, outline:'none', cursor:'default'}}
+            onMouseEnter={e=>e.currentTarget.style.background='#ffffff06'}
+            onMouseOut={e=>e.currentTarget.style.background='transparent'}>
+            <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10, marginBottom:5}}>
+              <span style={{fontSize:12, color:VIZ.ink2, overflow:'hidden', textOverflow:'ellipsis',
+                whiteSpace:'nowrap'}}>{r.label}</span>
+              <span style={{fontSize:12.5, fontWeight:700, color:VIZ.ink, flexShrink:0,
+                fontVariantNumeric:'tabular-nums'}}>
+                {nfmt(r.value)}
+                {r.sub!=null && <span style={{color:VIZ.muted, fontWeight:500, fontSize:11}}> · {r.sub}p</span>}
+              </span>
+            </div>
+            <div style={{height:10, background:'#ffffff08', borderRadius:5}}>
+              {/* square at the baseline, 4px rounded at the data end */}
+              <div style={{width:Math.max(pct,1.5)+'%', height:'100%', background:color,
+                borderRadius:'2px 4px 4px 2px', transition:'width .35s ease'}}/>
+            </div>
+          </div>
+        );
+      })}
+      <VizTip tip={tip}/>
+    </div>
+  );
+}
+
+// ── Weekly stacked columns ────────────────────────────────────
+// Part-to-whole over time. Five series is the soft cap, so the legend is
+// always on and the tail is folded into "Outros" instead of growing a sixth
+// hue. Segments are separated by a 2px gap in the surface colour, never a
+// stroke around each block.
+function WeeklyStack({ weekly, series }) {
+  const [tip, setTip] = React.useState(null);
+  React.useEffect(()=>{ setTip(null); }, [weekly]);
+  const totals = weekly.map(w => series.reduce((s,k)=>s+(w[k.key]||0), 0));
+  const rawMax = Math.max(...totals, 0);
+  if (!weekly.length || rawMax === 0)
+    return <div style={{fontSize:12, color:VIZ.muted, padding:'8px 0'}}>Sem atividade registrada neste período.</div>;
+  // Round the axis up to a number whose HALF is also round, so the three ticks
+  // read 0 / 40 / 80 rather than 0 / 32,5 / 65.
+  const pow   = Math.pow(10, Math.floor(Math.log10(rawMax)));
+  const nice  = ([1,1.5,2,2.5,3,4,5,6,8,10].find(m => m >= rawMax/pow) || 10) * pow;
+  // Below 20 the nice-number ladder can still land on an odd max (5 → ticks
+  // 0 / 2,5 / 5), so round small maxima up to an even number and keep the
+  // middle tick a whole one.
+  const max   = nice < 20 ? Math.ceil(nice/2)*2 : nice;
+  const ticks = [max, max/2, 0];
+  const labelEvery = Math.ceil(weekly.length / 8);
+  const fmtWk = (iso) => new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+
+  return (
+    <div>
+      {/* Legend — always present at two or more series */}
+      <div style={{display:'flex', flexWrap:'wrap', gap:'6px 14px', marginBottom:14}}>
+        {series.map(s=>(
+          <span key={s.key} style={{display:'inline-flex', alignItems:'center', gap:6, fontSize:11.5, color:VIZ.ink2}}>
+            <span style={{width:9, height:9, borderRadius:2, background:s.color}}/>{s.label}
+          </span>
+        ))}
+      </div>
+      <div style={{position:'relative', display:'flex', gap:10}} onMouseLeave={()=>setTip(null)}>
+        {/* y ticks */}
+        <div style={{width:34, flexShrink:0, height:170, position:'relative'}}>
+          {ticks.map((t,i)=>(
+            <div key={i} style={{position:'absolute', top:(i*50)+'%', right:0, transform:'translateY(-50%)',
+              fontSize:10, color:VIZ.muted, fontVariantNumeric:'tabular-nums'}}>{nfmt(t)}</div>
+          ))}
+        </div>
+        <div style={{flex:1, minWidth:0}}>
+          <div data-plot style={{position:'relative', height:170}}>
+            {/* hairline grid, solid — never dashed */}
+            {ticks.map((t,i)=>(
+              <div key={i} style={{position:'absolute', left:0, right:0, top:(i*50)+'%', height:1,
+                background: i===2 ? VIZ.axis : VIZ.grid}}/>
+            ))}
+            <div style={{position:'absolute', inset:0, display:'flex', alignItems:'flex-end', gap:3}}>
+              {weekly.map((w,wi)=>{
+                const total = totals[wi];
+                return (
+                  <div key={w.week} tabIndex={0}
+                    onMouseMove={e=>{const b=e.currentTarget.closest('[data-plot]').getBoundingClientRect(), c=e.currentTarget.getBoundingClientRect();
+                      setTip({x:c.left-b.left+c.width/2, w:b.width, y:c.bottom-b.top-(total/max)*170-6,
+                        title:'Semana de '+fmtWk(w.week),
+                        rows:series.filter(s=>w[s.key]).map(s=>({label:s.label, value:nfmt(w[s.key]), color:s.color}))
+                              .concat([{label:'Total', value:nfmt(total)}])});}}
+                    onFocus={e=>{const b=e.currentTarget.closest('[data-plot]').getBoundingClientRect(), c=e.currentTarget.getBoundingClientRect();
+                      setTip({x:c.left-b.left+c.width/2, w:b.width, y:c.bottom-b.top-(total/max)*170-6,
+                        title:'Semana de '+fmtWk(w.week),
+                        rows:series.filter(s=>w[s.key]).map(s=>({label:s.label, value:nfmt(w[s.key]), color:s.color}))
+                              .concat([{label:'Total', value:nfmt(total)}])});}}
+                    onBlur={()=>setTip(null)}
+                    style={{flex:1, minWidth:0, height:'100%', display:'flex', flexDirection:'column',
+                      justifyContent:'flex-end', outline:'none', cursor:'default'}}>
+                    {series.map((s,si)=>{
+                      const v = w[s.key]||0; if (!v) return null;
+                      const h = (v/max)*170;
+                      const isTop = !series.slice(si+1).some(x=>w[x.key]);
+                      return <div key={s.key} style={{height:Math.max(h,2)+'px', background:s.color,
+                        borderRadius: isTop ? '3px 3px 0 0' : 0,
+                        marginTop: 2, minHeight:2}}/>;
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{position:'absolute', inset:0, pointerEvents:'none'}}><VizTip tip={tip}/></div>
+          </div>
+          {/* x labels, thinned so they never collide */}
+          <div style={{display:'flex', gap:3, marginTop:7}}>
+            {weekly.map((w,i)=>(
+              <div key={w.week} style={{flex:1, minWidth:0, textAlign:'center', fontSize:9.5, color:VIZ.muted,
+                whiteSpace:'nowrap', overflow:'visible'}}>
+                {i % labelEvery === 0 ? fmtWk(w.week) : ''}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Funnel ────────────────────────────────────────────────────
+// Ordered stages, so the colour is an ORDINAL ramp (one hue, stepping darker)
+// rather than four unrelated hues — the reader sees the order in the colour.
+function Funnel({ stages }) {
+  const top = Math.max(1, stages[0]?.value || 0);
+  return (
+    <div>
+      {stages.map((s,i)=>{
+        const pct  = (s.value / top) * 100;
+        const prev = i > 0 ? stages[i-1].value : null;
+        const conv = prev ? Math.round((s.value / Math.max(prev,1)) * 100) : null;
+        return (
+          <div key={s.label} style={{marginBottom:i===stages.length-1?0:11}}>
+            <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:8, marginBottom:5}}>
+              <span style={{fontSize:12, color:VIZ.ink2}}>{s.label}</span>
+              <span style={{fontSize:12.5, fontWeight:700, color:VIZ.ink, fontVariantNumeric:'tabular-nums'}}>
+                {nfmt(s.value)}
+                {conv !== null && <span style={{color:VIZ.muted, fontWeight:500, fontSize:11}}> · {conv}%</span>}
+              </span>
+            </div>
+            <div style={{height:10, background:'#ffffff08', borderRadius:5}}>
+              <div style={{width:Math.max(pct,1.5)+'%', height:'100%', background:VIZ.funnel[i%VIZ.funnel.length],
+                borderRadius:'2px 4px 4px 2px', transition:'width .35s ease'}}/>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1923,7 +2196,14 @@ function AdminApp({ adminUser, onLogout }) {
   const [flaggedRatings, setFlaggedRatings] = React.useState([]); // suspicious ratings (collusion/manipulation)
   const [repeatedTradePairs, setRepeatedTradePairs] = React.useState([]); // same pair trading "sold" repeatedly
   const [newAccountRaters,   setNewAccountRaters]   = React.useState([]); // brand-new accounts rating fast
-  const [antifraudTab, setAntifraudTab] = React.useState('ratings'); // 'ratings'|'pairs'|'newaccounts'
+  const [antifraudTab, setAntifraudTab] = React.useState('ratings');
+  // Feature-usage tab. Aggregates come from the admin_usage_stats RPC because
+  // the admin has no read policy on messages or applications — see the migration.
+  const [usage,        setUsage]        = React.useState(null);
+  const [usageDays,    setUsageDays]    = React.useState(90);
+  const [usageLoading, setUsageLoading] = React.useState(false);
+  const [usageErr,     setUsageErr]     = React.useState(null);
+  const [usageView,    setUsageView]    = React.useState('chart'); // 'chart' | 'table' // 'ratings'|'pairs'|'newaccounts'
   // User filters
   const [userSearch,    setUserSearch]    = React.useState('');
   const [userDateFrom,  setUserDateFrom]  = React.useState('');
@@ -1973,6 +2253,24 @@ function AdminApp({ adminUser, onLogout }) {
     setLoading(false);
   };
   React.useEffect(()=>{ fetchAll(); },[]);
+
+  // Only fetched when the tab is actually open, and re-fetched when the range
+  // changes — it is a heavier aggregate than the rest of the panel's selects.
+  React.useEffect(()=>{
+    if (section !== 'usage') return;
+    let cancelled = false;
+    setUsageLoading(true); setUsageErr(null);
+    window.sb.rpc('admin_usage_stats', { p_days: usageDays })
+      .then(({data, error}) => {
+        if (cancelled) return;
+        if (error)            { setUsageErr('Não foi possível carregar: ' + error.message); }
+        else if (!data?.ok)   { setUsageErr(data?.error === 'not_admin' ? 'Sua conta não é admin.' : 'Resposta inesperada do servidor.'); }
+        else                  { setUsage(data); }
+      })
+      .catch(e => { if(!cancelled) setUsageErr('Não foi possível carregar: ' + (e?.message||e)); })
+      .finally(() => { if(!cancelled) setUsageLoading(false); });
+    return () => { cancelled = true; };
+  }, [section, usageDays]);
 
   const deleteRow = async (table, row) => {
     const isUser = table === 'profiles';
@@ -2164,6 +2462,7 @@ function AdminApp({ adminUser, onLogout }) {
     { type:'item',  id:'ratings',    label:'Antifraude',    icon:IC.star,    badge:flaggedRatings.length+repeatedTradePairs.length+newAccountRaters.length },
     { type:'item',  id:'sponsors',   label:'Patrocinadores',icon:IC.sponsor, badge:0 },
     { type:'item',  id:'withdrawals',label:'Saques',        icon:IC.sponsor, badge:withdrawals.filter(w=>w.status==='pending').length },
+    { type:'item',  id:'usage',      label:'Uso do App',    icon:IC.chart,   badge:0 },
   ];
 
   const sectionLabels = {
@@ -2171,6 +2470,7 @@ function AdminApp({ adminUser, onLogout }) {
     techs:'Técnicos', vacations:'Férias / Rotas', market:'Marketplace · Anúncios',
     rentals:'Marketplace · Aluguéis', quickpools:'Express Pools',
     disputes:'Reclamações', sponsors:'Patrocinadores', withdrawals:'Saques da Carteira',
+    usage:'Uso do App',
   };
   const sectionLabel = sectionLabels[section] || section;
 
@@ -2389,6 +2689,239 @@ function AdminApp({ adminUser, onLogout }) {
               </div>
             </div>
           )}
+
+          {/* ── Uso do app ── */}
+          {section==='usage' && (() => {
+            const FEATURE_LABELS = {
+              messages:'Mensagens', quick_pools:'Express Pools publicadas',
+              qp_applications:'Candidaturas Express', listings:'Anúncios publicados',
+              job_applications:'Candidaturas a vagas', jobs:'Vagas publicadas',
+              rentals:'Pedidos de aluguel', ratings:'Avaliações dadas',
+              handoffs:'Repasses de piscina', routes:'Rotas rápidas',
+              vacations:'Coberturas de férias',
+            };
+            const WEEK_SERIES = [
+              { key:'messages',        label:'Mensagens',       color:VIZ.series[0] },
+              { key:'quick_pools',     label:'Express Pools',   color:VIZ.series[1] },
+              { key:'qp_applications', label:'Candidaturas',    color:VIZ.series[2] },
+              { key:'listings',        label:'Anúncios',        color:VIZ.series[3] },
+              { key:'other',           label:'Outros',          color:VIZ.series[4] },
+            ];
+            const RANGES = [{d:30,l:'30 dias'},{d:90,l:'90 dias'},{d:365,l:'1 ano'}];
+            const pill = (active) => ({padding:'6px 13px',borderRadius:8,border:'none',cursor:'pointer',
+              fontFamily:'inherit',fontSize:12,fontWeight:600,transition:'all .15s',
+              background:active?'#0EBAC722':'#1a1f2e', color:active?'#0EBAC7':'#64748b',
+              outline:active?'1.5px solid #0EBAC755':'1.5px solid #1e293b'});
+
+            const t   = usage?.totals || {};
+            const dl  = (cur, prev) => (prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null);
+            const feats = (usage?.features || []).map(f => ({
+              label: FEATURE_LABELS[f.key] || f.key, value: f.n, sub: f.users }));
+            const cats  = (usage?.market_cats || []).map(c => ({ label:c.cat, value:c.n }));
+            const fn    = usage?.qp_funnel || {};
+            const funnelStages = [
+              { label:'Publicadas',       value: fn.posted    || 0 },
+              { label:'Com candidatura',  value: fn.with_apps || 0 },
+              { label:'Preenchidas',      value: fn.filled    || 0 },
+              { label:'Concluídas',       value: fn.completed || 0 },
+            ];
+            const perUser = t.active_users ? (t.actions / t.active_users) : 0;
+            const doneRate = fn.posted ? Math.round((fn.completed / fn.posted) * 100) : 0;
+
+            return (
+              <div>
+                <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:4,flexWrap:'wrap'}}>
+                  <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9'}}>Uso do App</h1>
+                  {usage?.generated_at && (
+                    <span style={{fontSize:11,color:'#475569'}}>atualizado {fmtDateTime(usage.generated_at)}</span>
+                  )}
+                </div>
+                <p style={{fontSize:13,color:'#64748b',marginBottom:16}}>
+                  O que os pool guys mais usam dentro do app. Cada “ação” é uma coisa que alguém
+                  realmente fez — mandou mensagem, publicou, se candidatou, avaliou.
+                </p>
+
+                {/* One filter row above everything it scopes — never inside a card */}
+                <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:18}}>
+                  {RANGES.map(r=>(
+                    <button key={r.d} onClick={()=>setUsageDays(r.d)} style={pill(usageDays===r.d)}>{r.l}</button>
+                  ))}
+                  <div style={{flex:1}}/>
+                  <button onClick={()=>setUsageView(v=>v==='chart'?'table':'chart')} style={pill(usageView==='table')}>
+                    {usageView==='table' ? '▦ Tabela' : '▤ Ver tabela'}
+                  </button>
+                </div>
+
+                {usageErr && (
+                  <div style={{background:'#ef444412',border:'1px solid #ef444440',borderRadius:12,padding:'12px 15px',
+                    color:'#fca5a5',fontSize:12.5,marginBottom:18}}>{usageErr}</div>
+                )}
+
+                {/* Previous render is held at reduced opacity while refetching —
+                    no skeleton flash, no layout jump. */}
+                <div style={{opacity: usageLoading ? 0.45 : 1, transition:'opacity .2s'}}>
+                  {!usage && usageLoading && (
+                    <div style={{fontSize:13,color:'#64748b',padding:'30px 0'}}>Carregando estatísticas…</div>
+                  )}
+
+                  {usage && (
+                    <React.Fragment>
+                      <div className="usage-kpi" style={{marginBottom:14}}>
+                        <UsageStat label="Ações no período" value={nfmt(t.actions)} icon={IC.bolt}
+                          delta={dl(t.actions, t.actions_prev)}
+                          hint={'vs. ' + nfmt(t.actions_prev) + ' nos ' + usageDays + ' dias anteriores'}/>
+                        <UsageStat label="Pool guys ativos" value={nfmt(t.active_users)} icon={IC.users} color="#6366f1"
+                          delta={dl(t.active_users, t.active_users_prev)}
+                          hint={'de ' + nfmt(t.total_users) + ' cadastrados no total'}/>
+                        <UsageStat label="Ações por pessoa ativa" value={perUser.toFixed(1).replace('.', ',')}
+                          icon={IC.star} color="#d97706"
+                          hint="Quanto cada pool guy ativo mexeu no app"/>
+                        <UsageStat label="Express Pools concluídas" value={doneRate + '%'} icon={IC.bolt} color="#16a34a"
+                          hint={nfmt(fn.completed) + ' de ' + nfmt(fn.posted) + ' publicadas chegaram ao fim'}/>
+                      </div>
+
+                      {usageView === 'chart' ? (
+                        <React.Fragment>
+                          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(330px,1fr))',gap:14,marginBottom:14}}>
+                            <VizCard title="O que eles mais usam"
+                              sub="Total de ações por recurso · “Np” = quantas pessoas diferentes usaram">
+                              <HBars rows={feats}/>
+                            </VizCard>
+                            <VizCard title="Funil das Express Pools"
+                              sub="Onde as vagas param entre publicar e concluir">
+                              <Funnel stages={funnelStages}/>
+                              <div style={{marginTop:16,paddingTop:14,borderTop:'1px solid '+VIZ.border,
+                                fontSize:11.5,color:VIZ.muted,lineHeight:1.5}}>
+                                A porcentagem ao lado de cada etapa é quanto sobrou da etapa anterior.
+                              </div>
+                            </VizCard>
+                          </div>
+
+                          <div style={{marginBottom:14}}>
+                            <VizCard title="Atividade por semana"
+                              sub="Como o uso se divide entre os recursos ao longo do tempo">
+                              <WeeklyStack weekly={usage.weekly||[]} series={WEEK_SERIES}/>
+                            </VizCard>
+                          </div>
+
+                          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(330px,1fr))',gap:14}}>
+                            <VizCard title="Categorias no Marketplace"
+                              sub="O que está sendo anunciado no período">
+                              <HBars rows={cats} color="#6366f1" emptyMsg="Nenhum anúncio publicado no período."/>
+                            </VizCard>
+                            <VizCard title="Pool guys mais ativos"
+                              sub="Quem mais mexeu no app no período">
+                              {(usage.top_users||[]).length === 0
+                                ? <div style={{fontSize:12,color:VIZ.muted}}>Ninguém ativo no período.</div>
+                                : (usage.top_users||[]).map((u,i)=>{
+                                  const top = usage.top_users[0].actions || 1;
+                                  return (
+                                    <div key={u.email||i} style={{display:'flex',alignItems:'center',gap:10,padding:'6px 0'}}>
+                                      <span style={{width:20,fontSize:11,color:VIZ.muted,fontVariantNumeric:'tabular-nums',
+                                        flexShrink:0}}>{i+1}.</span>
+                                      <div style={{flex:1,minWidth:0}}>
+                                        <div style={{fontSize:12.5,color:VIZ.ink,fontWeight:600,overflow:'hidden',
+                                          textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.name||u.email||'—'}</div>
+                                        <div style={{height:5,background:'#ffffff08',borderRadius:3,marginTop:4}}>
+                                          <div style={{width:Math.max((u.actions/top)*100,2)+'%',height:'100%',
+                                            background:VIZ.accent,borderRadius:'2px 3px 3px 2px'}}/>
+                                        </div>
+                                      </div>
+                                      <div style={{textAlign:'right',flexShrink:0}}>
+                                        <div style={{fontSize:12.5,fontWeight:700,color:VIZ.ink,
+                                          fontVariantNumeric:'tabular-nums'}}>{nfmt(u.actions)}</div>
+                                        <div style={{fontSize:10.5,color:VIZ.muted}}>{u.features_used} recursos</div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </VizCard>
+                          </div>
+                        </React.Fragment>
+                      ) : (
+                        /* Table view — the WCAG-clean twin of every chart above,
+                           so no value is reachable only by colour or hover. One card
+                           per row: this view is for reading exact values, so the
+                           columns get the full width instead of being squeezed
+                           two-up and ellipsised. */
+                        <div style={{display:'grid',gridTemplateColumns:'1fr',gap:14}}>
+                          <VizCard title="Uso por recurso">
+                            <div className="admin-table-wrap">
+                              <table className="admin-table" style={{minWidth:0}}>
+                                <thead><tr><th>Recurso</th><th style={{textAlign:'right'}}>Ações</th><th style={{textAlign:'right'}}>Pessoas</th></tr></thead>
+                                <tbody>
+                                  {feats.map(f=>(
+                                    <tr key={f.label}><td>{f.label}</td>
+                                      <td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{nfmt(f.value)}</td>
+                                      <td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{nfmt(f.sub)}</td></tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </VizCard>
+                          <VizCard title="Funil das Express Pools">
+                            <div className="admin-table-wrap">
+                              <table className="admin-table" style={{minWidth:0}}>
+                                <thead><tr><th>Etapa</th><th style={{textAlign:'right'}}>Vagas</th><th style={{textAlign:'right'}}>% da anterior</th></tr></thead>
+                                <tbody>
+                                  {funnelStages.map((s,i)=>(
+                                    <tr key={s.label}><td>{s.label}</td>
+                                      <td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{nfmt(s.value)}</td>
+                                      <td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>
+                                        {i===0 ? '—' : Math.round((s.value/Math.max(funnelStages[i-1].value,1))*100)+'%'}</td></tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </VizCard>
+                          <VizCard title="Atividade por semana">
+                            <div className="admin-table-wrap">
+                              <table className="admin-table">
+                                <thead><tr><th>Semana</th>{WEEK_SERIES.map(s=><th key={s.key} style={{textAlign:'right'}}>{s.label}</th>)}</tr></thead>
+                                <tbody>
+                                  {(usage.weekly||[]).map(w=>(
+                                    <tr key={w.week}><td>{fmtDate(w.week)}</td>
+                                      {WEEK_SERIES.map(s=><td key={s.key} style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{nfmt(w[s.key])}</td>)}</tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </VizCard>
+                          <VizCard title="Categorias no Marketplace">
+                            <div className="admin-table-wrap">
+                              <table className="admin-table" style={{minWidth:0}}>
+                                <thead><tr><th>Categoria</th><th style={{textAlign:'right'}}>Anúncios</th></tr></thead>
+                                <tbody>
+                                  {cats.map(c=>(
+                                    <tr key={c.label}><td>{c.label}</td>
+                                      <td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{nfmt(c.value)}</td></tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </VizCard>
+                          <VizCard title="Pool guys mais ativos">
+                            <div className="admin-table-wrap">
+                              <table className="admin-table">
+                                <thead><tr><th>Pool guy</th><th>Plano</th><th style={{textAlign:'right'}}>Ações</th><th style={{textAlign:'right'}}>Recursos</th></tr></thead>
+                                <tbody>
+                                  {(usage.top_users||[]).map((u,i)=>(
+                                    <tr key={u.email||i}><td>{u.name||u.email||'—'}</td><td>{u.tier}</td>
+                                      <td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{nfmt(u.actions)}</td>
+                                      <td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{u.features_used}</td></tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </VizCard>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ── Usuários ── */}
           {section==='users' && (() => {
