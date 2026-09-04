@@ -4802,7 +4802,11 @@ function QuickPoolDetails({
       }).then(({
         error
       }) => {
-        if (error) console.error('[QuickPools] rating upsert failed', error);
+        if (!error) return;
+        console.error('[QuickPools] rating upsert failed', error);
+        // One rating per pair, ever (ratings_pair_unique) — a second job with the
+        // same person can't be rated. Don't swallow that behind a success toast.
+        showToast && showToast((error.message || '').includes('ratings_pair_unique') ? lang === 'pt' ? 'ℹ️ Vocês já se avaliaram antes — só vale uma avaliação por pessoa.' : lang === 'es' ? 'ℹ️ Ya se calificaron antes — solo cuenta una calificación por persona.' : 'ℹ️ You two already rated each other — only one rating per person counts.' : '❌ ' + (error.message || 'Error'));
       });
       if (ownerRatingStars > 0) {
         window.sb.rpc('reveal_mutual_rating', {
@@ -4997,7 +5001,11 @@ function QuickPoolDetails({
       }).then(({
         error
       }) => {
-        if (error) console.error('[QuickPools] rating upsert failed', error);
+        if (!error) return;
+        console.error('[QuickPools] rating upsert failed', error);
+        // One rating per pair, ever (ratings_pair_unique) — a second job with the
+        // same person can't be rated. Don't swallow that behind a success toast.
+        showToast && showToast((error.message || '').includes('ratings_pair_unique') ? lang === 'pt' ? 'ℹ️ Vocês já se avaliaram antes — só vale uma avaliação por pessoa.' : lang === 'es' ? 'ℹ️ Ya se calificaron antes — solo cuenta una calificación por persona.' : 'ℹ️ You two already rated each other — only one rating per person counts.' : '❌ ' + (error.message || 'Error'));
       });
       if (ratingStars > 0) {
         window.sb.rpc('reveal_mutual_rating', {

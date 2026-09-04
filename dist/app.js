@@ -1859,6 +1859,10 @@ function App() {
           } = await window.sb.from('ratings').select('to_id, stars').in('to_id', hoPosterIds).eq('pending', false);
           const hoRatingMap = {};
           (hoRatingRows || []).forEach(r => {
+            // Skip the score-less placeholder rows ("still owes a rating"): JS turns
+            // sum += null into sum += 0 while still counting it, so one of them
+            // silently halves the person's public average.
+            if (r.stars == null) return;
             if (!hoRatingMap[r.to_id]) hoRatingMap[r.to_id] = {
               sum: 0,
               count: 0
@@ -1880,6 +1884,7 @@ function App() {
           } = await window.sb.from('ratings').select('to_id, stars').in('to_id', techAuthorIds).eq('pending', false);
           const ratingMap = {};
           (ratingRows || []).forEach(r => {
+            if (r.stars == null) return; // placeholder, not a score — see above
             if (!ratingMap[r.to_id]) ratingMap[r.to_id] = {
               sum: 0,
               count: 0
@@ -1907,6 +1912,7 @@ function App() {
           } = await window.sb.from('ratings').select('to_id, stars').in('to_id', vacAuthorIds).eq('pending', false);
           const vacRatingMap = {};
           (vacRatingRows || []).forEach(r => {
+            if (r.stars == null) return; // placeholder, not a score — see above
             if (!vacRatingMap[r.to_id]) vacRatingMap[r.to_id] = {
               sum: 0,
               count: 0

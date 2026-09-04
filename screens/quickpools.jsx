@@ -2689,7 +2689,17 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
         connection_type: 'quickpool',
         connection_id: String(job.id),
         expires_at: expiresAt,
-      }, { onConflict: 'connection_type,connection_id,from_id' }).then(({error})=>{ if(error) console.error('[QuickPools] rating upsert failed', error); });
+      }, { onConflict: 'connection_type,connection_id,from_id' }).then(({error})=>{
+        if(!error) return;
+        console.error('[QuickPools] rating upsert failed', error);
+        // One rating per pair, ever (ratings_pair_unique) — a second job with the
+        // same person can't be rated. Don't swallow that behind a success toast.
+        showToast && showToast((error.message||'').includes('ratings_pair_unique')
+          ? (lang==='pt' ? 'ℹ️ Vocês já se avaliaram antes — só vale uma avaliação por pessoa.'
+            : lang==='es' ? 'ℹ️ Ya se calificaron antes — solo cuenta una calificación por persona.'
+            : 'ℹ️ You two already rated each other — only one rating per person counts.')
+          : '❌ ' + (error.message || 'Error'));
+      });
       if (ownerRatingStars > 0) {
         window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: job.poster_id }).catch(()=>{});
       }
@@ -2858,7 +2868,17 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
         connection_type: 'quickpool',
         connection_id: String(job.id),
         expires_at: expiresAt,
-      }, { onConflict: 'connection_type,connection_id,from_id' }).then(({error})=>{ if(error) console.error('[QuickPools] rating upsert failed', error); });
+      }, { onConflict: 'connection_type,connection_id,from_id' }).then(({error})=>{
+        if(!error) return;
+        console.error('[QuickPools] rating upsert failed', error);
+        // One rating per pair, ever (ratings_pair_unique) — a second job with the
+        // same person can't be rated. Don't swallow that behind a success toast.
+        showToast && showToast((error.message||'').includes('ratings_pair_unique')
+          ? (lang==='pt' ? 'ℹ️ Vocês já se avaliaram antes — só vale uma avaliação por pessoa.'
+            : lang==='es' ? 'ℹ️ Ya se calificaron antes — solo cuenta una calificación por persona.'
+            : 'ℹ️ You two already rated each other — only one rating per person counts.')
+          : '❌ ' + (error.message || 'Error'));
+      });
       if (ratingStars > 0) {
         window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: acceptedApp.applicant_id }).catch(()=>{});
       }

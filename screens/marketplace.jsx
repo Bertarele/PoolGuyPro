@@ -1415,7 +1415,22 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
       pending: true, connection_type: 'rental', connection_id: connId,
       expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
     }, { onConflict: 'connection_type,connection_id,from_id' }).then(({error:e2}) => {
-      if (e2) { console.error('[Rental rating mirror] upsert failed', e2); return; }
+      if (e2) {
+        console.error('[Rental rating mirror] upsert failed', e2);
+        // ratings_pair_unique is (from_id, to_id): one rating per pair, EVER.
+        // A second deal with the same person therefore can't be rated, and this
+        // used to fail silently behind the success toast below — the score
+        // landed in rental_ratings, the public average never moved, and the
+        // person believed they had rated. Say so instead of pretending.
+        if ((e2.message||'').includes('ratings_pair_unique')) {
+          showToast && showToast(lang==='pt' ? 'ℹ️ Vocês já se avaliaram antes — só vale uma avaliação por pessoa.'
+            : lang==='es' ? 'ℹ️ Ya se calificaron antes — solo cuenta una calificación por persona.'
+            : 'ℹ️ You two already rated each other — only one rating per person counts.');
+        } else {
+          showToast && showToast('❌ ' + (e2.message || 'Error'));
+        }
+        return;
+      }
       window.sb.rpc('reveal_mutual_rating', { p_a: currentUser.uid, p_b: ratingSheet.rateeId }).catch(()=>{});
     });
     // Notify the person being rated — same "must have an action" bell/push pattern
