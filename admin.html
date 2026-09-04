@@ -1676,6 +1676,24 @@ function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
           body: message,
         }).catch(()=>{});
       }
+      // 7. Notificar QUEM REPORTOU. Antes só o denunciado era avisado, então
+      //    de quem abriu a reclamação a coisa sumia: sem notificação e, até a
+      //    política de leitura ser corrigida, sem conseguir nem reler o próprio
+      //    report. Ninguém reporta duas vezes num app que responde assim.
+      if (dispute.reporter_id && dispute.reporter_id !== dispute.reported_user_id) {
+        const outcome = action === 'ban'
+          ? 'A conta reportada foi banida.'
+          : action === 'suspension'
+            ? 'A conta reportada foi suspensa.'
+            : action === 'warning'
+              ? 'A pessoa reportada recebeu uma advertência.'
+              : 'Analisamos e nenhuma penalidade foi aplicada.';
+        window.sb.from('notifications').insert({
+          user_id: dispute.reporter_id, type: 'dispute_resolved',
+          title: 'Sua reclamação foi analisada',
+          body: outcome + ' ' + message,
+        }).catch(()=>{});
+      }
       // Sinaliza para o pai (setWarnings e outros estados ficam no pai)
       onResolved(dispute.id, { status:'resolved', resolution_message:message, resolution_action:action, resolved_at:now });
       showToast(action==='ban'?'🚫 Usuário banido e reclamação resolvida.':action==='warning'?`⚠️ Advertência (${warnWeight}) aplicada e reclamação resolvida.`:'✓ Reclamação resolvida com sucesso.');

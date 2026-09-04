@@ -908,6 +908,45 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
   const [schedulingFor, setSchedulingFor] = React.useState(null);
   const [rejectingFor,  setRejectingFor]  = React.useState(null);
   const [rejectReason,  setRejectReason]  = React.useState('');
+  // Reporting a problem with vacation coverage. Until now the only thing the
+  // owner could do with submitted photos was accept them: dirty pools, skipped
+  // days or photos of someone else's pool left a choice between finalizing
+  // anyway and leaving it stuck at "Aguardando confirmação" forever — which
+  // also blocks BOTH ratings, since finalizing is what opens them.
+  const [reportingFor, setReportingFor] = React.useState(null); // applicant row
+  const [reportDesc,   setReportDesc]   = React.useState('');
+  const [reportSev,    setReportSev]    = React.useState('serious');
+  const [reportSaving, setReportSaving] = React.useState(false);
+
+  const submitVacationReport = async (a) => {
+    if (!reportDesc.trim() || reportSaving || !window.sb || !user?.uid) return;
+    setReportSaving(true);
+    const { error } = await window.sb.from('dispute_reports').insert({
+      source_type:      'vacation',
+      source_id:        String(a._dbId || a.id),
+      reporter_id:      user.uid,
+      reported_user_id: a.applicant_id,
+      listing_name:     lang==='pt' ? 'Cobertura de férias' : lang==='es' ? 'Cobertura de vacaciones' : 'Vacation coverage',
+      severity:         reportSev,
+      description:      reportDesc.trim(),
+      reporter_name:    user.name || '',
+      reported_name:    a.name || '',
+      status:           'pending',
+    });
+    setReportSaving(false);
+    if (error) {
+      showToast && showToast((error.message||'').includes('one_open_per_reporter')
+        ? (lang==='pt' ? '⚠ Você já tem uma reclamação aberta sobre esta cobertura.'
+          : lang==='es' ? '⚠ Ya tienes un reclamo abierto sobre esta cobertura.'
+          : '⚠ You already have an open report on this coverage.')
+        : '❌ ' + (error.message || 'Error'));
+      return;
+    }
+    setReportingFor(null); setReportDesc(''); setReportSev('serious');
+    showToast && showToast(lang==='pt' ? '⚠ Problema reportado e enviado para análise.'
+      : lang==='es' ? '⚠ Problema reportado y enviado a revisión.'
+      : '⚠ Issue reported and sent for review.');
+  };
 
   // Helper: relative time from ISO timestamp
   const relTime = (iso) => {
@@ -1591,9 +1630,59 @@ function ApplicantsSheet({ open, onClose, post, lang='en', onChat, user, onOpenP
                         </div>
                       ));
                     })()}
-                    <button onClick={()=>finalizeVacation(a)} className="pg-btn pg-btn-primary" style={{width:'100%', height:38, fontSize:13, borderRadius:999}}>
-                      {Icon.check(14,'#fff')} {lang==='pt'?'Finalizar e avaliar':lang==='es'?'Finalizar y calificar':'Finalize and rate'}
-                    </button>
+                    <div style={{display:'flex', gap:7}}>
+                      <button onClick={()=>finalizeVacation(a)} className="pg-btn pg-btn-primary" style={{flex:2, height:38, fontSize:13, borderRadius:999}}>
+                        {Icon.check(14,'#fff')} {lang==='pt'?'Finalizar e avaliar':lang==='es'?'Finalizar y calificar':'Finalize and rate'}
+                      </button>
+                      <button onClick={()=>{ setReportingFor(reportingFor===a.id?null:a.id); setReportDesc(''); }}
+                        style={{flex:1, height:38, borderRadius:999, cursor:'pointer', fontFamily:'inherit',
+                          fontSize:12.5, fontWeight:700, border:'1.5px solid rgba(245,158,11,0.5)',
+                          background:'rgba(245,158,11,0.08)', color:'#D97706',
+                          display:'flex', alignItems:'center', justifyContent:'center', gap:5}}>
+                        ⚠ {lang==='pt'?'Problema':lang==='es'?'Problema':'Issue'}
+                      </button>
+                    </div>
+                    {reportingFor === a.id && (
+                      <div style={{marginTop:10, padding:'12px', borderRadius:10,
+                        background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.30)'}}>
+                        <div style={{fontSize:11.5, fontWeight:700, color:'#B45309', marginBottom:8}}>
+                          {lang==='pt'?'O que aconteceu?':lang==='es'?'¿Qué pasó?':'What happened?'}
+                        </div>
+                        <div style={{display:'flex', gap:6, marginBottom:9}}>
+                          {[{id:'minor',pt:'Leve',es:'Leve',en:'Minor'},
+                            {id:'serious',pt:'Sério',es:'Serio',en:'Serious'},
+                            {id:'critical',pt:'Crítico',es:'Crítico',en:'Critical'}].map(sv => (
+                            <button key={sv.id} onClick={()=>setReportSev(sv.id)}
+                              style={{flex:1, height:30, borderRadius:8, cursor:'pointer', fontFamily:'inherit',
+                                fontSize:11.5, fontWeight:700,
+                                border:'1px solid '+(reportSev===sv.id?'#D97706':'var(--pg-ink-200)'),
+                                background:reportSev===sv.id?'rgba(245,158,11,0.15)':'var(--pg-white)',
+                                color:reportSev===sv.id?'#B45309':'var(--pg-ink-500)'}}>
+                              {sv[lang] || sv.en}
+                            </button>
+                          ))}
+                        </div>
+                        <textarea value={reportDesc} onChange={e=>setReportDesc(e.target.value)} rows={3}
+                          placeholder={lang==='pt'?'Descreva o problema — piscinas sujas, dias não feitos, fotos que não batem…'
+                            : lang==='es'?'Describe el problema — piscinas sucias, días no hechos, fotos que no coinciden…'
+                            : 'Describe the problem — dirty pools, days skipped, photos that do not match…'}
+                          style={{width:'100%', padding:'9px 11px', borderRadius:9, fontFamily:'inherit',
+                            fontSize:12.5, border:'1px solid var(--pg-ink-200)', resize:'vertical',
+                            color:'var(--pg-ink-900)', background:'var(--pg-white)'}}/>
+                        <button onClick={()=>submitVacationReport(a)} disabled={!reportDesc.trim() || reportSaving}
+                          style={{width:'100%', height:36, marginTop:9, borderRadius:999, border:'none',
+                            cursor: (!reportDesc.trim()||reportSaving)?'default':'pointer', fontFamily:'inherit',
+                            fontSize:12.5, fontWeight:700, color:'#fff',
+                            background: (!reportDesc.trim()||reportSaving) ? 'var(--pg-ink-300)' : '#D97706'}}>
+                          {reportSaving ? '…' : (lang==='pt'?'Enviar para análise':lang==='es'?'Enviar a revisión':'Send for review')}
+                        </button>
+                        <div style={{fontSize:10.5, color:'var(--pg-ink-400)', marginTop:7, lineHeight:1.45}}>
+                          {lang==='pt'?'A cobertura fica em aberto até a equipe analisar. Você ainda pode finalizar depois.'
+                            : lang==='es'?'La cobertura queda abierta hasta la revisión. Aún puedes finalizar después.'
+                            : 'The coverage stays open until the team reviews it. You can still finalize later.'}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

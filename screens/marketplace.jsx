@@ -18,6 +18,16 @@ function timeAgo(iso, lang='en') {
   const w=Math.floor(diff/604800); return lang==='pt'?`${w}sem`:lang==='es'?`${w}sem`:`${w}w ago`;
 }
 
+// Days past a rental's return date. The return-by badge used to render the
+// same calm amber forever, so an item three weeks overdue looked exactly like
+// one due tomorrow and nothing in the app ever said otherwise.
+function daysOverdue(endDate) {
+  if (!endDate) return 0;
+  const end = new Date(endDate + 'T23:59:59');
+  if (isNaN(end)) return 0;
+  return Math.max(0, Math.floor((Date.now() - end.getTime()) / 86400000));
+}
+
 // ── Boost (paid listing highlight) ────────────────────────────
 // NOTE: prices are placeholders — final values TBD, easy to tweak here.
 const BOOST_PLANS = [
@@ -25,6 +35,32 @@ const BOOST_PLANS = [
   { days: 7,  price: 8.99  },
   { days: 14, price: 14.99 },
 ];
+
+// How many listing cards mount at a time before "Carregar mais". 24 fills more
+// than a screen in every layout (2 columns on a phone, up to 5 on desktop), so
+// the button is below the fold rather than interrupting the first scroll.
+const MARKET_PAGE = 24;
+
+// Shared footer for every windowed list. Says how much is left rather than just
+// "load more", so a long search result reads as finite instead of endless.
+function LoadMoreBar({ shown, total, lang, onMore }) {
+  if (total <= shown) return null;
+  const remaining = total - shown;
+  return (
+    <div style={{gridColumn:'1 / -1', display:'flex', flexDirection:'column', alignItems:'center',
+      gap:6, padding:'18px 0 6px'}}>
+      <button onClick={onMore} className="pg-btn pg-btn-ghost"
+        style={{height:40, padding:'0 22px', fontSize:13.5, fontWeight:700, borderRadius:999}}>
+        {lang==='pt' ? 'Carregar mais' : lang==='es' ? 'Cargar más' : 'Load more'}
+      </button>
+      <div style={{fontSize:11.5, color:'var(--pg-ink-400)'}}>
+        {lang==='pt' ? `Mostrando ${shown} de ${total} · faltam ${remaining}`
+          : lang==='es' ? `Mostrando ${shown} de ${total} · faltan ${remaining}`
+          : `Showing ${shown} of ${total} · ${remaining} left`}
+      </div>
+    </div>
+  );
+}
 
 // Boost is NOT purchasable yet, so its entry point stays hidden: there is no
 // server-side payment flow for it (poolguyx.com/boost/... isn't a real route),
@@ -1356,24 +1392,48 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
       } catch(e) {}
     }
 
-    // 2. Mark request as disputed
-    await window.sb.from('rental_requests').update({ status: 'disputed' }).eq('id', requestId);
-    // 3. Insert dispute report
-    await window.sb.from('dispute_reports').insert({
+    // 2. Mark request as disputed. Only the owner may write this column
+    //    (RLS: "owner can update status"), so the renter's report skips it —
+    //    the dispute row itself is what reaches the admin either way.
+    const amOwnerHere = item.author_id && item.author_id === currentUser.uid;
+    if (amOwnerHere) {
+      await window.sb.from('rental_requests').update({ status: 'disputed' }).eq('id', requestId);
+    }
+    // 3. Insert dispute report. reported_user_id used to be hardcoded to the
+    //    requester, which only made sense while the owner was the only one who
+    //    could report — a renter filing one would have reported themselves.
+    const otherId   = amOwnerHere ? req.requester_id : item.author_id;
+    const otherName = amOwnerHere ? (req.requester_name || 'Renter') : (item.author || 'Owner');
+    const { error: dErr } = await window.sb.from('dispute_reports').insert({
       rental_request_id: requestId,
+      source_type:       'rental',
+      source_id:         String(requestId),
       reporter_id:       currentUser.uid,
-      reported_user_id:  req.requester_id,
+      reported_user_id:  otherId,
       listing_id:        item._id,
       listing_name:      item.name || '',
       severity:          disputeSeverity,
       description:       disputeDesc.trim(),
-      reporter_name:     currentUser.name || (currentUser.email||'').split('@')[0] || 'Owner',
-      reported_name:     req.requester_name || 'Renter',
+      reporter_name:     currentUser.name || (currentUser.email||'').split('@')[0] || (amOwnerHere ? 'Owner' : 'Renter'),
+      reported_name:     otherName,
       status:            'pending',
       evidence_urls:     evidenceUrls,
     });
-    setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: 'disputed'} : r));
     setDisputeLoading(false);
+    if (dErr) {
+      // The unique index allows one OPEN report per person per transaction.
+      showToast && showToast((dErr.message||'').includes('one_open_per_reporter')
+        ? (lang==='pt' ? '⚠ Você já tem uma reclamação aberta sobre este aluguel.'
+          : lang==='es' ? '⚠ Ya tienes un reclamo abierto sobre este alquiler.'
+          : '⚠ You already have an open report on this rental.')
+        : '❌ ' + (dErr.message || 'Error'));
+      return;
+    }
+    if (amOwnerHere) {
+      setOwnerRequests(prev => prev.map(r => r.id === requestId ? {...r, status: 'disputed'} : r));
+    } else {
+      setReqStatus('disputed');
+    }
     showToast && showToast(lang==='pt' ? '⚠ Problema reportado e enviado para análise.' : '⚠ Issue reported and sent for review.');
     setDisputeForm(null);
     setDisputePhotos([]);
@@ -1726,6 +1786,22 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
       </div>
     );
 
+    // The renter had no way to report anything: the "Problema" button existed
+    // only in the owner's panel. Broken or wrong equipment, a no-show at the
+    // meetup, or being blamed for damage they didn't cause all had no path.
+    const renterReportBtn = (borderTint) => (
+      <button onClick={()=>{
+          setDisputeSeverity('serious'); setDisputeDesc('');
+          setDisputeForm({ requestId: myRequestId, req: { requester_name: currentUser?.name || '' } });
+        }}
+        style={{width:'100%',padding:'10px',border:'none',borderTop:'1px solid '+borderTint,
+          cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,
+          background:'rgba(245,158,11,0.08)',color:'#D97706',
+          display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        {lang==='pt'?'Reportar problema':lang==='es'?'Reportar problema':'Report a problem'}
+      </button>
+    );
     // Status cards (same for static/live)
     if (reqStatus === 'approved') {
       const beforePics = requestPhotos[myRequestId]?.before || [];
@@ -1747,7 +1823,11 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0EBAC7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:11,fontWeight:700,color:'var(--pg-ink-500)'}}>{lang==='pt'?'Devolver até':lang==='es'?'Devolver antes del':'Return by'}</div>
+              <div style={{fontSize:11,fontWeight:700,color: daysOverdue(myEndDate) ? '#DC2626' : 'var(--pg-ink-500)'}}>
+                {daysOverdue(myEndDate)
+                  ? (lang==='pt' ? `⚠ Atrasado ${daysOverdue(myEndDate)} dia(s)` : lang==='es' ? `⚠ Atrasado ${daysOverdue(myEndDate)} día(s)` : `⚠ ${daysOverdue(myEndDate)} day(s) overdue`)
+                  : (lang==='pt'?'Devolver até':lang==='es'?'Devolver antes del':'Return by')}
+              </div>
               <div style={{fontSize:13.5,fontWeight:800,color:'#0891A8'}}>{fmtDate(myEndDate)}</div>
             </div>
           </div>
@@ -1791,6 +1871,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
             </div>
           )}
         </div>
+        {renterReportBtn('rgba(14,186,199,0.20)')}
       </div>
     );}
     if (reqStatus === 'completed') {
@@ -2142,12 +2223,19 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
                       ${fmtN(req.total_price, lang)}
                     </span>
                   )}
-                  {req.end_date && req.status === 'approved' && (
-                    <span style={{fontSize:11,fontWeight:800,padding:'3px 9px',borderRadius:999,
-                      background:'rgba(245,158,11,0.12)',color:'#D97706',border:'1px solid rgba(245,158,11,0.3)',marginLeft:'auto'}}>
-                      {lang==='pt'?'Devolver até ':lang==='es'?'Devolver: ':'Return by '}{fmtDate(req.end_date)}
+                  {req.end_date && req.status === 'approved' && (() => {
+                    const od = daysOverdue(req.end_date);
+                    return (
+                    <span style={{fontSize:11,fontWeight:800,padding:'3px 9px',borderRadius:999,marginLeft:'auto',
+                      background: od ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+                      color: od ? '#DC2626' : '#D97706',
+                      border: '1px solid ' + (od ? 'rgba(239,68,68,0.35)' : 'rgba(245,158,11,0.3)')}}>
+                      {od
+                        ? (lang==='pt' ? `⚠ Atrasado ${od}d` : lang==='es' ? `⚠ Atrasado ${od}d` : `⚠ ${od}d overdue`)
+                        : <>{lang==='pt'?'Devolver até ':lang==='es'?'Devolver: ':'Return by '}{fmtDate(req.end_date)}</>}
                     </span>
-                  )}
+                    );
+                  })()}
                 </div>
               )}
 
@@ -2627,9 +2715,19 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
             ⚠ {lang==='pt'?'Reportar problema':'Report an issue'}
           </div>
           <div style={{fontSize:12.5,color:'var(--pg-ink-500)',marginBottom:16}}>
-            {lang==='pt'
-              ?`Este report será analisado pela equipe PoolGuyX e pode resultar em penalidades para ${disputeForm.req.requester_name||'o renter'}.`
-              :`This report will be reviewed by PoolGuyX and may result in penalties for ${disputeForm.req.requester_name||'the renter'}.`}
+            {(() => {
+              // Names the actual counterpart — this copy always said "the renter",
+              // which reads as nonsense on the renter's own report form.
+              const amOwnerHere = item.author_id && item.author_id === currentUser?.uid;
+              const other = amOwnerHere
+                ? (disputeForm.req.requester_name || (lang==='pt'?'o locatário':lang==='es'?'el arrendatario':'the renter'))
+                : (item.author || (lang==='pt'?'o dono':lang==='es'?'el dueño':'the owner'));
+              return lang==='pt'
+                ? `Este report será analisado pela equipe PoolGuyX e pode resultar em penalidades para ${other}.`
+                : lang==='es'
+                  ? `Este reporte será revisado por PoolGuyX y puede resultar en penalidades para ${other}.`
+                  : `This report will be reviewed by PoolGuyX and may result in penalties for ${other}.`;
+            })()}
           </div>
 
           {/* Banner de evidências */}
@@ -4274,6 +4372,12 @@ function MarketplaceScreen({ ctx }) {
   const [routePrice, setRoutePrice] = React.useState('all');  // routes price filter
   const [routeSub,   setRouteSub]   = React.useState('routes'); // 'routes' | 'pools'
   const [poolPrice,  setPoolPrice]  = React.useState('all');  // individual pools price filter
+  // How many cards are actually mounted. Everything the county/search filters
+  // keep used to render at once: 400 listings measured 17k DOM nodes and a
+  // 75,000px scroll — about 87 screens with no way to page. The filtering
+  // itself stays over the whole set (so counts and search results are still
+  // complete), only the rendering is windowed.
+  const [visibleCount, setVisibleCount] = React.useState(MARKET_PAGE);
   const [savedIds,   setSavedIds]   = React.useState(new Set());
   const [shareItem,  setShareItem]  = React.useState(null);
 
@@ -4480,6 +4584,13 @@ function MarketplaceScreen({ ctx }) {
   const isEquipment = view === 'buy' || view === 'rent';
   const mode = view === 'rent' ? 'rent' : 'sell';
 
+  // Any change to what's being listed starts the window over — otherwise
+  // switching tab or searching after paging through Buy would drop you into a
+  // few hundred already-mounted cards of something else.
+  React.useEffect(() => { setVisibleCount(MARKET_PAGE); },
+    [view, mode, cat, q, priceRange, routePrice, poolPrice, routeSub, radiusMiles, userLocation]);
+  const showMore = () => setVisibleCount(c => c + MARKET_PAGE);
+
   // City label for location button — uses stored city, falls back to haversine lookup
   const locCity = React.useMemo(() => {
     if (!userLocation) return '';
@@ -4551,6 +4662,31 @@ function MarketplaceScreen({ ctx }) {
       address: m.address || null,
     }));
   const allPools = [...livePools];
+
+  // The search box only ever filtered the EQUIPMENT demo array, which has been
+  // empty since the seed data was removed — so typing in it changed nothing at
+  // all for real listings. Matches name, description, category and city, since
+  // people search for "bomba", "Pentair" and "Coral Springs" interchangeably.
+  const matchesQuery = React.useCallback((m) => {
+    const term = q.trim().toLowerCase();
+    if (!term) return true;
+    return [m.name, m.description, m.cat, m.loc, m.condition]
+      .some(v => v && String(v).toLowerCase().includes(term));
+  }, [q]);
+
+  // Same filter+sort the mobile grid used inline, hoisted so the window and the
+  // "showing X of Y" footer can both see the full result rather than the slice.
+  const mobileEquipment = marketByCounty
+    .filter(m => m.type === mode &&
+      (cat === 'All' || !m.cat || m.cat === cat) &&
+      matchesQuery(m) &&
+      (m.status === 'approved' || (m.status === 'pending' && isMyPost(m)))
+    )
+    .sort((a, b) => {
+      const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
+      const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
+      return aOwn - bOwn;
+    });
 
   const list = isEquipment
     ? EQUIPMENT.filter(e =>
@@ -4710,7 +4846,7 @@ function MarketplaceScreen({ ctx }) {
         <div style={{position:'relative', paddingTop: desktopMode ? '62%' : '72%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
           <div style={{position:'absolute', inset:0}}>
             {photoSrc
-              ? <img src={photoSrc} alt={item.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+              ? <img src={photoSrc} alt={item.name} loading="lazy" decoding="async" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
               : <NoPhotoPlaceholder height={'100%'}/>
             }
           </div>
@@ -4842,6 +4978,7 @@ function MarketplaceScreen({ ctx }) {
   if (isDesktop) {
     const liveEquipment = marketByCounty.filter(m => m.type === mode &&
       (cat === 'All' || !m.cat || m.cat === cat) &&
+      matchesQuery(m) &&
       (m.status==='approved' || (m.status==='pending'&&isMyPost(m)))
     ).sort((a, b) => {
       const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
@@ -5173,7 +5310,9 @@ function MarketplaceScreen({ ctx }) {
             {/* Live listings grid */}
             {isEquipment && (
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px,1fr))', gap:16, marginBottom:24}}>
-                {liveEquipment.map(item => renderLiveCard(item, true))}
+                {liveEquipment.slice(0, visibleCount).map(item => renderLiveCard(item, true))}
+                <LoadMoreBar shown={Math.min(visibleCount, liveEquipment.length)}
+                  total={liveEquipment.length} lang={lang} onMore={showMore}/>
                 {liveEquipment.length === 0 && (view === 'rent' || list.length === 0) && (
                   <div style={{gridColumn:'1/-1', textAlign:'center', padding:'64px 20px',
                     background:'var(--pg-white)', borderRadius:16, border:'1px solid var(--pg-ink-200)'}}>
@@ -5275,7 +5414,7 @@ function MarketplaceScreen({ ctx }) {
                 {/* Route cards in 2-column grid on desktop */}
                 {user.tier === 'free' ? null :
                 <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(360px,1fr))', gap:16}}>
-                  {list.map(r => (
+                  {list.slice(0, visibleCount).map(r => (
                     <div key={r.id||r._liveId} onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ if(isMyPost(m)){ openMyPostDetail(m); return; } if(m.status==='sold'){return;} openListing(m); } } else { setSelected({...r, _type:'route'}); window.history.pushState({pgRoute:r.id},'','?listing=route-'+r.id); } }}
                       style={{
                         background:'var(--pg-white)', borderRadius:16, overflow:'hidden',
@@ -5288,7 +5427,7 @@ function MarketplaceScreen({ ctx }) {
                         <div style={{width:100, flexShrink:0, background:'linear-gradient(135deg,var(--pg-blue-100) 0%,var(--pg-blue-50) 100%)',
                           display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4, padding:'16px 8px'}}>
                           {(r.photoUrls&&r.photoUrls[0])||r.photoUrl
-                            ? <img src={(r.photoUrls&&r.photoUrls[0])||r.photoUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                            ? <img src={(r.photoUrls&&r.photoUrls[0])||r.photoUrl} alt="" loading="lazy" decoding="async" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                             : <>
                                 {Icon.pin(22,'var(--pg-blue-600)')}
                                 <div style={{fontFamily:'var(--pg-font-display)',fontSize:24,fontWeight:800,color:'var(--pg-blue-600)',lineHeight:1}}>{r.clients||r.pools||'?'}</div>
@@ -5688,16 +5827,8 @@ function MarketplaceScreen({ ctx }) {
         {isEquipment && (
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(155px, 1fr))', gap:12, marginTop:14}}>
             {/* Live user-posted equipment items */}
-            {marketByCounty
-              .filter(m => m.type === mode &&
-                (cat === 'All' || !m.cat || m.cat === cat) &&
-                (m.status === 'approved' || (m.status === 'pending' && isMyPost(m)))
-              )
-              .sort((a, b) => {
-                const aOwn = user?.uid && a.author_id === user.uid ? 0 : 1;
-                const bOwn = user?.uid && b.author_id === user.uid ? 0 : 1;
-                return aOwn - bOwn;
-              })
+            {mobileEquipment
+              .slice(0, visibleCount)
               .map(item => {
                 const isPending = item.status === 'pending';
                 const isSoldItem = item.status === 'sold';
@@ -5733,7 +5864,7 @@ function MarketplaceScreen({ ctx }) {
                     <div style={{position:'relative', paddingTop:'72%', background:'var(--pg-ink-200)', overflow:'hidden', flexShrink:0}}>
                       <div style={{position:'absolute', inset:0}}>
                         {item.photoUrl
-                          ? <img src={item.photoUrl} alt={item.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                          ? <img src={item.photoUrl} alt={item.name} loading="lazy" decoding="async" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
                           : <NoPhotoPlaceholder height={'100%'}/>
                         }
                       </div>
@@ -5929,22 +6060,36 @@ function MarketplaceScreen({ ctx }) {
                 );
               })}
 
-            {/* Empty state */}
-            {marketByCounty.filter(m=>m.type===mode && (m.status==='approved'||(m.status==='pending'&&isMyPost(m)))).length === 0
-             && (view === 'rent' || list.length === 0) && (
+            <LoadMoreBar shown={Math.min(visibleCount, mobileEquipment.length)}
+              total={mobileEquipment.length} lang={lang} onMore={showMore}/>
+
+            {/* Empty state — keyed off the FILTERED result, not the raw count.
+                It used to test the unfiltered set, so a search or category that
+                matched nothing left a blank grid with no explanation as long as
+                any listing existed at all. */}
+            {mobileEquipment.length === 0 && (view === 'rent' || list.length === 0) && (
               <div style={{gridColumn:'1/-1', textAlign:'center', padding:'48px 20px'}}>
-                <div style={{fontSize:36, marginBottom:12}}>{view==='rent'?'🔑':'🔍'}</div>
+                {/* "Be the first to post" is only true when the section is
+                    genuinely empty — with a search or category active the right
+                    message is that the FILTER matched nothing. */}
+                {(() => { const filtering = !!q.trim() || cat !== 'All'; return (<>
+                <div style={{fontSize:36, marginBottom:12}}>{filtering ? '🔍' : (view==='rent'?'🔑':'🔍')}</div>
                 <div style={{fontSize:14, fontWeight:600, color:'var(--pg-ink-700)', marginBottom:4}}>
-                  {view==='rent'
-                    ? (lang==='pt'?'Nenhum item para alugar ainda':lang==='es'?'Sin artículos en alquiler aún':'No rental listings yet')
-                    : (lang==='pt'?'Nenhum item encontrado':lang==='es'?'No se encontraron artículos':'No items found')}
+                  {filtering
+                    ? (lang==='pt'?'Nenhum resultado':lang==='es'?'Sin resultados':'No results')
+                    : view==='rent'
+                      ? (lang==='pt'?'Nenhum item para alugar ainda':lang==='es'?'Sin artículos en alquiler aún':'No rental listings yet')
+                      : (lang==='pt'?'Nenhum item encontrado':lang==='es'?'No se encontraron artículos':'No items found')}
                 </div>
-                <div style={{fontSize:12, color:'var(--pg-ink-400)', marginBottom: view==='rent'?14:0}}>
-                  {view==='rent'
-                    ? (lang==='pt'?'Seja o primeiro a publicar!':lang==='es'?'¡Sé el primero en publicar!':'Be the first to post a rental!')
-                    : (lang==='pt'?'Tente outros filtros ou categorias':lang==='es'?'Prueba otros filtros o categorías':'Try different filters or categories')}
+                <div style={{fontSize:12, color:'var(--pg-ink-400)', marginBottom: (!filtering && view==='rent')?14:0}}>
+                  {filtering
+                    ? (lang==='pt'?'Tente outra busca ou categoria':lang==='es'?'Prueba otra búsqueda o categoría':'Try another search or category')
+                    : view==='rent'
+                      ? (lang==='pt'?'Seja o primeiro a publicar!':lang==='es'?'¡Sé el primero en publicar!':'Be the first to post a rental!')
+                      : (lang==='pt'?'Tente outros filtros ou categorias':lang==='es'?'Prueba otros filtros o categorías':'Try different filters or categories')}
                 </div>
-                {view==='rent' && (
+                </>); })()}
+                {view==='rent' && !q.trim() && cat === 'All' && (
                   <button onClick={()=>{ setPostOpen(true); setPostMode('rent'); }} style={{
                     height:40, padding:'0 20px', borderRadius:11, border:'none', cursor:'pointer',
                     background:'linear-gradient(135deg,#0EBAC7,#0891A8)', color:'#fff',
@@ -6149,7 +6294,7 @@ function MarketplaceScreen({ ctx }) {
             )}
 
             {/* Route cards */}
-            {routeSub === 'routes' && list.map(r => (
+            {routeSub === 'routes' && list.slice(0, visibleCount).map(r => (
               <div key={r.id||r._liveId} className="pg-card pg-card-tap"
                 onClick={()=>{ if(r._live){ const m=liveMarket.find(x=>x._id===r._liveId); if(m){ if(isMyPost(m)){ openMyPostDetail(m); return; } if(m.status==='sold'){return;} openListing(m); } } else { setSelected({...r, _type:'route'}); window.history.pushState({pgRoute:r.id},'','?listing=route-'+r.id); } }}
                 style={{padding:14, display:'flex', gap:12, position:'relative'}}>
@@ -6157,7 +6302,7 @@ function MarketplaceScreen({ ctx }) {
                   background:'linear-gradient(135deg,var(--pg-blue-100) 0%,var(--pg-blue-50) 100%)',
                   display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3}}>
                   {(r.photoUrls && r.photoUrls[0]) || r.photoUrl
-                    ? <img src={(r.photoUrls&&r.photoUrls[0])||r.photoUrl} alt={r.name} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                    ? <img src={(r.photoUrls&&r.photoUrls[0])||r.photoUrl} alt={r.name} loading="lazy" decoding="async" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
                     : <>
                         {Icon.pin(20,'var(--pg-blue-600)')}
                         <div style={{fontFamily:'var(--pg-font-display)', fontSize:24, fontWeight:800, color:'var(--pg-blue-600)', lineHeight:1}}>{r.clients||r.pools||'?'}</div>
@@ -6230,8 +6375,13 @@ function MarketplaceScreen({ ctx }) {
               </div>
             ))}
 
+            {routeSub === 'routes' && (
+              <LoadMoreBar shown={Math.min(visibleCount, list.length)}
+                total={list.length} lang={lang} onMore={showMore}/>
+            )}
+
             {/* Single Pool cards */}
-            {routeSub === 'pools' && list.map(p => (
+            {routeSub === 'pools' && list.slice(0, visibleCount).map(p => (
               <div key={p.id||p._liveId} className="pg-card pg-card-tap"
                 onClick={()=>{
                   if (p._live) {
@@ -6245,7 +6395,7 @@ function MarketplaceScreen({ ctx }) {
                   {/* Pool thumbnail — photo if available, else icon + count */}
                   {(p.photoUrl || (p.photoUrls && p.photoUrls[0])) ? (
                     <div style={{width:82, height:82, borderRadius:12, overflow:'hidden', flexShrink:0}}>
-                      <img src={p.photoUrl || p.photoUrls[0]} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                      <img src={p.photoUrl || p.photoUrls[0]} alt="" loading="lazy" decoding="async" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
                     </div>
                   ) : (
                   <div style={{
@@ -6344,6 +6494,11 @@ function MarketplaceScreen({ ctx }) {
                 )}
               </div>
             ))}
+
+            {routeSub === 'pools' && (
+              <LoadMoreBar shown={Math.min(visibleCount, list.length)}
+                total={list.length} lang={lang} onMore={showMore}/>
+            )}
           </div>
         )}
       </div>
