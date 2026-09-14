@@ -57,7 +57,7 @@ const STRINGS = {
     poolRoutes: 'Pool Routes',
     sell: 'Sell',
     rent: 'Rent',
-    routesSaleOnly: 'Pool routes are sale-only. PoolGuyX escrows the first month\'s revenue until handoff is complete.',
+    routesSaleOnly: 'Pool routes are sale-only. Buyer and seller arrange payment directly — PoolGuyX does not hold or escrow any funds.',
     asking: 'Asking',
     makeOffer: 'Make offer',
     requestRental: 'Request rental',
@@ -147,7 +147,7 @@ const STRINGS = {
     pay: 'Pay',
     request: 'Request',
     goingOnVacation: 'Going on vacation?',
-    vacationDesc: 'Delegate your route to a trusted PoolGuy. We escrow payment until you confirm the route is clean.',
+    vacationDesc: 'Delegate your route to a trusted PoolGuy. Payment is arranged directly between you two — PoolGuyX does not hold or escrow any funds.',
     postAvailability: 'Post my availability',
     selectedDays: 'SELECTED DAYS',
     poolsPerDay: 'pools/day',
@@ -184,6 +184,8 @@ const STRINGS = {
     poolguyPro: 'PoolGuy PRO',
     premium: 'Premium',
     free: 'Free tier',
+    betaFreeTitle: 'Free Beta',
+    betaFreeDesc: 'Every feature is unlocked for everyone during the beta — no charge.',
     renews: 'Renews',
     activeSub: 'Active subscription',
     upgradeQp: 'Upgrade to unlock Express Pools',
@@ -333,7 +335,7 @@ const STRINGS = {
     poolRoutes: 'Rotas',
     sell: 'Vender',
     rent: 'Alugar',
-    routesSaleOnly: 'Rotas de piscina são apenas para venda. O PoolGuyX guarda em garantia a receita do primeiro mês até a entrega ser concluída.',
+    routesSaleOnly: 'Rotas de piscina são apenas para venda. Comprador e vendedor combinam o pagamento diretamente — o PoolGuyX não retém nem guarda nenhum valor.',
     asking: 'Pedido',
     makeOffer: 'Fazer oferta',
     requestRental: 'Solicitar aluguel',
@@ -420,7 +422,7 @@ const STRINGS = {
     pay: 'Salário',
     request: 'Solicitar',
     goingOnVacation: 'Vai sair de férias?',
-    vacationDesc: 'Delegue sua rota a um PoolGuy confiável. O pagamento fica em garantia até você confirmar que a rota está limpa.',
+    vacationDesc: 'Delegue sua rota a um PoolGuy confiável. O pagamento é combinado diretamente entre vocês dois — o PoolGuyX não retém nem guarda nenhum valor.',
     postAvailability: 'Publicar disponibilidade',
     selectedDays: 'DIAS SELECIONADOS',
     poolsPerDay: 'piscinas/dia',
@@ -456,6 +458,8 @@ const STRINGS = {
     poolguyPro: 'PoolGuy PRO',
     premium: 'Premium',
     free: 'Gratuito',
+    betaFreeTitle: 'Beta Gratuito',
+    betaFreeDesc: 'Todos os recursos estão liberados para todo mundo enquanto estamos em beta — sem cobrança.',
     renews: 'Renova',
     activeSub: 'Assinatura ativa',
     upgradeQp: 'Atualize para desbloquear Piscinas Rápidas',
@@ -603,7 +607,7 @@ const STRINGS = {
     poolRoutes: 'Rutas',
     sell: 'Vender',
     rent: 'Rentar',
-    routesSaleOnly: 'Las rutas de piscina son solo para venta. PoolGuyX retiene en garantía los ingresos del primer mes hasta completar la entrega.',
+    routesSaleOnly: 'Las rutas de piscina son solo para venta. Comprador y vendedor acuerdan el pago directamente — PoolGuyX no retiene ni guarda ningún fondo.',
     asking: 'Precio',
     makeOffer: 'Hacer oferta',
     requestRental: 'Solicitar renta',
@@ -690,7 +694,7 @@ const STRINGS = {
     pay: 'Pago',
     request: 'Solicitar',
     goingOnVacation: '¿Te vas de vacaciones?',
-    vacationDesc: 'Delega tu ruta a un PoolGuy de confianza. Retenemos el pago hasta que confirmes que la ruta está limpia.',
+    vacationDesc: 'Delega tu ruta a un PoolGuy de confianza. El pago se acuerda directamente entre ustedes — PoolGuyX no retiene ni guarda ningún fondo.',
     postAvailability: 'Publicar disponibilidad',
     selectedDays: 'DÍAS SELECCIONADOS',
     poolsPerDay: 'piscinas/día',
@@ -726,6 +730,8 @@ const STRINGS = {
     poolguyPro: 'PoolGuy PRO',
     premium: 'Premium',
     free: 'Gratis',
+    betaFreeTitle: 'Beta Gratuita',
+    betaFreeDesc: 'Todas las funciones están desbloqueadas para todos mientras estamos en beta — sin costo.',
     renews: 'Renueva',
     activeSub: 'Suscripción activa',
     upgradeQp: 'Actualiza para desbloquear Piscinas Rápidas',
@@ -1173,71 +1179,13 @@ const QUICK_POOLS = [{
   }
 }];
 const HIRING = [];
-const TECHS = [{
-  id: 1,
-  name: 'Rafael S.',
-  speciality: {
-    en: 'Pump & Motor Repair',
-    pt: 'Reparo de Bombas e Motores',
-    es: 'Reparación de Bombas'
-  },
-  rate: {
-    en: '$90/visit',
-    pt: 'R$450/visita',
-    es: '$90/visita'
-  },
-  loc: 'Miami',
-  phone: '(305) 487-2910',
-  email: 'rafael.pool@gmail.com'
-}, {
-  id: 2,
-  name: 'Joana P.',
-  speciality: {
-    en: 'Heater & Heat Pumps',
-    pt: 'Aquecedores e Bombas de Calor',
-    es: 'Calentadores y Bombas'
-  },
-  rate: {
-    en: '$110/visit',
-    pt: 'R$550/visita',
-    es: '$110/visita'
-  },
-  loc: 'Fort Lauderdale',
-  phone: '(954) 623-7841',
-  email: null
-}, {
-  id: 3,
-  name: 'Anderson L.',
-  speciality: {
-    en: 'Automation & Salt Cells',
-    pt: 'Automação e Células de Sal',
-    es: 'Automatización y Celdas'
-  },
-  rate: {
-    en: '$120/visit',
-    pt: 'R$600/visita',
-    es: '$120/visita'
-  },
-  loc: 'Boca Raton',
-  phone: '(561) 302-5588',
-  email: 'anderson.pool@outlook.com'
-}, {
-  id: 4,
-  name: 'Carla M.',
-  speciality: {
-    en: 'Tile & Plaster',
-    pt: 'Azulejo e Reboco',
-    es: 'Azulejo y Yeso'
-  },
-  rate: {
-    en: 'Quote',
-    pt: 'Orçamento',
-    es: 'Cotización'
-  },
-  loc: 'West Palm',
-  phone: '(561) 774-1923',
-  email: null
-}];
+
+// Used to be four invented technicians with real-looking contact info (a
+// phone number, a Gmail address) presented as real people to real users —
+// misleading regardless of whether the app charges anything. The Work →
+// Technicians tab now shows only techs real users have actually posted
+// (liveTechs, fetched from the `techs` table), same as EQUIPMENT/HIRING above.
+const TECHS = [];
 const VACATIONS_POSTED = [{
   id: 1,
   myPostId: 2,

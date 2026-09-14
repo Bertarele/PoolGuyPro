@@ -553,6 +553,17 @@ function App() {
     }
   });
 
+  // app_config is read once at boot, independent of login — a guest browsing
+  // the preview should see the same free-for-all state a logged-in user would.
+  React.useEffect(() => {
+    if (!window.sb) return;
+    window.sb.from('app_config').select('plans_enabled').eq('id', true).single().then(({
+      data
+    }) => {
+      if (data) setPlansEnabled(data.plans_enabled !== false);
+    }).catch(() => {});
+  }, []);
+
   // Keep URL hash in sync with active tab — preserve sub-segment when already on same base
   React.useEffect(() => {
     try {
@@ -675,6 +686,11 @@ function App() {
     });
   }, []);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  // 'plans_enabled' from app_config — an admin-controlled switch that lets a
+  // free-beta launch happen without exposing Stripe's SANDBOX checkout to
+  // real users. Defaults true (today's paid behavior) so nothing changes for
+  // anyone until an admin explicitly flips it off in the admin panel.
+  const [plansEnabled, setPlansEnabled] = React.useState(true);
   const [sessionExpired, setSessionExpired] = React.useState(false);
   const [user, setUser] = React.useState({
     name: '',
@@ -777,17 +793,22 @@ function App() {
       experience: profile?.experience ?? [],
       notifyPools: profile?.notify_pools !== false,
       notifyRoutes: profile?.notify_routes !== false,
-      notifyService: profile?.notify_service !== false,
-      tier: profile?.tier || 'free'
+      notifyService: profile?.notify_service !== false
+      // tier is NOT set here directly. It used to be — but this runs on every
+      // login, asynchronously, and always resolves AFTER the plansEnabled
+      // override effect's first pass (that effect fires synchronously on
+      // mount, before the network round-trip below has even started). A
+      // direct write here always landed last and always won, silently
+      // reverting the free-beta override back to the real DB tier for every
+      // single user on every single login — confirmed live: betaFreeForAll
+      // stayed true (nothing here touches it) while tier quietly went back to
+      // 'free'. tier is derived exclusively from t.tier + plansEnabled below.
     }));
-    // The tweaks panel mirrors tier into user state on change, so push the
-    // real value into it too — otherwise the locally-remembered preview
-    // tier would immediately overwrite what the database just told us.
-    if (profile?.tier) {
-      try {
-        setTweak('tier', profile.tier);
-      } catch (e) {}
-    }
+    // Feeds the plansEnabled-aware effect that actually sets user.tier — see
+    // its own comment for why the write can't happen directly here instead.
+    try {
+      setTweak('tier', profile?.tier || 'free');
+    } catch (e) {}
     // Load regionsByDay from profile if saved
     if (profile?.regions_by_day && Object.keys(profile.regions_by_day).length > 0) {
       setRegionsByDay(profile.regions_by_day);
@@ -2320,16 +2341,26 @@ function App() {
     });
   }, [user.name]);
 
-  // Sync tier tweak → user state + persist to localStorage
+  // Sync tier tweak → user state + persist to localStorage. t.tier is the
+  // REAL tier (from the database, or from the tweaks-panel preview control in
+  // the design tool — invisible to real users). When plans_enabled is off,
+  // every user's EFFECTIVE tier is forced to 'premium' — the superset of every
+  // paid feature (confirmed against the plan comparison table in overlays.jsx)
+  // — without touching t.tier or profiles.tier at all, so flipping the admin
+  // toggle back on instantly reverts everyone to what they actually paid for.
+  // realTier and betaFreeForAll ride along so the UI can tell the difference
+  // and never claims someone is on a paid plan they didn't buy.
   React.useEffect(() => {
     setUser(u => ({
       ...u,
-      tier: t.tier
+      tier: plansEnabled ? t.tier : 'premium',
+      realTier: t.tier,
+      betaFreeForAll: !plansEnabled
     }));
     try {
       localStorage.setItem('pg_tier', t.tier);
     } catch {}
-  }, [t.tier]);
+  }, [t.tier, plansEnabled]);
   const setLang = l => {
     setLangState(l);
     setTweak('lang', l);
@@ -2725,7 +2756,8 @@ function App() {
     lang: lang,
     context: payContext,
     wallet: wallet,
-    showToast: showToast
+    showToast: showToast,
+    betaFreeForAll: user.betaFreeForAll
   }), showOnboarding && (() => {
     const slides = {
       en: [{

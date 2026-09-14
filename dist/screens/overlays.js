@@ -5226,7 +5226,8 @@ function PaywallSheet({
   lang = 'en',
   context = null,
   wallet = null,
-  showToast
+  showToast,
+  betaFreeForAll = false
 }) {
   // Auto-select best plan based on context (quick pools / featured = premium)
   const [plan, setPlan] = React.useState('pro');
@@ -5328,6 +5329,17 @@ function PaywallSheet({
   const p = plans[plan];
   const handleSubscribe = async () => {
     if (busy) return;
+    // Defense in depth: every real path that opens this sheet is already
+    // gated on user.tier === 'free', which app.jsx forces away from 'free'
+    // whenever an admin has plans_enabled off — so this should be unreachable
+    // in practice. It stays here anyway so a future call site that forgets
+    // that check can never hit the live Stripe checkout (SANDBOX today) while
+    // plans are switched off for a free beta.
+    if (betaFreeForAll) {
+      showToast && showToast(lang === 'pt' ? '🎉 Tudo liberado no momento — não é preciso assinar.' : lang === 'es' ? '🎉 Todo está desbloqueado ahora mismo — no hace falta suscribirse.' : '🎉 Everything is unlocked right now — no need to subscribe.');
+      onClose && onClose();
+      return;
+    }
     setBusy(true);
     try {
       // The tier is NEVER granted here. Stripe charges the card, Stripe's

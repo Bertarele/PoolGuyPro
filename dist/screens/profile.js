@@ -1995,16 +1995,56 @@ function SubscriptionCard({
   lang = 'en',
   isDesktop = false
 }) {
-  const tiers = [{
-    id: 'free',
-    name: t.free
-  }, {
-    id: 'premium',
-    name: t.premium
-  }, {
-    id: 'pro',
-    name: 'PRO'
-  }];
+  // Free-beta: every user's gating tier is forced to 'premium' server-config
+  // side (see app.jsx's plansEnabled effect), but that must never be shown as
+  // a real subscription — nobody paid for it, and profiles.tier for most
+  // people is still 'free' underneath (user.realTier). One honest card for
+  // both layouts instead of pretending there's a plan.
+  if (user.betaFreeForAll) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "pg-card",
+      style: {
+        padding: 16,
+        background: 'linear-gradient(135deg,var(--pg-navy-900),var(--pg-blue-600))',
+        color: '#fff',
+        border: 'none',
+        position: 'relative',
+        overflow: 'hidden'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        background: 'rgba(255,255,255,0.14)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }
+    }, "\uD83C\uDF89"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'var(--pg-font-display)',
+        fontSize: 16,
+        fontWeight: 800,
+        letterSpacing: '-0.01em'
+      }
+    }, t.betaFreeTitle), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        opacity: 0.8,
+        marginTop: 2,
+        lineHeight: 1.4,
+        maxWidth: 320
+      }
+    }, t.betaFreeDesc))));
+  }
 
   // Desktop free-tier: compact premium upsell with gold/silver gradient
   if (isDesktop && user.tier === 'free') {
@@ -2143,32 +2183,7 @@ function SubscriptionCard({
       },
       onMouseEnter: e => e.currentTarget.style.filter = 'brightness(1.18)',
       onMouseLeave: e => e.currentTarget.style.filter = 'none'
-    }, t.comparePlans, " \u2726"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: 5,
-        marginTop: 14,
-        justifyContent: 'center'
-      }
-    }, tiers.map(tier => /*#__PURE__*/React.createElement("button", {
-      key: tier.id,
-      onClick: () => setUser(u => ({
-        ...u,
-        tier: tier.id
-      })),
-      style: {
-        padding: '5px 14px',
-        borderRadius: 8,
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        fontSize: 11,
-        fontWeight: 600,
-        transition: 'all .12s',
-        background: user.tier === tier.id ? 'rgba(14,186,199,0.18)' : 'rgba(255,255,255,0.05)',
-        border: '1px solid ' + (user.tier === tier.id ? 'rgba(14,186,199,0.45)' : 'rgba(255,255,255,0.08)'),
-        color: user.tier === tier.id ? '#A8EEFF' : 'rgba(255,255,255,0.35)'
-      }
-    }, tier.name))))));
+    }, t.comparePlans, " \u2726"))));
   }
 
   // Mobile / paid tiers: original card
@@ -2212,31 +2227,7 @@ function SubscriptionCard({
       opacity: 0.7,
       marginTop: 4
     }
-  }, user.tier === 'free' ? t.upgradeQp : planPriceLine(user, t, lang))), user.tier !== 'free' && Icon.crown(28, 'oklch(0.85 0.15 90)')), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      marginTop: 14
-    }
-  }, tiers.map(tier => /*#__PURE__*/React.createElement("button", {
-    key: tier.id,
-    onClick: () => setUser(u => ({
-      ...u,
-      tier: tier.id
-    })),
-    style: {
-      flex: 1,
-      padding: '8px 6px',
-      borderRadius: 10,
-      background: user.tier === tier.id ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)',
-      border: '1px solid ' + (user.tier === tier.id ? 'rgba(255,255,255,0.35)' : 'transparent'),
-      color: '#fff',
-      fontSize: 12,
-      fontWeight: 600,
-      cursor: 'pointer',
-      fontFamily: 'inherit'
-    }
-  }, tier.name))), user.tier === 'free' && /*#__PURE__*/React.createElement("button", {
+  }, user.tier === 'free' ? t.upgradeQp : planPriceLine(user, t, lang))), user.tier !== 'free' && Icon.crown(28, 'oklch(0.85 0.15 90)')), user.tier === 'free' && /*#__PURE__*/React.createElement("button", {
     onClick: openPaywall,
     className: "pg-btn pg-btn-aqua",
     style: {

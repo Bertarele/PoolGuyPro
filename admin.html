@@ -2208,6 +2208,12 @@ function AdminApp({ adminUser, onLogout }) {
   const [bannerImgUploading, setBannerImgUploading] = React.useState(false);
   const [quickPools,    setQuickPools]    = React.useState([]);
   const [withdrawals,   setWithdrawals]   = React.useState([]);
+  // Free-beta switch (app_config.plans_enabled). On = today's paid behavior
+  // (Stripe, tiers, the works). Off = every real user gets premium-level
+  // access for free — nothing is written to profiles.tier, so switching back
+  // on instantly restores whatever each person actually paid for.
+  const [plansEnabled, setPlansEnabled] = React.useState(true);
+  const [plansToggling, setPlansToggling] = React.useState(false);
   const [qpFilter,      setQpFilter]      = React.useState('active'); // 'active'|'all'
   const [editQP,        setEditQP]        = React.useState(null); // job being edited
   const [openGroups,    setOpenGroups]    = React.useState({work:false, marketplace:false});
@@ -2233,7 +2239,7 @@ function AdminApp({ adminUser, onLogout }) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [u,j,tc,m,v,d,w,r,sp,qp,fr,rtp,nar,wd,bn] = await Promise.all([
+    const [u,j,tc,m,v,d,w,r,sp,qp,fr,rtp,nar,wd,bn,ac] = await Promise.all([
       window.sb.from('profiles').select('*').order('created_at',{ascending:false}),
       window.sb.from('jobs').select('*, profiles(name, email)').order('created_at',{ascending:false}),
       window.sb.from('techs').select('*').order('created_at',{ascending:false}),
@@ -2249,7 +2255,9 @@ function AdminApp({ adminUser, onLogout }) {
       window._adminListTable('new_account_raters'),
       window.sb.from('withdrawal_requests').select('*').order('created_at',{ascending:false}).limit(200),
       window.sb.from('sponsor_banners').select('*').order('created_at',{ascending:false}),
+      window.sb.from('app_config').select('plans_enabled').eq('id', true).single(),
     ]);
+    if(ac.data) setPlansEnabled(ac.data.plans_enabled !== false);
     if(u.data) setUsers(u.data);
     if(j.data) setJobs(j.data);
     if(tc.data) setTechs(tc.data);
@@ -2510,6 +2518,24 @@ function AdminApp({ adminUser, onLogout }) {
       {v==='approved'?'✓ Aprovado':'⏳ Pendente'}
     </span>
   );
+  // Free-beta switch. Confirmed both ways because it changes what every
+  // current user sees the moment it lands — turning it off waives all
+  // subscription revenue immediately; turning it back on puts real paywalls
+  // (and the live Stripe checkout) back in front of free-tier users.
+  const togglePlansEnabled = async () => {
+    const next = !plansEnabled;
+    const msg = next
+      ? 'Reativar os planos pagos?\n\nTodo mundo volta a ver o paywall e o checkout do Stripe conforme o plano que realmente tem — quem estava usando de graça no beta perde o acesso pago na hora.'
+      : 'Desativar os planos e liberar o app 100% grátis para todo mundo?\n\nNinguém vê paywall nem checkout enquanto isso estiver desligado — todos ficam com acesso completo (nível Premium), sem cobrar nada. Nenhuma assinatura real é alterada; é só reativar depois para voltar ao normal.';
+    if (!confirm(msg)) return;
+    setPlansToggling(true);
+    const { error } = await window.sb.from('app_config').update({ plans_enabled: next }).eq('id', true);
+    setPlansToggling(false);
+    if (error) { showToast('❌ ' + error.message, false); return; }
+    setPlansEnabled(next);
+    showToast(next ? '✓ Planos pagos reativados.' : '✓ App liberado 100% grátis — modo Beta ativo.');
+  };
+
   const toggleFeatured = async (row) => {
     const next = !row.featured;
     const { error } = await window.sb.from('marketplace').update({ featured: next }).eq('id', row.id);
@@ -2668,6 +2694,32 @@ function AdminApp({ adminUser, onLogout }) {
                   <div style={{fontSize:18,color:'#f59e0b',opacity:0.7}}>→</div>
                 </div>
               )}
+
+              {/* Free-beta switch — off means every real user gets full
+                  access for free, without touching anyone's real tier. */}
+              <div style={{background:'#1a1f2e',border:'1px solid '+(plansEnabled?'#1e293b':'#0EBAC750'),borderRadius:14,padding:'15px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:14}}>
+                <div style={{width:38,height:38,borderRadius:10,background:plansEnabled?'#33415520':'#0EBAC720',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>
+                  {plansEnabled ? '💳' : '🎉'}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:700,fontSize:13.5,color: plansEnabled ? '#f1f5f9' : '#0EBAC7'}}>
+                    {plansEnabled ? 'Planos pagos ativos' : 'App 100% grátis (Beta)'}
+                  </div>
+                  <div style={{fontSize:12,color:'#94a3b8',marginTop:1}}>
+                    {plansEnabled
+                      ? 'Cada usuário vê o paywall e paga conforme o plano real.'
+                      : 'Todo mundo tem acesso completo de graça — nenhuma assinatura real foi alterada.'}
+                  </div>
+                </div>
+                <button onClick={togglePlansEnabled} disabled={plansToggling} style={{
+                  flexShrink:0, height:32, padding:'0 16px', borderRadius:999, border:'none',
+                  cursor: plansToggling ? 'default' : 'pointer', fontFamily:'inherit', fontSize:12.5, fontWeight:700,
+                  background: plansEnabled ? '#33415530' : '#0EBAC7', color: plansEnabled ? '#94a3b8' : '#0b1420',
+                  opacity: plansToggling ? 0.6 : 1,
+                }}>
+                  {plansToggling ? '…' : (plansEnabled ? 'Desativar (liberar grátis)' : 'Reativar planos pagos')}
+                </button>
+              </div>
 
               <div className="stat-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:12,marginBottom:24}}>
                 <StatCard label="Total de Usuários"  value={stats.users}    color="#0EBAC7" icon={IC.users}  onClick={()=>goSection('users')}/>

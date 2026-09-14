@@ -19,7 +19,7 @@ const STRINGS = {
     todayJobs:'Today\'s pool jobs', seeAllOpps:'See all', todayJobsSub:'tap to view & apply',
     // Marketplace
     equipment:'Equipment', poolRoutes:'Pool Routes', sell:'Sell', rent:'Rent',
-    routesSaleOnly:'Pool routes are sale-only. PoolGuyX escrows the first month\'s revenue until handoff is complete.',
+    routesSaleOnly:'Pool routes are sale-only. Buyer and seller arrange payment directly — PoolGuyX does not hold or escrow any funds.',
     asking:'Asking', makeOffer:'Make offer', requestRental:'Request rental',
     itemsSell:'items · Sell', itemsRent:'items · Rent', routesFor:'routes for sale',
     // Express Pools
@@ -57,7 +57,7 @@ const STRINGS = {
     fullTime:'Full-time', partTime:'Part-time', contract:'Contract', remote:'Remote', withTruck:'With truck',
     pay:'Pay', request:'Request',
     goingOnVacation:'Going on vacation?',
-    vacationDesc:'Delegate your route to a trusted PoolGuy. We escrow payment until you confirm the route is clean.',
+    vacationDesc:'Delegate your route to a trusted PoolGuy. Payment is arranged directly between you two — PoolGuyX does not hold or escrow any funds.',
     postAvailability:'Post my availability',
     selectedDays:'SELECTED DAYS', poolsPerDay:'pools/day', days:'days',
     viewApplicants:'View applicants', viewSchedule:'View schedule', withdraw:'Withdraw',
@@ -71,6 +71,7 @@ const STRINGS = {
     verification:'Verification', verifyPending:'Under review', notVerified:'Not verified', alwaysLbl:'Always',
     helpSupport:'Help & support', privacy:'Privacy', logout:'Log out',
     subscription:'SUBSCRIPTION', poolguyPro:'PoolGuy PRO', premium:'Premium', free:'Free tier',
+    betaFreeTitle:'Free Beta', betaFreeDesc:'Every feature is unlocked for everyone during the beta — no charge.',
     renews:'Renews', activeSub:'Active subscription', upgradeQp:'Upgrade to unlock Express Pools', comparePlans:'Compare plans',
     tapTier:'Tap a tier to preview gating behavior across the app',
     on:'On', english:'English', portuguese:'Português', spanish:'Español',
@@ -135,7 +136,7 @@ const STRINGS = {
     activityAgo:'atrás',
     todayJobs:'Piscinas para hoje', seeAllOpps:'Ver tudo', todayJobsSub:'toque para ver e candidatar',
     equipment:'Equipamento', poolRoutes:'Rotas', sell:'Vender', rent:'Alugar',
-    routesSaleOnly:'Rotas de piscina são apenas para venda. O PoolGuyX guarda em garantia a receita do primeiro mês até a entrega ser concluída.',
+    routesSaleOnly:'Rotas de piscina são apenas para venda. Comprador e vendedor combinam o pagamento diretamente — o PoolGuyX não retém nem guarda nenhum valor.',
     asking:'Pedido', makeOffer:'Fazer oferta', requestRental:'Solicitar aluguel',
     itemsSell:'itens · Venda', itemsRent:'itens · Aluguel', routesFor:'rotas à venda',
     postQuick:'Publicar Piscina Rápida', yourRegions:'SUAS REGIÕES', mapView:'Ver mapa',
@@ -170,7 +171,7 @@ const STRINGS = {
     fullTime:'Tempo integral', partTime:'Meio período', contract:'Contrato', remote:'Remoto', withTruck:'Com veículo',
     pay:'Salário', request:'Solicitar',
     goingOnVacation:'Vai sair de férias?',
-    vacationDesc:'Delegue sua rota a um PoolGuy confiável. O pagamento fica em garantia até você confirmar que a rota está limpa.',
+    vacationDesc:'Delegue sua rota a um PoolGuy confiável. O pagamento é combinado diretamente entre vocês dois — o PoolGuyX não retém nem guarda nenhum valor.',
     postAvailability:'Publicar disponibilidade',
     selectedDays:'DIAS SELECIONADOS', poolsPerDay:'piscinas/dia', days:'dias',
     viewApplicants:'Ver candidatos', viewSchedule:'Ver agenda', withdraw:'Retirar',
@@ -183,6 +184,7 @@ const STRINGS = {
     verification:'Verificação', verifyPending:'Em análise', notVerified:'Não verificado', alwaysLbl:'Sempre',
     helpSupport:'Ajuda e suporte', privacy:'Privacidade', logout:'Sair',
     subscription:'ASSINATURA', poolguyPro:'PoolGuy PRO', premium:'Premium', free:'Gratuito',
+    betaFreeTitle:'Beta Gratuito', betaFreeDesc:'Todos os recursos estão liberados para todo mundo enquanto estamos em beta — sem cobrança.',
     renews:'Renova', activeSub:'Assinatura ativa', upgradeQp:'Atualize para desbloquear Piscinas Rápidas', comparePlans:'Comparar planos',
     tapTier:'Toque em um plano para visualizar o comportamento de bloqueio no app',
     on:'Ativo', english:'English', portuguese:'Português', spanish:'Español',
@@ -245,7 +247,7 @@ const STRINGS = {
     activityAgo:'atrás',
     todayJobs:'Piscinas para hoy', seeAllOpps:'Ver todo', todayJobsSub:'toca para ver y postular',
     equipment:'Equipo', poolRoutes:'Rutas', sell:'Vender', rent:'Rentar',
-    routesSaleOnly:'Las rutas de piscina son solo para venta. PoolGuyX retiene en garantía los ingresos del primer mes hasta completar la entrega.',
+    routesSaleOnly:'Las rutas de piscina son solo para venta. Comprador y vendedor acuerdan el pago directamente — PoolGuyX no retiene ni guarda ningún fondo.',
     asking:'Precio', makeOffer:'Hacer oferta', requestRental:'Solicitar renta',
     itemsSell:'artículos · Venta', itemsRent:'artículos · Renta', routesFor:'rutas en venta',
     postQuick:'Publicar Piscina Rápida', yourRegions:'TUS REGIONES', mapView:'Ver mapa',
@@ -280,7 +282,7 @@ const STRINGS = {
     fullTime:'Tiempo completo', partTime:'Medio tiempo', contract:'Contrato', remote:'Remoto', withTruck:'Con camioneta',
     pay:'Pago', request:'Solicitar',
     goingOnVacation:'¿Te vas de vacaciones?',
-    vacationDesc:'Delega tu ruta a un PoolGuy de confianza. Retenemos el pago hasta que confirmes que la ruta está limpia.',
+    vacationDesc:'Delega tu ruta a un PoolGuy de confianza. El pago se acuerda directamente entre ustedes — PoolGuyX no retiene ni guarda ningún fondo.',
     postAvailability:'Publicar disponibilidad',
     selectedDays:'DÍAS SELECCIONADOS', poolsPerDay:'piscinas/día', days:'días',
     viewApplicants:'Ver postulantes', viewSchedule:'Ver agenda', withdraw:'Retirar',
@@ -293,6 +295,7 @@ const STRINGS = {
     verification:'Verificación', verifyPending:'En revisión', notVerified:'No verificado', alwaysLbl:'Siempre',
     helpSupport:'Ayuda y soporte', privacy:'Privacidad', logout:'Cerrar sesión',
     subscription:'SUSCRIPCIÓN', poolguyPro:'PoolGuy PRO', premium:'Premium', free:'Gratis',
+    betaFreeTitle:'Beta Gratuita', betaFreeDesc:'Todas las funciones están desbloqueadas para todos mientras estamos en beta — sin costo.',
     renews:'Renueva', activeSub:'Suscripción activa', upgradeQp:'Actualiza para desbloquear Piscinas Rápidas', comparePlans:'Comparar planes',
     tapTier:'Toca un plan para previsualizar el bloqueo en la app',
     on:'Activo', english:'English', portuguese:'Português', spanish:'Español',
@@ -456,12 +459,12 @@ const QUICK_POOLS = [
 
 const HIRING = [];
 
-const TECHS = [
-  { id:1, name:'Rafael S.',  speciality:{en:'Pump & Motor Repair', pt:'Reparo de Bombas e Motores', es:'Reparación de Bombas'},    rate:{en:'$90/visit', pt:'R$450/visita', es:'$90/visita'}, loc:'Miami',          phone:'(305) 487-2910', email:'rafael.pool@gmail.com' },
-  { id:2, name:'Joana P.',   speciality:{en:'Heater & Heat Pumps', pt:'Aquecedores e Bombas de Calor', es:'Calentadores y Bombas'}, rate:{en:'$110/visit', pt:'R$550/visita', es:'$110/visita'}, loc:'Fort Lauderdale', phone:'(954) 623-7841', email:null },
-  { id:3, name:'Anderson L.',speciality:{en:'Automation & Salt Cells', pt:'Automação e Células de Sal', es:'Automatización y Celdas'}, rate:{en:'$120/visit', pt:'R$600/visita', es:'$120/visita'}, loc:'Boca Raton',    phone:'(561) 302-5588', email:'anderson.pool@outlook.com' },
-  { id:4, name:'Carla M.',   speciality:{en:'Tile & Plaster', pt:'Azulejo e Reboco', es:'Azulejo y Yeso'},         rate:{en:'Quote', pt:'Orçamento', es:'Cotización'}, loc:'West Palm',       phone:'(561) 774-1923', email:null },
-];
+// Used to be four invented technicians with real-looking contact info (a
+// phone number, a Gmail address) presented as real people to real users —
+// misleading regardless of whether the app charges anything. The Work →
+// Technicians tab now shows only techs real users have actually posted
+// (liveTechs, fetched from the `techs` table), same as EQUIPMENT/HIRING above.
+const TECHS = [];
 
 const VACATIONS_POSTED = [
   { id:1, myPostId:2, month:{en:'June 2026', pt:'Junho 2026', es:'Junio 2026'},

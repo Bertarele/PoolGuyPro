@@ -908,11 +908,30 @@ function planPriceLine(user, t, lang) {
 }
 
 function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=false }) {
-  const tiers = [
-    { id:'free',    name:t.free },
-    { id:'premium', name:t.premium },
-    { id:'pro',     name:'PRO' },
-  ];
+  // Free-beta: every user's gating tier is forced to 'premium' server-config
+  // side (see app.jsx's plansEnabled effect), but that must never be shown as
+  // a real subscription — nobody paid for it, and profiles.tier for most
+  // people is still 'free' underneath (user.realTier). One honest card for
+  // both layouts instead of pretending there's a plan.
+  if (user.betaFreeForAll) {
+    return (
+      <div className="pg-card" style={{padding:16, background:'linear-gradient(135deg,var(--pg-navy-900),var(--pg-blue-600))', color:'#fff', border:'none', position:'relative', overflow:'hidden'}}>
+        <div style={{display:'flex', alignItems:'center', gap:12}}>
+          <div style={{width:44, height:44, borderRadius:12, background:'rgba(255,255,255,0.14)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+            🎉
+          </div>
+          <div>
+            <div style={{fontFamily:'var(--pg-font-display)', fontSize:16, fontWeight:800, letterSpacing:'-0.01em'}}>
+              {t.betaFreeTitle}
+            </div>
+            <div style={{fontSize:12, opacity:0.8, marginTop:2, lineHeight:1.4, maxWidth:320}}>
+              {t.betaFreeDesc}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Desktop free-tier: compact premium upsell with gold/silver gradient
   if (isDesktop && user.tier === 'free') {
@@ -987,18 +1006,6 @@ function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=
             >
               {t.comparePlans} ✦
             </button>
-            {/* Tier switcher (for demo) */}
-            <div style={{display:'flex', gap:5, marginTop:14, justifyContent:'center'}}>
-              {tiers.map(tier => (
-                <button key={tier.id} onClick={()=>setUser(u=>({...u,tier:tier.id}))} style={{
-                  padding:'5px 14px', borderRadius:8, cursor:'pointer', fontFamily:'inherit',
-                  fontSize:11, fontWeight:600, transition:'all .12s',
-                  background: user.tier===tier.id ? 'rgba(14,186,199,0.18)' : 'rgba(255,255,255,0.05)',
-                  border: '1px solid '+(user.tier===tier.id ? 'rgba(14,186,199,0.45)' : 'rgba(255,255,255,0.08)'),
-                  color: user.tier===tier.id ? '#A8EEFF' : 'rgba(255,255,255,0.35)',
-                }}>{tier.name}</button>
-              ))}
-            </div>
           </div>
         </div>
       </div>
@@ -1021,16 +1028,6 @@ function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=
           </div>
         </div>
         {user.tier!=='free' && Icon.crown(28,'oklch(0.85 0.15 90)')}
-      </div>
-      <div style={{display:'flex', gap:6, marginTop:14}}>
-        {tiers.map(tier => (
-          <button key={tier.id} onClick={()=>setUser(u=>({...u,tier:tier.id}))} style={{
-            flex:1, padding:'8px 6px', borderRadius:10,
-            background:user.tier===tier.id?'rgba(255,255,255,0.18)':'rgba(255,255,255,0.06)',
-            border:'1px solid '+(user.tier===tier.id?'rgba(255,255,255,0.35)':'transparent'),
-            color:'#fff', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
-          }}>{tier.name}</button>
-        ))}
       </div>
       {user.tier==='free' && (
         <button onClick={openPaywall} className="pg-btn pg-btn-aqua" style={{width:'100%', height:42, fontSize:14, marginTop:10}}>
