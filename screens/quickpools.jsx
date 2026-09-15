@@ -397,15 +397,24 @@ function QuickPoolsScreen({ ctx }) {
   // Applicant counts for jobs the current user posted — shown directly on the
   // card so the poster doesn't have to open the listing to know if anyone applied.
   const [qpApplicantCounts, setQpApplicantCounts] = React.useState({}); // job_id -> count
+  // Same query also tells us which of the owner's filled jobs already have
+  // photos waiting on them, so the card can say "review photos" instead of
+  // a generic "in progress" that no longer matches what's actually happening.
+  const [qpOwnDoneJobIds, setQpOwnDoneJobIds] = React.useState(new Set()); // job_id set
   const myJobIdsKey = jobs.filter(j => j.poster_id === user?.uid).map(j => j.id).sort().join(',');
   const loadQpApplicantCounts = React.useCallback(() => {
-    if (!window.sb || !myJobIdsKey) { setQpApplicantCounts({}); return; }
+    if (!window.sb || !myJobIdsKey) { setQpApplicantCounts({}); setQpOwnDoneJobIds(new Set()); return; }
     const ids = myJobIdsKey.split(',');
-    window.sb.from('quick_pool_applications').select('job_id').neq('status', 'withdrawn').in('job_id', ids)
+    window.sb.from('quick_pool_applications').select('job_id,status,pool_guy_done').neq('status', 'withdrawn').in('job_id', ids)
       .then(({ data }) => {
         const counts = {};
-        (data || []).forEach(a => { counts[a.job_id] = (counts[a.job_id] || 0) + 1; });
+        const done = new Set();
+        (data || []).forEach(a => {
+          counts[a.job_id] = (counts[a.job_id] || 0) + 1;
+          if (a.status === 'accepted' && a.pool_guy_done) done.add(String(a.job_id));
+        });
         setQpApplicantCounts(counts);
+        setQpOwnDoneJobIds(done);
       })
       .catch(() => {});
   }, [myJobIdsKey]);
@@ -688,6 +697,9 @@ function QuickPoolsScreen({ ctx }) {
     const isAccepted   = !isOwn && myAcceptedJobIds.has(String(j.id));
     // Amber for the owner when someone has been accepted (job filled, pending finalization)
     const isOwnFilled  = isOwn && j.status === 'filled';
+    // Once the pool guy has submitted photos, "in progress" is no longer
+    // true — the ball's back in the owner's court to check and finalize.
+    const isOwnFilledDone = isOwnFilled && qpOwnDoneJobIds.has(String(j.id));
     const isDone       = !isOwn && myDoneJobIds.has(String(j.id));
     // A downgrade to free mid-job shouldn't lock someone out of a job they
     // already applied to, got accepted for, or finished while still Premium —
@@ -704,15 +716,19 @@ function QuickPoolsScreen({ ctx }) {
           borderRadius:16, cursor:'pointer', opacity: isDone ? 0.7 : 1,
           border: isDone
             ? '1px solid var(--pg-ink-300,#CBD5E1)'
-            : isOwnFilled
-              ? '2px solid #F59E0B'
-              : isAccepted
-                ? '2px solid #22C55E'
-                : isHighlighted
-                  ? '2px solid #00B4D8'
-                  : '1px solid var(--pg-ink-200)',
+            : isOwnFilledDone
+              ? '2px solid #3B82F6'
+              : isOwnFilled
+                ? '2px solid #F59E0B'
+                : isAccepted
+                  ? '2px solid #22C55E'
+                  : isHighlighted
+                    ? '2px solid #00B4D8'
+                    : '1px solid var(--pg-ink-200)',
           boxShadow: isDone
             ? 'none'
+            : isOwnFilledDone
+            ? '0 0 0 4px rgba(59,130,246,0.10), 0 6px 20px rgba(59,130,246,0.15)'
             : isOwnFilled
             ? '0 0 0 4px rgba(245,158,11,0.10), 0 6px 20px rgba(245,158,11,0.15)'
             : isAccepted
@@ -725,7 +741,7 @@ function QuickPoolsScreen({ ctx }) {
         }}>
 
         {/* Top accent strip — only for states that DON'T already have a
-            colored border (isOwnFilled/isAccepted/isHighlighted/isDone).
+            colored border (isOwnFilled/isOwnFilledDone/isAccepted/isHighlighted/isDone).
             Stacking a flat-edged strip on top of a rounded, colored border
             made the top edge read as thicker than the sides — an actual
             visual bug, not just two accents layered on purpose. */}
@@ -856,7 +872,16 @@ function QuickPoolsScreen({ ctx }) {
               </div>
             </div>
 
-            {isOwnFilled ? (
+            {isOwnFilledDone ? (
+              <div style={{
+                height:36, padding:'0 14px', borderRadius:999,
+                background:'#EFF6FF', border:'1px solid #93C5FD',
+                color:'#1D4ED8', fontSize:12, fontWeight:700,
+                display:'flex', alignItems:'center', gap:6,
+              }}>
+                📸 {lang==='pt'?'Revisar fotos':lang==='es'?'Revisar fotos':'Review photos'}
+              </div>
+            ) : isOwnFilled ? (
               <div style={{
                 height:36, padding:'0 14px', borderRadius:999,
                 background:'#FFFBEB', border:'1px solid #FCD34D',
@@ -2922,14 +2947,25 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
           {lang==='pt'?'Piscinas Rápidas':lang==='es'?'Piscinas Rápidas':'Express Pools'}
         </button>
         {isOwnFilled && (
-          <div style={{
-            height:32, padding:'0 12px', borderRadius:9,
-            background:'#FFFBEB', border:'1px solid #FCD34D',
-            color:'#92400E', fontSize:12, fontWeight:700,
-            display:'flex', alignItems:'center', gap:6,
-          }}>
-            ⏳ {lang==='pt'?'Em andamento':lang==='es'?'En curso':'In progress'}
-          </div>
+          acceptedApp?.pool_guy_done ? (
+            <div style={{
+              height:32, padding:'0 12px', borderRadius:9,
+              background:'#EFF6FF', border:'1px solid #93C5FD',
+              color:'#1D4ED8', fontSize:12, fontWeight:700,
+              display:'flex', alignItems:'center', gap:6,
+            }}>
+              📸 {lang==='pt'?'Revisar fotos':lang==='es'?'Revisar fotos':'Review photos'}
+            </div>
+          ) : (
+            <div style={{
+              height:32, padding:'0 12px', borderRadius:9,
+              background:'#FFFBEB', border:'1px solid #FCD34D',
+              color:'#92400E', fontSize:12, fontWeight:700,
+              display:'flex', alignItems:'center', gap:6,
+            }}>
+              ⏳ {lang==='pt'?'Em andamento':lang==='es'?'En curso':'In progress'}
+            </div>
+          )
         )}
         {((isOwn && !isOwnFilled) || (isAdmin && !isOwn && job._live)) && (
           <div style={{display:'flex', alignItems:'center', gap:6}}>

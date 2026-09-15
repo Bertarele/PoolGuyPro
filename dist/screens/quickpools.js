@@ -690,21 +690,29 @@ function QuickPoolsScreen({
   // Applicant counts for jobs the current user posted — shown directly on the
   // card so the poster doesn't have to open the listing to know if anyone applied.
   const [qpApplicantCounts, setQpApplicantCounts] = React.useState({}); // job_id -> count
+  // Same query also tells us which of the owner's filled jobs already have
+  // photos waiting on them, so the card can say "review photos" instead of
+  // a generic "in progress" that no longer matches what's actually happening.
+  const [qpOwnDoneJobIds, setQpOwnDoneJobIds] = React.useState(new Set()); // job_id set
   const myJobIdsKey = jobs.filter(j => j.poster_id === user?.uid).map(j => j.id).sort().join(',');
   const loadQpApplicantCounts = React.useCallback(() => {
     if (!window.sb || !myJobIdsKey) {
       setQpApplicantCounts({});
+      setQpOwnDoneJobIds(new Set());
       return;
     }
     const ids = myJobIdsKey.split(',');
-    window.sb.from('quick_pool_applications').select('job_id').neq('status', 'withdrawn').in('job_id', ids).then(({
+    window.sb.from('quick_pool_applications').select('job_id,status,pool_guy_done').neq('status', 'withdrawn').in('job_id', ids).then(({
       data
     }) => {
       const counts = {};
+      const done = new Set();
       (data || []).forEach(a => {
         counts[a.job_id] = (counts[a.job_id] || 0) + 1;
+        if (a.status === 'accepted' && a.pool_guy_done) done.add(String(a.job_id));
       });
       setQpApplicantCounts(counts);
+      setQpOwnDoneJobIds(done);
     }).catch(() => {});
   }, [myJobIdsKey]);
   React.useEffect(() => {
@@ -1090,6 +1098,9 @@ function QuickPoolsScreen({
     const isAccepted = !isOwn && myAcceptedJobIds.has(String(j.id));
     // Amber for the owner when someone has been accepted (job filled, pending finalization)
     const isOwnFilled = isOwn && j.status === 'filled';
+    // Once the pool guy has submitted photos, "in progress" is no longer
+    // true — the ball's back in the owner's court to check and finalize.
+    const isOwnFilledDone = isOwnFilled && qpOwnDoneJobIds.has(String(j.id));
     const isDone = !isOwn && myDoneJobIds.has(String(j.id));
     // A downgrade to free mid-job shouldn't lock someone out of a job they
     // already applied to, got accepted for, or finished while still Premium —
@@ -1107,8 +1118,8 @@ function QuickPoolsScreen({
         borderRadius: 16,
         cursor: 'pointer',
         opacity: isDone ? 0.7 : 1,
-        border: isDone ? '1px solid var(--pg-ink-300,#CBD5E1)' : isOwnFilled ? '2px solid #F59E0B' : isAccepted ? '2px solid #22C55E' : isHighlighted ? '2px solid #00B4D8' : '1px solid var(--pg-ink-200)',
-        boxShadow: isDone ? 'none' : isOwnFilled ? '0 0 0 4px rgba(245,158,11,0.10), 0 6px 20px rgba(245,158,11,0.15)' : isAccepted ? '0 0 0 4px rgba(34,197,94,0.12), 0 6px 20px rgba(34,197,94,0.18)' : isHighlighted ? '0 0 0 4px rgba(0,180,216,0.18), 0 6px 20px rgba(0,180,216,0.22)' : '0 2px 8px rgba(0,0,0,0.05)',
+        border: isDone ? '1px solid var(--pg-ink-300,#CBD5E1)' : isOwnFilledDone ? '2px solid #3B82F6' : isOwnFilled ? '2px solid #F59E0B' : isAccepted ? '2px solid #22C55E' : isHighlighted ? '2px solid #00B4D8' : '1px solid var(--pg-ink-200)',
+        boxShadow: isDone ? 'none' : isOwnFilledDone ? '0 0 0 4px rgba(59,130,246,0.10), 0 6px 20px rgba(59,130,246,0.15)' : isOwnFilled ? '0 0 0 4px rgba(245,158,11,0.10), 0 6px 20px rgba(245,158,11,0.15)' : isAccepted ? '0 0 0 4px rgba(34,197,94,0.12), 0 6px 20px rgba(34,197,94,0.18)' : isHighlighted ? '0 0 0 4px rgba(0,180,216,0.18), 0 6px 20px rgba(0,180,216,0.22)' : '0 2px 8px rgba(0,0,0,0.05)',
         transition: 'all .2s ease',
         overflow: 'hidden'
       }
@@ -1351,7 +1362,21 @@ function QuickPoolsScreen({
         color: 'var(--pg-ink-500)',
         fontWeight: 500
       }
-    }, j.rating)))), isOwnFilled ? /*#__PURE__*/React.createElement("div", {
+    }, j.rating)))), isOwnFilledDone ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 36,
+        padding: '0 14px',
+        borderRadius: 999,
+        background: '#EFF6FF',
+        border: '1px solid #93C5FD',
+        color: '#1D4ED8',
+        fontSize: 12,
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, "\uD83D\uDCF8 ", lang === 'pt' ? 'Revisar fotos' : lang === 'es' ? 'Revisar fotos' : 'Review photos') : isOwnFilled ? /*#__PURE__*/React.createElement("div", {
       style: {
         height: 36,
         padding: '0 14px',
@@ -5077,7 +5102,21 @@ function QuickPoolDetails({
     strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("polyline", {
     points: "15 18 9 12 15 6"
-  })), lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'), isOwnFilled && /*#__PURE__*/React.createElement("div", {
+  })), lang === 'pt' ? 'Piscinas Rápidas' : lang === 'es' ? 'Piscinas Rápidas' : 'Express Pools'), isOwnFilled && (acceptedApp?.pool_guy_done ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 32,
+      padding: '0 12px',
+      borderRadius: 9,
+      background: '#EFF6FF',
+      border: '1px solid #93C5FD',
+      color: '#1D4ED8',
+      fontSize: 12,
+      fontWeight: 700,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6
+    }
+  }, "\uD83D\uDCF8 ", lang === 'pt' ? 'Revisar fotos' : lang === 'es' ? 'Revisar fotos' : 'Review photos') : /*#__PURE__*/React.createElement("div", {
     style: {
       height: 32,
       padding: '0 12px',
@@ -5091,7 +5130,7 @@ function QuickPoolDetails({
       alignItems: 'center',
       gap: 6
     }
-  }, "\u23F3 ", lang === 'pt' ? 'Em andamento' : lang === 'es' ? 'En curso' : 'In progress'), (isOwn && !isOwnFilled || isAdmin && !isOwn && job._live) && /*#__PURE__*/React.createElement("div", {
+  }, "\u23F3 ", lang === 'pt' ? 'Em andamento' : lang === 'es' ? 'En curso' : 'In progress')), (isOwn && !isOwnFilled || isAdmin && !isOwn && job._live) && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
