@@ -26,6 +26,18 @@ const json = (body: unknown, status = 200) =>
 
 const sbHeaders = { apikey: SB_SRK, Authorization: `Bearer ${SB_SRK}`, 'Content-Type': 'application/json' };
 
+// Flat-dollar coupons, one per plan/billing pair (Stripe coupons with
+// amount_off are fixed at creation, so a percentage can flex with price but
+// a dollar amount needs its own coupon per combo). Must match
+// referral_discount_cents() in the DB — that function is what actually
+// decides the amount; this is just which pre-made coupon carries it.
+const REFERRAL_COUPONS: Record<string, string> = {
+  pro_monthly: 'referral_pro_monthly_5',
+  pro_annual: 'referral_pro_annual_7',
+  premium_monthly: 'referral_premium_monthly_7',
+  premium_annual: 'referral_premium_annual_10',
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'POST')    return json({ error: 'method_not_allowed' }, 405);
@@ -83,7 +95,7 @@ Deno.serve(async (req) => {
       `${SB_URL}/rest/v1/referrals?referred_id=eq.${uid}&status=eq.pending&select=id`, { headers: sbHeaders });
     const hasPendingReferral = ((await refRes.json()) || []).length > 0;
     const discounts = hasPendingReferral
-      ? [{ coupon: billing === 'monthly' ? 'referral_monthly_10' : 'referral_annual_5' }]
+      ? [{ coupon: REFERRAL_COUPONS[`${plan}_${billing}`] }]
       : undefined;
 
     const session = await stripe.checkout.sessions.create({

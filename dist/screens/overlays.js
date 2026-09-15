@@ -5240,9 +5240,11 @@ function PaywallSheet({
   const mo = billing === 'annual' ? lang === 'pt' ? '/ano' : lang === 'es' ? '/año' : '/yr' : lang === 'pt' ? '/mês' : lang === 'es' ? '/mes' : '/mo';
 
   // Discount this user is entitled to for having joined via a referral
-  // link. Read-only here — the real discount is applied server-side at
-  // checkout, so a tampered client gains nothing by faking it.
-  const refDiscount = wallet?.my_discount ? billing === 'annual' ? wallet.my_discount.annual_pct : wallet.my_discount.monthly_pct : 0;
+  // link, in cents, for whichever plan/billing they currently have
+  // selected. Read-only here — the real discount is applied server-side at
+  // checkout (see REFERRAL_COUPONS in create-checkout-session), so a
+  // tampered client gains nothing by faking it.
+  const refDiscountCents = wallet?.my_discount ? wallet.my_discount[`${plan}_${billing}_cents`] || 0 : 0;
   const plans = {
     pro: {
       name: 'Pool Guy PRO',
@@ -5489,7 +5491,7 @@ function PaywallSheet({
       fontWeight: 800,
       color: '#0D7280'
     }
-  }, lang === 'pt' ? '-17%' : lang === 'es' ? '-17%' : '-17%'))), refDiscount > 0 && /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? '-17%' : lang === 'es' ? '-17%' : '-17%'))), refDiscountCents > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10,
       padding: '9px 13px',
@@ -5511,7 +5513,7 @@ function PaywallSheet({
       color: 'var(--pg-ink-800)',
       lineHeight: 1.4
     }
-  }, lang === 'pt' ? `Você entrou por indicação: ${refDiscount}% de desconto aplicado no checkout.` : lang === 'es' ? `Entraste por referido: ${refDiscount}% de descuento aplicado en el pago.` : `You joined via a referral: ${refDiscount}% off applied at checkout.`)), context === 'qp_weekly_limit' && /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? `Você entrou por indicação: ${money(refDiscountCents)} de desconto aplicado no checkout.` : lang === 'es' ? `Entraste por referido: ${money(refDiscountCents)} de descuento aplicado en el pago.` : `You joined via a referral: ${money(refDiscountCents)} off applied at checkout.`)), context === 'qp_weekly_limit' && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
       padding: '9px 13px',
@@ -5951,7 +5953,7 @@ function WalletSheet({
     monthly: 'Mensal',
     annual: 'Anual',
     youGet: 'Você tem desconto',
-    youGetSub: 'Alguém te indicou — seu desconto é aplicado na assinatura.',
+    youGetSub: 'Alguém te indicou — o valor é o mesmo da tabela abaixo, aplicado no plano que você escolher.',
     askAmount: 'Quanto deseja sacar?',
     confirmWd: 'Solicitar saque',
     cancel: 'Cancelar',
@@ -5987,7 +5989,7 @@ function WalletSheet({
     monthly: 'Mensual',
     annual: 'Anual',
     youGet: 'Tienes descuento',
-    youGetSub: 'Alguien te refirió — tu descuento se aplica en la suscripción.',
+    youGetSub: 'Alguien te refirió — el monto es el mismo de la tabla de abajo, aplicado al plan que elijas.',
     askAmount: '¿Cuánto quieres retirar?',
     confirmWd: 'Solicitar retiro',
     cancel: 'Cancelar',
@@ -6023,7 +6025,7 @@ function WalletSheet({
     monthly: 'Monthly',
     annual: 'Annual',
     youGet: 'You have a discount',
-    youGetSub: 'Someone referred you — your discount applies at checkout.',
+    youGetSub: 'Someone referred you — it\'s the same amount as the table below, applied to whichever plan you pick.',
     askAmount: 'How much do you want to withdraw?',
     confirmWd: 'Request withdrawal',
     cancel: 'Cancel',
@@ -6321,7 +6323,7 @@ function WalletSheet({
       color: 'var(--pg-ink-900)',
       marginBottom: 2
     }
-  }, "\uD83C\uDF81 ", L.youGet, " \u2014 ", myDisc.monthly_pct, "% / ", myDisc.annual_pct, "%"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83C\uDF81 ", L.youGet), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11.5,
       color: 'var(--pg-ink-600)',
@@ -6487,7 +6489,7 @@ function WalletSheet({
       color: 'var(--pg-ink-500)',
       lineHeight: 1.45
     }
-  }, lang === 'pt' ? 'Quem entrar pelo seu link ganha 10% de desconto no plano mensal e 5% no anual.' : lang === 'es' ? 'Quien entre por tu enlace obtiene 10% de descuento en el plan mensual y 5% en el anual.' : 'Whoever joins through your link gets 10% off monthly and 5% off annual.')), referred === 0 && /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'Quem entrar pelo seu link ganha o mesmo valor em desconto na assinatura.' : lang === 'es' ? 'Quien entre por tu enlace obtiene el mismo monto en descuento en la suscripción.' : 'Whoever joins through your link gets the same amount off their subscription.')), referred === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       padding: '8px 16px 4px',

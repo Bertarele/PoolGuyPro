@@ -2922,10 +2922,12 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null, wallet=
     : (lang==='pt'?'/mês':lang==='es'?'/mes':'/mo');
 
   // Discount this user is entitled to for having joined via a referral
-  // link. Read-only here — the real discount is applied server-side at
-  // checkout, so a tampered client gains nothing by faking it.
-  const refDiscount = wallet?.my_discount
-    ? (billing === 'annual' ? wallet.my_discount.annual_pct : wallet.my_discount.monthly_pct)
+  // link, in cents, for whichever plan/billing they currently have
+  // selected. Read-only here — the real discount is applied server-side at
+  // checkout (see REFERRAL_COUPONS in create-checkout-session), so a
+  // tampered client gains nothing by faking it.
+  const refDiscountCents = wallet?.my_discount
+    ? (wallet.my_discount[`${plan}_${billing}_cents`] || 0)
     : 0;
 
   const plans = {
@@ -3092,15 +3094,15 @@ function PaywallSheet({ open, onClose, setUser, lang='en', context=null, wallet=
             </button>
           </div>
 
-          {refDiscount > 0 && (
+          {refDiscountCents > 0 && (
             <div style={{marginTop:10, padding:'9px 13px', borderRadius:10, background:'rgba(14,186,199,0.10)', border:'1px solid rgba(14,186,199,0.30)', textAlign:'left', display:'flex', gap:8, alignItems:'center'}}>
               <span style={{fontSize:14}}>🎁</span>
               <span style={{fontSize:12, color:'var(--pg-ink-800)', lineHeight:1.4}}>
                 {lang==='pt'
-                  ? `Você entrou por indicação: ${refDiscount}% de desconto aplicado no checkout.`
+                  ? `Você entrou por indicação: ${money(refDiscountCents)} de desconto aplicado no checkout.`
                   : lang==='es'
-                    ? `Entraste por referido: ${refDiscount}% de descuento aplicado en el pago.`
-                    : `You joined via a referral: ${refDiscount}% off applied at checkout.`}
+                    ? `Entraste por referido: ${money(refDiscountCents)} de descuento aplicado en el pago.`
+                    : `You joined via a referral: ${money(refDiscountCents)} off applied at checkout.`}
               </span>
             </div>
           )}
@@ -3308,7 +3310,7 @@ function WalletSheet({ open, onClose, lang='en', wallet, walletTx=[], loadWallet
     pending:'saque em análise', empty:'Nenhuma movimentação ainda.',
     noRef:'Ninguém usou seu link ainda. Compartilhe para começar a ganhar.',
     table:'Quanto você ganha', plan:'Plano', monthly:'Mensal', annual:'Anual',
-    youGet:'Você tem desconto', youGetSub:'Alguém te indicou — seu desconto é aplicado na assinatura.',
+    youGet:'Você tem desconto', youGetSub:'Alguém te indicou — o valor é o mesmo da tabela abaixo, aplicado no plano que você escolher.',
     askAmount:'Quanto deseja sacar?', confirmWd:'Solicitar saque', cancel:'Cancelar',
     wdOk:'Saque solicitado! Vamos revisar e te avisar.',
     errMin:'Valor abaixo do mínimo.', errFunds:'Saldo insuficiente.', errGeneric:'Não foi possível solicitar o saque.',
@@ -3323,7 +3325,7 @@ function WalletSheet({ open, onClose, lang='en', wallet, walletTx=[], loadWallet
     pending:'retiro en revisión', empty:'Aún no hay movimientos.',
     noRef:'Nadie ha usado tu enlace todavía. Compártelo para empezar a ganar.',
     table:'Cuánto ganas', plan:'Plan', monthly:'Mensual', annual:'Anual',
-    youGet:'Tienes descuento', youGetSub:'Alguien te refirió — tu descuento se aplica en la suscripción.',
+    youGet:'Tienes descuento', youGetSub:'Alguien te refirió — el monto es el mismo de la tabla de abajo, aplicado al plan que elijas.',
     askAmount:'¿Cuánto quieres retirar?', confirmWd:'Solicitar retiro', cancel:'Cancelar',
     wdOk:'¡Retiro solicitado! Lo revisaremos y te avisaremos.',
     errMin:'Monto por debajo del mínimo.', errFunds:'Saldo insuficiente.', errGeneric:'No se pudo solicitar el retiro.',
@@ -3338,7 +3340,7 @@ function WalletSheet({ open, onClose, lang='en', wallet, walletTx=[], loadWallet
     pending:'withdrawal under review', empty:'No activity yet.',
     noRef:'Nobody has used your link yet. Share it to start earning.',
     table:'What you earn', plan:'Plan', monthly:'Monthly', annual:'Annual',
-    youGet:'You have a discount', youGetSub:'Someone referred you — your discount applies at checkout.',
+    youGet:'You have a discount', youGetSub:'Someone referred you — it\'s the same amount as the table below, applied to whichever plan you pick.',
     askAmount:'How much do you want to withdraw?', confirmWd:'Request withdrawal', cancel:'Cancel',
     wdOk:'Withdrawal requested! We will review and let you know.',
     errMin:'Amount is below the minimum.', errFunds:'Not enough balance.', errGeneric:'Could not request the withdrawal.',
@@ -3476,8 +3478,11 @@ function WalletSheet({ open, onClose, lang='en', wallet, walletTx=[], loadWallet
               {myDisc && (
                 <div style={{borderRadius:14, padding:'12px 14px', background:'rgba(14,186,199,0.10)', border:'1px solid rgba(14,186,199,0.30)'}}>
                   <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:2}}>
-                    🎁 {L.youGet} — {myDisc.monthly_pct}% / {myDisc.annual_pct}%
+                    🎁 {L.youGet}
                   </div>
+                  {/* Amount now depends on which plan they pick, same as the
+                      commission table below — so this points there instead
+                      of repeating four numbers here. */}
                   <div style={{fontSize:11.5, color:'var(--pg-ink-600)', lineHeight:1.4}}>{L.youGetSub}</div>
                 </div>
               )}
@@ -3529,10 +3534,10 @@ function WalletSheet({ open, onClose, lang='en', wallet, walletTx=[], loadWallet
                 </div>
                 <div style={{marginTop:10, paddingTop:10, borderTop:'0.5px solid var(--pg-ink-100)', fontSize:11.5, color:'var(--pg-ink-500)', lineHeight:1.45}}>
                   {lang==='pt'
-                    ? 'Quem entrar pelo seu link ganha 10% de desconto no plano mensal e 5% no anual.'
+                    ? 'Quem entrar pelo seu link ganha o mesmo valor em desconto na assinatura.'
                     : lang==='es'
-                    ? 'Quien entre por tu enlace obtiene 10% de descuento en el plan mensual y 5% en el anual.'
-                    : 'Whoever joins through your link gets 10% off monthly and 5% off annual.'}
+                    ? 'Quien entre por tu enlace obtiene el mismo monto en descuento en la suscripción.'
+                    : 'Whoever joins through your link gets the same amount off their subscription.'}
                 </div>
               </div>
 

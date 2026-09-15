@@ -2441,7 +2441,10 @@ function App() {
       if (error || !data) return;
       localStorage.removeItem('pg_pending_ref');
       if (data.ok) {
-        showToast(lang === 'pt' ? `🎁 Indicação aplicada! ${data.discount_monthly_pct}% de desconto no mensal, ${data.discount_annual_pct}% no anual.` : lang === 'es' ? `🎁 ¡Referido aplicado! ${data.discount_monthly_pct}% de descuento mensual, ${data.discount_annual_pct}% anual.` : `🎁 Referral applied! ${data.discount_monthly_pct}% off monthly, ${data.discount_annual_pct}% off annual.`);
+        // No specific amount here — the discount now depends on which plan
+        // gets picked later (see referral_discount_cents), so the exact
+        // number shows up in the paywall instead, once that's known.
+        showToast(lang === 'pt' ? `🎁 Indicação aplicada! Seu desconto será aplicado na assinatura.` : lang === 'es' ? `🎁 ¡Referido aplicado! Tu descuento se aplicará en la suscripción.` : `🎁 Referral applied! Your discount will apply at checkout.`);
         loadWallet();
       }
     }).catch(() => {});
