@@ -33,7 +33,9 @@ function ProfileScreen({
     saveNotifPrefs,
     openListingById,
     openPublicProfile,
-    county = 'Broward'
+    county = 'Broward',
+    manageSubscription,
+    subManageBusy
   } = ctx;
   const t = STRINGS[lang];
   const typeIcon = type => {
@@ -459,7 +461,9 @@ function ProfileScreen({
     openPaywall: openPaywall,
     t: t,
     lang: lang,
-    isDesktop: isDesktop
+    isDesktop: isDesktop,
+    manageSubscription: manageSubscription,
+    subManageBusy: subManageBusy
   }), /*#__PURE__*/React.createElement(PersonalInfoCard, {
     user: user,
     setUser: setUser,
@@ -1993,8 +1997,19 @@ function SubscriptionCard({
   openPaywall,
   t,
   lang = 'en',
-  isDesktop = false
+  isDesktop = false,
+  manageSubscription,
+  subManageBusy
 }) {
+  const fmtCancelDate = d => new Date(d).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-ES' : 'en-US', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+  // Real paid tier only — betaFreeForAll forces user.tier to 'premium' for
+  // everyone, and nobody has a Stripe subscription to cancel in that state.
+  const hasRealSub = !user.betaFreeForAll && user.realTier && user.realTier !== 'free';
+  const pendingCancel = hasRealSub && user.tierCancelAt && new Date(user.tierCancelAt) > new Date();
   // Free-beta: every user's gating tier is forced to 'premium' server-config
   // side (see app.jsx's plansEnabled effect), but that must never be shown as
   // a real subscription — nobody paid for it, and profiles.tier for most
@@ -2236,7 +2251,57 @@ function SubscriptionCard({
       fontSize: 14,
       marginTop: 10
     }
-  }, t.comparePlans));
+  }, t.comparePlans), hasRealSub && (pendingCancel ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10,
+      padding: '10px 12px',
+      borderRadius: 10,
+      background: 'rgba(255,255,255,0.08)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 600,
+      marginBottom: 8,
+      lineHeight: 1.4
+    }
+  }, lang === 'pt' ? /*#__PURE__*/React.createElement(React.Fragment, null, "Cancelado \u2014 seu acesso continua at\xE9 ", /*#__PURE__*/React.createElement("b", null, fmtCancelDate(user.tierCancelAt)), ".") : lang === 'es' ? /*#__PURE__*/React.createElement(React.Fragment, null, "Cancelado \u2014 tu acceso contin\xFAa hasta ", /*#__PURE__*/React.createElement("b", null, fmtCancelDate(user.tierCancelAt)), ".") : /*#__PURE__*/React.createElement(React.Fragment, null, "Canceled \u2014 your access continues until ", /*#__PURE__*/React.createElement("b", null, fmtCancelDate(user.tierCancelAt)), ".")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => manageSubscription && manageSubscription('resume'),
+    disabled: subManageBusy,
+    style: {
+      width: '100%',
+      height: 36,
+      borderRadius: 10,
+      border: '1px solid rgba(255,255,255,0.35)',
+      background: 'rgba(255,255,255,0.12)',
+      color: '#fff',
+      fontSize: 12.5,
+      fontWeight: 700,
+      cursor: subManageBusy ? 'default' : 'pointer',
+      fontFamily: 'inherit',
+      opacity: subManageBusy ? 0.6 : 1
+    }
+  }, subManageBusy ? '…' : lang === 'pt' ? 'Manter assinatura' : lang === 'es' ? 'Mantener suscripción' : 'Keep subscription')) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const msg = lang === 'pt' ? 'Cancelar sua assinatura? Você continua com acesso até o fim do período já pago — nada é reembolsado.' : lang === 'es' ? '¿Cancelar tu suscripción? Sigues con acceso hasta el fin del período ya pagado — no se reembolsa nada.' : 'Cancel your subscription? You keep access until the end of the period you already paid for — nothing is refunded.';
+      if (window.confirm(msg)) manageSubscription && manageSubscription('cancel');
+    },
+    disabled: subManageBusy,
+    style: {
+      width: '100%',
+      height: 36,
+      marginTop: 10,
+      borderRadius: 10,
+      border: '1px solid rgba(255,255,255,0.20)',
+      background: 'transparent',
+      color: 'rgba(255,255,255,0.65)',
+      fontSize: 12,
+      fontWeight: 600,
+      cursor: subManageBusy ? 'default' : 'pointer',
+      fontFamily: 'inherit',
+      opacity: subManageBusy ? 0.6 : 1
+    }
+  }, subManageBusy ? '…' : lang === 'pt' ? 'Cancelar assinatura' : lang === 'es' ? 'Cancelar suscripción' : 'Cancel subscription')));
 }
 function Section({
   title,

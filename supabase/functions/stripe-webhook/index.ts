@@ -100,14 +100,30 @@ Deno.serve(async (req) => {
       }
 
       case 'customer.subscription.updated': {
-        // Only acts on a subscription that has actually lapsed. `canceled`
-        // arrives as its own deleted event; this catches unpaid/incomplete
-        // expiry, where access should stop but no deletion event fires.
         const sub = event.data.object as Stripe.Subscription;
-        if (!['unpaid', 'incomplete_expired'].includes(sub.status)) break;
         const userId = await resolveUserId(sub);
         if (!userId) break;
-        await rpc('cancel_subscription', { p_user_id: userId, p_source: 'stripe_webhook' });
+        // A subscription that has actually lapsed. `canceled` arrives as its
+        // own deleted event; this catches unpaid/incomplete expiry, where
+        // access should stop but no deletion event fires.
+        if (['unpaid', 'incomplete_expired'].includes(sub.status)) {
+          await rpc('cancel_subscription', { p_user_id: userId, p_source: 'stripe_webhook' });
+          break;
+        }
+        // Keep tier_cancel_at (display-only — see manage-subscription and its
+        // migration) in sync whenever a still-active subscription's
+        // cancel_at_period_end flag changes, whether that happened through
+        // manage-subscription, the Stripe dashboard, or anywhere else. This
+        // is the backstop: manage-subscription already writes this directly
+        // for its own instant UI feedback, so this mostly matters when it
+        // wasn't the one making the change.
+        if (sub.status === 'active' || sub.status === 'trialing') {
+          const cancelAt = sub.cancel_at ? new Date(sub.cancel_at * 1000).toISOString() : null;
+          await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${userId}`, {
+            method: 'PATCH', headers: { ...sbHeaders, Prefer: 'return=minimal' },
+            body: JSON.stringify({ tier_cancel_at: cancelAt }),
+          });
+        }
         break;
       }
 

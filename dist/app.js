@@ -793,7 +793,10 @@ function App() {
       experience: profile?.experience ?? [],
       notifyPools: profile?.notify_pools !== false,
       notifyRoutes: profile?.notify_routes !== false,
-      notifyService: profile?.notify_service !== false
+      notifyService: profile?.notify_service !== false,
+      // Set (unlike tier below) whenever there's a scheduled cancellation —
+      // display-only, never gates anything, so it's safe to write directly.
+      tierCancelAt: profile?.tier_cancel_at || null
       // tier is NOT set here directly. It used to be — but this runs on every
       // login, asynchronously, and always resolves AFTER the plansEnabled
       // override effect's first pass (that effect fires synchronously on
@@ -2377,6 +2380,48 @@ function App() {
     }, onClick ? 5000 : 2400);
   };
 
+  // Self-serve cancel / resume — never refunds, never ends access early.
+  // 'cancel' schedules Stripe to stop renewing at the end of the period
+  // already paid for; 'resume' undoes that if they change their mind before
+  // it takes effect. The actual downgrade still only ever happens via the
+  // customer.subscription.deleted webhook once that period genuinely ends.
+  const [subManageBusy, setSubManageBusy] = React.useState(false);
+  const manageSubscription = async action => {
+    if (subManageBusy || !window.sb) return;
+    setSubManageBusy(true);
+    try {
+      const {
+        data: {
+          session
+        }
+      } = await window.sb.auth.getSession();
+      const res = await fetch('https://xiszfqghizqzlwyrfjol.supabase.co/functions/v1/manage-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + (session?.access_token || '')
+        },
+        body: JSON.stringify({
+          action
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        showToast('❌ ' + (data?.error === 'no_subscription' ? lang === 'pt' ? 'Nenhuma assinatura ativa encontrada.' : lang === 'es' ? 'No se encontró ninguna suscripción activa.' : 'No active subscription found.' : data?.message || 'Error'));
+        return;
+      }
+      setUser(u => ({
+        ...u,
+        tierCancelAt: data.cancel_at || null
+      }));
+      showToast(action === 'cancel' ? lang === 'pt' ? '✓ Assinatura cancelada — seu acesso continua até o fim do período pago.' : lang === 'es' ? '✓ Suscripción cancelada — tu acceso sigue hasta el fin del período pagado.' : '✓ Subscription canceled — your access continues until the paid period ends.' : lang === 'pt' ? '✓ Assinatura reativada — vai renovar normalmente.' : lang === 'es' ? '✓ Suscripción reactivada — se renovará normalmente.' : '✓ Subscription resumed — it will renew normally.');
+    } catch (e) {
+      showToast('❌ ' + (e?.message || 'Error'));
+    } finally {
+      setSubManageBusy(false);
+    }
+  };
+
   // Redeem a referral code parked by capturePendingReferral() once the
   // user actually exists. The server decides whether the code is valid —
   // this only decides when to stop asking.
@@ -2470,6 +2515,8 @@ function App() {
       setPayContext(ctx || null);
       setPayOpen(true);
     },
+    manageSubscription,
+    subManageBusy,
     openPostMenu: () => setPostMenuOpen(true),
     openPost: async () => {
       // Free accounts: max 5 Piscinas Rápidas postings per week, resetting

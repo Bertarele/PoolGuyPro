@@ -6,7 +6,8 @@ function ProfileScreen({ ctx }) {
           openEditProfile, onLogout, openHelp, openPrivacy,
           darkMode, toggleDark, openChat, hasUnreadChat, openNotifications, hasUnreadNotif, requestVerification,
           isDesktop=false, retryPush, pushLog='',
-          notifPrefs, saveNotifPrefs, openListingById, openPublicProfile, county='Broward' } = ctx;
+          notifPrefs, saveNotifPrefs, openListingById, openPublicProfile, county='Broward',
+          manageSubscription, subManageBusy } = ctx;
   const t = STRINGS[lang];
 
   const typeIcon = (type) => {
@@ -151,7 +152,8 @@ function ProfileScreen({ ctx }) {
 
       <div style={{padding:'0 18px', marginTop:-2, display:'flex', flexDirection:'column', gap:14}}>
         {/* Subscription */}
-        <SubscriptionCard user={user} setUser={setUser} openPaywall={openPaywall} t={t} lang={lang} isDesktop={isDesktop}/>
+        <SubscriptionCard user={user} setUser={setUser} openPaywall={openPaywall} t={t} lang={lang} isDesktop={isDesktop}
+          manageSubscription={manageSubscription} subManageBusy={subManageBusy}/>
 
         {/* Personal Info */}
         <PersonalInfoCard user={user} setUser={setUser} lang={lang}/>
@@ -907,7 +909,13 @@ function planPriceLine(user, t, lang) {
   return `$${price}${per}`;
 }
 
-function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=false }) {
+function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=false, manageSubscription, subManageBusy }) {
+  const fmtCancelDate = (d) => new Date(d).toLocaleDateString(
+    lang==='pt'?'pt-BR':lang==='es'?'es-ES':'en-US', { day:'2-digit', month:'short', year:'numeric' });
+  // Real paid tier only — betaFreeForAll forces user.tier to 'premium' for
+  // everyone, and nobody has a Stripe subscription to cancel in that state.
+  const hasRealSub = !user.betaFreeForAll && user.realTier && user.realTier !== 'free';
+  const pendingCancel = hasRealSub && user.tierCancelAt && new Date(user.tierCancelAt) > new Date();
   // Free-beta: every user's gating tier is forced to 'premium' server-config
   // side (see app.jsx's plansEnabled effect), but that must never be shown as
   // a real subscription — nobody paid for it, and profiles.tier for most
@@ -1033,6 +1041,41 @@ function SubscriptionCard({ user, setUser, openPaywall, t, lang='en', isDesktop=
         <button onClick={openPaywall} className="pg-btn pg-btn-aqua" style={{width:'100%', height:42, fontSize:14, marginTop:10}}>
           {t.comparePlans}
         </button>
+      )}
+      {/* Cancel is self-serve now — it schedules Stripe to stop renewing at
+          the end of the period already paid for. Never refunds, never ends
+          access early: same as Netflix/Spotify/any mainstream subscription.
+          The actual downgrade still only happens once that period genuinely
+          ends (customer.subscription.deleted webhook) — this button never
+          touches user.tier directly. */}
+      {hasRealSub && (
+        pendingCancel ? (
+          <div style={{marginTop:10, padding:'10px 12px', borderRadius:10, background:'rgba(255,255,255,0.08)'}}>
+            <div style={{fontSize:12, fontWeight:600, marginBottom:8, lineHeight:1.4}}>
+              {lang==='pt' ? <>Cancelado — seu acesso continua até <b>{fmtCancelDate(user.tierCancelAt)}</b>.</>
+                : lang==='es' ? <>Cancelado — tu acceso continúa hasta <b>{fmtCancelDate(user.tierCancelAt)}</b>.</>
+                : <>Canceled — your access continues until <b>{fmtCancelDate(user.tierCancelAt)}</b>.</>}
+            </div>
+            <button onClick={()=>manageSubscription && manageSubscription('resume')} disabled={subManageBusy}
+              style={{width:'100%', height:36, borderRadius:10, border:'1px solid rgba(255,255,255,0.35)',
+                background:'rgba(255,255,255,0.12)', color:'#fff', fontSize:12.5, fontWeight:700,
+                cursor: subManageBusy?'default':'pointer', fontFamily:'inherit', opacity: subManageBusy?0.6:1}}>
+              {subManageBusy ? '…' : (lang==='pt' ? 'Manter assinatura' : lang==='es' ? 'Mantener suscripción' : 'Keep subscription')}
+            </button>
+          </div>
+        ) : (
+          <button onClick={()=>{
+              const msg = lang==='pt' ? 'Cancelar sua assinatura? Você continua com acesso até o fim do período já pago — nada é reembolsado.'
+                : lang==='es' ? '¿Cancelar tu suscripción? Sigues con acceso hasta el fin del período ya pagado — no se reembolsa nada.'
+                : 'Cancel your subscription? You keep access until the end of the period you already paid for — nothing is refunded.';
+              if (window.confirm(msg)) manageSubscription && manageSubscription('cancel');
+            }} disabled={subManageBusy}
+            style={{width:'100%', height:36, marginTop:10, borderRadius:10, border:'1px solid rgba(255,255,255,0.20)',
+              background:'transparent', color:'rgba(255,255,255,0.65)', fontSize:12, fontWeight:600,
+              cursor: subManageBusy?'default':'pointer', fontFamily:'inherit', opacity: subManageBusy?0.6:1}}>
+            {subManageBusy ? '…' : (lang==='pt' ? 'Cancelar assinatura' : lang==='es' ? 'Cancelar suscripción' : 'Cancel subscription')}
+          </button>
+        )
       )}
     </div>
   );
