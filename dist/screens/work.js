@@ -7245,7 +7245,31 @@ function VacationPanel({
       flexDirection: 'column',
       gap: 0
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, user?.betaFreeForAll && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 10,
+      padding: '11px 13px',
+      marginBottom: 14,
+      borderRadius: 12,
+      border: '1px solid rgba(14,186,199,0.30)',
+      background: 'rgba(14,186,199,0.08)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 16,
+      lineHeight: 1,
+      flexShrink: 0,
+      marginTop: 1
+    }
+  }, "\uD83C\uDF89"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: '#0D7280',
+      lineHeight: 1.5
+    }
+  }, lang === 'pt' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, "Recurso em beta."), " Combina\xE7\xF5es j\xE1 feitas continuam valendo mesmo depois do lan\xE7amento oficial.") : lang === 'es' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, "Funci\xF3n en beta."), " Los acuerdos ya hechos siguen siendo v\xE1lidos incluso despu\xE9s del lanzamiento oficial.") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, "Beta feature."), " Arrangements already made stay valid even after the official launch."))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 20
     }

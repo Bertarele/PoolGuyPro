@@ -3357,6 +3357,31 @@ function VacationPanel({ t, lang, vacTab, setVacTab, onChat, onCreate, onEditVac
   return (
     <div style={{display:'flex', flexDirection:'column', gap:0}}>
 
+      {/* Beta notice — vacation coverage is the one feature whose commitment
+          spans real future dates (someone gets a route/pool for a week,
+          weeks or months out), so it's the one place worth saying plainly
+          that pricing may change before official launch. Deliberately NOT
+          the "you're missing out, upgrade" purple tone of the PRO banner
+          right below — this is reassurance, not an upsell. Everything else
+          in the app (Quick Pools, Marketplace routes) is same-day-ish, so a
+          beta ending mid-arrangement isn't a real concern there the way it
+          is here. Only shown while an admin has plans_enabled off (see
+          app.jsx) — disappears the moment the app is out of beta. */}
+      {user?.betaFreeForAll && (
+        <div style={{display:'flex', alignItems:'flex-start', gap:10, padding:'11px 13px',
+          marginBottom:14, borderRadius:12, border:'1px solid rgba(14,186,199,0.30)',
+          background:'rgba(14,186,199,0.08)'}}>
+          <span style={{fontSize:16, lineHeight:1, flexShrink:0, marginTop:1}}>🎉</span>
+          <div style={{fontSize:12, color:'#0D7280', lineHeight:1.5}}>
+            {lang==='pt'
+              ? <><b>Recurso em beta.</b> Combinações já feitas continuam valendo mesmo depois do lançamento oficial.</>
+              : lang==='es'
+                ? <><b>Función en beta.</b> Los acuerdos ya hechos siguen siendo válidos incluso después del lanzamiento oficial.</>
+                : <><b>Beta feature.</b> Arrangements already made stay valid even after the official launch.</>}
+          </div>
+        </div>
+      )}
+
       {/* ═══════════════════════════════════════════════ */}
       {/*  SECTION 1 — AVAILABLE TO COVER  (em destaque) */}
       {/* ═══════════════════════════════════════════════ */}
