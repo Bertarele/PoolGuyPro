@@ -4708,6 +4708,12 @@ function QuickPoolDetails({
   const [ratingComment, setRatingComment] = React.useState('');
   const [ratingSubmitting, setRatingSubmitting] = React.useState(false);
 
+  // Fullscreen viewer for submitted photos — {photos: string[], idx} | null.
+  // Reuses marketplace.jsx's PhotoViewer instead of a plain <a target="_blank">
+  // so a submitted photo opens in-app (swipe/arrows through the set) instead
+  // of navigating to the raw Supabase storage URL.
+  const [photoViewer, setPhotoViewer] = React.useState(null);
+
   // Photo upload state (pool guy)
   const [showPhotoUpload, setShowPhotoUpload] = React.useState(false);
   const [uploadedPhotos, setUploadedPhotos] = React.useState({});
@@ -5857,16 +5863,18 @@ function QuickPoolDetails({
       gap: 6,
       flexWrap: 'wrap'
     }
-  }, a.submitted_photos.map((p, i) => /*#__PURE__*/React.createElement("a", {
+  }, a.submitted_photos.map((p, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
-    href: p.url,
-    target: "_blank",
-    rel: "noreferrer",
+    onClick: () => setPhotoViewer({
+      photos: a.submitted_photos.map(x => x.url),
+      idx: i
+    }),
     style: {
       display: 'block',
       borderRadius: 8,
       overflow: 'hidden',
-      flexShrink: 0
+      flexShrink: 0,
+      cursor: 'zoom-in'
     }
   }, /*#__PURE__*/React.createElement("img", {
     src: p.url,
@@ -6323,11 +6331,12 @@ function QuickPoolDetails({
       gap: 8,
       flexWrap: 'wrap'
     }
-  }, acceptedApp.submitted_photos.map((p, i) => /*#__PURE__*/React.createElement("a", {
+  }, acceptedApp.submitted_photos.map((p, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
-    href: p.url,
-    target: "_blank",
-    rel: "noreferrer",
+    onClick: () => setPhotoViewer({
+      photos: acceptedApp.submitted_photos.map(x => x.url),
+      idx: i
+    }),
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -6335,7 +6344,8 @@ function QuickPoolDetails({
       gap: 3,
       borderRadius: 10,
       overflow: 'hidden',
-      flexShrink: 0
+      flexShrink: 0,
+      cursor: 'zoom-in'
     }
   }, /*#__PURE__*/React.createElement("img", {
     src: p.url,
@@ -6876,6 +6886,10 @@ function QuickPoolDetails({
     lang: lang,
     onConfirm: confirmDialog.onConfirm,
     onCancel: () => setConfirmDialog(null)
+  }), photoViewer && /*#__PURE__*/React.createElement(PhotoViewer, {
+    photos: photoViewer.photos,
+    startIdx: photoViewer.idx,
+    onClose: () => setPhotoViewer(null)
   }));
 }
 function DetailPill({

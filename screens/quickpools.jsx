@@ -2627,6 +2627,12 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
   const [ratingComment,  setRatingComment]  = React.useState('');
   const [ratingSubmitting, setRatingSubmitting] = React.useState(false);
 
+  // Fullscreen viewer for submitted photos — {photos: string[], idx} | null.
+  // Reuses marketplace.jsx's PhotoViewer instead of a plain <a target="_blank">
+  // so a submitted photo opens in-app (swipe/arrows through the set) instead
+  // of navigating to the raw Supabase storage URL.
+  const [photoViewer, setPhotoViewer] = React.useState(null);
+
   // Photo upload state (pool guy)
   const [showPhotoUpload,   setShowPhotoUpload]   = React.useState(false);
   const [uploadedPhotos,    setUploadedPhotos]    = React.useState({});
@@ -3267,9 +3273,9 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
                     </div>
                     <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
                       {a.submitted_photos.map((p, i) => (
-                        <a key={i} href={p.url} target="_blank" rel="noreferrer" style={{display:'block',borderRadius:8,overflow:'hidden',flexShrink:0}}>
+                        <div key={i} onClick={()=>setPhotoViewer({photos:a.submitted_photos.map(x=>x.url), idx:i})} style={{display:'block',borderRadius:8,overflow:'hidden',flexShrink:0,cursor:'zoom-in'}}>
                           <img src={p.url} alt={photoLabel(p.type)} style={{width:60,height:60,objectFit:'cover',display:'block'}}/>
-                        </a>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -3465,10 +3471,10 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
                   </div>
                   <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
                     {acceptedApp.submitted_photos.map((p, i) => (
-                      <a key={i} href={p.url} target="_blank" rel="noreferrer" style={{display:'flex', flexDirection:'column', alignItems:'center', gap:3, borderRadius:10, overflow:'hidden', flexShrink:0}}>
+                      <div key={i} onClick={()=>setPhotoViewer({photos:acceptedApp.submitted_photos.map(x=>x.url), idx:i})} style={{display:'flex', flexDirection:'column', alignItems:'center', gap:3, borderRadius:10, overflow:'hidden', flexShrink:0, cursor:'zoom-in'}}>
                         <img src={p.url} alt={photoLabel(p.type)} style={{width:76, height:76, objectFit:'cover', display:'block', borderRadius:10, border:'1px solid var(--pg-ink-200)'}}/>
                         <span style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:600}}>{photoLabel(p.type)}</span>
-                      </a>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -3764,6 +3770,9 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
         onConfirm={confirmDialog.onConfirm}
         onCancel={()=>setConfirmDialog(null)}
       />
+    )}
+    {photoViewer && (
+      <PhotoViewer photos={photoViewer.photos} startIdx={photoViewer.idx} onClose={()=>setPhotoViewer(null)}/>
     )}
     </>
   );
