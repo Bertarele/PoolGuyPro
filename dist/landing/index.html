@@ -100,27 +100,26 @@
 
     /* ── 3-PHONE SHOWCASE ── */
     .phones-wrap{position:relative;z-index:1;display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-top:56px}
-    /* Carousel: clicking a side phone rotates all three screenshots — the
-       clicked one lands in the center slot, and the other two shift over
-       (left click = counter-clockwise, right click = clockwise). The three
-       boxes themselves never move (left/center/right stay fixed size/spot);
-       only the image each one shows changes, animated as a same-direction
-       slide+fade on all three so it reads as one wheel turning rather than
-       three separate swaps. The slide/fade lives on the <img> itself, not
-       the .phone-frame box, so it never fights the box's own floatY bob. */
+    /* Carousel: clicking a side phone physically rotates all three boxes at
+       once — the clicked one grows into the center while the other two
+       slide over and shrink, all three moving together (left click spins
+       counter-clockwise, right click spins clockwise). This is a genuine
+       FLIP animation (see pgxHeroSpin): the three elements are actually
+       reordered in the DOM, and their position+size jump is captured as a
+       transform then animated back to zero — real motion, not a fade.
+       Sizing/animation-delay key off DOM position (nth-child) rather than
+       a class on a specific element, since reordering the DOM is exactly
+       what makes a box "become" the center one. */
     .phone-frame{position:relative;border-radius:36px;overflow:hidden;cursor:pointer;
       box-shadow:0 0 0 1.5px rgba(255,255,255,0.1),0 32px 80px rgba(0,0,0,0.65),0 0 40px rgba(14,186,199,0.08);
-      transition:width .45s cubic-bezier(.22,1,.36,1),height .45s cubic-bezier(.22,1,.36,1),opacity .4s ease,filter .4s ease,box-shadow .4s ease}
-    .phone-frame img{display:block;width:100%;height:100%;object-fit:cover;transition:opacity .32s ease,transform .32s ease}
-    .phones-wrap.spin-ccw .phone-frame img{opacity:0;transform:translateX(-26px) scale(.92)}
-    .phones-wrap.spin-cw .phone-frame img{opacity:0;transform:translateX(26px) scale(.92)}
-    .pf-center{width:224px;height:445px;animation:floatY 4.5s ease-in-out infinite}
-    .pf-center.pf-pop{animation:centerPop .55s cubic-bezier(.22,1,.36,1);box-shadow:0 0 0 1.5px rgba(14,186,199,0.5),0 32px 80px rgba(0,0,0,0.65),0 0 60px rgba(14,186,199,0.35)}
-    @keyframes centerPop{0%{transform:scale(.9)}55%{transform:scale(1.04)}100%{transform:scale(1)}}
-    .pf-side{width:182px;height:362px;opacity:.65;filter:brightness(.8)}
-    .pf-side:hover{opacity:.85;filter:brightness(.95)}
-    .pf-left{animation:floatY 4.5s ease-in-out infinite;animation-delay:.6s}
-    .pf-right{animation:floatY 4.5s ease-in-out infinite;animation-delay:1.1s}
+      transition:opacity .4s ease,filter .4s ease,box-shadow .4s ease}
+    .phone-frame img{display:block;width:100%;height:100%;object-fit:cover}
+    .phones-wrap > .phone-frame:nth-child(2){width:224px;height:445px;animation:floatY 4.5s ease-in-out infinite}
+    .phones-wrap > .phone-frame:nth-child(2).pf-pop{box-shadow:0 0 0 1.5px rgba(14,186,199,0.5),0 32px 80px rgba(0,0,0,0.65),0 0 60px rgba(14,186,199,0.35)}
+    .phones-wrap > .phone-frame:nth-child(1),.phones-wrap > .phone-frame:nth-child(3){width:182px;height:362px;opacity:.65;filter:brightness(.8)}
+    .phones-wrap > .phone-frame:nth-child(1):hover,.phones-wrap > .phone-frame:nth-child(3):hover{opacity:.85;filter:brightness(.95)}
+    .phones-wrap > .phone-frame:nth-child(1){animation:floatY 4.5s ease-in-out infinite;animation-delay:.6s}
+    .phones-wrap > .phone-frame:nth-child(3){animation:floatY 4.5s ease-in-out infinite;animation-delay:1.1s}
     .phone-label{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10px;font-weight:600;color:rgba(255,255,255,0.3);letter-spacing:.04em}
 
     /* Wave divider between hero and content */
@@ -288,16 +287,16 @@
     <p class="hero-note au d4" data-t="hn">Free to join · No credit card required</p>
   </div>
 
-  <!-- 3 real app screenshots — click a side phone to bring it to center -->
+  <!-- 3 real app screenshots — click a side phone to spin it into center -->
   <div class="phones-wrap au d3" id="heroPhones">
-    <div class="phone-frame pf-side pf-left" onclick="pgxHeroSpin(this)">
+    <div class="phone-frame" onclick="pgxHeroSpin(this)">
       <img src="/landing/ss-work.webp" alt="Job listings" loading="lazy">
     </div>
-    <div class="phone-frame pf-center" onclick="pgxHeroSpin(this)">
+    <div class="phone-frame" onclick="pgxHeroSpin(this)">
       <img src="/landing/ss-home.webp" alt="PoolGuyX home screen" loading="lazy">
     </div>
-    <div class="phone-frame pf-side pf-right" onclick="pgxHeroSpin(this)">
-      <img src="/landing/ss-quickpools.webp" alt="Quick Pools tab" loading="lazy">
+    <div class="phone-frame" onclick="pgxHeroSpin(this)">
+      <img src="/landing/ss-quickpools.webp" alt="Express Pools tab" loading="lazy">
     </div>
   </div>
 </section>
@@ -386,20 +385,20 @@
       </div>
     </div>
 
-    <!-- Row 3: Quick Pools -->
+    <!-- Row 3: Express Pools -->
     <div class="alt-row">
       <div class="alt-text">
         <div class="eyebrow" data-t="f3e">Real-time jobs</div>
-        <h2 class="sec-h" data-t="f3h">Quick Pools &amp; Vacation coverage</h2>
-        <p class="sec-p" data-t="f3d">Get instant alerts for emergency pool jobs. Or post your vacation dates and let qualified pool guys apply to cover your route while you're away.</p>
+        <h2 class="sec-h" data-t="f3h">Express Pools — work, on demand</h2>
+        <p class="sec-p" data-t="f3d">The moment a pool near you needs covering, you get a push notification — tap it, message the poster, and lock in the job. It works like calling a ride: the work comes to you the second it opens up, no browsing required.</p>
         <div class="feat-pills">
           <span class="pill pill-purple">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span data-t="f3p1">Quick Pools</span>
+            <span data-t="f3p1">Express Pools</span>
           </span>
           <span class="pill pill-cyan">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span data-t="f3p2">Vacation coverage</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span data-t="f3p2">Instant alerts</span>
           </span>
           <span class="pill pill-blue">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
@@ -409,7 +408,7 @@
       </div>
       <div class="alt-phone" style="position:relative">
         <div class="alt-phone-frame" style="animation-delay:1s">
-          <img src="/landing/ss-quickpools.webp" alt="Quick Pools" loading="lazy">
+          <img src="/landing/ss-quickpools.webp" alt="Express Pools" loading="lazy">
         </div>
         <div class="phone-badge" style="top:80px;right:-46px;border-color:rgba(124,58,237,0.28)">
           <div class="pb-val" style="color:#c4b5fd">⚡ Now</div>
@@ -442,7 +441,7 @@
       <div class="card">
         <div class="card-ico" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.18);color:#fbbf24"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
         <div class="card-t" data-t="c3t">Job Notifications</div>
-        <div class="card-d" data-t="c3d">Get push alerts when someone applies for your listing, sends a message, or a new Quick Pool drops near your area.</div>
+        <div class="card-d" data-t="c3d">Get push alerts when someone applies for your listing, sends a message, or a new Express Pool drops near your area.</div>
       </div>
       <div class="card">
         <div class="card-ico" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.16);color:#f87171"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
@@ -514,7 +513,7 @@
           <li><span class="ck">✓</span><span data-t="p1f2">Vacation coverage</span></li>
           <li><span class="ck">✓</span><span data-t="p1f3">Routes tab</span></li>
           <li><span class="ck">✓</span><span data-t="p1f4">Direct messaging</span></li>
-          <li><span class="cx">✕</span><span data-t="p1f5">Quick Pools</span></li>
+          <li><span class="cx">✕</span><span data-t="p1f5">Express Pools</span></li>
         </ul>
         <a href="/upgrade/pro" class="plan-btn pb-pro" data-t="p1b">Get PRO →</a>
       </div>
@@ -525,7 +524,7 @@
         <div class="plan-div" style="background:rgba(124,58,237,0.2)"></div>
         <ul class="plan-feats">
           <li><span class="ck">✓</span><span data-t="p2f1">10 active listings</span></li>
-          <li><span class="ck">✓</span><span data-t="p2f2">Quick Pools access</span></li>
+          <li><span class="ck">✓</span><span data-t="p2f2">Express Pools access</span></li>
           <li><span class="ck">✓</span><span data-t="p2f3">2 featured listings/mo</span></li>
           <li><span class="ck">✓</span><span data-t="p2f4">Premium badge</span></li>
           <li><span class="ck">✓</span><span data-t="p2f5">All PRO features</span></li>
@@ -582,12 +581,19 @@
   }
 })();
 
-// Hero phone carousel — click a side phone and all three rotate: the one
-// you clicked lands in the center, the other two step over to make room.
+// Hero phone carousel — click a side phone and all three actually move at
+// once: the one you clicked slides over and grows into the center, the
+// other two slide over and shrink into place, all in the same motion.
 // Left click spins counter-clockwise (left->center->right->left), right
 // click spins the other way (right->center->left->right) — same wheel,
-// opposite direction. The three boxes stay put; only which screenshot
-// each one shows changes, so nothing needs re-measuring or re-ordering.
+// opposite direction.
+//
+// This is a FLIP animation (First-Last-Invert-Play): reorder the DOM
+// (which is what makes an element "become" the center one, since its
+// size comes from :nth-child CSS), then paper over the instant jump by
+// measuring where each box WAS, computing the transform that fakes it
+// still being there, and animating that transform down to zero. Real
+// movement, not a crossfade.
 let pgxHeroSpinning = false;
 function pgxHeroSpin(el){
   const wrap = document.getElementById('heroPhones');
@@ -596,25 +602,52 @@ function pgxHeroSpin(el){
   const idx = kids.indexOf(el);
   if(idx === -1 || idx === 1) return; // center clicked, or not one of ours
   pgxHeroSpinning = true;
-  const dir = idx === 0 ? 'ccw' : 'cw'; // left clicked -> ccw, right clicked -> cw
-  wrap.classList.add('spin-' + dir);
+
+  // FIRST — where is everything right now, before anything changes.
+  const firstRects = new Map();
+  kids.forEach(k => {
+    firstRects.set(k, k.getBoundingClientRect());
+    k.style.animation = 'none'; // pause the floatY bob so it can't fight our transform
+  });
+
+  // Reorder the DOM. This alone would jump-cut everything to its new
+  // size/position — that jump is exactly what FLIP hides.
+  const newOrder = idx === 0
+    ? [kids[2], kids[0], kids[1]]  // left clicked: counter-clockwise
+    : [kids[1], kids[2], kids[0]]; // right clicked: clockwise
+  newOrder.forEach(k => wrap.appendChild(k));
+
+  // LAST + INVERT — measure the new layout, work out the transform that
+  // makes each box LOOK like it never left its old spot/size...
+  requestAnimationFrame(() => {
+    newOrder.forEach(k => {
+      const last  = k.getBoundingClientRect();
+      const first = firstRects.get(k);
+      const dx = (first.left + first.width/2)  - (last.left + last.width/2);
+      const dy = (first.top  + first.height/2) - (last.top  + last.height/2);
+      const sx = first.width  / last.width;
+      const sy = first.height / last.height;
+      k.style.transition = 'none';
+      k.style.transform  = `translate(${dx}px,${dy}px) scale(${sx},${sy})`;
+    });
+    void wrap.offsetWidth; // force layout so the line above actually applies before...
+
+    // ...PLAY — animate that transform back to none, landing on the real
+    // (new) position/size. Every box moves in the same beat.
+    requestAnimationFrame(() => {
+      newOrder.forEach(k => {
+        k.style.transition = 'transform .6s cubic-bezier(.22,1,.36,1)';
+        k.style.transform  = '';
+      });
+    });
+  });
+
   setTimeout(() => {
-    const imgs = kids.map(k => k.querySelector('img'));
-    const srcs = imgs.map(i => i.getAttribute('src'));
-    const alts = imgs.map(i => i.getAttribute('alt'));
-    if (dir === 'ccw') { // left->center, center->right, right->left
-      imgs[1].setAttribute('src', srcs[0]); imgs[1].setAttribute('alt', alts[0]);
-      imgs[2].setAttribute('src', srcs[1]); imgs[2].setAttribute('alt', alts[1]);
-      imgs[0].setAttribute('src', srcs[2]); imgs[0].setAttribute('alt', alts[2]);
-    } else { // right->center, center->left, left->right
-      imgs[1].setAttribute('src', srcs[2]); imgs[1].setAttribute('alt', alts[2]);
-      imgs[0].setAttribute('src', srcs[1]); imgs[0].setAttribute('alt', alts[1]);
-      imgs[2].setAttribute('src', srcs[0]); imgs[2].setAttribute('alt', alts[0]);
-    }
-    wrap.classList.remove('spin-' + dir);
-    kids[1].classList.add('pf-pop');
-    setTimeout(() => { kids[1].classList.remove('pf-pop'); pgxHeroSpinning = false; }, 600);
-  }, 260);
+    kids.forEach(k => { k.style.transition = ''; k.style.transform = ''; k.style.animation = ''; });
+    const center = wrap.children[1];
+    center.classList.add('pf-pop');
+    setTimeout(() => { center.classList.remove('pf-pop'); pgxHeroSpinning = false; }, 550);
+  }, 650);
 }
 
 // i18n
@@ -632,13 +665,13 @@ const T={
     'f2e':'Find work','f2h':'Job listings, built right in',
     'f2d':'Post an opening or apply to one nearby. Pay per pool, revenue split, and what\'s provided are all upfront — message directly, no middleman.',
     'f2p1':'Job listings','f2p2':'Direct contact','f2p3':'Pay per pool','f2b':'Per week',
-    'f3e':'Real-time jobs','f3h':'Quick Pools & Vacation coverage',
-    'f3d':'Get instant alerts for emergency pool jobs. Or post your vacation dates and let pool pros apply to cover your route.',
-    'f3p1':'Quick Pools','f3p2':'Vacation coverage','f3p3':'PREMIUM','f3b':'Emergency job',
+    'f3e':'Real-time jobs','f3h':'Express Pools — work, on demand',
+    'f3d':'The moment a pool near you needs covering, you get a push notification — tap it, message the poster, and lock in the job. It works like calling a ride: the work comes to you the second it opens up, no browsing required.',
+    'f3p1':'Express Pools','f3p2':'Instant alerts','f3p3':'PREMIUM','f3b':'Emergency job',
     'ce':'More features','ch':'Built for how pool guys actually work',
     'c1t':'Direct Messaging','c1d':'Chat with pool pros and clients inside the app. Negotiate, confirm jobs, and coordinate in one thread.',
     'c2t':'Verified Profiles','c2d':'Ratings, reviews, and admin verification badges. Know a pool pro\'s track record before hiring.',
-    'c3t':'Job Notifications','c3d':'Push alerts when someone applies for your listing, sends a message, or a Quick Pool drops near you.',
+    'c3t':'Job Notifications','c3d':'Push alerts when someone applies for your listing, sends a message, or an Express Pool drops near you.',
     'c4t':'Marketplace Listings','c4d':'Post job openings, find pool technicians, advertise equipment. The complete classifieds for Florida pool pros.',
     'c5t':'Pool Pro Network','c5d':'Connect with professionals in Broward County. Build reputation and grow your client base through referrals.','c5tag':'PRO & PREMIUM',
     'c6t':'Refer & Earn','c6d':'Invite other pool guys with your link. You earn real cash when they subscribe, and they get a discount too.',
@@ -649,8 +682,8 @@ const T={
     'sw4t':'Connect & earn','sw4d':'Chat, arrange, and grow your business.',
     'pre':'Simple pricing','prh':'Start free. Upgrade when ready.','prs':'No hidden fees · Cancel anytime · Annual plans save 17%',
     'p0n':'FREE','p0p':'forever','p0f1':'2 active listings','p0f2':'Post routes for sale','p0f3':'Direct messaging','p0f4':'Vacation coverage','p0f5':'Routes tab','p0b':'Get Started',
-    'p1pop':'Most Popular','p1p':'/month','p1f1':'5 active listings','p1f2':'Vacation coverage','p1f3':'Routes tab','p1f4':'Direct messaging','p1f5':'Quick Pools','p1b':'Get PRO →',
-    'p2p':'/month','p2f1':'10 active listings','p2f2':'Quick Pools access','p2f3':'2 featured listings/mo','p2f4':'Premium badge','p2f5':'All PRO features','p2b':'Get PREMIUM →',
+    'p1pop':'Most Popular','p1p':'/month','p1f1':'5 active listings','p1f2':'Vacation coverage','p1f3':'Routes tab','p1f4':'Direct messaging','p1f5':'Express Pools','p1b':'Get PRO →',
+    'p2p':'/month','p2f1':'10 active listings','p2f2':'Express Pools access','p2f3':'2 featured listings/mo','p2f4':'Premium badge','p2f5':'All PRO features','p2b':'Get PREMIUM →',
     'ctat':"Join Florida's pool pro community",'ctas':'Start for free. No credit card. Built for pool professionals in Broward County, FL.','ctab':'Get Started Free','ctaf':'Free to join · No credit card · poolguyx.com',
     'fapp':'Open App','fpro':'PRO Plan','fprem':'PREMIUM Plan','fpriv':'Privacy Policy','fterm':'Terms of Use',
   },
@@ -667,13 +700,13 @@ const T={
     'f2e':'Encontre trabalho','f2h':'Vagas de emprego, direto no app',
     'f2d':'Publique uma vaga ou candidate-se a uma perto de você. Valor por piscina, divisão de repasse e o que está incluso ficam claros antes de conversar — sem intermediário.',
     'f2p1':'Vagas de emprego','f2p2':'Contato direto','f2p3':'Valor por piscina','f2b':'Por semana',
-    'f3e':'Trabalhos em tempo real','f3h':'Quick Pools e Cobertura de Férias',
-    'f3d':'Alertas instantâneos para trabalhos emergenciais. Ou publique suas férias e deixe pool guys se candidatarem para cobrir sua rota.',
-    'f3p1':'Quick Pools','f3p2':'Cobertura de férias','f3p3':'PREMIUM','f3b':'Trabalho emergencial',
+    'f3e':'Trabalhos em tempo real','f3h':'Piscinas Rápidas — trabalho na hora',
+    'f3d':'No instante em que uma piscina perto de você precisa de cobertura, chega uma notificação — você toca, manda mensagem pra quem publicou e fecha o trabalho na hora. Funciona como chamar uma corrida: o trabalho chega até você assim que surge, sem precisar ficar procurando.',
+    'f3p1':'Piscinas Rápidas','f3p2':'Alertas instantâneos','f3p3':'PREMIUM','f3b':'Trabalho emergencial',
     'ce':'Mais funcionalidades','ch':'Feito do jeito que os pool guys trabalham',
     'c1t':'Mensagens Diretas','c1d':'Converse com profissionais e clientes dentro do app. Negocie, confirme e coordene em um só lugar.',
     'c2t':'Perfis Verificados','c2d':'Avaliações, reviews e badges de verificação. Saiba o histórico antes de contratar.',
-    'c3t':'Notificações de Trabalho','c3d':'Alertas quando alguém se candidata ao seu anúncio, manda mensagem ou um Quick Pool aparece perto de você.',
+    'c3t':'Notificações de Trabalho','c3d':'Alertas quando alguém se candidata ao seu anúncio, manda mensagem ou uma Piscina Rápida aparece perto de você.',
     'c4t':'Anúncios no Marketplace','c4d':'Publique vagas, encontre técnicos, anuncie equipamentos. O marketplace completo para pool guys na Flórida.',
     'c5t':'Rede de Profissionais','c5d':'Conecte-se com profissionais em Broward County. Construa reputação e cresça sua base de clientes.','c5tag':'PRO e PREMIUM',
     'c6t':'Indique e Ganhe','c6d':'Convide outros pool guys com seu link. Você ganha dinheiro de verdade quando eles assinam, e eles ainda saem com desconto.',
@@ -684,8 +717,8 @@ const T={
     'sw4t':'Conectar e ganhar','sw4d':'Converse, combine e faça seu negócio crescer.',
     'pre':'Preços simples','prh':'Comece grátis. Faça upgrade quando quiser.','prs':'Sem taxas ocultas · Cancele a qualquer momento · Planos anuais economizam 17%',
     'p0n':'GRÁTIS','p0p':'para sempre','p0f1':'2 anúncios ativos','p0f2':'Publicar rotas à venda','p0f3':'Mensagens diretas','p0f4':'Cobertura de férias','p0f5':'Aba de Rotas','p0b':'Começar',
-    'p1pop':'Mais Popular','p1p':'/mês','p1f1':'5 anúncios ativos','p1f2':'Cobertura de férias','p1f3':'Aba de Rotas','p1f4':'Mensagens diretas','p1f5':'Quick Pools','p1b':'Obter PRO →',
-    'p2p':'/mês','p2f1':'10 anúncios ativos','p2f2':'Acesso Quick Pools','p2f3':'2 destaques/mês','p2f4':'Badge Premium','p2f5':'Todos os recursos PRO','p2b':'Obter PREMIUM →',
+    'p1pop':'Mais Popular','p1p':'/mês','p1f1':'5 anúncios ativos','p1f2':'Cobertura de férias','p1f3':'Aba de Rotas','p1f4':'Mensagens diretas','p1f5':'Piscinas Rápidas','p1b':'Obter PRO →',
+    'p2p':'/mês','p2f1':'10 anúncios ativos','p2f2':'Acesso Piscinas Rápidas','p2f3':'2 destaques/mês','p2f4':'Badge Premium','p2f5':'Todos os recursos PRO','p2b':'Obter PREMIUM →',
     'ctat':'Junte-se à comunidade de pool guys da Flórida','ctas':'Comece grátis. Sem cartão. Feito para profissionais de piscinas em Broward County, FL.','ctab':'Começar Grátis','ctaf':'Gratuito · Sem cartão · poolguyx.com',
     'fapp':'Abrir App','fpro':'Plano PRO','fprem':'Plano PREMIUM','fpriv':'Política de Privacidade','fterm':'Termos de Uso',
   },
@@ -702,13 +735,13 @@ const T={
     'f2e':'Encuentra trabajo','f2h':'Vacantes de empleo, dentro de la app',
     'f2d':'Publica una vacante o postúlate a una cerca de ti. Pago por piscina, división del reparto y qué está incluido quedan claros antes de hablar — sin intermediarios.',
     'f2p1':'Vacantes de empleo','f2p2':'Contacto directo','f2p3':'Pago por piscina','f2b':'Por semana',
-    'f3e':'Trabajos en tiempo real','f3h':'Quick Pools y Cobertura de Vacaciones',
-    'f3d':'Alertas instantáneas para trabajos de emergencia. O publica tus vacaciones y deja que pool guys se postulen para cubrir tu ruta.',
-    'f3p1':'Quick Pools','f3p2':'Cobertura vacaciones','f3p3':'PREMIUM','f3b':'Trabajo de emergencia',
+    'f3e':'Trabajos en tiempo real','f3h':'Piscinas Rápidas — trabajo al instante',
+    'f3d':'En el momento en que una piscina cerca de ti necesita cobertura, te llega una notificación — la tocas, le escribes a quien publicó y cierras el trabajo al instante. Funciona como pedir un viaje: el trabajo llega a ti apenas aparece, sin tener que buscar.',
+    'f3p1':'Piscinas Rápidas','f3p2':'Alertas instantáneas','f3p3':'PREMIUM','f3b':'Trabajo de emergencia',
     'ce':'Más funciones','ch':'Hecho para cómo trabajan los pool guys',
     'c1t':'Mensajes Directos','c1d':'Chatea con profesionales y clientes dentro de la app. Negocia, confirma y coordina en un solo lugar.',
     'c2t':'Perfiles Verificados','c2d':'Calificaciones, reseñas y badges de verificación. Conoce el historial antes de contratar.',
-    'c3t':'Notificaciones de Trabajo','c3d':'Alertas cuando alguien se postula a tu anuncio, envía un mensaje o aparece un Quick Pool cerca.',
+    'c3t':'Notificaciones de Trabajo','c3d':'Alertas cuando alguien se postula a tu anuncio, envía un mensaje o aparece una Piscina Rápida cerca.',
     'c4t':'Anuncios en Marketplace','c4d':'Publica vacantes, encuentra técnicos, anuncia equipos. El clasificado completo para pool guys en Florida.',
     'c5t':'Red de Profesionales','c5d':'Conéctate con profesionales en Broward County. Construye reputación y crece tu base de clientes.','c5tag':'PRO y PREMIUM',
     'c6t':'Refiere y Gana','c6d':'Invita a otros pool guys con tu enlace. Ganas dinero real cuando se suscriben, y ellos también reciben un descuento.',
@@ -719,8 +752,8 @@ const T={
     'sw4t':'Conectar y ganar','sw4d':'Chatea, coordina y haz crecer tu negocio.',
     'pre':'Precios simples','prh':'Empieza gratis. Mejora cuando quieras.','prs':'Sin cargos ocultos · Cancela en cualquier momento · Planes anuales ahorran 17%',
     'p0n':'GRATIS','p0p':'para siempre','p0f1':'2 anuncios activos','p0f2':'Publicar rutas en venta','p0f3':'Mensajes directos','p0f4':'Cobertura de vacaciones','p0f5':'Pestaña Rutas','p0b':'Empezar',
-    'p1pop':'Más Popular','p1p':'/mes','p1f1':'5 anuncios activos','p1f2':'Cobertura de vacaciones','p1f3':'Pestaña Rutas','p1f4':'Mensajes directos','p1f5':'Quick Pools','p1b':'Obtener PRO →',
-    'p2p':'/mes','p2f1':'10 anuncios activos','p2f2':'Acceso Quick Pools','p2f3':'2 destacados/mes','p2f4':'Badge Premium','p2f5':'Todos los recursos PRO','p2b':'Obtener PREMIUM →',
+    'p1pop':'Más Popular','p1p':'/mes','p1f1':'5 anuncios activos','p1f2':'Cobertura de vacaciones','p1f3':'Pestaña Rutas','p1f4':'Mensajes directos','p1f5':'Piscinas Rápidas','p1b':'Obtener PRO →',
+    'p2p':'/mes','p2f1':'10 anuncios activos','p2f2':'Acceso Piscinas Rápidas','p2f3':'2 destacados/mes','p2f4':'Badge Premium','p2f5':'Todos los recursos PRO','p2b':'Obtener PREMIUM →',
     'ctat':'Únete a la comunidad de pool guys de Florida','ctas':'Empieza gratis. Sin tarjeta. Hecho para profesionales de piscinas en Broward County, FL.','ctab':'Empezar Gratis','ctaf':'Gratis · Sin tarjeta · poolguyx.com',
     'fapp':'Abrir App','fpro':'Plan PRO','fprem':'Plan PREMIUM','fpriv':'Política de Privacidad','fterm':'Términos de Uso',
   }
