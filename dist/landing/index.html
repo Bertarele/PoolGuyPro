@@ -21,10 +21,32 @@
       --card:rgba(255,255,255,0.04);
     }
     html{scroll-behavior:smooth}
-    body{font-family:'Poppins',sans-serif;background:var(--navy);color:#e8edf2;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    body{font-family:'Poppins',sans-serif;background:var(--navy);color:#e8edf2;-webkit-font-smoothing:antialiased;overflow-x:hidden;position:relative}
     ::-webkit-scrollbar{width:5px}
     ::-webkit-scrollbar-track{background:var(--navy)}
     ::-webkit-scrollbar-thumb{background:rgba(14,186,199,0.3);border-radius:99px}
+
+    /* Full-bleed backdrop: a faint dot grid plus a few soft glows anchored
+       toward the edges, fixed behind the whole page. Every section's own
+       max-width container sits well inside the viewport on a wide desktop
+       screen, which used to leave the outer gutters totally flat/empty —
+       this gives them something too, without competing with foreground
+       content (z-index:0, pointer-events:none, very low opacity). */
+    body::before{
+      content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+      background:
+        radial-gradient(circle at 6% 18%,rgba(14,186,199,0.10) 0%,transparent 32%),
+        radial-gradient(circle at 95% 8%,rgba(0,119,182,0.10) 0%,transparent 30%),
+        radial-gradient(circle at 3% 72%,rgba(0,119,182,0.08) 0%,transparent 28%),
+        radial-gradient(circle at 97% 60%,rgba(14,186,199,0.08) 0%,transparent 30%),
+        radial-gradient(circle at 92% 92%,rgba(124,58,237,0.06) 0%,transparent 26%),
+        radial-gradient(rgba(255,255,255,0.05) 1px,transparent 1px);
+      background-size:auto,auto,auto,auto,auto,28px 28px;
+    }
+    /* Everything else needs to sit above that backdrop explicitly, since an
+       unpositioned element with author-level z-index:0 can still end up
+       behind a positioned z-index:0 sibling in paint order. */
+    nav,.hero,.stats-bar,.feat-section,.cards-section,.how-section,.pricing-section,.cta-section,footer{position:relative;z-index:1}
 
     /* ── Keyframes ── */
     @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
@@ -98,6 +120,18 @@
     .btn-g:hover{background:rgba(14,186,199,0.14);border-color:rgba(14,186,199,0.45)}
     .hero-note{font-size:12px;color:rgba(255,255,255,0.2)}
 
+    /* Side proof cards — real facts already stated in the stats bar below,
+       just surfaced earlier so the wide gutters either side of the (fairly
+       narrow, for readability) hero text column aren't dead space on a
+       big desktop screen. Hidden below 1300px: there's no room for them
+       once the hero text column and the viewport edge get close, and the
+       phones showcase already fills that width on tablet anyway. */
+    .hero-side-card{display:none;position:absolute;top:50%;z-index:1;background:rgba(4,13,24,0.85);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:16px;padding:14px 18px;box-shadow:0 20px 50px rgba(0,0,0,0.45);text-align:left;align-items:center;gap:12px;animation:floatY 5s ease-in-out infinite}
+    .hero-side-card .stat-ico{width:38px;height:38px;flex-shrink:0}
+    .hero-side-l{left:clamp(24px,4vw,80px);transform:translateY(-135%)}
+    .hero-side-r{right:clamp(24px,4vw,80px);transform:translateY(35%);animation-delay:.8s}
+    @media(min-width:1300px){.hero-side-card{display:flex}}
+
     /* ── 3-PHONE SHOWCASE ── */
     .phones-wrap{position:relative;z-index:1;display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-top:56px}
     /* Carousel: clicking a side phone physically rotates all three boxes at
@@ -127,23 +161,24 @@
     .wave-div svg{display:block;width:100%}
 
     /* ── STATS BAR ── */
-    .stats-bar{display:flex;justify-content:center;background:rgba(14,186,199,0.04);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-    .stat-i{flex:1;max-width:180px;text-align:center;padding:22px 12px;border-right:1px solid var(--border)}
+    .stats-bar{display:flex;justify-content:center;background:rgba(14,186,199,0.04);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:0 24px}
+    .stat-i{flex:1;max-width:230px;text-align:center;padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px}
     .stat-i:last-child{border-right:none}
+    .stat-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(14,186,199,0.1);border:1px solid rgba(14,186,199,0.2);color:var(--cyan)}
     .stat-n{font-size:26px;font-weight:900;letter-spacing:-.03em;background:linear-gradient(90deg,var(--cyan),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .stat-l{font-size:11px;color:rgba(255,255,255,0.32);margin-top:3px;font-weight:500}
+    .stat-l{font-size:11px;color:rgba(255,255,255,0.32);margin-top:-4px;font-weight:500}
 
     /* ── FEATURE ALTERNATING ── */
-    .feat-section{padding:88px 24px}
-    .feat-inner{max-width:1000px;margin:0 auto}
+    .feat-section{padding:96px 40px}
+    .feat-inner{max-width:1180px;margin:0 auto}
     .eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
     .sec-h{font-size:clamp(24px,4vw,36px);font-weight:800;letter-spacing:-.025em;margin-bottom:12px;color:#f0f8ff}
     .sec-p{font-size:14px;color:rgba(255,255,255,0.4);line-height:1.75;max-width:440px}
-    .alt-row{display:flex;align-items:center;gap:64px;margin-bottom:96px}
+    .alt-row{display:flex;align-items:center;gap:88px;margin-bottom:108px}
     .alt-row:last-child{margin-bottom:0}
     .alt-row.rev{flex-direction:row-reverse}
     .alt-text{flex:1;min-width:0}
-    .alt-phone{flex:0 0 auto;width:220px;position:relative}
+    .alt-phone{flex:0 0 auto;width:248px;position:relative}
     .alt-phone-frame{border-radius:38px;overflow:hidden;box-shadow:0 0 0 1.5px rgba(255,255,255,0.1),0 32px 80px rgba(0,0,0,0.6),0 0 50px rgba(14,186,199,0.1);animation:floatY 5s ease-in-out infinite}
     .alt-phone-frame img{display:block;width:100%}
     .feat-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
@@ -159,8 +194,8 @@
     @media(max-width:700px){.alt-row,.alt-row.rev{flex-direction:column;gap:36px}.alt-phone{width:200px;margin:0 auto}.sec-p{max-width:100%}}
 
     /* ── FEATURE CARDS GRID ── */
-    .cards-section{padding:0 24px 88px}
-    .cards-inner{max-width:1000px;margin:0 auto}
+    .cards-section{padding:0 40px 96px}
+    .cards-inner{max-width:1180px;margin:0 auto}
     .cards-head{text-align:center;margin-bottom:44px}
     .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
     .card{background:var(--card);border:1px solid rgba(14,186,199,0.1);border-radius:20px;padding:24px 20px;transition:transform .2s,border-color .2s,box-shadow .2s;position:relative;overflow:hidden}
@@ -173,8 +208,8 @@
     .card-tag{display:inline-flex;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;margin-top:10px;background:rgba(124,58,237,0.12);color:#c4b5fd;border:1px solid rgba(124,58,237,0.22)}
 
     /* ── HOW IT WORKS ── */
-    .how-section{padding:0 24px 88px}
-    .how-inner{max-width:900px;margin:0 auto}
+    .how-section{padding:0 40px 96px}
+    .how-inner{max-width:1100px;margin:0 auto}
     .how-head{text-align:center;margin-bottom:52px}
     .steps{display:flex;gap:0;position:relative}
     .steps::before{content:'';position:absolute;top:28px;left:calc(100%/8);right:calc(100%/8);height:1px;background:linear-gradient(90deg,transparent,rgba(14,186,199,0.35) 20%,rgba(14,186,199,0.35) 80%,transparent)}
@@ -185,11 +220,11 @@
     @media(max-width:640px){.steps{flex-direction:column;gap:32px}.steps::before{display:none}.step{display:flex;gap:16px;text-align:left;align-items:flex-start}.step-n{flex-shrink:0;width:44px;height:44px;font-size:15px;margin:0}}
 
     /* ── PRICING ── */
-    .pricing-section{padding:0 24px 88px;background:radial-gradient(ellipse 90% 40% at 50% 0%,rgba(14,186,199,0.05),transparent 70%)}
-    .pricing-inner{max-width:900px;margin:0 auto}
+    .pricing-section{padding:0 40px 96px;background:radial-gradient(ellipse 90% 40% at 50% 0%,rgba(14,186,199,0.05),transparent 70%)}
+    .pricing-inner{max-width:1100px;margin:0 auto}
     .pricing-head{text-align:center;margin-bottom:44px}
-    .plans{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-    .plan{flex:1;min-width:220px;max-width:270px;background:rgba(11,31,50,0.6);border:1px solid rgba(14,186,199,0.12);border-radius:22px;padding:26px 20px;position:relative;overflow:hidden;transition:transform .2s}
+    .plans{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
+    .plan{flex:1;min-width:240px;max-width:300px;background:rgba(11,31,50,0.6);border:1px solid rgba(14,186,199,0.12);border-radius:22px;padding:30px 24px;position:relative;overflow:hidden;transition:transform .2s}
     .plan:hover{transform:translateY(-4px)}
     .plan.feat{border-color:rgba(14,186,199,0.35);background:rgba(14,186,199,0.06);box-shadow:0 0 0 1px rgba(14,186,199,0.12),0 20px 60px rgba(14,186,199,0.08)}
     .plan.prem{border-color:rgba(124,58,237,0.35);background:rgba(124,58,237,0.06);box-shadow:0 0 0 1px rgba(124,58,237,0.12),0 20px 60px rgba(124,58,237,0.08)}
@@ -254,6 +289,15 @@
   <div class="water-rings"><div class="ring ring1"></div><div class="ring ring2"></div><div class="ring ring3"></div></div>
   <div class="bubbles" id="bubbles"></div>
 
+  <div class="hero-side-card hero-side-l">
+    <div class="stat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+    <div><div class="pb-val" style="font-size:15px" data-t="hsl1">$0 to join</div><div class="pb-lbl" data-t="hsl2">No credit card needed</div></div>
+  </div>
+  <div class="hero-side-card hero-side-r">
+    <div class="stat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+    <div><div class="pb-val" style="font-size:15px" data-t="hsr1">Real-time alerts</div><div class="pb-lbl" data-t="hsr2">Jobs come to you</div></div>
+  </div>
+
   <div class="hero-inner">
     <!-- Real app icon -->
     <div class="brand-icon-wrap au">
@@ -311,10 +355,22 @@
 
 <!-- STATS -->
 <div class="stats-bar">
-  <div class="stat-i"><div class="stat-n">100%</div><div class="stat-l" data-t="s1">Pool pros only</div></div>
-  <div class="stat-i"><div class="stat-n">3</div><div class="stat-l" data-t="s2">Languages</div></div>
-  <div class="stat-i"><div class="stat-n">$0</div><div class="stat-l" data-t="s3">To get started</div></div>
-  <div class="stat-i"><div class="stat-n">24/7</div><div class="stat-l" data-t="s4">Job alerts</div></div>
+  <div class="stat-i">
+    <div class="stat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    <div class="stat-n">100%</div><div class="stat-l" data-t="s1">Pool pros only</div>
+  </div>
+  <div class="stat-i">
+    <div class="stat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+    <div class="stat-n">3</div><div class="stat-l" data-t="s2">Languages</div>
+  </div>
+  <div class="stat-i">
+    <div class="stat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+    <div class="stat-n">$0</div><div class="stat-l" data-t="s3">To get started</div>
+  </div>
+  <div class="stat-i">
+    <div class="stat-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+    <div class="stat-n">24/7</div><div class="stat-l" data-t="s4">Job alerts</div>
+  </div>
 </div>
 
 <!-- ═══ FEATURE ALTERNATING — real screenshots ═══ -->
@@ -659,6 +715,7 @@ const T={
     'hs':'Find vacation coverage, buy & sell pool routes, get emergency jobs instantly. Built for Broward County pool professionals.',
     'hcta':'Get Started Free','hl':'See how it works','hn':'Free to join · No credit card required',
     's1':'Pool pros only','s2':'Languages','s3':'To get started','s4':'Job alerts',
+    'hsl1':'$0 to join','hsl2':'No credit card needed','hsr1':'Real-time alerts','hsr2':'Jobs come to you',
     'f1e':'Your home base','f1h':'Everything in one dashboard',
     'f1d':'See your active listings, weekly earnings, pending applications, and upgrade status — all from the home screen.',
     'f1p1':'Live stats','f1p2':'My Listings','f1p3':'Weekly earnings','f1b':'This week',
@@ -694,6 +751,7 @@ const T={
     'hs':'Encontre cobertura de férias, compre e venda rotas, receba trabalhos emergenciais. Feito para profissionais de piscinas em Broward County.',
     'hcta':'Começar Grátis','hl':'Ver como funciona','hn':'Gratuito · Sem cartão de crédito',
     's1':'Só profissionais','s2':'Idiomas','s3':'Para começar','s4':'Alertas de trabalho',
+    'hsl1':'$0 para entrar','hsl2':'Sem cartão de crédito','hsr1':'Alertas em tempo real','hsr2':'O trabalho vem até você',
     'f1e':'Sua base','f1h':'Tudo em um dashboard',
     'f1d':'Veja seus anúncios ativos, ganhos semanais, candidaturas e status do plano — tudo na tela inicial.',
     'f1p1':'Stats ao vivo','f1p2':'Meus anúncios','f1p3':'Ganhos semanais','f1b':'Esta semana',
@@ -729,6 +787,7 @@ const T={
     'hs':'Encuentra cobertura de vacaciones, compra y vende rutas, recibe trabajos de emergencia. Hecho para profesionales de piscinas en Broward County.',
     'hcta':'Empezar Gratis','hl':'Ver cómo funciona','hn':'Gratis · Sin tarjeta de crédito',
     's1':'Solo profesionales','s2':'Idiomas','s3':'Para empezar','s4':'Alertas de trabajo',
+    'hsl1':'$0 para unirte','hsl2':'Sin tarjeta de crédito','hsr1':'Alertas en tiempo real','hsr2':'El trabajo llega a ti',
     'f1e':'Tu base','f1h':'Todo en un dashboard',
     'f1d':'Ve tus anuncios activos, ganancias semanales, postulaciones y estado del plan — todo desde la pantalla de inicio.',
     'f1p1':'Stats en vivo','f1p2':'Mis anuncios','f1p3':'Ganancias semanales','f1b':'Esta semana',
