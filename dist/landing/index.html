@@ -83,7 +83,7 @@
     .brand-icon-glow::after{content:'';position:absolute;inset:-40px;border-radius:60px;background:radial-gradient(ellipse,rgba(0,119,182,0.12) 0%,transparent 70%);animation:glowPulse 3s ease-in-out infinite;animation-delay:.5s;z-index:-1}
 
     /* PGX icon SVG inline */
-    .pgx-icon{display:block;border-radius:28px;box-shadow:0 0 0 1px rgba(14,186,199,0.3),0 24px 60px rgba(0,0,0,0.5),0 0 40px rgba(14,186,199,0.15)}
+    .pgx-logo{display:block;width:clamp(220px,32vw,320px);height:auto;filter:drop-shadow(0 20px 45px rgba(0,0,0,0.55)) drop-shadow(0 0 30px rgba(14,186,199,0.18))}
 
     .hero-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(14,186,199,0.1);border:1px solid rgba(14,186,199,0.28);border-radius:999px;padding:6px 16px 6px 10px;font-size:12px;font-weight:600;color:var(--cyan);margin-bottom:20px;white-space:nowrap}
     .badge-dot{width:6px;height:6px;border-radius:50%;background:#34d399;flex-shrink:0;box-shadow:0 0 0 3px rgba(52,211,153,0.2)}
@@ -244,7 +244,7 @@
     <!-- Real app icon -->
     <div class="brand-icon-wrap au">
       <div class="brand-icon-glow">
-        <img class="pgx-icon" src="/icone-512.png" width="100" height="100" alt="PoolGuyX icon">
+        <img class="pgx-logo" src="/wordmarkwhite.webp" alt="PoolGuyX">
       </div>
     </div>
 
@@ -276,13 +276,13 @@
   <!-- 3 real app screenshots -->
   <div class="phones-wrap au d3">
     <div class="phone-frame pf-side pf-left">
-      <img src="ss-work.webp" alt="Job listings" loading="lazy">
+      <img src="/landing/ss-work.webp" alt="Job listings" loading="lazy">
     </div>
     <div class="phone-frame pf-center">
-      <img src="ss-home.webp" alt="PoolGuyX home screen" loading="lazy">
+      <img src="/landing/ss-home.webp" alt="PoolGuyX home screen" loading="lazy">
     </div>
     <div class="phone-frame pf-side pf-right">
-      <img src="ss-quickpools.webp" alt="Quick Pools tab" loading="lazy">
+      <img src="/landing/ss-quickpools.webp" alt="Quick Pools tab" loading="lazy">
     </div>
   </div>
 </section>
@@ -330,7 +330,7 @@
       </div>
       <div class="alt-phone" style="position:relative">
         <div class="alt-phone-frame">
-          <img src="ss-home.webp" alt="Home screen" loading="lazy">
+          <img src="/landing/ss-home.webp" alt="Home screen" loading="lazy">
         </div>
         <div class="phone-badge" style="bottom:60px;right:-40px">
           <div class="pb-val">$340</div>
@@ -362,7 +362,7 @@
       </div>
       <div class="alt-phone" style="position:relative">
         <div class="alt-phone-frame" style="animation-delay:.5s">
-          <img src="ss-work.webp" alt="Job listings" loading="lazy">
+          <img src="/landing/ss-work.webp" alt="Job listings" loading="lazy">
         </div>
         <div class="phone-badge" style="top:70px;left:-44px;border-color:rgba(52,211,153,0.25)">
           <div class="pb-val" style="color:#34d399">$900</div>
@@ -394,7 +394,7 @@
       </div>
       <div class="alt-phone" style="position:relative">
         <div class="alt-phone-frame" style="animation-delay:1s">
-          <img src="ss-quickpools.webp" alt="Quick Pools" loading="lazy">
+          <img src="/landing/ss-quickpools.webp" alt="Quick Pools" loading="lazy">
         </div>
         <div class="phone-badge" style="top:80px;right:-46px;border-color:rgba(124,58,237,0.28)">
           <div class="pb-val" style="color:#c4b5fd">⚡ Now</div>
