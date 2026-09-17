@@ -83,7 +83,7 @@
     .brand-icon-glow::after{content:'';position:absolute;inset:-40px;border-radius:60px;background:radial-gradient(ellipse,rgba(0,119,182,0.12) 0%,transparent 70%);animation:glowPulse 3s ease-in-out infinite;animation-delay:.5s;z-index:-1}
 
     /* PGX icon SVG inline */
-    .pgx-logo{display:block;width:clamp(220px,32vw,320px);height:auto;filter:drop-shadow(0 20px 45px rgba(0,0,0,0.55)) drop-shadow(0 0 30px rgba(14,186,199,0.18))}
+    .pgx-logo{display:block;width:clamp(280px,42vw,460px);height:auto;filter:drop-shadow(0 20px 45px rgba(0,0,0,0.55)) drop-shadow(0 0 30px rgba(14,186,199,0.18))}
 
     .hero-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(14,186,199,0.1);border:1px solid rgba(14,186,199,0.28);border-radius:999px;padding:6px 16px 6px 10px;font-size:12px;font-weight:600;color:var(--cyan);margin-bottom:20px;white-space:nowrap}
     .badge-dot{width:6px;height:6px;border-radius:50%;background:#34d399;flex-shrink:0;box-shadow:0 0 0 3px rgba(52,211,153,0.2)}
@@ -100,10 +100,20 @@
 
     /* ── 3-PHONE SHOWCASE ── */
     .phones-wrap{position:relative;z-index:1;display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-top:56px}
-    .phone-frame{position:relative;border-radius:36px;overflow:hidden;box-shadow:0 0 0 1.5px rgba(255,255,255,0.1),0 32px 80px rgba(0,0,0,0.65),0 0 40px rgba(14,186,199,0.08)}
-    .phone-frame img{display:block;width:100%;height:100%;object-fit:cover}
+    /* Carousel: clicking a side phone swaps it into the center slot. Slots
+       stay put (left/center/right); only size/opacity/glow animate, so the
+       transition reads as the clicked phone "coming forward" rather than a
+       jump-cut. */
+    .phone-frame{position:relative;border-radius:36px;overflow:hidden;cursor:pointer;
+      box-shadow:0 0 0 1.5px rgba(255,255,255,0.1),0 32px 80px rgba(0,0,0,0.65),0 0 40px rgba(14,186,199,0.08);
+      transition:width .45s cubic-bezier(.22,1,.36,1),height .45s cubic-bezier(.22,1,.36,1),opacity .4s ease,filter .4s ease,box-shadow .4s ease}
+    .phone-frame img{display:block;width:100%;height:100%;object-fit:cover;transition:opacity .25s ease,transform .25s ease}
+    .phone-frame.pf-fade img{opacity:0;transform:scale(.94)}
     .pf-center{width:196px;height:390px;animation:floatY 4.5s ease-in-out infinite}
+    .pf-center.pf-pop{animation:centerPop .55s cubic-bezier(.22,1,.36,1);box-shadow:0 0 0 1.5px rgba(14,186,199,0.5),0 32px 80px rgba(0,0,0,0.65),0 0 60px rgba(14,186,199,0.35)}
+    @keyframes centerPop{0%{transform:scale(.9)}55%{transform:scale(1.04)}100%{transform:scale(1)}}
     .pf-side{width:160px;height:320px;opacity:.65;filter:brightness(.8)}
+    .pf-side:hover{opacity:.85;filter:brightness(.95)}
     .pf-left{animation:floatY 4.5s ease-in-out infinite;animation-delay:.6s}
     .pf-right{animation:floatY 4.5s ease-in-out infinite;animation-delay:1.1s}
     .phone-label{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10px;font-weight:600;color:rgba(255,255,255,0.3);letter-spacing:.04em}
@@ -273,15 +283,15 @@
     <p class="hero-note au d4" data-t="hn">Free to join · No credit card required</p>
   </div>
 
-  <!-- 3 real app screenshots -->
+  <!-- 3 real app screenshots — click a side phone to bring it to center -->
   <div class="phones-wrap au d3">
-    <div class="phone-frame pf-side pf-left">
+    <div class="phone-frame pf-side pf-left" onclick="pgxHeroSwap(this)">
       <img src="/landing/ss-work.webp" alt="Job listings" loading="lazy">
     </div>
-    <div class="phone-frame pf-center">
+    <div class="phone-frame pf-center" onclick="pgxHeroSwap(this)">
       <img src="/landing/ss-home.webp" alt="PoolGuyX home screen" loading="lazy">
     </div>
-    <div class="phone-frame pf-side pf-right">
+    <div class="phone-frame pf-side pf-right" onclick="pgxHeroSwap(this)">
       <img src="/landing/ss-quickpools.webp" alt="Quick Pools tab" loading="lazy">
     </div>
   </div>
@@ -566,6 +576,32 @@
     bc.appendChild(b);
   }
 })();
+
+// Hero phone carousel — click a side phone to swap it into the center slot.
+// The 3 boxes never move (left/center/right stay fixed); only which image
+// sits in which box changes, cross-faded so it reads as the picked one
+// stepping forward instead of a jump-cut.
+let pgxHeroSwapping = false;
+function pgxHeroSwap(el){
+  const center = document.querySelector('.phones-wrap .pf-center');
+  if(!center || el===center || pgxHeroSwapping) return;
+  pgxHeroSwapping = true;
+  const cImg = center.querySelector('img');
+  const eImg = el.querySelector('img');
+  center.classList.add('pf-fade');
+  el.classList.add('pf-fade');
+  setTimeout(()=>{
+    const tSrc=cImg.getAttribute('src'), tAlt=cImg.getAttribute('alt');
+    cImg.setAttribute('src', eImg.getAttribute('src'));
+    cImg.setAttribute('alt', eImg.getAttribute('alt'));
+    eImg.setAttribute('src', tSrc);
+    eImg.setAttribute('alt', tAlt);
+    center.classList.remove('pf-fade');
+    el.classList.remove('pf-fade');
+    center.classList.add('pf-pop');
+    setTimeout(()=>{ center.classList.remove('pf-pop'); pgxHeroSwapping=false; }, 600);
+  }, 220);
+}
 
 // i18n
 const T={
