@@ -4964,4 +4964,12 @@ class AppErrorBoundary extends React.Component {
     }, "Recarregar"));
   }
 }
-ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(AppErrorBoundary, null, /*#__PURE__*/React.createElement(App, null)));
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(AppErrorBoundary, null, /*#__PURE__*/React.createElement(App, null), /*#__PURE__*/React.createElement(RecoveryGate, {
+  lang: (() => {
+    try {
+      return localStorage.getItem("pg_lang") || "en";
+    } catch (e) {
+      return "en";
+    }
+  })()
+})));

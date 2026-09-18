@@ -14,6 +14,7 @@ function LoginScreen({
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [emailConfirmNeeded, setEmailConfirmNeeded] = React.useState(false);
+  const [notice, setNotice] = React.useState('');
   const [showPass, setShowPass] = React.useState(false);
   const [showPassC, setShowPassC] = React.useState(false);
   // Signup fields
@@ -63,6 +64,44 @@ function LoginScreen({
     return () => document.removeEventListener('animationstart', onAutoFill, true);
   }, []);
   const canSubmit = email.trim().length > 3 && pass.trim().length >= 4;
+
+  // Raw GoTrue messages are English and cryptic ("email rate limit exceeded");
+  // map the ones users actually hit to something they can act on.
+  const friendlyAuthError = e => {
+    const raw = String(e && e.message || '');
+    const code = String(e && e.code || '');
+    const L = (en, pt, es) => lang === 'pt' ? pt : lang === 'es' ? es : en;
+    if (code === 'over_email_send_rate_limit' || /rate limit/i.test(raw) || e && e.status === 429) return L('Too many attempts right now. Please wait a few minutes and try again.', 'Muitas tentativas agora. Aguarde alguns minutos e tente de novo.', 'Demasiados intentos ahora. Espera unos minutos e inténtalo de nuevo.');
+    if (/invalid login credentials|invalid credentials/i.test(raw)) return L('Wrong email or password.', 'E-mail ou senha incorretos.', 'Correo o contraseña incorrectos.');
+    if (/email not confirmed/i.test(raw)) return L('Confirm your email first — check your inbox for the link.', 'Confirme seu e-mail antes de entrar — veja o link na sua caixa de entrada.', 'Confirma tu correo primero — revisa el enlace en tu bandeja de entrada.');
+    if (/already registered|already been registered/i.test(raw)) return L('This email already has an account. Try logging in.', 'Este e-mail já tem conta. Tente entrar.', 'Este correo ya tiene cuenta. Intenta iniciar sesión.');
+    if (/password.*(short|least|weak)/i.test(raw)) return L('Password is too weak — use at least 8 characters.', 'Senha muito fraca — use pelo menos 8 caracteres.', 'Contraseña muy débil — usa al menos 8 caracteres.');
+    return raw || L('Something went wrong. Try again.', 'Algo deu errado. Tente novamente.', 'Algo salió mal. Inténtalo de nuevo.');
+  };
+  const handleForgot = async () => {
+    if (loading) return;
+    setError('');
+    setNotice('');
+    const L = (en, pt, es) => lang === 'pt' ? pt : lang === 'es' ? es : en;
+    const em = email.trim();
+    if (!/^\S+@\S+\.\S+$/.test(em)) {
+      setError(L('Type your email above first, then tap "Forgot password".', 'Digite seu e-mail acima e toque em "Esqueci a senha".', 'Escribe tu correo arriba y toca "Olvidé mi contraseña".'));
+      return;
+    }
+    setLoading(true);
+    const {
+      error: err
+    } = await window.sb.auth.resetPasswordForEmail(em, {
+      redirectTo: window.location.origin + '/'
+    });
+    setLoading(false);
+    if (err) {
+      setError(friendlyAuthError(err));
+      return;
+    }
+    // Same message whether or not the account exists — don't leak which emails are registered.
+    setNotice(L('If that email has an account, we sent a link to reset your password.', 'Se esse e-mail tiver conta, enviamos um link para redefinir a senha.', 'Si ese correo tiene cuenta, enviamos un enlace para restablecer la contraseña.'));
+  };
   const handleLogin = async () => {
     if (!canSubmit || loading) return;
     setLoading(true);
@@ -80,17 +119,21 @@ function LoginScreen({
       if (err) throw err;
       onLogin(data.user);
     } catch (e) {
-      setError(e.message || 'Login failed');
+      setError(friendlyAuthError(e));
       setLoading(false);
     }
   };
   const goSignup = () => {
     setMode('signup');
     setStep(1);
+    setNotice('');
+    setError('');
   };
   const goLogin = () => {
     setMode('login');
     setStep(1);
+    setNotice('');
+    setError('');
   };
 
   // ── Password strength ────────────────────────────────────────
@@ -153,7 +196,13 @@ function LoginScreen({
         error: err
       } = await window.sb.auth.signUp({
         email: email.trim(),
-        password: pass
+        password: pass,
+        options: {
+          data: {
+            name: name.trim(),
+            region
+          }
+        }
       });
       if (err) throw err;
       const userId = data.user?.id || data.id;
@@ -189,7 +238,7 @@ function LoginScreen({
       }
       onLogin(data.user || data);
     } catch (e) {
-      setError(e.message || 'Signup failed');
+      setError(friendlyAuthError(e));
       setLoading(false);
     }
   };
@@ -535,6 +584,8 @@ function LoginScreen({
       marginTop: -4
     }
   }, /*#__PURE__*/React.createElement("button", {
+    onClick: handleForgot,
+    disabled: loading,
     style: {
       border: 'none',
       background: 'transparent',
@@ -545,7 +596,17 @@ function LoginScreen({
       padding: 0,
       fontFamily: 'inherit'
     }
-  }, t.forgotPw)), error && /*#__PURE__*/React.createElement("div", {
+  }, t.forgotPw)), notice && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: '#166534',
+      background: '#f0fdf4',
+      border: '1px solid #bbf7d0',
+      borderRadius: 10,
+      padding: '9px 12px',
+      fontWeight: 500
+    }
+  }, notice), error && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12.5,
       color: '#ef4444',
@@ -1055,6 +1116,8 @@ function LoginScreen({
         marginTop: -8
       }
     }, /*#__PURE__*/React.createElement("button", {
+      onClick: handleForgot,
+      disabled: loading,
       style: {
         border: 'none',
         background: 'transparent',
@@ -1065,7 +1128,17 @@ function LoginScreen({
         padding: 0,
         fontFamily: 'inherit'
       }
-    }, t.forgotPw)), error && /*#__PURE__*/React.createElement("div", {
+    }, t.forgotPw)), notice && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12.5,
+        color: '#166534',
+        background: '#f0fdf4',
+        border: '1px solid #bbf7d0',
+        borderRadius: 10,
+        padding: '9px 12px',
+        fontWeight: 500
+      }
+    }, notice), error && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12.5,
         color: '#ef4444',
@@ -1613,7 +1686,17 @@ function LoginScreen({
         zIndex: 98
       },
       onClick: () => setRegionOpen(false)
-    }), error && /*#__PURE__*/React.createElement("div", {
+    }), notice && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12.5,
+        color: '#166534',
+        background: '#f0fdf4',
+        border: '1px solid #bbf7d0',
+        borderRadius: 10,
+        padding: '9px 12px',
+        fontWeight: 500
+      }
+    }, notice), error && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12.5,
         color: '#ef4444',
@@ -1953,6 +2036,8 @@ function LoginScreen({
       marginTop: -6
     }
   }, /*#__PURE__*/React.createElement("button", {
+    onClick: handleForgot,
+    disabled: loading,
     style: {
       border: 'none',
       background: 'transparent',
@@ -1963,7 +2048,17 @@ function LoginScreen({
       padding: 0,
       fontFamily: 'inherit'
     }
-  }, t.forgotPw)), error ? /*#__PURE__*/React.createElement("div", {
+  }, t.forgotPw)), notice && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: '#166534',
+      background: '#f0fdf4',
+      border: '1px solid #bbf7d0',
+      borderRadius: 10,
+      padding: '9px 12px',
+      fontWeight: 500
+    }
+  }, notice), error ? /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12.5,
       color: '#ef4444',
@@ -2650,7 +2745,17 @@ function LoginScreen({
       zIndex: 98
     },
     onClick: () => setRegionOpen(false)
-  })), error ? /*#__PURE__*/React.createElement("div", {
+  })), notice && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: '#166534',
+      background: '#f0fdf4',
+      border: '1px solid #bbf7d0',
+      borderRadius: 10,
+      padding: '9px 12px',
+      fontWeight: 500
+    }
+  }, notice), error ? /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12.5,
       color: '#ef4444',
@@ -2717,6 +2822,158 @@ function LoginScreen({
     }
   }, lang === 'pt' ? 'Entrar' : lang === 'es' ? 'Iniciar sesión' : 'Sign in')))), /*#__PURE__*/React.createElement("style", null, `@keyframes pgSpin { to { transform: rotate(360deg); } }`));
 }
+
+// Shown once after the user opens the "reset your password" email link — the
+// link signs them in (see index.html's _pgRecovery), and this makes them pick a
+// new password right away instead of landing in the app with the old one.
+function RecoveryGate({
+  lang = 'en'
+}) {
+  const [open, setOpen] = React.useState(() => !!window._pgRecovery);
+  const [pass, setPass] = React.useState('');
+  const [pass2, setPass2] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState('');
+  const [done, setDone] = React.useState(false);
+  const L = (en, pt, es) => lang === 'pt' ? pt : lang === 'es' ? es : en;
+  if (!open) return null;
+  const strong = pass.length >= 8 && /[A-Z]/.test(pass) && /[a-z]/.test(pass) && /[0-9]/.test(pass);
+  const save = async () => {
+    if (!strong || pass !== pass2 || busy) return;
+    setBusy(true);
+    setErr('');
+    const {
+      error
+    } = await window.sb.auth.updateUser({
+      password: pass
+    });
+    setBusy(false);
+    if (error) {
+      setErr(/same|different/i.test(error.message || '') ? L('Choose a password different from the old one.', 'Escolha uma senha diferente da anterior.', 'Elige una contraseña diferente a la anterior.') : error.message || L('Could not save. Try again.', 'Não foi possível salvar. Tente de novo.', 'No se pudo guardar. Inténtalo de nuevo.'));
+      return;
+    }
+    window._pgRecovery = false;
+    setDone(true);
+    setTimeout(() => setOpen(false), 1600);
+  };
+  const field = {
+    width: '100%',
+    height: 48,
+    borderRadius: 12,
+    border: '1px solid #cfd8e3',
+    padding: '0 14px',
+    fontSize: 15,
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+    color: '#0A2840',
+    background: '#fff'
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 100000,
+      background: 'rgba(4,13,24,0.72)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    role: "dialog",
+    "aria-modal": "true",
+    style: {
+      width: '100%',
+      maxWidth: 400,
+      background: '#fff',
+      borderRadius: 20,
+      padding: '26px 22px',
+      boxShadow: '0 24px 70px rgba(0,0,0,0.4)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12
+    }
+  }, done ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '14px 0',
+      color: '#166534',
+      fontWeight: 700,
+      fontSize: 16
+    }
+  }, "\u2713 ", L('Password updated', 'Senha atualizada', 'Contraseña actualizada')) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 19,
+      fontWeight: 800,
+      color: '#0A2840'
+    }
+  }, L('Choose a new password', 'Escolha uma nova senha', 'Elige una nueva contraseña')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: '#5b7186',
+      lineHeight: 1.45
+    }
+  }, L('At least 8 characters, with upper case, lower case and a number.', 'Pelo menos 8 caracteres, com maiúscula, minúscula e número.', 'Al menos 8 caracteres, con mayúscula, minúscula y número.')), /*#__PURE__*/React.createElement("input", {
+    type: "password",
+    autoComplete: "new-password",
+    value: pass,
+    onChange: e => setPass(e.target.value),
+    style: field,
+    placeholder: L('New password', 'Nova senha', 'Nueva contraseña')
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "password",
+    autoComplete: "new-password",
+    value: pass2,
+    onChange: e => setPass2(e.target.value),
+    style: field,
+    onKeyDown: e => e.key === 'Enter' && save(),
+    placeholder: L('Confirm new password', 'Confirmar nova senha', 'Confirmar nueva contraseña')
+  }), pass2 && pass !== pass2 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: '#b91c1c'
+    }
+  }, L('Passwords do not match.', 'As senhas não coincidem.', 'Las contraseñas no coinciden.')), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: '#b91c1c',
+      background: '#fef2f2',
+      border: '1px solid #fecaca',
+      borderRadius: 10,
+      padding: '9px 12px'
+    }
+  }, err), /*#__PURE__*/React.createElement("button", {
+    onClick: save,
+    disabled: !strong || pass !== pass2 || busy,
+    style: {
+      height: 50,
+      borderRadius: 12,
+      border: 'none',
+      fontFamily: 'inherit',
+      fontSize: 15,
+      fontWeight: 700,
+      color: '#fff',
+      cursor: strong && pass === pass2 ? 'pointer' : 'default',
+      background: 'linear-gradient(90deg,#1565E8 0%,#00C2D4 100%)',
+      opacity: strong && pass === pass2 && !busy ? 1 : 0.45
+    }
+  }, busy ? '…' : L('Save password', 'Salvar senha', 'Guardar contraseña')), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      window._pgRecovery = false;
+      setOpen(false);
+    },
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: '#5b7186',
+      fontSize: 13,
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      padding: 4
+    }
+  }, L('Not now', 'Agora não', 'Ahora no')))));
+}
 Object.assign(window, {
-  LoginScreen
+  LoginScreen,
+  RecoveryGate
 });

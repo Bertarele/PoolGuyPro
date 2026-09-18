@@ -3243,5 +3243,5 @@ class AppErrorBoundary extends React.Component {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <AppErrorBoundary><App/></AppErrorBoundary>
+  <AppErrorBoundary><App/><RecoveryGate lang={(()=>{try{return localStorage.getItem("pg_lang")||"en";}catch(e){return "en";}})()}/></AppErrorBoundary>
 );

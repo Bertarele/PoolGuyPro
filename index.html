@@ -203,6 +203,9 @@
         var _ort = _hp.get('refresh_token');
         if (_oat) {
           _tok = _oat;
+          // Password-recovery email link: same hash shape as OAuth, but the app must
+          // show a 'choose a new password' step instead of just dropping them in.
+          if (_hp.get('type') === 'recovery') window._pgRecovery = true;
           window._pendingOAuth = { access_token: _oat, refresh_token: _ort };
           history.replaceState(null, '', window.location.pathname + window.location.search);
         }
@@ -374,16 +377,16 @@
         signInWithPassword:async function(creds){
           var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
           var d=await r.json();
-          if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Invalid credentials'}};
+          if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Invalid credentials',code:d.error_code||d.code||null,status:r.status}};
           _saveSession(d);
           // Start background auto-refresh (every 50 min, token valid 1h)
           _startAutoRefresh();
           return{data:{user:d.user,session:d},error:null};
         },
         signUp:async function(creds){
-          var r=await fetch(BASE+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
+          var r=await fetch(BASE+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password,data:(creds.options&&creds.options.data)||undefined})});
           var d=await r.json();
-          if(!r.ok) return{data:null,error:{message:d.msg||d.error_description||d.message||'Signup failed'}};
+          if(!r.ok) return{data:null,error:{message:d.msg||d.error_description||d.message||'Signup failed',code:d.error_code||d.code||null,status:r.status}};
           if(d.access_token){ _saveSession(d); _startAutoRefresh(); }
           return{data:{user:d.user||d},error:null};
         },
@@ -404,6 +407,26 @@
           }
           try{var s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(s&&s.u) return{data:{session:{user:s.u,access_token:s.t}}};}catch(e){}
           return{data:{session:null}};
+        },
+        // Sends the password-reset email. redirectTo must be in the project's
+        // allowed redirect list (Auth -> URL config); poolguyx.com is.
+        resetPasswordForEmail:async function(email, opts){
+          var to = (opts && opts.redirectTo) ? '?redirect_to='+encodeURIComponent(opts.redirectTo) : '';
+          try{
+            var r=await fetch(BASE+'/auth/v1/recover'+to,{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:email})});
+            if(!r.ok){ var d=await r.json().catch(function(){return{};}); return{data:null,error:{message:d.msg||d.error_description||d.message||'Reset failed',code:d.error_code||d.code||null,status:r.status}}; }
+            return{data:{},error:null};
+          }catch(e){ return{data:null,error:{message:e.message||'Network error'}}; }
+        },
+        // Change the signed-in user's password (used after a recovery link).
+        updateUser:async function(attrs){
+          if(!_tok) return{data:null,error:{message:'Not signed in'}};
+          try{
+            var r=await fetch(BASE+'/auth/v1/user',{method:'PUT',headers:{'apikey':KEY,'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},body:JSON.stringify(attrs)});
+            var d=await r.json().catch(function(){return{};});
+            if(!r.ok) return{data:null,error:{message:d.msg||d.error_description||d.message||'Update failed',code:d.error_code||d.code||null,status:r.status}};
+            return{data:{user:d},error:null};
+          }catch(e){ return{data:null,error:{message:e.message||'Network error'}}; }
         },
         // Proactively refresh the token — call this on page load before data fetches
         refresh: async function(){
