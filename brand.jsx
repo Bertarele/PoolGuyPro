@@ -630,6 +630,7 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
     return 'FL';
   };
   const [activeState,  setActiveState]  = React.useState(inferStateFromCities);
+  const [statePickerOpen, setStatePickerOpen] = React.useState(false);
   const [activeCounty, setActiveCounty] = React.useState(() => {
     const st = US_STATES[inferStateFromCities()];
     return (county && st.counties[county]) ? county : Object.keys(st.counties)[0];
@@ -736,6 +737,7 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
   };
 
   return (
+    <React.Fragment>
     <Sheet open={open} onClose={onClose} height="92%">
       <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
         {/* Header */}
@@ -756,18 +758,26 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
           {/* State picker — first thing on the sheet, deliberately: which
               cities exist to pick from depends entirely on this. Always
               visible (not just on first open) so switching states later is
-              never more than a tap away. */}
-          <div style={{marginBottom:10}}>
+              never more than a tap away. A single button opening a picker
+              sheet, rather than 4 chips sitting side by side — chips that
+              close together invite a mis-tap that silently swaps the whole
+              state (and with it every city list below); a full-row picker
+              (same pattern as LanguagePickerSheet) needs a deliberate
+              second tap and gives each option much more room to miss. */}
+          <div style={{marginBottom:16}}>
             <div style={{fontSize:10, color:'var(--pg-ink-500)', fontWeight:700, letterSpacing:'0.06em', marginBottom:6}}>
               {(lang==='pt'?'ESTADO':lang==='es'?'ESTADO':'STATE')}
             </div>
-            <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-              {Object.values(US_STATES).map(st => (
-                <button key={st.code} onClick={()=>setActiveState(st.code)} className={`pg-chip ${activeState===st.code?'pg-chip-on':''}`} style={{fontSize:12, padding:'6px 12px'}}>
-                  {st.name[lang] || st.name.en}
-                </button>
-              ))}
-            </div>
+            <button onClick={()=>setStatePickerOpen(true)} className="pg-press" style={{
+              display:'flex', alignItems:'center', gap:10, width:'100%', padding:'12px 14px',
+              borderRadius:12, border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-white)',
+              cursor:'pointer', fontFamily:'inherit', textAlign:'left',
+            }}>
+              <span style={{flex:1, fontSize:14.5, fontWeight:700, color:'var(--pg-ink-900)'}}>
+                {US_STATES[activeState].name[lang] || US_STATES[activeState].name.en}
+              </span>
+              <span style={{transform:'rotate(90deg)', display:'flex'}}>{Icon.chev(15, 'var(--pg-ink-400)')}</span>
+            </button>
           </div>
           <button onClick={useMyLocation} disabled={geoBusy} style={{
             display:'flex', alignItems:'center', justifyContent:'center', gap:7,
@@ -986,6 +996,50 @@ function RegionEditorSheet({ open, onClose, lang='en', regionsByDay, setRegionsB
         </div>
       </div>
     </Sheet>
+
+    {/* State picker — nested sheet, same full-row pattern as LanguagePickerSheet.
+        Stacks on top of the sheet above rather than replacing it, so the day/
+        county editing underneath is exactly where they left it once a state
+        is picked (or the sheet is dismissed without picking one). */}
+    <Sheet open={statePickerOpen} onClose={()=>setStatePickerOpen(false)} height="auto">
+      <div style={{padding:'4px 18px 30px'}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18}}>
+          <h2 style={{margin:0, fontSize:18, fontWeight:700, letterSpacing:'-0.01em'}}>
+            {lang==='pt'?'Escolha o estado':lang==='es'?'Elige el estado':'Choose a state'}
+          </h2>
+          <button onClick={()=>setStatePickerOpen(false)} style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
+            {Icon.x(16,'var(--pg-ink-700)')}
+          </button>
+        </div>
+        <div style={{display:'flex', flexDirection:'column', gap:8}}>
+          {Object.values(US_STATES).map(st => {
+            const active = activeState === st.code;
+            return (
+              <button key={st.code} onClick={()=>{ setActiveState(st.code); setStatePickerOpen(false); }}
+                className="pg-press" style={{
+                  display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:14,
+                  cursor:'pointer', fontFamily:'inherit', textAlign:'left',
+                  border: active ? '2px solid var(--pg-blue-500)' : '1px solid var(--pg-ink-200)',
+                  background: active ? 'var(--pg-blue-50)' : 'var(--pg-white)',
+                }}>
+                <span style={{flex:1, fontSize:16, fontWeight:600, color:active?'var(--pg-blue-700)':'var(--pg-ink-900)'}}>
+                  {st.name[lang] || st.name.en}
+                </span>
+                <span style={{fontSize:12, color:'var(--pg-ink-400)', fontWeight:600}}>
+                  {Object.keys(st.counties).length} {lang==='pt'?'condados':lang==='es'?'condados':'counties'}
+                </span>
+                {active && (
+                  <div style={{width:22, height:22, borderRadius:'50%', background:'var(--pg-blue-500)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                    {Icon.check(13,'#fff')}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </Sheet>
+    </React.Fragment>
   );
 }
 

@@ -1198,6 +1198,7 @@ function RegionEditorSheet({
     return 'FL';
   };
   const [activeState, setActiveState] = React.useState(inferStateFromCities);
+  const [statePickerOpen, setStatePickerOpen] = React.useState(false);
   const [activeCounty, setActiveCounty] = React.useState(() => {
     const st = US_STATES[inferStateFromCities()];
     return county && st.counties[county] ? county : Object.keys(st.counties)[0];
@@ -1302,7 +1303,7 @@ function RegionEditorSheet({
     clearLbl: lang === 'pt' ? 'Limpar' : lang === 'es' ? 'Limpiar' : 'Clear',
     pickCities: lang === 'pt' ? 'Escolha as cidades' : lang === 'es' ? 'Elige las ciudades' : 'Pick cities'
   };
-  return /*#__PURE__*/React.createElement(Sheet, {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sheet, {
     open: open,
     onClose: onClose,
     height: "92%"
@@ -1358,7 +1359,7 @@ function RegionEditorSheet({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 10
+      marginBottom: 16
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1368,21 +1369,35 @@ function RegionEditorSheet({
       letterSpacing: '0.06em',
       marginBottom: 6
     }
-  }, lang === 'pt' ? 'ESTADO' : lang === 'es' ? 'ESTADO' : 'STATE'), /*#__PURE__*/React.createElement("div", {
+  }, lang === 'pt' ? 'ESTADO' : lang === 'es' ? 'ESTADO' : 'STATE'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setStatePickerOpen(true),
+    className: "pg-press",
     style: {
       display: 'flex',
-      gap: 6,
-      flexWrap: 'wrap'
+      alignItems: 'center',
+      gap: 10,
+      width: '100%',
+      padding: '12px 14px',
+      borderRadius: 12,
+      border: '1.5px solid var(--pg-ink-200)',
+      background: 'var(--pg-white)',
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      textAlign: 'left'
     }
-  }, Object.values(US_STATES).map(st => /*#__PURE__*/React.createElement("button", {
-    key: st.code,
-    onClick: () => setActiveState(st.code),
-    className: `pg-chip ${activeState === st.code ? 'pg-chip-on' : ''}`,
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 12,
-      padding: '6px 12px'
+      flex: 1,
+      fontSize: 14.5,
+      fontWeight: 700,
+      color: 'var(--pg-ink-900)'
     }
-  }, st.name[lang] || st.name.en)))), /*#__PURE__*/React.createElement("button", {
+  }, US_STATES[activeState].name[lang] || US_STATES[activeState].name.en), /*#__PURE__*/React.createElement("span", {
+    style: {
+      transform: 'rotate(90deg)',
+      display: 'flex'
+    }
+  }, Icon.chev(15, 'var(--pg-ink-400)')))), /*#__PURE__*/React.createElement("button", {
     onClick: useMyLocation,
     disabled: geoBusy,
     style: {
@@ -1805,7 +1820,94 @@ function RegionEditorSheet({
       height: 50,
       fontSize: 15
     }
-  }, head.save))));
+  }, head.save)))), /*#__PURE__*/React.createElement(Sheet, {
+    open: statePickerOpen,
+    onClose: () => setStatePickerOpen(false),
+    height: "auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '4px 18px 30px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontSize: 18,
+      fontWeight: 700,
+      letterSpacing: '-0.01em'
+    }
+  }, lang === 'pt' ? 'Escolha o estado' : lang === 'es' ? 'Elige el estado' : 'Choose a state'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setStatePickerOpen(false),
+    style: {
+      border: 'none',
+      background: 'var(--pg-ink-100)',
+      width: 30,
+      height: 30,
+      borderRadius: '50%',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, Icon.x(16, 'var(--pg-ink-700)'))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
+    }
+  }, Object.values(US_STATES).map(st => {
+    const active = activeState === st.code;
+    return /*#__PURE__*/React.createElement("button", {
+      key: st.code,
+      onClick: () => {
+        setActiveState(st.code);
+        setStatePickerOpen(false);
+      },
+      className: "pg-press",
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        padding: '14px 16px',
+        borderRadius: 14,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        border: active ? '2px solid var(--pg-blue-500)' : '1px solid var(--pg-ink-200)',
+        background: active ? 'var(--pg-blue-50)' : 'var(--pg-white)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: 600,
+        color: active ? 'var(--pg-blue-700)' : 'var(--pg-ink-900)'
+      }
+    }, st.name[lang] || st.name.en), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: 'var(--pg-ink-400)',
+        fontWeight: 600
+      }
+    }, Object.keys(st.counties).length, " ", lang === 'pt' ? 'condados' : lang === 'es' ? 'condados' : 'counties'), active && /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 22,
+        height: 22,
+        borderRadius: '50%',
+        background: 'var(--pg-blue-500)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }
+    }, Icon.check(13, '#fff')));
+  })))));
 }
 Object.assign(window, {
   Wordmark,
