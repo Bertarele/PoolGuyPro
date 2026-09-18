@@ -50,6 +50,275 @@ function ConfirmModal({ message, subMessage, confirmLabel, onConfirm, onCancel, 
   );
 }
 
+// Reason categories for a photo-specific problem report — deliberately not
+// the generic minor/serious/critical severity Marketplace rental disputes
+// use, since "the pool guy photographed the wrong thing" doesn't map onto
+// that scale cleanly. Each maps to a severity under the hood only so the
+// existing dispute_reports column (and the admin queue's severity strip)
+// still gets something sensible; the picker itself is reason-first.
+const PHOTO_DISPUTE_REASONS = [
+  { id:'quality',       sev:'minor',    emoji:'📷', pt:'Qualidade baixa',            en:'Low quality',                es:'Baja calidad',
+    dPt:'Foto borrada, escura ou cortada', dEn:'Blurry, dark or cropped photo', dEs:'Foto borrosa, oscura o cortada' },
+  { id:'wrong_type',    sev:'minor',    emoji:'🔀', pt:'Tipo de foto errado',        en:'Wrong photo type',           es:'Tipo de foto incorrecto',
+    dPt:'Pedi um ângulo/parte, veio outro', dEn:'Asked for one angle/part, got another', dEs:'Pedí un ángulo/parte, llegó otro' },
+  { id:'mismatch',      sev:'serious',  emoji:'❓', pt:'Não bate com a piscina',      en:"Doesn't match the pool",     es:'No coincide con la piscina',
+    dPt:'Parece outro lugar', dEn:'Looks like a different place', dEs:'Parece otro lugar' },
+  { id:'missing_angle', sev:'minor',    emoji:'📐', pt:'Faltou uma foto obrigatória', en:'Missing a required photo',   es:'Falta una foto obligatoria',
+    dPt:'Uma das fotos pedidas não veio', dEn:"One of the required photos wasn't sent", dEs:'Una de las fotos pedidas no llegó' },
+  { id:'other',         sev:'minor',    emoji:'✏️', pt:'Outro motivo',                en:'Other reason',               es:'Otro motivo',
+    dPt:'Descreva abaixo', dEn:'Describe below', dEs:'Describe abajo' },
+];
+
+// Pool guy → owner: shown when the pool guy answers "No" to "were you paid?"
+const PAYMENT_DISPUTE_REASONS = [
+  { id:'not_paid',    sev:'serious', emoji:'🚫', pt:'Não recebi nada',        en:"Didn't get paid at all",   es:'No recibí nada',
+    dPt:'Serviço feito, sem pagamento até agora', dEn:'Job done, no payment so far', dEs:'Servicio hecho, sin pago hasta ahora' },
+  { id:'partial',     sev:'minor',   emoji:'➗', pt:'Recebi só uma parte',    en:'Only got part of it',      es:'Recibí solo una parte',
+    dPt:'Combinamos um valor, veio menos', dEn:'Agreed on an amount, got less', dEs:'Acordamos un monto, llegó menos' },
+  { id:'wrong_amount',sev:'minor',   emoji:'🔢', pt:'Valor diferente do combinado', en:'Amount different from agreed', es:'Monto distinto al acordado',
+    dPt:'Pagou, mas não o valor certo', dEn:'Paid, but not the right amount', dEs:'Pagó, pero no el monto correcto' },
+  { id:'other',       sev:'minor',   emoji:'✏️', pt:'Outro motivo',           en:'Other reason',              es:'Otro motivo',
+    dPt:'Descreva abaixo', dEn:'Describe below', dEs:'Describe abajo' },
+];
+
+// Owner → pool guy: shown when the owner answers "No" to "did the pool guy
+// finish the job?" — broader than PHOTO_DISPUTE_REASONS (photos can be
+// perfect and the pool still not actually cleaned).
+const COMPLETION_DISPUTE_REASONS = [
+  { id:'no_show',     sev:'serious', emoji:'🚷', pt:'Nem apareceu',                en:"Never showed up",           es:'Nunca apareció',
+    dPt:'Marcado, mas não foi feito', dEn:"Scheduled but never done", dEs:'Programado pero nunca se hizo' },
+  { id:'not_done',     sev:'serious', emoji:'🏊', pt:'Piscina não foi limpa',       en:"Pool wasn't cleaned",        es:'La piscina no fue limpiada',
+    dPt:'Fotos ou não, o serviço não foi feito', dEn:"Photos or not, the work wasn't done", dEs:'Fotos o no, el trabajo no se hizo' },
+  { id:'partial_job', sev:'minor',   emoji:'🌓', pt:'Serviço pela metade',         en:'Job half-done',             es:'Trabajo a medias',
+    dPt:'Começou mas não terminou direito', dEn:"Started but didn't finish properly", dEs:'Empezó pero no terminó bien' },
+  { id:'other',        sev:'minor',   emoji:'✏️', pt:'Outro motivo',                en:'Other reason',               es:'Otro motivo',
+    dPt:'Descreva abaixo', dEn:'Describe below', dEs:'Describe abajo' },
+];
+
+// Shared by Express Pools and Vacation — both hit the same finish-the-job
+// moment (owner reviews submitted photos, or the pool guy wraps up their
+// side), so this is intentionally generic: the caller supplies the reason
+// set, photos and copy, and does its own dispute_reports insert
+// (source_type/source_id/reporter/reported differ per screen/direction) —
+// this just collects reason + description and hands them back.
+function PhotoDisputeModal({ open, reasons=PHOTO_DISPUTE_REASONS, title, intro, questionLabel, photos=[], allowUpload=false, uid, busy=false, onSubmit, onClose, lang='pt' }) {
+  const [reason, setReason]           = React.useState(null);
+  const [desc, setDesc]               = React.useState('');
+  // Only meaningful when allowUpload=true (the payment-dispute case — there
+  // are no existing photos to point at, so the reporter attaches their own
+  // proof: a payment app screenshot, a chat screenshot, etc.).
+  const [uploads, setUploads]         = React.useState([]); // [{file, preview}]
+  const [uploading, setUploading]     = React.useState(false);
+  React.useEffect(() => { if (open) { setReason(null); setDesc(''); setUploads([]); } }, [open]);
+  if (!open) return null;
+  const addUploads = (fileList) => {
+    const room = 5 - uploads.length;
+    const next = Array.from(fileList || []).slice(0, room).map(file => ({ file, preview: URL.createObjectURL(file) }));
+    if (next.length) setUploads(prev => [...prev, ...next]);
+  };
+  const removeUpload = (i) => setUploads(prev => prev.filter((_,idx)=>idx!==i));
+  const handleSubmit = async () => {
+    if (!reason || !desc.trim() || busy || uploading) return;
+    let evidenceUrls = [];
+    if (allowUpload && uploads.length > 0 && window.sb && uid) {
+      setUploading(true);
+      for (const u of uploads) {
+        try {
+          const raw = (u.file.name.split('.').pop() || 'jpg').toLowerCase();
+          const ext = /^(jpg|jpeg|png|webp|gif|heic)$/.test(raw) ? raw : 'jpg';
+          const path = `dispute-evidence/${uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+          const { error: upErr } = await window.sb.storage.from('post-images').upload(path, u.file, { contentType: u.file.type, upsert: false });
+          if (!upErr) {
+            const { data: pub } = window.sb.storage.from('post-images').getPublicUrl(path);
+            if (pub?.publicUrl) evidenceUrls.push(pub.publicUrl);
+          }
+        } catch (e) {}
+      }
+      setUploading(false);
+    }
+    onSubmit(reason, desc.trim(), evidenceUrls);
+  };
+  const label = (r) => lang==='pt'?r.pt:lang==='es'?r.es:r.en;
+  const descOf = (r) => lang==='pt'?r.dPt:lang==='es'?r.dEs:r.dEn;
+  const titleText = title || (lang==='pt'?'Reportar problema nas fotos':lang==='es'?'Reportar problema con las fotos':'Report a photo problem');
+  const introText = intro || (lang==='pt'
+    ? 'A vaga finaliza normalmente — isso só registra o problema para nossa equipe revisar.'
+    : lang==='es'
+      ? 'La vacante finaliza normalmente — esto solo registra el problema para que nuestro equipo lo revise.'
+      : "The job still finishes normally — this just logs the problem for our team to review.");
+  const questionText = questionLabel || (lang==='pt'?'O que houve com as fotos?':lang==='es'?'¿Qué pasó con las fotos?':'What was wrong with the photos?');
+  return (
+    <div onClick={onClose} style={{
+      position:'fixed', inset:0, zIndex:10001,
+      background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-end', justifyContent:'center',
+    }}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        width:'100%', maxWidth:520, maxHeight:'88vh', overflowY:'auto',
+        background:'var(--pg-white)', borderRadius:'20px 20px 0 0', padding:'24px 20px 36px',
+        boxShadow:'0 -8px 32px rgba(0,0,0,0.2)',
+      }}>
+        <div style={{width:40, height:4, borderRadius:4, background:'var(--pg-ink-200)', margin:'0 auto 18px'}}/>
+        <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', marginBottom:4}}>
+          {titleText}
+        </div>
+        <div style={{fontSize:13, color:'var(--pg-ink-500)', marginBottom:18, lineHeight:1.5}}>
+          {introText}
+        </div>
+
+        {photos.length > 0 && (
+          <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:18}}>
+            {photos.map((p,i) => (
+              <img key={i} src={p.url || p} alt="" style={{width:56, height:56, objectFit:'cover', borderRadius:10, border:'1px solid var(--pg-ink-200)'}}/>
+            ))}
+          </div>
+        )}
+
+        <div style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-700)', marginBottom:8}}>
+          {questionText}
+        </div>
+        <div style={{display:'flex', flexDirection:'column', gap:7, marginBottom:16}}>
+          {reasons.map(r => (
+            <button key={r.id} onClick={()=>setReason(r.id)} style={{
+              display:'flex', alignItems:'center', gap:10, textAlign:'left',
+              padding:'11px 13px', borderRadius:12, cursor:'pointer', fontFamily:'inherit',
+              border:`1.5px solid ${reason===r.id?'#DC2626':'var(--pg-ink-200)'}`,
+              background: reason===r.id ? 'rgba(220,38,38,0.06)' : 'var(--pg-ink-50)',
+              transition:'all .12s',
+            }}>
+              <span style={{fontSize:18, flexShrink:0}}>{r.emoji}</span>
+              <span>
+                <div style={{fontSize:13.5, fontWeight:700, color: reason===r.id ? '#DC2626' : 'var(--pg-ink-800)'}}>{label(r)}</div>
+                <div style={{fontSize:11, color:'var(--pg-ink-400)', marginTop:1}}>{descOf(r)}</div>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-700)', marginBottom:6}}>
+          {lang==='pt'?'Detalhes:':lang==='es'?'Detalles:':'Details:'}
+        </div>
+        <textarea
+          value={desc} onChange={e=>setDesc(e.target.value)} maxLength={500} rows={3}
+          placeholder={lang==='pt'?'O que exatamente está errado com as fotos?':lang==='es'?'¿Qué exactamente está mal en las fotos?':'What exactly is wrong with the photos?'}
+          style={{width:'100%', borderRadius:12, border:'1.5px solid var(--pg-ink-200)', background:'var(--pg-ink-50)',
+            color:'var(--pg-ink-900)', fontFamily:'inherit', fontSize:14, padding:'11px 13px',
+            resize:'none', boxSizing:'border-box', outline:'none', marginBottom: allowUpload ? 16 : 18, display:'block'}}
+        />
+
+        {allowUpload && (
+          <>
+            <div style={{fontSize:12, fontWeight:700, color:'var(--pg-ink-700)', marginBottom:8}}>
+              📎 {lang==='pt'?`Provas — print, comprovante etc. (${uploads.length}/5)`:lang==='es'?`Pruebas — captura, comprobante, etc. (${uploads.length}/5)`:`Evidence — screenshot, receipt, etc. (${uploads.length}/5)`}
+            </div>
+            {uploads.length > 0 && (
+              <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:10}}>
+                {uploads.map((u,i) => (
+                  <div key={i} style={{position:'relative', width:64, height:64, borderRadius:10, overflow:'hidden', flexShrink:0, border:'1.5px solid var(--pg-ink-200)'}}>
+                    <img src={u.preview} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                    <button onClick={()=>removeUpload(i)} style={{
+                      position:'absolute', top:2, right:2, width:18, height:18, borderRadius:'50%', border:'none',
+                      background:'rgba(0,0,0,0.65)', color:'#fff', fontSize:10, fontWeight:900,
+                      cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1, padding:0,
+                    }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {uploads.length < 5 && (
+              <label style={{
+                display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                height:42, borderRadius:12, border:'1.5px dashed var(--pg-ink-300)',
+                background:'var(--pg-ink-50)', cursor:'pointer', marginBottom:18,
+                fontSize:13, fontWeight:600, color:'var(--pg-ink-500)',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                </svg>
+                {lang==='pt'?'Adicionar prova':lang==='es'?'Agregar prueba':'Add evidence'}
+                <input type="file" accept="image/*" multiple style={{display:'none'}} onChange={e=>{ addUploads(e.target.files); e.target.value=''; }}/>
+              </label>
+            )}
+          </>
+        )}
+
+        <button onClick={handleSubmit} disabled={!reason || !desc.trim() || busy || uploading} style={{
+          width:'100%', height:50, borderRadius:14, border:'none', fontFamily:'inherit',
+          fontSize:15, fontWeight:800, color:'#fff', marginBottom:10,
+          cursor: (!reason || !desc.trim() || busy || uploading) ? 'not-allowed' : 'pointer',
+          background: (!reason || !desc.trim()) ? 'var(--pg-ink-300)' : 'linear-gradient(135deg,#DC2626,#EF4444)',
+          opacity: (!reason || !desc.trim()) ? 0.6 : 1, transition:'all .15s',
+        }}>
+          {busy || uploading
+            ? (lang==='pt'?'Enviando...':lang==='es'?'Enviando...':'Sending...')
+            : (lang==='pt'?'Reportar e finalizar':lang==='es'?'Reportar y finalizar':'Report & finish')}
+        </button>
+        <button onClick={onClose} style={{
+          width:'100%', height:42, borderRadius:12, border:'1.5px solid var(--pg-ink-200)',
+          background:'transparent', color:'var(--pg-ink-500)', fontSize:14, fontWeight:600,
+          cursor:'pointer', fontFamily:'inherit',
+        }}>
+          {lang==='pt'?'Cancelar':lang==='es'?'Cancelar':'Cancel'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// A quick Yes/No/Later checkpoint dropped in front of a rating sheet — "did
+// the job actually happen the way it should have" (payment received / job
+// completed) before either side rates the other. Yes and "answer later"
+// both just move straight on to the normal rating flow (this never blocks
+// finishing the job); No opens the matching PhotoDisputeModal instead. Kept
+// as its own tiny component rather than folded into PhotoDisputeModal
+// because it's a different interaction shape (pick one of three, not a
+// form) and reused identically for both directions (payment / completion).
+function YesNoLaterGate({ open, question, sub, onYes, onNo, onLater, lang='pt' }) {
+  if (!open) return null;
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:10000,
+      background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-end', justifyContent:'center',
+    }}>
+      <div style={{
+        width:'100%', maxWidth:520, background:'var(--pg-white)',
+        borderRadius:'20px 20px 0 0', padding:'24px 20px 36px',
+        boxShadow:'0 -8px 32px rgba(0,0,0,0.2)',
+      }}>
+        <div style={{width:40, height:4, borderRadius:4, background:'var(--pg-ink-200)', margin:'0 auto 20px'}}/>
+        <div style={{fontSize:18, fontWeight:800, color:'var(--pg-ink-900)', textAlign:'center', marginBottom: sub ? 6 : 22}}>
+          {question}
+        </div>
+        {sub && (
+          <div style={{fontSize:13, color:'var(--pg-ink-500)', textAlign:'center', marginBottom:22, lineHeight:1.45}}>
+            {sub}
+          </div>
+        )}
+        <div style={{display:'flex', gap:10, marginBottom:10}}>
+          <button onClick={onNo} style={{
+            flex:1, height:50, borderRadius:14, border:'1.5px solid #FCA5A5',
+            background:'#FEF2F2', color:'#B91C1C', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+          }}>
+            {lang==='pt'?'Não':lang==='es'?'No':'No'}
+          </button>
+          <button onClick={onYes} style={{
+            flex:1, height:50, borderRadius:14, border:'none',
+            background:'linear-gradient(135deg,#16A34A,#22C55E)', color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+            boxShadow:'0 4px 12px rgba(22,163,74,0.35)',
+          }}>
+            {lang==='pt'?'Sim':lang==='es'?'Sí':'Yes'}
+          </button>
+        </div>
+        <button onClick={onLater} style={{
+          width:'100%', height:42, borderRadius:12, border:'none', background:'transparent',
+          color:'var(--pg-ink-500)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+        }}>
+          {lang==='pt'?'Responder depois':lang==='es'?'Responder después':'Answer later'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ExtendJobModal({ onExtend, onCancel, lang='pt' }) {
   const opts = [
     { hours:6,  label: lang==='pt'?'+6 horas':lang==='es'?'+6 horas':'+6 hours' },
@@ -2633,6 +2902,144 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
   // of navigating to the raw Supabase storage URL.
   const [photoViewer, setPhotoViewer] = React.useState(null);
 
+  // Report-a-photo-problem — see PhotoDisputeModal. Reporting doesn't block
+  // finishing the job: on a successful report this goes straight into the
+  // same finalize flow the green button uses (setShowRating(true)), so
+  // "reportar e finalizar" is one continuous action, not two separate steps.
+  const [photoDisputeOpen, setPhotoDisputeOpen] = React.useState(false);
+  const [disputeBusy,      setDisputeBusy]      = React.useState(false);
+  const submitPhotoDispute = async (reasonId, description) => {
+    if (!reasonId || !description || !window.sb || !user?.uid || !acceptedApp) return;
+    setDisputeBusy(true);
+    try {
+      const reason = PHOTO_DISPUTE_REASONS.find(r => r.id === reasonId);
+      const reasonLabel = lang==='pt' ? reason.pt : lang==='es' ? reason.es : reason.en;
+      const jobTitleStr = typeof job.title==='object' ? (job.title[lang]||job.title.pt||job.title.en) : job.title;
+      const evidenceUrls = (acceptedApp.submitted_photos || []).map(p => p.url).filter(Boolean);
+      const { error } = await window.sb.from('dispute_reports').insert({
+        source_type:      'quickpool',
+        source_id:         String(acceptedApp.id),
+        reporter_id:        user.uid,
+        reported_user_id:   acceptedApp.applicant_id,
+        listing_id:          job.id,
+        listing_name:        jobTitleStr || (lang==='pt'?'Piscina Rápida':'Express Pool'),
+        severity:            reason.sev,
+        description:        `[${reasonLabel}] ${description}`,
+        reporter_name:      user.name || 'Owner',
+        reported_name:      acceptedApp.applicant_name || 'Pool guy',
+        status:             'pending',
+        evidence_urls:      evidenceUrls,
+      });
+      if (error) {
+        const dup = (error.message || '').includes('one_open_per_reporter');
+        showToast && showToast(dup
+          ? (lang==='pt'?'⚠ Você já reportou um problema nessa vaga.':lang==='es'?'⚠ Ya reportaste un problema en esta vacante.':'⚠ You already reported a problem on this job.')
+          : '❌ ' + (error.message || 'Error'));
+        return;
+      }
+      setPhotoDisputeOpen(false);
+      showToast && showToast(lang==='pt'?'✅ Problema reportado — finalize a vaga.':lang==='es'?'✅ Problema reportado — finaliza la vacante.':'✅ Problem reported — now finish the job.');
+      setShowRating(true);
+    } catch (e) {
+      showToast && showToast('❌ ' + (e?.message || 'Error'));
+    } finally {
+      setDisputeBusy(false);
+    }
+  };
+
+  // ── Pre-rating checkpoints ────────────────────────────────────────
+  // A quick "did this actually happen the way it should have" question in
+  // front of EACH side's rating step — the owner is asked whether the pool
+  // guy finished the job, the pool guy is asked whether they got paid.
+  // Both directions are best-effort: reporting a problem here never blocks
+  // finishing the job (the finally-block always proceeds to the normal
+  // rating flow, even if the dispute insert itself failed — e.g. a job
+  // that already has an open photo-quality report on it will hit the
+  // "one report per person per transaction" constraint here too, which is
+  // fine, not a reason to strand the owner mid-finalize).
+  const [completionGateOpen,    setCompletionGateOpen]    = React.useState(false);
+  const [completionReportOpen,  setCompletionReportOpen]  = React.useState(false);
+  const [completionDisputeBusy, setCompletionDisputeBusy] = React.useState(false);
+  const openFinalizeFlow = () => setCompletionGateOpen(true);
+  const submitCompletionDispute = async (reasonId, description) => {
+    if (!reasonId || !description) return;
+    setCompletionDisputeBusy(true);
+    try {
+      if (window.sb && user?.uid && acceptedApp) {
+        const reason = COMPLETION_DISPUTE_REASONS.find(r => r.id === reasonId);
+        const reasonLabel = lang==='pt' ? reason.pt : lang==='es' ? reason.es : reason.en;
+        const jobTitleStr = typeof job.title==='object' ? (job.title[lang]||job.title.pt||job.title.en) : job.title;
+        const evidenceUrls = (acceptedApp.submitted_photos || []).map(p => p.url).filter(Boolean);
+        const { error } = await window.sb.from('dispute_reports').insert({
+          source_type:      'quickpool',
+          source_id:         String(acceptedApp.id),
+          reporter_id:        user.uid,
+          reported_user_id:   acceptedApp.applicant_id,
+          listing_id:          job.id,
+          listing_name:        jobTitleStr || (lang==='pt'?'Piscina Rápida':'Express Pool'),
+          severity:            reason.sev,
+          description:        `[${reasonLabel}] ${description}`,
+          reporter_name:      user.name || 'Owner',
+          reported_name:      acceptedApp.applicant_name || 'Pool guy',
+          status:             'pending',
+          evidence_urls:      evidenceUrls,
+        });
+        const dup = error && (error.message || '').includes('one_open_per_reporter');
+        if (error && !dup) showToast && showToast('❌ ' + (error.message || 'Error'));
+        else showToast && showToast(dup
+          ? (lang==='pt'?'⚠ Você já tem um problema reportado nessa vaga.':lang==='es'?'⚠ Ya reportaste un problema en esta vacante.':'⚠ You already have an open report on this job.')
+          : (lang==='pt'?'✅ Problema reportado.':lang==='es'?'✅ Problema reportado.':'✅ Problem reported.'));
+      }
+    } catch (e) {
+      showToast && showToast('❌ ' + (e?.message || 'Error'));
+    } finally {
+      setCompletionDisputeBusy(false);
+      setCompletionReportOpen(false);
+      setShowRating(true); // reporting is best-effort — always still finalize
+    }
+  };
+
+  const [paymentGateOpen,    setPaymentGateOpen]    = React.useState(false);
+  const [paymentReportOpen,  setPaymentReportOpen]  = React.useState(false);
+  const [paymentDisputeBusy, setPaymentDisputeBusy] = React.useState(false);
+  const openOwnerRatingFlow = () => setPaymentGateOpen(true);
+  const submitPaymentDispute = async (reasonId, description, evidenceUrls=[]) => {
+    if (!reasonId || !description) return;
+    setPaymentDisputeBusy(true);
+    try {
+      if (window.sb && user?.uid && myApp && job?.poster_id) {
+        const reason = PAYMENT_DISPUTE_REASONS.find(r => r.id === reasonId);
+        const reasonLabel = lang==='pt' ? reason.pt : lang==='es' ? reason.es : reason.en;
+        const jobTitleStr = typeof job.title==='object' ? (job.title[lang]||job.title.pt||job.title.en) : job.title;
+        const { error } = await window.sb.from('dispute_reports').insert({
+          source_type:      'quickpool',
+          source_id:         String(myApp.id),
+          reporter_id:        user.uid,
+          reported_user_id:   job.poster_id,
+          listing_id:          job.id,
+          listing_name:        jobTitleStr || (lang==='pt'?'Piscina Rápida':'Express Pool'),
+          severity:            reason.sev,
+          description:        `[${reasonLabel}] ${description}`,
+          reporter_name:      user.name || 'Pool guy',
+          reported_name:      job.poster || 'Owner',
+          status:             'pending',
+          evidence_urls:      evidenceUrls,
+        });
+        const dup = error && (error.message || '').includes('one_open_per_reporter');
+        if (error && !dup) showToast && showToast('❌ ' + (error.message || 'Error'));
+        else showToast && showToast(dup
+          ? (lang==='pt'?'⚠ Você já tem um problema reportado nessa vaga.':lang==='es'?'⚠ Ya reportaste un problema en esta vacante.':'⚠ You already have an open report on this job.')
+          : (lang==='pt'?'✅ Problema reportado.':lang==='es'?'✅ Problema reportado.':'✅ Problem reported.'));
+      }
+    } catch (e) {
+      showToast && showToast('❌ ' + (e?.message || 'Error'));
+    } finally {
+      setPaymentDisputeBusy(false);
+      setPaymentReportOpen(false);
+      setShowOwnerRating(true); // reporting is best-effort — always still finalize
+    }
+  };
+
   // Photo upload state (pool guy)
   const [showPhotoUpload,   setShowPhotoUpload]   = React.useState(false);
   const [uploadedPhotos,    setUploadedPhotos]    = React.useState({});
@@ -3479,12 +3886,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
                   </div>
                 </div>
               )}
-              <button onClick={()=>setConfirmDialog({
-                message: lang==='pt'?'Finalizar e remover vaga?':lang==='es'?'¿Finalizar y eliminar?':'Mark complete & remove?',
-                subMessage: lang==='pt'?'A vaga será removida da lista. Você poderá avaliar o pool guy.':'The job will be removed from the list. You can rate the pool guy.',
-                confirmLabel: lang==='pt'?'Sim, finalizar':lang==='es'?'Sí, finalizar':'Yes, finalize',
-                onConfirm: ()=>{ setConfirmDialog(null); setShowRating(true); },
-              })} style={{
+              <button onClick={openFinalizeFlow} style={{
                 height:50, borderRadius:14, border:'none', cursor:'pointer',
                 background:'linear-gradient(135deg,#16A34A,#22C55E)',
                 color:'#fff', fontSize:15, fontWeight:700,
@@ -3495,6 +3897,17 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
                 {lang==='pt'?'Finalizar e remover vaga':lang==='es'?'Finalizar y eliminar':'Mark complete & remove'}
+              </button>
+              <button onClick={()=>setPhotoDisputeOpen(true)} style={{
+                height:42, borderRadius:12, border:'1.5px solid #FCA5A5', background:'#FEF2F2',
+                color:'#B91C1C', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                {lang==='pt'?'Reportar problema nas fotos':lang==='es'?'Reportar problema con las fotos':'Report a photo problem'}
               </button>
               </>
             ) : job.status === 'filled' ? (
@@ -3664,7 +4077,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
                     📸 {lang==='pt'?'Enviar fotos':lang==='es'?'Enviar fotos':'Send photos'}
                   </button>
                 ) : (
-                  <button onClick={()=>setShowOwnerRating(true)} style={{
+                  <button onClick={openOwnerRatingFlow} style={{
                     flex:2, height:46, borderRadius:999, border:'none', cursor:'pointer',
                     background:'linear-gradient(135deg,#16A34A,#22C55E)',
                     color:'#fff', fontSize:14, fontWeight:700,
@@ -3722,7 +4135,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
                       📸 {lang==='pt'?'Enviar fotos':lang==='es'?'Enviar fotos':'Send photos'}
                     </button>
                   ) : (
-                    <button onClick={()=>setShowOwnerRating(true)} style={{
+                    <button onClick={openOwnerRatingFlow} style={{
                       flex:2, height:46, borderRadius:999, border:'none', cursor:'pointer',
                       background:'linear-gradient(135deg,#16A34A,#22C55E)',
                       color:'#fff', fontSize:14, fontWeight:700,
@@ -3774,6 +4187,62 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
     {photoViewer && (
       <PhotoViewer photos={photoViewer.photos} startIdx={photoViewer.idx} onClose={()=>setPhotoViewer(null)}/>
     )}
+    <PhotoDisputeModal
+      open={photoDisputeOpen}
+      jobTitle={typeof job.title==='object' ? (job.title[lang]||job.title.pt||job.title.en) : job.title}
+      photos={acceptedApp?.submitted_photos || []}
+      busy={disputeBusy}
+      onSubmit={submitPhotoDispute}
+      onClose={()=>setPhotoDisputeOpen(false)}
+      lang={lang}
+    />
+
+    {/* Owner checkpoint: "did the pool guy actually finish?" before rating them */}
+    <YesNoLaterGate
+      open={completionGateOpen}
+      question={lang==='pt'?'Pool guy concluiu o trabalho?':lang==='es'?'¿El pool guy terminó el trabajo?':'Did the pool guy finish the job?'}
+      sub={lang==='pt'?'As fotos foram enviadas, mas isso ajuda a saber se o serviço foi feito de verdade.':lang==='es'?'Las fotos fueron enviadas, pero esto ayuda a saber si el trabajo se hizo de verdad.':'The photos came in, but this helps confirm the work actually happened.'}
+      lang={lang}
+      onYes={()=>{ setCompletionGateOpen(false); setShowRating(true); }}
+      onLater={()=>{ setCompletionGateOpen(false); setShowRating(true); }}
+      onNo={()=>{ setCompletionGateOpen(false); setCompletionReportOpen(true); }}
+    />
+    <PhotoDisputeModal
+      open={completionReportOpen}
+      reasons={COMPLETION_DISPUTE_REASONS}
+      title={lang==='pt'?'Reportar problema no serviço':lang==='es'?'Reportar problema con el servicio':'Report a problem with the job'}
+      questionLabel={lang==='pt'?'O que aconteceu?':lang==='es'?'¿Qué pasó?':'What happened?'}
+      intro={lang==='pt'?'A vaga finaliza normalmente — isso só registra o problema para nossa equipe revisar.':lang==='es'?'La vacante finaliza normalmente — esto solo registra el problema para que nuestro equipo lo revise.':"The job still finishes normally — this just logs the problem for our team to review."}
+      photos={acceptedApp?.submitted_photos || []}
+      busy={completionDisputeBusy}
+      onSubmit={submitCompletionDispute}
+      onClose={()=>{ setCompletionReportOpen(false); setShowRating(true); }}
+      lang={lang}
+    />
+
+    {/* Pool guy checkpoint: "did you get paid?" before rating the owner */}
+    <YesNoLaterGate
+      open={paymentGateOpen}
+      question={lang==='pt'?'Você foi pago?':lang==='es'?'¿Te pagaron?':'Did you get paid?'}
+      sub={lang==='pt'?'Isso não afeta sua avaliação — é só pra gente saber se os pagamentos estão acontecendo.':lang==='es'?'Esto no afecta tu calificación — solo para saber si los pagos están ocurriendo.':"This doesn't affect your rating — it just helps us know whether payments are actually happening."}
+      lang={lang}
+      onYes={()=>{ setPaymentGateOpen(false); setShowOwnerRating(true); }}
+      onLater={()=>{ setPaymentGateOpen(false); setShowOwnerRating(true); }}
+      onNo={()=>{ setPaymentGateOpen(false); setPaymentReportOpen(true); }}
+    />
+    <PhotoDisputeModal
+      open={paymentReportOpen}
+      reasons={PAYMENT_DISPUTE_REASONS}
+      title={lang==='pt'?'Reportar problema no pagamento':lang==='es'?'Reportar problema con el pago':'Report a payment problem'}
+      questionLabel={lang==='pt'?'O que aconteceu?':lang==='es'?'¿Qué pasó?':'What happened?'}
+      intro={lang==='pt'?'Você continua avaliando normalmente — isso só registra o problema para nossa equipe revisar.':lang==='es'?'De igual forma puedes calificar — esto solo registra el problema para que nuestro equipo lo revise.':"You can still go ahead and rate — this just logs the problem for our team to review."}
+      allowUpload
+      uid={user?.uid}
+      busy={paymentDisputeBusy}
+      onSubmit={submitPaymentDispute}
+      onClose={()=>{ setPaymentReportOpen(false); setShowOwnerRating(true); }}
+      lang={lang}
+    />
     </>
   );
 }

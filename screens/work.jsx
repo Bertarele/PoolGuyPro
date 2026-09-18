@@ -19,6 +19,60 @@ function WorkScreen({ ctx }) {
   // "completed"; see the sheet below for the rest of the handshake with the owner.
   const [completingVacApp, setCompletingVacApp] = React.useState(null);
   const t = STRINGS[lang];
+
+  // Pool guy checkpoint: "did you get paid?" before rating the owner, on the
+  // vacation side — mirrors the same gate quickpools.jsx uses for Express
+  // Pools (PhotoDisputeModal/YesNoLaterGate/PAYMENT_DISPUTE_REASONS live
+  // there and are globals by the time this actually renders — see
+  // build.js's script order). vacPayGateApp/vacPayReportApp hold the
+  // job_applications row (from the "⭐ Avaliar" button) while its gate/report
+  // step is open; both paths end by opening the normal RatingSheet via
+  // openRating — reporting is best-effort and never blocks rating.
+  const [vacPayGateApp,   setVacPayGateApp]   = React.useState(null);
+  const [vacPayReportApp, setVacPayReportApp] = React.useState(null);
+  const [vacPayDisputeBusy, setVacPayDisputeBusy] = React.useState(false);
+  const openVacRating = (app) => {
+    openRating && openRating({
+      to_id: app.author_id, to_name: app.owner || '',
+      listing_name: lang==='pt'?'Cobertura de férias':lang==='es'?'Cobertura de vacaciones':'Vacation coverage',
+      connection_type: 'vacation', connection_id: app.job_id || app.id,
+    });
+  };
+  const submitVacPaymentDispute = async (reasonId, description, evidenceUrls=[]) => {
+    const app = vacPayReportApp;
+    if (!reasonId || !description || !app) return;
+    setVacPayDisputeBusy(true);
+    try {
+      if (window.sb && ctxUser?.uid && app.author_id) {
+        const reason = PAYMENT_DISPUTE_REASONS.find(r => r.id === reasonId);
+        const reasonLabel = lang==='pt' ? reason.pt : lang==='es' ? reason.es : reason.en;
+        const { error } = await window.sb.from('dispute_reports').insert({
+          source_type:      'vacation',
+          source_id:         String(app.id),
+          reporter_id:        ctxUser.uid,
+          reported_user_id:   app.author_id,
+          listing_name:        lang==='pt'?'Cobertura de férias':lang==='es'?'Cobertura de vacaciones':'Vacation coverage',
+          severity:            reason.sev,
+          description:        `[${reasonLabel}] ${description}`,
+          reporter_name:      ctxUser.name || '',
+          reported_name:      app.owner || '',
+          status:             'pending',
+          evidence_urls:      evidenceUrls,
+        });
+        const dup = error && (error.message || '').includes('one_open_per_reporter');
+        if (error && !dup) showToast && showToast('❌ ' + (error.message || 'Error'));
+        else showToast && showToast(dup
+          ? (lang==='pt'?'⚠ Você já tem um problema reportado nessa cobertura.':lang==='es'?'⚠ Ya reportaste un problema en esta cobertura.':'⚠ You already have an open report on this coverage.')
+          : (lang==='pt'?'✅ Problema reportado.':lang==='es'?'✅ Problema reportado.':'✅ Problem reported.'));
+      }
+    } catch (e) {
+      showToast && showToast('❌ ' + (e?.message || 'Error'));
+    } finally {
+      setVacPayDisputeBusy(false);
+      setVacPayReportApp(null);
+      openVacRating(app);
+    }
+  };
   // WorkScreen fully unmounts when the user leaves the Trabalho tab (app.jsx
   // only renders it while tab==='work'), so a plain useState here forgets
   // which sub-tab (Vagas/Técnicos/Férias) was open every time — the hash can
@@ -416,6 +470,35 @@ function WorkScreen({ ctx }) {
         />
       )}
     </Sheet>
+  );
+
+  // "Did you get paid?" checkpoint in front of the pool guy's rate-the-owner
+  // step — see the state/handlers declared near the top of WorkScreen.
+  const vacPaymentGateOverlay = (
+    <React.Fragment>
+      <YesNoLaterGate
+        open={!!vacPayGateApp}
+        question={lang==='pt'?'Você foi pago?':lang==='es'?'¿Te pagaron?':'Did you get paid?'}
+        sub={lang==='pt'?'Isso não afeta sua avaliação — é só pra gente saber se os pagamentos estão acontecendo.':lang==='es'?'Esto no afecta tu calificación — solo para saber si los pagos están ocurriendo.':"This doesn't affect your rating — it just helps us know whether payments are actually happening."}
+        lang={lang}
+        onYes={()=>{ const a=vacPayGateApp; setVacPayGateApp(null); openVacRating(a); }}
+        onLater={()=>{ const a=vacPayGateApp; setVacPayGateApp(null); openVacRating(a); }}
+        onNo={()=>setVacPayReportApp(vacPayGateApp)}
+      />
+      <PhotoDisputeModal
+        open={!!vacPayReportApp}
+        reasons={PAYMENT_DISPUTE_REASONS}
+        title={lang==='pt'?'Reportar problema no pagamento':lang==='es'?'Reportar problema con el pago':'Report a payment problem'}
+        questionLabel={lang==='pt'?'O que aconteceu?':lang==='es'?'¿Qué pasó?':'What happened?'}
+        intro={lang==='pt'?'Você continua avaliando normalmente — isso só registra o problema para nossa equipe revisar.':lang==='es'?'De igual forma puedes calificar — esto solo registra el problema para que nuestro equipo lo revise.':"You can still go ahead and rate — this just logs the problem for our team to review."}
+        allowUpload
+        uid={ctxUser?.uid}
+        busy={vacPayDisputeBusy}
+        onSubmit={submitVacPaymentDispute}
+        onClose={()=>{ const a=vacPayReportApp; setVacPayReportApp(null); if (a) openVacRating(a); }}
+        lang={lang}
+      />
+    </React.Fragment>
   );
 
   // ── My Activity data (shared between desktop + mobile) ────────
@@ -962,11 +1045,7 @@ function WorkScreen({ ctx }) {
                                   : (lang==='pt'?'🔒 Bloqueado':lang==='es'?'🔒 Bloqueado':'🔒 Locked')}
                               </button>
                             ) : isDone ? (
-                              <button onClick={()=>openRating && openRating({
-                                to_id: app.author_id, to_name: app.owner || '',
-                                listing_name: lang==='pt'?'Cobertura de férias':lang==='es'?'Cobertura de vacaciones':'Vacation coverage',
-                                connection_type: 'vacation', connection_id: app.job_id || app.id,
-                              })} style={{
+                              <button onClick={()=>setVacPayGateApp(app)} style={{
                                 flexShrink:0,height:26,padding:'0 9px',borderRadius:7,fontSize:10.5,fontWeight:700,
                                 border:'1px solid var(--pg-blue-200)',background:'var(--pg-blue-50)',
                                 color:'var(--pg-blue-600)',cursor:'pointer',whiteSpace:'nowrap',
@@ -1163,6 +1242,7 @@ function WorkScreen({ ctx }) {
         radiusMiles={workRadiusMiles} setRadiusMiles={setWorkRadiusMiles} lang={lang}/>
       {handoffOverlays}
       {vacCompleteOverlay}
+      {vacPaymentGateOverlay}
       </div>
     );
   }
@@ -1503,11 +1583,7 @@ function WorkScreen({ ctx }) {
                                 : (lang==='pt'?'🔒 Bloqueado':lang==='es'?'🔒 Bloqueado':'🔒 Locked')}
                             </button>
                           ) : isDone ? (
-                            <button onClick={()=>openRating && openRating({
-                              to_id: app.author_id, to_name: app.owner || '',
-                              listing_name: lang==='pt'?'Cobertura de férias':lang==='es'?'Cobertura de vacaciones':'Vacation coverage',
-                              connection_type: 'vacation', connection_id: app.job_id || app.id,
-                            })} style={{
+                            <button onClick={()=>setVacPayGateApp(app)} style={{
                               flexShrink:0, height:28, padding:'0 10px', borderRadius:8, fontSize:11, fontWeight:700,
                               border:'1px solid var(--pg-blue-200)', background:'var(--pg-blue-50)',
                               color:'var(--pg-blue-600)', cursor:'pointer', whiteSpace:'nowrap',
@@ -1648,6 +1724,7 @@ function WorkScreen({ ctx }) {
 
     {handoffOverlays}
     {vacCompleteOverlay}
+    {vacPaymentGateOverlay}
     </div>
   );
 }

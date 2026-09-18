@@ -1709,7 +1709,7 @@ function ResolveDisputeModal({ dispute, onClose, onResolved, showToast }) {
         <div style={{background:'#13161f',padding:'14px 18px',borderBottom:'1px solid #1e293b',borderRadius:'20px 20px 0 0',display:'flex',alignItems:'center',gap:10}}>
           <div style={{flex:1}}>
             <div style={{fontWeight:700,fontSize:15,color:'#f1f5f9'}}>✅ Resolver Reclamação</div>
-            <div style={{fontSize:12,color:'#64748b',marginTop:2}}>📋 {dispute.listing_name||'Item de aluguel'} · Renter: {dispute.reported_name||'—'}</div>
+            <div style={{fontSize:12,color:'#64748b',marginTop:2}}>📋 {dispute.listing_name||'Transação'} · Reportado(a): {dispute.reported_name||'—'}</div>
           </div>
           <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',fontSize:20,lineHeight:1}}>×</button>
         </div>
@@ -3579,7 +3579,7 @@ function AdminApp({ adminUser, onLogout }) {
                 <h1 style={{fontSize:20,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>
                   Reclamações
                 </h1>
-                <p style={{fontSize:13,color:'#64748b',marginBottom:16}}>Reports de problemas em aluguéis. Clique nos nomes para ver perfil completo.</p>
+                <p style={{fontSize:13,color:'#64748b',marginBottom:16}}>Reports de problemas em aluguéis, Piscinas Rápidas e Férias. Clique nos nomes para ver perfil completo.</p>
 
                 {/* Tabs */}
                 <div style={{display:'flex',gap:6,marginBottom:20}}>
@@ -3645,7 +3645,7 @@ function AdminApp({ adminUser, onLogout }) {
 
                           {/* Listing */}
                           <div style={{fontSize:14,fontWeight:700,color:'#f1f5f9',marginBottom:10}}>
-                            📋 {d.listing_name||'Item de aluguel'}
+                            📋 {d.listing_name||'Transação'}
                           </div>
 
                           {/* Parties — CLICKABLE names */}
@@ -3653,14 +3653,14 @@ function AdminApp({ adminUser, onLogout }) {
                             <button onClick={()=>setViewUserModal({userId:d.reporter_id,userName:d.reporter_name,disputeRequestId:d.rental_request_id})}
                               style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit',transition:'border-color .15s'}}
                               onMouseEnter={e=>e.currentTarget.style.borderColor='#0EBAC7'} onMouseLeave={e=>e.currentTarget.style.borderColor='#1e293b'}>
-                              <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>👤 Proprietário (reportou)</div>
+                              <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>👤 Quem reportou</div>
                               <div style={{fontSize:13,fontWeight:700,color:'#0EBAC7'}}>{d.reporter_name||'—'}</div>
                               <div style={{fontSize:10,color:'#475569',marginTop:2}}>Clique para ver perfil</div>
                             </button>
                             <button onClick={()=>setViewUserModal({userId:d.reported_user_id,userName:d.reported_name,disputeRequestId:d.rental_request_id})}
                               style={{textAlign:'left',padding:'10px 12px',background:'#0f1117',borderRadius:10,border:'1px solid #1e293b',cursor:'pointer',fontFamily:'inherit',transition:'border-color .15s'}}
                               onMouseEnter={e=>e.currentTarget.style.borderColor='#ef4444'} onMouseLeave={e=>e.currentTarget.style.borderColor='#1e293b'}>
-                              <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>⚠ Renter (reportado)</div>
+                              <div style={{fontSize:10,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:3}}>⚠ Reportado(a)</div>
                               <div style={{fontSize:13,fontWeight:700,color:'#f87171'}}>{d.reported_name||'—'}</div>
                               {reportedWarnPts > 0 && (
                                 <div style={{fontSize:10,fontWeight:700,color:reportedWarnPts>=5?'#ef4444':'#f97316',marginTop:3,padding:'1px 7px',borderRadius:999,
