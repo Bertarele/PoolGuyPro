@@ -8457,13 +8457,14 @@ function VacCompletionSheet({
         error: null
       }
     }));
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const up = await pgCompressImage(file);
+    const ext = (up.name.split('.').pop() || 'jpg').toLowerCase();
     const path = `${app.job_id}/${slotKey}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const {
       error: uploadErr
-    } = await window.sb.storage.from('job-photos').upload(path, file, {
+    } = await window.sb.storage.from('job-photos').upload(path, up, {
       upsert: true,
-      contentType: file.type
+      contentType: up.type
     });
     if (uploadErr) {
       setUploadedPhotos(prev => ({

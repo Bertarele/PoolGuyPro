@@ -4114,9 +4114,10 @@ function VacCompletionSheet({ app, lang='en', onClose, onSubmitted, showToast, a
   const handlePhotoSelect = async (slotKey, file) => {
     if (!file || !window.sb) return;
     setUploadedPhotos(prev => ({ ...prev, [slotKey]: { url: URL.createObjectURL(file), uploading: true, error: null } }));
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const up = await pgCompressImage(file);
+    const ext = (up.name.split('.').pop() || 'jpg').toLowerCase();
     const path = `${app.job_id}/${slotKey}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error: uploadErr } = await window.sb.storage.from('job-photos').upload(path, file, { upsert: true, contentType: file.type });
+    const { error: uploadErr } = await window.sb.storage.from('job-photos').upload(path, up, { upsert: true, contentType: up.type });
     if (uploadErr) {
       setUploadedPhotos(prev => ({ ...prev, [slotKey]: { ...prev[slotKey], uploading: false, error: uploadErr.message } }));
       return;

@@ -38,6 +38,42 @@ function ProfileScreen({
     subManageBusy
   } = ctx;
   const t = STRINGS[lang];
+
+  // ── Delete account ──────────────────────────────────────────────
+  const [delOpen, setDelOpen] = React.useState(false);
+  const [delText, setDelText] = React.useState('');
+  const [delBusy, setDelBusy] = React.useState(false);
+  const [delErr, setDelErr] = React.useState('');
+  const L3 = (en, pt, es) => lang === 'pt' ? pt : lang === 'es' ? es : en;
+  const DEL_WORD = L3('DELETE', 'EXCLUIR', 'ELIMINAR');
+  const closeDel = () => {
+    if (delBusy) return;
+    setDelOpen(false);
+    setDelText('');
+    setDelErr('');
+  };
+  const doDeleteAccount = async () => {
+    if (delBusy || delText.trim().toUpperCase() !== DEL_WORD) return;
+    setDelBusy(true);
+    setDelErr('');
+    const {
+      data,
+      error
+    } = await window.sb.rpc('delete_my_account');
+    if (error || !data || !data.ok) {
+      setDelBusy(false);
+      const code = data && data.error;
+      setDelErr(code === 'active_subscription' ? L3('Cancel your PRO/Premium subscription first (Profile → Manage subscription), then delete your account.', 'Cancele sua assinatura PRO/Premium antes (Perfil → Gerenciar assinatura) e depois exclua a conta.', 'Cancela primero tu suscripción PRO/Premium (Perfil → Gestionar suscripción) y luego elimina la cuenta.') : code === 'wallet_pending' ? L3('You still have a balance or a pending withdrawal in your wallet. Withdraw it first, then delete your account.', 'Você ainda tem saldo ou um saque pendente na carteira. Saque antes de excluir a conta.', 'Aún tienes saldo o un retiro pendiente en la billetera. Retíralo antes de eliminar la cuenta.') : code === 'admin_account' ? L3('Admin accounts cannot be deleted from the app.', 'Contas de administrador não podem ser excluídas pelo app.', 'Las cuentas de administrador no se pueden eliminar desde la app.') : L3('Could not delete the account. Try again.', 'Não foi possível excluir a conta. Tente de novo.', 'No se pudo eliminar la cuenta. Inténtalo de nuevo.'));
+      return;
+    }
+    try {
+      await window.sb.auth.signOut();
+    } catch (e) {}
+    try {
+      localStorage.clear();
+    } catch (e) {}
+    window.location.replace('/');
+  };
   const typeIcon = type => {
     if (type === 'quickpool') return Icon.bolt(13, 'var(--pg-blue-600)');
     if (type === 'vacation') return Icon.cal(13, 'var(--pg-blue-600)');
@@ -1351,7 +1387,119 @@ function ProfileScreen({
       cursor: 'pointer',
       fontFamily: 'inherit'
     }
-  }, t.logout), /*#__PURE__*/React.createElement("div", {
+  }, t.logout), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setDelOpen(true),
+    style: {
+      width: '100%',
+      padding: '10px 14px',
+      borderRadius: 12,
+      border: 'none',
+      background: 'transparent',
+      color: 'var(--pg-ink-400)',
+      fontWeight: 500,
+      fontSize: 12.5,
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      textDecoration: 'underline'
+    }
+  }, L3('Delete my account', 'Excluir minha conta', 'Eliminar mi cuenta')), delOpen && /*#__PURE__*/React.createElement("div", {
+    onClick: closeDel,
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 100000,
+      background: 'rgba(4,13,24,0.72)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    role: "dialog",
+    "aria-modal": "true",
+    onClick: e => e.stopPropagation(),
+    style: {
+      width: '100%',
+      maxWidth: 400,
+      background: '#fff',
+      borderRadius: 20,
+      padding: '24px 22px',
+      boxShadow: '0 24px 70px rgba(0,0,0,0.4)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: '#b91c1c'
+    }
+  }, L3('Delete your account?', 'Excluir sua conta?', '¿Eliminar tu cuenta?')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      color: '#3b4f63',
+      lineHeight: 1.5
+    }
+  }, L3('This permanently removes your profile, listings, applications, chats and ratings. It cannot be undone.', 'Isso remove definitivamente seu perfil, anúncios, candidaturas, conversas e avaliações. Não dá para desfazer.', 'Esto elimina de forma permanente tu perfil, anuncios, postulaciones, chats y calificaciones. No se puede deshacer.')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: '#5b7186'
+    }
+  }, L3('Type ', 'Digite ', 'Escribe '), /*#__PURE__*/React.createElement("b", null, DEL_WORD), L3(' to confirm:', ' para confirmar:', ' para confirmar:')), /*#__PURE__*/React.createElement("input", {
+    value: delText,
+    onChange: e => setDelText(e.target.value),
+    autoCapitalize: "characters",
+    autoComplete: "off",
+    style: {
+      height: 46,
+      borderRadius: 12,
+      border: '1px solid #cfd8e3',
+      padding: '0 14px',
+      fontSize: 15,
+      fontFamily: 'inherit',
+      color: '#0A2840',
+      background: '#fff',
+      boxSizing: 'border-box',
+      width: '100%'
+    }
+  }), delErr && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: '#b91c1c',
+      background: '#fef2f2',
+      border: '1px solid #fecaca',
+      borderRadius: 10,
+      padding: '9px 12px',
+      lineHeight: 1.45
+    }
+  }, delErr), /*#__PURE__*/React.createElement("button", {
+    onClick: doDeleteAccount,
+    disabled: delBusy || delText.trim().toUpperCase() !== DEL_WORD,
+    style: {
+      height: 48,
+      borderRadius: 12,
+      border: 'none',
+      fontFamily: 'inherit',
+      fontSize: 14.5,
+      fontWeight: 700,
+      color: '#fff',
+      background: '#dc2626',
+      cursor: delText.trim().toUpperCase() === DEL_WORD ? 'pointer' : 'default',
+      opacity: delText.trim().toUpperCase() === DEL_WORD && !delBusy ? 1 : 0.4
+    }
+  }, delBusy ? '…' : L3('Delete permanently', 'Excluir definitivamente', 'Eliminar definitivamente')), /*#__PURE__*/React.createElement("button", {
+    onClick: closeDel,
+    style: {
+      border: 'none',
+      background: 'transparent',
+      color: '#5b7186',
+      fontSize: 13.5,
+      cursor: 'pointer',
+      fontFamily: 'inherit',
+      padding: 6
+    }
+  }, L3('Cancel', 'Cancelar', 'Cancelar')))), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       fontSize: 11,

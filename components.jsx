@@ -920,4 +920,33 @@ function Tx({ children, lang, src }) {
   return out;
 }
 
-Object.assign(window, { Icon, Avatar, Stars, ReputationBadge, Sheet, FullPage, TopBar, IconButton, TabBar, LangPill, Shimmer, Tx, _lockScreen, _unlockScreen });
+// Shrinks a picked photo before upload. Phone cameras produce 3-8 MB JPEGs
+// (job-photos averaged 1.7 MB each); 1600px @ 0.8 is still plenty to judge a
+// pool by, at ~250-400 KB. Any failure (HEIC the browser can't decode, GIF,
+// already-small file) returns the original file untouched, so uploads never break.
+async function pgCompressImage(file, opts) {
+  const max = (opts && opts.max) || 1600, quality = (opts && opts.quality) || 0.8;
+  try {
+    if (!file || !/^image\/(jpe?g|png|webp)$/i.test(file.type || '')) return file;
+    const src = URL.createObjectURL(file);
+    const img = await new Promise((res, rej) => {
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = () => rej(new Error('decode'));
+      im.src = src;
+    }).finally(() => URL.revokeObjectURL(src));
+    let w = img.width, h = img.height;
+    if (w > max || h > max) {
+      if (w >= h) { h = Math.round(h * max / w); w = max; }
+      else        { w = Math.round(w * max / h); h = max; }
+    }
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', quality));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], ((file.name || 'photo').replace(/\.[^.]+$/, '') || 'photo') + '.jpg', { type: 'image/jpeg' });
+  } catch (e) { return file; }
+}
+
+Object.assign(window, { pgCompressImage, Icon, Avatar, Stars, ReputationBadge, Sheet, FullPage, TopBar, IconButton, TabBar, LangPill, Shimmer, Tx, _lockScreen, _unlockScreen });

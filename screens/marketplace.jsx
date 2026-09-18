@@ -1381,10 +1381,11 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
     const evidenceUrls = [];
     for (const p of disputePhotos) {
       try {
-        const raw = p.file.name.split('.').pop().toLowerCase();
+        const up = await pgCompressImage(p.file);
+        const raw = up.name.split('.').pop().toLowerCase();
         const ext = /^(jpg|jpeg|png|webp|gif|heic)$/.test(raw) ? raw : 'jpg';
         const path = `dispute-evidence/${currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await window.sb.storage.from('post-images').upload(path, p.file, { contentType: p.file.type, upsert: false });
+        const { error: upErr } = await window.sb.storage.from('post-images').upload(path, up, { contentType: up.type, upsert: false });
         if (!upErr) {
           const { data: pub } = window.sb.storage.from('post-images').getPublicUrl(path);
           if (pub?.publicUrl) evidenceUrls.push(pub.publicUrl);

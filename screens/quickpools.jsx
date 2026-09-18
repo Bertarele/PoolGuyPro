@@ -124,10 +124,11 @@ function PhotoDisputeModal({ open, reasons=PHOTO_DISPUTE_REASONS, title, intro, 
       setUploading(true);
       for (const u of uploads) {
         try {
-          const raw = (u.file.name.split('.').pop() || 'jpg').toLowerCase();
+          const up = await pgCompressImage(u.file);
+          const raw = (up.name.split('.').pop() || 'jpg').toLowerCase();
           const ext = /^(jpg|jpeg|png|webp|gif|heic)$/.test(raw) ? raw : 'jpg';
           const path = `dispute-evidence/${uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-          const { error: upErr } = await window.sb.storage.from('post-images').upload(path, u.file, { contentType: u.file.type, upsert: false });
+          const { error: upErr } = await window.sb.storage.from('post-images').upload(path, up, { contentType: up.type, upsert: false });
           if (!upErr) {
             const { data: pub } = window.sb.storage.from('post-images').getPublicUrl(path);
             if (pub?.publicUrl) evidenceUrls.push(pub.publicUrl);
@@ -3069,9 +3070,10 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
   const handlePhotoSelect = async (photoKey, file) => {
     if (!file) return;
     setUploadedPhotos(prev => ({ ...prev, [photoKey]: { file, url: URL.createObjectURL(file), uploading: true, error: null } }));
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const up = await pgCompressImage(file);
+    const ext = (up.name.split('.').pop() || 'jpg').toLowerCase();
     const path = `${job.id}/${(user?.uid||'anon')}_${photoKey}_${Date.now()}.${ext}`;
-    const { error: uploadErr } = await window.sb.storage.from('job-photos').upload(path, file, { upsert: true, contentType: file.type });
+    const { error: uploadErr } = await window.sb.storage.from('job-photos').upload(path, up, { upsert: true, contentType: up.type });
     if (uploadErr) {
       console.error('Photo upload error:', uploadErr);
       setUploadedPhotos(prev => ({ ...prev, [photoKey]: { ...prev[photoKey], uploading: false, error: uploadErr.message } }));

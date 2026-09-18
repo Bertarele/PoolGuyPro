@@ -46,7 +46,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mu7ky7lb">
+  <link rel="stylesheet" href="tokens.css?v=mu7lcd01">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -189,6 +189,44 @@
     var KEY  = 'sb_publishable_2C7PFtLNiXt3IziFnMVb4w_1YGfBqyX';
     var _tok = null;
     var _refreshing = null; // pending refresh promise — avoids race conditions
+
+    // ── Bot protection (Cloudflare Turnstile) ──────────────────────
+    // Leave the site key empty and nothing changes. Once a key is set here AND
+    // Captcha is switched on in Supabase (Auth -> Attack Protection, provider
+    // Turnstile), sign-up / log-in / password-reset each fetch a fresh one-shot
+    // token first. 'interaction-only' keeps the widget invisible unless
+    // Cloudflare actually wants the user to prove something.
+    window.PG_CAPTCHA_SITEKEY = '';
+    function _captchaToken() {
+      var key = window.PG_CAPTCHA_SITEKEY;
+      if (!key) return Promise.resolve(undefined);
+      return new Promise(function (resolve) {
+        var host = document.createElement('div');
+        host.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:100001;';
+        var done = false;
+        function finish(tok) {
+          if (done) return; done = true;
+          try { if (window.turnstile) window.turnstile.remove(host); } catch (e) {}
+          try { host.remove(); } catch (e) {}
+          resolve(tok || undefined);
+        }
+        function run() {
+          document.body.appendChild(host);
+          try {
+            window.turnstile.render(host, {
+              sitekey: key, appearance: 'interaction-only',
+              callback: finish, 'error-callback': function () { finish(); }, 'timeout-callback': function () { finish(); }
+            });
+          } catch (e) { finish(); }
+          setTimeout(function () { finish(); }, 45000);
+        }
+        if (window.turnstile) return run();
+        var sc = document.createElement('script');
+        sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        sc.async = true; sc.onload = run; sc.onerror = function () { finish(); };
+        document.head.appendChild(sc);
+      });
+    }
 
     // Load saved session (now includes refresh_token as 'r')
     try { var _s=JSON.parse(localStorage.getItem('pg_s')||'null'); if(_s&&_s.t) _tok=_s.t; } catch(e){}
@@ -374,7 +412,8 @@
       },
       auth:{
         signInWithPassword:async function(creds){
-          var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password})});
+          var cap=await _captchaToken();
+          var r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password,gotrue_meta_security:cap?{captcha_token:cap}:undefined})});
           var d=await r.json();
           if(!r.ok) return{data:null,error:{message:d.error_description||d.msg||d.message||'Invalid credentials',code:d.error_code||d.code||null,status:r.status}};
           _saveSession(d);
@@ -383,7 +422,8 @@
           return{data:{user:d.user,session:d},error:null};
         },
         signUp:async function(creds){
-          var r=await fetch(BASE+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password,data:(creds.options&&creds.options.data)||undefined})});
+          var cap=await _captchaToken();
+          var r=await fetch(BASE+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:creds.email,password:creds.password,data:(creds.options&&creds.options.data)||undefined,gotrue_meta_security:cap?{captcha_token:cap}:undefined})});
           var d=await r.json();
           if(!r.ok) return{data:null,error:{message:d.msg||d.error_description||d.message||'Signup failed',code:d.error_code||d.code||null,status:r.status}};
           if(d.access_token){ _saveSession(d); _startAutoRefresh(); }
@@ -412,7 +452,8 @@
         resetPasswordForEmail:async function(email, opts){
           var to = (opts && opts.redirectTo) ? '?redirect_to='+encodeURIComponent(opts.redirectTo) : '';
           try{
-            var r=await fetch(BASE+'/auth/v1/recover'+to,{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:email})});
+            var cap=await _captchaToken();
+            var r=await fetch(BASE+'/auth/v1/recover'+to,{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({email:email,gotrue_meta_security:cap?{captcha_token:cap}:undefined})});
             if(!r.ok){ var d=await r.json().catch(function(){return{};}); return{data:null,error:{message:d.msg||d.error_description||d.message||'Reset failed',code:d.error_code||d.code||null,status:r.status}}; }
             return{data:{},error:null};
           }catch(e){ return{data:null,error:{message:e.message||'Network error'}}; }
@@ -494,20 +535,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mu7ky7lb"></script>
-  <script src="tweaks-panel.js?v=mu7ky7lb"></script>
-  <script src="components.js?v=mu7ky7lb"></script>
-  <script src="brand.js?v=mu7ky7lb"></script>
-  <script src="data.js?v=mu7ky7lb"></script>
-  <script src="screens/login.js?v=mu7ky7lb"></script>
-  <script src="screens/home.js?v=mu7ky7lb"></script>
-  <script src="screens/marketplace.js?v=mu7ky7lb"></script>
-  <script src="screens/quickpools.js?v=mu7ky7lb"></script>
-  <script src="screens/post.js?v=mu7ky7lb"></script>
-  <script src="screens/work.js?v=mu7ky7lb"></script>
-  <script src="screens/profile.js?v=mu7ky7lb"></script>
-  <script src="screens/overlays.js?v=mu7ky7lb"></script>
-  <script src="app.js?v=mu7ky7lb"></script>
+  <script src="ios-frame.js?v=mu7lcd01"></script>
+  <script src="tweaks-panel.js?v=mu7lcd01"></script>
+  <script src="components.js?v=mu7lcd01"></script>
+  <script src="brand.js?v=mu7lcd01"></script>
+  <script src="data.js?v=mu7lcd01"></script>
+  <script src="screens/login.js?v=mu7lcd01"></script>
+  <script src="screens/home.js?v=mu7lcd01"></script>
+  <script src="screens/marketplace.js?v=mu7lcd01"></script>
+  <script src="screens/quickpools.js?v=mu7lcd01"></script>
+  <script src="screens/post.js?v=mu7lcd01"></script>
+  <script src="screens/work.js?v=mu7lcd01"></script>
+  <script src="screens/profile.js?v=mu7lcd01"></script>
+  <script src="screens/overlays.js?v=mu7lcd01"></script>
+  <script src="app.js?v=mu7lcd01"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {

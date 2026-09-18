@@ -292,13 +292,14 @@ function PhotoDisputeModal({
       setUploading(true);
       for (const u of uploads) {
         try {
-          const raw = (u.file.name.split('.').pop() || 'jpg').toLowerCase();
+          const up = await pgCompressImage(u.file);
+          const raw = (up.name.split('.').pop() || 'jpg').toLowerCase();
           const ext = /^(jpg|jpeg|png|webp|gif|heic)$/.test(raw) ? raw : 'jpg';
           const path = `dispute-evidence/${uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
           const {
             error: upErr
-          } = await window.sb.storage.from('post-images').upload(path, u.file, {
-            contentType: u.file.type,
+          } = await window.sb.storage.from('post-images').upload(path, up, {
+            contentType: up.type,
             upsert: false
           });
           if (!upErr) {
@@ -5488,13 +5489,14 @@ function QuickPoolDetails({
         error: null
       }
     }));
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const up = await pgCompressImage(file);
+    const ext = (up.name.split('.').pop() || 'jpg').toLowerCase();
     const path = `${job.id}/${user?.uid || 'anon'}_${photoKey}_${Date.now()}.${ext}`;
     const {
       error: uploadErr
-    } = await window.sb.storage.from('job-photos').upload(path, file, {
+    } = await window.sb.storage.from('job-photos').upload(path, up, {
       upsert: true,
-      contentType: file.type
+      contentType: up.type
     });
     if (uploadErr) {
       console.error('Photo upload error:', uploadErr);
