@@ -3223,7 +3223,8 @@ function App() {
     notifyPools: user.notifyPools,
     notifyRoutes: user.notifyRoutes,
     notifyService: user.notifyService,
-    setNotifyPref: setNotifyPref
+    setNotifyPref: setNotifyPref,
+    showToast: showToast
   }), /*#__PURE__*/React.createElement(LanguagePickerSheet, {
     open: langPickerOpen,
     onClose: () => setLangPickerOpen(false),

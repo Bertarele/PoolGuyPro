@@ -635,6 +635,127 @@ const FL_COUNTIES = {
   'Hamilton': ['Jasper', 'White Springs']
 };
 
+// California, Texas and Arizona — unlike FL_COUNTIES (every county, built out
+// first since it's the launch state), these deliberately cover only the
+// populous/metro counties a pool guy would realistically be in, not every
+// county in the state (Texas alone has 254). Good enough to open the state
+// for real use; add the rest incrementally as it comes up, same as FL_COUNTIES
+// itself was clearly extended over time.
+const CA_COUNTIES = {
+  'Los Angeles': ['Los Angeles', 'Long Beach', 'Glendale', 'Santa Clarita', 'Lancaster', 'Palmdale', 'Pomona', 'Torrance', 'Pasadena', 'Downey', 'West Covina', 'Norwalk', 'Burbank', 'Compton', 'Inglewood', 'El Monte', 'Carson', 'Santa Monica', 'Whittier', 'Hawthorne', 'Beverly Hills', 'Culver City', 'Manhattan Beach', 'Redondo Beach'],
+  'San Diego': ['San Diego', 'Chula Vista', 'Oceanside', 'Escondido', 'Carlsbad', 'El Cajon', 'Vista', 'San Marcos', 'Encinitas', 'National City', 'La Mesa', 'Santee', 'Poway', 'Coronado'],
+  'Orange': ['Anaheim', 'Santa Ana', 'Irvine', 'Huntington Beach', 'Garden Grove', 'Orange', 'Fullerton', 'Costa Mesa', 'Mission Viejo', 'Westminster', 'Newport Beach', 'Buena Park', 'Lake Forest', 'Tustin', 'Laguna Niguel', 'Laguna Beach', 'Yorba Linda', 'Fountain Valley'],
+  'Riverside': ['Riverside', 'Moreno Valley', 'Corona', 'Murrieta', 'Temecula', 'Jurupa Valley', 'Indio', 'Palm Desert', 'Palm Springs', 'Hemet', 'Menifee', 'Perris', 'Eastvale'],
+  'San Bernardino': ['San Bernardino', 'Fontana', 'Rancho Cucamonga', 'Ontario', 'Victorville', 'Rialto', 'Chino', 'Chino Hills', 'Upland', 'Redlands', 'Yucaipa', 'Hesperia', 'Apple Valley'],
+  'Santa Clara': ['San Jose', 'Sunnyvale', 'Santa Clara', 'Mountain View', 'Palo Alto', 'Milpitas', 'Gilroy', 'Cupertino', 'Campbell', 'Los Gatos', 'Morgan Hill'],
+  'Alameda': ['Oakland', 'Fremont', 'Hayward', 'Berkeley', 'San Leandro', 'Union City', 'Pleasanton', 'Livermore', 'Newark', 'Dublin', 'Alameda'],
+  'Sacramento': ['Sacramento', 'Elk Grove', 'Roseville', 'Citrus Heights', 'Folsom', 'Rancho Cordova'],
+  'Contra Costa': ['Concord', 'Richmond', 'Antioch', 'San Ramon', 'Walnut Creek', 'Pittsburg', 'Danville', 'Brentwood', 'Martinez'],
+  'Fresno': ['Fresno', 'Clovis'],
+  'Kern': ['Bakersfield', 'Delano', 'Ridgecrest'],
+  'San Francisco': ['San Francisco'],
+  'San Mateo': ['Daly City', 'San Mateo', 'Redwood City', 'South San Francisco', 'Menlo Park'],
+  'Ventura': ['Oxnard', 'Thousand Oaks', 'Simi Valley', 'Ventura', 'Camarillo'],
+  'San Joaquin': ['Stockton', 'Tracy', 'Manteca', 'Lodi'],
+  'Sonoma': ['Santa Rosa', 'Petaluma', 'Rohnert Park'],
+  'Solano': ['Vallejo', 'Fairfield', 'Vacaville'],
+  'Marin': ['San Rafael', 'Novato'],
+  'Santa Barbara': ['Santa Barbara', 'Santa Maria', 'Lompoc', 'Goleta'],
+  'Monterey': ['Salinas', 'Monterey', 'Seaside'],
+  'Placer': ['Rocklin', 'Lincoln', 'Auburn']
+};
+const TX_COUNTIES = {
+  'Harris': ['Houston', 'Pasadena', 'Baytown', 'League City', 'Humble', 'Spring', 'Cypress'],
+  'Dallas': ['Dallas', 'Garland', 'Irving', 'Grand Prairie', 'Mesquite', 'Carrollton', 'Richardson', 'Farmers Branch', 'DeSoto', 'Duncanville'],
+  'Tarrant': ['Fort Worth', 'Arlington', 'Mansfield', 'North Richland Hills', 'Euless', 'Bedford', 'Hurst', 'Grapevine', 'Southlake'],
+  'Bexar': ['San Antonio', 'Helotes', 'Converse'],
+  'Travis': ['Austin', 'Pflugerville', 'Manor'],
+  'Collin': ['Plano', 'McKinney', 'Frisco', 'Allen', 'Wylie'],
+  'Denton': ['Denton', 'Lewisville', 'Flower Mound', 'Little Elm'],
+  'El Paso': ['El Paso'],
+  'Fort Bend': ['Sugar Land', 'Missouri City', 'Katy', 'Rosenberg'],
+  'Montgomery': ['The Woodlands', 'Conroe'],
+  'Williamson': ['Round Rock', 'Georgetown', 'Cedar Park', 'Leander'],
+  'Hidalgo': ['McAllen', 'Edinburg', 'Mission'],
+  'Cameron': ['Brownsville', 'Harlingen'],
+  'Nueces': ['Corpus Christi'],
+  'Lubbock': ['Lubbock'],
+  'Webb': ['Laredo'],
+  'Galveston': ['Galveston', 'Texas City']
+};
+const AZ_COUNTIES = {
+  'Maricopa': ['Phoenix', 'Mesa', 'Chandler', 'Scottsdale', 'Glendale', 'Gilbert', 'Tempe', 'Peoria', 'Surprise', 'Avondale', 'Goodyear', 'Buckeye', 'Cave Creek', 'Fountain Hills', 'Paradise Valley', 'Queen Creek', 'El Mirage'],
+  'Pima': ['Tucson', 'Oro Valley', 'Marana', 'Sahuarita'],
+  'Pinal': ['Casa Grande', 'Apache Junction', 'Maricopa', 'Coolidge'],
+  'Yavapai': ['Prescott', 'Prescott Valley', 'Cottonwood', 'Sedona'],
+  'Yuma': ['Yuma'],
+  'Mohave': ['Lake Havasu City', 'Bullhead City', 'Kingman'],
+  'Cochise': ['Sierra Vista'],
+  'Navajo': ['Show Low'],
+  'Coconino': ['Flagstaff'],
+  'Apache': ['Show Low'],
+  'Gila': ['Payson'],
+  'Graham': ['Safford'],
+  'Greenlee': ['Clifton'],
+  'La Paz': ['Parker'],
+  'Santa Cruz': ['Nogales']
+};
+
+// State picker for RegionEditorSheet — Florida stays first/default (it's the
+// launch state with full county coverage); the other three are the newer,
+// metro-only additions above. Name is {en,pt,es} like everything else that
+// renders per-language; code is the USPS 2-letter abbreviation, also what
+// geolocation matching (below) looks for in Nominatim's address.state_code.
+const US_STATES = {
+  FL: {
+    code: 'FL',
+    name: {
+      en: 'Florida',
+      pt: 'Flórida',
+      es: 'Florida'
+    },
+    counties: FL_COUNTIES
+  },
+  CA: {
+    code: 'CA',
+    name: {
+      en: 'California',
+      pt: 'Califórnia',
+      es: 'California'
+    },
+    counties: CA_COUNTIES
+  },
+  TX: {
+    code: 'TX',
+    name: {
+      en: 'Texas',
+      pt: 'Texas',
+      es: 'Texas'
+    },
+    counties: TX_COUNTIES
+  },
+  AZ: {
+    code: 'AZ',
+    name: {
+      en: 'Arizona',
+      pt: 'Arizona',
+      es: 'Arizona'
+    },
+    counties: AZ_COUNTIES
+  }
+};
+// Reverse index for matching a Nominatim result back to one of the counties
+// above — built once, not per-lookup. Keys are lowercased "county|state".
+const US_COUNTY_INDEX = {};
+Object.values(US_STATES).forEach(st => {
+  Object.keys(st.counties).forEach(countyName => {
+    US_COUNTY_INDEX[(countyName + '|' + st.code).toLowerCase()] = {
+      state: st.code,
+      county: countyName
+    };
+  });
+});
+
 // City → [lat, lng] for South Florida (used by radius filter)
 const FL_CITY_COORDS = {
   // Broward
@@ -1054,12 +1175,103 @@ function RegionEditorSheet({
   notifyPools = true,
   notifyRoutes = true,
   notifyService = true,
-  setNotifyPref
+  setNotifyPref,
+  showToast
 }) {
   const t = STRINGS[lang];
   const [openDay, setOpenDay] = React.useState('mon');
-  const [activeCounty, setActiveCounty] = React.useState(county || 'Broward');
+
+  // Which state's county/city list is showing. Nothing about "state" is
+  // persisted anywhere (regionsByDay only ever stored plain city names) —
+  // rather than add a new profile column just for this, infer it from
+  // whatever cities are already saved: find the state whose counties
+  // contain one of them. A brand new user with nothing saved yet falls
+  // back to Florida, but sees the state row right at the top either way
+  // (and the "use my location" button below it) to change that immediately.
+  const inferStateFromCities = () => {
+    const saved = Object.values(regionsByDay || {}).flat();
+    if (!saved.length) return 'FL';
+    for (const st of Object.values(US_STATES)) {
+      const allCities = Object.values(st.counties).flat();
+      if (saved.some(c => allCities.includes(c))) return st.code;
+    }
+    return 'FL';
+  };
+  const [activeState, setActiveState] = React.useState(inferStateFromCities);
+  const [activeCounty, setActiveCounty] = React.useState(() => {
+    const st = US_STATES[inferStateFromCities()];
+    return county && st.counties[county] ? county : Object.keys(st.counties)[0];
+  });
   const [citySearch, setCitySearch] = React.useState('');
+  const [geoBusy, setGeoBusy] = React.useState(false);
+  const countiesForState = US_STATES[activeState].counties;
+  // Switching state can leave activeCounty pointing at a county that
+  // doesn't exist in the new state (e.g. "Broward" while on CA) — the
+  // county tabs below would then render nothing selected. Reset it to the
+  // new state's first county whenever that happens.
+  React.useEffect(() => {
+    if (!countiesForState[activeCounty]) setActiveCounty(Object.keys(countiesForState)[0]);
+  }, [activeState]);
+
+  // "Use my location" — reverse-geocodes via Nominatim (free, no API key)
+  // and jumps straight to the matching state/county so a new user doesn't
+  // have to hunt for either by hand. Never auto-picks cities — that stays
+  // a deliberate choice the pool guy makes below.
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      showToast && showToast(lang === 'pt' ? '❌ Seu navegador não suporta localização.' : lang === 'es' ? '❌ Tu navegador no soporta ubicación.' : '❌ Your browser doesn’t support location.');
+      return;
+    }
+    setGeoBusy(true);
+    navigator.geolocation.getCurrentPosition(async pos => {
+      try {
+        const {
+          latitude,
+          longitude
+        } = pos.coords;
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`);
+        const data = await res.json();
+        const addr = data?.address || {};
+        const stateCode = addr['ISO3166-2-lvl4'] ? addr['ISO3166-2-lvl4'].split('-')[1]?.toUpperCase() : null;
+        const countyRaw = (addr.county || '').replace(/\s+County$/i, '').trim();
+        const match = US_COUNTY_INDEX[(countyRaw + '|' + (stateCode || '')).toLowerCase()];
+        if (match) {
+          setActiveState(match.state);
+          setActiveCounty(match.county);
+          setCitySearch('');
+          showToast && showToast(lang === 'pt' ? `📍 ${match.county}, ${US_STATES[match.state].name.pt} — escolha suas cidades abaixo.` : lang === 'es' ? `📍 ${match.county}, ${US_STATES[match.state].name.es} — elige tus ciudades abajo.` : `📍 ${match.county}, ${US_STATES[match.state].name.en} — pick your cities below.`);
+        } else {
+          showToast && showToast(lang === 'pt' ? '⚠ Não encontramos sua região na lista ainda — escolha manualmente abaixo.' : lang === 'es' ? '⚠ No encontramos tu región en la lista todavía — elige manualmente abajo.' : '⚠ We don’t have your area listed yet — pick manually below.');
+        }
+      } catch (e) {
+        showToast && showToast(lang === 'pt' ? '❌ Não foi possível detectar sua localização.' : lang === 'es' ? '❌ No se pudo detectar tu ubicación.' : '❌ Could not detect your location.');
+      } finally {
+        setGeoBusy(false);
+      }
+    }, () => {
+      setGeoBusy(false);
+      showToast && showToast(lang === 'pt' ? '⚠ Permissão de localização negada.' : lang === 'es' ? '⚠ Permiso de ubicación denegado.' : '⚠ Location permission denied.');
+    }, {
+      timeout: 8000
+    });
+  };
+
+  // One tap to get every city in the active county, instead of picking
+  // them one by one — the day still stores plain city names, so this just
+  // toggles all of them at once. "On" only once every one of them is
+  // already selected for that day.
+  const countyCities = countiesForState[activeCounty] || [];
+  const toggleWholeCounty = day => {
+    setRegionsByDay(prev => {
+      const cur = prev[day] || [];
+      const allOn = countyCities.every(c => cur.includes(c));
+      const next = allOn ? cur.filter(c => !countyCities.includes(c)) : Array.from(new Set([...cur, ...countyCities]));
+      return {
+        ...prev,
+        [day]: next
+      };
+    });
+  };
   const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   const dayShort = lang === 'pt' ? ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'] : lang === 'es' ? ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayFull = lang === 'pt' ? ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'] : lang === 'es' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -1144,7 +1356,54 @@ function RegionEditorSheet({
       overflow: 'auto',
       padding: '12px 18px 0'
     }
-  }, setNotifyPref && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: 'var(--pg-ink-500)',
+      fontWeight: 700,
+      letterSpacing: '0.06em',
+      marginBottom: 6
+    }
+  }, lang === 'pt' ? 'ESTADO' : lang === 'es' ? 'ESTADO' : 'STATE'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      flexWrap: 'wrap'
+    }
+  }, Object.values(US_STATES).map(st => /*#__PURE__*/React.createElement("button", {
+    key: st.code,
+    onClick: () => setActiveState(st.code),
+    className: `pg-chip ${activeState === st.code ? 'pg-chip-on' : ''}`,
+    style: {
+      fontSize: 12,
+      padding: '6px 12px'
+    }
+  }, st.name[lang] || st.name.en)))), /*#__PURE__*/React.createElement("button", {
+    onClick: useMyLocation,
+    disabled: geoBusy,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 7,
+      width: '100%',
+      height: 40,
+      borderRadius: 11,
+      marginBottom: 16,
+      cursor: geoBusy ? 'default' : 'pointer',
+      fontFamily: 'inherit',
+      fontSize: 12.5,
+      fontWeight: 700,
+      border: '1px solid var(--pg-blue-200)',
+      background: 'var(--pg-blue-50)',
+      color: 'var(--pg-blue-700)',
+      opacity: geoBusy ? 0.6 : 1
+    }
+  }, Icon.pin(14, 'var(--pg-blue-700)'), geoBusy ? lang === 'pt' ? 'Detectando localização...' : lang === 'es' ? 'Detectando ubicación...' : 'Detecting location...' : lang === 'pt' ? 'Usar minha localização' : lang === 'es' ? 'Usar mi ubicación' : 'Use my location'), setNotifyPref && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
       border: '1px solid var(--pg-ink-200)',
@@ -1438,7 +1697,7 @@ function RegionEditorSheet({
         cursor: 'pointer',
         padding: 4
       }
-    }, Icon.x(12, 'var(--pg-ink-400)'))), !citySearch && /*#__PURE__*/React.createElement("div", {
+    }, Icon.x(12, 'var(--pg-ink-400)'))), !citySearch && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       className: "pg-scroll-x",
       style: {
         display: 'flex',
@@ -1447,7 +1706,7 @@ function RegionEditorSheet({
         marginRight: -14,
         padding: '0 14px 6px'
       }
-    }, Object.keys(FL_COUNTIES).map(c => /*#__PURE__*/React.createElement("button", {
+    }, Object.keys(countiesForState).map(c => /*#__PURE__*/React.createElement("button", {
       key: c,
       onClick: () => setActiveCounty(c),
       className: `pg-chip ${activeCounty === c ? 'pg-chip-on' : ''}`,
@@ -1455,14 +1714,33 @@ function RegionEditorSheet({
         fontSize: 11,
         padding: '5px 10px'
       }
-    }, c))), /*#__PURE__*/React.createElement("div", {
+    }, c))), /*#__PURE__*/React.createElement("button", {
+      onClick: () => toggleWholeCounty(dk),
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        width: '100%',
+        height: 34,
+        borderRadius: 9,
+        marginBottom: 8,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 11.5,
+        fontWeight: 700,
+        border: '1px dashed ' + (countyCities.length > 0 && countyCities.every(c => cities.includes(c)) ? 'var(--pg-aqua-400)' : 'var(--pg-ink-300)'),
+        background: countyCities.length > 0 && countyCities.every(c => cities.includes(c)) ? 'var(--pg-aqua-50)' : 'transparent',
+        color: countyCities.length > 0 && countyCities.every(c => cities.includes(c)) ? 'var(--pg-aqua-700)' : 'var(--pg-ink-500)'
+      }
+    }, Icon.check(12, countyCities.length > 0 && countyCities.every(c => cities.includes(c)) ? 'var(--pg-aqua-700)' : 'var(--pg-ink-400)'), countyCities.length > 0 && countyCities.every(c => cities.includes(c)) ? lang === 'pt' ? `Notificando todo o condado (${countyCities.length})` : lang === 'es' ? `Notificando todo el condado (${countyCities.length})` : `Notifying the whole county (${countyCities.length})` : lang === 'pt' ? `Notificar todo o condado de ${activeCounty} (${countyCities.length} cidades)` : lang === 'es' ? `Notificar todo el condado de ${activeCounty} (${countyCities.length} ciudades)` : `Notify the whole ${activeCounty} county (${countyCities.length} cities)`)), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: 6,
         marginTop: 4
       }
-    }, (citySearch ? Object.values(FL_COUNTIES).flat().filter((c, i, a) => a.indexOf(c) === i && c.toLowerCase().includes(citySearch.toLowerCase())) : FL_COUNTIES[activeCounty]).map(city => {
+    }, (citySearch ? Object.values(countiesForState).flat().filter((c, i, a) => a.indexOf(c) === i && c.toLowerCase().includes(citySearch.toLowerCase())) : countyCities).map(city => {
       const on = cities.includes(city);
       return /*#__PURE__*/React.createElement("button", {
         key: city,
@@ -1534,5 +1812,6 @@ Object.assign(window, {
   NavyBar,
   EquipImg,
   FL_COUNTIES,
+  US_STATES,
   RegionEditorSheet
 });

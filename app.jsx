@@ -2326,6 +2326,7 @@ function App() {
         saveRegionsByDay={saveRegionsByDay} county={county}
         notifyPools={user.notifyPools} notifyRoutes={user.notifyRoutes}
         notifyService={user.notifyService} setNotifyPref={setNotifyPref}
+        showToast={showToast}
       />
       <LanguagePickerSheet
         open={langPickerOpen} onClose={()=>setLangPickerOpen(false)}
