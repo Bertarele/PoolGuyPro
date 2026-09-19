@@ -8598,7 +8598,18 @@ function EditProfileSheet({
   const [photoUrl, setPhotoUrl] = React.useState('');
   const [photoUploading, setPhotoUploading] = React.useState(false);
   const photoInputRef = React.useRef(null);
-  const REGION_LIST = ['Fort Lauderdale, FL', 'Weston, FL', 'Plantation, FL', 'Davie, FL', 'Sunrise, FL', 'Pembroke Pines, FL', 'Hollywood, FL', 'Miramar, FL', 'Coral Springs, FL', 'Pompano Beach, FL', 'Boca Raton, FL', 'Deerfield Beach, FL', 'Margate, FL', 'Tamarac, FL', 'Oakland Park, FL', 'Hallandale Beach, FL', 'Dania Beach, FL', 'Lauderhill, FL', 'Lauderdale Lakes, FL', 'North Lauderdale, FL', 'Miami, FL', 'Miami Beach, FL', 'Hialeah, FL', 'Doral, FL', 'Kendall, FL', 'Coral Gables, FL', 'Aventura, FL', 'North Miami Beach, FL', 'Opa-locka, FL', 'Miami Lakes, FL', 'Homestead, FL', 'Miami Gardens, FL', 'Cutler Bay, FL', 'Palmetto Bay, FL', 'Pinecrest, FL', 'West Palm Beach, FL', 'Boca Raton, FL', 'Boynton Beach, FL', 'Delray Beach, FL', 'Lake Worth, FL', 'Wellington, FL', 'Palm Beach Gardens, FL', 'Jupiter, FL', 'Riviera Beach, FL', 'Royal Palm Beach, FL', 'Naples, FL', 'Cape Coral, FL', 'Fort Myers, FL', 'Bonita Springs, FL', 'Marco Island, FL', 'Broward County, FL', 'Miami-Dade County, FL', 'Palm Beach County, FL'];
+  const REGION_LIST = ['Fort Lauderdale, FL', 'Weston, FL', 'Plantation, FL', 'Davie, FL', 'Sunrise, FL', 'Pembroke Pines, FL', 'Hollywood, FL', 'Miramar, FL', 'Coral Springs, FL', 'Pompano Beach, FL', 'Boca Raton, FL', 'Deerfield Beach, FL', 'Margate, FL', 'Tamarac, FL', 'Oakland Park, FL', 'Hallandale Beach, FL', 'Dania Beach, FL', 'Lauderhill, FL', 'Lauderdale Lakes, FL', 'North Lauderdale, FL', 'Miami, FL', 'Miami Beach, FL', 'Hialeah, FL', 'Doral, FL', 'Kendall, FL', 'Coral Gables, FL', 'Aventura, FL', 'North Miami Beach, FL', 'Opa-locka, FL', 'Miami Lakes, FL', 'Homestead, FL', 'Miami Gardens, FL', 'Cutler Bay, FL', 'Palmetto Bay, FL', 'Pinecrest, FL', 'West Palm Beach, FL', 'Boca Raton, FL', 'Boynton Beach, FL', 'Delray Beach, FL', 'Lake Worth, FL', 'Wellington, FL', 'Palm Beach Gardens, FL', 'Jupiter, FL', 'Riviera Beach, FL', 'Royal Palm Beach, FL', 'Naples, FL', 'Cape Coral, FL', 'Fort Myers, FL', 'Bonita Springs, FL', 'Marco Island, FL', 'Broward County, FL', 'Miami-Dade County, FL', 'Palm Beach County, FL'].concat((() => {
+    // Other supported states (same 'City, ST' format the signup screen stores)
+    const out = [];
+    Object.values(window.US_STATES || {}).forEach(st => {
+      if (st.code === 'FL') return;
+      Object.entries(st.counties).forEach(([c, cities]) => {
+        out.push(c + ' County, ' + st.code);
+        cities.forEach(city => out.push(city + ', ' + st.code));
+      });
+    });
+    return out;
+  })());
   const regionSuggestions = region.trim().length >= 2 ? REGION_LIST.filter(r => r.toLowerCase().includes(region.toLowerCase())).slice(0, 6) : [];
   React.useEffect(() => {
     if (!open || !user) return;

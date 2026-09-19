@@ -27,20 +27,108 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   }, []);
 
   const FL = window.FL_COUNTIES || {};
+  // Every state the app supports (FL full coverage; CA/TX/AZ metro areas). Falls
+  // back to Florida alone if brand.jsx hasn't exported US_STATES for some reason.
+  const STATES = window.US_STATES || { FL: { code:'FL', name:{en:'Florida', pt:'Flórida', es:'Florida'}, counties: FL } };
+  const [regionState, setRegionState] = React.useState('');   // '' = all states
+  const [geoBusy,     setGeoBusy]     = React.useState(false);
+  const regionBoxRef = React.useRef(null);
 
-  // Build flat list of searchable items: county names + cities
+  // Florida keeps its legacy values ("Weston", "Broward County") so nothing that
+  // already reads profiles.region changes; other states carry the state code
+  // ("Austin, TX") since city names repeat across states.
   const regionItems = React.useMemo(() => {
     const items = [];
-    Object.entries(FL).forEach(([county, cities]) => {
-      items.push({ label: county + ' County', value: county + ' County', isCounty: true });
-      cities.forEach(city => items.push({ label: city + ', ' + county, value: city, isCounty: false }));
+    Object.values(STATES).forEach(st => {
+      const sn = (st.name[lang] || st.name.en);
+      const isFL = st.code === 'FL';
+      Object.entries(st.counties).forEach(([county, cities]) => {
+        const cLabel = isFL ? county + ' County' : county + ' County, ' + st.code;
+        items.push({ label: cLabel, value: cLabel, isCounty: true, st: st.code, search: (cLabel + ' ' + sn).toLowerCase() });
+        cities.forEach(city => {
+          const label = isFL ? city + ', ' + county : city + ', ' + county + ', ' + st.code;
+          items.push({ label, value: isFL ? city : city + ', ' + st.code, isCounty: false, st: st.code, search: (label + ' ' + sn).toLowerCase() });
+        });
+      });
     });
     return items;
-  }, []);
+  }, [lang]);
 
+  const regionPool = regionState ? regionItems.filter(i => i.st === regionState) : regionItems;
   const filteredItems = regionSearch.trim().length > 0
-    ? regionItems.filter(i => i.label.toLowerCase().includes(regionSearch.toLowerCase()))
-    : regionItems.slice(0, 20); // show first 20 when no search
+    ? regionPool.filter(i => i.search.includes(regionSearch.trim().toLowerCase())).slice(0, 60)
+    : regionPool.slice(0, 30); // first 30 when nothing typed yet
+
+  // Close the list when tapping outside it. Deliberately NOT a full-screen
+  // overlay: that layer swallowed scroll gestures, so on a phone the page
+  // (and the list) could not be scrolled while the list was open.
+  React.useEffect(() => {
+    if (!regionOpen) return;
+    const onDown = (e) => { if (regionBoxRef.current && !regionBoxRef.current.contains(e.target)) setRegionOpen(false); };
+    document.addEventListener('pointerdown', onDown);
+    const tm = setTimeout(() => { try { regionBoxRef.current && regionBoxRef.current.scrollIntoView({ block:'nearest', behavior:'smooth' }); } catch (e) {} }, 80);
+    return () => { document.removeEventListener('pointerdown', onDown); clearTimeout(tm); };
+  }, [regionOpen]);
+
+  // "Use my current location": browser geolocation -> Nominatim reverse geocode
+  // (free, no key) -> match against our own state/county/city lists. Picks the
+  // city when we list it, otherwise the county. Never guesses outside our list.
+  const detectLocation = () => {
+    const L = (en, pt, es) => lang==='pt' ? pt : lang==='es' ? es : en;
+    setError(''); setNotice('');
+    if (!navigator.geolocation) { setError(L('Your browser does not support location.', 'Seu navegador não suporta localização.', 'Tu navegador no soporta ubicación.')); return; }
+    setGeoBusy(true);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const { latitude, longitude } = pos.coords;
+        const res = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&addressdetails=1&accept-language=en&lat=' + latitude + '&lon=' + longitude);
+        const data = await res.json();
+        const addr = (data && data.address) || {};
+        const stCode = addr['ISO3166-2-lvl4'] ? String(addr['ISO3166-2-lvl4']).split('-')[1].toUpperCase() : '';
+        const st = STATES[stCode];
+        const countyRaw = String(addr.county || '').replace(/\s+County$/i, '').trim().toLowerCase();
+        const cityRaw = String(addr.city || addr.town || addr.village || addr.hamlet || addr.suburb || '').trim().toLowerCase();
+        const countyKey = st && Object.keys(st.counties).find(c => c.toLowerCase() === countyRaw);
+        if (!st || !countyKey) {
+          setError(L('We do not cover your area yet — search for the closest city below.',
+                     'Ainda não atendemos sua região — busque a cidade mais próxima abaixo.',
+                     'Aún no cubrimos tu zona — busca la ciudad más cercana abajo.'));
+          return;
+        }
+        const cityKey = st.counties[countyKey].find(c => c.toLowerCase() === cityRaw);
+        const isFL = st.code === 'FL';
+        const value = cityKey ? (isFL ? cityKey : cityKey + ', ' + st.code) : (isFL ? countyKey + ' County' : countyKey + ' County, ' + st.code);
+        setRegion(value); setRegionSearch(''); setRegionOpen(false); setRegionState(st.code);
+        setNotice('📍 ' + (cityKey ? cityKey + ', ' : '') + countyKey + ' County, ' + st.code);
+      } catch (e) {
+        setError(L('Could not detect your location. Search below instead.', 'Não foi possível detectar sua localização. Busque abaixo.', 'No se pudo detectar tu ubicación. Busca abajo.'));
+      } finally { setGeoBusy(false); }
+    }, () => {
+      setGeoBusy(false);
+      setError(L('Location permission denied. Search for your city below.', 'Permissão de localização negada. Busque sua cidade abaixo.', 'Permiso de ubicación denegado. Busca tu ciudad abajo.'));
+    }, { timeout: 10000 });
+  };
+
+  const regionTools = (
+    <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom:8}}>
+      <button type="button" onClick={detectLocation} disabled={geoBusy} style={{
+        display:'flex', alignItems:'center', justifyContent:'center', gap:8, width:'100%', minHeight:44,
+        borderRadius:12, border:'1.5px solid #1565E8', background:'#fff', color:'#1565E8',
+        fontFamily:'inherit', fontSize:13.5, fontWeight:700, cursor: geoBusy ? 'default' : 'pointer', opacity: geoBusy ? 0.6 : 1,
+      }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+        {geoBusy ? (lang==='pt'?'Detectando…':lang==='es'?'Detectando…':'Detecting…')
+                 : (lang==='pt'?'Usar minha localização atual':lang==='es'?'Usar mi ubicación actual':'Use my current location')}
+      </button>
+      <select value={regionState} onChange={e=>{ setRegionState(e.target.value); setRegionOpen(true); }} aria-label={lang==='pt'?'Estado':lang==='es'?'Estado':'State'} style={{
+        width:'100%', height:44, borderRadius:12, border:'1.5px solid #cfd8e3', background:'#fff', color:'#0A2840',
+        fontFamily:'inherit', fontSize:13.5, padding:'0 12px',
+      }}>
+        <option value="">{lang==='pt'?'Todos os estados':lang==='es'?'Todos los estados':'All states'}</option>
+        {Object.values(STATES).map(st => <option key={st.code} value={st.code}>{st.name[lang] || st.name.en}</option>)}
+      </select>
+    </div>
+  );
 
   // Browser/password-manager autofill sets input.value directly without firing React's
   // onChange, so canSubmit (and the Log In button) stayed stuck disabled until the user
@@ -524,13 +612,15 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                 </>)}
                 {step===2 && (<>
                   <p style={{fontSize:13, color:'#64748b', margin:'0 0 4px'}}>{lang==='pt'?'Selecione sua região de trabalho:':lang==='es'?'Selecciona tu región:':'Select your work region:'}</p>
+                  <div ref={regionBoxRef} style={{display:'flex', flexDirection:'column', gap:8}}>
+                  {regionTools}
                   <div style={{position:'relative'}}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round"
                       style={{position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', pointerEvents:'none'}}>
                       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
                     <input className="pg-field" type="text" value={regionSearch}
-                      onChange={e=>{setRegionSearch(e.target.value);setRegionOpen(true);}} onFocus={()=>setRegionOpen(true)}
+                      onChange={e=>{setRegionSearch(e.target.value);setRegionOpen(true);}} onFocus={()=>setRegionOpen(true)} onClick={()=>setRegionOpen(true)}
                       placeholder={lang==='pt'?'Buscar cidade ou condado…':lang==='es'?'Buscar ciudad o condado…':'Search city or county…'}
                       style={{...deskInput, paddingLeft:34}}/>
                   </div>
@@ -541,7 +631,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                     </button>
                   </div>}
                   {regionOpen && filteredItems.length > 0 && (
-                    <div style={{border:'1.5px solid #e2e8f0', borderRadius:12, maxHeight:160, overflowY:'auto', boxShadow:'0 8px 24px rgba(15,30,60,0.10)'}}>
+                    <div style={{border:'1.5px solid #e2e8f0', borderRadius:12, maxHeight:220, overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', boxShadow:'0 8px 24px rgba(15,30,60,0.10)'}}>
                       {filteredItems.map((item,idx)=>(
                         <button key={idx} onMouseDown={e=>e.preventDefault()} onClick={()=>{setRegion(item.value);setRegionSearch('');setRegionOpen(false);}}
                           style={{display:'flex', alignItems:'center', gap:8, width:'100%', padding:'9px 14px', border:'none', background:item.isCounty?'#f8fafc':'#fff', cursor:'pointer', fontFamily:'inherit', textAlign:'left', borderBottom:'0.5px solid #f1f5f9'}}>
@@ -551,7 +641,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                       ))}
                     </div>
                   )}
-                  {regionOpen && <div style={{position:'fixed', inset:0, zIndex:98}} onClick={()=>setRegionOpen(false)}/>}
+                  </div>
                   {notice && <div style={{fontSize:12.5, color:'#166534', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{notice}</div>}
                   {error && <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div>}
                   <button onClick={handleSignup} disabled={!canStep2||loading} style={{
@@ -615,7 +705,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       {/* ── Hero section ── */}
       <div style={{
         position:'relative', zIndex:2,
-        flex:'0 0 auto', paddingTop:36, paddingBottom:0,
+        flex:'0 0 auto', paddingTop: mode=='signup' ? 44 : 36, paddingBottom:0,
         display:'flex', flexDirection:'column', alignItems:'center', gap:0,
       }}>
         {/* PoolGuyX logo */}
@@ -623,7 +713,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           src="wordmarkwhite.webp"
           alt="PoolGuyX"
           style={{
-            height: 280,
+            height: mode==='signup' ? 110 : 280,
             width: 'auto',
             display: 'block',
             marginBottom: 0,
@@ -631,8 +721,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           }}
         />
 
-        {/* Tagline with decorative lines */}
-        <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:0}}>
+        {/* Tagline with decorative lines — hidden while signing up so the form gets the room */}
+        {mode !== 'signup' && <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:0}}>
           <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
           <span style={{
             fontSize:12, fontWeight:700, color:'#ffffff',
@@ -640,14 +730,14 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             textShadow:'0 1px 4px rgba(0,0,0,0.35)',
           }}>{t.tagline}</span>
           <div style={{width:32, height:1.5, background:'rgba(255,255,255,0.45)', borderRadius:2}}/>
-        </div>
+        </div>}
 
         {/* Subtitle */}
-        <p style={{
+        {mode !== 'signup' && <p style={{
           margin:'0', fontSize:13, fontWeight:500, color:'#ffffff',
           textAlign:'center', lineHeight:1.5, maxWidth:240, padding:'0 20px',
           textShadow:'0 1px 4px rgba(0,0,0,0.35)',
-        }}>{t.loginSub}</p>
+        }}>{t.loginSub}</p>}
       </div>
 
       {/* ── Form card — glass over photo ── */}
@@ -660,7 +750,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         padding:'24px 24px 28px',
         display:'flex', flexDirection:'column', gap:12,
         overflowY:'auto',
-        marginTop:28,
+        marginTop: mode==='signup' ? 12 : 28,
       }}>
 
         {/* ══ LOGIN MODE ══ */}
@@ -933,7 +1023,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
               )}
 
               {/* Search input */}
-              <div style={{position:'relative'}}>
+              <div ref={regionBoxRef} style={{position:'relative'}}>
+                {regionTools}
                 <div style={{position:'relative'}}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pg-ink-400)" strokeWidth="2" strokeLinecap="round"
                     style={{position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', pointerEvents:'none'}}>
@@ -944,7 +1035,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                     type="text"
                     value={regionSearch}
                     onChange={e=>{setRegionSearch(e.target.value); setRegionOpen(true);}}
-                    onFocus={()=>setRegionOpen(true)}
+                    onFocus={()=>setRegionOpen(true)} onClick={()=>setRegionOpen(true)}
                     placeholder={lang==='pt'?'Buscar cidade ou condado…':lang==='es'?'Buscar ciudad o condado…':'Search city or county…'}
                     style={{height:44, fontSize:13.5, paddingLeft:34}}
                   />
@@ -953,9 +1044,9 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                 {/* Dropdown */}
                 {regionOpen && (
                   <div style={{
-                    position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:99,
+                    marginTop:6,
                     background:'var(--pg-white)', border:'1.5px solid var(--pg-ink-200)',
-                    borderRadius:12, maxHeight:180, overflowY:'auto',
+                    borderRadius:12, maxHeight:220, overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch',
                     boxShadow:'0 8px 24px rgba(15,30,60,0.12)',
                   }}>
                     {filteredItems.length === 0 ? (
@@ -986,10 +1077,6 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                 )}
               </div>
 
-              {/* Close dropdown on outside click */}
-              {regionOpen && (
-                <div style={{position:'fixed', inset:0, zIndex:98}} onClick={()=>setRegionOpen(false)}/>
-              )}
             </div>
 
             {notice && <div style={{fontSize:12.5, color:'#166534', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{notice}</div>}

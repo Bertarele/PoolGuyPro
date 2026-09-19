@@ -1007,6 +1007,15 @@ function App() {
   const county = (() => {
     const FL = window.FL_COUNTIES || {};
     const region = user.region || '';
+    // 'City, TX' / 'Travis County, TX' (signup + profile edit format for any state)
+    const stM = /^(.*),s*([A-Z]{2})$/.exec(region);
+    const US = window.US_STATES || {};
+    if (stM && US[stM[2]]) {
+      const nm = stM[1].trim();
+      for (const [c, cities] of Object.entries(US[stM[2]].counties)) {
+        if (nm === c + ' County' || Array.isArray(cities) && cities.includes(nm)) return c;
+      }
+    }
     if (region) {
       for (const [c, cities] of Object.entries(FL)) {
         if (region === c || region === c + ' County') return c;

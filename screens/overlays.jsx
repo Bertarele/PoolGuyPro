@@ -4703,7 +4703,18 @@ function EditProfileSheet({ open, onClose, user, setUser, lang='en' }) {
     'Wellington, FL','Palm Beach Gardens, FL','Jupiter, FL','Riviera Beach, FL','Royal Palm Beach, FL',
     'Naples, FL','Cape Coral, FL','Fort Myers, FL','Bonita Springs, FL','Marco Island, FL',
     'Broward County, FL','Miami-Dade County, FL','Palm Beach County, FL',
-  ];
+  ].concat((() => {
+    // Other supported states (same 'City, ST' format the signup screen stores)
+    const out = [];
+    Object.values(window.US_STATES || {}).forEach(st => {
+      if (st.code === 'FL') return;
+      Object.entries(st.counties).forEach(([c, cities]) => {
+        out.push(c + ' County, ' + st.code);
+        cities.forEach(city => out.push(city + ', ' + st.code));
+      });
+    });
+    return out;
+  })());
 
   const regionSuggestions = region.trim().length >= 2
     ? REGION_LIST.filter(r => r.toLowerCase().includes(region.toLowerCase())).slice(0, 6)
