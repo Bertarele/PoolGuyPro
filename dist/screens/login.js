@@ -897,7 +897,7 @@ function LoginScreen({
       fontSize: 14,
       paddingLeft: 40,
       background: 'rgba(255,255,255,0.92)',
-      border: '1px solid rgba(255,255,255,0.60)',
+      border: '1px solid #cfd8e3',
       color: '#0A2840',
       backdropFilter: 'blur(8px)'
     }
@@ -943,7 +943,7 @@ function LoginScreen({
       paddingLeft: 40,
       paddingRight: 46,
       background: 'rgba(255,255,255,0.92)',
-      border: '1px solid rgba(255,255,255,0.60)',
+      border: '1px solid #cfd8e3',
       color: '#0A2840',
       backdropFilter: 'blur(8px)'
     }
@@ -1073,7 +1073,7 @@ function LoginScreen({
     style: {
       flex: 1,
       height: 1,
-      background: isDesktop ? 'var(--pg-ink-200)' : 'rgba(255,255,255,0.25)'
+      background: 'var(--pg-ink-200)'
     }
   }), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -1085,7 +1085,7 @@ function LoginScreen({
     style: {
       flex: 1,
       height: 1,
-      background: isDesktop ? 'var(--pg-ink-200)' : 'rgba(255,255,255,0.25)'
+      background: 'var(--pg-ink-200)'
     }
   })), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -1313,7 +1313,9 @@ function LoginScreen({
         zIndex: 2,
         width: '100%',
         maxWidth: 480,
-        background: 'rgba(255,255,255,0.10)',
+        background: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
         borderRadius: 28,
         padding: '40px 44px 36px',
         boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
@@ -1326,7 +1328,9 @@ function LoginScreen({
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: 'center',
-        marginBottom: 28
+        margin: '-40px -44px 26px',
+        padding: '26px 44px 20px',
+        background: 'linear-gradient(160deg,#0B2A45 0%,#0A1F33 100%)'
       }
     }, /*#__PURE__*/React.createElement("img", {
       src: "wordmarkwhite.webp",
@@ -1343,7 +1347,7 @@ function LoginScreen({
       style: {
         fontSize: 11,
         fontWeight: 600,
-        color: '#64748b',
+        color: 'rgba(255,255,255,0.78)',
         letterSpacing: '0.07em',
         textTransform: 'uppercase'
       }
@@ -2266,7 +2270,7 @@ function LoginScreen({
       position: 'relative',
       zIndex: 2,
       flex: 1,
-      background: 'rgba(255,255,255,0.34)',
+      background: 'rgba(255,255,255,0.82)',
       backdropFilter: 'blur(18px)',
       WebkitBackdropFilter: 'blur(18px)',
       borderTop: '1px solid rgba(255,255,255,0.45)',
@@ -2315,7 +2319,7 @@ function LoginScreen({
       fontSize: 14,
       paddingLeft: 40,
       background: 'rgba(255,255,255,0.82)',
-      border: '1px solid rgba(255,255,255,0.60)',
+      border: '1px solid #cfd8e3',
       color: '#0A2840',
       backdropFilter: 'blur(8px)'
     }
@@ -2361,7 +2365,7 @@ function LoginScreen({
       paddingLeft: 40,
       paddingRight: 46,
       background: 'rgba(255,255,255,0.82)',
-      border: '1px solid rgba(255,255,255,0.60)',
+      border: '1px solid #cfd8e3',
       color: '#0A2840',
       backdropFilter: 'blur(8px)'
     }
@@ -2631,7 +2635,7 @@ function LoginScreen({
     onClick: step === 1 ? goLogin : () => setStep(1),
     style: {
       border: 'none',
-      background: 'rgba(255,255,255,0.18)',
+      background: 'rgba(10,40,64,0.10)',
       width: 32,
       height: 32,
       borderRadius: '50%',
@@ -2642,17 +2646,17 @@ function LoginScreen({
       flexShrink: 0,
       backdropFilter: 'blur(6px)'
     }
-  }, Icon.chev(16, '#fff', 'left')), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, Icon.chev(16, '#0A2840', 'left')), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'var(--pg-font-display)',
       fontSize: 17,
       fontWeight: 700,
-      color: '#fff'
+      color: '#0A2840'
     }
   }, lang === 'pt' ? 'Criar conta' : lang === 'es' ? 'Crear cuenta' : 'Create account'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: '#ffffff'
+      color: '#3b4f63'
     }
   }, lang === 'pt' ? `Passo ${step} de 2` : lang === 'es' ? `Paso ${step} de 2` : `Step ${step} of 2`)), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2674,7 +2678,7 @@ function LoginScreen({
       fontSize: 10,
       fontWeight: 700,
       letterSpacing: '0.08em',
-      color: '#ffffff',
+      color: '#0A2840',
       marginBottom: 6
     }
   }, lang === 'pt' ? 'NOME COMPLETO' : lang === 'es' ? 'NOMBRE COMPLETO' : 'FULL NAME'), /*#__PURE__*/React.createElement("input", {
@@ -2687,7 +2691,7 @@ function LoginScreen({
       height: 48,
       fontSize: 14,
       background: 'rgba(255,255,255,0.82)',
-      border: '1px solid rgba(255,255,255,0.60)',
+      border: '1px solid #cfd8e3',
       color: '#0A2840',
       backdropFilter: 'blur(8px)'
     }
@@ -2696,7 +2700,7 @@ function LoginScreen({
       fontSize: 10,
       fontWeight: 700,
       letterSpacing: '0.08em',
-      color: '#ffffff',
+      color: '#0A2840',
       marginBottom: 6
     }
   }, "EMAIL"), /*#__PURE__*/React.createElement("input", {
@@ -2709,7 +2713,7 @@ function LoginScreen({
       height: 48,
       fontSize: 14,
       background: 'rgba(255,255,255,0.82)',
-      border: '1px solid rgba(255,255,255,0.60)',
+      border: '1px solid #cfd8e3',
       color: '#0A2840',
       backdropFilter: 'blur(8px)'
     }
@@ -2718,7 +2722,7 @@ function LoginScreen({
       fontSize: 10,
       fontWeight: 700,
       letterSpacing: '0.08em',
-      color: '#ffffff',
+      color: '#0A2840',
       marginBottom: 6
     }
   }, t.passLbl.toUpperCase()), /*#__PURE__*/React.createElement("div", {
@@ -2736,7 +2740,7 @@ function LoginScreen({
       fontSize: 14,
       paddingRight: 46,
       background: 'rgba(255,255,255,0.82)',
-      border: '1px solid rgba(255,255,255,0.60)',
+      border: '1px solid #cfd8e3',
       color: '#0A2840',
       backdropFilter: 'blur(8px)'
     }
@@ -2858,7 +2862,7 @@ function LoginScreen({
       fontSize: 10,
       fontWeight: 700,
       letterSpacing: '0.08em',
-      color: '#ffffff'
+      color: '#0A2840'
     }
   }, lang === 'pt' ? 'CONFIRMAR SENHA' : lang === 'es' ? 'CONFIRMAR CONTRASEÑA' : 'CONFIRM PASSWORD'), passConfirm.length >= 1 && /*#__PURE__*/React.createElement("span", {
     style: {
@@ -2883,7 +2887,7 @@ function LoginScreen({
       background: 'rgba(255,255,255,0.82)',
       color: '#0A2840',
       backdropFilter: 'blur(8px)',
-      border: passConfirm.length >= 4 ? `1px solid ${passMatch ? '#22c55e' : '#f87171'}` : '1px solid rgba(255,255,255,0.25)'
+      border: passConfirm.length >= 4 ? `1px solid ${passMatch ? '#22c55e' : '#f87171'}` : '1px solid #cfd8e3'
     }
   }), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowPassC(p => !p),
@@ -2952,7 +2956,7 @@ function LoginScreen({
       fontSize: 10,
       fontWeight: 700,
       letterSpacing: '0.08em',
-      color: '#ffffff',
+      color: '#0A2840',
       marginBottom: 8
     }
   }, lang === 'pt' ? 'REGIÃO / CIDADE' : lang === 'es' ? 'REGIÓN / CIUDAD' : 'REGION / CITY'), region && /*#__PURE__*/React.createElement("div", {
@@ -3179,16 +3183,16 @@ function LoginScreen({
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 12.5,
-      color: '#ffffff'
+      color: '#3b4f63'
     }
   }, lang === 'pt' ? 'Já tem conta? ' : lang === 'es' ? '¿Ya tienes cuenta? ' : 'Already have an account? '), /*#__PURE__*/React.createElement("button", {
     onClick: goLogin,
     style: {
       border: 'none',
       background: 'transparent',
-      color: '#fff',
+      color: '#1565E8',
       fontSize: 12.5,
-      fontWeight: 700,
+      fontWeight: 800,
       cursor: 'pointer',
       padding: 0,
       fontFamily: 'inherit'
