@@ -1727,7 +1727,14 @@ async function pgCompressImage(file, opts) {
     return file;
   }
 }
+
+// Server rules (ratings guard) reply in 'EN · PT · ES'; show the reader's language.
+function pgRatingErr(msg, lang) {
+  const p = String(msg || '').split(' · ');
+  return p.length >= 3 ? lang === 'pt' ? p[1] : lang === 'es' ? p[2] : p[0] : p.length === 2 ? lang === 'pt' ? p[1] : p[0] : String(msg || '');
+}
 Object.assign(window, {
+  pgRatingErr,
   pgCompressImage,
   Icon,
   Avatar,

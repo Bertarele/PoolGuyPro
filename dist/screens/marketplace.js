@@ -2293,7 +2293,7 @@ function ViewListingSheet({
         if ((e2.message || '').includes('ratings_pair_unique')) {
           showToast && showToast(lang === 'pt' ? 'ℹ️ Vocês já se avaliaram antes — só vale uma avaliação por pessoa.' : lang === 'es' ? 'ℹ️ Ya se calificaron antes — solo cuenta una calificación por persona.' : 'ℹ️ You two already rated each other — only one rating per person counts.');
         } else {
-          showToast && showToast('❌ ' + (e2.message || 'Error'));
+          showToast && showToast('❌ ' + pgRatingErr(e2.message || 'Error', lang));
         }
         return;
       }

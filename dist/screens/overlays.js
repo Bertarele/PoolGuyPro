@@ -9960,7 +9960,7 @@ function RatingSheet({
       showToast && showToast('⭐ ' + (lang === 'pt' ? 'Avaliação enviada!' : 'Rating submitted!'));
       onDone && onDone(rating.id);
     } catch (e) {
-      showToast && showToast('❌ ' + (e.message || 'Error'));
+      showToast && showToast('❌ ' + pgRatingErr(e.message || 'Error', lang));
       setSubmitting(false);
     }
   };
@@ -10714,7 +10714,7 @@ function BuyerRatingPromptModal({
       showToast && showToast('⭐ ' + (lang === 'pt' ? 'Avaliação enviada!' : 'Rating submitted!'));
       onRateNow && onRateNow(null);
     } catch (e) {
-      showToast && showToast('❌ ' + (e.message || 'Error'));
+      showToast && showToast('❌ ' + pgRatingErr(e.message || 'Error', lang));
       setSubmitting(false);
     }
   };

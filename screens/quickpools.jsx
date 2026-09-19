@@ -528,7 +528,7 @@ function QuickPoolsScreen({ ctx }) {
     if (!window.sb || stars === 0) return;
     const { error } = await window.sb.from('ratings')
       .update({ stars, comment: comment?.trim() || null }).eq('id', row.id);
-    if (error) { showToast && showToast('❌ ' + error.message); return; }
+    if (error) { showToast && showToast('❌ ' + pgRatingErr(error.message, lang)); return; }
     window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: row.to_id }).catch(()=>{});
     setPendingOutRatings(prev => prev.filter(r => r.id !== row.id));
     setRateNowTarget(null);
@@ -2936,7 +2936,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
         const dup = (error.message || '').includes('one_open_per_reporter');
         showToast && showToast(dup
           ? (lang==='pt'?'⚠ Você já reportou um problema nessa vaga.':lang==='es'?'⚠ Ya reportaste un problema en esta vacante.':'⚠ You already reported a problem on this job.')
-          : '❌ ' + (error.message || 'Error'));
+          : '❌ ' + pgRatingErr(error.message || 'Error', lang));
         return;
       }
       setPhotoDisputeOpen(false);
@@ -3139,7 +3139,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
           ? (lang==='pt' ? 'ℹ️ Vocês já se avaliaram antes — só vale uma avaliação por pessoa.'
             : lang==='es' ? 'ℹ️ Ya se calificaron antes — solo cuenta una calificación por persona.'
             : 'ℹ️ You two already rated each other — only one rating per person counts.')
-          : '❌ ' + (error.message || 'Error'));
+          : '❌ ' + pgRatingErr(error.message || 'Error', lang));
       });
       if (ownerRatingStars > 0) {
         window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: job.poster_id }).catch(()=>{});
@@ -3318,7 +3318,7 @@ function QuickPoolDetails({ job, user, t, lang, applied, isAccepted=false, isDon
           ? (lang==='pt' ? 'ℹ️ Vocês já se avaliaram antes — só vale uma avaliação por pessoa.'
             : lang==='es' ? 'ℹ️ Ya se calificaron antes — solo cuenta una calificación por persona.'
             : 'ℹ️ You two already rated each other — only one rating per person counts.')
-          : '❌ ' + (error.message || 'Error'));
+          : '❌ ' + pgRatingErr(error.message || 'Error', lang));
       });
       if (ratingStars > 0) {
         window.sb.rpc('reveal_mutual_rating', { p_a: user.uid, p_b: acceptedApp.applicant_id }).catch(()=>{});

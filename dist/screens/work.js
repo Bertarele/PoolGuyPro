@@ -5581,6 +5581,7 @@ function TechReviewSheet({
   const [tags, setTags] = React.useState([]);
   const [submitted, setSubmitted] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
+  const [submitErr, setSubmitErr] = React.useState(''); // why the server refused (phone not verified, no chat yet...)
   const [alreadyRated, setAlreadyRated] = React.useState(false);
   const [checking, setChecking] = React.useState(false);
   const toggleTag = tag => setTags(p => p.includes(tag) ? p.filter(t => t !== tag) : [...p, tag]);
@@ -5621,6 +5622,7 @@ function TechReviewSheet({
   const handleSubmit = async () => {
     if (!rating || !window.sb || !user?.uid || !tech?.author_id) return;
     setSubmitting(true);
+    setSubmitErr('');
     const {
       error
     } = await window.sb.from('ratings').insert({
@@ -5635,6 +5637,9 @@ function TechReviewSheet({
     });
     setSubmitting(false);
     if (error) {
+      const m = String(error.message || '');
+      // ratings_pair_unique = you already rated this person; anything else is a server rule with a readable message
+      setSubmitErr(/ratings_pair_unique|duplicate key/i.test(m) ? lang === 'pt' ? 'Você já avaliou esta pessoa.' : lang === 'es' ? 'Ya calificaste a esta persona.' : 'You already rated this person.' : lang === 'pt' ? m.split(' · ')[1] || m : lang === 'es' ? m.split(' · ')[2] || m : m.split(' · ')[0]);
       return;
     }
     setSubmitted(true);
@@ -5852,7 +5857,18 @@ function TechReviewSheet({
       color: 'var(--pg-ink-900)',
       lineHeight: 1.5
     }
-  }), /*#__PURE__*/React.createElement("button", {
+  }), submitErr && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      fontSize: 12.5,
+      color: '#b91c1c',
+      background: '#fef2f2',
+      border: '1px solid #fecaca',
+      borderRadius: 10,
+      padding: '9px 12px',
+      lineHeight: 1.45
+    }
+  }, submitErr), /*#__PURE__*/React.createElement("button", {
     onClick: handleSubmit,
     disabled: rating === 0 || submitting,
     className: "pg-btn pg-btn-primary",

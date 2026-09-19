@@ -1488,7 +1488,7 @@ function ViewListingSheet({ item, lang, onClose, openChat, openPublicProfile, go
             : lang==='es' ? 'ℹ️ Ya se calificaron antes — solo cuenta una calificación por persona.'
             : 'ℹ️ You two already rated each other — only one rating per person counts.');
         } else {
-          showToast && showToast('❌ ' + (e2.message || 'Error'));
+          showToast && showToast('❌ ' + pgRatingErr(e2.message || 'Error', lang));
         }
         return;
       }
