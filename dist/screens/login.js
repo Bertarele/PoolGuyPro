@@ -1,5 +1,8 @@
 // login.jsx — splash + login screen — PoolGuyX brand
 
+// Sign in with Apple is not configured in Supabase yet (provider disabled -> the button
+// landed on a raw JSON error). Flip to true once Apple is set up (needed for the App Store).
+const APPLE_LOGIN_ENABLED = false;
 function LoginScreen({
   onLogin,
   lang = 'en',
@@ -1428,7 +1431,7 @@ function LoginScreen({
     }), /*#__PURE__*/React.createElement("path", {
       fill: "#34A853",
       d: "M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-    })), lang === 'pt' ? 'Continuar com Google' : lang === 'es' ? 'Continuar con Google' : 'Continue with Google'), /*#__PURE__*/React.createElement("button", {
+    })), lang === 'pt' ? 'Continuar com Google' : lang === 'es' ? 'Continuar con Google' : 'Continue with Google'), APPLE_LOGIN_ENABLED && /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         const b = 'https://xiszfqghizqzlwyrfjol.supabase.co';
         const r = window.location.origin || 'https://poolguyx.com';
@@ -2361,7 +2364,7 @@ function LoginScreen({
   }), /*#__PURE__*/React.createElement("path", {
     fill: "#34A853",
     d: "M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-  })), lang === 'pt' ? 'Continuar com Google' : lang === 'es' ? 'Continuar con Google' : 'Continue with Google'), /*#__PURE__*/React.createElement("button", {
+  })), lang === 'pt' ? 'Continuar com Google' : lang === 'es' ? 'Continuar con Google' : 'Continue with Google'), APPLE_LOGIN_ENABLED && /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
       const redirect = window.location.origin || 'https://poolguyx.com';

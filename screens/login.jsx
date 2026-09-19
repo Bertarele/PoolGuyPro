@@ -1,5 +1,9 @@
 ﻿// login.jsx — splash + login screen — PoolGuyX brand
 
+// Sign in with Apple is not configured in Supabase yet (provider disabled -> the button
+// landed on a raw JSON error). Flip to true once Apple is set up (needed for the App Store).
+const APPLE_LOGIN_ENABLED = false;
+
 function LoginScreen({ onLogin, lang='en', setLang }) {
   const t = STRINGS[lang];
   const [mode,          setMode]         = React.useState('login'); // 'login' | 'signup'
@@ -555,11 +559,11 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                   <svg width="19" height="19" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
                   {lang==='pt'?'Continuar com Google':lang==='es'?'Continuar con Google':'Continue with Google'}
                 </button>
-                <button onClick={()=>{const b='https://xiszfqghizqzlwyrfjol.supabase.co';const r=window.location.origin||'https://poolguyx.com';window.location.href=b+'/auth/v1/authorize?provider=apple&redirect_to='+encodeURIComponent(r);}}
+                {APPLE_LOGIN_ENABLED && <button onClick={()=>{const b='https://xiszfqghizqzlwyrfjol.supabase.co';const r=window.location.origin||'https://poolguyx.com';window.location.href=b+'/auth/v1/authorize?provider=apple&redirect_to='+encodeURIComponent(r);}}
                   style={{width:'100%', height:50, borderRadius:12, border:'none', background:'#000', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:14, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', gap:9}}>
                   <svg width="17" height="17" viewBox="0 0 384 512" fill="#fff"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
                   {lang==='pt'?'Continuar com a Apple':lang==='es'?'Continuar con Apple':'Continue with Apple'}
-                </button>
+                </button>}
                 <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'#1a2744', fontSize:13, cursor:'pointer', padding:'2px 0', fontFamily:'inherit', textDecoration:'none'}}>{t.continueGuest}</button>
                 <div style={{textAlign:'center', paddingTop:4}}>
                   <span style={{fontSize:13, color:'#1a2744'}}>{t.noAccount} </span>
@@ -845,7 +849,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
               {lang==='pt'?'Continuar com Google':lang==='es'?'Continuar con Google':'Continue with Google'}
             </button>
 
-            <button onClick={() => {
+            {APPLE_LOGIN_ENABLED && <button onClick={() => {
               const base = 'https://xiszfqghizqzlwyrfjol.supabase.co';
               const redirect = window.location.origin || 'https://poolguyx.com';
               window.location.href = base + '/auth/v1/authorize?provider=apple&redirect_to=' + encodeURIComponent(redirect);
@@ -854,7 +858,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
               color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', gap:9}}>
               <svg width="17" height="17" viewBox="0 0 384 512" fill="#fff"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
               {lang==='pt'?'Continuar com a Apple':lang==='es'?'Continuar con Apple':'Continue with Apple'}
-            </button>
+            </button>}
           </div>
 
           <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'#0A2840',
