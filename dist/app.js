@@ -1068,11 +1068,12 @@ function App() {
       // 7-day blind window", not "not yet submitted". So we must check stars IS NOT NULL
       // (valid stars are 1-5, never 0) to know the OTHER side actually rated me, instead
       // of filtering on `pending` here.
+      // Server function on purpose: the ratee may not read a rating (stars/comment) while it is
+      // still blind, but does need to know one exists so they can rate back. It returns the row
+      // WITHOUT stars/comment, oldest first.
       const {
         data: received
-      } = await window.sb.from('ratings').select('id,listing_id,listing_name,from_id,from_name,to_id,connection_type,connection_id,created_at,expires_at').eq('to_id', user.uid).neq('stars', 0).order('created_at', {
-        ascending: true
-      });
+      } = await window.sb.rpc('my_incoming_ratings');
       if (!received || received.length === 0) {
         setPendingRatings([]);
         return;
@@ -1112,7 +1113,7 @@ function App() {
       if (!window.sb || !user?.uid) return;
       const {
         data: received
-      } = await window.sb.from('ratings').select('id').eq('to_id', user.uid).neq('stars', 0).catch(() => ({
+      } = await window.sb.rpc('my_incoming_ratings').catch(() => ({
         data: null
       }));
       if (!received) return;

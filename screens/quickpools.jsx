@@ -519,6 +519,7 @@ function QuickPoolsScreen({ ctx }) {
       .select('id,listing_name,to_id,connection_id')
       .eq('from_id', user.uid).eq('connection_type', 'quickpool')
       .or('stars.is.null')
+      .or('skipped_at.is.null')
       .or('expires_at.is.null,expires_at.gte.' + new Date().toISOString())
       .then(({ data }) => setPendingOutRatings(data || []));
   }, [user?.uid]);
@@ -533,12 +534,12 @@ function QuickPoolsScreen({ ctx }) {
     setRateNowTarget(null);
     showToast && showToast(lang==='pt'?'✓ Avaliação enviada':lang==='es'?'✓ Calificación enviada':'✓ Rating submitted');
   };
-  // Permanent "don't rate" — there's no client-side DELETE policy on ratings, so
-  // instead expire the row immediately. It drops out of loadPendingOutRatings'
-  // expires_at filter and never nags again, without needing a new RLS grant.
+  // Permanent "don't rate" — there's no client-side DELETE policy on ratings, so mark the
+  // row skipped. It drops out of loadPendingOutRatings' skipped_at filter and never nags
+  // again. (This used to fake an epoch expires_at; the server now owns expires_at.)
   const declinePendingOutRating = async (row) => {
     if (!window.sb) return;
-    await window.sb.from('ratings').update({ expires_at: new Date(0).toISOString() }).eq('id', row.id).catch(()=>{});
+    await window.sb.from('ratings').update({ skipped_at: new Date().toISOString() }).eq('id', row.id).catch(()=>{});
     setPendingOutRatings(prev => prev.filter(r => r.id !== row.id));
     setRateNowTarget(null);
   };
