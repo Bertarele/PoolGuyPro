@@ -33,6 +33,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   const [regionState, setRegionState] = React.useState('');   // '' = all states
   const [geoBusy,     setGeoBusy]     = React.useState(false);
   const regionBoxRef = React.useRef(null);
+  const geoLock = React.useRef(false); // one location lookup at a time (double-tap safe)
 
   // Florida keeps its legacy values ("Weston", "Broward County") so nothing that
   // already reads profiles.region changes; other states carry the state code
@@ -75,8 +76,10 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   // city when we list it, otherwise the county. Never guesses outside our list.
   const detectLocation = () => {
     const L = (en, pt, es) => lang==='pt' ? pt : lang==='es' ? es : en;
+    if (geoLock.current) return;
     setError(''); setNotice('');
     if (!navigator.geolocation) { setError(L('Your browser does not support location.', 'Seu navegador não suporta localização.', 'Tu navegador no soporta ubicación.')); return; }
+    geoLock.current = true;
     setGeoBusy(true);
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try {
@@ -102,11 +105,19 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         setNotice('📍 ' + (cityKey ? cityKey + ', ' : '') + countyKey + ' County, ' + st.code);
       } catch (e) {
         setError(L('Could not detect your location. Search below instead.', 'Não foi possível detectar sua localização. Busque abaixo.', 'No se pudo detectar tu ubicación. Busca abajo.'));
-      } finally { setGeoBusy(false); }
-    }, () => {
+      } finally { geoLock.current = false; setGeoBusy(false); }
+    }, (err) => {
+      geoLock.current = false;
       setGeoBusy(false);
-      setError(L('Location permission denied. Search for your city below.', 'Permissão de localização negada. Busque sua cidade abaixo.', 'Permiso de ubicación denegado. Busca tu ciudad abajo.'));
-    }, { timeout: 10000 });
+      setNotice('');
+      // 1 = denied, 2 = position unavailable (GPS/location services off), 3 = timed out
+      const code = err && err.code;
+      setError(code === 1
+        ? L('Location permission is blocked for this site. Allow it in your browser settings, or search for your city below.', 'A permissão de localização está bloqueada para este site. Libere nas configurações do navegador ou busque sua cidade abaixo.', 'El permiso de ubicación está bloqueado para este sitio. Actívalo en la configuración del navegador o busca tu ciudad abajo.')
+        : code === 3
+        ? L('Getting your location took too long. Try again, or search for your city below.', 'Demorou demais para pegar sua localização. Tente de novo ou busque sua cidade abaixo.', 'Tardó demasiado en obtener tu ubicación. Inténtalo de nuevo o busca tu ciudad abajo.')
+        : L('Could not determine your position. Check that location services are on, or search below.', 'Não foi possível determinar sua posição. Verifique se a localização do aparelho está ligada ou busque abaixo.', 'No se pudo determinar tu posición. Verifica que la ubicación esté activada o busca abajo.'));
+    }, { timeout: 20000, maximumAge: 60000 });
   };
 
   const regionTools = (
