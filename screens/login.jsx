@@ -284,6 +284,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       return;
     }
     setLoading(true);
+    // Tell the server which language to write the reset e-mail in (older accounts have none saved).
+    try { await window.sb.rpc('set_email_lang', { p_email: em, p_lang: lang }); } catch (e) {}
     const { error: err } = await window.sb.auth.resetPasswordForEmail(em, { redirectTo: window.location.origin + '/' });
     setLoading(false);
     if (err) { setError(friendlyAuthError(err)); return; }

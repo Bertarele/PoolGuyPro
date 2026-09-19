@@ -607,6 +607,8 @@ function App() {
   const handleAuthLogin = React.useCallback(async (sbUser) => {
     setIsLoggedIn(true);
     await loadProfile(sbUser);
+    // Older accounts have no language saved (used for e-mail language) — record the one in use.
+    try { const ll = localStorage.getItem('pg_lang'); if (sbUser && sbUser.user_metadata && ll && sbUser.user_metadata.lang !== ll) window.sb.auth.updateUser({ data: { lang: ll } }); } catch (e) {}
     if (!localStorage.getItem('pg_onboarded')) {
       setShowOnboarding(true);
     }
