@@ -197,7 +197,7 @@
     // Turnstile), sign-up / log-in / password-reset each fetch a fresh one-shot
     // token first. 'interaction-only' keeps the widget invisible unless
     // Cloudflare actually wants the user to prove something.
-    window.PG_CAPTCHA_SITEKEY = '';
+    window.PG_CAPTCHA_SITEKEY = '0x4AAAAAAE8aOnZaAJ66BGij'; // public Turnstile site key (secret lives in Supabase)
     function _captchaToken() {
       var key = window.PG_CAPTCHA_SITEKEY;
       if (!key) return Promise.resolve(undefined);

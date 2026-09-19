@@ -46,7 +46,7 @@
   <link rel="preload" href="https://unpkg.com/react@18.3.1/umd/react.production.min.js" as="script" crossorigin="anonymous">
   <link rel="preload" href="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="tokens.css?v=mu7lcd01">
+  <link rel="stylesheet" href="tokens.css?v=mu7n0k2g">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -196,7 +196,7 @@
     // Turnstile), sign-up / log-in / password-reset each fetch a fresh one-shot
     // token first. 'interaction-only' keeps the widget invisible unless
     // Cloudflare actually wants the user to prove something.
-    window.PG_CAPTCHA_SITEKEY = '';
+    window.PG_CAPTCHA_SITEKEY = '0x4AAAAAAE8aOnZaAJ66BGij'; // public Turnstile site key (secret lives in Supabase)
     function _captchaToken() {
       var key = window.PG_CAPTCHA_SITEKEY;
       if (!key) return Promise.resolve(undefined);
@@ -535,20 +535,20 @@
        reloads skip JSX compilation entirely (~3-6s faster on mobile).
        Cache key = src URL with version string → auto-invalidates on update. -->
 
-  <script src="ios-frame.js?v=mu7lcd01"></script>
-  <script src="tweaks-panel.js?v=mu7lcd01"></script>
-  <script src="components.js?v=mu7lcd01"></script>
-  <script src="brand.js?v=mu7lcd01"></script>
-  <script src="data.js?v=mu7lcd01"></script>
-  <script src="screens/login.js?v=mu7lcd01"></script>
-  <script src="screens/home.js?v=mu7lcd01"></script>
-  <script src="screens/marketplace.js?v=mu7lcd01"></script>
-  <script src="screens/quickpools.js?v=mu7lcd01"></script>
-  <script src="screens/post.js?v=mu7lcd01"></script>
-  <script src="screens/work.js?v=mu7lcd01"></script>
-  <script src="screens/profile.js?v=mu7lcd01"></script>
-  <script src="screens/overlays.js?v=mu7lcd01"></script>
-  <script src="app.js?v=mu7lcd01"></script>
+  <script src="ios-frame.js?v=mu7n0k2g"></script>
+  <script src="tweaks-panel.js?v=mu7n0k2g"></script>
+  <script src="components.js?v=mu7n0k2g"></script>
+  <script src="brand.js?v=mu7n0k2g"></script>
+  <script src="data.js?v=mu7n0k2g"></script>
+  <script src="screens/login.js?v=mu7n0k2g"></script>
+  <script src="screens/home.js?v=mu7n0k2g"></script>
+  <script src="screens/marketplace.js?v=mu7n0k2g"></script>
+  <script src="screens/quickpools.js?v=mu7n0k2g"></script>
+  <script src="screens/post.js?v=mu7n0k2g"></script>
+  <script src="screens/work.js?v=mu7n0k2g"></script>
+  <script src="screens/profile.js?v=mu7n0k2g"></script>
+  <script src="screens/overlays.js?v=mu7n0k2g"></script>
+  <script src="app.js?v=mu7n0k2g"></script>
   <script>
     // ── Splash removal — called by app.jsx once React has rendered ──
     window.__pgHideSplash = function() {
