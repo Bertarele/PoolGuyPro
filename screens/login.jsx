@@ -70,6 +70,10 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       return L('Too many attempts right now. Please wait a few minutes and try again.',
                'Muitas tentativas agora. Aguarde alguns minutos e tente de novo.',
                'Demasiados intentos ahora. Espera unos minutos e inténtalo de nuevo.');
+    if (code === 'captcha_failed' || /captcha/i.test(raw))
+      return L('Security check failed. Reload the page and try again — if it keeps happening, disable ad blockers for this site.',
+               'A verificação de segurança falhou. Recarregue a página e tente de novo — se continuar, desative bloqueadores de anúncio neste site.',
+               'La verificación de seguridad falló. Recarga la página e inténtalo de nuevo — si sigue, desactiva los bloqueadores de anuncios en este sitio.');
     if (/invalid login credentials|invalid credentials/i.test(raw))
       return L('Wrong email or password.', 'E-mail ou senha incorretos.', 'Correo o contraseña incorrectos.');
     if (/email not confirmed/i.test(raw))
