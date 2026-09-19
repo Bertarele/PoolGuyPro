@@ -5597,6 +5597,82 @@ function HelpSheet({ open, onClose, lang='en' }) {
 }
 
 // ── Privacy sheet ─────────────────────────────────────────────
+// Terms of Use — beta draft. Plain-language, three languages. Keep the payment
+// wording in step with reality: money between users happens OUTSIDE the app and
+// there is no escrow (see project notes); paid plans go through Stripe.
+function TermsSheet({ open, onClose, lang='en' }) {
+  React.useEffect(() => {
+    if (open) { _lockScreen(); return () => _unlockScreen(); }
+  }, [open]);
+  if (!open) return null;
+  const title = lang==='pt'?'Termos de Uso':lang==='es'?'Términos de Uso':'Terms of Use';
+  const sections = lang==='pt' ? [
+    { title:'1. Usando o PoolGuyX', body:'O PoolGuyX é uma plataforma onde profissionais e donos de piscina se encontram: anúncios de equipamentos, aluguéis, trabalhos de Piscinas Rápidas, cobertura de férias, rotas e vagas. Ao criar uma conta, você confirma que tem 18 anos ou mais e concorda com estes Termos e com a Política de Privacidade.' },
+    { title:'2. Somos uma plataforma, não parte do negócio', body:'O PoolGuyX não contrata, não emprega, não segura nem supervisiona ninguém, e não é parte de nenhuma venda, aluguel, trabalho ou serviço combinado entre usuários. Cada usuário é independente e responsável pelo próprio trabalho, segurança, qualidade e resultado.' },
+    { title:'3. Pagamentos entre usuários', body:'Pagamentos de vendas, aluguéis e trabalhos são combinados e feitos diretamente entre as pessoas envolvidas, fora do app. O PoolGuyX não guarda, garante, reembolsa nem intermedia esse dinheiro, e não existe custódia (escrow). Só pague e receba de quem você confia e guarde seus próprios comprovantes. Os planos pagos, quando disponíveis, são processados pelo Stripe.' },
+    { title:'4. Licenças, seguro e impostos', body:'Você é responsável por licenças, seguros, autorizações e impostos exigidos pelo seu trabalho (por exemplo, regras da Flórida para contratados e manuseio de produtos químicos) e por cumprir todas as leis aplicáveis.' },
+    { title:'5. Seu conteúdo', body:'Você é dono das fotos e textos que publica e nos autoriza a exibi-los no app para o serviço funcionar. Publique apenas o que você tem direito de compartilhar. Fotos enviadas como prova de serviço ou como evidência podem ser vistas pela outra parte e pelos administradores do PoolGuyX.' },
+    { title:'6. Avaliações e denúncias', body:'As avaliações devem ser honestas e baseadas em experiência real. Você pode denunciar um problema (por exemplo, serviço não pago ou trabalho não concluído). As denúncias vão para os administradores do PoolGuyX, que podem analisar as evidências e decidir o que fazer, inclusive advertência ou suspensão. Não somos obrigados a mediar disputas nem a recuperar dinheiro, e nossas decisões são tomadas a nosso critério.' },
+    { title:'7. O que não é permitido', body:'Fraude, anúncios ou avaliações falsas, assédio, discriminação, itens ou serviços ilegais, spam, divulgação de dados privados de terceiros, tentar quebrar ou burlar o app, ou usá-lo para qualquer fim ilegal.' },
+    { title:'8. Suspensão e exclusão', body:'Podemos limitar ou suspender contas que descumprirem estas regras. Você pode excluir sua conta a qualquer momento em Perfil → Excluir minha conta.' },
+    { title:'9. Versão beta', body:'O PoolGuyX está em fase beta. É oferecido “como está” e “conforme disponível”: recursos podem mudar e pode haver erros ou interrupções. Trabalhamos para proteger seus dados, mas não podemos garantir que nada será perdido.' },
+    { title:'10. Limite de responsabilidade', body:'Na extensão máxima permitida por lei, o PoolGuyX não responde por disputas entre usuários, trabalhos não pagos, equipamentos danificados, lesões ou perdas indiretas decorrentes do uso do app. Nada aqui limita direitos que a lei não permite limitar.' },
+    { title:'11. Mudanças e lei aplicável', body:'Podemos atualizar estes Termos; se a mudança for relevante, avisaremos no app. Continuar usando o app significa aceitar a atualização. Estes Termos são regidos pelas leis do Estado da Flórida, EUA.' },
+    { title:'12. Contato', body:'Dúvidas ou pedidos: use Perfil → Ajuda e suporte ou Enviar Feedback dentro do app.' },
+  ] : lang==='es' ? [
+    { title:'1. Usar PoolGuyX', body:'PoolGuyX es una plataforma donde profesionales y dueños de piscinas se encuentran: anuncios de equipos, alquileres, trabajos de Piscinas Rápidas, cobertura de vacaciones, rutas y vacantes. Al crear una cuenta confirmas que tienes 18 años o más y aceptas estos Términos y la Política de Privacidad.' },
+    { title:'2. Somos una plataforma, no parte del negocio', body:'PoolGuyX no contrata, no emplea, no asegura ni supervisa a nadie, y no es parte de ninguna venta, alquiler, trabajo o servicio acordado entre usuarios. Cada usuario es independiente y responsable de su propio trabajo, seguridad, calidad y resultado.' },
+    { title:'3. Pagos entre usuarios', body:'Los pagos de ventas, alquileres y trabajos se acuerdan y se hacen directamente entre las personas involucradas, fuera de la app. PoolGuyX no guarda, garantiza, reembolsa ni intermedia ese dinero, y no existe custodia (escrow). Paga y cobra solo con personas de confianza y guarda tus propios comprobantes. Los planes de pago, cuando estén disponibles, los procesa Stripe.' },
+    { title:'4. Licencias, seguros e impuestos', body:'Eres responsable de las licencias, seguros, permisos e impuestos que exija tu trabajo (por ejemplo, las reglas de Florida para contratistas y manejo de químicos) y de cumplir todas las leyes aplicables.' },
+    { title:'5. Tu contenido', body:'Eres dueño de las fotos y textos que publicas y nos autorizas a mostrarlos en la app para que el servicio funcione. Publica solo lo que tienes derecho a compartir. Las fotos enviadas como prueba de trabajo o evidencia pueden ser vistas por la otra parte y por los administradores de PoolGuyX.' },
+    { title:'6. Calificaciones y denuncias', body:'Las calificaciones deben ser honestas y basadas en experiencia real. Puedes denunciar un problema (por ejemplo, un trabajo no pagado o sin terminar). Las denuncias van a los administradores de PoolGuyX, que pueden revisar las pruebas y decidir qué hacer, incluso advertencia o suspensión. No estamos obligados a mediar disputas ni a recuperar dinero, y nuestras decisiones son a nuestro criterio.' },
+    { title:'7. Qué no está permitido', body:'Fraude, anuncios o reseñas falsas, acoso, discriminación, artículos o servicios ilegales, spam, compartir datos privados de terceros, intentar romper o eludir la app, o usarla para cualquier fin ilegal.' },
+    { title:'8. Suspensión y eliminación', body:'Podemos limitar o suspender cuentas que incumplan estas reglas. Puedes eliminar tu cuenta en cualquier momento en Perfil → Eliminar mi cuenta.' },
+    { title:'9. Versión beta', body:'PoolGuyX está en fase beta. Se ofrece “tal cual” y “según disponibilidad”: las funciones pueden cambiar y puede haber errores o interrupciones. Trabajamos para proteger tus datos, pero no podemos garantizar que nada se pierda.' },
+    { title:'10. Límite de responsabilidad', body:'En la máxima medida permitida por la ley, PoolGuyX no responde por disputas entre usuarios, trabajos no pagados, equipos dañados, lesiones o pérdidas indirectas derivadas del uso de la app. Nada aquí limita derechos que la ley no permite limitar.' },
+    { title:'11. Cambios y ley aplicable', body:'Podemos actualizar estos Términos; si el cambio es importante, te avisaremos en la app. Seguir usando la app significa aceptar la actualización. Estos Términos se rigen por las leyes del Estado de Florida, EE. UU.' },
+    { title:'12. Contacto', body:'Dudas o solicitudes: usa Perfil → Ayuda y soporte o Enviar Feedback dentro de la app.' },
+  ] : [
+    { title:'1. Using PoolGuyX', body:'PoolGuyX is a platform where pool professionals and pool owners find each other: equipment listings, rentals, Express Pools jobs, vacation coverage, routes and job openings. By creating an account you confirm you are at least 18 and agree to these Terms and the Privacy Policy.' },
+    { title:'2. We are a platform, not a party to the deal', body:'PoolGuyX does not hire, employ, insure or supervise anyone, and is not a party to any sale, rental, job or service agreed between users. Every user is independent and responsible for their own work, safety, quality and results.' },
+    { title:'3. Payments between users', body:'Payments for sales, rentals and jobs are agreed and made directly between the people involved, outside the app. PoolGuyX does not hold, guarantee, refund or mediate that money, and there is no escrow. Only pay and get paid with people you trust, and keep your own records. Paid plans, when available, are processed by Stripe.' },
+    { title:'4. Licenses, insurance and taxes', body:'You are responsible for the licenses, insurance, permits and taxes your work requires (for example Florida contractor and chemical-handling rules) and for following all applicable laws.' },
+    { title:'5. Your content', body:'You own the photos and text you post, and you allow us to display them in the app so the service works. Only post what you have the right to share. Photos sent as proof of work or as evidence may be seen by the other party and by PoolGuyX administrators.' },
+    { title:'6. Ratings and reports', body:'Ratings must be honest and based on real experience. You can report a problem (for example an unpaid or unfinished job). Reports go to PoolGuyX administrators, who may review the evidence and decide what to do, including a warning or suspension. We are not obliged to mediate disputes or recover money, and our decisions are made at our discretion.' },
+    { title:'7. What is not allowed', body:'Fraud, fake listings or reviews, harassment, discrimination, illegal items or services, spam, sharing other people’s private data, trying to break or bypass the app, or using it for anything unlawful.' },
+    { title:'8. Suspension and deletion', body:'We may limit or suspend accounts that break these rules. You can delete your account at any time in Profile → Delete my account.' },
+    { title:'9. Beta service', body:'PoolGuyX is in beta. It is provided “as is” and “as available”: features may change and there may be errors or interruptions. We work to protect your data but cannot guarantee that nothing will be lost.' },
+    { title:'10. Limit of liability', body:'To the fullest extent allowed by law, PoolGuyX is not liable for disputes between users, unpaid work, damaged equipment, injuries or indirect losses arising from use of the app. Nothing here limits rights that cannot be limited by law.' },
+    { title:'11. Changes and governing law', body:'We may update these Terms; if the change is material we will tell you in the app. Continuing to use the app means you accept the update. These Terms are governed by the laws of the State of Florida, USA.' },
+    { title:'12. Contact', body:'Questions or requests: use Profile → Help & support or Send Feedback inside the app.' },
+  ];
+
+  return (
+    <div className="pg-sheet-backdrop" onClick={onClose} style={{zIndex:100000}}>
+      <div className="pg-sheet" style={{padding:'0 0 36px'}} onClick={e=>e.stopPropagation()}>
+        <div className="pg-sheet-grabber"/>
+        <div style={{padding:'4px 18px 16px', borderBottom:'0.5px solid var(--pg-ink-200)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <h2 style={{margin:0, fontSize:18, fontWeight:700, letterSpacing:'-0.02em'}}>{title}</h2>
+          <button onClick={onClose} aria-label="Close" style={{border:'none', background:'var(--pg-ink-100)', width:30, height:30, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
+            {Icon.x(16,'var(--pg-ink-700)')}
+          </button>
+        </div>
+        <div style={{padding:'18px 18px 0', display:'flex', flexDirection:'column', gap:18, maxHeight:460, overflowY:'auto', overscrollBehavior:'contain'}}>
+          {sections.map((s,i) => (
+            <div key={i}>
+              <div style={{fontSize:13, fontWeight:700, color:'var(--pg-ink-900)', marginBottom:6}}>{s.title}</div>
+              <div style={{fontSize:13, color:'var(--pg-ink-600)', lineHeight:1.55}}>{s.body}</div>
+            </div>
+          ))}
+          <div style={{fontSize:11, color:'var(--pg-ink-400)', paddingBottom:4}}>
+            {lang==='pt'?'Última atualização: setembro de 2026':lang==='es'?'Última actualización: septiembre 2026':'Last updated: September 2026'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PrivacySheet({ open, onClose, lang='en' }) {
   React.useEffect(() => {
     if (open) { _lockScreen(); return () => _unlockScreen(); }
@@ -5607,17 +5683,17 @@ function PrivacySheet({ open, onClose, lang='en' }) {
     { title:'Dados coletados', body:'Coletamos apenas os dados necessários para o funcionamento do app: nome, e-mail, telefone e localização geral (condado/cidade). Nunca compartilhamos seus dados pessoais com terceiros sem sua autorização.' },
     { title:'Localização', body:'O app usa sua localização apenas para mostrar trabalhos próximos. A localização exata nunca é armazenada nem compartilhada com outros usuários.' },
     { title:'Comunicação', body:'Usamos seu e-mail para enviar notificações de trabalho e atualizações importantes. Você pode cancelar a qualquer momento nas configurações.' },
-    { title:'Exclusão de conta', body:'Para excluir sua conta e todos os seus dados, entre em contato com suporte@poolguyapp.com. Processamos pedidos em até 7 dias úteis.' },
+    { title:'Exclusão de conta', body:'Você pode excluir sua conta e seus dados a qualquer momento em Perfil → Excluir minha conta. Depois disso, seu perfil, anúncios, candidaturas e conversas são removidos. Registros de denúncias podem ser mantidos para segurança dos outros usuários.' },
   ] : lang==='es' ? [
     { title:'Datos recopilados', body:'Solo recopilamos los datos necesarios para el funcionamiento de la app: nombre, email, teléfono y ubicación general. Nunca compartimos tus datos personales con terceros.' },
     { title:'Ubicación', body:'La app usa tu ubicación solo para mostrar trabajos cercanos. La ubicación exacta nunca se almacena ni se comparte con otros usuarios.' },
     { title:'Comunicación', body:'Usamos tu email para enviarte notificaciones de trabajo. Puedes cancelar en cualquier momento en la configuración.' },
-    { title:'Eliminación de cuenta', body:'Para eliminar tu cuenta, contacta a support@poolguyapp.com. Procesamos solicitudes en hasta 7 días hábiles.' },
+    { title:'Eliminación de cuenta', body:'Puedes eliminar tu cuenta y tus datos en cualquier momento en Perfil → Eliminar mi cuenta. Después se eliminan tu perfil, anuncios, postulaciones y chats. Los registros de denuncias pueden conservarse por la seguridad de otros usuarios.' },
   ] : [
     { title:'Data collected', body:'We only collect the data necessary for the app to work: name, email, phone, and general location (county/city). We never share your personal data with third parties without your consent.' },
     { title:'Location', body:'The app uses your location only to show nearby jobs. Your exact location is never stored or shared with other users.' },
     { title:'Communication', body:'We use your email to send job notifications and important updates. You can opt out at any time in settings.' },
-    { title:'Account deletion', body:'To delete your account and all your data, contact support@poolguyapp.com. We process requests within 7 business days.' },
+    { title:'Account deletion', body:'You can delete your account and data at any time in Profile → Delete my account. Your profile, listings, applications and chats are then removed. Records of reports may be kept to protect other users.' },
   ];
 
   return (
@@ -5638,7 +5714,7 @@ function PrivacySheet({ open, onClose, lang='en' }) {
             </div>
           ))}
           <div style={{fontSize:11, color:'var(--pg-ink-400)', paddingBottom:4}}>
-            {lang==='pt'?'Última atualização: maio de 2026':lang==='es'?'Última actualización: mayo 2026':'Last updated: May 2026'}
+            {lang==='pt'?'Última atualização: setembro de 2026':lang==='es'?'Última actualización: septiembre 2026':'Last updated: September 2026'}
           </div>
         </div>
       </div>
@@ -5857,6 +5933,6 @@ Object.assign(window, {
   LanguagePickerSheet, ApplicantsSheet, VerificationSheet, PushNotifSheet,
   WalletSheet, WorkLifecycleSheet, ReviewSheet, HiringAppDetailSheet,
   ApplyJobSheet, EditProfileSheet,
-  PublicProfileSheet, HelpSheet, PrivacySheet,
+  PublicProfileSheet, HelpSheet, PrivacySheet, TermsSheet,
   BuyerRatingPromptModal,
 });

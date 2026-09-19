@@ -595,8 +595,8 @@ function HomeScreen({ ctx }) {
         </div>
       </div>
 
-      {/* ── Wallet + referral ── */}
-      <div style={{padding:'14px 18px 0'}}>
+      {/* ── Wallet + referral ── hidden during the free beta: there is no subscription to refer yet */}
+      {!user?.betaFreeForAll && <div style={{padding:'14px 18px 0'}}>
         <button onClick={openWallet} className="pg-press" style={{
           width:'100%', textAlign:'left', cursor:'pointer', padding:'14px 15px',
           borderRadius:16, border:'1px solid var(--pg-ink-200)', background:'var(--pg-white)',
@@ -627,7 +627,7 @@ function HomeScreen({ ctx }) {
           </div>
           {Icon.chev(15,'var(--pg-ink-400)')}
         </button>
-      </div>
+      </div>}
 
       <div style={{padding:'16px 18px 16px', display:'flex', flexDirection:'column', gap:18}}>
 

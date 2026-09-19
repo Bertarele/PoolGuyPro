@@ -3,7 +3,7 @@
 function ProfileScreen({ ctx }) {
   const { lang, user, setUser, openPaywall, regions, openRegionEditor,
           openLanguagePicker, openApplicants, openVerification, openPushNotif, openFeedback,
-          openEditProfile, onLogout, openHelp, openPrivacy,
+          openEditProfile, onLogout, openHelp, openPrivacy, openTerms,
           darkMode, toggleDark, openChat, hasUnreadChat, openNotifications, hasUnreadNotif, requestVerification,
           isDesktop=false, retryPush, pushLog='',
           notifPrefs, saveNotifPrefs, openListingById, openPublicProfile, county='Broward',
@@ -588,7 +588,8 @@ function ProfileScreen({ ctx }) {
               label={lang==='pt'?'Enviar Feedback':lang==='es'?'Enviar Feedback':'Send Feedback'}
               detail={lang==='pt'?'Beta':'Beta'}
               chev onClick={openFeedback}/>
-            <SettingRow icon={Icon.lock(17,'var(--pg-ink-500)')} iconBg="var(--pg-ink-100)" label={t.privacy} chev last onClick={openPrivacy}/>
+            <SettingRow icon={Icon.lock(17,'var(--pg-ink-500)')} iconBg="var(--pg-ink-100)" label={t.privacy} chev onClick={openPrivacy}/>
+            <SettingRow icon={Icon.lock(17,'var(--pg-ink-500)')} iconBg="var(--pg-ink-100)" label={lang==='pt'?'Termos de Uso':lang==='es'?'Términos de Uso':'Terms of Use'} chev last onClick={openTerms}/>
           </div>
         </Section>
 

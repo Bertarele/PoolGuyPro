@@ -1,5 +1,154 @@
 // login.jsx — splash + login screen — PoolGuyX brand
 
+// Round flag language picker (Windows shows emoji flags as letters, so these are
+// drawn as SVG). The choice drives the app language AND the language of the
+// e-mails Supabase sends (it is saved on the account at sign-up, see handleSignup).
+function LangFlags({
+  lang,
+  setLang,
+  size = 40
+}) {
+  const flags = {
+    pt: /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 60 60",
+      width: "100%",
+      height: "100%",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("rect", {
+      width: "60",
+      height: "60",
+      fill: "#009B3A"
+    }), /*#__PURE__*/React.createElement("polygon", {
+      points: "30,8 55,30 30,52 5,30",
+      fill: "#FEDF00"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "30",
+      cy: "30",
+      r: "11.5",
+      fill: "#002776"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M19 28 Q30 23.5 41.5 32",
+      stroke: "#fff",
+      strokeWidth: "2.2",
+      fill: "none"
+    })),
+    en: /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 60 60",
+      width: "100%",
+      height: "100%",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("rect", {
+      width: "60",
+      height: "60",
+      fill: "#fff"
+    }), [0, 2, 4, 6, 8, 10, 12].map(i => /*#__PURE__*/React.createElement("rect", {
+      key: i,
+      y: i * 4.615,
+      width: "60",
+      height: "4.615",
+      fill: "#B22234"
+    })), /*#__PURE__*/React.createElement("rect", {
+      width: "30",
+      height: "32.3",
+      fill: "#3C3B6E"
+    }), [[6, 6], [15, 6], [24, 6], [10.5, 12], [19.5, 12], [6, 18], [15, 18], [24, 18], [10.5, 24], [19.5, 24]].map(([x, y], i) => /*#__PURE__*/React.createElement("circle", {
+      key: i,
+      cx: x,
+      cy: y,
+      r: "1.6",
+      fill: "#fff"
+    }))),
+    es: /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 60 60",
+      width: "100%",
+      height: "100%",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("rect", {
+      width: "60",
+      height: "60",
+      fill: "#AA151B"
+    }), /*#__PURE__*/React.createElement("rect", {
+      y: "15",
+      width: "60",
+      height: "30",
+      fill: "#F1BF00"
+    }))
+  };
+  const items = [{
+    id: 'pt',
+    label: 'Português'
+  }, {
+    id: 'en',
+    label: 'English'
+  }, {
+    id: 'es',
+    label: 'Español'
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    role: "group",
+    "aria-label": "Language",
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 8,
+      padding: 5,
+      borderRadius: 999,
+      background: 'rgba(10,30,50,0.32)',
+      border: '1px solid rgba(255,255,255,0.35)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)'
+    }
+  }, items.map(it => {
+    const on = lang === it.id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: it.id,
+      type: "button",
+      onClick: () => setLang(it.id),
+      "aria-label": it.label,
+      "aria-pressed": on,
+      title: it.label,
+      style: {
+        width: size + 8,
+        height: size + 8,
+        padding: 4,
+        borderRadius: '50%',
+        cursor: 'pointer',
+        border: 'none',
+        background: on ? 'rgba(0,194,212,0.30)' : 'transparent',
+        boxShadow: on ? '0 0 0 2.5px #00C2D4' : 'none',
+        opacity: on ? 1 : 0.7,
+        transform: on ? 'scale(1.06)' : 'scale(1)',
+        transition: 'all .18s',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        display: 'block',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.35)'
+      }
+    }, flags[it.id]));
+  }));
+}
+
+// First-visit language: whatever the phone/browser is set to (pt / es), else English.
+function pgDetectLang() {
+  try {
+    const n = String(navigator.languages && navigator.languages[0] || navigator.language || 'en').toLowerCase();
+    if (n.startsWith('pt')) return 'pt';
+    if (n.startsWith('es')) return 'es';
+  } catch (e) {}
+  return 'en';
+}
+
+// Bump when the Terms text changes materially; stored on each account at sign-up.
+const TERMS_VERSION = '2026-09-19';
+
 // Sign in with Apple is not configured in Supabase yet (provider disabled -> the button
 // landed on a raw JSON error). Flip to true once Apple is set up (needed for the App Store).
 const APPLE_LOGIN_ENABLED = false;
@@ -18,6 +167,8 @@ function LoginScreen({
   const [error, setError] = React.useState('');
   const [emailConfirmNeeded, setEmailConfirmNeeded] = React.useState(false);
   const [notice, setNotice] = React.useState('');
+  const [agreed, setAgreed] = React.useState(false); // Terms + Privacy accepted (sign-up)
+  const [legal, setLegal] = React.useState(null); // 'terms' | 'privacy' | null
   const [showPass, setShowPass] = React.useState(false);
   const [showPassC, setShowPassC] = React.useState(false);
   // Signup fields
@@ -165,6 +316,77 @@ function LoginScreen({
       maximumAge: 60000
     });
   };
+  const legalLinkStyle = {
+    border: 'none',
+    background: 'transparent',
+    padding: 0,
+    margin: 0,
+    font: 'inherit',
+    fontWeight: 700,
+    color: '#1565E8',
+    textDecoration: 'underline',
+    cursor: 'pointer'
+  };
+  const openLegal = which => e => {
+    e.preventDefault();
+    e.stopPropagation();
+    setLegal(which);
+  };
+  const legalSentence = prefix => {
+    const T = /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: openLegal('terms'),
+      style: legalLinkStyle
+    }, lang === 'pt' ? 'Termos de Uso' : lang === 'es' ? 'Términos de Uso' : 'Terms of Use');
+    const P = /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: openLegal('privacy'),
+      style: legalLinkStyle
+    }, lang === 'pt' ? 'Política de Privacidade' : lang === 'es' ? 'Política de Privacidad' : 'Privacy Policy');
+    return lang === 'pt' ? /*#__PURE__*/React.createElement(React.Fragment, null, prefix, " os ", T, " e a ", P, ".") : lang === 'es' ? /*#__PURE__*/React.createElement(React.Fragment, null, prefix, " los ", T, " y la ", P, ".") : /*#__PURE__*/React.createElement(React.Fragment, null, prefix, " the ", T, " and ", P, ".");
+  };
+  const agreeBox = /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 10,
+      fontSize: 12.5,
+      lineHeight: 1.45,
+      color: '#0A2840',
+      cursor: 'pointer',
+      textAlign: 'left'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: agreed,
+    onChange: e => setAgreed(e.target.checked),
+    style: {
+      width: 20,
+      height: 20,
+      marginTop: 1,
+      flexShrink: 0,
+      accentColor: '#1565E8',
+      cursor: 'pointer'
+    }
+  }), /*#__PURE__*/React.createElement("span", null, legalSentence(lang === 'pt' ? 'Li e concordo com' : lang === 'es' ? 'He leído y acepto' : 'I have read and agree to')));
+  const legalLine = /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      lineHeight: 1.5,
+      color: '#475569',
+      textAlign: 'center',
+      padding: '2px 6px'
+    }
+  }, legalSentence(lang === 'pt' ? 'Ao continuar, você concorda com' : lang === 'es' ? 'Al continuar, aceptas' : 'By continuing you agree to'));
+  const legalSheets = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(TermsSheet, {
+    open: legal === 'terms',
+    onClose: () => setLegal(null),
+    lang: lang
+  }), /*#__PURE__*/React.createElement(PrivacySheet, {
+    open: legal === 'privacy',
+    onClose: () => setLegal(null),
+    lang: lang
+  }));
   const regionTools = /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -372,7 +594,7 @@ function LoginScreen({
   const passValid = passStrength.score >= 5; // all 5 checks
   const passMatch = pass.length >= 8 && passConfirm.length >= 1 && pass === passConfirm;
   const canStep1 = name.trim().length > 1 && email.trim().length > 3 && passValid && passMatch;
-  const canStep2 = region !== '';
+  const canStep2 = region !== '' && agreed;
   const handleSignup = async () => {
     if (!canStep2 || loading) return;
     setLoading(true);
@@ -389,7 +611,10 @@ function LoginScreen({
         options: {
           data: {
             name: name.trim(),
-            region
+            region,
+            lang,
+            terms_accepted_at: new Date().toISOString(),
+            terms_version: TERMS_VERSION
           }
         }
       });
@@ -1067,7 +1292,7 @@ function LoginScreen({
         justifyContent: 'center',
         overflow: 'hidden'
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, legalSheets, /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute',
         inset: 0,
@@ -1082,33 +1307,6 @@ function LoginScreen({
         background: 'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.04) 38%, rgba(0,0,0,0.03) 52%, rgba(0,0,0,0.12) 100%)'
       }
     }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        top: 20,
-        right: 24,
-        display: 'flex',
-        gap: 6,
-        zIndex: 10
-      }
-    }, langs.map(l => /*#__PURE__*/React.createElement("button", {
-      key: l.id,
-      onClick: () => setLang(l.id),
-      style: {
-        padding: '5px 11px',
-        borderRadius: 8,
-        border: '1.5px solid',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: '0.05em',
-        background: lang === l.id ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.20)',
-        borderColor: lang === l.id ? '#fff' : 'rgba(255,255,255,0.40)',
-        color: lang === l.id ? '#1565E8' : '#fff',
-        backdropFilter: 'blur(8px)',
-        transition: 'all .15s'
-      }
-    }, l.flag, " ", l.short))), /*#__PURE__*/React.createElement("div", {
       className: "pg-login-card",
       style: {
         position: 'relative',
@@ -1149,7 +1347,15 @@ function LoginScreen({
         letterSpacing: '0.07em',
         textTransform: 'uppercase'
       }
-    }, t.tagline)), /*#__PURE__*/React.createElement("div", {
+    }, t.tagline), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 16
+      }
+    }, /*#__PURE__*/React.createElement(LangFlags, {
+      lang: lang,
+      setLang: setLang,
+      size: 40
+    }))), /*#__PURE__*/React.createElement("div", {
       style: {
         width: '100%'
       }
@@ -1460,7 +1666,7 @@ function LoginScreen({
       fill: "#fff"
     }, /*#__PURE__*/React.createElement("path", {
       d: "M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"
-    })), lang === 'pt' ? 'Continuar com a Apple' : lang === 'es' ? 'Continuar con Apple' : 'Continue with Apple'), /*#__PURE__*/React.createElement("button", {
+    })), lang === 'pt' ? 'Continuar com a Apple' : lang === 'es' ? 'Continuar con Apple' : 'Continue with Apple'), legalLine, /*#__PURE__*/React.createElement("button", {
       onClick: () => onLogin(),
       style: {
         border: 'none',
@@ -1898,7 +2104,7 @@ function LoginScreen({
         padding: '9px 12px',
         fontWeight: 500
       }
-    }, error), /*#__PURE__*/React.createElement("button", {
+    }, error), agreeBox, /*#__PURE__*/React.createElement("button", {
       onClick: handleSignup,
       disabled: !canStep2 || loading,
       style: {
@@ -1966,7 +2172,7 @@ function LoginScreen({
       overflow: 'hidden',
       position: 'relative'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, legalSheets, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       inset: 0,
@@ -1984,32 +2190,6 @@ function LoginScreen({
       zIndex: 1
     }
   }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      top: 18,
-      right: 16,
-      display: 'flex',
-      gap: 5,
-      zIndex: 10
-    }
-  }, langs.map(l => /*#__PURE__*/React.createElement("button", {
-    key: l.id,
-    onClick: () => setLang(l.id),
-    style: {
-      padding: '4px 9px',
-      borderRadius: 8,
-      border: 'none',
-      cursor: 'pointer',
-      fontFamily: 'inherit',
-      fontSize: 10.5,
-      fontWeight: 700,
-      letterSpacing: '0.05em',
-      background: lang === l.id ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.12)',
-      color: lang === l.id ? '#ffffff' : 'rgba(255,255,255,0.90)',
-      backdropFilter: 'blur(8px)',
-      transition: 'all .15s'
-    }
-  }, l.flag, " ", l.short))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
       zIndex: 2,
@@ -2073,7 +2253,15 @@ function LoginScreen({
       padding: '0 20px',
       textShadow: '0 1px 4px rgba(0,0,0,0.35)'
     }
-  }, t.loginSub)), /*#__PURE__*/React.createElement("div", {
+  }, t.loginSub), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: mode === 'signup' ? 8 : 16
+    }
+  }, /*#__PURE__*/React.createElement(LangFlags, {
+    lang: lang,
+    setLang: setLang,
+    size: mode === 'signup' ? 34 : 40
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
       zIndex: 2,
@@ -2394,7 +2582,7 @@ function LoginScreen({
     fill: "#fff"
   }, /*#__PURE__*/React.createElement("path", {
     d: "M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"
-  })), lang === 'pt' ? 'Continuar com a Apple' : lang === 'es' ? 'Continuar con Apple' : 'Continue with Apple')), /*#__PURE__*/React.createElement("button", {
+  })), lang === 'pt' ? 'Continuar com a Apple' : lang === 'es' ? 'Continuar con Apple' : 'Continue with Apple')), legalLine, /*#__PURE__*/React.createElement("button", {
     onClick: () => onLogin(),
     style: {
       border: 'none',
@@ -2950,7 +3138,7 @@ function LoginScreen({
       padding: '9px 12px',
       fontWeight: 500
     }
-  }, error) : null, /*#__PURE__*/React.createElement("button", {
+  }, error) : null, agreeBox, /*#__PURE__*/React.createElement("button", {
     onClick: handleSignup,
     disabled: !canStep2 || loading,
     style: {
@@ -3160,5 +3348,7 @@ function RecoveryGate({
 }
 Object.assign(window, {
   LoginScreen,
-  RecoveryGate
+  RecoveryGate,
+  LangFlags,
+  pgDetectLang
 });

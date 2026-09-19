@@ -658,7 +658,7 @@ function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [lang, setLangState] = React.useState(() => {
-    try { return localStorage.getItem('pg_lang') || t.lang; } catch(e) { return t.lang; }
+    try { return localStorage.getItem('pg_lang') || pgDetectLang(); } catch(e) { return pgDetectLang(); }
   });
   // Per-weekday region preferences for notifications (loaded from Supabase on login)
   const [regionsByDay, setRegionsByDay] = React.useState({mon:[],tue:[],wed:[],thu:[],fri:[],sat:[],sun:[]});
@@ -1204,6 +1204,7 @@ function App() {
   const [publicProfileUser, setPublicProfileUser] = React.useState(null);
   const [helpOpen,         setHelpOpen]        = React.useState(false);
   const [privacyOpen,      setPrivacyOpen]     = React.useState(false);
+  const [termsOpen,        setTermsOpen]       = React.useState(false);
   const [pendingRatings,   setPendingRatings]  = React.useState([]); // ratings to submit
   const [activeRating,     setActiveRating]    = React.useState(null); // current RatingSheet
   const [ratingPromptOpen, setRatingPromptOpen] = React.useState(false); // buyer popup
@@ -1756,6 +1757,9 @@ function App() {
     setLangState(l);
     setTweak('lang', l);
     try { localStorage.setItem('pg_lang', l); } catch(e) {}
+    // Keep the account's language in step, so password-reset / confirmation e-mails
+    // come in the language the person actually uses (no-op when signed out).
+    try { if (userRef.current && userRef.current.uid && window.sb) window.sb.auth.updateUser({ data: { lang: l } }); } catch(e) {}
   };
 
   const showToast = (msg, onClick) => {
@@ -1950,6 +1954,7 @@ function App() {
     openPublicProfile:  (u)   => setPublicProfileUser(u),
     openHelp:           ()    => setHelpOpen(true),
     openPrivacy:        ()    => setPrivacyOpen(true),
+    openTerms:          ()    => setTermsOpen(true),
     notifPrefs: user.notifPrefs || { chat: true, quick: true, market: true, work: true },
     saveNotifPrefs: async (prefs) => {
       if (!window.sb || !user.uid) return;
@@ -2549,6 +2554,7 @@ function App() {
       />
       <HelpSheet open={helpOpen} onClose={()=>setHelpOpen(false)} lang={lang}/>
       <PrivacySheet open={privacyOpen} onClose={()=>setPrivacyOpen(false)} lang={lang}/>
+      <TermsSheet open={termsOpen} onClose={()=>setTermsOpen(false)} lang={lang}/>
       <HiringAppDetailSheet
         open={!!hiringAppDetail} onClose={()=>setHiringAppDetail(null)}
         app={hiringAppDetail} lang={lang}
@@ -3252,5 +3258,5 @@ class AppErrorBoundary extends React.Component {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <AppErrorBoundary><App/><RecoveryGate lang={(()=>{try{return localStorage.getItem("pg_lang")||"en";}catch(e){return "en";}})()}/></AppErrorBoundary>
+  <AppErrorBoundary><App/><RecoveryGate lang={(()=>{try{return localStorage.getItem("pg_lang")||pgDetectLang();}catch(e){return "en";}})()}/></AppErrorBoundary>
 );

@@ -19,6 +19,7 @@ function ProfileScreen({
     onLogout,
     openHelp,
     openPrivacy,
+    openTerms,
     darkMode,
     toggleDark,
     openChat,
@@ -1342,8 +1343,14 @@ function ProfileScreen({
     iconBg: "var(--pg-ink-100)",
     label: t.privacy,
     chev: true,
-    last: true,
     onClick: openPrivacy
+  }), /*#__PURE__*/React.createElement(SettingRow, {
+    icon: Icon.lock(17, 'var(--pg-ink-500)'),
+    iconBg: "var(--pg-ink-100)",
+    label: lang === 'pt' ? 'Termos de Uso' : lang === 'es' ? 'Términos de Uso' : 'Terms of Use',
+    chev: true,
+    last: true,
+    onClick: openTerms
   }))), user.role === 'admin' && /*#__PURE__*/React.createElement("button", {
     onClick: () => window.open('admin.html', '_blank'),
     style: {

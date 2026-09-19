@@ -1,5 +1,56 @@
 ﻿// login.jsx — splash + login screen — PoolGuyX brand
 
+// Round flag language picker (Windows shows emoji flags as letters, so these are
+// drawn as SVG). The choice drives the app language AND the language of the
+// e-mails Supabase sends (it is saved on the account at sign-up, see handleSignup).
+function LangFlags({ lang, setLang, size = 40 }) {
+  const flags = {
+    pt: (<svg viewBox="0 0 60 60" width="100%" height="100%" aria-hidden="true"><rect width="60" height="60" fill="#009B3A"/><polygon points="30,8 55,30 30,52 5,30" fill="#FEDF00"/><circle cx="30" cy="30" r="11.5" fill="#002776"/><path d="M19 28 Q30 23.5 41.5 32" stroke="#fff" strokeWidth="2.2" fill="none"/></svg>),
+    en: (<svg viewBox="0 0 60 60" width="100%" height="100%" aria-hidden="true"><rect width="60" height="60" fill="#fff"/>{[0,2,4,6,8,10,12].map(i => <rect key={i} y={i*4.615} width="60" height="4.615" fill="#B22234"/>)}<rect width="30" height="32.3" fill="#3C3B6E"/>{[[6,6],[15,6],[24,6],[10.5,12],[19.5,12],[6,18],[15,18],[24,18],[10.5,24],[19.5,24]].map(([x,y],i) => <circle key={i} cx={x} cy={y} r="1.6" fill="#fff"/>)}</svg>),
+    es: (<svg viewBox="0 0 60 60" width="100%" height="100%" aria-hidden="true"><rect width="60" height="60" fill="#AA151B"/><rect y="15" width="60" height="30" fill="#F1BF00"/></svg>),
+  };
+  const items = [
+    { id:'pt', label:'Português' },
+    { id:'en', label:'English' },
+    { id:'es', label:'Español' },
+  ];
+  return (
+    <div role="group" aria-label="Language" style={{
+      display:'inline-flex', alignItems:'center', gap:8, padding:5, borderRadius:999,
+      background:'rgba(10,30,50,0.32)', border:'1px solid rgba(255,255,255,0.35)',
+      backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)',
+    }}>
+      {items.map(it => {
+        const on = lang === it.id;
+        return (
+          <button key={it.id} type="button" onClick={() => setLang(it.id)} aria-label={it.label} aria-pressed={on} title={it.label} style={{
+            width:size + 8, height:size + 8, padding:4, borderRadius:'50%', cursor:'pointer', border:'none',
+            background: on ? 'rgba(0,194,212,0.30)' : 'transparent',
+            boxShadow: on ? '0 0 0 2.5px #00C2D4' : 'none',
+            opacity: on ? 1 : 0.7, transform: on ? 'scale(1.06)' : 'scale(1)',
+            transition:'all .18s', display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <span style={{width:size, height:size, borderRadius:'50%', overflow:'hidden', display:'block', boxShadow:'0 1px 4px rgba(0,0,0,0.35)'}}>{flags[it.id]}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// First-visit language: whatever the phone/browser is set to (pt / es), else English.
+function pgDetectLang() {
+  try {
+    const n = String((navigator.languages && navigator.languages[0]) || navigator.language || 'en').toLowerCase();
+    if (n.startsWith('pt')) return 'pt';
+    if (n.startsWith('es')) return 'es';
+  } catch (e) {}
+  return 'en';
+}
+
+// Bump when the Terms text changes materially; stored on each account at sign-up.
+const TERMS_VERSION = '2026-09-19';
+
 // Sign in with Apple is not configured in Supabase yet (provider disabled -> the button
 // landed on a raw JSON error). Flip to true once Apple is set up (needed for the App Store).
 const APPLE_LOGIN_ENABLED = false;
@@ -15,6 +66,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   const [error,         setError]        = React.useState('');
   const [emailConfirmNeeded, setEmailConfirmNeeded] = React.useState(false);
   const [notice,        setNotice]       = React.useState('');
+  const [agreed,        setAgreed]       = React.useState(false);   // Terms + Privacy accepted (sign-up)
+  const [legal,         setLegal]        = React.useState(null);    // 'terms' | 'privacy' | null
   const [showPass,      setShowPass]     = React.useState(false);
   const [showPassC,     setShowPassC]    = React.useState(false);
   // Signup fields
@@ -123,6 +176,31 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
         : L('Could not determine your position. Check that location services are on, or search below.', 'Não foi possível determinar sua posição. Verifique se a localização do aparelho está ligada ou busque abaixo.', 'No se pudo determinar tu posición. Verifica que la ubicación esté activada o busca abajo.'));
     }, { timeout: 20000, maximumAge: 60000 });
   };
+
+  const legalLinkStyle = { border:'none', background:'transparent', padding:0, margin:0, font:'inherit', fontWeight:700, color:'#1565E8', textDecoration:'underline', cursor:'pointer' };
+  const openLegal = (which) => (e) => { e.preventDefault(); e.stopPropagation(); setLegal(which); };
+  const legalSentence = (prefix) => {
+    const T = <button type="button" onClick={openLegal('terms')} style={legalLinkStyle}>{lang==='pt'?'Termos de Uso':lang==='es'?'Términos de Uso':'Terms of Use'}</button>;
+    const P = <button type="button" onClick={openLegal('privacy')} style={legalLinkStyle}>{lang==='pt'?'Política de Privacidade':lang==='es'?'Política de Privacidad':'Privacy Policy'}</button>;
+    return lang==='pt' ? <>{prefix} os {T} e a {P}.</>
+         : lang==='es' ? <>{prefix} los {T} y la {P}.</>
+         : <>{prefix} the {T} and {P}.</>;
+  };
+  const agreeBox = (
+    <label style={{display:'flex', alignItems:'flex-start', gap:10, fontSize:12.5, lineHeight:1.45, color:'#0A2840', cursor:'pointer', textAlign:'left'}}>
+      <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{width:20, height:20, marginTop:1, flexShrink:0, accentColor:'#1565E8', cursor:'pointer'}}/>
+      <span>{legalSentence(lang==='pt'?'Li e concordo com':lang==='es'?'He leído y acepto':'I have read and agree to')}</span>
+    </label>
+  );
+  const legalLine = (
+    <div style={{fontSize:11.5, lineHeight:1.5, color:'#475569', textAlign:'center', padding:'2px 6px'}}>
+      {legalSentence(lang==='pt'?'Ao continuar, você concorda com':lang==='es'?'Al continuar, aceptas':'By continuing you agree to')}
+    </div>
+  );
+  const legalSheets = (<>
+    <TermsSheet   open={legal==='terms'}   onClose={()=>setLegal(null)} lang={lang}/>
+    <PrivacySheet open={legal==='privacy'} onClose={()=>setLegal(null)} lang={lang}/>
+  </>);
 
   const regionTools = (
     <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom:8}}>
@@ -254,7 +332,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   const passValid = passStrength.score >= 5; // all 5 checks
   const passMatch = pass.length >= 8 && passConfirm.length >= 1 && pass === passConfirm;
   const canStep1 = name.trim().length > 1 && email.trim().length > 3 && passValid && passMatch;
-  const canStep2 = region !== '';
+  const canStep2 = region !== '' && agreed;
 
   const handleSignup = async () => {
     if (!canStep2 || loading) return;
@@ -263,7 +341,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
     try {
       if (!window.supabase) throw new Error('SDK not loaded (check CDN)');
       if (!window.sb) throw new Error('createClient failed — check console');
-      const { data, error: err } = await window.sb.auth.signUp({ email: email.trim(), password: pass, options: { data: { name: name.trim(), region } } });
+      const { data, error: err } = await window.sb.auth.signUp({ email: email.trim(), password: pass, options: { data: { name: name.trim(), region, lang, terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION } } });
       if (err) throw err;
       const userId = data.user?.id || data.id;
       // If Supabase requires email confirmation, data.session will be null
@@ -462,23 +540,10 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   if (isDesktop) {
     return (
       <div style={{width:'100%', height:'100%', position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden'}}>
+        {legalSheets}
         {/* Background full screen */}
         <div style={{position:'absolute', inset:0, backgroundImage:'url(wallpaper.webp)', backgroundSize:'cover', backgroundPosition:'center'}}/>
         <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.04) 38%, rgba(0,0,0,0.03) 52%, rgba(0,0,0,0.12) 100%)'}}/>
-
-        {/* Language switcher */}
-        <div style={{position:'absolute', top:20, right:24, display:'flex', gap:6, zIndex:10}}>
-          {langs.map(l => (
-            <button key={l.id} onClick={()=>setLang(l.id)} style={{
-              padding:'5px 11px', borderRadius:8, border:'1.5px solid', cursor:'pointer',
-              fontFamily:'inherit', fontSize:11, fontWeight:700, letterSpacing:'0.05em',
-              background: lang===l.id ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.20)',
-              borderColor: lang===l.id ? '#fff' : 'rgba(255,255,255,0.40)',
-              color: lang===l.id ? '#1565E8' : '#fff',
-              backdropFilter:'blur(8px)', transition:'all .15s',
-            }}>{l.flag} {l.short}</button>
-          ))}
-        </div>
 
         {/* Centered card */}
         <div className="pg-login-card" style={{
@@ -497,6 +562,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           <div style={{textAlign:'center', marginBottom:28}}>
             <img src="wordmarkwhite.webp" alt="PoolGuyX" style={{height:'auto', width:'96%', maxHeight:340, display:'block', margin:'0 auto -4px', filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.30))'}}/>
             <div style={{fontSize:11, fontWeight:600, color:'#64748b', letterSpacing:'0.07em', textTransform:'uppercase'}}>{t.tagline}</div>
+            <div style={{marginTop:16}}><LangFlags lang={lang} setLang={setLang} size={40}/></div>
           </div>
 
           <div style={{width:'100%'}}>
@@ -564,6 +630,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                   <svg width="17" height="17" viewBox="0 0 384 512" fill="#fff"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
                   {lang==='pt'?'Continuar com a Apple':lang==='es'?'Continuar con Apple':'Continue with Apple'}
                 </button>}
+                {legalLine}
                 <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'#1a2744', fontSize:13, cursor:'pointer', padding:'2px 0', fontFamily:'inherit', textDecoration:'none'}}>{t.continueGuest}</button>
                 <div style={{textAlign:'center', paddingTop:4}}>
                   <span style={{fontSize:13, color:'#1a2744'}}>{t.noAccount} </span>
@@ -659,6 +726,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
                   </div>
                   {notice && <div style={{fontSize:12.5, color:'#166534', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{notice}</div>}
                   {error && <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div>}
+                  {agreeBox}
                   <button onClick={handleSignup} disabled={!canStep2||loading} style={{
                     width:'100%', height:52, borderRadius:12, border:'none', cursor:canStep2?'pointer':'default',
                     fontFamily:'inherit', fontSize:15, fontWeight:700,
@@ -691,6 +759,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
   return (
     <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
 
+      {legalSheets}
       {/* ── Background — full screen photo ── */}
       <div style={{
         position:'absolute', inset:0,
@@ -702,20 +771,6 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
       }}/>
       {/* Overlay: escurece topo (tagline) e base (form) mantendo o centro vivo */}
       <div style={{position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.04) 38%, rgba(0,0,0,0.03) 52%, rgba(0,0,0,0.12) 100%)', zIndex:1}}/>
-
-      {/* ── Language switcher ── */}
-      <div style={{position:'absolute', top:18, right:16, display:'flex', gap:5, zIndex:10}}>
-        {langs.map(l => (
-          <button key={l.id} onClick={()=>setLang(l.id)} style={{
-            padding:'4px 9px', borderRadius:8, border:'none', cursor:'pointer',
-            fontFamily:'inherit', fontSize:10.5, fontWeight:700, letterSpacing:'0.05em',
-            background: lang===l.id ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.12)',
-            color: lang===l.id ? '#ffffff' : 'rgba(255,255,255,0.90)',
-            backdropFilter:'blur(8px)',
-            transition:'all .15s',
-          }}>{l.flag} {l.short}</button>
-        ))}
-      </div>
 
       {/* ── Hero section ── */}
       <div style={{
@@ -753,6 +808,9 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
           textAlign:'center', lineHeight:1.5, maxWidth:240, padding:'0 20px',
           textShadow:'0 1px 4px rgba(0,0,0,0.35)',
         }}>{t.loginSub}</p>}
+
+        {/* Language — first thing a new user can set */}
+        <div style={{marginTop: mode==='signup' ? 8 : 16}}><LangFlags lang={lang} setLang={setLang} size={mode==='signup' ? 34 : 40}/></div>
       </div>
 
       {/* ── Form card — glass over photo ── */}
@@ -861,6 +919,7 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
             </button>}
           </div>
 
+          {legalLine}
           <button onClick={()=>onLogin()} style={{border:'none', background:'transparent', color:'#0A2840',
             fontSize:13, fontWeight:600, cursor:'pointer', padding:'2px 0', fontFamily:'inherit',
             textDecoration:'underline', textDecorationColor:'rgba(10,40,64,0.45)'}}>{t.continueGuest}</button>
@@ -1098,7 +1157,8 @@ function LoginScreen({ onLogin, lang='en', setLang }) {
 
             {error ? <div style={{fontSize:12.5, color:'#ef4444', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontWeight:500}}>{error}</div> : null}
 
-            <button onClick={handleSignup} disabled={!canStep2||loading} style={{
+            {agreeBox}
+                  <button onClick={handleSignup} disabled={!canStep2||loading} style={{
               width:'72%', alignSelf:'center', height:56, borderRadius:999, border:'none', cursor: canStep2?'pointer':'not-allowed',
               fontFamily:'inherit', fontSize:15, fontWeight:700,
               background: canStep2 ? 'linear-gradient(90deg, #1565E8 0%, #00C2D4 100%)' : 'var(--pg-ink-200)',
@@ -1189,4 +1249,4 @@ function RecoveryGate({ lang = 'en' }) {
   );
 }
 
-Object.assign(window, { LoginScreen, RecoveryGate });
+Object.assign(window, { LoginScreen, RecoveryGate, LangFlags, pgDetectLang });

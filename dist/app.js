@@ -968,9 +968,9 @@ function App() {
 
   const [lang, setLangState] = React.useState(() => {
     try {
-      return localStorage.getItem('pg_lang') || t.lang;
+      return localStorage.getItem('pg_lang') || pgDetectLang();
     } catch (e) {
-      return t.lang;
+      return pgDetectLang();
     }
   });
   // Per-weekday region preferences for notifications (loaded from Supabase on login)
@@ -1645,6 +1645,7 @@ function App() {
   const [publicProfileUser, setPublicProfileUser] = React.useState(null);
   const [helpOpen, setHelpOpen] = React.useState(false);
   const [privacyOpen, setPrivacyOpen] = React.useState(false);
+  const [termsOpen, setTermsOpen] = React.useState(false);
   const [pendingRatings, setPendingRatings] = React.useState([]); // ratings to submit
   const [activeRating, setActiveRating] = React.useState(null); // current RatingSheet
   const [ratingPromptOpen, setRatingPromptOpen] = React.useState(false); // buyer popup
@@ -2379,6 +2380,15 @@ function App() {
     try {
       localStorage.setItem('pg_lang', l);
     } catch (e) {}
+    // Keep the account's language in step, so password-reset / confirmation e-mails
+    // come in the language the person actually uses (no-op when signed out).
+    try {
+      if (userRef.current && userRef.current.uid && window.sb) window.sb.auth.updateUser({
+        data: {
+          lang: l
+        }
+      });
+    } catch (e) {}
   };
   const showToast = (msg, onClick) => {
     setToast(msg);
@@ -2630,6 +2640,7 @@ function App() {
     openPublicProfile: u => setPublicProfileUser(u),
     openHelp: () => setHelpOpen(true),
     openPrivacy: () => setPrivacyOpen(true),
+    openTerms: () => setTermsOpen(true),
     notifPrefs: user.notifPrefs || {
       chat: true,
       quick: true,
@@ -3530,6 +3541,10 @@ function App() {
   }), /*#__PURE__*/React.createElement(PrivacySheet, {
     open: privacyOpen,
     onClose: () => setPrivacyOpen(false),
+    lang: lang
+  }), /*#__PURE__*/React.createElement(TermsSheet, {
+    open: termsOpen,
+    onClose: () => setTermsOpen(false),
     lang: lang
   }), /*#__PURE__*/React.createElement(HiringAppDetailSheet, {
     open: !!hiringAppDetail,
@@ -4976,7 +4991,7 @@ class AppErrorBoundary extends React.Component {
 ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(AppErrorBoundary, null, /*#__PURE__*/React.createElement(App, null), /*#__PURE__*/React.createElement(RecoveryGate, {
   lang: (() => {
     try {
-      return localStorage.getItem("pg_lang") || "en";
+      return localStorage.getItem("pg_lang") || pgDetectLang();
     } catch (e) {
       return "en";
     }

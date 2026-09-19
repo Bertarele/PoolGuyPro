@@ -1030,7 +1030,7 @@ function HomeScreen({
         marginTop: 'auto'
       }
     }, priceStr));
-  })))), /*#__PURE__*/React.createElement("div", {
+  })))), !user?.betaFreeForAll && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '14px 18px 0'
     }
